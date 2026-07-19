@@ -1,0 +1,12 @@
+{
+  "ts_utc": "2026-07-19T17:07:42.346130+00:00",
+  "command": "python3 verifier/verify_sdk.py",
+  "exit_code": 1,
+  "passes": [
+    "C9-compile: sdk-python compiles"
+  ],
+  "failures": [
+    "C9-tests: 1 failures, 0 errors"
+  ],
+  "test_output_tail": "...test_causal_chain_stops_on_gap ... ok\ntest_emit_conforms_and_ledgers ... ok\ntest_events_are_hash_chained ... ok\ntest_replay_and_get ... ok\ntest_bad_sensitivity_rejected_at_construction ... ok\n======================================================================\nFAIL: test_field_sets_match (test_events.TestSchemaParity.test_field_sets_match)\n----------------------------------------------------------------------\nAssertionError: Items in the first set but not the second:\n'$defs'\n"
+}

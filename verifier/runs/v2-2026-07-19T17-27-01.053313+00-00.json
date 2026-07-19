@@ -1,0 +1,16 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-07-19T17:27:01.053313+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 0,
+  "passes": [
+    "V2: pytest tests/unit: 67 passed in 1.10s",
+    "V3: all modules closed: compiler, consequence_gate, evidence_ledger, identity",
+    "V4: false closure -> FALSELY_CLOSED; gate applicable loops -> CLOSED",
+    "V5: 5 module READMEs declare the 14-condition buildability standard"
+  ],
+  "skips": [
+    "V1: partial mirror, 14 v1 files not present locally (full 45/45 verified in-repo)"
+  ],
+  "failures": []
+}

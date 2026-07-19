@@ -170,7 +170,8 @@ class ConsequenceGate:
     def __init__(self, *, compiled: CompiledConstitution, passports: PassportRegistry,
                  ledger: EvidenceLedger, signer: WitnessSigner,
                  grants: GrantIssuer | None = None, budget: BudgetOffice | None = None,
-                 policy_version: str = "1.0.0"):
+                 policy_version: str = "1.0.0",
+                 evidence_thresholds: dict | None = None):
         self.compiled = compiled
         self.passports = passports
         self.ledger = ledger
@@ -178,6 +179,7 @@ class ConsequenceGate:
         self.grants = grants or GrantIssuer()
         self.budget = budget or BudgetOffice()
         self.policy_version = policy_version
+        self.evidence_thresholds = evidence_thresholds
 
     # -- internal helpers -------------------------------------------------
     def _transition(self, rec: ActionRecord, state: str, detail: dict | None = None) -> None:
@@ -216,7 +218,7 @@ class ConsequenceGate:
 
         # 3-5. legal principal + evidence + policy -----------------------
         eval_grant = self._eval_view(standing_grant) if standing_grant else None
-        decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant)
+        decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant, thresholds=self.evidence_thresholds)
         if decision.verdict == Verdict.DENY:
             return self._refuse(rec, "refused", decision.reasons)
 
@@ -229,7 +231,7 @@ class ConsequenceGate:
             if not approved:
                 return self._refuse(rec, "denied", [f"human decision: {why}"])
             self._transition(rec, "evaluating", {"step": "policy_recheck_after_approval"})
-            decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant)
+            decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant, thresholds=self.evidence_thresholds)
             if decision.verdict == Verdict.DENY:
                 return self._refuse(rec, "refused", decision.reasons)
 
@@ -344,7 +346,7 @@ class ConsequenceGate:
         # policy must still allow, with the identical input. The evaluation view
         # merges the wire contract with gate-managed stage metadata (the contract
         # records initial_stage; the runtime stage is promoted by the decision).
-        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g))
+        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g), thresholds=self.evidence_thresholds)
         if decision.verdict == Verdict.DENY:
             reasons.extend(f"commit-time policy refusal: {r}" for r in decision.reasons)
         if reasons:

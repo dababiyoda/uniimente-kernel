@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/capability-grant.schema.json",
+  "title": "CapabilityGrant",
+  "description": "Explicit, narrow, time-bound, revocable, purpose-bound, resource-limited, auditable authority. No child grant may exceed its parent. No grant may carry material authority at issuance.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "grant_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "grantee": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "granted_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "legal_actor": {
+      "type": "string",
+      "description": "Accountable legal actor from /authority/legal-principals.yaml. Never UNIIMENTE itself."
+    },
+    "venture_cell": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": "string"
+    },
+    "permitted_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "accounts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "counterparties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "spending_limit_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rate_limits": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "prohibited": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "initial_stage": {
+      "type": "string",
+      "enum": [
+        "simulate",
+        "shadow"
+      ],
+      "description": "New grants start only at simulate or shadow. Executable stages require recorded one-stage promotions."
+    },
+    "parent_grant": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "If set, this grant must be a strict subset of the parent"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "escalation_triggers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "revocable_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^spiffe://uniimente\\.internal/",
+        "description": "SPIFFE-style institutional identity"
+      },
+      "minItems": 1
+    },
+    "revoked": {
+      "type": "boolean"
+    },
+    "revoked_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "revocation_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "grant_id",
+    "grantee",
+    "granted_by",
+    "legal_actor",
+    "objective",
+    "permitted_actions",
+    "spending_limit_usd",
+    "prohibited",
+    "initial_stage",
+    "issued_at",
+    "expires_at",
+    "revocable_by",
+    "revoked"
+  ]
+}

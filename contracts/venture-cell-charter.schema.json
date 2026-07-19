@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/venture-cell-charter.schema.json",
+  "title": "Venture Cell Charter",
+  "description": "The bounded law of one Venture Cell. Every cell inherits the Constitution and starts at autonomy Level 0 or 1. Versioned and stored in the Evidence Ledger.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "charter_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "string"
+    },
+    "cell_name": {
+      "type": "string"
+    },
+    "legal_principal": {
+      "type": "string",
+      "description": "Accountable legal actor from /authority/legal-principals.yaml. Never UNIIMENTE itself."
+    },
+    "mission": {
+      "type": "string"
+    },
+    "autonomy_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Earned per XXI. New cells start at 0 or 1. Level changes log evidence, date, and approver."
+    },
+    "permitted_objectives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prohibited_objectives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "loss_limit_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "daily_spend_cap_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "founder_attention_budget_minutes_per_day": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "loss_limit_usd",
+        "daily_spend_cap_usd"
+      ]
+    },
+    "advancement_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Objective external evidence required to advance autonomy"
+    },
+    "kill_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "escalation_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_ledger_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "approved_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "$defs": {
+      "hash": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    }
+  },
+  "required": [
+    "charter_id",
+    "version",
+    "cell_name",
+    "legal_principal",
+    "mission",
+    "autonomy_level",
+    "budget",
+    "kill_conditions",
+    "created_at",
+    "approved_by"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "ts_utc": "2026-07-19T16:53:37.559214+00:00",
+  "command": "python3 verifier/verify_sdk.py",
+  "exit_code": 0,
+  "passes": [
+    "C9-compile: sdk-python compiles",
+    "C9-tests: OK"
+  ],
+  "failures": [],
+  "test_output_tail": ".......Kill switch DISARMED (operator_freeze)\n......................Kill switch DISARMED (constitution_tampered)\nConstitution changed at runtime -> live action disarmed\n..Constitution file missing at /tmp/tmpqsptz8y7/nope.ucl\n............................heartbeat stage act failed (1): e0\nheartbeat stage act failed (2): e1\nheartbeat stage act failed (3): e2\nKill switch DISARMED (heartbeat_breaker)\nheartbeat breaker tripped -> live action disarmed\n.heartbeat stage act failed (1): e\nheartbeat stage act failed (2): e\nheartbeat stage act failed (3): e\nKill switch DISARMED (heartbeat_breaker)\nheartbeat breaker tripped -> live action disarmed\n./tmp/uniimente-kernel/sdk-python/tests/test_heartbeat.py:16: DeprecationWarning: There is no current event loop\n  return asyncio.get_event_loop().run_until_complete(coro)\nheartbeat stage b failed (1): boom\n.heartbeat stage plan failed (1): x\n.heartbeat stage job failed (1): boom\n..........Kill switch ARMED (human ceremony)\nKill switch DISARMED (test over)\n.....................\n----------------------------------------------------------------------\nRan 94 tests in 0.042s\n\nOK\n"
+}

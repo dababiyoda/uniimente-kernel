@@ -1,101 +1,136 @@
-"""Semantic Constitution model over the five parsed .ucl documents.
+"""UCL semantic model — Constitution over the five real documents.
 
-Every accessor is sourced from the five real files — no invented content:
+Builds the executable view of the five constitution/*.ucl files
+(constitution.ucl, amendment-policy.ucl, participant-rights.ucl,
+shutdown-policy.ucl, sovereignty.ucl). Every accessor is sourced from those
+files; nothing is invented. Missing required blocks/attributes, wrong types,
+duplicate ranks or an unknown current safety state raise UCLError — the
+kernel_invariant's ``on_violation = "refuse_and_escalate"`` applied at model
+build time: ambiguity fails closed.
 
-- version / status / ratified_by       <- constitution "uniimente"
-- permanent_prohibitions               <- permanent_prohibitions.non_delegable
-- humans_authorize                     <- doctrine.humans_authorize
-- failure_posture                      <- failure_posture (fails_toward /
-                                        never_fails_toward)
-- participant_rights / hard_refusal    <- participant_rights > right blocks
-- safety_states                        <- safety_states > state blocks
-- shutdown_may_never_block             <- shutdown_rule "authority"
-- sovereignty_ranks                    <- sovereignty_hierarchy > level blocks
-- kill_conditions                      <- kill_condition blocks
-- amendment_hard_rules                 <- amendment_rule > hard_rules
-
-Constitutional clause: the kernel_invariant's ``on_violation =
-"refuse_and_escalate"`` — a constitution that is missing a required block or
-attribute, or holds an ambiguous value, raises UCLError at build time. An
-unenforceable constitution fails closed and compiles to nothing.
+Clauses exposed (file of origin in parentheses):
+- version / status / ratified_by            (constitution block)
+- permanent_prohibitions.non_delegable      (permanent_prohibitions block)
+- doctrine.humans_authorize                 (doctrine block)
+- failure_posture                           (failure_posture block)
+- participant_rights / hard_refusal_rights  (participant_rights.right blocks)
+- safety_states ladder                      (safety_states.state blocks)
+- shutdown_may_never_block                  (shutdown_rule "authority")
+- sovereignty_ranks                         (sovereignty_hierarchy.level blocks)
+- kill_conditions                           (kill_condition blocks)
+- amendment_hard_rules                      (amendment_rule "constitutional_amendment")
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from .ast import Block
 from .lexer import UCLError
 from .parser import Document, parse_file
 
 
-def _err(block: Block, message: str) -> UCLError:
-    return UCLError(message, line=block.line or None, col=block.col or None)
+def _err(block: Block | None, message: str) -> UCLError:
+    if block is not None and block.line:
+        return UCLError(message, line=block.line, col=block.col)
+    return UCLError(message)
 
 
-def _require_str(block: Block, name: str) -> str:
-    value = block.attrs.get(name)
-    if not isinstance(value, str) or not value:
-        raise _err(block, f"required string attribute {name!r} is missing or empty")
+def _require_str(block: Block, name: str, *, allow_null: bool = False) -> str | None:
+    if name not in block.attrs:
+        raise _err(block, f"{block.kind} block is missing required attribute {name!r}")
+    value = block.attrs[name]
+    if allow_null and value is None:
+        return None
+    if not isinstance(value, str):
+        raise _err(block, f"attribute {name!r} of {block.kind} block must be a string")
+    return value
+
+
+def _require_bool(block: Block, name: str) -> bool:
+    if name not in block.attrs:
+        raise _err(block, f"{block.kind} block is missing required attribute {name!r}")
+    value = block.attrs[name]
+    if type(value) is not bool:
+        raise _err(block, f"attribute {name!r} of {block.kind} block must be a bool")
     return value
 
 
 def _require_int(block: Block, name: str) -> int:
-    value = block.attrs.get(name)
-    # bool is a subclass of int; a boolean is NOT an acceptable integer here.
-    if type(value) is not int:
-        raise _err(block, f"required integer attribute {name!r} is missing")
+    if name not in block.attrs:
+        raise _err(block, f"{block.kind} block is missing required attribute {name!r}")
+    value = block.attrs[name]
+    if type(value) is not int:  # bool is a subclass of int; exclude it explicitly
+        raise _err(block, f"attribute {name!r} of {block.kind} block must be an integer")
     return value
 
 
 def _require_str_list(block: Block, name: str) -> list[str]:
-    value = block.attrs.get(name)
-    if (
-        not isinstance(value, list)
-        or not value
-        or any(not isinstance(item, str) or not item for item in value)
-    ):
-        raise _err(block, f"required string-list attribute {name!r} is missing or malformed")
+    if name not in block.attrs:
+        raise _err(block, f"{block.kind} block is missing required attribute {name!r}")
+    value = block.attrs[name]
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise _err(
+            block, f"attribute {name!r} of {block.kind} block must be a list of strings"
+        )
     return list(value)
 
 
 def _require_child(block: Block, kind: str) -> Block:
     child = block.child(kind)
     if child is None:
-        raise _err(block, f"required nested block {kind!r} is missing")
+        raise _err(block, f"{block.kind} block is missing required nested block {kind!r}")
     return child
 
 
-@dataclass(frozen=True)
 class Constitution:
-    """The enforceable semantic model of the five-file constitution."""
+    """The semantic model of the five-file UNIIMENTE constitution."""
 
-    version: str
-    status: str
-    ratified_by: str | None
-    permanent_prohibitions: frozenset
-    humans_authorize: bool
-    failure_posture: dict
-    participant_rights: list
-    hard_refusal_rights: list
-    safety_states: dict
-    shutdown_may_never_block: list
-    sovereignty_ranks: list
-    kill_conditions: list
-    amendment_hard_rules: dict
-    current_state: str = field(default="normal")
+    def __init__(
+        self,
+        *,
+        version: str,
+        status: str,
+        ratified_by: str | None,
+        permanent_prohibitions: frozenset[str],
+        humans_authorize: bool,
+        failure_posture: dict[str, Any],
+        participant_rights: list[Block],
+        hard_refusal_rights: list[Block],
+        safety_states: dict[str, str],
+        shutdown_may_never_block: list[str],
+        sovereignty_ranks: list[tuple[int, str, str]],
+        kill_conditions: list[Block],
+        amendment_hard_rules: dict[str, bool],
+        current_state: str = "normal",
+    ):
+        if current_state not in safety_states:
+            raise UCLError(
+                f"current safety state {current_state!r} is not on the safety_states ladder"
+            )
+        self.version = version
+        self.status = status
+        self.ratified_by = ratified_by
+        self.permanent_prohibitions = permanent_prohibitions
+        self.humans_authorize = humans_authorize
+        self.failure_posture = failure_posture
+        self.participant_rights = participant_rights
+        self.hard_refusal_rights = hard_refusal_rights
+        self.safety_states = safety_states
+        self.shutdown_may_never_block = shutdown_may_never_block
+        self.sovereignty_ranks = sovereignty_ranks
+        self.kill_conditions = kill_conditions
+        self.amendment_hard_rules = amendment_hard_rules
+        self.current_state = current_state
 
     # ------------------------------------------------------------ construction
 
     @classmethod
     def from_documents(
-        cls, documents: list[Document], *, current_state: str = "normal"
+        cls, documents: Iterable[Document], *, current_state: str = "normal"
     ) -> "Constitution":
-        """Build the semantic model from parsed documents. Fails closed."""
-        if not documents:
-            raise UCLError("no .ucl documents supplied")
-        blocks = [block for document in documents for block in document.blocks]
+        """Build (and fully validate) the model from the parsed .ucl set."""
+        blocks = [block for doc in documents for block in doc.blocks]
 
         constitutions = [b for b in blocks if b.kind == "constitution"]
         if len(constitutions) != 1:
@@ -103,30 +138,25 @@ class Constitution:
                 f"exactly one constitution block is required, found {len(constitutions)}"
             )
         constitution = constitutions[0]
+
         version = _require_str(constitution, "version")
         status = _require_str(constitution, "status")
-        ratified_by = constitution.attrs.get("ratified_by")
-        if ratified_by is not None and not isinstance(ratified_by, str):
-            raise _err(constitution, "ratified_by must be a string or null")
+        ratified_by = _require_str(constitution, "ratified_by", allow_null=True)
 
-        prohibitions = _require_child(constitution, "permanent_prohibitions")
-        non_delegable = _require_str_list(prohibitions, "non_delegable")
+        doctrine = _require_child(constitution, "doctrine")
+        humans_authorize = _require_bool(doctrine, "humans_authorize")
 
-        doctrine = constitution.child("doctrine")
-        humans_authorize = True
-        if doctrine is not None:
-            value = doctrine.attrs.get("humans_authorize")
-            if value is not None:
-                if type(value) is not bool:
-                    raise _err(doctrine, "doctrine.humans_authorize must be a bool")
-                humans_authorize = value
+        prohibitions_block = _require_child(constitution, "permanent_prohibitions")
+        non_delegable = _require_str_list(prohibitions_block, "non_delegable")
+        if not non_delegable:
+            raise _err(prohibitions_block, "non_delegable must not be empty")
+        if len(set(non_delegable)) != len(non_delegable):
+            raise _err(prohibitions_block, "non_delegable contains duplicate matters")
 
         posture_block = _require_child(constitution, "failure_posture")
-        fails_toward = _require_str_list(posture_block, "fails_toward")
-        never_fails_toward = _require_str(posture_block, "never_fails_toward")
         failure_posture = {
-            "fails_toward": fails_toward,
-            "never_fails_toward": never_fails_toward,
+            "fails_toward": _require_str_list(posture_block, "fails_toward"),
+            "never_fails_toward": _require_str(posture_block, "never_fails_toward"),
         }
 
         rights_blocks = [b for b in blocks if b.kind == "participant_rights"]
@@ -134,21 +164,14 @@ class Constitution:
             raise UCLError(
                 f"exactly one participant_rights block is required, found {len(rights_blocks)}"
             )
-        participant_rights: list[Block] = []
-        for right in rights_blocks[0].children_of("right"):
+        participant_rights = rights_blocks[0].children_of("right")
+        if not participant_rights:
+            raise _err(rights_blocks[0], "participant_rights must declare at least one right")
+        for right in participant_rights:
             if not right.label:
                 raise _err(right, "every right block must be labelled")
             _require_str(right, "rule")
-            enforcement = _require_str(right, "enforcement")
-            if enforcement not in ("hard_refusal", "soft_flag", "audit_only"):
-                raise _err(
-                    right,
-                    f"right {right.label!r} has unknown enforcement {enforcement!r}",
-                )
-            participant_rights.append(right)
-        if not participant_rights:
-            raise _err(rights_blocks[0], "participant_rights must declare at least one right")
-
+            _require_str(right, "enforcement")
         hard_refusal_rights = [
             r for r in participant_rights if r.attrs["enforcement"] == "hard_refusal"
         ]

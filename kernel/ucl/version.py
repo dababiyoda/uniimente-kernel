@@ -2,7 +2,7 @@
 
 ``constitution_version = "ucl-" + sha256(canonical concatenation of the five
 file contents)[:16]`` — the canonical concatenation is, for each .ucl file in
-sorted filename order, ``"<name>\n<content>\n"``.
+sorted filename order, ``"<name>\\n<content>\\n"``.
 
 ``policy_version = "policy-" + sha256(canonical model dump)[:16]`` — the model
 dump is ``Constitution.to_canonical()`` serialized with the WP-01 canonical

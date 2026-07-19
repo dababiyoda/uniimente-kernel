@@ -1,0 +1,17 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-07-19T17:54:27.446185+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 1,
+  "passes": [
+    "V2: pytest tests/unit: 78 passed in 1.23s",
+    "V3: all modules closed: compiler, consequence_gate, evidence_ledger, evolution, identity",
+    "V4: false closure -> FALSELY_CLOSED; gate applicable loops -> CLOSED"
+  ],
+  "skips": [
+    "V1: partial mirror, 14 v1 files not present locally (full 45/45 verified in-repo)"
+  ],
+  "failures": [
+    "V5: evolution/README.md: missing (file landed seconds after this run; superseded by next run)"
+  ]
+}

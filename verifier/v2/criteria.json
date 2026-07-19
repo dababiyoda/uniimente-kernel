@@ -42,7 +42,8 @@
         "identity/README.md",
         "policy/README.md",
         "provenance/README.md",
-        "closure/README.md"
+        "closure/README.md",
+        "evolution/README.md"
       ]
     }
   ]

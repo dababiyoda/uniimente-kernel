@@ -52,6 +52,18 @@ from uniimente_kernel.events import (
     EventValidationError,
     validate_event_dict,
 )
+from uniimente_kernel.evolution_loop import (
+    BranchCandidate,
+    BranchGenerator,
+    EvolutionLoop,
+    FAILURE_CLASSES,
+    FailureAnalyzer,
+    FailureRecord,
+    ImprovementProposal,
+    IsolatedResult,
+    IsolatedRunner,
+    OutcomeComparator,
+)
 from uniimente_kernel.gate import (
     VALIDATION_STATUSES,
     ConsequenceGate,
@@ -72,6 +84,8 @@ __all__ = [
     "ApprovalQueue",
     "ApprovalRecord",
     "ApprovalStore",
+    "BranchCandidate",
+    "BranchGenerator",
     "CapabilityError",
     "CommitReceipt",
     "CommitWitness",
@@ -89,15 +103,23 @@ __all__ = [
     "EventValidationError",
     "EvolutionCapsule",
     "EvolutionError",
+    "EvolutionLoop",
     "ExperimentSpec",
+    "FAILURE_CLASSES",
+    "FailureAnalyzer",
+    "FailureRecord",
     "GateError",
     "GateResult",
     "GrantRecord",
     "GrantStore",
     "Heartbeat",
+    "ImprovementProposal",
     "InMemoryApprovalStore",
     "InMemoryGrantStore",
+    "IsolatedResult",
+    "IsolatedRunner",
     "KillSwitch",
+    "OutcomeComparator",
     "PostconditionResult",
     "PromptFirewall",
     "VALIDATION_STATUSES",
@@ -115,4 +137,4 @@ __all__ = [
     "validate_event_dict",
 ]
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"

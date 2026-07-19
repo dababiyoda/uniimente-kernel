@@ -1,0 +1,35 @@
+{
+  "proposal": {
+    "proposal_id": "bf6ea27f-9e58-4688-bff1-1a46b66a00d1",
+    "bottleneck": "the organ's quality scorer rewards keyword density, not doctrine quality: hype and vagueness pass unpenalized",
+    "selected_branch_id": "e58b4dd8-c792-4346-bd00-da6f41efd5e0",
+    "selected_archetype": "maximum_ownership",
+    "decision": "retain",
+    "capsule_id": "230db63d-86f0-4d24-a4b8-f10aa024e237",
+    "outcome": {
+      "separation_margin": 0.0,
+      "false_accepts": 0.0,
+      "good_floor": 35.0
+    },
+    "evidence_refs": [
+      "sha256:064a517eae54ed788b9066e2a8da9d9561f557823bc370672f5bf7868499e284",
+      "sha256:6ad3341415fd17f886d69b9e516e9e0922ba6d2d2ae280b938e4b1d4333c41f8",
+      "harness-run:2026-07-19T19-16-48.174886+00-00-harness.json"
+    ],
+    "verifier_level": 1,
+    "summary": "the only configuration beating baseline on all three metrics: penalize doctrine violations, boost substance, keep the good floor rising",
+    "recorded_at": "2026-07-19T19:18:49.980831+00:00",
+    "applied": false
+  },
+  "baseline": {
+    "separation_margin": -70.0,
+    "false_accepts": 6.0,
+    "good_floor": 30.0
+  },
+  "winner_outcome": {
+    "separation_margin": 0.0,
+    "false_accepts": 0.0,
+    "good_floor": 35.0
+  },
+  "experiment_id": "bde98ec7-0903-4bb5-8bb7-06acb6ac5ada"
+}

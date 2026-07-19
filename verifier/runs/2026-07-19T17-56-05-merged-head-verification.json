@@ -1,0 +1,15 @@
+{
+  "ts_utc": "2026-07-19T17:56:05.683920+00:00",
+  "command": "merged-head verification of 70edf64 (executed checks + deterministic invariance; see note)",
+  "exit_code": 0,
+  "passes": [
+    "C9 executed: sdk-python compiles, 109/109 unittest OK (run 17-43-53.986164-sdk; pre-slice baseline 17-39-46 preserved)",
+    "C10 executed: pip install --target OK, 25 symbols exported (run 17-43-58.404987-pkg; baseline 17-40-21.761032 preserved)",
+    "C11 executed: 11/11 wire-contract parity checks (run 17-43-58.574930-contracts; baseline 17-40-21.924722 preserved)",
+    "C12 executed: 16/16 event-spine parity + behavioral + hostile checks (run 17-43-58.752421-events)",
+    "verify_events.py on branch 70edf64 is byte-identical to the executed copy (re-fetched post-push, blob sha dd7cf4fadeac1be321d0570423a353d9d53ed85d)",
+    "C1-C8 on 70edf64 by deterministic invariance: green run 17-13-17.827717 on parent acddc29, and commit 70edf64 changes no measured invariant (3 modified: events/README.md, sdk-python/README.md, verifier/README.md, all still present and non-empty; 9 added: 7 run records, verifier/v5/criteria.json, verifier/verify_events.py; 0 deleted)"
+  ],
+  "failures": [],
+  "note": "Executed checks ran on a local tree byte-verified against 70edf64 for every file those checks read (sdk-python tree, 4 wire/event schemas, pyproject). C1-C8 invariance covers the canonical artifact layer; the next full-tree run of verifier/verify.py (which now defaults to the newest vN, i.e. v5) will re-execute C1-C8 directly. v5 C1/C2 file lists are identical to v4."
+}

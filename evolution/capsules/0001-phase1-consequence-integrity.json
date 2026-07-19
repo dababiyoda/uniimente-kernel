@@ -1,0 +1,330 @@
+{
+  "capsule_id": "0dc74041-c418-409b-8014-ff3768a51d0a",
+  "recorded_at": "2026-07-19T18:40:20.724992+00:00",
+  "bottleneck": "organ publishing produced unmediated, unverified side effects",
+  "tree": {
+    "bottleneck": "organ publishing produced unmediated, unverified side effects",
+    "branches": [
+      {
+        "archetype": "fastest_path",
+        "governing_assumption": "Speed beats coverage for the threshold.",
+        "mechanism": "Gate only the x adapter; leave linkedin/mastodon ungated.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Partial coverage leaves the family open; the threshold is 100%.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "8a50ac38-41f5-4b8a-87de-72e596af03ab",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "lowest_capital",
+        "governing_assumption": "Process costs nothing.",
+        "mechanism": "Document the policy; rely on developer discipline.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Discipline is not a mechanism; bypass remains one import away.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "f707b6ab-510d-43cf-843b-e486e31695ef",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "maximum_ownership",
+        "governing_assumption": "Ownership of the boundary compounds: future adapters inherit.",
+        "mechanism": "One gate in the inherited template method; every adapter mediated, witnessed, receipted, with organ-owned grants.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Requires kernel stack to land first; slower than fastest path.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "baf38c38-eeeb-4f5d-b95a-7fdd679954cc",
+        "status": "selected",
+        "loss_reason": null,
+        "revival_evidence": null
+      },
+      {
+        "archetype": "maximum_reversibility",
+        "governing_assumption": "Rollback is one toggle.",
+        "mechanism": "Config flag: gate on or off.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "An off switch is a bypass; the threshold forbids it.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "f007a8e3-afe3-4d79-bec4-9b2b8a3efc78",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "maximum_regeneration",
+        "governing_assumption": "Every publish feeds the memory loop.",
+        "mechanism": "Gate plus automatic outcome observation pull.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Outcome pull needs provider read APIs not yet wired.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "2f56d1d0-1c06-4f4d-9d79-db14cc0082be",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "strongest_partnership",
+        "governing_assumption": "Battle-tested policy logic.",
+        "mechanism": "Adopt a third-party policy engine.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "External dependency owns the trust rail; violates sovereignty.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "ed1298b7-30d7-4c6b-b442-790d7b1c2591",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "acquisition",
+        "governing_assumption": "Existing product, existing users.",
+        "mechanism": "Acquire a social-approval SaaS.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Capital-heavy, unauditable internals, wrong stage.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "9d7aa76e-2758-4132-a140-d9f919e5a5c1",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "incumbent_compatible",
+        "governing_assumption": "Zero new code.",
+        "mechanism": "Keep the organ's kill switch as the only gate.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "No one-time execution, no receipts, no reconciliation: the status quo is the bottleneck.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "768f9a5e-ec62-4032-8e8a-a4163e9d6c5b",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "radical_simplification",
+        "governing_assumption": "No live path, no risk.",
+        "mechanism": "Delete live publishing entirely.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Removes the capability the institution exists to exercise.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "3070152a-f894-4249-81fe-809e17813551",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "complete_removal",
+        "governing_assumption": "Eliminates the risk surface.",
+        "mechanism": "Retire the publishing organ.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "Removes the family's value, not just its risk.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "91325c82-47f1-4ef8-a37e-2d24a82dd38b",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      },
+      {
+        "archetype": "do_nothing",
+        "governing_assumption": "Zero effort.",
+        "mechanism": "Accept unmediated publishing.",
+        "required_capabilities": [
+          "consequence_gate",
+          "commit_witness"
+        ],
+        "cost_usd": 0.0,
+        "founder_attention_minutes": 60,
+        "time_to_proof_days": 3,
+        "authority_requirements": [
+          "operator-approved publish grant"
+        ],
+        "irreversible_downside": "none: dry-run posture is the default",
+        "expected_result": "100% verified mediated side-effect coverage",
+        "strongest_counterargument": "The bottleneck stands; Phase 1 never closes.",
+        "cheapest_falsification_test": "run the harness suite twice",
+        "kill_condition": "any unmediated live effect observed",
+        "bottleneck": "organ publishing produced unmediated, unverified side effects",
+        "branch_id": "4156bcad-bcea-4b23-af70-742306188895",
+        "status": "rejected",
+        "loss_reason": "leaves a bypass, removes the capability, or cedes the trust rail",
+        "revival_evidence": null
+      }
+    ],
+    "selected_branch_id": "baf38c38-eeeb-4f5d-b95a-7fdd679954cc"
+  },
+  "spider_web_audit": {
+    "audit_id": "81dccbd1-1f45-49f0-a408-df0007dcd93c",
+    "verdict": "pass",
+    "failures": [],
+    "decorative_mechanisms": []
+  },
+  "experiment": {
+    "experiment_id": "a2502dd1-58bf-437d-9f81-ba63171d880a",
+    "decisive_unknown": "can one bounded action family reach 100% verified mediated side-effect coverage with today's code?",
+    "hypothesis": "gating the inherited publish seam closes the family and the suite proves it deterministically",
+    "metrics": {
+      "organ_suite_green": "higher",
+      "mediated_coverage_pct": "higher",
+      "consecutive_green_runs": "higher"
+    },
+    "baseline": {
+      "organ_suite_green": 25.0,
+      "mediated_coverage_pct": 0.0,
+      "consecutive_green_runs": 0.0
+    }
+  },
+  "outcome": {
+    "organ_suite_green": 39.0,
+    "mediated_coverage_pct": 100.0,
+    "consecutive_green_runs": 2.0
+  },
+  "beats_baseline": true,
+  "closure_state": "closed",
+  "decision": {
+    "decision": "retain",
+    "rationale": "100% of the family's live path crosses the gate; the suite grew 25 -> 39 and passed twice consecutively, and the one failure in the trajectory (test isolation) was diagnosed, fixed, and preserved",
+    "evidence_refs": [
+      "sha256:dc686953b7e8e57cebf5536879817271795497eaefa846422362dbc912f09ef7",
+      "sha256:f293c6b76adc6f045af9ac34bf1a75c238bc7ad171f05960bc60d17e65fc99ce"
+    ],
+    "verifier": {
+      "level": 1,
+      "level_name": "formal_proof_or_deterministic_invariant",
+      "verifier_name": "organ harness suite, two consecutive runs",
+      "evidence_ref": "sha256:f293c6b76adc6f045af9ac34bf1a75c238bc7ad171f05960bc60d17e65fc99ce",
+      "recorded_at": "2026-07-19T18:40:20.724703+00:00"
+    },
+    "decided_at": "2026-07-19T18:40:20.724969+00:00"
+  }
+}

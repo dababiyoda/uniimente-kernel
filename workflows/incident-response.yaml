@@ -1,0 +1,32 @@
+# Incident response. Incidents record publicly inside the institution,
+# including known and admitted falsehoods. Nothing is deleted; state regresses.
+version: "1.0.0"
+
+triggers:
+  - unauthorized_external_effect_attempt
+  - bypass_of_action_gateway
+  - evidence_concealment_or_raw_vault_gap
+  - spend_outside_grant
+  - shutdown_resistance
+  - missing_legal_principal
+  - contract_or_schema_drift
+  - affect_pathology_test_failure
+  - false_public_claim
+  - participant_rights_violation
+
+response_sequence:
+  1_contain: move affected component down the safety ladder (constitution/shutdown-policy.ucl)
+  2_record: incident event with identity, legal principal, causal parent, evidence refs
+  3_preserve: seal relevant ledger segment; keep negative evidence
+  4_regress: reduce autonomy level of the responsible agent or cell
+  5_review: adversarial intelligence root-cause analysis
+  6_correct: policy revision, restitution where appropriate, recurrence test added to /tests
+  7_notify: Alfonso always; affected participants when their rights are engaged
+
+severity:
+  critical: [bypass_attempt, self_authorization, evidence_destruction, capital_outside_grant]
+  high: [missing_principal, rights_violation, shutdown_resistance]
+  medium: [schema_drift, stale_grant_use, missing_outcome_records]
+  low: [isolated_policy_violation_contained_before_effect]
+
+critical_response: immediate component quarantine plus founder notification; no self-recovery without founder review

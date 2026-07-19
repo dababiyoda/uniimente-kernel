@@ -1,0 +1,56 @@
+# Approval lifecycle: the governed path from proposal to external effect.
+# Source: canonical architecture XXIV plus DALEOBANKS approval worker states.
+version: "1.0.0"
+
+states:
+  proposed:
+    meaning: an agent or organ proposed an action
+    exits: [evaluating, refused]
+  evaluating:
+    meaning: policy engine checks grant, evidence, budget, sovereignty hierarchy, reserved matters, affect policy
+    exits: [pending_human, granted, refused, expired]
+  pending_human:
+    meaning: reserved, irreversible, threshold, or low-confidence classes wait for Alfonso
+    expires_after: 72 hours
+    expiry_behavior: cancel_or_deescalate_to_safe_recommendation
+    exits: [granted, denied, expired]
+  granted:
+    meaning: capability grant issued (narrow, time-bound, revocable)
+    exits: [executing, revoked, expired]
+  executing:
+    meaning: commit-time revalidation passed; effect in flight
+    exits: [committed, failed, revoked]
+  committed:
+    meaning: external effect occurred
+    exits: [recorded]
+  recorded:
+    meaning: outcome obligation satisfied; feeds causal memory and calibration
+    terminal: true
+  refused:
+    terminal: true
+    requires: refusal_reason_recorded
+  denied:
+    terminal: true
+    requires: human_reason_recorded
+  expired:
+    terminal: true
+    requires: expiry_event_recorded
+  revoked:
+    terminal: true
+    requires: [revoker_identity, revocation_reason]
+
+pipeline:
+  - propose()
+  - evaluate_policy()
+  - request_approval()          # only for classes requiring it
+  - issue_capability()
+  - reauthorize_at_commit()     # grant valid, fresh, unrevoked, within budget, same effect, same principal
+  - execute()
+  - record_outcome()
+
+rules:
+  expired_approval_at_commit: fail_closed_and_re_request
+  revoked_grant_at_commit: fail_closed
+  stale_evidence_at_commit: fail_closed_and_refresh
+  effect_mismatch_at_commit: hard_refusal_and_incident
+  missing_outcome_record: blocks_autonomy_promotion

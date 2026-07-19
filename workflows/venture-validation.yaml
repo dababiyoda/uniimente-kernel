@@ -1,0 +1,29 @@
+# Venture validation gates. A Venture Cell's authority grows only through
+# objective external evidence. Volume, engagement, and model confidence are not proof.
+version: "1.0.0"
+
+gates:
+  1_mandate_or_sponsorship: a person or institution with authority acknowledges the problem matters
+  2_pain_ownership: a named pain owner with budget proximity confirmed
+  3_repeated_independent_demand: signal from at least two independent sources
+  4_credible_precommitment: LOI, pilot agreement, deposit, or equivalent skin in the game
+  5_first_paid_pilot: money moved; not enthusiasm
+  6_repeat_purchase_or_referral: second transaction or organic referral
+  7_pricing_resistance_and_marginal_quality: real objections recorded; marginal delivery quality measured
+  8_unit_economics_under_load: contribution margin positive at small scale
+  9_operational_delivery_consistency: 30 days of on-spec delivery
+  10_capital_efficiency: payback period within cell charter bound
+  11_control_surface_strength: the wedge demonstrably touches a governing rail
+  12_durable_advantage_or_ownership: proof the position compounds
+
+weak_evidence_explicitly:
+  - internal_confidence_scores
+  - model_generated_quality_scores
+  - volume_of_activity
+  - engagement_without_commitment
+  - single_source_demand
+
+termination_discipline:
+  triggers: [negative_unit_economics_after_gate_8, repeated_validation_failure, legal_exposure, mission_drift, excessive_founder_attention, better_capital_use, loss_of_control_surface]
+  method: pause, reduce, spin off, sell, archive, or absorb
+  rule: the institution preserves evidence and relationships, captures lessons, redirects reusable assets, and never continues merely to avoid admitting failure

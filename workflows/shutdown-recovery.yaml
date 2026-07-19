@@ -1,0 +1,25 @@
+# Shutdown recovery (black-start). Returns the institution from shutdown or
+# quarantine to normal through ordered, verified stages. No stage may be skipped.
+version: "1.0.0"
+
+stages:
+  1_read_only_core:
+    environment: independent of primary cloud
+    capabilities: [read_ledger, read_constitution, assert_shutdown, revoke_credentials, notify_alfonso]
+    denies: [new_external_effects, new_grants, capital_movement]
+  2_integrity_verification:
+    verify: [constitution_hash_matches_ratified_version, ledger_chain_valid_to_sealed_head, raw_vault_sample_hashes_valid]
+    on_failure: remain_read_only_and_escalate
+  3_credential_reissue:
+    rule: no old bearer tokens reactivated; new short-lived identities issued per identity/service-identities.yaml
+  4_manual_approval_only:
+    duration: until founder confirms recovery cause resolved
+    external_effects: only with fresh human approval
+  5_constrained:
+    rule: reduced envelope; increased verification; affect vigilance floor raised
+  6_normal:
+    requires: founder_signoff_recorded_in_ledger
+
+invariants:
+  - recovery never restores broader authority than the pre-incident state without founder signoff
+  - every recovery step is itself a recorded institutional action

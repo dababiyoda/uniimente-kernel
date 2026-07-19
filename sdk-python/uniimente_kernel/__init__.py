@@ -18,6 +18,12 @@ from uniimente_kernel.capability import (
     GrantStore,
     InMemoryGrantStore,
 )
+from uniimente_kernel.commit_witness import (
+    CommitReceipt,
+    CommitWitness,
+    PostconditionResult,
+    action_fingerprint,
+)
 from uniimente_kernel.constitution_check import (
     DEFAULT_CONSTITUTION_PATHS,
     ConstitutionGuard,
@@ -49,6 +55,8 @@ __all__ = [
     "ApprovalStore",
     "CapabilityError",
     "CapabilityService",
+    "CommitReceipt",
+    "CommitWitness",
     "ConstitutionGuard",
     "ContextPacketData",
     "DEFAULT_CONSTITUTION_PATHS",
@@ -62,13 +70,15 @@ __all__ = [
     "InMemoryApprovalStore",
     "InMemoryGrantStore",
     "KillSwitch",
+    "PostconditionResult",
     "PromptFirewall",
     "RateGovernor",
     "RawVault",
+    "action_fingerprint",
     "build_packet",
     "contracts",
     "default_ledger_path",
     "validate_event_dict",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

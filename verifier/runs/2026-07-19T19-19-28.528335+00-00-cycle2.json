@@ -1,0 +1,13 @@
+{
+  "ts_utc": "2026-07-19T19:19:28.528335+00:00",
+  "command": "python3 evolution/run_fast_loop.py (after baseline-parity gate)",
+  "exit_code": 0,
+  "passes": [
+    "baseline parity: BASELINE_WEIGHTS == organ critic (blob b11e8b31) on all 14 corpus texts, reference artifact + corpus sha256 verified",
+    "cycle 2 completed: 11 candidates generated, 11 isolated runs, 0 failures, decision RETAIN (maximum_ownership)",
+    "metrics: separation_margin -70.0 -> 0.0, false_accepts 6.0 -> 0.0, good_floor 30.0 -> 35.0",
+    "evolution ledger: 77 events, hash chain verified OK (seq 1-25 cycle 1 unchanged)",
+    "note: one aborted evolution_loop_started event precedes the cycle (proposer wiring error raised before candidates); preserved append-only"
+  ],
+  "failures": []
+}

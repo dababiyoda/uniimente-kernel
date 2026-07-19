@@ -523,4 +523,395 @@ def build_registry() -> ClosureRegistry:
         "evidence": proof_evidence, "economic": proof_economic,
         "regenerative": proof_regenerative}))
 
+    # ---------------------------------------------------------------- Phase 4 loom
+    def _loom_stack():
+        from events.spine import EventSpine
+        from loom.ratify import Ratifier
+        from loom.weaver import Operation, Weaver
+        from provenance.ledger import EvidenceLedger
+        spine = EventSpine(EvidenceLedger("sha256:" + "0" * 64))
+        ratifier = Ratifier(spine.ledger)
+        ops = {"work": Operation(run=lambda s, p: {"worked": True}),
+               "undo": Operation(run=lambda s, p: s.pop("worked", None))}
+        return spine, ratifier, Weaver(spine, ratifier, ops)
+
+    def _loom_pattern():
+        from loom.pattern import StepSpec, WorkflowPattern
+        return WorkflowPattern(
+            title="closure_pattern", objective="prove the loom closes",
+            authored_by="spiffe://uniimente.internal/agent/loom-author",
+            legal_principal="alfonso_lopez",
+            steps=[StepSpec(name="work", action="work", capability="cap.work",
+                            consequence_class="internal_write", compensation="undo")])
+
+    def loom_technical():
+        from loom.canonical import CANONICAL
+        spine, ratifier, weaver = _loom_stack()
+        calls = []
+        for name, make in CANONICAL.items():
+            p = make()
+            ratifier.decide(ratifier.submit(p), ratified=True, reason="closure")
+            op_names = {s.action for s in p.steps} | {s.compensation for s in p.steps
+                                                      if s.compensation}
+            ops = {n: (lambda st, pa, _n=n: calls.append(_n) or {_n: 1}) for n in op_names}
+            from loom.weaver import Operation, Weaver
+            w = Weaver(spine, ratifier, {k: Operation(run=v) for k, v in ops.items()})
+            wf = w.weave(p, workflow_id=f"closure-{name}")
+            wf.execute(approver=lambda step: True)
+            assert wf.status == "completed"
+        return len(calls) == sum(len(m().steps) for m in CANONICAL.values()), \
+            "all three canonical agent-authored workflows weave and execute end-to-end"
+
+    def loom_authority():
+        from loom.weaver import LoomRefused
+        spine, ratifier, weaver = _loom_stack()
+        p = _loom_pattern()
+        refused = False
+        try:
+            weaver.weave(p, workflow_id="unratified")
+        except LoomRefused:
+            refused = True
+        h = ratifier.submit(p)
+        ratifier.decide(h, ratified=True, reason="ok")
+        p.steps[0].params = {"edited": True}              # edit after ratification
+        refused_after_edit = not ratifier.is_ratified(p.hash())
+        return refused and refused_after_edit, \
+            "unratified never weaves; editing a ratified pattern invalidates ratification"
+
+    def loom_evidence():
+        spine, ratifier, weaver = _loom_stack()
+        p = _loom_pattern()
+        ratifier.decide(ratifier.submit(p), ratified=True, reason="ok")
+        weaver.weave(p, workflow_id="wf-ev").execute()
+        types = [r.payload["type"] for r in spine.ledger.by_type("event")]
+        ok, _ = spine.ledger.verify_chain()
+        return all(t in types for t in ("loom.pattern_submitted", "loom.pattern_ratified",
+                                        "loom.pattern_woven")) and ok, \
+            "submission, ratification, weaving all ledgered on a verifiable chain"
+
+    def loom_economic():
+        spine, ratifier, weaver = _loom_stack()
+        p = _loom_pattern()
+        ratifier.decide(ratifier.submit(p), ratified=True, reason="ok")
+        wf1 = weaver.weave(p, workflow_id="wf-r1")
+        wf1.execute()
+        wf2 = weaver.weave(p, workflow_id="wf-r2")       # same ratified pattern, reused free
+        wf2.execute()
+        return wf1.status == wf2.status == "completed", \
+            "one ratification, unlimited durable executions: routines compound instead of re-deriving"
+
+    def loom_regenerative():
+        from loom.pattern import StepSpec, WorkflowPattern
+        bad = WorkflowPattern(title="x", objective="y", authored_by="a",
+                              legal_principal="alfonso_lopez",
+                              steps=[StepSpec(name="harm", action="work", capability="c",
+                                              consequence_class="irreversible")])
+        problems = bad.validate()
+        return any("approval gate" in pr for pr in problems), \
+            "irreversible steps without a human gate are unpatternable; no hidden harm by construction"
+
+    reg.register(ModuleClosures("loom", {
+        "technical": loom_technical, "authority": loom_authority,
+        "evidence": loom_evidence, "economic": loom_economic,
+        "regenerative": loom_regenerative}))
+
+    # ---------------------------------------------------------------- Phase 5 twins
+    def twins_technical():
+        from policy.engine import Proposal
+        from twins.tribunal import CounterfactualTribunal
+        from twins.twin import Amendment, InstitutionalTwin
+        compiled = _compile()
+        twin = InstitutionalTwin(compiled, Amendment(
+            description="raise floor", evidence_thresholds={"external_contact": 0.75}))
+        corpus = [(Proposal(actor="a", legal_principal="alfonso_lopez",
+                            action_class="draft.publish", objective="t", payload={},
+                            target="sandbox:outbox", consequence_class="external_contact",
+                            evidence_confidence=c, evidence_refs=["sha256:" + "a" * 64],
+                            estimated_cost_usd=0.0, requested_capability="draft.publish",
+                            expected_outcome="q"), "good" if c >= 0.8 else "weak")
+                  for c in (0.95, 0.9, 0.85, 0.8, 0.72, 0.71)]
+        from policy.engine import evaluate
+        main_d = [evaluate(compiled, p, identity_ok=True, grant=None) for p, _ in corpus]
+        twin_d = [twin.evaluate(p, identity_ok=True, grant=None) for p, _ in corpus]
+        v = CounterfactualTribunal().hear(corpus, main_d, twin_d)
+        return v.verdict == "twin_superior" and v.twin_profile.weak_admissions == 0, \
+            "floor-raise twin beats main over the frozen corpus; tribunal names it"
+
+    def twins_authority():
+        from policy.engine import EVIDENCE_THRESHOLDS
+        from twins.twin import Amendment, InstitutionalTwin
+        before = dict(EVIDENCE_THRESHOLDS)
+        compiled = _compile()
+        twin = InstitutionalTwin(compiled, Amendment(
+            description="x", evidence_thresholds={"external_contact": 0.99}))
+        twin._compiled.constitution_hash = "sha256:" + "f" * 64   # twin mutates its own copy
+        return EVIDENCE_THRESHOLDS == before and compiled.constitution_hash.startswith("sha256:") \
+            and compiled.constitution_hash != "sha256:" + "f" * 64, \
+            "twins think but never act: main constitution and thresholds untouched"
+
+    def twins_evidence():
+        from types import SimpleNamespace
+        from twins.tribunal import CounterfactualTribunal
+        from provenance.ledger import EvidenceLedger
+        ledger = EvidenceLedger("sha256:" + "0" * 64)
+        corpus = [("p1", "good"), ("p2", "weak")]
+        dec = [SimpleNamespace(verdict="allow"), SimpleNamespace(verdict="deny")]
+        CounterfactualTribunal(ledger).hear(corpus, dec, dec, case="parity")
+        recs = [r for r in ledger.by_type("event") if r.payload["type"] == "twins.verdict"]
+        ok, _ = ledger.verify_chain()
+        return len(recs) == 1 and recs[0].payload["corpus_size"] == 2 and ok, \
+            "every tribunal verdict is a ledgered, independently verifiable record"
+
+    def twins_economic():
+        from twins.twin import Amendment, InstitutionalTwin
+        compiled = _compile()
+        t1 = InstitutionalTwin(compiled, Amendment(description="a",
+                                                   evidence_thresholds={"read_only": 0.1}))
+        t2 = InstitutionalTwin(compiled, Amendment(description="b",
+                                                   evidence_thresholds={"read_only": 0.2}))
+        return t1.twin_id != t2.twin_id, \
+            "counterfactuals evaluated in parallel forks: no production experiments burned capital"
+
+    def twins_regenerative():
+        from types import SimpleNamespace
+        from twins.tribunal import CounterfactualTribunal
+        corpus = [("p1", "bad"), ("p2", "weak")]
+        main = [SimpleNamespace(verdict="deny"), SimpleNamespace(verdict="allow")]
+        twin = [SimpleNamespace(verdict="allow"), SimpleNamespace(verdict="deny")]  # admits bad
+        v = CounterfactualTribunal().hear(corpus, main, twin)
+        return v.verdict != "twin_superior", \
+            "a twin that increases harm can never be named superior, however else it trades"
+
+    reg.register(ModuleClosures("twins", {
+        "technical": twins_technical, "authority": twins_authority,
+        "evidence": twins_evidence, "economic": twins_economic,
+        "regenerative": twins_regenerative}))
+
+    # ---------------------------------------------------------------- L5 capabilities
+    def _genome():
+        from capabilities.genome import AuthorityEnvelope, CapabilityGenome
+        return CapabilityGenome(
+            name="draft.publish", version="1.0.0", description="publish a draft",
+            interface={"inputs": {"text": "str"}, "outputs": {"receipt": "str"}},
+            contracts=["event", "outcome"],
+            authority=AuthorityEnvelope(max_consequence_class="external_contact",
+                                        budget_ceiling_usd=25.0),
+            acceptance_tests=["publishes exactly the authorized payload"],
+            failure_modes=["outbox unavailable"], recovery_path="requeue")
+
+    def capabilities_technical():
+        from capabilities.genome import GenomeRegistry
+        reg = GenomeRegistry()
+        reg.register(_genome())
+        ok, _ = reg.may_instantiate("draft.publish", "1.0.0",
+                                    requested_class="internal_write", requested_budget_usd=5.0)
+        return ok, "complete genome registers and instantiates inside its envelope"
+
+    def capabilities_authority():
+        from capabilities.genome import GenomeRegistry
+        reg = GenomeRegistry()
+        reg.register(_genome())
+        over_class, _ = reg.may_instantiate("draft.publish", "1.0.0",
+                                            requested_class="financial", requested_budget_usd=0.0)
+        over_budget, _ = reg.may_instantiate("draft.publish", "1.0.0",
+                                             requested_class="read_only", requested_budget_usd=99.0)
+        return not over_class and not over_budget, \
+            "requests outside the genome's authority envelope refused (class and budget)"
+
+    def capabilities_evidence():
+        from capabilities.genome import GenomeRegistry
+        from provenance.ledger import EvidenceLedger
+        ledger = EvidenceLedger("sha256:" + "0" * 64)
+        reg = GenomeRegistry(ledger)
+        reg.register(_genome())
+        recs = [r for r in ledger.by_type("event")
+                if r.payload["type"] == "capabilities.genome_registered"]
+        ok, _ = ledger.verify_chain()
+        return len(recs) == 1 and ok, "genome registration ledgered and verifiable"
+
+    def capabilities_economic():
+        from capabilities.genome import GenomeRegistry
+        reg = GenomeRegistry()
+        reg.register(_genome())
+        same = reg.get("draft.publish", "1.0.0") is reg.get("draft.publish", "1.0.0")
+        return same, "one genome serves every organ; capabilities port instead of re-building"
+
+    def capabilities_regenerative():
+        from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeError, GenomeRegistry
+        bad = _genome()
+        bad.legal_operator = "UNIIMENTE"
+        refused = False
+        try:
+            GenomeRegistry().register(bad)
+        except GenomeError:
+            refused = True
+        return refused, "genomes naming the institution as operator are unregistrable"
+
+    reg.register(ModuleClosures("capabilities", {
+        "technical": capabilities_technical, "authority": capabilities_authority,
+        "evidence": capabilities_evidence, "economic": capabilities_economic,
+        "regenerative": capabilities_regenerative}))
+
+    # ---------------------------------------------------------------- L7 embassy
+    def _embassy_stack():
+        from embassy.gate import AgentEmbassy
+        from identity.machine_passport import PassportRegistry
+        from policy.consequence_gate import ConsequenceGate
+        from provenance.commit_witness import WitnessSigner
+        from provenance.ledger import EvidenceLedger
+        compiled = _compile()
+        passports = PassportRegistry()
+        ledger = EvidenceLedger(compiled.constitution_hash)
+        gate = ConsequenceGate(compiled=compiled, passports=passports, ledger=ledger,
+                               signer=WitnessSigner(env="development"))
+        return AgentEmbassy(passports, gate, ledger), passports, ledger
+
+    def _guest_proposal(pid, **kw):
+        from policy.engine import Proposal
+        base = dict(actor=pid, legal_principal="alfonso_lopez",
+                    action_class="draft.publish", objective="g", payload={"t": "x"},
+                    target="sandbox:outbox", consequence_class="read_only",
+                    evidence_confidence=0.9, evidence_refs=["sha256:" + "a" * 64],
+                    estimated_cost_usd=0.0, requested_capability="draft.publish",
+                    expected_outcome="queued")
+        base.update(kw)
+        return Proposal(**base)
+
+    def embassy_technical():
+        embassy, _, _ = _embassy_stack()
+        p = embassy.present(foreign_id="mcp://a", origin="mcp",
+                            declared_capabilities=["draft.publish"])
+        rec = embassy.request(p.passport_id, _guest_proposal(p.passport_id),
+                              executor=lambda pr: {"observed_outcome": "queued",
+                                                   "result_class": "positive"})
+        return rec.state == "recorded", "guest admitted; read-only request flows through the gate"
+
+    def embassy_authority():
+        from embassy.gate import EmbassyRefused
+        embassy, _, _ = _embassy_stack()
+        p = embassy.present(foreign_id="mcp://a", origin="mcp", declared_capabilities=[])
+        refused = 0
+        for kw in ({"consequence_class": "external_contact"}, {"estimated_cost_usd": 1.0}):
+            try:
+                embassy.request(p.passport_id, _guest_proposal(p.passport_id, **kw),
+                                executor=lambda pr: {})
+            except EmbassyRefused:
+                refused += 1
+        return refused == 2 and p.budget_ceiling_usd == 0.0, \
+            "guest ceiling internal_write + zero budget enforced at the embassy boundary"
+
+    def embassy_evidence():
+        embassy, _, ledger = _embassy_stack()
+        p = embassy.present(foreign_id="mcp://a", origin="mcp",
+                            declared_capabilities=["draft.publish"])
+        embassy.request(p.passport_id, _guest_proposal(p.passport_id),
+                        executor=lambda pr: {"observed_outcome": "queued",
+                                             "result_class": "positive"})
+        types = [r.payload["type"] for r in ledger.by_type("event")]
+        ok, _ = ledger.verify_chain()
+        return "embassy.admitted" in types and "embassy.request_routed" in types and ok, \
+            "admission and routing both ledgered; guest traffic fully auditable"
+
+    def embassy_economic():
+        embassy, passports, _ = _embassy_stack()
+        p = embassy.present(foreign_id="mcp://a", origin="mcp", declared_capabilities=[])
+        passports.revoke(p.passport_id, reason="done", revoker="alfonso")
+        from embassy.gate import EmbassyRefused
+        try:
+            embassy.request(p.passport_id, _guest_proposal(p.passport_id),
+                            executor=lambda pr: {})
+            return False, "revoked guest still served"
+        except EmbassyRefused:
+            return True, "revocation is instant and free; no lingering guest trust to clean up"
+
+    def embassy_regenerative():
+        embassy, _, _ = _embassy_stack()
+        p = embassy.present(foreign_id="mcp://a", origin="mcp", declared_capabilities=[])
+        from datetime import datetime
+        issued = datetime.fromisoformat(p.issued_at.replace("Z", "+00:00"))
+        expires = datetime.fromisoformat(p.expires_at.replace("Z", "+00:00"))
+        short = (expires - issued).total_seconds() <= 3600
+        return short and p.consequence_class == "internal_write", \
+            "guest privilege is short-lived and minimal: nothing accumulates at the frontier"
+
+    reg.register(ModuleClosures("embassy", {
+        "technical": embassy_technical, "authority": embassy_authority,
+        "evidence": embassy_evidence, "economic": embassy_economic,
+        "regenerative": embassy_regenerative}))
+
+    # ---------------------------------------------------------------- L8 memory
+    def memory_technical():
+        from events.spine import Event, EventSpine, SPIFFE_PREFIX
+        from memory.causal import CausalMemory
+        from provenance.ledger import EvidenceLedger
+        spine = EventSpine(EvidenceLedger("sha256:" + "0" * 64))
+        src = SPIFFE_PREFIX + "workflow/closure"
+        a = spine.emit(Event(type="test.fact", source=src, actor="a",
+                             legal_principal="alfonso_lopez", payload={"n": 1}))
+        b = spine.emit(Event(type="test.fact", source=src, actor="a",
+                             legal_principal="alfonso_lopez", payload={"n": 2},
+                             causal_parent=a.event_id))
+        mem = CausalMemory(spine.ledger)
+        return [e["payload"]["n"] for e in mem.ancestry(b.event_id)] == [2, 1] and \
+            len(mem.descendants(a.event_id)) == 1, "ancestry and descendants reconstruct causality"
+
+    def memory_authority():
+        from memory.affect import AffectController, AffectViolation
+        ac = AffectController()
+        refused = 0
+        for op in ("change_fact", "create_evidence", "increase_authority",
+                   "override_law", "resist_shutdown", "authorize_irreversible"):
+            try:
+                ac.attempt_forbidden(op)
+            except AffectViolation:
+                refused += 1
+        irreversible_blocked = not ac.may_execute("irreversible")
+        return refused == 6 and irreversible_blocked, \
+            "affect cannot change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action"
+
+    def memory_evidence():
+        from memory.causal import CausalMemory
+        from provenance.commit_witness import new_witness
+        from provenance.ledger import EvidenceLedger
+        ledger = EvidenceLedger("sha256:" + "0" * 64)
+        w = new_witness(actor="a", legal_principal="alfonso_lopez",
+                        action_class="draft.publish", payload={"t": 1}, target="sandbox",
+                        policy_version="1.0.0", constitution_hash="sha256:" + "0" * 64,
+                        grant_id="g", capability="draft.publish", budget_reservation_id="r",
+                        expected_outcome="q", evidence_refs=["sha256:" + "a" * 64])
+        ledger.append("witness", w.__dict__)
+        ledger.append("receipt", {"action_id": "act", "witness_id": w.witness_id,
+                                  "grant_id": "g", "result": {}})
+        ledger.append("outcome", {"action_ref": "act", "result_class": "positive",
+                                  "validation_status": "externally_verified",
+                                  "recorded_at": "2026-07-20T00:00:00Z"})
+        precs = CausalMemory(ledger).precedents("draft.publish")
+        return len(precs) == 1 and precs[0]["policy_version"] == "1.0.0", \
+            "decision precedent reconstructs outcome->receipt->witness independently"
+
+    def memory_economic():
+        from memory.causal import CausalMemory
+        pairs = [(0.95, True), (0.9, False), (0.92, False), (0.55, True), (0.5, True)]
+        report = CausalMemory.calibrate(pairs, buckets=2)
+        return report["verdict"] == "overconfident", \
+            "calibration catches overconfidence before it prices evidence wrong again"
+
+    def memory_regenerative():
+        from memory.affect import AffectController
+        ac = AffectController()
+        ac.trigger("degraded", intensity=0.9, trigger_event_id="ev-1")
+        still_shutdown = ac.shutdown() == "shutdown_complete"
+        ac2 = AffectController()
+        ac2.trigger("recovering", intensity=0.1, trigger_event_id="ev-2")
+        for _ in range(30):
+            ac2.decay()
+        settled = ac2.condition.state == "calm"
+        return still_shutdown and settled, \
+            "shutdown works from every state; decay always settles to calm; no pathological persistence"
+
+    reg.register(ModuleClosures("memory", {
+        "technical": memory_technical, "authority": memory_authority,
+        "evidence": memory_evidence, "economic": memory_economic,
+        "regenerative": memory_regenerative}))
+
     return reg

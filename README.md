@@ -45,6 +45,11 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/evolution` | Recursive self-improvement: strategy trees, spider-web audits, experiments, capsules, the ClosureLoop, and the Phase 3 machine-paced auto-cycle |
 | `/events` | Event spine + durable workflows (Layer 4): typed events, idempotent inbox, mediated outbox, replay, kill-and-resume workflows |
 | `/autonomy` | Autonomy licensing (Layer 13): evidence-earned A0–A8 levels on exact 9-dimension tuples; A9 reserved human sovereignty |
+| `/loom` | Automation Loom (Phase 4): machine-authored, human-ratified workflow patterns woven onto the durable spine |
+| `/twins` | Institutional Twins + Counterfactual Tribunal (Phase 5): hermetic counterfactual forks; dominance-verdict hearings that recommend and never apply |
+| `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
+| `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
+| `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
@@ -57,9 +62,11 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 3 — Fast Capability Evolution + Layers 4/10/13: executable and verified (2026-07-20).** The improvement cycle now runs at machine pace: branch generation across all 11 kinds → isolated testing → failure analysis → baseline comparison → champion proposed to the ClosureLoop. Hard bounds: hypothesis-only verifiers are refused before any test runs (the cycle may not self-authorize); structural doctrinal refusals halt the cycle (it never routes around doctrine); when nothing beats baseline, do_nothing stands. Layer 4 event spine: typed events (identity, legal principal, causal parent, policy version), idempotent inbox, mediated outbox, replay, durable workflows — killed mid-flight, resumed from checkpoint with no manual restatement, retries, approval waits, reverse-order compensation. Layer 13 autonomy ladder A0–A8: weakest-link promotion across 10 criteria, missing outcome records block promotion, severe failure collapses autonomy to A0 immediately (A9 reserved, never granted). Layer 10 Merkle proofs: checkpointed roots anchor the ledger; any record provable in O(log n) without trusting the host.
 
-126 unit tests green. 8 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+**Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-Phase 4 (Automation Loom: ≥3 agent-authored, human-ratified durable workflows) is next. See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+
+Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
 
 ## The doctrine
 

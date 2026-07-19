@@ -1,0 +1,17 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-07-19T19:31:35.815796+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 1,
+  "passes": [
+    "V2: pytest tests/unit: 172 passed in 2.71s",
+    "V3: all modules closed: autonomy, capabilities, compiler, consequence_gate, embassy, events, evidence_ledger, evolution, identity, loom, memory, proof, twins",
+    "V4: false closure -> FALSELY_CLOSED; gate applicable loops -> CLOSED"
+  ],
+  "skips": [
+    "V1: partial mirror, 14 v1 files not present locally: ['identity/organ-registry.yaml', 'identity/agent-registry.yaml', 'identity/service-identities.yaml', 'affect/affect-policy.yaml', 'affect/identity-coherence.yaml']..."
+  ],
+  "failures": [
+    "V5: loom/README.md: missing; capabilities/README.md: missing; embassy/README.md: missing"
+  ]
+}

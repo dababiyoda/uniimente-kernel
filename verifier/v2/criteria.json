@@ -45,7 +45,12 @@
     "closure/README.md",
     "evolution/README.md",
     "events/README.md",
-    "autonomy/README.md"
+    "autonomy/README.md",
+    "loom/README.md",
+    "twins/README.md",
+    "capabilities/README.md",
+    "embassy/README.md",
+    "memory/README.md"
    ]
   }
  ]

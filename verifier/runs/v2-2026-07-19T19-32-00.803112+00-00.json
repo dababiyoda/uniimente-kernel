@@ -1,0 +1,16 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-07-19T19:32:00.803112+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 0,
+  "passes": [
+    "V2: pytest tests/unit: 172 passed in 2.14s",
+    "V3: all modules closed: autonomy, capabilities, compiler, consequence_gate, embassy, events, evidence_ledger, evolution, identity, loom, memory, proof, twins",
+    "V4: false closure -> FALSELY_CLOSED; gate applicable loops -> CLOSED",
+    "V5: 13 module READMEs declare the 14-condition buildability standard"
+  ],
+  "skips": [
+    "V1: partial mirror, 14 v1 files not present locally: ['identity/organ-registry.yaml', 'identity/agent-registry.yaml', 'identity/service-identities.yaml', 'affect/affect-policy.yaml', 'affect/identity-coherence.yaml']..."
+  ],
+  "failures": []
+}

@@ -1,0 +1,43 @@
+# Agent registry. Every agent holds an identity, a home organ, an autonomy level,
+# and grants by reference. Autonomy is earned per capability, never granted by default.
+version: "1.0.0"
+
+autonomy_levels:   # mirror of canonical architecture XXI
+  0: observation            # inspect approved information; no external effects
+  1: recommendation         # plans, simulations, analyses, drafts, ranked options; humans authorize
+  2: reversible_execution   # organize records, run tests, update internal docs, branches, sandboxed experiments
+  3: bounded_operation      # preapproved workflows within named accounts, budgets, counterparties, templates
+  4: evidence_governed      # independent selection among approved actions after demonstrated reliability
+  5: venture_cell_autonomy  # mature cell within board-approved charter; may spawn task agents, never grant beyond itself
+
+agents:
+  daleobanks_publisher:
+    identity: spiffe://uniimente.internal/organ/daleobanks/publisher
+    organ: daleobanks
+    current_level: 1
+    grants: []        # to be issued per workflows/approval-lifecycle.yaml
+    notes: Drafts and recommends. Publishing requires fresh human approval and LIVE arming.
+  wealthmachine_evaluator:
+    identity: spiffe://uniimente.internal/organ/wealthmachine/evaluator
+    organ: wealthmachine
+    current_level: 1
+    grants: []
+    notes: Produces VentureAssessments. requires_human_approval hardcoded true; zero execution authority.
+  ivio_sales_agent:
+    identity: spiffe://uniimente.internal/venture/ivio/agent/sales-03
+    organ: ivio_nemt
+    current_level: 0
+    grants: []
+    notes: "Created at Phase 6 only. First grants: draft_outreach, send_preapproved_followup; spend 0 USD."
+  railscout_monitor:
+    identity: spiffe://uniimente.internal/organ/railscout/regulatory-monitor
+    organ: railscout
+    current_level: 0
+    grants: []
+    notes: Read-only perception. Emits packets, never actions.
+
+rules:
+  level_changes_require: [objective_external_evidence, logged_approver, ledger_entry]
+  regression: automatic_on_incident_or_metric_degradation
+  new_agents_start_at: [0, 1]
+  one_task_per_worker: true   # stable roles spawn short-lived workers; minimum context, strict output contract, narrow tools, cost ceiling, termination condition

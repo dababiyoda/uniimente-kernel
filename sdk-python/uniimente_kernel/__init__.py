@@ -22,6 +22,7 @@ from uniimente_kernel.constitution_check import (
     DEFAULT_CONSTITUTION_PATHS,
     ConstitutionGuard,
 )
+from uniimente_kernel import contracts
 from uniimente_kernel.context_packet import (
     ContextPacketData,
     build_packet,
@@ -56,7 +57,8 @@ __all__ = [
     "RateGovernor",
     "RawVault",
     "build_packet",
+    "contracts",
     "default_ledger_path",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"

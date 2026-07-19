@@ -12,7 +12,7 @@ Surveyed 2026-07-19 against `dababiyoda/DALEOBANKS` main (`829c5f2`). Each row i
 | `services/constitution.py` | Constitution integrity check | `sdk-python/uniimente_kernel/constitution_check.py` | watches all five kernel UCL files; kernel ledger/switch | **Extracted in PR #14; packaged in PR #16** |
 | `services/heartbeat.py` | Supervision and automatic disarm | `sdk-python/uniimente_kernel/heartbeat.py` | kernel ledger/switch; behavior identical | **Extracted in PR #14; packaged in PR #16** |
 | `services/operator_line.py` | Operator approval queue | `sdk-python/uniimente_kernel/approval_queue.py` | ORM to ApprovalStore; notifier/briefing providers injected; command grammar identical | **Extracted in PR #14; packaged in PR #16** |
-| `services/venture_protocol.py` | OpportunityPacket / VentureAssessment wire types | `sdk-python/uniimente_kernel/contracts.py` | replace with imports from `/contracts` (Phase 3) | Phase 3 |
+| `services/venture_protocol.py` | Signal wire types (packet out, assessment back) | `sdk-python/uniimente_kernel/contracts.py` | mirrored copy in WMI deleted; both import the kernel module; wire formalized as `contracts/venture-signal` + `contracts/signal-assessment` v1.1 | **Unified in PR #17** |
 | `services/bridge_security.py` | HMAC signed transport | `sdk-python/uniimente_kernel/transport.py` | scheduled for retirement per `identity/service-identities.yaml` | Phase 5 |
 
 ## Adapter principle
@@ -22,3 +22,19 @@ Extraction never rewrites organ behavior in the same step. Each module lands in 
 ## Byte-compatibility note
 
 `uniimente_kernel.ledger.DecisionLedger.record()` produces the same canonical entry form as `services/ledger.py` (same fields, same hashing), so existing `data/decision_ledger.jsonl` files verify under the kernel module with no migration.
+
+## Maturation mapping: signal wire to institutional contracts
+
+The signal wire (`venture-signal`, `signal-assessment`) is what organs exchange today. The institutional contracts (`opportunity-packet`, `venture-assessment`) are the mature artifacts produced later in the pipeline. No organ fabricates the institutional fields; they are earned through evaluation and the human gate. The mapping when the venture pipeline matures (Phase 4/6):
+
+| Institutional field | Derived from |
+|---|---|
+| `observed_failure` | signal `observed_pain` |
+| `pain_owner` | signal `customer_segment` |
+| `budget_owner` | signal `buyer_type` |
+| `governing_bottleneck` | computed by the assessment engine, confirmed at the human gate |
+| `cheapest_decisive_test` | signal `smallest_validation_action`, upgraded by the engine |
+| `key_risks` | signal `risk_flags` + assessment `reasons` |
+| `evidence_refs` | raw-vault `content_hash` values behind signal `evidence` |
+| `verdict` | assessment `go_no_go` |
+| `adversarial_cases` | engine-generated bull/bear/do_nothing (schema 1.1 committee) |

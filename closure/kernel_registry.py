@@ -295,4 +295,232 @@ def build_registry() -> ClosureRegistry:
         "evidence": evolution_evidence, "economic": evolution_economic,
         "regenerative": evolution_regenerative}))
 
+    # ---------------------------------------------------------------- L4 events
+    def _spine():
+        from events.spine import EventSpine
+        from provenance.ledger import EvidenceLedger
+        return EventSpine(EvidenceLedger("sha256:" + "0" * 64))
+
+    def _ev(**kw):
+        from events.spine import Event, SPIFFE_PREFIX
+        base = dict(type="draft.published", source=SPIFFE_PREFIX + "workflow/closure",
+                    actor="alfonso", legal_principal="alfonso_lopez", payload={})
+        base.update(kw)
+        return Event(**base)
+
+    def events_technical():
+        spine = _spine()
+        spine.emit(_ev(payload={"n": 1}))
+        spine.emit(_ev(type="settlement.completed", payload={"n": 2}))
+        replayed = spine.replay()
+        return [e.payload["n"] for e in replayed] == [1, 2], \
+            "emit -> ledger -> replay round-trips the exact stream"
+
+    def events_authority():
+        from events.spine import EventError
+        spine = _spine()
+        refused = 0
+        for bad in (_ev(source="https://external.example"), _ev(legal_principal="UNIIMENTE")):
+            try:
+                spine.emit(bad)
+            except EventError:
+                refused += 1
+        return refused == 2, "non-spiffe emissions and UNIIMENTE-as-principal both refused"
+
+    def events_evidence():
+        from events.spine import DurableWorkflow, WorkflowStep, WorkflowKilled
+        spine = _spine()
+        calls = []
+        def mk(name):
+            return WorkflowStep(name=name, run=lambda s: (calls.append(name) or {name: 1}),
+                                compensate=lambda s: None)
+        wf = DurableWorkflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")],
+                             actor="alfonso", legal_principal="alfonso_lopez")
+        try:
+            wf.execute(kill_at_step="b")
+        except WorkflowKilled:
+            pass
+        resumed = DurableWorkflow.resume(spine, "wf-closure", steps=[mk("a"), mk("b"), mk("c")])
+        resumed.execute()
+        return resumed.status == "completed" and calls.count("a") == 1 and calls == ["a", "b", "c"], \
+            "killed workflow resumed from checkpoint; finished steps never re-executed"
+
+    def events_economic():
+        spine = _spine()
+        ev = _ev(source="ext:webhook")
+        first = spine.ingest(ev)
+        dup = spine.ingest(ev)
+        events = len(spine.ledger.by_type("event"))
+        return first is ev and dup is None and events == 1, \
+            "idempotent inbox: duplicate deliveries cost nothing, ledger stays lean"
+
+    def events_regenerative():
+        from events.spine import DurableWorkflow, WorkflowStep, WorkflowFailed
+        spine = _spine()
+        undone = []
+        def boom(s):
+            raise RuntimeError("adapter exploded")
+        steps = [WorkflowStep(name="s1", run=lambda s: {"s1": 1},
+                              compensate=lambda s: undone.append("s1")),
+                 WorkflowStep(name="s2", run=boom, max_retries=0)]
+        wf = DurableWorkflow(spine, "wf-fail", steps, actor="alfonso",
+                             legal_principal="alfonso_lopez")
+        try:
+            wf.execute()
+        except WorkflowFailed:
+            pass
+        comps = spine.replay("workflow.compensation")
+        fails = spine.replay("workflow.step_failed")
+        return undone == ["s1"] and len(comps) == 1 and len(fails) == 1, \
+            "failure compensated in reverse; failure + compensation kept as negative evidence"
+
+    reg.register(ModuleClosures("events", {
+        "technical": events_technical, "authority": events_authority,
+        "evidence": events_evidence, "economic": events_economic,
+        "regenerative": events_regenerative}))
+
+    # ---------------------------------------------------------------- L13 autonomy
+    def _aut():
+        from autonomy.levels import AutonomyAuthority, AutonomyTuple
+        from provenance.ledger import EvidenceLedger
+        t = AutonomyTuple(capability="draft.publish", domain="comms", action="publish",
+                          resource="outbox", target="sandbox", consequence_class="external_contact",
+                          environment="production", budget_usd=25.0, duration="30 days")
+        return AutonomyAuthority(EvidenceLedger("sha256:" + "0" * 64)), t
+
+    def _full_evidence(**kw):
+        from autonomy.levels import PromotionEvidence, PROMOTION_CRITERIA
+        base = dict(criteria={c: True for c in PROMOTION_CRITERIA},
+                    independent_verifier="external_auditor", founder_intervention_trend="declining")
+        base.update(kw)
+        return PromotionEvidence(**base)
+
+    def autonomy_technical():
+        auth, t = _aut()
+        lic = auth.issue("agent-1", t, level=2)
+        auth.promote(lic.license_id, _full_evidence())
+        return auth.level_of("agent-1", t) == 3, "issue -> promote -> level_of reads back exactly"
+
+    def autonomy_authority():
+        auth, t = _aut()
+        a9_refused = False
+        try:
+            auth.issue("agent-1", t, level=9)
+        except ValueError:
+            a9_refused = True
+        lic = auth.issue("agent-2", t, level=1)
+        weak = False
+        try:
+            auth.promote(lic.license_id, _full_evidence(missing_outcome_records=1))
+        except ValueError:
+            weak = True
+        return a9_refused and weak, \
+            "A9 never granted; missing outcome record blocks promotion (weakest link)"
+
+    def autonomy_evidence():
+        auth, t = _aut()
+        lic = auth.issue("agent-1", t, level=1)
+        auth.promote(lic.license_id, _full_evidence())
+        auth.regress(lic.license_id, failure_class="sloppy", detail="late records")
+        types = [r.payload["type"] for r in auth.ledger.by_type("event")]
+        ok, _ = auth.ledger.verify_chain()
+        return all(k in types for k in ("autonomy.issued", "autonomy.promoted", "autonomy.regressed")) and ok, \
+            "every autonomy transition ledgered on a verifiable chain"
+
+    def autonomy_economic():
+        from autonomy.levels import AutonomyTuple
+        auth, t = _aut()
+        auth.issue("agent-1", t, level=5)
+        other = AutonomyTuple(**{**t.__dict__, "action": "delete"})
+        return auth.level_of("agent-1", t) == 5 and auth.level_of("agent-1", other) == 0, \
+            "autonomy is exact per 9-dimension tuple; no broad personality grants to misuse"
+
+    def autonomy_regenerative():
+        auth, t = _aut()
+        lic = auth.issue("agent-1", t, level=7)
+        auth.regress(lic.license_id, failure_class="harm", detail="unforeseen risk")
+        immediate = lic.level == 0 and not lic.active
+        try:
+            auth.renew(lic.license_id, _full_evidence(criteria={}))
+            renewed = True
+        except ValueError:
+            renewed = False
+        return immediate and not renewed, \
+            "severe failure zeroes autonomy immediately; stale evidence cannot renew it"
+
+    reg.register(ModuleClosures("autonomy", {
+        "technical": autonomy_technical, "authority": autonomy_authority,
+        "evidence": autonomy_evidence, "economic": autonomy_economic,
+        "regenerative": autonomy_regenerative}))
+
+    # ---------------------------------------------------------------- L10 proofs
+    def proof_technical():
+        from provenance.ledger import EvidenceLedger
+        from provenance.proof import LedgerProver
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        for i in range(9):
+            l.append("event", {"i": i})
+        prover = LedgerProver(l)
+        cp = prover.checkpoint()
+        return all(prover.verify(prover.prove(r.hash, tree_size=cp["covers_records"]),
+                                 expected_root=cp["root"])
+                   for r in l.records[: cp["covers_records"]]), \
+            "checkpoint + prove + verify round-trips for every committed record"
+
+    def proof_authority():
+        from provenance.ledger import EvidenceLedger
+        from provenance.proof import LedgerProver
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        l.append("event", {"x": 1})
+        cp = LedgerProver(l).checkpoint()
+        rec = l.by_type("checkpoint")[0]
+        return rec.payload["root"] == cp["root"] and rec.prev_hash == l.records[-2].hash, \
+            "the Merkle root is itself anchored by the ledger's hash chain"
+
+    def proof_evidence():
+        from provenance.ledger import EvidenceLedger
+        from provenance.proof import InclusionProof, LedgerProver
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        for i in range(6):
+            l.append("event", {"i": i})
+        prover = LedgerProver(l)
+        cp = prover.checkpoint()
+        proof = prover.prove(l.records[3].hash, tree_size=cp["covers_records"])
+        forged = InclusionProof(leaf_record_hash="sha256:" + "e" * 64, leaf_index=proof.leaf_index,
+                                tree_size=proof.tree_size, steps=proof.steps, root=proof.root)
+        return prover.verify(proof, expected_root=cp["root"]) and \
+            not prover.verify(forged, expected_root=cp["root"]), \
+            "honest proofs verify; forged records fail against the same root"
+
+    def proof_economic():
+        import math
+        from provenance.ledger import EvidenceLedger
+        from provenance.proof import LedgerProver
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        for i in range(64):
+            l.append("event", {"i": i})
+        prover = LedgerProver(l)
+        cp = prover.checkpoint()
+        proof = prover.prove(l.records[10].hash, tree_size=cp["covers_records"])
+        bound = math.ceil(math.log2(cp["covers_records"])) + 1
+        return len(proof.steps) <= bound, \
+            f"proof is O(log n): {len(proof.steps)} siblings for {cp['covers_records']} records"
+
+    def proof_regenerative():
+        from provenance.ledger import EvidenceLedger
+        from provenance.proof import LedgerProver, verify_inclusion
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        for i in range(5):
+            l.append("event", {"i": i})
+        prover = LedgerProver(l)
+        cp = prover.checkpoint()
+        proof = prover.prove(l.records[0].hash, tree_size=cp["covers_records"])
+        return verify_inclusion(proof) and proof.root == cp["root"], \
+            "verification needs only root+proof: no trust in the ledger host, ever"
+
+    reg.register(ModuleClosures("proof", {
+        "technical": proof_technical, "authority": proof_authority,
+        "evidence": proof_evidence, "economic": proof_economic,
+        "regenerative": proof_regenerative}))
+
     return reg

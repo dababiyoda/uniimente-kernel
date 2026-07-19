@@ -40,17 +40,26 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/tests` | Governance laboratory: constitutional, authority, capital, security, recovery, provenance test specifications + `/tests/unit` executable suites |
 | `/compiler` | UCL compiler (Layer 1): doctrine → deterministic policy decisions, relationship tuples, invariants, grant contract |
 | `/policy` | Policy engine + Consequence Gate (Layer 3): the sole path to external effects |
-| `/provenance` | Evidence Ledger + Commit Witness (Layers 3+10): hash-chained, HMAC-signed institutional memory |
+| `/provenance` | Evidence Ledger + Commit Witness + Merkle proofs (Layers 3+10): hash-chained, HMAC-signed, checkpoint-anchored institutional memory |
 | `/closure` | Orthogonal loop closure: five closures per module + Whole-Body Closure Controller (13 loops) |
-| `/events` `/sandbox` `/observability` | Kernel module specifications (build targets) |
+| `/evolution` | Recursive self-improvement: strategy trees, spider-web audits, experiments, capsules, the ClosureLoop, and the Phase 3 machine-paced auto-cycle |
+| `/events` | Event spine + durable workflows (Layer 4): typed events, idempotent inbox, mediated outbox, replay, kill-and-resume workflows |
+| `/autonomy` | Autonomy licensing (Layer 13): evidence-earned A0–A8 levels on exact 9-dimension tuples; A9 reserved human sovereignty |
+| `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
 
 ## Build status
 
-**Phase 1 — Consequence Integrity: executable and verified (2026-07-20).** One bounded action family (`draft.publish`) closes the full loop: Evidence → Policy → Authority → Commit Witness → Execution → Receipt → Reconciliation → Outcome. 67 unit tests green including 12 adversarial gate cases (revoked/expired/replayed grants, effect mismatch, budget overflow, identity lapse, executor explosion — all fail closed). Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; run recorded under `verifier/runs/`).
+**Phase 1 — Consequence Integrity: executable and verified (2026-07-20).** One bounded action family (`draft.publish`) closes the full loop: Evidence → Policy → Authority → Commit Witness → Execution → Receipt → Reconciliation → Outcome, including 12 adversarial gate cases (revoked/expired/replayed grants, effect mismatch, budget overflow, identity lapse, executor explosion — all fail closed).
 
-Phase 2 (First Evolution Cycle: StrategyTree, SpiderWebAudit, ExperimentSpec, EvolutionCapsule, VerifierRecord, RetainRegressKillDecision) is next. See `docs/BUILD_ORDER.md` for the ten-phase sequence and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+**Phase 2 — First Evolution Cycle: executable and verified (2026-07-20).** One complete machine-recorded improvement cycle beat its baseline: the `external_contact` evidence floor rose 0.70 → 0.75, eliminating weak-evidence admissions (2 → 0) with zero new good refusals, verified by formal proof, decision RETAIN, capsule preserved on the ledger with all 10 rejected branches and their revival evidence. Organs: StrategyTree (11 branch kinds, 12 required fields), SpiderWebAudit (8 sides, 4 super-nodes, 11 completeness requirements, decorative removal), ExperimentSpec (irreversible experiments refuse to compile), EvolutionCapsule, 7-level verifier hierarchy (levels 6–7 hypothesis-only, cannot authorize promotion), RetainRegressKill.
+
+**Phase 3 — Fast Capability Evolution + Layers 4/10/13: executable and verified (2026-07-20).** The improvement cycle now runs at machine pace: branch generation across all 11 kinds → isolated testing → failure analysis → baseline comparison → champion proposed to the ClosureLoop. Hard bounds: hypothesis-only verifiers are refused before any test runs (the cycle may not self-authorize); structural doctrinal refusals halt the cycle (it never routes around doctrine); when nothing beats baseline, do_nothing stands. Layer 4 event spine: typed events (identity, legal principal, causal parent, policy version), idempotent inbox, mediated outbox, replay, durable workflows — killed mid-flight, resumed from checkpoint with no manual restatement, retries, approval waits, reverse-order compensation. Layer 13 autonomy ladder A0–A8: weakest-link promotion across 10 criteria, missing outcome records block promotion, severe failure collapses autonomy to A0 immediately (A9 reserved, never granted). Layer 10 Merkle proofs: checkpointed roots anchor the ledger; any record provable in O(log n) without trusting the host.
+
+126 unit tests green. 8 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+
+Phase 4 (Automation Loom: ≥3 agent-authored, human-ratified durable workflows) is next. See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
 
 ## The doctrine
 

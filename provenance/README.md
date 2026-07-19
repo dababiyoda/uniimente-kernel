@@ -17,6 +17,13 @@ Witness. Signed receipts for high-consequence records.
   constitution version, current authority, current capability, current
   budget, and expected outcome. HMAC-SHA256 signed. Proof remains valid
   even if the original model disappears.
+- `proof.py` — Merkle inclusion proofs (Layer 10): `LedgerProver.
+  checkpoint()` anchors a Merkle root over all prior record hashes in a
+  ledger checkpoint record; `prove()/verify()` give O(log n) inclusion
+  proofs for any committed record against that root — verification needs
+  only root + proof, never trust in the ledger host. Domain-separated
+  hashing (leaf/node prefixes); odd leaves promote, never duplicate.
+  Tampering with any committed record fails its proof.
 
 ## The proof sentence
 

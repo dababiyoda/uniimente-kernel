@@ -1,6 +1,7 @@
 # evolution
 
-Phase 2 — First Evolution Cycle: the recursive self-improvement machinery.
+Phases 2+3 — First Evolution Cycle and Fast Capability Evolution: the
+recursive self-improvement machinery, now machine-paced.
 
 ## Organs
 
@@ -20,8 +21,34 @@ Phase 2 — First Evolution Cycle: the recursive self-improvement machinery.
   unknown → experiment → measurement → verification → comparison vs
   baseline → retain/regress/kill → capsule on the ledger → whole-body
   evaluation of the change itself.
+- `branch_generator.py` — Phase 3: drafts candidate branches across ALL
+  eleven kinds for one bottleneck; every generated branch carries all
+  twelve required fields (the generator never emits an invalid branch).
+- `comparison.py` — Phase 3: ranks isolated test results against
+  baseline + threshold (gte/lte); the champion must resolve the decisive
+  unknown AND beat baseline — when nothing does, do_nothing wins and no
+  winner is manufactured.
+- `failure_analysis.py` — Phase 3: classifies every failed attempt
+  (transient, doctrinal_refusal, capability_missing, budget_exceeded,
+  verifier_insufficient, executor_error), names the dominant class and
+  cheapest fix, flags structural failures (one class spanning branches).
+  Failures are preserved verbatim, never summarised away.
+- `auto_cycle.py` — Phase 3: the machine-paced cycle — generate (11
+  kinds) → isolated test per branch → failure analysis → comparison →
+  champion proposed to the ClosureLoop. Hard bounds: hypothesis-only
+  verifiers refused before any testing (the cycle may not
+  self-authorize); structural doctrinal refusal halts the cycle (never
+  route around doctrine); every stage ledgered.
 
-## Recorded proof
+## Recorded proof (Phase 3)
+
+`tests/unit/test_fast_evolution.py` (12 tests): full machine-paced cycle
+with a RETAIN decision and all 10 losing branches preserved with revival
+evidence; no-improvement outcome when baseline stands unbeaten;
+hypothesis-only verifier refused before ANY isolated test runs;
+structural doctrinal refusal halting the cycle.
+
+## Recorded proof (Phase 2)
 
 `tests/unit/test_evolution.py::test_complete_machine_recorded_improvement_cycle`
 runs one complete manual machine-recorded cycle against the real

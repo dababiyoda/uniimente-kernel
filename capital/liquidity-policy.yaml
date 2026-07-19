@@ -1,0 +1,20 @@
+# Liquidity policy. Survival before growth.
+version: "1.0.0"
+
+reserves:
+  emergency_liquidity:
+    target_months_of_obligations: 6
+    floor_months: 3
+    breach_response: halt ranks 6-11 of the allocation waterfall until floor restored
+  operating_reserves:
+    definition: cash covering taxes, payroll, family stability, and committed spend
+    rule: never counted as deployable experimental capital
+
+runway:
+  metric: months of obligations covered by unrestricted reserves
+  review: weekly while below target
+  founder_alert_below: 3
+
+illegality:
+  borrowing_against_restricted_or_customer_funds: prohibited
+  treating_unearned_revenue_as_cash: prohibited

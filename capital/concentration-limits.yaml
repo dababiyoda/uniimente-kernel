@@ -1,0 +1,18 @@
+# Concentration limits. Dependency asymmetry is scored like financial exposure.
+version: "1.0.0"
+
+single_counterparty_limits:
+  single_customer_share_of_revenue_max: 0.25
+  single_supplier_criticality_max: replaceable_within_30_days
+  single_platform_distribution_dependency_max: 0.5   # no platform may carry more than half of reach
+
+venture_concentration:
+  single_cell_capital_share_max: 0.5
+  single_cell_founder_attention_share_max: 0.6
+
+dependency_leverage_map:
+  purpose: measure who can extract from UNIIMENTE and whom UNIIMENTE can replace
+  tracked: [model_provider, cloud_provider, payment_rail, distribution_platform, key_supplier, key_customer]
+  replacement_plan_required_when: dependency_exceeds_limit
+
+breach_response: escalate(alfonso) with reduction plan and deadline

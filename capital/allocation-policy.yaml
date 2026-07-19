@@ -1,0 +1,45 @@
+# Capital architecture. UNIIMENTE converts income into durable strategic freedom.
+# No score independently authorizes spending. No extraction may weaken service
+# continuity, legal compliance, payroll, participant rights, security, required
+# reserves, institutional ownership, or critical reinvestment.
+version: "1.0.0"
+
+conversion_chain: [operating_cash_flow, unrestricted_reserves, operating_reinvestment, diversified_productive_assets, protected_ownership_and_succession, founder_independent_regenerative_continuity]
+
+priority_waterfall:   # fund in order; never skip upward to fund downward
+  1: taxes_and_binding_legal_obligations
+  2: payroll_and_participant_obligations
+  3: family_stability_and_basic_protection
+  4: emergency_liquidity_and_operating_reserves
+  5: security_insurance_compliance_restitution_reliability
+  6: high_return_reinvestment_in_validated_operations
+  7: prudent_debt_reduction
+  8: diversified_productive_assets
+  9: strategic_acquisitions
+  10: humanitarian_and_public_benefit_deployment
+  11: family_education_and_long_term_stewardship
+
+fund_separation:
+  - operating_cash
+  - restricted_funds
+  - customer_owned_funds
+  - regulatory_reserves
+  - insurance_reserves
+  - reinvestment_capital
+  - acquisition_capital
+  - diversified_treasury
+  - owner_distributions
+  - public_benefit_capital
+
+rules:
+  restricted_as_operating_cash: prohibited
+  customer_funds_touching: prohibited_except_contracted_settlement
+  venture_scaling_before_payment_proof: prohibited
+  capital_creating_forced_sale_risk_or_mission_drift: rejected
+
+portfolio_governor_formula:
+  numerator: [expected_strategic_value, probability_of_success, ownership_retained, reversibility, evidence_gain, cross_venture_reinforcement, regenerative_gain]
+  denominator: [capital_required, founder_attention, time_to_proof, irreversible_downside, legal_exposure, concentration_risk]
+  note: Output is a ranking, never an authorization. Human approval moves money.
+
+maintains: [exploitation_of_proven_opportunities, bounded_exploration, liquidity, option_value, redundancy]

@@ -1,0 +1,20 @@
+# Acquisition and investment gates. Strategic acquisitions sit at rank 9 of the
+# waterfall; they are never funded ahead of obligations, reserves, or validated
+# reinvestment.
+version: "1.0.0"
+
+gates:
+  1_strategic_rationale:
+    must_state: [governing_rail_acquired, why_buy_not_build]
+  2_financial_quality:
+    requires: [verified_cash_flow, no_hidden_liabilities, working_capital_normalization]
+  3_integration_burden:
+    requires: [founder_attention_estimate, systems_migration_cost, key_person_dependency]
+  4_legal_exposure:
+    requires: [compliance_review, litigation_check, license_transferability]
+  5_ownership_and_mission_fit:
+    rejects: [structures_creating_forced_sale_risk, mission_drift, control_dilution]
+  6_downside_case:
+    requires: [bear_case_from_adversarial_intelligence, kill_condition, exit_cost_estimate]
+  7_approval:
+    requires: [alfonso]   # merger_or_acquisition_approval is a reserved matter

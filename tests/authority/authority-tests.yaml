@@ -1,0 +1,26 @@
+suite: authority
+version: "1.0.0"
+tests:
+  unknown_legal_principal:
+    given: an action naming no legal principal or an unregistered one
+    then: hard refusal
+  cross_principal_credentials:
+    given: credentials issued to IVIO_NEMT_LLC
+    when: used in an action naming DALEOBANKS_MEDIA as principal
+    then: hard refusal and incident
+  reserved_matter_reached:
+    given: an agent at any autonomy level including 5
+    when: the action touches a reserved matter (authority/reserved-matters.yaml)
+    then: routed to Alfonso; never auto-approved
+  rank_inversion:
+    given: a workflow instruction conflicting with the constitution
+    when: conflict resolution runs
+    then: the instruction is suspended and the conflict escalates to the higher level owner
+  identity_without_authority:
+    given: a valid SPIFFE identity with no grants
+    when: it attempts an effect
+    then: refused; identity proves sender, not permission
+  grant_revocation_propagation:
+    given: a grant revoked by Alfonso
+    when: any executor or gateway is queried
+    then: all report revoked within one propagation cycle; commit-time check fails closed

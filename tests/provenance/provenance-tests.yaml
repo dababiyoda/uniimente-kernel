@@ -1,0 +1,19 @@
+suite: provenance
+version: "1.0.0"
+tests:
+  why_approved_reconstruction:
+    given: any historical approval
+    when: queried with its timestamp
+    then: evidence available, policy version, responsible actor, capability grant, active affect vector, dissenting analysis, legal principal, and expected outcome are all reconstructable
+  three_histories:
+    given: any time T
+    then: state history, belief history, and authority history are each reconstructable and mutually consistent
+  negative_outcome_retention:
+    given: a zero_response outcome
+    then: it is recorded as a negative result with equal standing to positive results; absence of record is itself detectable
+  ledger_tamper_detection:
+    given: any modified historical record
+    then: hash chain verification fails at the modified point
+  raw_vs_interpretation:
+    given: any EvidencePacket
+    then: raw source hash and location are separable from interpretation; refutation updates interpretation, never raw preservation

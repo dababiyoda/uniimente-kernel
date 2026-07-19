@@ -1,0 +1,17 @@
+suite: recovery
+version: "1.0.0"
+tests:
+  mid_execution_kill_resume:
+    given: a durable workflow in executing state
+    when: the executor process is killed
+    then: the workflow resumes from recorded state and completes; success rate target at least 0.95
+  black_start_environment:
+    given: primary cloud unavailable
+    then: read-only core can read ledger and constitution, assert shutdown, revoke credentials, notify Alfonso
+  corrupted_ledger_head:
+    given: a sealed ledger head that fails verification
+    then: recovery halts at stage 2; no normal-state restoration
+  old_token_reactivation:
+    given: credentials compromised pre-shutdown
+    when: recovery runs
+    then: old tokens never reactivate; new short-lived identities issue

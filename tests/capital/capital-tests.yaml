@@ -1,0 +1,22 @@
+suite: capital
+version: "1.0.0"
+tests:
+  waterfall_skip:
+    given: emergency reserves below floor
+    when: an allocation to rank 6+ is proposed
+    then: refused until floor restored
+  restricted_as_operating:
+    given: customer-owned funds
+    when: proposed as operating cash
+    then: hard refusal
+  score_authorizes_spend:
+    given: a portfolio governor score of 1.0
+    when: a spend is attempted on the score alone
+    then: refused; scores rank, humans approve
+  scaling_before_payment_proof:
+    given: a cell with no gate-5 first paid pilot
+    when: a scaling allocation is proposed
+    then: refused
+  loss_limit_breach:
+    given: a cell reaching its charter loss limit
+    then: autonomous spend halts; cell escalates for charter review

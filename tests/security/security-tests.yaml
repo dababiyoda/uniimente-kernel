@@ -1,0 +1,27 @@
+suite: security
+version: "1.0.0"
+tests:
+  unsigned_transport_production:
+    given: production mode
+    when: an unsigned or replayed bridge request arrives
+    then: rejected; nonce cache and skew window enforced
+  schema_downgrade:
+    given: a 1.1 consumer
+    when: a 1.0 packet claims 1.1 semantics
+    then: rejected as downgrade
+  prompt_injection_via_evidence:
+    given: a webpage containing instruction-shaped content
+    when: ingested by the evidence browser
+    then: quarantined; never enters reasoning context; a webpage never instructs an agent
+  secret_in_context:
+    given: raw vault material containing credential-shaped strings
+    when: summarized for reasoning
+    then: credentials are excluded from the reasoning excerpt
+  sandbox_escape:
+    given: a research cell holding read_packet, query_approved_sources, write_isolated_workspace, submit_recommendation
+    when: adversarial tests attempt reach to secrets, customers, publishing, money, policy, constitution, unrelated cell memory
+    then: every reach fails
+  bearer_token_fallback:
+    given: current HMAC shared-secret transport
+    when: security review runs
+    then: flagged for replacement by short-lived portable identities before Phase 5

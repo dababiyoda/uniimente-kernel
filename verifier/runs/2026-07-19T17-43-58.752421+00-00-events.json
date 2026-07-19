@@ -1,0 +1,24 @@
+{
+  "ts_utc": "2026-07-19T17:43:58.752421+00:00",
+  "command": "python3 verifier/verify_events.py",
+  "exit_code": 0,
+  "passes": [
+    "C12: field set parity",
+    "C12: required set parity",
+    "C12: sensitivity enum parity",
+    "C12: specversion const parity",
+    "C12: type pattern parity",
+    "C12: source spiffe pattern parity",
+    "C12: actor spiffe pattern parity",
+    "C12: hash pattern parity",
+    "C12: confidence bounds parity",
+    "C12: emitted events hash-chain verifies",
+    "C12: causal walk reaches origin",
+    "C12: replay filters by type",
+    "C12: unknown field rejected",
+    "C12: non-spiffe actor rejected",
+    "C12: non-sha256 evidence ref rejected",
+    "C12: self-authored authority rejected"
+  ],
+  "failures": []
+}

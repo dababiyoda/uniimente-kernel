@@ -1,0 +1,19 @@
+{
+  "ts_utc": "2026-07-19T17:40:21.924722+00:00",
+  "command": "python3 verifier/verify_contracts.py",
+  "exit_code": 0,
+  "passes": [
+    "C11: signal_type enum parity",
+    "C11: urgency enum parity",
+    "C11: status enum parity",
+    "C11: signal schema_version const",
+    "C11: go_no_go enum parity",
+    "C11: risk_level enum parity",
+    "C11: assessment requires_human_approval const",
+    "C11: assessment schema_version const",
+    "C11: institutional verdict enum parity",
+    "C11: minimal conforming packet validates",
+    "C11: self-executing assessment rejected"
+  ],
+  "failures": []
+}

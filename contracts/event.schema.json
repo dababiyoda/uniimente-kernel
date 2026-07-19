@@ -78,12 +78,6 @@
     },
     "data": {
       "type": "object"
-    },
-    "$defs": {
-      "hash": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
-      }
     }
   },
   "required": [
@@ -96,5 +90,11 @@
     "time",
     "sensitivity",
     "causal_parent"
-  ]
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
 }

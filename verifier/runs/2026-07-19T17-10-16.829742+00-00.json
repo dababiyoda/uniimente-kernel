@@ -1,0 +1,17 @@
+{
+  "ts_utc": "2026-07-19T17:10:16.829742+00:00",
+  "command": "python3 verifier/verify.py verifier/v1/criteria.json",
+  "exit_code": 1,
+  "passes": [
+    "C1: all 31 canonical files present",
+    "C3: all YAML parse as non-empty mappings",
+    "C4: all .ucl structurally sane",
+    "C5: kernel invariant + sovereignty + non-delegables present",
+    "C6: 6 doctrine test dirs each hold >=1 spec",
+    "C7: README/LICENSE/docs present",
+    "C8: 8 module placeholder READMEs present"
+  ],
+  "failures": [
+    "C2: schema set mismatch: v1 criteria expected the Phase 1 set of 9 contracts; the tree now holds 11 (expected failure of the superseded version against the current tree)"
+  ]
+}

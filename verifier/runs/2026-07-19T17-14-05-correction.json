@@ -1,0 +1,12 @@
+{
+  "ts_utc": "2026-07-19T17:14:05.000000+00:00",
+  "type": "correction",
+  "note": "The run records at 17-08-38, 17-09-13, 17-10-16.829742, 17-10-16.957555, and 17-10-17.087108 were pushed with two transcription errors: (1) their C1 pass line reads '31 canonical files present' where the actual verifier output for v4 criteria was 'all 33 canonical files present' (v4's C1 lists 33 files, as the correctly transcribed 17-13-17 record shows); (2) the C2 failure strings in the 17-08-38/17-09-13/17-10-16.829742 records are paraphrases of the actual mismatch messages, which named the full on-disk vs criteria file lists. Exit codes, pass/fail classification, and the substance of the failures (hardcoded 9-schema count, hardcoded v1 criteria path, superseded v1 criteria) are accurate as recorded. The errors were mine in manual transcription, not verifier behavior. Corrected by this append-only note rather than by rewriting the records.",
+  "affects": [
+    "verifier/runs/2026-07-19T17-08-38.812798+00-00.json",
+    "verifier/runs/2026-07-19T17-09-13.870796+00-00.json",
+    "verifier/runs/2026-07-19T17-10-16.829742+00-00.json",
+    "verifier/runs/2026-07-19T17-10-16.957555+00-00.json",
+    "verifier/runs/2026-07-19T17-10-17.087108+00-00.json"
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "version": "v3",
+  "created_utc": "2026-07-19T16:02:48.411078+00:00",
+  "source": "UNIIMENTE canonical docs, Section XXVI (Canonical Machine-Readable Artifacts) + Verdict Phase 1 initial structure",
+  "checks": [
+    {
+      "id": "C1",
+      "rule": "Every Section XXVI file exists and is non-empty",
+      "files": [
+        "constitution/constitution.ucl",
+        "constitution/sovereignty.ucl",
+        "constitution/participant-rights.ucl",
+        "constitution/amendment-policy.ucl",
+        "constitution/shutdown-policy.ucl",
+        "authority/authority-matrix.yaml",
+        "authority/legal-principals.yaml",
+        "authority/reserved-matters.yaml",
+        "contracts/event.schema.json",
+        "contracts/evidence.schema.json",
+        "contracts/context-packet.schema.json",
+        "contracts/opportunity-packet.schema.json",
+        "contracts/venture-assessment.schema.json",
+        "contracts/decision.schema.json",
+        "contracts/outcome.schema.json",
+        "contracts/capability-grant.schema.json",
+        "contracts/venture-cell-charter.schema.json",
+        "identity/organ-registry.yaml",
+        "identity/agent-registry.yaml",
+        "identity/service-identities.yaml",
+        "affect/affect-policy.yaml",
+        "affect/identity-coherence.yaml",
+        "affect/pathological-state-tests.yaml",
+        "capital/allocation-policy.yaml",
+        "capital/liquidity-policy.yaml",
+        "capital/concentration-limits.yaml",
+        "capital/acquisition-gates.yaml",
+        "workflows/approval-lifecycle.yaml",
+        "workflows/venture-validation.yaml",
+        "workflows/incident-response.yaml",
+        "workflows/shutdown-recovery.yaml"
+      ]
+    },
+    {
+      "id": "C2",
+      "rule": "All 9 contracts/*.schema.json are valid JSON, draft 2020-12, with $id/title/type=object/required",
+      "files": [
+        "contracts/event.schema.json",
+        "contracts/evidence.schema.json",
+        "contracts/context-packet.schema.json",
+        "contracts/opportunity-packet.schema.json",
+        "contracts/venture-assessment.schema.json",
+        "contracts/decision.schema.json",
+        "contracts/outcome.schema.json",
+        "contracts/capability-grant.schema.json",
+        "contracts/venture-cell-charter.schema.json"
+      ]
+    },
+    {
+      "id": "C3",
+      "rule": "All .yaml files parse as YAML and are non-empty mappings",
+      "glob": "*.yaml"
+    },
+    {
+      "id": "C4",
+      "rule": "All .ucl files contain balanced braces and at least one top-level block",
+      "glob": "*.ucl"
+    },
+    {
+      "id": "C5",
+      "rule": "Kernel invariant, sovereignty hierarchy, and non-delegable matters appear in constitution files",
+      "needles": [
+        "capability grant",
+        "legal principal",
+        "commit-time",
+        "shutdown"
+      ]
+    },
+    {
+      "id": "C6",
+      "rule": "tests/ has all 6 doctrine test directories, each with >=1 spec file",
+      "dirs": [
+        "tests/constitutional",
+        "tests/authority",
+        "tests/capital",
+        "tests/security",
+        "tests/recovery",
+        "tests/provenance"
+      ]
+    },
+    {
+      "id": "C7",
+      "rule": "README + docs present",
+      "files": [
+        "README.md",
+        "LICENSE",
+        "docs/BACKCAST_GPS.md",
+        "docs/BUILD_ORDER.md",
+        "docs/ARCHITECTURE.md",
+        "docs/UCL.md"
+      ]
+    },
+    {
+      "id": "C8",
+      "rule": "8 module placeholder READMEs exist (compiler/policy/events/provenance/sandbox/observability/sdk-python/sdk-typescript)",
+      "dirs": [
+        "compiler",
+        "policy",
+        "events",
+        "provenance",
+        "sandbox",
+        "observability",
+        "sdk-python",
+        "sdk-typescript"
+      ]
+    },
+    {
+      "id": "C9",
+      "rule": "sdk-python compiles (py_compile) and its unittest suite passes with zero failures",
+      "command": "python3 verifier/verify_sdk.py"
+    },
+    {
+      "id": "C10",
+      "rule": "sdk-python installs as a package (pip install --target) and uniimente_kernel imports with all __all__ symbols",
+      "command": "python3 verifier/verify_pkg.py"
+    }
+  ]
+}

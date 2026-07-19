@@ -6,3 +6,6 @@ First version; no prior baseline.
 
 ## v2 — 2026-07-19T15:30:13.178493+00:00
 Measures everything v1 measures (C1-C8), plus C9: sdk-python compiles and its stdlib unittest suite passes (run by `verifier/verify_sdk.py`). Added when the first extracted kernel module (decision ledger, Phase 2) entered the tree. v1 remains the acceptance record for the canonical artifact layer; v2 governs the tree from the extraction PR onward.
+
+## v3 — 2026-07-19T16:02:48.411078+00:00
+Measures everything v2 measures (C1-C9), plus C10: sdk-python pip-installs and imports with all exported symbols (run by `verifier/verify_pkg.py`). Added when the SDK became an installable package (pyproject.toml) so organs can depend on it via git URL.

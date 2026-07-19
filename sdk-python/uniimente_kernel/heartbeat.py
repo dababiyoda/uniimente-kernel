@@ -1,12 +1,12 @@
 """Supervised cognitive loop: keeps the system alive without drifting.
 
-Extracted from DALEOBANKS ``services/heartbeat.py`` (kernel Phase 2) into
-``observability/``. Distributed-systems supervision pattern. Each stage
-(perceive, plan, act, reflect — or any scheduled job) runs isolated, so a
-failure in one organ never kills the loop. Repeated consecutive failures
-trip a breaker that disarms live action via the kill switch — the system
-fails toward silence, never toward runaway action — and every error and
-breaker trip is recorded in the decision ledger.
+Extracted from DALEOBANKS ``services/heartbeat.py`` (kernel Phase 2)
+into the kernel SDK package. Distributed-systems supervision pattern.
+Each stage (perceive, plan, act, reflect — or any scheduled job) runs
+isolated, so a failure in one organ never kills the loop. Repeated
+consecutive failures trip a breaker that disarms live action via the kill
+switch — the system fails toward silence, never toward runaway action —
+and every error and breaker trip is recorded in the decision ledger.
 
 Generalization points versus the DALEOBANKS original: standard library
 logging; kernel ``DecisionLedger`` and ``KillSwitch``. Behavior identical.

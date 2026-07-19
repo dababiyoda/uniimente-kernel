@@ -7,10 +7,13 @@ import unittest
 from datetime import datetime, timedelta, UTC
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "policy"))
 
 from uniimente_kernel.ledger import DecisionLedger, KillSwitch  # noqa: E402
-from approval_queue import ApprovalQueue, ApprovalRecord, InMemoryApprovalStore  # noqa: E402
+from uniimente_kernel.approval_queue import (  # noqa: E402
+    ApprovalQueue,
+    ApprovalRecord,
+    InMemoryApprovalStore,
+)
 
 
 class TestApprovalQueue(unittest.TestCase):

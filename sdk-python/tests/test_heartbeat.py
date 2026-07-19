@@ -7,10 +7,9 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "observability"))
 
 from uniimente_kernel.ledger import DecisionLedger, KillSwitch  # noqa: E402
-from heartbeat import Heartbeat  # noqa: E402
+from uniimente_kernel.heartbeat import Heartbeat  # noqa: E402
 
 
 def run(coro):

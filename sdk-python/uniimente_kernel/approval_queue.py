@@ -1,7 +1,7 @@
 """Approval queue: the human command channel for judgment.
 
 Extracted from DALEOBANKS ``services/operator_line.py`` (kernel Phase 2)
-into ``policy/``. Organs contact the operator only when judgment is
+into the kernel SDK package. Organs contact the operator only when judgment is
 required. Commands arrive over any transport the organ wires in
 (DALEOBANKS: SMS via Twilio webhook, or the dashboard); every path runs
 through :meth:`ApprovalQueue.handle_command`.

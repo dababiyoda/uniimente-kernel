@@ -1,14 +1,14 @@
 """Constitution guard: fixed values no agent can rewrite.
 
 Extracted from DALEOBANKS ``services/constitution.py`` (kernel Phase 2)
-into ``policy/``. The constitution file is loaded read-only. Its hash is
-recorded in the decision ledger at startup and re-verified while the
-system runs; a runtime mismatch means the file changed underneath a live
-process (tampering or an unreviewed edit), and the guard fails toward
-silence by disarming live action. Legitimate amendments arrive through
-the human ceremony in ``constitution/amendment-policy.ucl`` — a human
-commit followed by a restart, which records the new hash as a ledgered
-constitution event.
+into the kernel SDK package. The constitution file is loaded read-only.
+Its hash is recorded in the decision ledger at startup and re-verified
+while the system runs; a runtime mismatch means the file changed
+underneath a live process (tampering or an unreviewed edit), and the
+guard fails toward silence by disarming live action. Legitimate
+amendments arrive through the human ceremony in
+``constitution/amendment-policy.ucl`` — a human commit followed by a
+restart, which records the new hash as a ledgered constitution event.
 
 Generalization points versus the DALEOBANKS original:
 
@@ -67,13 +67,19 @@ class ConstitutionGuard:
             return f.read()
 
     def combined_hash(self) -> Optional[str]:
-        """One hash over every watched file, in declared order."""
+        """One hash over every watched file, in declared order.
+
+        A single watched file hashes to its own plain digest. This keeps
+        one-file organs (DALEOBANKS' constitution.md) byte-compatible with
+        their pre-kernel guard; multiple files combine as before."""
         digests = []
         for path in self.paths:
             h = _hash_file(path)
             if h is None:
                 return None
             digests.append(h)
+        if len(digests) == 1:
+            return digests[0]
         return hashlib.sha256("".join(digests).encode("utf-8")).hexdigest()
 
     def load_and_record(self) -> Optional[str]:

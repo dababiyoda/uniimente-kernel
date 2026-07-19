@@ -1,0 +1,76 @@
+{
+  "description": "Doctrine-labeled quality corpus for the content-critic evolution cycle. Labels follow the surgical-writing doctrine: good texts are specific, concrete, time-bound, and measured; bad texts rely on hype, vagueness, or unrealistic claims. Labels were fixed before any scorer was run against the corpus.",
+  "accept_threshold": 50.0,
+  "texts": [
+    {
+      "id": "G1",
+      "label": "good",
+      "text": "Ship the gate by Friday. 39 tests green, zero unmediated posts. Next: DMs behind the same boundary within 14 days."
+    },
+    {
+      "id": "G2",
+      "label": "good",
+      "text": "Implement the witness dedupe rule this week: committed fingerprints skip re-execution. Target: zero double-posts across 100 retries, verified in 30 days."
+    },
+    {
+      "id": "G3",
+      "label": "good",
+      "text": "Deploy the reconciliation probe by 2026-08-01. Success means two consecutive green runs; failure means we regress the branch and keep the ledger intact."
+    },
+    {
+      "id": "G4",
+      "label": "good",
+      "text": "Reduce draft refusals, measured as a decrease by 40% within 30 days; route each post through the critic and review the ledger each Friday."
+    },
+    {
+      "id": "G5",
+      "label": "good",
+      "text": "Build the outcome pull in 3 slices: receipts parsed within 7 days, aggregates within 14 days, dashboard within 21 days. Owner: the operator. Budget: 0 dollars."
+    },
+    {
+      "id": "G6",
+      "label": "good",
+      "text": "Establish a weekly review: every Monday we read the ledger, count verified outcomes, and kill one weak mechanism. First review starts in 7 days."
+    },
+    {
+      "id": "G7",
+      "label": "good",
+      "text": "Improve by 30% the reply quality score within 60 days: two-sentence cadence, one concrete mechanism per reply, zero filler. Customers notice brevity."
+    },
+    {
+      "id": "B1",
+      "label": "bad",
+      "text": "Our revolutionary, game-changing platform will 100% guarantee success with no risk, launching in 30 days to improve by 90% the outcomes of enterprise customers."
+    },
+    {
+      "id": "B2",
+      "label": "bad",
+      "text": "We will launch a revolutionary solution in 30 days to increase by 50% the revenue of our customers. This game-changing system creates seamless synergy."
+    },
+    {
+      "id": "B3",
+      "label": "bad",
+      "text": "Our world-class team will build something amazing that could work for everyone, maybe within 90 days. KPIs improve by 100%."
+    },
+    {
+      "id": "B4",
+      "label": "bad",
+      "text": "Deploy our next-level framework in 7 days and achieve 200% growth with no risk. Users love seamless solutions."
+    },
+    {
+      "id": "B5",
+      "label": "bad",
+      "text": "This cutting-edge approach could work somehow and might help your team solve everything within 14 days."
+    },
+    {
+      "id": "B6",
+      "label": "bad",
+      "text": "We perhaps offer a perfect solution that could work for your organization, with metrics that improve by 25% in 60 days."
+    },
+    {
+      "id": "B7",
+      "label": "bad",
+      "text": "Our disruptive vision will change everything, somehow creating stuff that things need, maybe by 2027."
+    }
+  ]
+}

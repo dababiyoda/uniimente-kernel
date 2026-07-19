@@ -7,5 +7,6 @@ fails closed.
 """
 from .base import Adapter, BoundedAdapter
 from .echo import EchoAdapter
+from .http_research import FetchResult, HttpResearchAdapter
 
-__all__ = ["Adapter", "BoundedAdapter", "EchoAdapter"]
+__all__ = ["Adapter", "BoundedAdapter", "EchoAdapter", "FetchResult", "HttpResearchAdapter"]

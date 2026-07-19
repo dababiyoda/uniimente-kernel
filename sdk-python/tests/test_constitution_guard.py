@@ -6,10 +6,9 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "policy"))
 
 from uniimente_kernel.ledger import DecisionLedger, KillSwitch  # noqa: E402
-from constitution_check import ConstitutionGuard  # noqa: E402
+from uniimente_kernel.constitution_check import ConstitutionGuard  # noqa: E402
 
 
 class TestConstitutionGuard(unittest.TestCase):

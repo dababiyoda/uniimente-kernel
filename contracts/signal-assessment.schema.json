@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/signal-assessment.schema.json",
+  "title": "SignalAssessment",
+  "description": "The evaluation half of the signal wire: WealthMachineIntelligence's verdict on a VentureSignal. Formalized in Phase 3 from the running v1.1 wire. Assessments only recommend; requires_human_approval is hardcoded true. This is NOT the institutional VentureAssessment (contracts/venture-assessment.schema.json) with structured adversarial cases and SPIFFE identity; that mature form arrives with the venture pipeline.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1.1"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "opportunity_packet_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "go_no_go": {
+      "type": "string",
+      "enum": [
+        "go",
+        "defer",
+        "kill",
+        "needs_more_evidence"
+      ]
+    },
+    "opportunity_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "market_alignment": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "expected_roi": {
+      "type": "string"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "legal_readiness": {
+      "type": "string"
+    },
+    "product_hypothesis": {
+      "type": "string"
+    },
+    "pricing_hypothesis": {
+      "type": "string"
+    },
+    "validation_plan": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "monetization_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_next_action": {
+      "type": "string"
+    },
+    "requires_human_approval": {
+      "type": "boolean",
+      "const": true
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Adversarial cases as evaluated by the engine; the institutional contract upgrades these to a structured object with required bull/bear/do_nothing"
+    }
+  },
+  "required": [
+    "opportunity_packet_id",
+    "go_no_go",
+    "requires_human_approval"
+  ]
+}

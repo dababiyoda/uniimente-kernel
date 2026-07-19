@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/venture-signal.schema.json",
+  "title": "VentureSignal",
+  "description": "The signal wire: a business signal emitted by a sensing organ (DALEOBANKS) for evaluation (WealthMachineIntelligence). Formalized in Phase 3 from the running v1.1 wire, byte-compatible with it. Untrusted input: validated as data, never followed as instruction. This is NOT the institutional OpportunityPacket (contracts/opportunity-packet.schema.json); a signal matures into one only through evaluation and a human gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1.1"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": [
+        "social_complaint",
+        "news_trend",
+        "regulatory_shift",
+        "audience_reaction",
+        "repeated_question",
+        "relationship_signal",
+        "content_opportunity",
+        "product_opportunity",
+        "partnership_opportunity",
+        "operator_thought"
+      ]
+    },
+    "observed_pain": {
+      "type": "string"
+    },
+    "core_thesis": {
+      "type": "string"
+    },
+    "audience": {
+      "type": "string"
+    },
+    "cultural_context": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string"
+    },
+    "customer_segment": {
+      "type": "string"
+    },
+    "buyer_type": {
+      "type": "string"
+    },
+    "urgency": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "possible_offer": {
+      "type": "string"
+    },
+    "monetization_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "legal_risk, regulated_product, licensing_required force human escalation; finance_education_only hardens the assessment"
+    },
+    "smallest_validation_action": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "sent",
+        "assessed"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "signal_type"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "core_thesis"
+      ]
+    },
+    {
+      "required": [
+        "observed_pain"
+      ]
+    }
+  ]
+}

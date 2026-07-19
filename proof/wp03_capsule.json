@@ -1,0 +1,287 @@
+{
+  "approval_id": "40101fa44e2e4bc5902e2a1e346828d4",
+  "capsule_schema": "wp03-proof-capsule/1.0",
+  "episode": {
+    "approval_id": "40101fa44e2e4bc5902e2a1e346828d4",
+    "close_reason": "completed",
+    "closed": true,
+    "created_at": "2026-07-19T19:51:17.952400Z",
+    "decision_id": "76e7e3f4b21d4193a52a7409e8ff262b",
+    "id": "a2bdf1d3374943b98dedf4419a2b5f6f",
+    "intent_id": "9ce82ce2cefd49e993cf0889ee6e8b3f",
+    "outcome_id": "176d8e61dba14b209b396e86d450a588",
+    "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+    "schema_version": "0.1.0",
+    "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+  },
+  "error": null,
+  "generated_at": "2026-07-19T19:51:18.616733+00:00",
+  "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+  "ok": true,
+  "receipt": {
+    "adapter_id": "http-research",
+    "body_sha256": "ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d",
+    "bytes_fetched": 559,
+    "executed_at": "2026-07-19T19:51:18.612797Z",
+    "fetched_at": "2026-07-19T19:51:18.612744+00:00",
+    "final_url": "https://example.com/",
+    "provider_response_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+    "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+    "signature": "a47b07993255aee7e710d2ce33094d80ea30bbbd2b74118e7633f1787aa7b76367792393642269dbbfe016839af0979b9fbc9eca75f596a11ff5324e3c6edd03",
+    "status_code": 200,
+    "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+  },
+  "reconciliation": {
+    "actual_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+    "created_at": "2026-07-19T19:51:18.614144Z",
+    "discrepancy": null,
+    "expected_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+    "id": "c9a586c2132c4b019c5b0b74949214f4",
+    "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+    "reconciled": true,
+    "schema_version": "0.1.0"
+  },
+  "spine_records": [
+    {
+      "kind": "ActionIntent",
+      "payload": {
+        "action_type": "research_fetch",
+        "actor_id": "uniimente-kernel",
+        "consequence_class": "C2",
+        "created_at": "2026-07-19T19:51:17.951937Z",
+        "evidence_ids": [],
+        "expected_outcome": "{\"body_sha256\":\"ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d\",\"description\":\"one bounded HTTPS GET of the IANA example.com page\",\"final_url\":\"https://example.com/\",\"status_code\":200}",
+        "expiry_minutes": 30,
+        "id": "9ce82ce2cefd49e993cf0889ee6e8b3f",
+        "legal_principal": "Uniimente Ltd",
+        "objective": "WP-03 proof: close one real external loop — a single bounded HTTPS GET of https://example.com/ through the Consequence Gate",
+        "organ_id": "research-organ",
+        "payload": {
+          "max_bytes": 262144,
+          "max_redirects": 3,
+          "method": "GET"
+        },
+        "resource": "web",
+        "rollback": null,
+        "schema_version": "0.1.0",
+        "target": "https://example.com/"
+      },
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "record_hash": "2c585d1785136ad4412e0a47362a11f7fb94fe655c4ea303c100ec80b5e2c95d",
+      "refs": {},
+      "seq": 0
+    },
+    {
+      "kind": "PolicyDecision",
+      "payload": {
+        "constitution_version": "ucl-8874e52869b5bb0e",
+        "created_at": "2026-07-19T19:51:17.959195Z",
+        "decision_trace": [
+          "PROPOSE: fingerprint=da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+          "IDENTIFY: legal_principal=Uniimente Ltd",
+          "CLASSIFY: consequence_class=C2",
+          "EVALUATE: ucl:shutdown_state state=normal constraint=none",
+          "EVALUATE: ucl:permanent_prohibitions matched=none",
+          "EVALUATE: ucl:participant_rights flags=none",
+          "EVALUATE: ucl:consequence_default humans_authorize=True class=C2 effect=REQUIRE_HUMAN",
+          "EVALUATE: ucl:final effect=REQUIRE_HUMAN governing_clauses=[consequence_default:C2:REQUIRE_HUMAN]"
+        ],
+        "effect": "REQUIRE_HUMAN",
+        "governing_clauses": [
+          "consequence_default:C2:REQUIRE_HUMAN"
+        ],
+        "id": "76e7e3f4b21d4193a52a7409e8ff262b",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "policy_version": "policy-5c79eb3ae32cfe63",
+        "schema_version": "0.1.0"
+      },
+      "prev_hash": "2c585d1785136ad4412e0a47362a11f7fb94fe655c4ea303c100ec80b5e2c95d",
+      "record_hash": "39bcf0d0a03cbebb8b67af6b7fbfe1e990c11cf0ad4c5e7e97adac6d77ff0b3e",
+      "refs": {},
+      "seq": 1
+    },
+    {
+      "kind": "ApprovalRecord",
+      "payload": {
+        "approver_id": "founder",
+        "created_at": "2026-07-19T19:51:17.952363Z",
+        "expires_at": "2026-07-19T20:01:17.952006Z",
+        "id": "40101fa44e2e4bc5902e2a1e346828d4",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "nonce": "e8055fc88e834a5297bcd7812029aa76",
+        "schema_version": "0.1.0",
+        "signature": "38d30ae2f6bf8df4448a0e5991d0da4f5bc23ede811931bc4e30426ea3226528e80398117ea899869267dcdc6f4642bc01624a887fca7383933739138099aa0b"
+      },
+      "prev_hash": "39bcf0d0a03cbebb8b67af6b7fbfe1e990c11cf0ad4c5e7e97adac6d77ff0b3e",
+      "record_hash": "3d1b7deafe34a9867897b3e6e8b26dd8eb453f8609876559dbaac8bbd33ab6a2",
+      "refs": {},
+      "seq": 2
+    },
+    {
+      "kind": "CapabilityGrant",
+      "payload": {
+        "allowed_targets": [
+          "https://example.com/"
+        ],
+        "allowed_tools": [
+          "research_fetch"
+        ],
+        "budget": {
+          "cost_usd": 0.0,
+          "cpu_seconds": 0.0,
+          "memory_mb": 0.0
+        },
+        "created_at": "2026-07-19T19:51:17.961030Z",
+        "expires_at": "2026-07-19T19:56:17.960996Z",
+        "grant_id": "5a9926480a334f1abe7a3a09a25e48f0",
+        "id": "e458a78feab441af862b09feb712a01d",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "one_use": true,
+        "revoked": false,
+        "schema_version": "0.1.0",
+        "signature": "5a1fa248fececf0da881a3da06dc17e3c92e014e60346b79dea8f95be2af1c358976276ddd46e787393fb92f2eb806a3e3b72a63f15ec438033dc49875a05107"
+      },
+      "prev_hash": "3d1b7deafe34a9867897b3e6e8b26dd8eb453f8609876559dbaac8bbd33ab6a2",
+      "record_hash": "099df3e935eef1b740fdf0332c458f997bb9c85dd506c201a831a50ff4262ace",
+      "refs": {},
+      "seq": 3
+    },
+    {
+      "kind": "CommitWitness",
+      "payload": {
+        "approval_id": "40101fa44e2e4bc5902e2a1e346828d4",
+        "constitution_version": "ucl-8874e52869b5bb0e",
+        "created_at": "2026-07-19T19:51:17.967991Z",
+        "exact_payload_hash": "bcb7187580f090b72d9288a1e67e56927426ace21e38519543eac2a29df7748b",
+        "exact_target": "https://example.com/",
+        "expected_outcome": "{\"body_sha256\":\"ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d\",\"description\":\"one bounded HTTPS GET of the IANA example.com page\",\"final_url\":\"https://example.com/\",\"status_code\":200}",
+        "expires_at": "2026-07-19T19:56:17.967929Z",
+        "grant_id": "5a9926480a334f1abe7a3a09a25e48f0",
+        "id": "daf99069cfa24140b2fd02cbefd4644e",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "policy_decision_id": "76e7e3f4b21d4193a52a7409e8ff262b",
+        "policy_version": "policy-5c79eb3ae32cfe63",
+        "schema_version": "0.1.0",
+        "witness_signature": "d711d6d009dba385da3abd30047c911b7a178300a53fd87f42bc452d72c366c6efb107516574bac6a529469717e5d370c785338eb93ae2841cb35790df835202"
+      },
+      "prev_hash": "099df3e935eef1b740fdf0332c458f997bb9c85dd506c201a831a50ff4262ace",
+      "record_hash": "553dd6e401e06ccb98fcc26c07937829a86f11e689118251795c7847d6dbf88c",
+      "refs": {},
+      "seq": 4
+    },
+    {
+      "kind": "EXECUTE_BEGIN",
+      "payload": {
+        "actor_id": "uniimente-kernel",
+        "created_at": "2026-07-19T19:51:17.969871Z",
+        "event_type": "EXECUTE_BEGIN",
+        "id": "a4fc3ed93d314f70a9428d968c644d21",
+        "organ_id": "research-organ",
+        "payload_hash": "33688da4b601e5f6dbc64a9d68a6f76d80219e648e478466c9e38d2e1f911fcd",
+        "schema_version": "0.1.0",
+        "spine_seq": 5
+      },
+      "prev_hash": "553dd6e401e06ccb98fcc26c07937829a86f11e689118251795c7847d6dbf88c",
+      "record_hash": "1034f5498037fa14571d798fcea8665073b58bb234daac19b1644a22a3b799dc",
+      "refs": {
+        "grant_id": "5a9926480a334f1abe7a3a09a25e48f0",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+      },
+      "seq": 5
+    },
+    {
+      "kind": "ExecutionReceipt",
+      "payload": {
+        "adapter_id": "http-research",
+        "created_at": "2026-07-19T19:51:18.612831Z",
+        "executed_at": "2026-07-19T19:51:18.612797Z",
+        "external_id": "{\"allowlist_version\":\"84f4d16df1ffb7115c68c55f6bba5fb36c550181a1210311d0ae5eea5ecac9e8\",\"body_sha256\":\"ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d\",\"bytes_fetched\":559,\"fetched_at\":\"2026-07-19T19:51:18.612744+00:00\",\"final_url\":\"https://example.com/\",\"status_code\":200}",
+        "id": "05d804016bee4f7c8d07fede970bae16",
+        "provider_response_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+        "schema_version": "0.1.0",
+        "signature": "a47b07993255aee7e710d2ce33094d80ea30bbbd2b74118e7633f1787aa7b76367792393642269dbbfe016839af0979b9fbc9eca75f596a11ff5324e3c6edd03",
+        "success": true,
+        "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+      },
+      "prev_hash": "1034f5498037fa14571d798fcea8665073b58bb234daac19b1644a22a3b799dc",
+      "record_hash": "4c5a1c589a9a44fe64e1013a230f7fd48c064e1a23af6d05cccc532cd6e5c7bc",
+      "refs": {},
+      "seq": 6
+    },
+    {
+      "kind": "ReconciliationRecord",
+      "payload": {
+        "actual_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+        "created_at": "2026-07-19T19:51:18.614144Z",
+        "discrepancy": null,
+        "expected_hash": "e93acfd238fcdc3b736c8281f87097b42424b39355a35586a8918438f3ec6c2f",
+        "id": "c9a586c2132c4b019c5b0b74949214f4",
+        "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+        "reconciled": true,
+        "schema_version": "0.1.0"
+      },
+      "prev_hash": "4c5a1c589a9a44fe64e1013a230f7fd48c064e1a23af6d05cccc532cd6e5c7bc",
+      "record_hash": "719a1610de34c84f15aaf88e2894e4e402b6b351c3e5a14e4c0de9a7cd0d4529",
+      "refs": {},
+      "seq": 7
+    },
+    {
+      "kind": "OutcomeRecord",
+      "payload": {
+        "actual_outcome": "{\"body_sha256\":\"ff67a9d764d6a2367a187734e697f6a53217db9a21c101d410a113ca871a299d\",\"description\":\"one bounded HTTPS GET of the IANA example.com page\",\"final_url\":\"https://example.com/\",\"status_code\":200}",
+        "created_at": "2026-07-19T19:51:18.614860Z",
+        "id": "176d8e61dba14b209b396e86d450a588",
+        "intent_fingerprint": "da0eff64b7cb28a3b7a9f05f7990fff9fbdb7d75cfcb9b62e21f513b45d5d791",
+        "matched_expected": true,
+        "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+        "regenerative_effect": {},
+        "schema_version": "0.1.0"
+      },
+      "prev_hash": "719a1610de34c84f15aaf88e2894e4e402b6b351c3e5a14e4c0de9a7cd0d4529",
+      "record_hash": "6c6b9a6281b42e9eff6ef20062f22eac74fc7c13d65e8c796309c13650564303",
+      "refs": {},
+      "seq": 8
+    },
+    {
+      "kind": "DecisionEpisode",
+      "payload": {
+        "approval_id": "40101fa44e2e4bc5902e2a1e346828d4",
+        "close_reason": "completed",
+        "closed": true,
+        "created_at": "2026-07-19T19:51:17.952400Z",
+        "decision_id": "76e7e3f4b21d4193a52a7409e8ff262b",
+        "id": "a2bdf1d3374943b98dedf4419a2b5f6f",
+        "intent_id": "9ce82ce2cefd49e993cf0889ee6e8b3f",
+        "outcome_id": "176d8e61dba14b209b396e86d450a588",
+        "receipt_id": "05d804016bee4f7c8d07fede970bae16",
+        "schema_version": "0.1.0",
+        "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+      },
+      "prev_hash": "6c6b9a6281b42e9eff6ef20062f22eac74fc7c13d65e8c796309c13650564303",
+      "record_hash": "1d13d0502c03e8a5f90967a6f49092600767fdbd6ab3ebc09ba95a622b625a68",
+      "refs": {},
+      "seq": 9
+    }
+  ],
+  "verify_chain": true,
+  "versions": {
+    "adapter_id": "http-research",
+    "allowlist": [
+      "gov",
+      "edu",
+      "bbc.co.uk",
+      "nytimes.com",
+      "theguardian.com",
+      "reuters.com",
+      "apnews.com",
+      "bloomberg.com",
+      "example.com"
+    ],
+    "allowlist_version": "84f4d16df1ffb7115c68c55f6bba5fb36c550181a1210311d0ae5eea5ecac9e8",
+    "constitution_version": "ucl-8874e52869b5bb0e",
+    "policy_version": "policy-5c79eb3ae32cfe63",
+    "user_agent": "uniimente-kernel/http-research (+https://github.com/dababiyoda/uniimente-kernel)"
+  },
+  "witness_id": "daf99069cfa24140b2fd02cbefd4644e"
+}

@@ -108,10 +108,15 @@ class CommitWitness:
         self.disarm_on_postcondition_failure = disarm_on_postcondition_failure
         # Rebuild the dedupe set from the ledger: witnessed fingerprints
         # survive process restarts, so a retried deploy cannot re-execute.
+        # Only effects that actually happened dedupe: "committed" (verified)
+        # and "postcondition_failed" (executed but unverified; repair runs
+        # through reconciliation, never blind re-execution). A "failed"
+        # commit produced no effect, so repair-and-retry must execute.
         self._committed: Dict[str, Dict[str, Any]] = {}
         for entry in self.ledger.replay(event="commit_executed"):
             payload = entry["payload"]
-            self._committed[payload["fingerprint"]] = payload
+            if payload.get("status") in ("committed", "postcondition_failed"):
+                self._committed[payload["fingerprint"]] = payload
 
     def already_committed(self, fingerprint: str) -> bool:
         return fingerprint in self._committed
@@ -211,7 +216,8 @@ class CommitWitness:
             "result": result if status != "failed" else None,
             "error": error,
         })
-        if receipt.status == "committed":
+        if receipt.status in ("committed", "postcondition_failed"):
+            # The effect happened (verified or not); never re-execute it.
             self._committed[fingerprint] = {
                 "witness_id": witness_id, "grant_id": grant_id,
                 "executed_at": executed_at, "completed_at": completed_at,

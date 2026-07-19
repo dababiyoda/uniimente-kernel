@@ -89,6 +89,30 @@ class TestCommitWitness(unittest.TestCase):
         self.assertEqual(receipt.status, "committed")
         self.assertEqual(len(receipt.postconditions), 2)
 
+    def test_postcondition_failed_dedupes_across_restart(self):
+        # The effect happened (unverified); a restart must not re-execute it.
+        receipt, calls = self._run(postconditions={"provider_confirmed": lambda r: False})
+        self.assertEqual(receipt.status, "postcondition_failed")
+        witness2 = CommitWitness(self.ledger)  # new instance, same ledger file
+        calls2 = []
+        r2 = witness2.commit(grant_id="g1", action_type="publish.post",
+                             resource="draft-1", executor=lambda: calls2.append(1))
+        self.assertEqual(calls2, [])
+        self.assertEqual(r2.status, "deduplicated")
+
+    def test_failed_commit_retries_across_restart(self):
+        def boom():
+            raise RuntimeError("provider down")
+        receipt = self.witness.commit(grant_id="g1", action_type="publish.post",
+                                      resource="draft-1", executor=boom)
+        self.assertEqual(receipt.status, "failed")
+        witness2 = CommitWitness(self.ledger)  # new instance, same ledger file
+        calls = []
+        r2 = witness2.commit(grant_id="g1", action_type="publish.post",
+                             resource="draft-1", executor=lambda: calls.append(1) or {"ok": True})
+        self.assertEqual(calls, [1])  # repair-and-retry executes
+        self.assertEqual(r2.status, "committed")
+
     def test_fingerprint_canonical(self):
         a = action_fingerprint("publish.post", "d1", parameters={"x": 1, "y": 2})
         b = action_fingerprint("publish.post", "d1", parameters={"y": 2, "x": 1})

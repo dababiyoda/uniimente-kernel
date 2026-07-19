@@ -39,6 +39,12 @@ from uniimente_kernel.events import (
     EventValidationError,
     validate_event_dict,
 )
+from uniimente_kernel.gate import (
+    VALIDATION_STATUSES,
+    ConsequenceGate,
+    GateError,
+    GateResult,
+)
 from uniimente_kernel.heartbeat import Heartbeat
 from uniimente_kernel.ledger import (
     DecisionLedger,
@@ -54,9 +60,10 @@ __all__ = [
     "ApprovalRecord",
     "ApprovalStore",
     "CapabilityError",
-    "CapabilityService",
     "CommitReceipt",
     "CommitWitness",
+    "CapabilityService",
+    "ConsequenceGate",
     "ConstitutionGuard",
     "ContextPacketData",
     "DEFAULT_CONSTITUTION_PATHS",
@@ -64,6 +71,8 @@ __all__ = [
     "Event",
     "EventSpine",
     "EventValidationError",
+    "GateError",
+    "GateResult",
     "GrantRecord",
     "GrantStore",
     "Heartbeat",
@@ -72,6 +81,7 @@ __all__ = [
     "KillSwitch",
     "PostconditionResult",
     "PromptFirewall",
+    "VALIDATION_STATUSES",
     "RateGovernor",
     "RawVault",
     "action_fingerprint",
@@ -81,4 +91,4 @@ __all__ = [
     "validate_event_dict",
 ]
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"

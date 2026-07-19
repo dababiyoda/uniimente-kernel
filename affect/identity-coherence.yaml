@@ -1,0 +1,30 @@
+# Identity homeostasis: measured distance between what the institution exists to
+# do, what it believes, what it does, what it funds, what reality returns, and
+# who gains or loses. Not personality. A control signal.
+version: "1.0.0"
+
+loop: [identity, appraisal, affect, priority, action, consequence, correction]
+
+coherence_dimensions:
+  constitution_vs_actions:
+    measure: share of committed actions traceable to an approved objective
+    alert_below: 1.0   # anything untraceable is a violation, not a drift metric
+  constitution_vs_capital:
+    measure: allocations consistent with capital/allocation-policy.yaml waterfall
+    alert: any allocation skipping a higher-priority obligation
+  agents_vs_doctrine:
+    measure: sampled agent outputs passing the identity gate
+    alert_below: 0.95
+  public_narrative_vs_actions:
+    measure: public claims independently verifiable
+    alert: any unsupported consequential claim
+  participants_vs_consequences:
+    measure: regenerative metrics from constitution/participant-rights.ucl trending non-negative
+    alert: burden, exclusion, or dignity regression
+  alfonso_sovereignty:
+    measure: founder intervention per verified outcome declining without reduced awareness or control
+    alert: rising dependence or rising workload
+
+drift_detection:
+  method: weekly comparison of affect vector, allocation mix, and outcome mix against ratified doctrine
+  silent_drift_response: escalate(alfonso) with before/after reconstruction

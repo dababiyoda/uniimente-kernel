@@ -1,0 +1,14 @@
+{
+  "ts_utc": "2026-07-19T17:42:03.895788+00:00",
+  "command": "docs/EGREGORE.md acceptance check (55 items, style gate, themes, waterfall)",
+  "exit_code": 0,
+  "passes": [
+    "all 55 BYO-X items present",
+    "no em/en dashes",
+    "no banned hype/fog terms",
+    "all objective themes present",
+    "proof-discipline rail present",
+    "all 11 waterfall ranks present"
+  ],
+  "failures": []
+}

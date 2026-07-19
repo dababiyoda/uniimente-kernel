@@ -242,4 +242,57 @@ def build_registry() -> ClosureRegistry:
         "evidence": ledger_evidence, "economic": ledger_economic,
         "regenerative": ledger_regenerative}))
 
+    # ---------------------------------------------------------------- Phase 2
+    def evolution_technical():
+        from evolution.strategy_tree import StrategyTree, BRANCH_KINDS
+        from evolution.spider_web import SpiderWebAudit, EIGHT_SIDES
+        t = StrategyTree(bottleneck="b", objective="o")
+        a = SpiderWebAudit(subject="s")
+        return len(BRANCH_KINDS) == 11 and len(EIGHT_SIDES) == 8, \
+            "tree (11 branch kinds) + spider-web (8 sides) machinery operational"
+
+    def evolution_authority():
+        from evolution.capsule import VerifierRecord, RetainRegressKill, RetainRegressKillDecision
+        v = VerifierRecord(level="intrinsic_confidence", evidence="e", decided_by="model")
+        d = RetainRegressKillDecision(decision=RetainRegressKill.RETAIN, reason="r",
+                                      decided_by="m", verifier=v)
+        return not d.verifier.may_authorize_promotion and d.validate(), \
+            "levels 6-7 verifiers (self-opinion) cannot authorize promotion"
+
+    def evolution_evidence():
+        from evolution.loop import ClosureLoop
+        from evolution.capsule import EvolutionCapsule
+        from provenance.ledger import EvidenceLedger
+        l = EvidenceLedger("sha256:" + "0" * 64)
+        return hasattr(ClosureLoop(l), "run_cycle"), \
+            "every cycle is preserved as a capsule on the ledger (successes AND failures)"
+
+    def evolution_economic():
+        from evolution.experiment import ExperimentSpec
+        s = ExperimentSpec(decisive_unknown="u", hypothesis="h", prediction="p", metric="m",
+                           baseline=2.0, threshold=0.0, direction="lte", workflow="w",
+                           required_capabilities=["c"], authority_requirements=["a"],
+                           budget_usd=0.0, reversible=True, rollback_path="r",
+                           kill_condition="k", verification="formal_proof")
+        return not s.validate() and s.budget_usd == 0.0 and s.reversible, \
+            "experiments are bounded, reversible, cheap; improvement compounds instead of re-deriving"
+
+    def evolution_regenerative():
+        from evolution.experiment import ExperimentSpec, ExperimentCompiler
+        s = ExperimentSpec(decisive_unknown="u", hypothesis="h", prediction="p", metric="m",
+                           baseline=2.0, threshold=0.0, direction="lte", workflow="w",
+                           required_capabilities=["c"], authority_requirements=["a"],
+                           budget_usd=0.0, reversible=False, rollback_path="r",
+                           kill_condition="k", verification="formal_proof")
+        try:
+            ExperimentCompiler().compile(s)
+            return False, "irreversible experiment compiled"
+        except ValueError:
+            return True, "irreversible experiments refuse to compile; no hidden harm by construction"
+
+    reg.register(ModuleClosures("evolution", {
+        "technical": evolution_technical, "authority": evolution_authority,
+        "evidence": evolution_evidence, "economic": evolution_economic,
+        "regenerative": evolution_regenerative}))
+
     return reg

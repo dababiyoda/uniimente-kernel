@@ -33,6 +33,19 @@ from uniimente_kernel.context_packet import (
     ContextPacketData,
     build_packet,
 )
+from uniimente_kernel.evolution import (
+    BRANCH_ARCHETYPES,
+    CLOSURE_STATES,
+    ClosureController,
+    EvolutionCapsule,
+    EvolutionError,
+    ExperimentSpec,
+    RetainRegressKillDecision,
+    SpiderWebAudit,
+    StrategyBranch,
+    StrategyTree,
+    VerifierRecord,
+)
 from uniimente_kernel.events import (
     Event,
     EventSpine,
@@ -68,9 +81,15 @@ __all__ = [
     "ContextPacketData",
     "DEFAULT_CONSTITUTION_PATHS",
     "DecisionLedger",
+    "BRANCH_ARCHETYPES",
+    "CLOSURE_STATES",
+    "ClosureController",
     "Event",
     "EventSpine",
     "EventValidationError",
+    "EvolutionCapsule",
+    "EvolutionError",
+    "ExperimentSpec",
     "GateError",
     "GateResult",
     "GrantRecord",
@@ -82,8 +101,13 @@ __all__ = [
     "PostconditionResult",
     "PromptFirewall",
     "VALIDATION_STATUSES",
+    "VerifierRecord",
     "RateGovernor",
+    "RetainRegressKillDecision",
     "RawVault",
+    "SpiderWebAudit",
+    "StrategyBranch",
+    "StrategyTree",
     "action_fingerprint",
     "build_packet",
     "contracts",
@@ -91,4 +115,4 @@ __all__ = [
     "validate_event_dict",
 ]
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"

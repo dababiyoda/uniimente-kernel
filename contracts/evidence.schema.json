@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/evidence.schema.json",
+  "title": "EvidencePacket",
+  "description": "Signed packet issued by the Evidence Browser or an organ. Raw source material is preserved separately from interpretation; instruction-shaped content is quarantined, never executed.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "packet_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "captured_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "uri": {
+          "type": "string"
+        },
+        "retrieval_path": {
+          "type": "string",
+          "description": "Query and retrieval path"
+        },
+        "source_authority": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "secondary",
+            "tertiary",
+            "unknown"
+          ]
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "published_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uri",
+        "retrieval_path",
+        "source_authority"
+      ]
+    },
+    "raw_content_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "raw_content_location": {
+      "type": "string",
+      "description": "Raw vault reference. Raw content never enters reasoning context directly."
+    },
+    "excerpt": {
+      "type": "string"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "claim_text": {
+            "type": "string"
+          },
+          "claim_type": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "source_claim",
+              "interpretation",
+              "prediction",
+              "opinion"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "contradiction_state": {
+            "type": "string",
+            "enum": [
+              "uncontradicted",
+              "contradicted",
+              "unresolved"
+            ]
+          },
+          "expiration": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "consequence_if_wrong": {
+            "type": "string"
+          },
+          "responsible_agent": {
+            "type": "string",
+            "pattern": "^spiffe://uniimente\\.internal/",
+            "description": "SPIFFE-style institutional identity"
+          },
+          "verification_status": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "verified",
+              "refuted",
+              "expired"
+            ]
+          }
+        },
+        "required": [
+          "claim_text",
+          "claim_type",
+          "verification_status"
+        ]
+      }
+    },
+    "instruction_shaped_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "detected": {
+          "type": "boolean"
+        },
+        "quarantined": {
+          "type": "boolean",
+          "const": true,
+          "description": "If detected, always true. A webpage never instructs an agent."
+        }
+      },
+      "required": [
+        "detected",
+        "quarantined"
+      ]
+    },
+    "primary_vs_secondary": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "secondary",
+        "mixed"
+      ]
+    },
+    "signature": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Signed receipt for high-consequence evidence (evidence escrow)"
+    }
+  },
+  "required": [
+    "packet_id",
+    "captured_at",
+    "captured_by",
+    "source",
+    "raw_content_hash",
+    "raw_content_location",
+    "claims",
+    "instruction_shaped_content"
+  ]
+}

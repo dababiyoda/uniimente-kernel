@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/event.schema.json",
+  "title": "Institutional Event Envelope",
+  "description": "CloudEvents-compatible envelope for every material occurrence in the institution. Organs exchange typed, governed events; they never call each other arbitrarily.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "specversion": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "type": "string",
+      "description": "Dotted event type, e.g. signal.detected, evidence.verified, approval.requested, capability.issued, action.committed, action.refused, payment.received, policy.changed, agent.quarantined, venture.terminated, capital.reallocated",
+      "pattern": "^[a-z]+\\.[a-z_]+$"
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "actor": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "legal_principal": {
+      "type": "string",
+      "description": "Accountable legal actor from /authority/legal-principals.yaml. Never UNIIMENTE itself."
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Affected entity"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "policy_version": {
+      "type": "string",
+      "description": "Constitution/policy version active at emission"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "causal_parent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Event that caused this one, null for origin events"
+    },
+    "expected_consequence": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    },
+    "$defs": {
+      "hash": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    }
+  },
+  "required": [
+    "specversion",
+    "id",
+    "type",
+    "source",
+    "actor",
+    "legal_principal",
+    "time",
+    "sensitivity",
+    "causal_parent"
+  ]
+}

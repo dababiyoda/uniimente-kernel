@@ -1,0 +1,49 @@
+{
+  "version": "v2",
+  "created_utc": "2026-07-20T00:00:00Z",
+  "source": "Build document: '100% buildable / 100% sci-fi level' + UNIIMENTE Final Plan objective (13 orthogonal loops, 14-condition buildability standard)",
+  "checks": [
+    {
+      "id": "V1",
+      "rule": "v1 canonical artifact checks still pass (full passthrough when all v1 files present; SKIP-missing on partial mirrors)"
+    },
+    {
+      "id": "V2",
+      "rule": "All executable unit tests pass: python3 -m pytest tests/unit -q"
+    },
+    {
+      "id": "V3",
+      "rule": "Every registered module closes all five orthogonal closures (technical, authority, evidence, economic, regenerative)"
+    },
+    {
+      "id": "V4",
+      "rule": "Whole-Body Closure Controller: detects FALSELY_CLOSED on a synthetic false-closure case and reports CLOSED for the Consequence Gate's applicable loops"
+    },
+    {
+      "id": "V5",
+      "rule": "Every built module README declares the 14-condition buildability standard",
+      "keywords": [
+        "existing mechanism",
+        "defined interface",
+        "bounded authority",
+        "available dependencies",
+        "security model",
+        "failure modes",
+        "acceptance tests",
+        "recovery path",
+        "resource ceiling",
+        "operating cost",
+        "legal operator",
+        "handoff",
+        "replaceable"
+      ],
+      "module_readmes": [
+        "compiler/README.md",
+        "identity/README.md",
+        "policy/README.md",
+        "provenance/README.md",
+        "closure/README.md"
+      ]
+    }
+  ]
+}

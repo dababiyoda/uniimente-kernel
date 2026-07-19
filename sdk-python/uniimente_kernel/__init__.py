@@ -27,6 +27,12 @@ from uniimente_kernel.context_packet import (
     ContextPacketData,
     build_packet,
 )
+from uniimente_kernel.events import (
+    Event,
+    EventSpine,
+    EventValidationError,
+    validate_event_dict,
+)
 from uniimente_kernel.heartbeat import Heartbeat
 from uniimente_kernel.ledger import (
     DecisionLedger,
@@ -47,6 +53,9 @@ __all__ = [
     "ContextPacketData",
     "DEFAULT_CONSTITUTION_PATHS",
     "DecisionLedger",
+    "Event",
+    "EventSpine",
+    "EventValidationError",
     "GrantRecord",
     "GrantStore",
     "Heartbeat",
@@ -59,6 +68,7 @@ __all__ = [
     "build_packet",
     "contracts",
     "default_ledger_path",
+    "validate_event_dict",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"

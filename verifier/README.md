@@ -12,3 +12,6 @@ Measures everything v2 measures (C1-C9), plus C10: sdk-python pip-installs and i
 
 ## v4 — 2026-07-19T16:53:26.156683+00:00
 Measures everything v3 measures, with C1/C2 extended to the two Phase 3 wire contracts (`venture-signal`, `signal-assessment`), plus C11: parity between `uniimente_kernel.contracts` and the wire schema files (enums, schema_version consts, requires_human_approval const, institutional verdict enum), run by `verifier/verify_contracts.py`. Added when the mirrored organ protocol modules were unified into the kernel SDK (v0.5.0).
+
+## v5 — 2026-07-19T17:42:32.444220+00:00
+Measures everything v4 measures, plus C12: parity between `uniimente_kernel.events` and `contracts/event.schema.json` (field/required sets, sensitivity enum, specversion const, type/SPIFFE/hash patterns, confidence bounds) and a behavioral spine check — emitted events hash-chain verify, causal walks reach the origin event, replay filters by type, and hostile envelopes (unknown fields, non-SPIFFE identities, non-sha256 evidence refs, empty legal principal) are rejected. Run by `verifier/verify_events.py`. Added when the Phase 4 event spine entered the kernel SDK (v0.6.0).

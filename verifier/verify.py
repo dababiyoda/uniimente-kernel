@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Verifier v1 for uniimente-kernel canonical artifacts. Exit 0 = pass."""
+"""Verifier for uniimente-kernel canonical artifacts. Exit 0 = pass.
+
+Usage: verify.py [criteria-path]. Defaults to the newest verifier/vN criteria.
+"""
 import os, sys, json, glob, datetime
 
 ROOT = os.path.dirname(os.path.abspath(__file__)) + "/.."
@@ -11,7 +14,9 @@ failures, passes = [], []
 def check(cid, ok, msg):
     (passes if ok else failures).append(f"{cid}: {msg}")
 
-crit = json.load(open("verifier/v1/criteria.json"))
+crit_path = sys.argv[1] if len(sys.argv) > 1 else sorted(glob.glob("verifier/v*/criteria.json"))[-1]
+crit = json.load(open(crit_path))
+print(f"criteria: {crit_path}")
 
 # C1: existence
 missing = [f for f in crit["checks"][0]["files"] if not (os.path.isfile(f) and os.path.getsize(f) > 0)]
@@ -29,7 +34,12 @@ for f in glob.glob("contracts/*.schema.json"):
     except Exception as e:
         bad.append(f"{f}: {e}")
 schemas = glob.glob("contracts/*.schema.json")
-check("C2", not bad and len(schemas) == 9, "; ".join(bad) if bad else f"{len(schemas)} valid 2020-12 schemas")
+expected_schemas = crit["checks"][1].get("files")
+count_ok = len(schemas) == len(expected_schemas) if expected_schemas else len(schemas) == 9
+set_ok = sorted(schemas) == sorted(expected_schemas) if expected_schemas else True
+check("C2", not bad and count_ok and set_ok,
+      "; ".join(bad) if bad else (f"{len(schemas)} valid 2020-12 schemas" if count_ok and set_ok
+      else f"schema set mismatch: on-disk {sorted(schemas)} vs criteria {sorted(expected_schemas or [])}"))
 
 # C3: YAML parse
 try:
@@ -77,7 +87,7 @@ for f_ in failures: print("FAIL", f_)
 status = "PASS" if not failures else "FAIL"
 run = {
   "ts_utc": datetime.datetime.now(datetime.UTC).isoformat(),
-  "command": "python3 verifier/verify.py",
+  "command": "python3 verifier/verify.py " + crit_path,
   "exit_code": 0 if not failures else 1,
   "passes": passes, "failures": failures,
 }

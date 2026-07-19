@@ -1,0 +1,11 @@
+{
+  "ts_utc": "2026-07-19T15:40:04.625104+00:00",
+  "command": "python3 verifier/verify_sdk.py",
+  "exit_code": 0,
+  "passes": [
+    "C9-compile: sdk-python compiles",
+    "C9-tests: OK"
+  ],
+  "failures": [],
+  "test_output_tail": ".........................Kill switch ARMED (human ceremony)\nKill switch DISARMED (test over)\n..........\n----------------------------------------------------------------------\nRan 35 tests in 0.020s\n\nOK\n"
+}

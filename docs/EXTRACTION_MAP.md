@@ -4,10 +4,10 @@ Surveyed 2026-07-19 against `dababiyoda/DALEOBANKS` main (`829c5f2`). Each row i
 
 | DALEOBANKS module | Mechanism | Kernel target | Coupling to remove | Status |
 |---|---|---|---|---|
-| `services/ledger.py` | Hash-chained decision ledger, kill switch, rate governor | `sdk-python/uniimente_kernel/ledger.py` | `config` import, `logging_utils` | **Extracted in this PR** |
-| `services/raw_vault.py` | Raw evidence preservation with hashes | `provenance/raw_vault.py` | storage paths | Next |
-| `services/capability.py` | Capability grants | `sdk-python/uniimente_kernel/capability.py` | align to `contracts/capability-grant.schema.json` | Next |
-| `services/prompt_firewall.py` | Prompt-injection defense | `sdk-python/uniimente_kernel/prompt_firewall.py` | persona-specific rules stay in organ | Planned |
+| `services/ledger.py` | Hash-chained decision ledger, kill switch, rate governor | `sdk-python/uniimente_kernel/ledger.py` | `config` import, `logging_utils` | **Extracted in PR #11** |
+| `services/raw_vault.py` | Raw evidence preservation with hashes | `sdk-python/uniimente_kernel/raw_vault.py` | `logging_utils`; adds per-record sha256 | **Extracted in this PR** |
+| `services/capability.py` | Capability grants | `sdk-python/uniimente_kernel/capability.py` | ORM to GrantStore protocol; aligned to `contracts/capability-grant.schema.json` | **Extracted in this PR** |
+| `services/prompt_firewall.py` | Prompt-injection defense | `sdk-python/uniimente_kernel/prompt_firewall.py` | persona-specific rules stay in organ | Next |
 | `services/context_packet.py` | ContextPacket builder | `sdk-python/uniimente_kernel/context_packet.py` | align to `contracts/context-packet.schema.json` | Planned |
 | `services/constitution.py` | Constitution integrity check | `policy/constitution_check.py` | point at kernel `/constitution` hash | Planned |
 | `services/heartbeat.py` | Supervision and automatic disarm | `observability/heartbeat.py` | organ-specific intervals to config | Planned |

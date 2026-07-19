@@ -68,10 +68,17 @@ class PolicyDecision:
 
 def evaluate(compiled: CompiledConstitution, proposal: Proposal,
              *, identity_ok: bool, grant: dict | None,
-             now: datetime | None = None) -> PolicyDecision:
+             now: datetime | None = None,
+             thresholds: dict | None = None) -> PolicyDecision:
     """Evaluate a proposal. Pure function of (compiled doctrine, proposal,
-    identity verdict, current grant). Deny by default."""
+    identity verdict, current grant). Deny by default.
+
+    thresholds: optional evidence-floor override per consequence class
+    (defaults to EVIDENCE_THRESHOLDS). Evolution cycles may test candidate
+    floors in simulation; production floors change only by ratified policy.
+    """
     now = now or datetime.now(timezone.utc)
+    floors = thresholds or EVIDENCE_THRESHOLDS
     reasons: list[str] = []
     missing: list[str] = []
     law: list[str] = []
@@ -148,7 +155,7 @@ def evaluate(compiled: CompiledConstitution, proposal: Proposal,
     law.append("capability-grant.schema.json")
 
     # Evidence sufficiency.
-    floor = EVIDENCE_THRESHOLDS.get(proposal.consequence_class, 1.0)
+    floor = floors.get(proposal.consequence_class, 1.0)
     if proposal.evidence_confidence < floor:
         reasons.append(f"evidence confidence {proposal.evidence_confidence:.2f} below floor {floor:.2f} "
                        f"for {proposal.consequence_class}")

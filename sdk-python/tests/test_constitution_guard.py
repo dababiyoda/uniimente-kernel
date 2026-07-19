@@ -43,6 +43,14 @@ class TestConstitutionGuard(unittest.TestCase):
         self.assertEqual(self.applied, [False])
         self.assertEqual(len(self.ledger.replay(event="constitution_tampered")), 1)
 
+    def test_single_file_hash_is_plain_digest(self):
+        # Organ compatibility: a one-file constitution records the plain
+        # file hash, matching DALEOBANKS' original single-file guard.
+        import hashlib
+        h = self.guard.load_and_record()
+        with open(self.path, "rb") as f:
+            self.assertEqual(h, hashlib.sha256(f.read()).hexdigest())
+
     def test_missing_file_ledgers(self):
         guard = ConstitutionGuard([os.path.join(self.dir.name, "nope.ucl")],
                                   ledger=self.ledger, kill_switch=self.sw)

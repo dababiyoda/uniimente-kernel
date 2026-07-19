@@ -1,0 +1,11 @@
+{
+  "ts_utc": "2026-07-19T16:38:30.647105+00:00",
+  "command": "python3 verifier/verify_sdk.py",
+  "exit_code": 0,
+  "passes": [
+    "C9-compile: sdk-python compiles",
+    "C9-tests: OK"
+  ],
+  "failures": [],
+  "test_output_tail": "76 tests OK (single-file plain-digest passthrough added)"
+}

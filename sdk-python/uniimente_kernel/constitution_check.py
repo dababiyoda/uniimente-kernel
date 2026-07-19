@@ -67,13 +67,19 @@ class ConstitutionGuard:
             return f.read()
 
     def combined_hash(self) -> Optional[str]:
-        """One hash over every watched file, in declared order."""
+        """One hash over every watched file, in declared order.
+
+        A single watched file hashes to its own plain digest. This keeps
+        one-file organs (DALEOBANKS' constitution.md) byte-compatible with
+        their pre-kernel guard; multiple files combine as before."""
         digests = []
         for path in self.paths:
             h = _hash_file(path)
             if h is None:
                 return None
             digests.append(h)
+        if len(digests) == 1:
+            return digests[0]
         return hashlib.sha256("".join(digests).encode("utf-8")).hexdigest()
 
     def load_and_record(self) -> Optional[str]:

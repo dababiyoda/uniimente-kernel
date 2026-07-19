@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/decision.schema.json",
+  "title": "DecisionRecord",
+  "description": "A resolved choice with rationale, authority, reversibility, evidence, and reconsideration conditions. The append-only unit of decision memory.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "decider": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "legal_principal": {
+      "type": "string",
+      "description": "Accountable legal actor from /authority/legal-principals.yaml. Never UNIIMENTE itself."
+    },
+    "objective": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    },
+    "options_considered": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "chosen": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "counterfactual_memory": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alternatives rejected, deferred, or invalidated, with reasons"
+    },
+    "dissenting_analysis": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Adversarial organ's case against; preserved even when overruled"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "policy_version": {
+      "type": "string"
+    },
+    "affect_vector_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Active affect state hash at decision time"
+    },
+    "reversibility": {
+      "type": "string",
+      "enum": [
+        "reversible",
+        "costly_to_reverse",
+        "irreversible"
+      ]
+    },
+    "reconsideration_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authority_chain": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^spiffe://uniimente\\.internal/",
+        "description": "SPIFFE-style institutional identity"
+      },
+      "minItems": 1
+    },
+    "expected_outcome": {
+      "type": "string"
+    },
+    "ledger_prev_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "$defs": {
+      "hash": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    }
+  },
+  "required": [
+    "decision_id",
+    "decided_at",
+    "decider",
+    "legal_principal",
+    "objective",
+    "question",
+    "options_considered",
+    "chosen",
+    "rationale",
+    "evidence_refs",
+    "policy_version",
+    "reversibility",
+    "authority_chain",
+    "expected_outcome",
+    "ledger_prev_hash"
+  ]
+}

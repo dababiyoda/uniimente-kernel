@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/outcome.schema.json",
+  "title": "OutcomeRecord",
+  "description": "What actually happened, including negative and zero responses. An executed action without its outcome record is incomplete and blocks autonomy promotion. Zero response is a negative result, never an absence.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "outcome_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "action_ref": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The committed action this records"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "recorded_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "external_observation": {
+      "type": "string",
+      "description": "What reality produced, observed externally where possible"
+    },
+    "result_class": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "negative",
+        "zero_response",
+        "inconclusive",
+        "harm"
+      ]
+    },
+    "expected_vs_actual": {
+      "type": "string"
+    },
+    "metrics": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hash"
+      }
+    },
+    "learning": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "System update produced: doctrine, workflow, permission, model, procedure, allocation, or architecture change"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "externally_verified",
+        "internally_observed",
+        "self_reported"
+      ]
+    },
+    "feeds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "causal_memory",
+          "portfolio_governor",
+          "belief_history",
+          "calibration",
+          "charter_review"
+        ]
+      }
+    },
+    "$defs": {
+      "hash": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    }
+  },
+  "required": [
+    "outcome_id",
+    "action_ref",
+    "recorded_at",
+    "recorded_by",
+    "external_observation",
+    "result_class",
+    "expected_vs_actual",
+    "validation_status"
+  ]
+}

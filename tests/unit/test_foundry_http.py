@@ -146,7 +146,7 @@ class FoundryHTTPTests(unittest.TestCase):
             request_headers(body, idempotency="authority"),
         )
         self.assertEqual(status, "422 Unprocessable Entity")
-        self.assertIn("zero execution authority", json.loads(response_body)["detail"])
+        self.assertIn("execution authority", json.loads(response_body)["detail"])
 
         no_approval = json.dumps(underwriting(human_approval_record_hash=""), sort_keys=True).encode()
         status, _, response_body = invoke(

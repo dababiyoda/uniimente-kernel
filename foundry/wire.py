@@ -27,7 +27,8 @@ def opportunity_from_underwriting_wire(payload: Mapping[str, Any]) -> Opportunit
 
     The wire is untrusted. A model score, a `go` recommendation, or a claimed
     readiness bit can never compensate for missing commercial facts, blocking
-    cases, absent evidence, or a widened execution boundary.
+    cases, absent evidence, missing human approval provenance, or a widened
+    execution boundary.
     """
     if not isinstance(payload, Mapping):
         raise FoundryError("underwriting payload must be an object")
@@ -52,6 +53,7 @@ def opportunity_from_underwriting_wire(payload: Mapping[str, Any]) -> Opportunit
     assessment_id = _require_text(payload, "assessment_id")
     packet_digest = _require_sha256(payload, "packet_digest")
     assessment_digest = _require_sha256(payload, "assessment_digest")
+    approval_record_hash = _require_sha256(payload, "human_approval_record_hash")
     observed_pain = str(payload.get("observed_pain") or "").strip()
     core_thesis = str(payload.get("core_thesis") or "").strip()
     if not observed_pain and not core_thesis:
@@ -93,6 +95,7 @@ def opportunity_from_underwriting_wire(payload: Mapping[str, Any]) -> Opportunit
         constraints=(
             f"packet_digest={packet_digest}",
             f"assessment_digest={assessment_digest}",
+            f"human_approval_record_hash={approval_record_hash}",
             f"risk_level={str(payload.get('risk_level') or 'unknown')}",
             f"legal_readiness={str(payload.get('legal_readiness') or 'unknown')}",
         ),

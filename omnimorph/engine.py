@@ -7,9 +7,11 @@ from typing import Any, Protocol
 
 from foundry.contracts import AdvantageArchitecture, ExternalOutcome, FoundryError
 
+
 class GenomeRegistryLike(Protocol):
     def get(self, name: str, version: str) -> Any: ...
     def may_instantiate(self, name: str, version: str, *, requested_class: str, requested_budget_usd: float) -> tuple[bool, str]: ...
+
 
 @dataclass(frozen=True)
 class CapabilityBinding:
@@ -17,6 +19,7 @@ class CapabilityBinding:
     version: str
     requested_class: str
     budget_usd: float
+
 
 @dataclass(frozen=True)
 class OrganManifest:
@@ -37,11 +40,13 @@ class OrganManifest:
         raw = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, separators=(",", ":"))
         return "sha256:" + sha256(raw.encode()).hexdigest()
 
+
 @dataclass(frozen=True)
 class SimulationReport:
     manifest_hash: str
     passed: bool
     reasons: tuple[str, ...]
+
 
 @dataclass(frozen=True)
 class RatificationRecord:
@@ -50,17 +55,45 @@ class RatificationRecord:
     signature_ref: str
     expires_at: str
 
+
 @dataclass(frozen=True)
 class ActivationProposal:
     manifest_hash: str
     status: str = "PROPOSED_NOT_EXECUTED"
     gate_receipt_hash: str | None = None
 
+
 @dataclass
 class OmnimorphEngine:
     registry: GenomeRegistryLike
     max_budget_usd: float = 10_000.0
+    ledger: Any | None = None
     active: dict[str, ActivationProposal] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.ledger is not None:
+            self.rebuild_from_ledger()
+
+    def _record(self, event_type: str, payload: dict) -> None:
+        if self.ledger is not None:
+            self.ledger.append("event", {"type": event_type, **payload})
+
+    def rebuild_from_ledger(self) -> None:
+        self.active.clear()
+        for record in self.ledger.by_type("event"):
+            payload = record.payload
+            event_type = payload.get("type")
+            organ_id = payload.get("organ_id")
+            if not organ_id:
+                continue
+            if event_type == "omnimorph.activation_proposed":
+                self.active[organ_id] = ActivationProposal(payload["manifest_hash"])
+            elif event_type == "omnimorph.gate_activation_recorded":
+                self.active[organ_id] = ActivationProposal(
+                    payload["manifest_hash"],
+                    status="GATE_ACTIVATED",
+                    gate_receipt_hash=payload["gate_receipt_hash"],
+                )
 
     def compose(
         self,
@@ -97,7 +130,7 @@ class OmnimorphEngine:
             raise FoundryError("organ aggregate budget exceeds OMNIMORPH ceiling")
         seed = f"{architecture.digest}|{objective}|{expires_at}|{len(bindings)}"
         organ_id = "organ-" + sha256(seed.encode()).hexdigest()[:16]
-        return OrganManifest(
+        manifest = OrganManifest(
             organ_id=organ_id,
             architecture_hash=architecture.digest,
             objective=objective,
@@ -109,6 +142,14 @@ class OmnimorphEngine:
             kill_conditions=architecture.kill_conditions,
             state_namespace=f"omnimorph:{organ_id}",
         )
+        self._record("omnimorph.manifest_composed", {
+            "organ_id": manifest.organ_id,
+            "manifest_hash": manifest.digest,
+            "architecture_hash": manifest.architecture_hash,
+            "capabilities": [f"{binding.capability}@{binding.version}" for binding in manifest.bindings],
+            "aggregate_budget_usd": manifest.aggregate_budget_usd,
+        })
+        return manifest
 
     def simulate(self, manifest: OrganManifest) -> SimulationReport:
         reasons: list[str] = []
@@ -120,7 +161,14 @@ class OmnimorphEngine:
             reasons.append("budget_ceiling_exceeded")
         if not manifest.kill_conditions:
             reasons.append("kill_conditions_missing")
-        return SimulationReport(manifest.digest, not reasons, tuple(reasons))
+        report = SimulationReport(manifest.digest, not reasons, tuple(reasons))
+        self._record("omnimorph.simulation_completed", {
+            "organ_id": manifest.organ_id,
+            "manifest_hash": manifest.digest,
+            "passed": report.passed,
+            "reasons": list(report.reasons),
+        })
+        return report
 
     def propose_activation(self, manifest: OrganManifest, simulation: SimulationReport, ratification: RatificationRecord) -> ActivationProposal:
         if not simulation.passed or simulation.manifest_hash != manifest.digest:
@@ -133,16 +181,29 @@ class OmnimorphEngine:
             raise FoundryError("founder or authorized human signature reference required")
         proposal = ActivationProposal(manifest.digest)
         self.active[manifest.organ_id] = proposal
+        self._record("omnimorph.activation_proposed", {
+            "organ_id": manifest.organ_id,
+            "manifest_hash": manifest.digest,
+            "ratifier": ratification.ratifier,
+            "ratification_signature_ref": ratification.signature_ref,
+            "status": proposal.status,
+        })
         return proposal
 
     def record_gate_activation(self, manifest: OrganManifest, receipt_hash: str) -> ActivationProposal:
         current = self.active.get(manifest.organ_id)
         if current is None:
             raise FoundryError("no activation proposal exists")
-        if not receipt_hash.startswith("sha256:"):
+        if not receipt_hash.startswith("sha256:") or len(receipt_hash) != 71:
             raise FoundryError("canonical Consequence Gate receipt hash required")
         activated = ActivationProposal(manifest.digest, status="GATE_ACTIVATED", gate_receipt_hash=receipt_hash)
         self.active[manifest.organ_id] = activated
+        self._record("omnimorph.gate_activation_recorded", {
+            "organ_id": manifest.organ_id,
+            "manifest_hash": manifest.digest,
+            "gate_receipt_hash": receipt_hash,
+            "status": activated.status,
+        })
         return activated
 
     @staticmethod

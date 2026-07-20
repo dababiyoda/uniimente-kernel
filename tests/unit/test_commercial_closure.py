@@ -2,11 +2,34 @@ import unittest
 
 from foundry import (
     AdvantageFoundry, CapabilityNeed, CommercialClosureCompiler, CommercialStage,
-    FoundryError,
+    FoundryError, OpportunitySpec, StrategyBranch, STRATEGY_ROUTES,
 )
 from provenance.ledger import EvidenceLedger
 
-from tests.unit.test_foundry_omnimorph import branches, opportunity
+
+def opportunity():
+    return OpportunitySpec(
+        opportunity_id="opp-1", buyer="buyer", beneficiary="user", pain_owner="ops",
+        budget_owner="cfo", recurring_transaction="verify workflow", broken_state="proof missing",
+        trapped_value_usd=10000, accepted_artifact="verification receipt",
+        external_consequence="buyer changes workflow", lawful_path="paid pilot",
+        evidence_refs=("sha256:" + "a" * 64,),
+    )
+
+
+def branches():
+    return [
+        StrategyBranch(
+            route=route, mechanism=f"mechanism-{route}", governing_assumption="buyer cares",
+            strongest_counterargument="status quo may be sufficient",
+            cheapest_falsification_test="ask for a paid pilot", kill_condition="no commitment",
+            cost_usd=10 + index, time_to_proof_days=1 + index,
+            expected_value_usd=1000 + index * 100, reversibility=1.0,
+            evidence_quality=0.8, founder_hours=1.0,
+            required_capabilities=("research.read",),
+        )
+        for index, route in enumerate(STRATEGY_ROUTES)
+    ]
 
 
 def architecture():
@@ -15,9 +38,7 @@ def architecture():
     return foundry.compile_architecture(
         opportunity(), winner,
         (CapabilityNeed("research.read", "research", ("request",), ("result",), "read_only", 10),),
-        control_surface="proof",
-        success_metrics=("payment",),
-        kill_conditions=("no buyer",),
+        control_surface="proof", success_metrics=("payment",), kill_conditions=("no buyer",),
     )
 
 
@@ -107,9 +128,7 @@ class CommercialClosureTests(unittest.TestCase):
         )
         with self.assertRaises(FoundryError):
             compiler.mark_genome_sealed(
-                case.case_id,
-                genome_key="audit@1",
-                actor="alfonso_lopez",
+                case.case_id, genome_key="audit@1", actor="alfonso_lopez",
                 seal_record_hash="sha256:" + "f" * 64,
             )
 
@@ -123,9 +142,7 @@ class CommercialClosureTests(unittest.TestCase):
             evidence_ref="decision:1", human_approval_ref="approval:4",
         )
         compiler.mark_genome_sealed(
-            case.case_id,
-            genome_key="audit@1.0.0",
-            actor="alfonso_lopez",
+            case.case_id, genome_key="audit@1.0.0", actor="alfonso_lopez",
             seal_record_hash="sha256:" + "f" * 64,
         )
         restarted = CommercialClosureCompiler(ledger)

@@ -22,6 +22,7 @@ def underwriting(**overrides):
         "packet_digest": "sha256:" + "a" * 64,
         "assessment_id": "assessment-1",
         "assessment_digest": "sha256:" + "b" * 64,
+        "human_approval_record_hash": "sha256:" + "d" * 64,
         "observed_pain": "proof is unreliable",
         "core_thesis": "verified proof may reduce disputes",
         "go_no_go": "go",
@@ -137,7 +138,7 @@ class FoundryHTTPTests(unittest.TestCase):
             "401 Unauthorized",
         )
 
-    def test_valid_signature_cannot_widen_execution_authority(self):
+    def test_valid_signature_cannot_widen_authority_or_omit_approval(self):
         body = json.dumps(underwriting(execution_authority="launch"), sort_keys=True).encode()
         status, _, response_body = invoke(
             self.app,
@@ -146,6 +147,15 @@ class FoundryHTTPTests(unittest.TestCase):
         )
         self.assertEqual(status, "422 Unprocessable Entity")
         self.assertIn("zero execution authority", json.loads(response_body)["detail"])
+
+        no_approval = json.dumps(underwriting(human_approval_record_hash=""), sort_keys=True).encode()
+        status, _, response_body = invoke(
+            self.app,
+            no_approval,
+            request_headers(no_approval, idempotency="approval"),
+        )
+        self.assertEqual(status, "422 Unprocessable Entity")
+        self.assertIn("human_approval_record_hash", json.loads(response_body)["detail"])
 
     def test_bad_signature_and_oversized_body_are_rejected(self):
         body = json.dumps(underwriting(), sort_keys=True).encode()

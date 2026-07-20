@@ -102,12 +102,6 @@
       "type": "string",
       "pattern": "^spiffe://uniimente\\.internal/",
       "description": "SPIFFE-style institutional identity"
-    },
-    "$defs": {
-      "hash": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
-      }
     }
   },
   "required": [
@@ -121,5 +115,11 @@
     "kill_conditions",
     "created_at",
     "approved_by"
-  ]
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
 }

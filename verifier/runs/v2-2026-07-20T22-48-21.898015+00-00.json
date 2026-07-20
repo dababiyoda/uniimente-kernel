@@ -1,0 +1,15 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-07-20T22:48:21.898015+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 0,
+  "passes": [
+    "V1: all v1 canonical artifacts present (45/45)",
+    "V2: pytest tests/unit: 228 passed in 2.38s",
+    "V3: all modules closed: autonomy, business, capabilities, compiler, consequence_gate, embassy, events, evidence_ledger, evolution, foundry, identity, loom, memory, proof, treasury, twins",
+    "V4: false closure -> FALSELY_CLOSED; gate applicable loops -> CLOSED",
+    "V5: 16 module READMEs declare the 14-condition buildability standard"
+  ],
+  "skips": [],
+  "failures": []
+}

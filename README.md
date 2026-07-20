@@ -35,7 +35,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/contracts` | Versioned JSON Schemas shared by every organ: events, evidence, decisions, outcomes, capability grants, packets, charters |
 | `/identity` | Organ registry, agent registry, service identities (SPIFFE-style) + executable machine passports (Layer 2) |
 | `/affect` | Functional affect policy: bounded machine control states, identity coherence, pathological-state tests |
-| `/capital` | Allocation waterfall, liquidity policy, concentration limits, acquisition gates |
+| `/capital` | Regenerative Treasury: the 11-tier allocation waterfall (declarative law + executable metabolism), double-entry books, regenerative debt that blocks promotion/expansion/replication; liquidity policy, concentration limits, acquisition gates |
 | `/workflows` | Approval lifecycle, venture validation gates, incident response, shutdown recovery |
 | `/tests` | Governance laboratory: constitutional, authority, capital, security, recovery, provenance test specifications + `/tests/unit` executable suites |
 | `/compiler` | UCL compiler (Layer 1): doctrine → deterministic policy decisions, relationship tuples, invariants, grant contract |
@@ -50,6 +50,8 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
 | `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
+| `/foundry` | AI Influencer Company Foundry + Rabbit Hole Engine (Phase 6): chartered synthetic media companies, Territory Graphs, gate-mediated publishing, informed-return distribution |
+| `/business` | Digital Business Foundry (Phase 7): Business Genome Compiler + the Commercial Loop with gate-mediated payment and delivery |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
@@ -64,9 +66,15 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+**Phase 6 — AI Influencer Company Foundry + Rabbit Hole Engine: executable and verified (2026-07-20).** Synthetic media companies are chartered artifacts, not accounts: identity, visual canon, editorial constitution (8 required rules — no outrage optimization, no exploitation of vulnerable attention, no fear-based retention hooks, standing correction obligation, synthetic disclosure always), narrative world, owned hub, subscriber list, product, community. Charters are hash-bound to human ratification (an edited charter is an unratified charter); every publish routes through the Consequence Gate. Territory Graphs decompose a domain into a DAG of questions with explicit doors, exactly one owned exit onto owned ground, Reality Gradient evidence levels, and a public correction layer — stale, weak, or retired nodes refuse to publish. The Distribution Loop measures informed return (useful actions per returning visitor, never watch time); impressions-without-relationships evaluates FALSELY_CLOSED and impression growth with zero behavior change trips the organ's kill condition.
 
-Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+**Phase 7 — Digital Business Foundry: executable and verified (2026-07-20).** The Business Genome Compiler refuses incomplete genomes, negative margins, missing demand evidence, capabilities the institution does not hold, and unratified workflows — refusals preserved as negative evidence. The Commercial Loop closes in order or not at all: problem → buyer → offer → payment → delivery → verified customer outcome → retention/termination. Payment (financial) and delivery (external_contact) each run through the gate with exact-effect-bound single-use grants, their own witnesses and receipts; customer outcomes are accepted only from the strong half of the verifier hierarchy; launch without revenue is FALSELY_CLOSED; the precommitted kill condition terminates the business and preserves the failure as learning.
+
+**Regenerative Treasury: executable and verified (2026-07-20).** The 11-tier waterfall is loaded from `capital/allocation-policy.yaml` (the yaml is law; the code executes it): fund in order, never skip upward to fund downward — an underfunded tier stops the flow and the stop is recorded. Double-entry postings keep the trial balance at zero; sign games refuse. Regenerative debt (attention drain, relationship damage, externalized risk, depleted capacity) blocks autonomy promotion, budget expansion, and replication until repaid with evidence of repair.
+
+228 unit tests green. 16 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V1–V5 green; every run recorded under `verifier/runs/`).
+
+Next: organ contract consumption (issue #5; DALEOBANKS #57) and first external proof for one bounded action family (Phase 6 exit evidence: one territory published through a declared account with an owned-relationship conversion measured). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
 
 ## The doctrine
 

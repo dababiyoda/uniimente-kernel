@@ -149,6 +149,26 @@ class OmnimorphTests(unittest.TestCase):
         activated = engine.record_gate_activation(manifest, "sha256:" + "c" * 64)
         self.assertEqual(activated.status, "GATE_ACTIVATED")
 
+    def test_unregistered_or_changed_manifest_cannot_activate(self):
+        engine = OmnimorphEngine(registry())
+        manifest = engine.compose(
+            self.architecture(),
+            {"research.read": "1.0.0", "offer.compile": "1.0.0"},
+            objective="build audit organ",
+            consequence_ceiling="internal_write",
+            expires_at="2026-08-01T00:00:00Z",
+        )
+        changed = type(manifest)(**{**manifest.__dict__, "objective": "changed objective"})
+        report = engine.simulate(manifest)
+        with self.assertRaises(FoundryError):
+            engine.propose_activation(
+                changed,
+                report,
+                RatificationRecord(
+                    changed.digest, "alfonso_lopez", "sig:founder", "2026-08-01T00:00:00Z",
+                ),
+            )
+
     def test_self_ratification_refused(self):
         engine = OmnimorphEngine(registry())
         manifest = engine.compose(
@@ -198,7 +218,7 @@ class OmnimorphTests(unittest.TestCase):
 
 
 class LedgerIntegrationTests(unittest.TestCase):
-    def test_foundry_rebuilds_replay_and_genome_state(self):
+    def test_foundry_rebuilds_full_resumable_state(self):
         from provenance.ledger import EvidenceLedger
 
         ledger = EvidenceLedger("sha256:" + "0" * 64)
@@ -220,13 +240,18 @@ class LedgerIntegrationTests(unittest.TestCase):
             time_to_validated_genome_days=7, rollback="revoke",
         )
         restarted = AdvantageFoundry(ledger)
+        rebuilt_opportunity = restarted.get_opportunity(opportunity().opportunity_id)
+        rebuilt_architecture = restarted.get_architecture(architecture.architecture_id)
+        self.assertEqual(rebuilt_opportunity, opportunity())
+        self.assertEqual(rebuilt_architecture, architecture)
+        self.assertEqual(rebuilt_architecture.digest, architecture.digest)
         self.assertIsNotNone(restarted.get_genome("audit", "1.0.0"))
         changed = OpportunitySpec(**{**opportunity().__dict__, "buyer": "other"})
         with self.assertRaises(FoundryError):
             restarted.intake(changed)
         self.assertTrue(ledger.verify_chain()[0])
 
-    def test_omnimorph_rebuilds_activation_state(self):
+    def test_omnimorph_rebuilds_manifest_simulation_and_activation(self):
         from provenance.ledger import EvidenceLedger
 
         ledger = EvidenceLedger("sha256:" + "0" * 64)
@@ -248,7 +273,13 @@ class LedgerIntegrationTests(unittest.TestCase):
         )
         engine.record_gate_activation(manifest, "sha256:" + "c" * 64)
         restarted = OmnimorphEngine(registry(), ledger=ledger)
+        self.assertEqual(restarted.get_manifest(manifest.organ_id), manifest)
+        self.assertEqual(restarted.get_simulation(manifest.organ_id), report)
         self.assertEqual(restarted.active[manifest.organ_id].status, "GATE_ACTIVATED")
+        self.assertEqual(
+            restarted.active[manifest.organ_id].gate_receipt_hash,
+            "sha256:" + "c" * 64,
+        )
         self.assertTrue(ledger.verify_chain()[0])
 
 

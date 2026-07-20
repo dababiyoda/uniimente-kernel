@@ -5,6 +5,12 @@
   "description": "What actually happened, including negative and zero responses. An executed action without its outcome record is incomplete and blocks autonomy promotion. Zero response is a negative result, never an absence.",
   "type": "object",
   "additionalProperties": false,
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
   "properties": {
     "outcome_id": {
       "type": "string",
@@ -80,12 +86,6 @@
           "calibration",
           "charter_review"
         ]
-      }
-    },
-    "$defs": {
-      "hash": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
       }
     }
   },

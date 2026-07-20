@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 KNOWN_CONTRACTS = (
     "capability-grant", "context-packet", "decision", "event", "evidence",
     "opportunity-packet", "outcome", "venture-assessment", "venture-cell-charter",
+    "organ-manifest", "wire-opportunity-packet", "wire-venture-assessment",
 )
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact",
                        "financial", "irreversible")

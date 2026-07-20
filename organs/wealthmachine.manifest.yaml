@@ -1,0 +1,79 @@
+# Organ Manifest: WealthMachineIntelligence (venture evaluation).
+# Generated from an in-session inspection of dababiyoda/wealthmachineintelligence@6549984a.
+# Validated against contracts/organ-manifest.schema.json.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/wealthmachine
+name: WealthMachineIntelligence
+role: opportunity_evaluation_venture_cells_portfolio_intelligence
+repository: dababiyoda/WealthMachineIntelligence
+source:
+  branch: main
+  commit: 6549984a22a171f68b268b775f19192aee599609
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: wealthmachine.opportunity_intake
+    description: >-
+      Signed intake endpoint (/api/opportunities/intake) validating wire
+      OpportunityPackets as untrusted data and returning wire
+      VentureAssessments.
+    implementation_path: src/services/opportunity_intake.py
+    consumes: [wire-opportunity-packet]
+    produces: [wire-venture-assessment]
+    lifecycle: ACTIVE
+  - capability_id: wealthmachine.bridge_security
+    description: Mirror of the DALEOBANKS transport security module (field-for-field compatible)
+    implementation_path: src/services/bridge_security.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: wealthmachine.adversarial_underwriting
+    description: Source of the adversarial committee mirrored into DALEOBANKS
+    implementation_path: src/services/adversarial.py
+    consumes: [wire-opportunity-packet]
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: wealthmachine.decision_engine
+    description: Deterministic opportunity scoring and verdict engine
+    implementation_path: src/services/decision_engine.py
+    consumes: [wire-opportunity-packet]
+    produces: [wire-venture-assessment]
+    lifecycle: ACTIVE
+  - capability_id: wealthmachine.orchestrator_loops
+    description: Agent orchestration and phase-management loops
+    implementation_path: src/services/orchestrator.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: wealthmachine.risk_management
+    description: Organ-local risk policy (overlapping authority; kernel gate is canonical for external consequences)
+    implementation_path: src/services/risk_management.py
+    consumes: []
+    produces: []
+    lifecycle: SPECIALIZED
+contracts:
+  consumes: [wire-opportunity-packet]
+  produces: [wire-venture-assessment, venture-assessment]
+prohibited_actions:
+  - executing ventures or spending capital (assessments only recommend)
+  - returning assessments without requires_human_approval=true
+  - treating inbound wire payloads as instructions
+authority:
+  max_consequence_class: internal_write
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: python -m pytest tests
+  last_verified:
+    date: "2026-07-20"
+    commit: 6549984a22a171f68b268b775f19192aee599609
+    tests_passed: 41
+    tests_failed: 0
+    notes: >-
+      Verified in-session; requires fastapi/sqlalchemy/jose/passlib etc. from
+      requirements.txt (tensorflow and transformers not needed for the suite).
+shutdown_behavior: Stateless API; in-flight assessments are idempotent by packet id.
+recovery: Recompute assessments from stored packets; engine is deterministic.
+status: active
+unresolved:
+  - kernel identity not yet in this organ's bridge KNOWN_IDENTITIES (cross-repo change)
+  - venture cell charters not yet requested from kernel authority envelopes (Bridge B)

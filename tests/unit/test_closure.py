@@ -1,6 +1,8 @@
 """Orthogonal closure tests: the five-closure standard itself."""
+import json
+
 from closure.framework import ClosureRegistry, ModuleClosures, CLOSURE_NAMES
-from closure.kernel_registry import build_registry
+from closure.complete_registry import build_registry
 
 
 def test_five_closures_named_exactly():
@@ -25,21 +27,32 @@ def test_a_module_with_only_technical_closure_is_not_finished():
 
 def test_crashing_check_fails_closed():
     reg = ClosureRegistry()
+
     def explode():
         raise RuntimeError("boom")
-    reg.register(ModuleClosures("demo", {n: (explode if n == "technical" else (lambda: (True, "ok")))
-                                         for n in CLOSURE_NAMES}))
+
+    reg.register(ModuleClosures("demo", {
+        name: (explode if name == "technical" else (lambda: (True, "ok")))
+        for name in CLOSURE_NAMES
+    }))
     ok, reports = reg.verify()
     assert not ok
-    assert any("raised" in c.detail for c in reports[0].closures if c.closure == "technical")
+    assert any(
+        "raised" in closure.detail
+        for closure in reports[0].closures
+        if closure.closure == "technical"
+    )
 
 
-def test_kernel_modules_close_all_five():
-    """The Stage A modules must pass every orthogonal closure."""
-    reg = build_registry()
-    ok, reports = reg.verify()
-    failed = {r.module: r.open_closures for r in reports if not r.complete}
-    assert ok, f"open closures: {failed}"
-    assert set(reg.modules()) == {"compiler", "identity", "consequence_gate", "evidence_ledger",
-                                  "evolution", "events", "autonomy", "proof",
-                                  "loom", "twins", "capabilities", "embassy", "memory"}
+def test_all_canonical_modules_close_all_five():
+    """Every canonical module, including Foundry and OMNIMORPH, must close."""
+    registry = build_registry()
+    ok, reports = registry.verify()
+    failures = [report.to_dict() for report in reports if not report.complete]
+    assert ok, json.dumps(failures, indent=2, sort_keys=True)
+    assert len(reports) == 15
+    assert set(registry.modules()) == {
+        "compiler", "identity", "consequence_gate", "evidence_ledger",
+        "evolution", "events", "autonomy", "proof", "loom", "twins",
+        "capabilities", "embassy", "memory", "foundry", "omnimorph",
+    }

@@ -197,5 +197,60 @@ class OmnimorphTests(unittest.TestCase):
             )
 
 
+class LedgerIntegrationTests(unittest.TestCase):
+    def test_foundry_rebuilds_replay_and_genome_state(self):
+        from provenance.ledger import EvidenceLedger
+
+        ledger = EvidenceLedger("sha256:" + "0" * 64)
+        foundry = AdvantageFoundry(ledger)
+        winner, _ = foundry.complete_route_tournament(branches())
+        architecture = foundry.compile_architecture(
+            opportunity(), winner,
+            (CapabilityNeed("research.read", "research", ("request",), ("result",), "read_only", 10),),
+            control_surface="proof",
+            success_metrics=("payment",),
+            kill_conditions=("no buyer",),
+        )
+        outcome = ExternalOutcome(
+            500, True, True, 200, 3, True,
+            {"payment": 1}, ("sha256:" + "b" * 64,),
+        )
+        foundry.seal_advantage_genome(
+            "audit", "1.0.0", architecture, ("research.read@1.0.0",), outcome,
+            time_to_validated_genome_days=7, rollback="revoke",
+        )
+        restarted = AdvantageFoundry(ledger)
+        self.assertIsNotNone(restarted.get_genome("audit", "1.0.0"))
+        changed = OpportunitySpec(**{**opportunity().__dict__, "buyer": "other"})
+        with self.assertRaises(FoundryError):
+            restarted.intake(changed)
+        self.assertTrue(ledger.verify_chain()[0])
+
+    def test_omnimorph_rebuilds_activation_state(self):
+        from provenance.ledger import EvidenceLedger
+
+        ledger = EvidenceLedger("sha256:" + "0" * 64)
+        engine = OmnimorphEngine(registry(), ledger=ledger)
+        manifest = engine.compose(
+            OmnimorphTests().architecture(),
+            {"research.read": "1.0.0", "offer.compile": "1.0.0"},
+            objective="build audit organ",
+            consequence_ceiling="internal_write",
+            expires_at="2026-08-01T00:00:00Z",
+        )
+        report = engine.simulate(manifest)
+        engine.propose_activation(
+            manifest,
+            report,
+            RatificationRecord(
+                manifest.digest, "alfonso_lopez", "sig:founder", "2026-08-01T00:00:00Z",
+            ),
+        )
+        engine.record_gate_activation(manifest, "sha256:" + "c" * 64)
+        restarted = OmnimorphEngine(registry(), ledger=ledger)
+        self.assertEqual(restarted.active[manifest.organ_id].status, "GATE_ACTIVATED")
+        self.assertTrue(ledger.verify_chain()[0])
+
+
 if __name__ == "__main__":
     unittest.main()

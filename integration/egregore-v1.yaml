@@ -1,4 +1,4 @@
-manifest_version: "1.2"
+manifest_version: "1.3"
 integration_id: uniimente-egregore-v1
 status: active_integration
 branch: integration/uniimente-egregore-v1
@@ -142,8 +142,32 @@ source_prs:
     normalized_artifact_name: composition_plan
   - number: 40
     role: developmental_substrate_benchmark
-    disposition: active_integration_candidate
-    candidate_branch: integration/developmental-substrate-v1
+    disposition: merged_into_integration_as_active_experimental
+    integration_merge_commit: a0aed970ba325bd6c6023d86f1e18e41ae2fb090
+    evidence_artifact:
+      name: target-form-001-report
+      artifact_id: 8526894406
+      digest: sha256:e97a43257cae80cb7f6899d8b6f6af302edf34120bd6d41b293bf72fc51c9ca9
+      expires_at: "2026-10-20T10:52:18Z"
+    observed_metrics:
+      removed_cells: 24
+      removed_fraction: 0.20
+      original_route_edges_blocked: 11
+      distributed_deliveries: 28
+      distributed_ticks: 40
+      distributed_throughput: 0.70
+      distributed_first_delivery_tick: 13
+      distributed_planning_operations: 304
+      adaptive_central_deliveries: 28
+      adaptive_central_throughput: 0.70
+      adaptive_central_first_delivery_tick: 13
+      adaptive_central_planning_operations: 270
+      static_central_deliveries: 0
+      throughput_ratio_vs_adaptive: 1.0
+      compute_ratio_vs_adaptive: 1.1259259259
+      false_activations: 0
+      exact_restoration_attempts: 0
+      external_effects: 0
     mechanisms:
       - cell_state_v0_1
       - local_rule_genome_v0_1
@@ -229,9 +253,12 @@ research_gate:
     - adaptive_central_replanner
   throughput_ratio_min: 0.90
   compute_ratio_max: 4.0
+  observed_throughput_ratio: 1.0
+  observed_compute_ratio: 1.1259259259
   false_activation_max: 0
   promote_only_if_materially_superior: true
   promotion_state: SIMULATED_NOT_AUTHORIZED
+  operational_fallback: adaptive_central_replanner
 
 non_zero_sum_rules:
   preserve_source_lineage: true

@@ -7,10 +7,12 @@ integration verifier entry point, not a second authority path.
 from closure.kernel_registry import build_registry as build_kernel_registry
 from closure.commercial_registry import register_commercial_closures
 from closure.advantage_registry import register_advantage_closures
+from closure.developmental_registry import register_developmental_closures
 
 
 def build_registry():
     registry = build_kernel_registry()
     register_commercial_closures(registry)
     register_advantage_closures(registry)
+    register_developmental_closures(registry)
     return registry

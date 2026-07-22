@@ -1,4 +1,4 @@
-manifest_version: "1.0"
+manifest_version: "1.1"
 integration_id: uniimente-egregore-v1
 status: active_integration
 branch: integration/uniimente-egregore-v1
@@ -29,6 +29,27 @@ canonical_functions:
   opportunity_underwriting:
     owner: wealthmachineintelligence
     execution_authority: false
+  phase_zero_to_foundry_intake:
+    owner: foundry_intake_adapter
+    raw_model_input_allowed: false
+  strategy_route_tournament:
+    owner: advantage_foundry
+    required_routes: 11
+    preserve_rejected_routes: true
+  adversarial_architecture_review:
+    owner: spider_web_tribunal
+    required_lenses: 8
+    required_control_super_nodes:
+      - eligibility
+      - default_routing
+      - proof_and_truth
+      - cashflow_and_settlement
+    execution_authority: false
+  technology_composition:
+    owner: foundry_composer
+    arsenal_size: 55
+    output_artifact: composition_plan
+    execution_authority: false
   first_transaction_vertical:
     owner: ivio_obvio_nemt
   operator_surface:
@@ -38,6 +59,7 @@ canonical_functions:
   temporary_organ_composition:
     owner: omnimorph
     output_state: PROPOSED_NOT_EXECUTED
+    arbitrary_receipt_hash_allowed: false
   standing_cognition:
     owner: ade1_governed_runtime
     sovereign_intent: false
@@ -46,6 +68,9 @@ canonical_functions:
     target_reached_state: TARGET_REACHED_NOT_AUTHORIZED
   commercial_lifecycle:
     owner: business_foundry
+  commercial_to_foundry_validation:
+    owner: external_outcome_bridge
+    payment_alone_sufficient: false
   capital_allocation:
     owner: regenerative_treasury
     human_controlled: true
@@ -59,29 +84,50 @@ source_prs:
     disposition: merged_into_integration
     merge_commit: 56a5339cb2995053d51c8bc0dfcf2fad84b1498b
   - number: 32
-    role: commercial_metabolism
-    disposition: reconcile_conflicts
-    retain:
+    role: commercial_metabolism_source
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 38
+    integration_merge_commit: 4495607999fb771072574f4679497e9f3cdc7da7
+    retained:
       - media_foundry
       - business_foundry
       - regenerative_treasury
       - schema_repairs
-    must_not_overwrite:
-      - institutional_linker
-      - organ_manifests
-      - phase_zero_adapters
   - number: 34
     role: governed_standing_cognition
-    disposition: stack_after_commercial_reconciliation
+    disposition: merged_into_integration
+    merge_commit: 3768d5dc9424638312f4fb018a93a0800b0e05c9
   - number: 30
     role: setpoint_control_and_ivio_first_cell
-    disposition: stack_on_canonical_integration
+    disposition: merged_into_integration
+    merge_commit: 378d66dfb6bcab7e704a29a5c706bbbf9b91e9ea
   - number: 27
     role: foundry_omnimorph_source
-    disposition: preserve_and_extract_nonduplicative_mechanisms
+    disposition: clean_reconciliation_candidate
+    candidate_branch: integration/foundry-omnimorph-v1
+    retained_mechanisms:
+      - qualified_opportunity
+      - eleven_route_tournament
+      - advantage_architecture
+      - paid_outcome_sealing
+      - omnimorph
+      - resumable_pipeline
+    excluded_duplicates:
+      - alternate_closure_registry
+      - alternate_ci
+      - duplicate_schemas
+      - duplicate_commercial_executor
+      - raw_underwriting_wire
   - number: 29
     role: arsenal_and_composer_source
-    disposition: preserve_and_extract_nonduplicative_mechanisms
+    disposition: clean_reconciliation_candidate
+    candidate_branch: integration/foundry-omnimorph-v1
+    retained_mechanisms:
+      - technology_arsenal_55
+      - dependency_aware_composer
+      - capability_binding
+      - attach_detach_rollback
+    normalized_artifact_name: composition_plan
 
 implementation_classes:
   allowed:
@@ -92,6 +138,13 @@ implementation_classes:
     - historical
     - quarantined
   deletion_for_simplification: forbidden
+
+artifact_distinctions:
+  opportunity_spec: qualified_governing_transaction
+  advantage_architecture: selected_strategy_and_control_design
+  composition_plan: reversible_nonexecuting_technology_plan
+  organ_manifest: temporary_bounded_body_plan
+  sealed_advantage_genome: externally_validated_reusable_asset
 
 prohibited_system_properties:
   - machine_sovereignty
@@ -104,6 +157,9 @@ prohibited_system_properties:
   - autonomous_trading_without_separate_authorization
   - self_rewriting_constitution
   - production_action_from_model_consensus_alone
+  - raw_model_recommendation_as_foundry_intake
+  - arbitrary_hash_as_gate_activation_receipt
+  - payment_as_complete_validation
 
 external_validation_closure:
   required:
@@ -111,7 +167,9 @@ external_validation_closure:
     - accepted_delivery
     - externally_verified_outcome
     - reconciled_economics
+    - nonnegative_contribution_margin
     - valid_authority_receipts
+    - zero_critical_authority_incidents
     - no_unresolved_critical_participant_harm
   deterministic_fixture_counts_as_external_validation: false
 

@@ -50,6 +50,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
 | `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
+| `/trustrail` | Proof-to-settlement trust rail: independent outcome credentials, principal-signed settlement, disputes, and scoped reputation |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
@@ -64,7 +65,9 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+**Proof-to-Settlement Trust Rail: executable in sandbox (2026-07-22).** A reconciled Consequence Gate action can now become an independently attested outcome credential, a legal-principal-signed settlement intent, an idempotent sandbox receipt, a reconciliation record, and context-scoped reputation. Disputes suspend proof immediately. The OpenClaw MCP surface can select only pre-registered executors and request intents; it cannot commit payment. No live-money or live-chain adapter is included.
+
+202 unit tests green (172 verified on the base plus 30 trust-rail adversarial cases). 14 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py`.
 
 Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
 

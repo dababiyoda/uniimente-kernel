@@ -32,6 +32,12 @@ All external actions pass through: `propose()` -> `evaluate_policy()` -> `reques
 
 Exit evidence: no repository can communicate directly with production accounts; expired or revoked grants fail closed at commit time in adversarial tests.
 
+## Phase 5B: Proof-to-Settlement Trust Rail (SANDBOX EXECUTABLE)
+
+Turn a reconciled action into independent verifier proof, a portable outcome credential, legal-principal-signed settlement authority, an idempotent adapter receipt, reconciliation, dispute state, and scoped reputation. OpenClaw reaches it through an external MCP boundary with named executors and no payment-commit tool.
+
+Exit evidence: 30 adversarial tests green; all five orthogonal closures green; ledger tamper, self-verification, signature mutation, amount overflow, replay, disputed proof, live/sandbox mismatch, and bad adapter receipts fail closed with zero unauthorized external effects. A live bank or blockchain adapter remains a separate legal, security, and operational gate.
+
 ## Phase 6: IVIO Closed Loop
 
 Run one complete signal-to-buyer-response workflow for 30 consecutive days: signal -> evidence -> assessment -> approval -> action -> external response -> learning.

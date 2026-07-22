@@ -33,7 +33,16 @@ External action gateway               <- the only path to real-world effects
 Outcome + provenance ledger           <- append-only, hash-chained, signed receipts
         |
         v
-Causal memory + Portfolio Governor    <- learning, allocation, replication, termination
+Independent proof credential          <- verifier-bound outcome, receipt, evidence, policy and reality status
+        |
+        v
+Principal-authorized settlement       <- exact scope, expiry, idempotency, commit-time revalidation, reconciliation
+        |
+        v
+Scoped reputation + Causal memory     <- context-bound history; never a universal score or spending authority
+        |
+        v
+Portfolio Governor                    <- learning, allocation, replication, termination
 ```
 
 ## Layer responsibilities
@@ -48,6 +57,9 @@ Causal memory + Portfolio Governor    <- learning, allocation, replication, term
 | Agent Cell Sandbox | isolation, typed tools, quotas | model weights |
 | Commit-Time Gateway | final revalidation before any real effect | policy authorship |
 | Outcome + Provenance | append-only consequence record | observability signals (kept separate per OpenTelemetry split) |
+| Independent Verification | verifier attestations and outcome credentials | deciding whether the underlying physical claim is true by signature alone |
+| Settlement Router | principal-signed intent, adapter selection, commit revalidation, receipt reconciliation | AI decisions, legal identity, or unrestricted payment access |
+| Scoped Reputation | exact-context evidence history | global scoring, authority, or automatic spending |
 | Causal Memory + Portfolio Governor | learning and allocation recommendations | spending authorization (scores never authorize spend) |
 
 ## The three histories
@@ -62,7 +74,7 @@ Every consequential question must be answerable from three reconstructable histo
 
 ## Integrity without a blockchain
 
-One governed institution does not need trustless consensus. Use content-addressed objects, cryptographic hashes, signed attestations, append-only logs, independent backups, and optional external timestamping. High-consequence evidence and approvals get independently verifiable signed receipts (evidence escrow).
+One governed institution does not need trustless consensus. Use content-addressed objects, cryptographic hashes, signed attestations, append-only logs, independent backups, and optional external timestamping. High-consequence evidence and approvals get independently verifiable signed receipts (evidence escrow). The trust rail can later anchor proofs or settle through a blockchain adapter, but blockchain consensus does not verify an off-chain physical outcome; an independently governed verifier or oracle remains necessary.
 
 ## Organs
 
@@ -78,4 +90,4 @@ One governed institution does not need trustless consensus. Use content-addresse
 
 ## Hidden capabilities (scheduled, not built)
 
-Institutional forks (policy simulation branches), reputation compartments, black-start recovery core, memory immune system, evidence escrow, competence inheritance, controlled self-cannibalization, dependency leverage map. Each enters only through a phase gate in `docs/BUILD_ORDER.md`.
+Black-start recovery core, memory immune system, competence inheritance, controlled self-cannibalization, dependency leverage map. Each enters only through a phase gate in `docs/BUILD_ORDER.md`.

@@ -42,4 +42,4 @@ def test_kernel_modules_close_all_five():
     assert ok, f"open closures: {failed}"
     assert set(reg.modules()) == {"compiler", "identity", "consequence_gate", "evidence_ledger",
                                   "evolution", "events", "autonomy", "proof",
-                                  "loom", "twins", "capabilities", "embassy", "memory"}
+                                  "loom", "twins", "capabilities", "embassy", "memory", "trustrail"}

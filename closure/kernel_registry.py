@@ -914,4 +914,8 @@ def build_registry() -> ClosureRegistry:
         "evidence": memory_evidence, "economic": memory_economic,
         "regenerative": memory_regenerative}))
 
+    # ------------------------------------------------------- proof-to-settlement trust rail
+    from trustrail.closure import register_trustrail_closures
+    register_trustrail_closures(reg)
+
     return reg

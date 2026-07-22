@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.uniimente.internal/trustrail/settlement-authorization.v1.json",
+  "title": "Settlement Authorization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["authorization_id", "authority_id", "legal_principal", "credential_id", "payer", "payee", "max_amount", "currency", "purpose", "adapter_id", "reality_status", "issued_at", "expires_at", "signature"],
+  "properties": {
+    "authorization_id": {"type": "string", "format": "uuid"},
+    "authority_id": {"type": "string", "minLength": 1},
+    "legal_principal": {"type": "string", "minLength": 1},
+    "credential_id": {"type": "string", "format": "uuid"},
+    "payer": {"type": "string", "minLength": 1},
+    "payee": {"type": "string", "minLength": 1},
+    "max_amount": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "currency": {"type": "string", "pattern": "^[A-Z0-9_-]{2,12}$"},
+    "purpose": {"type": "string", "minLength": 1},
+    "adapter_id": {"type": "string", "minLength": 1},
+    "reality_status": {"enum": ["LIVE", "SANDBOX", "SIMULATED", "PROPOSED"]},
+    "issued_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "signature": {"type": "string", "minLength": 1}
+  }
+}

@@ -81,12 +81,12 @@
           "charter_review"
         ]
       }
-    },
-    "$defs": {
-      "hash": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
-      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
     }
   },
   "required": [

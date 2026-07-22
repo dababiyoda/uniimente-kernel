@@ -914,4 +914,77 @@ def build_registry() -> ClosureRegistry:
         "evidence": memory_evidence, "economic": memory_economic,
         "regenerative": memory_regenerative}))
 
+    # ---------------------------------------------------------------- linker
+    def linker_technical():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        report = InstitutionalLinker(load_all()).link()
+        bridge_a = any(e.contract == "wire-opportunity-packet" for e in report.edges)
+        return bridge_a and report.untyped == [], \
+            f"{len(report.edges)} typed edges resolved across 3 organ manifests; Bridge A linked"
+
+    def linker_authority():
+        from linker.manifest import ManifestError, load_manifest
+        import os, tempfile
+        src = open(os.path.join(KERNEL_ROOT, "organs", "kernel.manifest.yaml")).read()
+        refused = 0
+        for bad in (src.replace("may_self_promote: false", "may_self_promote: true"),
+                    src.replace("legal_operators: [alfonso_lopez]",
+                                "legal_operators: [UNIIMENTE]")):
+            with tempfile.TemporaryDirectory() as d:
+                p = os.path.join(d, "x.manifest.yaml")
+                open(p, "w").write(bad)
+                try:
+                    load_manifest(p)
+                except ManifestError:
+                    refused += 1
+        return refused == 2, \
+            "self-promotion and UNIIMENTE-as-operator both unrepresentable in a valid manifest"
+
+    def linker_evidence():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        r1 = InstitutionalLinker(load_all()).link()
+        r2 = InstitutionalLinker(load_all()).link()
+        same = [(e.producer, e.contract, e.consumer) for e in r1.edges] == \
+               [(e.producer, e.contract, e.consumer) for e in r2.edges]
+        carried = all(any(o == m.organ_id for o, _ in r1.unresolved)
+                      for m in load_all() if m.unresolved)
+        return same and carried, \
+            "link graph deterministic; every manifest's open questions carried verbatim"
+
+    def linker_economic():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        manifests = load_all()
+        manifests[0].consumes = manifests[0].consumes + ["business-genome"]
+        report = InstitutionalLinker(manifests).link()
+        return not report.fully_connected and \
+            any(c == "business-genome" for _, c in report.untyped), \
+            "missing integrations surface at link time, before any runtime cost is spent"
+
+    def linker_regenerative():
+        from linker.linker import InstitutionalLinker, LinkerError
+        try:
+            InstitutionalLinker([])
+            return False, "linked an empty organism"
+        except LinkerError:
+            pass
+        from linker.manifest import ManifestError, load_manifest
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.manifest.yaml")
+            open(p, "w").write("manifest_version: '1.0'\n")
+            try:
+                load_manifest(p)
+                return False, "incomplete manifest accepted"
+            except ManifestError as exc:
+                named = "authority" in str(exc) and "health" in str(exc)
+        return named, "invalid manifests fail closed naming every missing field; no partial links"
+
+    reg.register(ModuleClosures("linker", {
+        "technical": linker_technical, "authority": linker_authority,
+        "evidence": linker_evidence, "economic": linker_economic,
+        "regenerative": linker_regenerative}))
+
     return reg

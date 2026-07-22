@@ -1,0 +1,30 @@
+{
+  "id": "7d8a56b2-4a86-4a83-9a5d-2f43cf7f1a20",
+  "source": "daleobanks:mentions",
+  "source_ref": "mention:184450",
+  "signal_type": "repeated_question",
+  "observed_pain": "Independent NEMT operators repeatedly ask how to prove on-time performance to brokers; missed-pickup disputes cost them contracts.",
+  "core_thesis": "Small NEMT fleets lose broker contracts because they cannot produce verifiable on-time-performance evidence.",
+  "audience": "independent NEMT fleet operators (1-10 vehicles)",
+  "cultural_context": "US non-emergency medical transport",
+  "language": "en",
+  "customer_segment": "owner-operator transport businesses",
+  "buyer_type": "NEMT fleet owner",
+  "urgency": "high",
+  "evidence": [
+    "14 replies in 30 days asking how to dispute broker no-show penalties",
+    "2 operators shared spreadsheets they hand-build to contest chargebacks",
+    "broker forum thread: 'send GPS proof or eat the penalty' (87 comments)"
+  ],
+  "possible_offer": "verifiable trip-evidence log that exports broker-ready dispute packets",
+  "monetization_paths": [
+    "$19/mo per vehicle subscription",
+    "paid dispute-packet exports"
+  ],
+  "risk_flags": [],
+  "smallest_validation_action": "Offer 5 engaged operators a hand-built dispute packet for one contested trip and ask for $25 if it is accepted by the broker",
+  "confidence": 0.6,
+  "created_at": "2026-07-20T22:13:39.175476+00:00",
+  "status": "pending",
+  "schema_version": "1.1"
+}

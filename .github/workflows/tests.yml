@@ -20,6 +20,13 @@ jobs:
       - name: Full unit and integration suite
         run: python -m pytest -q
       - name: TARGET_FORM_001 quantitative benchmark
-        run: python -m developmental
+        run: python -m developmental | tee target_form_001_report.json
+      - name: Upload TARGET_FORM_001 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: target-form-001-report
+          path: target_form_001_report.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py

@@ -48,6 +48,6 @@ def test_integrated_modules_close_all_five():
         "evolution", "events", "autonomy", "proof", "loom", "twins",
         "capabilities", "embassy", "memory", "linker",
         "foundry", "business", "treasury",
-        "advantage_foundry", "omnimorph",
+        "advantage_foundry", "omnimorph", "developmental_substrate",
     }
     assert required.issubset(set(registry.modules()))

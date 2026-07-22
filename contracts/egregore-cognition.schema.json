@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.example/contracts/egregore-cognition.schema.json",
+  "title": "ADE-1 standing cognition cycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cycle_id",
+    "trigger_id",
+    "request_hash",
+    "status",
+    "signal_ids",
+    "candidates",
+    "assessments",
+    "failures",
+    "selected_candidate_id",
+    "resource_snapshot",
+    "execution_authority"
+  ],
+  "properties": {
+    "cycle_id": {"$ref": "#/$defs/sha256"},
+    "trigger_id": {"type": "string", "minLength": 1},
+    "request_hash": {"$ref": "#/$defs/sha256"},
+    "status": {
+      "enum": ["silent", "proposed", "conserving", "hibernating", "suspended", "refused"]
+    },
+    "signal_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sha256"}
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["candidate_id", "evidence_refs", "source_signal_ids", "execution_authority"],
+        "properties": {
+          "candidate_id": {"$ref": "#/$defs/sha256"},
+          "evidence_refs": {"type": "array", "items": {"type": "string"}},
+          "source_signal_ids": {"type": "array", "items": {"$ref": "#/$defs/sha256"}},
+          "execution_authority": {"const": "none"}
+        }
+      }
+    },
+    "assessments": {"type": "array", "items": {"type": "object"}},
+    "failures": {"type": "array", "items": {"type": "object"}},
+    "selected_candidate_id": {
+      "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+    },
+    "resource_snapshot": {
+      "type": "object",
+      "required": ["max_model_calls", "used_model_calls", "mode", "attention_confers_authority"],
+      "properties": {
+        "max_model_calls": {"type": "integer", "minimum": 0},
+        "used_model_calls": {"type": "integer", "minimum": 0},
+        "mode": {"enum": ["normal", "conserve", "hibernate"]},
+        "attention_confers_authority": {"const": false}
+      }
+    },
+    "execution_authority": {"const": "none"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

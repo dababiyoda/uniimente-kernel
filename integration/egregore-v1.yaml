@@ -1,4 +1,4 @@
-manifest_version: "1.1"
+manifest_version: "1.2"
 integration_id: uniimente-egregore-v1
 status: active_integration
 branch: integration/uniimente-egregore-v1
@@ -75,8 +75,18 @@ canonical_functions:
     owner: regenerative_treasury
     human_controlled: true
   developmental_research:
-    owner: mica_cdpe_mvm
+    owner: mica_cdpe
+    status: active_experimental
+    target_form: TARGET_FORM_001
+    cells: 120
+    tissues: 3
+    distributed_policy: asynchronous_local_relaxation
+    centralized_counterexamples:
+      - static_central_route
+      - adaptive_central_replanner
+    output_verdict: MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
     production_authority: false
+    external_effects: 0
 
 source_prs:
   - number: 31
@@ -103,8 +113,9 @@ source_prs:
     merge_commit: 378d66dfb6bcab7e704a29a5c706bbbf9b91e9ea
   - number: 27
     role: foundry_omnimorph_source
-    disposition: clean_reconciliation_candidate
-    candidate_branch: integration/foundry-omnimorph-v1
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 39
+    integration_merge_commit: ad696c23e8d316db706424644427b41d3f45cec2
     retained_mechanisms:
       - qualified_opportunity
       - eleven_route_tournament
@@ -120,14 +131,28 @@ source_prs:
       - raw_underwriting_wire
   - number: 29
     role: arsenal_and_composer_source
-    disposition: clean_reconciliation_candidate
-    candidate_branch: integration/foundry-omnimorph-v1
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 39
+    integration_merge_commit: ad696c23e8d316db706424644427b41d3f45cec2
     retained_mechanisms:
       - technology_arsenal_55
       - dependency_aware_composer
       - capability_binding
       - attach_detach_rollback
     normalized_artifact_name: composition_plan
+  - number: 40
+    role: developmental_substrate_benchmark
+    disposition: active_integration_candidate
+    candidate_branch: integration/developmental-substrate-v1
+    mechanisms:
+      - cell_state_v0_1
+      - local_rule_genome_v0_1
+      - intelligence_genome_v0_1
+      - mica_local_field
+      - cdpe_benchmark_executor
+      - static_central_counterexample
+      - adaptive_central_counterexample
+      - five_closure_verification
 
 implementation_classes:
   allowed:
@@ -145,6 +170,7 @@ artifact_distinctions:
   composition_plan: reversible_nonexecuting_technology_plan
   organ_manifest: temporary_bounded_body_plan
   sealed_advantage_genome: externally_validated_reusable_asset
+  developmental_benchmark_report: sandbox_mechanics_evidence_not_external_validation
 
 prohibited_system_properties:
   - machine_sovereignty
@@ -160,6 +186,8 @@ prohibited_system_properties:
   - raw_model_recommendation_as_foundry_intake
   - arbitrary_hash_as_gate_activation_receipt
   - payment_as_complete_validation
+  - developmental_benchmark_as_production_authority
+  - exact_restoration_of_removed_cells
 
 external_validation_closure:
   required:
@@ -172,6 +200,7 @@ external_validation_closure:
     - zero_critical_authority_incidents
     - no_unresolved_critical_participant_harm
   deterministic_fixture_counts_as_external_validation: false
+  developmental_benchmark_counts_as_external_validation: false
 
 release_gates:
   - canonical_contract_registry
@@ -187,14 +216,22 @@ release_gates:
   - external_fixture_boundary_documented
 
 research_gate:
-  experiment: target_form_001
+  experiment: TARGET_FORM_001
   minimum_cells: 100
+  implemented_cells: 120
+  required_tissues: 3
   perturbations:
     - remove_20_percent_cells
-    - block_original_route
+    - block_every_original_route_edge
     - prohibit_exact_restoration
-  compare_against: centralized_baseline
+  compare_against:
+    - static_central_route
+    - adaptive_central_replanner
+  throughput_ratio_min: 0.90
+  compute_ratio_max: 4.0
+  false_activation_max: 0
   promote_only_if_materially_superior: true
+  promotion_state: SIMULATED_NOT_AUTHORIZED
 
 non_zero_sum_rules:
   preserve_source_lineage: true

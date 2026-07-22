@@ -1,0 +1,41 @@
+name: ADE-1 standing cognition
+
+on:
+  push:
+    branches:
+      - "agent/ade1-standing-cognition-runtime"
+  pull_request:
+    paths:
+      - "egregore/**"
+      - "contracts/egregore-cognition.schema.json"
+      - "docs/ADE1_GOVERNED_RUNTIME.md"
+      - "tests/unit/test_egregore_runtime.py"
+      - ".github/workflows/ade1-standing-cognition.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install verifier dependencies
+        run: python -m pip install --upgrade pip pytest pyyaml jsonschema
+
+      - name: Run ADE-1 adversarial tests
+        run: python -m pytest tests/unit/test_egregore_runtime.py -q
+
+      - name: Run full unit suite
+        run: python -m pytest tests/unit -q
+
+      - name: Run institutional verifier
+        run: python verifier/v2/verify.py

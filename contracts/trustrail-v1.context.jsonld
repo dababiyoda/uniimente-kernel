@@ -1,0 +1,20 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "VerifiedOutcomeCredential": "https://schemas.uniimente.internal/trustrail/v1#VerifiedOutcomeCredential",
+    "UniimenteCredentialStatus": "https://schemas.uniimente.internal/trustrail/v1#UniimenteCredentialStatus",
+    "actionId": "https://schemas.uniimente.internal/trustrail/v1#actionId",
+    "actorId": "https://schemas.uniimente.internal/trustrail/v1#actorId",
+    "legalPrincipal": "https://schemas.uniimente.internal/trustrail/v1#legalPrincipal",
+    "actionClass": "https://schemas.uniimente.internal/trustrail/v1#actionClass",
+    "verifierId": "https://schemas.uniimente.internal/trustrail/v1#verifierId",
+    "outcomeHash": "https://schemas.uniimente.internal/trustrail/v1#outcomeHash",
+    "receiptHash": "https://schemas.uniimente.internal/trustrail/v1#receiptHash",
+    "witnessId": "https://schemas.uniimente.internal/trustrail/v1#witnessId",
+    "evidenceRefs": "https://schemas.uniimente.internal/trustrail/v1#evidenceRefs",
+    "policyVersion": "https://schemas.uniimente.internal/trustrail/v1#policyVersion",
+    "verificationResult": "https://schemas.uniimente.internal/trustrail/v1#verificationResult",
+    "realityStatus": "https://schemas.uniimente.internal/trustrail/v1#realityStatus",
+    "status": "https://schemas.uniimente.internal/trustrail/v1#status"
+  }
+}

@@ -1,10 +1,8 @@
-"""Phase 4 — human ratification of machine-authored patterns.
+"""Human ratification of machine-authored artifacts.
 
-Doctrine (SOVEREIGNTY): the machine authors; the human disposes. A
-pattern is executable only after ratification by the legal operator,
-and ratification binds to the pattern's content hash — editing a
-ratified pattern yields a different hash, which is an unratified
-pattern. Rejections are preserved forever (negative evidence).
+The machine authors; the human disposes. An artifact is executable only
+after ratification by the legal operator, and ratification binds to the
+artifact's content hash. Rejections remain negative evidence.
 """
 from __future__ import annotations
 
@@ -16,16 +14,22 @@ def _now() -> str:
 
 
 class Ratifier:
-    def __init__(self, ledger, *, operator: str = "alfonso_lopez"):
+    """Hash-bound ratification for any artifact exposing
+    validate(), hash(), title, and authored_by. `kind` names its ledger
+    event family without changing the default Loom behavior."""
+
+    def __init__(self, ledger, *, operator: str = "alfonso_lopez",
+                 kind: str = "loom.pattern"):
         self.ledger = ledger
         self.operator = operator
+        self.kind = kind
 
     def submit(self, pattern) -> str:
         problems = pattern.validate()
         if problems:
             raise ValueError(f"invalid pattern, refusing submission: {problems}")
         h = pattern.hash()
-        self.ledger.append("event", {"type": "loom.pattern_submitted",
+        self.ledger.append("event", {"type": f"{self.kind}_submitted",
                                      "pattern_hash": h, "title": pattern.title,
                                      "authored_by": pattern.authored_by, "at": _now()})
         return h
@@ -33,24 +37,23 @@ class Ratifier:
     def decide(self, pattern_hash: str, *, ratified: bool, reason: str,
                ratifier: str | None = None) -> dict:
         ratifier = ratifier or self.operator
-        record = {"type": "loom.pattern_ratified" if ratified else "loom.pattern_rejected",
+        record = {"type": f"{self.kind}_ratified" if ratified else f"{self.kind}_rejected",
                   "pattern_hash": pattern_hash, "ratifier": ratifier,
                   "reason": reason, "at": _now()}
         self.ledger.append("event", record)
         return record
 
     def status(self, pattern_hash: str) -> str:
-        """ratified | rejected | submitted | unknown — latest decision wins."""
         status = "unknown"
         for rec in self.ledger.by_type("event"):
             p = rec.payload
             if p.get("pattern_hash") != pattern_hash:
                 continue
-            if p["type"] == "loom.pattern_submitted":
+            if p["type"] == f"{self.kind}_submitted":
                 status = "submitted"
-            elif p["type"] == "loom.pattern_ratified":
+            elif p["type"] == f"{self.kind}_ratified":
                 status = "ratified"
-            elif p["type"] == "loom.pattern_rejected":
+            elif p["type"] == f"{self.kind}_rejected":
                 status = "rejected"
         return status
 

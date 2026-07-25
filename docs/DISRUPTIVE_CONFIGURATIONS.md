@@ -1,275 +1,264 @@
 # Disruptive Configurations
 
-**A cumulative ladder of recombinations, ordered by verifiability radius.**
+**Thirteen recombinations of top-ranked open-source repos, connected by Claude, ordered by ascending impressiveness.**
 
-Status: research artifact. Nothing here is ratified doctrine. Twelve configurations, ordered easiest to hardest, pragmatic through speculative, with the boundary between them named explicitly.
-
----
-
-## The reframe
-
-The obvious reading of "recombine open-source repos into something new" produces a list of clever mashups. That list is worthless, because cleverness is not scarce and every mashup on it can be reproduced by anyone who reads the same repos.
-
-The Kernel already states the correct doctrine: *own the control plane, adopt or rent commodity mechanics.* So the question is not what can be assembled. It is:
-
-**What does the Kernel currently lack that keeps its authority asserted rather than provable to a stranger?**
-
-Today the Kernel is self-certifying. It declares that no consequential effect occurs without nine conditions, and it can demonstrate that — to anyone holding read access to the ledger and willing to trust the host. That is an institution capable of convincing itself. 172 green tests are evidence for the operator and no one else.
-
-Every compounding win available here comes from one movement: taking a claim that is checkable only by you and making it checkable by someone with every reason to distrust you, without granting them access. Each step outward along that axis unlocks a class of counterparty that was previously unreachable — an auditor, a payer, an insurer, a regulator, a capital allocator.
-
-That axis is the spine of this list. Call it **verifiability radius**:
-
-| Radius | Who can check the claim | Instrument |
-|---|---|---|
-| R0 | You, with the ledger open | Hash-chained records |
-| R1 | You, by re-deriving from seed | Deterministic replay |
-| R2 | An auditor holding one hash | Merkle inclusion + public checkpoint |
-| R3 | A stranger with no access at all | Succinct proof of the gate decision |
-| R4 | The claim checks itself | Machine-checked doctrine |
-| R5 | Peer institutions, mutually | Federated proof rail |
-
-The developmental half of the ask follows from this. As radius grows, organs stop being *founded* and start being *induced* — a new venture inherits the proof apparatus instead of rebuilding trust from zero. That is ontogeny, and it is where the continuous win actually lives: **the marginal cost of making the next organ trustworthy declines monotonically.** Not more revenue. A falling cost curve on institutional trust, compounding across every organ you will ever grow.
+Status: research artifact. Not ratified doctrine.
 
 ---
 
-## How to read each configuration
+## The rule I'm following
 
-- **Primitives** — mechanisms extracted from `build-your-own-x` tutorials and named open-source repositories. Mechanisms, never products. The tutorial is a teaching instrument; the mechanism inside it is the reusable part.
-- **Mutation** — what changes when the mechanism leaves its original domain. Without a mutation it is a clone.
-- **Recombination** — how the mutated mechanisms interlock.
-- **Unlock** — the class of counterparty or capability that becomes reachable.
-- **Effort / Radius** — honest sizing.
-- **Failure mode** — how it breaks, stated before it breaks.
+Every configuration below obeys four constraints:
 
----
+1. **Built from repos that the 2026 top-10 lists actually name.** Not my private infrastructure picks. The repos people are already starring.
+2. **No tutorial products get cloned.** From each repo I take the *primitive mechanism* — the one thing it does that nothing else does — and leave the product behind. The mechanism is named explicitly each time.
+3. **Claude is the connective tissue.** Every rung names precisely what the model does between the repos. Six distinct connector roles recur; they are named, not hand-waved.
+4. **Ordered by impressiveness, ascending.** Rung 1 saves you an afternoon. Rung 13 is science fiction. The escalation is legible because each rung removes a *category of human labor* the previous rung still required.
 
-# Tier I — Buildable now
+That last point is the spine. Read the ladder as: what stops needing a person.
 
-## C1. The Receipt Compiler
-**Effort: 1–2 weeks · R0 → R0 (hardening)**
-
-**Primitives.** Write-ahead log and MVCC (`build your own database`). NFA→DFA subset construction (`build your own regex engine`). Content addressing (`build your own git`).
-
-**Mutation.** The WAL's entries are *decisions*, not row mutations. And the policy predicate set compiles to a DFA, so admission is a table walk rather than a rule search — which means the transition trace *is* the explanation, produced by the act of deciding rather than narrated afterward.
-
-**Recombination.** Every gate decision emits a receipt whose hash chains to its predecessor. The DFA path taken is a field on that receipt. Explanation stops being a story generated after the fact by a model, and becomes an execution artifact.
-
-**Unlock.** Kills the entire class of failure where an agent explains a decision it did not actually make that way. `/policy` and `/provenance` already have this shape; this is hardening, not invention.
-
-**Failure mode.** Predicates involving unbounded numeric comparison (budget thresholds, evidence floors) are not finite-state. Compile the DFA over *categorical* predicates only and carry numeric guards as side conditions on the transition. Attempting a pure-DFA encoding of the whole policy set produces state explosion.
-
----
-
-## C2. The Institutional Time Machine
-**Effort: 3–6 weeks · R0 → R1** ← *highest leverage-per-hour on this list*
-
-**Primitives.** Emulator save-states and deterministic instruction stepping (`build your own emulator / virtual machine`). Git reflog. Deterministic simulation testing as practiced by FoundationDB, TigerBeetle, and `madsim`.
-
-**Mutation.** Make the *institution* the deterministic machine. Every nondeterminism source — clock, RNG, network, disk, and critically the model — becomes a pluggable, seeded interface. FoundationDB pioneered this for a database; nobody has done it for a governance layer.
-
-Model calls are the interesting part, and the mutation is to stop fighting them. You cannot make a hosted model deterministic — providers deprecate weights, sampling drifts, temperature zero is not a guarantee. So do not try. Record the model as an **oracle**: prompt hash → response, persisted. Replay reads the oracle. The model becomes a fixture, exactly like a mocked disk.
-
-**Recombination.** An institutional day replays bit-exact from `seed + event log + oracle`. Then you can fuzz governance itself: clock skew, grant revocation mid-flight, evidence arriving out of causal order, budget races, executor partition. Any failure found is perfectly reproducible.
-
-**Unlock.** TigerBeetle's largest simulation cluster runs roughly two millennia of simulated time per day. Applied here that means adversarial institutional centuries against your own constitution before reality gets a turn. The Kernel's 12 adversarial gate cases become 12 million.
-
-**Failure mode.** Determinism is all-or-nothing — one unseeded `time.now()` in one organ silently voids the guarantee. This needs a lint rule and a CI gate from day one, not a convention. Retrofitting determinism costs multiples of building it in.
-
----
-
-## C3. The Undo Tree as Counterfactual Organ
-**Effort: 1–2 months · R1**
-
-**Primitives.** Undo tree and piece table (`build your own text editor`). Git worktrees. Differential Dataflow / DBSP incremental view maintenance.
-
-**Mutation.** The undo tree branches over *institutional decisions* rather than keystrokes, and each branch is a hermetic fork. The DBSP layer means a counterfactual does not re-run history — it incrementally recomputes only what the changed decision actually touched.
-
-**Recombination.** `/twins` and the Counterfactual Tribunal exist and work. This drops their cost from `O(replay all history)` to `O(delta)`. A tribunal stops being a ceremony you schedule and becomes something that runs on every consequential decision.
-
-**Unlock.** Counterfactual reasoning at decision frequency instead of review frequency. You stop asking "was that right?" quarterly and start asking it per commit.
-
-**Failure mode.** IVM requires the computation be expressible as a dataflow over relations. Policy evaluation mostly is. Model inference is an opaque function and is not. So the delta boundary is: incremental on the relational and policy layer, memoized against the C2 oracle on the model layer. Draw that boundary explicitly or the incremental engine silently degrades to full recompute.
-
----
-
-## C4. Portable Organelles over a Verified Mesh
-**Effort: 2–3 months · R1 → R2**
-
-**Primitives.** Namespaces, cgroups, capability dropping, union filesystems (`build your own Docker`). DHT plus per-chunk hash verification (`build your own BitTorrent client`). The WebAssembly component model.
-
-**Mutation.** A capability stops being a configuration entry and becomes a content-addressed artifact whose authority envelope is baked in and whose hash *is* its identity inside the grant. Revocation is then not a message that must reach everyone — it is the removal of a hash from a registry, and every host converges on its own.
-
-**Recombination.** `/capabilities` genomes compile to WASM components. An organ pulls an organelle by hash, verifies it, and runs it under dropped capabilities with a TTL-clamped grant. The Layer 5 authority envelope becomes physically enforced rather than contractually asserted.
-
-**Unlock.** This is the first ontogeny step. A new organ *inherits* capability instead of reimplementing it. The marginal cost curve starts bending.
-
-**Failure mode.** WASI's story for rich network and filesystem access is still thin. Budget real time for host-function shims, and expect anything touching native crypto or long-lived sockets to need an escape hatch — which is precisely where capability enforcement leaks. Audit the shim surface as carefully as the policy.
-
----
-
-# Tier II — Genuinely disruptive
-
-## C5. Proof-Carrying Consequence
-**Effort: 4–9 months · R2 → R3** ← *the wedge*
-
-**Primitives.** A zkVM — SP1 (Plonky3, fully open source) or RISC Zero (zk-STARK, RISC-V). A transparency log — Trillian, the append-only log underneath Sigstore's Rekor. Cedar's verification-guided development method: a Dafny and Lean model of the engine, differentially tested against the Rust implementation across millions of cases.
-
-**Mutation.** This is the whole insight, and it inverts how everyone else approaches zkVMs.
-
-Do not prove the computation. Proving model inference is infeasible at any useful scale, and chasing it is why verifiable AI has stayed a research poster. **Prove only the gate decision.** The statement is: *given evidence digest E, grant digest G, and policy version P, the Consequence Gate returned ALLOW.* That is a few thousand RISC-V cycles. It proves in seconds on commodity hardware, sub-second on a prover network.
-
-The reason this configuration is available to this Kernel and not to a generic agent company is architectural and already built: the model **proposes**, the gate **decides**. That separation is the Kernel's founding invariant. It also happens to be exactly the seam that makes zero-knowledge proof tractable. The hard part is done.
-
-**Recombination.** Every external effect ships three things: a succinct proof that the gate authorized it under a named policy version; an inclusion proof that this policy version was published to a public transparency log *before* the action occurred; and the receipt from C1. A counterparty verifies all three in milliseconds — with no access to your evidence, your ledger, your capital position, or your business.
-
-**Unlock.** This is the step that changes what the institution can do commercially. It can make binding claims to parties who have every reason to distrust it, without disclosure and without an audit engagement. "This action was authorized under policy v37, and v37 was public before the action" becomes a stranger-checkable fact in one API call.
-
-Consider who that reaches: a payer who currently requires an audit; an insurer who currently prices your opacity as risk; a regulator who currently requires a narrative; a capital allocator who currently requires a relationship. Each of those is a cost you pay today because you cannot prove what you already do.
-
-**Failure mode.** Three, all real.
-1. **Proving cost scales with circuit size.** Keep the proven statement minimal and stable. The moment someone proposes proving "the whole workflow," the economics collapse.
-2. **A proof of gate correctness is not a proof of evidence truth.** You prove the gate ran correctly on the evidence it was given. Garbage evidence yields a valid proof of a bad decision. This is a genuine limit — state it publicly rather than letting a counterparty discover it.
-3. **Log ordering is the trust anchor.** If you can backdate a policy version, the entire construction is theater. The log must be third-party-witnessed or the guarantee is self-referential.
-
-**Sequencing note.** You do not need a zkVM to move the number that matters. The first external verification is reachable with a published Merkle checkpoint and one counterparty checking an inclusion proof — that is C1 plus C2, weeks of work. The zkVM makes verification *zero-disclosure*, which is what makes it commercially general. Get one stranger to verify one receipt in the clear first. Then make it private when someone cares enough to ask.
-
----
-
-## C6. Quality-Diversity Governance
-**Effort: 6–12 months · R3**
-
-**Primitives.** MAP-Elites and its implementations (`pyribs`, `QDax`). POET-style co-evolution of environments alongside solutions. C2 as the fitness oracle. The Kernel's existing StrategyTree, ExperimentSpec, and EvolutionCapsule.
-
-**Mutation.** Stop optimizing policy toward a scalar. Optimize toward an *archive* — retain the best configuration in each cell of a behavior space (refusal rate × decision latency × false-allow rate × human-escalation load). MAP-Elites returns an illuminated map, not a champion.
-
-Then co-evolve the adversary. POET's move is that the environment evolves against the solution; here the attack patterns — forged evidence, grant races, budget exhaustion, identity lapse — evolve against the policy archive. Your simulator stops testing the failures you imagined.
-
-**Recombination.** Phase 3 currently promotes one champion per cycle and lets `do_nothing` stand when nothing beats baseline. An archive changes the response to regime change: you *switch* to the cell matching current conditions rather than re-deriving under pressure. Regime shift stops being an outage.
-
-**Unlock.** A documented portfolio of governance configurations plus a map of which regime each dominates. That map is also the most legible artifact you could hand a regulator or an insurer — it demonstrates you know your own failure surface.
-
-**Failure mode.** QD needs cheap fitness evaluation. If one institutional simulation costs minutes, you get thousands of evaluations, not the millions the method assumes. And badly chosen behavior descriptors fill the archive with meaningless diversity — a hundred configurations differing in nothing that matters. Choose descriptors that name real operating tradeoffs, and validate that the archive's cells are actually distinguishable.
-
----
-
-## C7. The Digital Ontogeny Engine
-**Effort: 9–18 months · R3 · the substrate proper**
-
-**Primitives.** Arena allocation and garbage collection (`build your own memory allocator`). Congestion control and backpressure (`build your own network stack`). Constraint solving and timestep integration (`build your own physics engine`). Gene regulatory networks, morphogen gradients, and apoptosis, from developmental biology. Everything in C1–C6.
-
-**Mutation.** A venture is not configured. It is **induced**.
-
-You deposit a stem cell — a generic venture cell carrying the full genome, expressing nothing, holding zero autonomy — into a positional context: market, evidence density, available capital, regulatory gradient. Expression is a function of position. The cell differentiates into an organ because of where it is, not because someone specified what it should be.
-
-The mapping is exact, and every piece already exists in the Kernel or in C1–C6:
-
-| Biology | Kernel |
+| # | What stops needing a human |
 |---|---|
-| Genome | Capability organelles (C4) |
-| Gene regulatory network | Which grants express under which evidence and policy conditions |
-| Morphogen gradient | The observable environment vector |
-| Apoptosis | Kill criteria as a default-on program |
-| Immune system | The Embassy (Layer 7) |
-| Homeostasis | Action-rate backpressure when reconciliation lag rises |
-| Metabolism | The capital waterfall and budget arenas |
-
-**The one inversion that makes it work.** Apoptosis is the hard part, and the difficulty is not technical. A kill program a human can veto at will is not a kill program — it is a review meeting with extra steps, and it will not fire when it matters, because it never does.
-
-So invert the default: **termination fires automatically, and continuation requires affirmative human evidence.** A cell that stops meeting its outcome obligations dies and returns its budget arena to the allocator unless someone produces a reason it should live. This preserves A9 human sovereignty exactly — the human still decides — but it moves the burden of proof onto survival, where it belongs. Default-death with affirmative revival is the only version of portfolio discipline that survives contact with founder attachment.
-
-**Unlock.** Ventures stop being founded and start being grown. Marginal cost of a new organ approaches the cost of establishing its positional context, not the cost of standing up an institution. Every organ inherits provability from C5 at birth. This is where "vast continuous wins" stops being an aspiration and becomes a cost curve you can chart.
-
-**Failure mode.** Differentiation driven by a badly specified environment vector produces organs optimized for a misread of the world — and it produces them *fast*, which is worse than producing them slowly. Gate the gradient's inputs at the same evidence floor as any other consequential input. A morphogen gradient built on unverified market signal is a mechanism for scaling a mistake.
+| 1 | Building the workflow |
+| 2 | Maintaining it when it breaks |
+| 3 | Writing integrations between tools |
+| 4 | Sitting at the keyboard operating software |
+| 5 | Remembering what the organization did |
+| 6 | Engineering new capabilities |
+| 7 | Standing up a new venture |
+| 8 | Managing the portfolio |
+| 9 | Depending on upstream maintainers |
+| 10 | Depending on a model vendor |
+| 11–13 | *(speculative — walls named)* |
 
 ---
 
-# Tier III — Frontier, still grounded
+## The six connector roles
 
-## C8. The Federated Institutional Rail
-**Effort: 18 months – 3 years · R3 → R5**
+Claude is not glue in a vague sense. It does exactly six things between repos, and naming them is what separates this from a wiring diagram:
 
-**Primitives.** Certificate Transparency's gossip and witness protocol. TEE remote attestation across backends — AWS Nitro, Intel TDX, AMD SEV — with EnclaveOS demonstrating multi-backend attestation is practical. The Kernel's Embassy. C5's proof-carrying receipts.
+- **CR1 · Intent→DAG.** Compiles a sentence into a workflow graph another repo executes.
+- **CR2 · Schema bridging.** Maps repo A's output onto repo B's input at runtime, with no adapter written in advance.
+- **CR3 · Failure repair.** Reads a trace of a broken call and rewrites the call.
+- **CR4 · Semantic routing.** Decides which repo handles a request.
+- **CR5 · Tool synthesis.** Writes, tests, and registers a capability that did not exist.
+- **CR6 · Trace→spec.** Turns observed behavior into a durable specification — a test, a node, a policy.
 
-**Mutation.** Other institutions do not join your platform. They run their own kernel and interoperate **on proofs**. You publish policy versions to a shared transparency log; so do they; each verifies the other's gate proofs without access to anything else.
-
-**Recombination.** A cross-institution action requires both gates to allow, both proofs to verify, and both policy versions to be logged prior. Disputes resolve against the log rather than against lawyers.
-
-**Unlock.** This is the rail, and it is the strongest commercial position available: a standard you authored. Value comes from the market becoming more provable, not from you accumulating participants. Note the structure — it only works if you give the *verification* side away for free. The verifier is the gift; the kernel is the business.
-
-**Failure mode.** Standards work is slow, political, and usually fails. Do not start there. The path that works is unilateral: make your proofs verifiable by anyone, publish the verifier as open source, and find one counterparty in enough pain to adopt verification because it saves them money this quarter. Adoption follows a removed cost, never a specification. If the first adopter has to be convinced by the elegance, the design is wrong.
+**The mutation that makes all six economical:** the model writes the artifact *once*, then gets out of the loop. A bridged schema becomes cached code. A repaired call becomes a committed patch. A synthesized tool becomes a registered MCP server. Inference cost amortizes toward zero per execution instead of recurring forever. Configurations that keep the model in the hot path stay expensive and flaky; configurations that use the model as a *compiler* get cheap and stable. Every rung below is built the second way.
 
 ---
 
-# Tier IV — Speculative, with the wall named
+# Rung 1 — The Self-Writing Workflow
+**Weekend · saves an afternoon**
 
-Everything below is honest speculation. Each entry names the specific thing that is not solved, so it can be tracked rather than assumed.
+**Repos.** [n8n](https://github.com/n8n-io/n8n) (~180k stars, 400+ integrations) · Claude.
 
-## C9. The Self-Proving Constitution
-**5+ years, partially open research**
+**Mechanism extracted.** Not n8n's visual editor — its **pre-authenticated connector layer**. Four hundred services with credential handling, retry, and pagination already solved. That is years of unglamorous integration work sitting in a repo.
 
-Compile doctrine to Lean 4. Require every amendment to carry a machine-checked proof that it preserves named invariants: no path to irreversible action without human authority, budget conservation, monotonic provenance.
+**Mutation.** The workflow graph stops being drawn and starts being *generated*. n8n workflows are JSON. Claude writes JSON.
 
-**Why it is not fiction.** Cedar did this at policy-language scale — modeled in Dafny, formalized in Lean, properties like *forbid overrides permit* proven rather than tested, implementation differentially tested against the model across millions of cases. The method is demonstrated.
+**Connector role.** CR1. You describe an outcome; Claude emits workflow JSON; n8n executes it against real credentials.
 
-**The wall.** Verifying a *fixed* specification is solved. Verifying "every future amendment preserves property P" requires the amendment language be restricted enough that P is inductive over it. That restriction is designable and nobody has designed it for institutional doctrine.
+**Why it's rung 1.** It impresses for ten minutes and then becomes infrastructure. That's the correct floor for this list.
 
-**Available today.** The first 20% is not speculative at all. Proving budget conservation and forbid-overrides-permit over the *current* policy set is a Lean exercise on the order of months, using Cedar's published method. That is a real next step, not a someday.
+**Honest limit.** Claude writes plausible n8n JSON, not always *valid* n8n JSON. Validate against the node schema before import, and expect a repair loop on first generation. Which is exactly rung 2.
 
-## C10. Institutional Cryonics
+---
+
+# Rung 2 — The Self-Healing Connector
+**1–2 weeks · removes maintenance**
+
+**Repos.** n8n or [Dify](https://github.com/langgenius/dify) (~144k stars, most-starred agent repo) · [Langfuse](https://github.com/langfuse/langfuse) · Claude.
+
+**Mechanism extracted.** Langfuse's **trace tree** — spans, scores, and datasets attached to a run. Its intended use is human debugging. That's the part to discard.
+
+**Mutation.** The trace is not for a human. It is **input to the author**. An API changes shape, a node throws, the trace lands in Claude's context, Claude rewrites the node, Langfuse scores whether the repair held across the next N runs. A failure becomes a patch instead of an alert.
+
+**Connector role.** CR3 + CR6. Repair the call, then promote the repair to a regression case so the same break never recurs silently.
+
+**Why it's more impressive than rung 1.** Rung 1 produces automation you still babysit. This one produces automation that *survives the vendor changing their API on a Tuesday* — the single largest source of automation rot.
+
+**Honest limit.** Auto-repair on a *write* action is how you get a plausible-looking wrong call executed 400 times. Gate repairs: read-only actions repair automatically; anything with an external effect proposes a patch and waits. This is the first rung where your Kernel's consequence gate earns its existence.
+
+---
+
+# Rung 3 — The Schema-Free Bus
+**3–6 weeks · removes integration work**
+
+**Repos.** [Firecrawl](https://github.com/firecrawl/firecrawl) · [Qdrant](https://github.com/qdrant/qdrant) · [Mem0](https://github.com/mem0ai/mem0) (~52k) · n8n · Claude.
+
+**Mechanisms extracted.** Firecrawl: **URL → agent-legible markdown normalization**. Qdrant: **HNSW search with payload filtering** — the filtering matters more than the vectors here. Mem0: **extract → consolidate → retrieve with decay**.
+
+**Mutation.** Stop writing adapters. Two repos that were never designed to talk get connected by Claude reading both schemas and emitting a mapping function — and then **the mapping is cached as code and never regenerated**. The model is a compiler pass, not a runtime dependency. First call costs an inference; the next hundred thousand cost nothing.
+
+**Connector role.** CR2, used as a build step rather than a request handler.
+
+**Why it's more impressive.** Integration is the tax on every system that has ever been assembled from parts. Rungs 1–2 automate work inside one tool's boundary. This one dissolves the boundary. Adding a new source becomes a paste of its docs, not a sprint.
+
+**Honest limit.** Silent semantic drift is the real failure, not crashes. Two fields both named `status` meaning different things produce a mapping that runs clean and is wrong. Mitigation: have Claude emit property assertions alongside the mapping (`status ∈ {a,b,c}`, `total == sum(items)`) and fail the pipeline when an assertion breaks. Without assertions this rung is a liability.
+
+---
+
+# Rung 4 — The Operator
+**2–3 months · removes the human at the keyboard**
+
+**Repos.** [browser-use](https://github.com/browser-use/browser-use) (~86k stars) · [Whisper](https://github.com/openai/whisper) · [LiveKit](https://github.com/livekit/livekit) · Langfuse · Claude.
+
+**Mechanism extracted.** browser-use's real contribution is not "agent browses web." It is **projecting a rendered DOM into a discrete, enumerable action space** — turning a visual interface into a finite set of choices a model can select from. LiveKit contributes **realtime turn detection**; Whisper contributes **timestamped transcription**.
+
+**Mutation.** Every operating session is recorded as an action trace, and **failed sessions become the regression suite**. The mutation is treating browser automation as a *test corpus generator* rather than a task executor. Nobody does this, and it is the difference between a demo that works once and an operator that works in month six.
+
+**Connector role.** CR4 (route the step: click, call the API, escalate to a person) + CR6 (a failed session becomes a durable test).
+
+**Why it's more impressive.** Every prior rung needs the target system to have an API. This one operates the enormous surface of software that has no API and never will — payer portals, broker systems, county records, legacy dashboards. That's most of the economically interesting software in existence.
+
+**Honest limit.** Two, both real. Web operation is brittle against layout change — the recorded-trace suite is what tells you it broke, and it will break weekly. And operating a portal on someone's behalf usually touches terms of service and sometimes touches law; scope this to systems you're authorized to operate, and keep the authorization on file. This is not a technical footnote.
+
+---
+
+# Rung 5 — The Organizational Nervous System
+**3–5 months · removes institutional forgetting**
+
+**Repos.** Mem0 · Qdrant · n8n · Langfuse · [LlamaIndex](https://github.com/run-llama/llama_index) · Claude.
+
+**Mechanism extracted.** Mem0's memory loop, taken out of its intended scope.
+
+**Mutation.** Memory in every agent framework is **agent-scoped** — it belongs to a conversation or an assistant. Make it **organization-scoped** instead. Every event from every rung above — a repaired connector, an operated portal session, a workflow outcome, a decision and its result — writes into one substrate. Retrieval is by *situation*, not by thread.
+
+**Connector role.** CR6 at organizational scale. Claude converts raw events into typed memories with causal links: what was decided, what was expected, what actually happened.
+
+**Why it's more impressive.** The prior four rungs each get better at doing a thing. This is the first one that gets better at *having done things.* An organization that cannot retrieve why it made a decision two years ago repeats the decision. Compounding starts here — this is the rung where the system stops being a set of tools and starts being an institution with a past.
+
+**Honest limit.** Memory systems degrade toward a landfill. Without eviction, contradiction detection, and confidence decay, retrieval quality falls as the corpus grows — the system gets *worse* the longer it runs, which is the opposite of the promise. Budget as much engineering for forgetting as for remembering. Mem0 gives you decay primitives; the contradiction handling you build yourself.
+
+---
+
+# Rung 6 — The Substrate That Grows Its Own Tools
+**5–9 months · removes the engineer from the capability loop**
+
+**Repos.** [OpenHands](https://github.com/All-Hands-AI/OpenHands) · [E2B](https://github.com/e2b-dev/E2B) (Firecracker microVMs, sub-200ms start) · MCP · [vLLM](https://github.com/vllm-project/vllm) · Claude.
+
+**Mechanisms extracted.** OpenHands: **an agent that edits a repository and runs its own tests** — the self-verification loop, not the IDE. E2B: **disposable isolated VM with snapshot/restore**. MCP: **typed capability discovery**.
+
+**Mutation.** When the system hits a capability it lacks, it does not file a ticket. It writes an MCP server for that capability inside an E2B sandbox, generates tests, runs them, and — only on green — registers the server in the tool registry. **The registry is grown, not curated.**
+
+**Connector role.** CR5, the first genuinely hard one. Claude synthesizes a tool, and the sandbox plus test suite is what makes synthesis safe rather than reckless.
+
+**Why it's a step change.** Rungs 1–5 all operate within a fixed capability set that a human defined. This is the first configuration whose *capability surface expands on its own*. This is where "developmental substrate" stops being a metaphor: the thing acquires new organs in response to encountering an environment it cannot yet handle.
+
+**Honest limit.** Tests written by the same model that wrote the code validate the model's *understanding*, not the requirement — a confidently wrong tool ships with confidently passing tests. The mitigation is that a synthesized tool enters at zero authority: it runs, its outputs are recorded, and it earns capability only against real outcomes over time. Your Kernel's A0–A8 autonomy ladder is precisely this instrument, which is why this rung is available to you and dangerous for anyone without one.
+
+---
+
+# Rung 7 — The Venture Cell
+**9–15 months · removes venture setup**
+
+**Repos.** Everything above · Dify (provider abstraction, prompt versioning, eval harness) · vLLM (PagedAttention, continuous batching) · [LangGraph](https://github.com/langchain-ai/langgraph) (~34.5M monthly downloads).
+
+**Mechanism extracted.** LangGraph's **checkpointer** — stateful graph execution that can be interrupted and resumed. Not the graph API; the checkpoint.
+
+**Mutation.** A venture stops being *configured* and starts being *induced*. You deposit a generic cell — full capability genome, nothing expressed, zero autonomy — into a **positional context**: a market, an evidence density, a capital allocation, a regulatory gradient. What expresses is a function of position. The cell differentiates into an organ because of where it is, not because someone wrote a spec.
+
+Rungs 1–6 are the genome. Rung 7 is the first time it *develops*.
+
+**Connector role.** All six. Claude reads the position and determines expression: which connectors authenticate (CR1), which schemas bridge (CR2), which portals get operated (CR4), which tools get synthesized for this market specifically (CR5).
+
+**Why it's the most impressive thing on this list that is actually buildable.** The marginal cost of a new venture collapses toward the cost of establishing its positional context. Not "faster to launch." *Structurally cheaper*, and cheaper again each time, because rung 5 means every cell inherits what every prior cell learned.
+
+**Honest limit.** A badly specified positional vector produces an organ optimized for a misreading of the world, and produces it fast — which is worse than producing it slowly, because speed removes the interval in which a human notices. Gate the position's inputs at the same evidence floor as any consequential input. A market signal nobody verified is a mechanism for scaling a mistake efficiently.
+
+---
+
+# Rung 8 — The Population
+**15–24 months · removes portfolio management**
+
+**Repos.** Rung 7 × N · [pyribs](https://github.com/icaros-usc/pyribs) / QDax (MAP-Elites) · Langfuse at fleet scale.
+
+**Mechanism extracted.** MAP-Elites: **keep the best performer in each cell of a behavior space**, rather than a single global winner.
+
+**Mutation.** Do not select the best venture. Maintain an **archive** — the best cell in each region of (margin × capital intensity × regulatory exposure × time-to-revenue). And invert the survival default: **termination fires automatically; continuation requires affirmative human evidence.** A cell that stops meeting its outcome obligations dies and returns its budget unless someone produces a reason it should live.
+
+That inversion is the entire rung. A kill program a human can veto at will is a review meeting with extra steps — it will not fire when it matters, because it never does. Default-death with affirmative revival is the only portfolio discipline that survives founder attachment. Human sovereignty is untouched: the human still decides. The burden of proof moves onto survival, where it belongs.
+
+**Connector role.** CR4 at portfolio scale — Claude routes capital and attention across the archive by reading outcomes, and proposes which cells to revive.
+
+**Why it's more impressive.** Rung 7 grows one organ well. This one runs a population, kills its own losers without being asked, and keeps a *map* of which configuration dominates which regime — so a market shift is a switch rather than a crisis.
+
+**Honest limit.** Quality-diversity needs cheap fitness evaluation, and a venture's fitness signal takes months to arrive. This is the binding constraint on the whole rung: you will get tens of evaluations per year, not the millions MAP-Elites assumes. It works only if you can build a *proxy* fitness that correlates with the real one — and if that proxy is wrong, you will efficiently populate an archive of well-diversified failures.
+
+---
+
+# Rung 9 — Upstream Independence
+**2–3 years · removes dependency on maintainers**
+
+**Repos.** All of the above, plus their own source trees.
+
+**Mutation.** The substrate stops being a *consumer* of the repos it runs on. When a dependency blocks it — a missing n8n node, a browser-use selector strategy that fails on a specific portal class, a Qdrant filter it needs — rung 6's synthesis loop points **at the dependency's own codebase**: fork, patch, test against the upstream suite, deploy the fork, and open the PR upstream.
+
+**Connector role.** CR5 turned on the substrate's own foundations.
+
+**Why it's more impressive.** Every configuration up to here inherits its ceiling from its dependencies. This one raises its own floor. It also produces a genuinely regenerative position: the ecosystem you depend on gets healthier because you are in it, and your improvements return as maintained upstream code rather than fork debt you carry alone.
+
+**Honest limit.** Maintaining forks of nine major repos is a real, permanent cost, and it is the way this rung actually fails — not dramatically, but by slow accumulation of divergence until upgrades become impossible. The discipline is: patch upstream-first, fork only while the PR is open, and delete the fork when it merges. If your fork count is not trending toward zero, the rung is failing.
+
+---
+
+# Rung 10 — Cognitive Self-Hosting
+**3–5 years · removes the model vendor**
+
+**Repos.** vLLM (production serving) · [Ollama](https://github.com/ollama/ollama) / llama.cpp (local) · open-weight models · the substrate's own accumulated traces from rung 5.
+
+**Mutation.** Rungs 1–9 rent their cognition. This one distills it. Every trace the substrate has produced — repaired connectors, operated portals, synthesized tools, venture outcomes — is training data for a small model that handles the high-frequency, low-ambiguity share of the work locally on vLLM, while a frontier model handles the rest. Volume shifts toward local as competence accumulates.
+
+**Connector role.** Claude becomes the *teacher* rather than the runtime — supervising, generating training data, and adjudicating cases the local model flags as uncertain.
+
+**Why it's near the ceiling of the plausible.** Cost per action falls with usage instead of rising with it, and the institution stops being one pricing change or one deprecation away from an outage. A rented cognition layer is a dependency no amount of governance survives.
+
+**Honest limit, stated precisely.** Distillation captures the *distribution you have already seen*. The local model will be excellent at the work you've done and unreliable at the work you haven't — which means the routing decision (local vs. frontier) is the entire engineering problem, and getting it wrong is invisible until it is expensive. Also: a model trained on your own traces inherits your own errors and amplifies them, with no external correction. Keep a frontier model in an audit role permanently, not just during the transition.
+
+---
+
+# Tier: speculative
+
+Below here I am no longer confident. Each entry names the specific unsolved thing so it can be tracked rather than assumed.
+
+## Rung 11 — The Substrate That Proves Itself to Strangers
+**5+ years · partially open research**
+
+Everything above is verifiable only by you. This rung makes each consequential action ship a succinct cryptographic proof that it was authorized under a published policy version — verifiable by a payer, insurer, or regulator with **no access to your data at all**.
+
+**Why it isn't fiction.** [SP1](https://github.com/succinctlabs/sp1) and [RISC Zero](https://github.com/risc0/risc0) prove RISC-V execution today. [Trillian](https://transparency.dev/) provides the tamper-evident log. Cedar demonstrated that an authorization engine can be formally modeled in Lean and Dafny and differentially tested against its implementation. Crucially, you do not prove the *model* — infeasible — you prove only the **gate decision**, a few thousand cycles. Your Kernel's model-proposes/gate-decides split is exactly the seam that makes this tractable.
+
+**The wall.** Proving gate correctness is not proving evidence truth: bad evidence yields a valid proof of a bad decision. And log ordering must be third-party-witnessed or the guarantee is self-referential.
+
+## Rung 12 — Institutional Substrate Independence
 **5–10 years**
 
-The institution as a bit-exact reconstitutable artifact: `seed + event log + pinned model oracles + content-addressed organelles`, rebuilt hermetically on hardware that does not exist yet. Nix-style hermetic builds, C2's determinism, C4's content addressing.
+The whole substrate as a bit-exact reconstitutable artifact: seed, event log, pinned model weights, content-addressed tools — rebuildable on hardware that does not exist yet. Continuity as a property rather than a plan.
 
-**The wall, precisely.** You cannot preserve a hosted model. You preserve the *transcript*, which makes the past replayable but not the future runnable. Full substrate independence requires weights you physically control.
+**The wall.** You cannot preserve a hosted model, only its transcript — which makes the past replayable but not the future runnable. Full independence requires weights you physically control, which is the real argument for rung 10 arriving before this one.
 
-That is not a footnote. It is a strategic argument, arrived at from the continuity requirement rather than from fashion: at some point the institution needs a small model it owns outright, not because owned models are better, but because a rented cognition layer is a dependency no amount of governance can survive. Worth deciding deliberately rather than discovering.
+## Rung 13 — Federated Development
+**Horizon, not roadmap**
 
-## C11. Economic Autopoiesis
-**5–10 years**
+Many substrates, each independently provable, differentiating into organs, interoperating on proofs rather than on trust — so a market can rehearse a change before adopting it.
 
-Organs pay a metabolic tax into the capital waterfall. The allocator becomes a constraint solver over concentration limits, liquidity policy, and evidence-weighted expected value. Apoptosis returns capital. The C6 archive selects the configuration matching the regime. The institution becomes homeostatic with respect to cash.
-
-**The wall.** Not the mechanics — all of it is buildable. What is unproven is whether an evidence-weighted allocator beats a competent human allocator across a full economic cycle. Nobody knows, because nobody has run one for a decade and instrumented it.
-
-Which is the actual argument for building it: the Kernel's outcome obligations are precisely the instrument that would generate that dataset. Worth building even if the answer turns out to be no, because the answer itself does not currently exist.
-
-## C12. The Egregore Proper
-**Terminus, not roadmap**
-
-Many institutions, each independently provable, federating on a shared log, differentiating into organs, running cross-institution counterfactual tribunals so a market can rehearse a policy change before adopting it. Regulation as a simulated, evidence-tested artifact rather than a negotiated document.
-
-**Stated as a horizon and nothing more.** Civilizational claims are where capable engineers go to stop shipping. It belongs on the list because it is the honest terminus of the axis — and it belongs *last* because treating it as a plan is the most expensive mistake available in this entire document.
+**Stated as a terminus and nothing more.** Civilizational claims are where capable engineers go to stop shipping. It is last on the list because treating it as a plan is the most expensive mistake available in this document.
 
 ---
 
-## The single bottleneck
+## Where the ladder actually breaks
 
-Every configuration above is decoration until one number moves.
+Not at rung 13. At **rung 6**.
 
-The Kernel has 172 green tests, thirteen modules closed across five orthogonal closures, Merkle-anchored provenance, and a verifier that runs clean. It also has, as far as this document can establish, **zero external verifiers** — no party outside the institution has ever independently checked one of its claims.
+Rungs 1–5 are assembly: real work, low novelty, and the failure modes are known. Rung 6 is the first one that requires a mechanism nobody has solved — deciding whether a capability the system wrote for itself is safe to grant authority to. Every rung above 6 inherits that unsolved problem and compounds it.
 
-That number reads zero. Every tier here is an elaborate way of raising it.
-
-Which sets the order of operations, and it is not the order of impressiveness:
-
-1. **C2 first.** Deterministic replay is the highest leverage-per-hour item on the list, and it is a prerequisite for C3, C6, and C10. It also gets cheaper the earlier it is built and rapidly more expensive after.
-2. **C1 alongside it.** Weeks. Makes receipts self-explaining.
-3. **Then publish a Merkle checkpoint and get one outsider to verify one receipt in the clear.** Not a customer. Not a pilot. One person with no stake, checking one inclusion proof. Zero to one.
-4. **C5 only once someone has asked for privacy.** The zkVM is the right answer to a question a real counterparty has actually asked. Built before that question exists, it is the most sophisticated possible form of motion without proof — and this institution's own doctrine already names that as the failure to interrupt.
-
-C7 is the design worth wanting. C5 is the wedge that makes it fundable. C2 is what you build Monday.
+Which is the honest reading of this list: the interesting difficulty is not at the sci-fi end. It is at rung 6, it arrives sooner than the timeline suggests, and your existing autonomy ladder is the closest thing to an answer that currently exists anywhere.
 
 ---
 
 ## Sources
 
-- [build-your-own-x](https://github.com/codecrafters-io/build-your-own-x) — primitive mechanism extraction
-- [Awesome Deterministic Simulation Testing](https://github.com/ivanyu/awesome-deterministic-simulation-testing) · [Antithesis on DST](https://antithesis.com/docs/resources/deterministic_simulation_testing/) · [What's the big deal about DST](https://notes.eatonphil.com/2024-08-20-deterministic-simulation-testing.html) · [WarpStream](https://www.warpstream.com/blog/deterministic-simulation-testing-for-our-entire-saas)
-- [SP1 zkVM](https://github.com/succinctlabs/sp1) · [RISC Zero](https://github.com/risc0/risc0)
-- [Trillian / transparency.dev](https://transparency.dev/) · [Sigstore Rekor](https://github.com/sigstore/rekor) · [Rekor overview](https://docs.sigstore.dev/logging/overview/)
-- [How We Built Cedar: A Verification-Guided Approach](https://arxiv.org/pdf/2407.01688) · [Cedar with automated reasoning and differential testing](https://www.amazon.science/blog/how-we-built-cedar-with-automated-reasoning-and-differential-testing)
-- [DBSP: Automatic Incremental View Maintenance](https://www.vldb.org/pvldb/vol16/p1601-budiu.pdf)
-- [QDax](https://arxiv.org/pdf/2308.03665) · [POET](https://dl.acm.org/doi/10.1145/3321707.3321799)
-- [EnclaveOS multi-backend attestation](https://distrust.co/blog/enclaveos.html) · [Nitro vs TDX attestation roots](https://dev.to/voltagegpu/aws-nitro-enclaves-vs-intel-tdx-why-attestation-root-matters-for-regulated-workloads-56ib)
-- [Automerge / local-first landscape](https://fosdem.org/2026/schedule/track/local-first/)
+Top-10 / trending lists consulted: [Fungies — Top 20 AI agent repos by stars](https://fungies.io/top-github-repositories-ai-agent-frameworks-2026/) · [Firecrawl — best open source agent frameworks 2026](https://www.firecrawl.dev/blog/best-open-source-agent-frameworks) · [The Agent Report — top 20 open source agent tools](https://the-agent-report.com/2026/06/top-20-open-source-ai-agent-tools-2026/) · [ByteByteGo — Top AI GitHub repositories 2026](https://blog.bytebytego.com/p/top-ai-github-repositories-in-2026) · [OSSInsight trending AI](https://ossinsight.io/trending/ai) · [Analytics Vidhya — trending July 2026](https://www.analyticsvidhya.com/blog/2026/07/trending-ai-github-repositories/)
+
+Supporting: [Modal — best code execution sandboxes 2026](https://modal.com/resources/best-code-execution-sandboxes-coding-agents) · [agent sandboxing: Firecracker, gVisor, isolation](https://manveerc.substack.com/p/ai-agent-sandboxing-guide) · [inference engines: vLLM, Ollama, llama.cpp](https://dev.to/agdex_ai/5-best-open-source-llm-inference-engines-in-2026-vllm-ollama-llamacpp-more-2811) · [vector DBs for RAG 2026](https://www.turingpost.com/p/vector-databases-libraries-resources) · [How We Built Cedar](https://arxiv.org/pdf/2407.01688) · [pyribs / QDax](https://arxiv.org/pdf/2308.03665)

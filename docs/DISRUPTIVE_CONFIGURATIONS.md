@@ -1,8 +1,12 @@
-# Disruptive Configurations
+# Disruptive Configurations — Track A
 
-**Fourteen recombinations, ordered by ascending audacity. Each one converts a class of failure from *unlikely* to *structurally impossible*.**
+**The institutional capability track. Fourteen recombinations, ordered by ascending audacity. Each one converts a class of failure from *unlikely* to *structurally impossible*.**
 
 Status: research artifact. Not ratified doctrine.
+
+> **Scope, stated up front.** This is one of two tracks. Built alone it produces a governed, self-improving, venture-producing institutional operating system — top-down, authority-bearing, correctness-critical. It does not produce an organ nobody designed, and it must not claim to. The developmental track lives in [`DEVELOPMENTAL_TRACK.md`](./DEVELOPMENTAL_TRACK.md) and runs on its own tests until convergence.
+>
+> **Vocabulary rule.** Nothing in this document may use developmental language — cell, gradient, differentiation, apoptosis, regeneration — for a mechanism that reads global state. Those terms are reserved for Track B, where each one has a test that can fail. An earlier draft violated this rule by calling a global environment vector a morphogen gradient; the rule exists so that cannot recur.
 
 ---
 
@@ -158,7 +162,9 @@ This is the failure mode of autonomous systems at scale and it has no widely-ado
 
 **The leap.** The generational hypothesis is *empirically true of ventures, bets, and commitments*, and nobody has made the analogy operational. New bets live in a nursery with frequent, cheap kill checks. Survivors get promoted and reviewed rarely. Write barriers track the case that actually matters: **a tenured venture that has quietly become dependent on a nursery experiment.** That dependency is invisible in every portfolio review process I know of, and it is exactly how a proven business acquires a fatal dependency on an unproven one.
 
-**The inversion that makes it real.** Collection is automatic. A kill program a human can veto at will is a review meeting with extra steps — it will not fire when it matters, because it never does. So: **termination fires by default; continuation requires affirmative evidence.** A cell that stops meeting its outcome obligations dies and returns its budget arena unless someone produces a reason it should live.
+**The inversion that makes it real.** Collection is automatic. A kill program a human can veto at will is a review meeting with extra steps — it will not fire when it matters, because it never does. So: **termination fires by default; continuation requires affirmative evidence.** A venture that stops meeting its outcome obligations is collected and returns its budget arena unless someone produces a reason it should live.
+
+*(Collection here is centrally scheduled and reads global portfolio state. That makes it garbage collection, not apoptosis — the vocabulary rule above applies to this rung as much as any other.)*
 
 Human sovereignty is completely preserved — the human still decides. What moves is the burden of proof, onto survival, where it belongs. Default-death with affirmative revival is the only portfolio discipline that survives founder attachment, and founder attachment is undefeated.
 

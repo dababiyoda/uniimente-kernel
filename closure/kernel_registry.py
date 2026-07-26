@@ -332,19 +332,20 @@ def build_registry() -> ClosureRegistry:
         return refused == 2, "non-spiffe emissions and UNIIMENTE-as-principal both refused"
 
     def events_evidence():
-        from events.spine import DurableWorkflow, WorkflowStep, WorkflowKilled
+        from events.spine import (WorkflowStep, WorkflowKilled,
+                                  durable_workflow, resume_workflow)
         spine = _spine()
         calls = []
         def mk(name):
             return WorkflowStep(name=name, run=lambda s: (calls.append(name) or {name: 1}),
                                 compensate=lambda s: None)
-        wf = DurableWorkflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")],
+        wf = durable_workflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")],
                              actor="alfonso", legal_principal="alfonso_lopez")
         try:
             wf.execute(kill_at_step="b")
         except WorkflowKilled:
             pass
-        resumed = DurableWorkflow.resume(spine, "wf-closure", steps=[mk("a"), mk("b"), mk("c")])
+        resumed = resume_workflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")])
         resumed.execute()
         return resumed.status == "completed" and calls.count("a") == 1 and calls == ["a", "b", "c"], \
             "killed workflow resumed from checkpoint; finished steps never re-executed"
@@ -359,7 +360,7 @@ def build_registry() -> ClosureRegistry:
             "idempotent inbox: duplicate deliveries cost nothing, ledger stays lean"
 
     def events_regenerative():
-        from events.spine import DurableWorkflow, WorkflowStep, WorkflowFailed
+        from events.spine import WorkflowStep, WorkflowFailed, durable_workflow
         spine = _spine()
         undone = []
         def boom(s):
@@ -367,7 +368,7 @@ def build_registry() -> ClosureRegistry:
         steps = [WorkflowStep(name="s1", run=lambda s: {"s1": 1},
                               compensate=lambda s: undone.append("s1")),
                  WorkflowStep(name="s2", run=boom, max_retries=0)]
-        wf = DurableWorkflow(spine, "wf-fail", steps, actor="alfonso",
+        wf = durable_workflow(spine, "wf-fail", steps, actor="alfonso",
                              legal_principal="alfonso_lopez")
         try:
             wf.execute()

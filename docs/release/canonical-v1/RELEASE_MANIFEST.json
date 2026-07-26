@@ -1,9 +1,35 @@
 {
+  "archive_anchor": {
+    "accuracy_note": "Described as the REMOTE PRE-RELEASE ARCHIVE ANCHOR, not as absolutely immutable. GitHub's own release object reports immutable=false, and no branch/tag protection rule preventing deletion or movement was observed. The anchor is a real, independently verifiable remote reference; it is not cryptographically or administratively undeletable.",
+    "direct_tag_sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "frozen_rollback_commit": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "github_release": {
+      "draft": false,
+      "exists": true,
+      "github_reported_immutable": false,
+      "id": 360089207,
+      "name": "Frozen Main Before Canonical v1 Release.",
+      "prerelease": false,
+      "target_commitish": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/releases/tag/main-pre-canonical-v1-2026-07-19"
+    },
+    "peeled_commit_sha": null,
+    "peeled_note": "not applicable \u2014 a lightweight tag has no separate tag object, so the direct SHA IS the commit",
+    "tag_name": "main-pre-canonical-v1-2026-07-19",
+    "tag_type": "lightweight",
+    "tag_type_evidence": "git cat-file -t resolves to 'commit', and ls-remote emits no '^{}' peeled record; an annotated tag would show both",
+    "targets_frozen_pre_release_main": true,
+    "verification_command": "git ls-remote --tags origin \"refs/tags/main-pre-canonical-v1-2026-07-19*\"",
+    "verification_result": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393\trefs/tags/main-pre-canonical-v1-2026-07-19",
+    "verification_timestamp_utc": "2026-07-26T22:22:00.392776Z",
+    "verified_release_head": "526e320475d7b1175c546d48147f9f49f53831e1"
+  },
   "archive_tag_requirement": {
     "must_peel_to": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
     "required": true,
-    "status": "NOT CREATED \u2014 git proxy returns HTTP 403 on tag push; founder-operated",
-    "tag": "main-pre-canonical-v1-2026-07-19"
+    "status": "RESOLVED \u2014 verified present on the remote",
+    "tag": "main-pre-canonical-v1-2026-07-19",
+    "verified_at_utc": "2026-07-26T22:22:00.392776Z"
   },
   "authority_matrix_sha256": "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45",
   "canonical_subsystems": [
@@ -77,7 +103,7 @@
     "service-identities.yaml": "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
   },
   "known_limitations": [
-    "The immutable archive tag does not yet exist; the archive is a BRANCH (archive/main-2026-07-19). Founder action required before merging into main.",
+    "The archive anchor exists as a LIGHTWEIGHT tag plus a GitHub Release, both resolving to 3d9b5779. GitHub reports immutable=false and no protection rule was observed, so it is a verifiable anchor rather than an undeletable one.",
     "Packages 3 and 4 are governed experiments, not autonomous regeneration and not open-ended self-repair.",
     "Package 4's state migration is process-local over an in-memory ledger: NOT distributed and NOT crash-consistent.",
     "Package 4 used an isolated ledger instance and the p4x- workflow namespace; the provider substitution at canonical sites is real, the durable history written is not the institution's own.",
@@ -125,6 +151,7 @@
     "linker/manifest.py": "b7b14a9177717ae0cdd8a5c702a1efc202b522f2e488a7666042d7e9aab8e33f"
   },
   "shutdown_policy_sha256": "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54",
+  "supersedes_manifest_sha256": "6aef5a03065cd78282cd009ad98d93f264e9ed82dac8c43579a5e1a3ac8555e2",
   "venture_cells": {
     "ivio_nemt": {
       "ACTIVE": false,

@@ -39,3 +39,28 @@ governed":
 It certifies the **Kernel**, not a venture, and not an external consequence. The
 release contains zero Clean Verified Outcomes. Nothing here has been deployed,
 spent, or contacted.
+
+---
+
+## Archive anchor verification (recorded 2026-07-26)
+
+| | |
+|---|---|
+| Tag | `main-pre-canonical-v1-2026-07-19` |
+| Type | **lightweight** — `git cat-file -t` resolves to `commit`, and `ls-remote` emits no `^{}` record |
+| Resolves to | `3d9b5779a7093d6ddd07f225c8329ead6d0c6393` ✓ |
+| GitHub Release | exists, id `360089207`, target `3d9b5779…`, not draft, not prerelease |
+| `main` | `3d9b5779…` unchanged ✓ |
+| archive branch | `3d9b5779…` unchanged ✓ |
+
+```
+$ git ls-remote --tags origin "refs/tags/main-pre-canonical-v1-2026-07-19*"
+3d9b5779a7093d6ddd07f225c8329ead6d0c6393	refs/tags/main-pre-canonical-v1-2026-07-19
+```
+
+**Terminology, stated accurately.** This is the **remote pre-release archive
+anchor**. It is not described as absolutely immutable: GitHub's own release
+object reports `immutable: false`, and no branch- or tag-protection rule
+preventing deletion or movement was observed. The anchor is real and
+independently verifiable by anyone with repository access — that is what it
+provides, and it is not the same thing as being undeletable.

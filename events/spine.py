@@ -281,3 +281,40 @@ class DurableWorkflow:
                 sensitivity="confidential",
                 payload={"workflow_id": self.workflow_id, "step": step.name,
                          "failed_step": failed_step, "ok": ok, "note": note}))
+
+
+# ---------------------------------------------------------------------------
+# Governed engine seam (Package 4, founder decision 1)
+#
+# The canonical construction sites call these factories instead of the class
+# directly, so a governed replacement can take over at the real boundary. The
+# DurableWorkflow class above is UNCHANGED and remains the default: with no
+# replacement active, `resolve` returns it and the untouched spine, so these
+# factories are exactly equivalent to constructing it directly.
+#
+# Direct construction of DurableWorkflow remains valid and is still used by
+# existing tests — the seam adds a governed path, it does not remove the plain
+# one.
+
+def durable_workflow(spine, workflow_id: str, steps: list[WorkflowStep], *,
+                     actor: str, legal_principal: str):
+    """Construct the workflow through the governed engine seam."""
+    from events.engine import resolve
+
+    engine, resolved_spine = resolve(spine, workflow_id)
+    return engine(resolved_spine, workflow_id, steps,
+                  actor=actor, legal_principal=legal_principal)
+
+
+def resume_workflow(spine, workflow_id: str, steps: list[WorkflowStep]):
+    """Resume through the governed engine seam.
+
+    Resolution happens per workflow id, so a resume can legitimately land on a
+    different engine than the one that wrote the checkpoint. That IS the
+    stateful-replacement case, and it is exactly why the checkpoint must carry
+    enough state to be read by an engine that did not write it.
+    """
+    from events.engine import resolve
+
+    engine, resolved_spine = resolve(spine, workflow_id)
+    return engine.resume(resolved_spine, workflow_id, steps)

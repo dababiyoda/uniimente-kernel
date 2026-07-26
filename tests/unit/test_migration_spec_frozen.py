@@ -293,16 +293,3 @@ def test_continuity_baseline_is_true_right_now():
         with open(os.path.join(ROOT, rel), "rb") as fh:
             digest.update(fh.read())
     assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
-
-
-def test_no_candidate_implementation_exists_in_this_commit():
-    """Freeze discipline: the spec lands before the code it judges.
-
-    This test is expected to be DELETED in the commit that adds candidates —
-    deleting it is the visible act of leaving the freeze phase, which is the
-    point.
-    """
-    migration_dir = os.path.join(ROOT, "evolution", "migration")
-    present = sorted(f for f in os.listdir(migration_dir) if f.endswith(".py"))
-    assert present == ["__init__.py", "spec.py"], (
-        f"candidate or adapter code landed in the freeze commit: {present}")

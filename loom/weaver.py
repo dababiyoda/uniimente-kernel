@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from events.spine import DurableWorkflow, WorkflowStep
+from events.spine import DurableWorkflow, WorkflowStep, durable_workflow
 from loom.ratify import Ratifier
 
 
@@ -59,7 +59,7 @@ class Weaver:
                 if comp_op else None,
                 max_retries=spec.max_retries,
                 approval_wait=spec.approval_required))
-        wf = DurableWorkflow(self.spine, workflow_id, steps,
+        wf = durable_workflow(self.spine, workflow_id, steps,
                              actor=pattern.authored_by,
                              legal_principal=pattern.legal_principal)
         self.spine.ledger.append("event", {"type": "loom.pattern_woven",

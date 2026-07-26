@@ -30,8 +30,71 @@ class Substrate:
         self.u = [1.0] * self.n
         self.v = [0.0] * self.n
 
+        # Optional tissue-scale morphogen. None means the field is absent, not
+        # zero — cells receive no morphogen argument at all in that case.
+        self.morphogen = None
+
         self._ortho = self._build_ortho()
         self._diag = self._build_diag()
+
+        # Baseline controls. Both are null models for the perturbation study:
+        # without them, "the pattern came back" is an observation with nothing
+        # to be measured against.
+        self._diffusion = True
+
+    # -- baseline controls --------------------------------------------------
+
+    def shuffle_topology(self):
+        """Randomly permute adjacency, preserving degree, destroying locality.
+
+        Null model 1. If pattern still forms and reconstitutes on a shuffled
+        neighbourhood, then spatial locality was doing no work and the Stage 1
+        result is an artefact of the reaction terms alone.
+        """
+        perm = list(range(self.n))
+        self.rng.shuffle(perm)
+        self._ortho = [tuple(perm[self.rng.randrange(self.n)] for _ in range(4))
+                       for _ in range(self.n)]
+        self._diag = [tuple(perm[self.rng.randrange(self.n)] for _ in range(4))
+                      for _ in range(self.n)]
+
+    def disable_diffusion(self):
+        """Remove transport while leaving reaction intact.
+
+        Null model 2. The stencil weights sum to exactly zero, so feeding each
+        cell its own value as every neighbour yields a Laplacian of zero
+        without touching cell.py. Reaction-only dynamics cannot produce
+        spatial structure; if they appear to, the metric is wrong.
+        """
+        self._diffusion = False
+
+    def _neighbour_values(self, field, idx):
+        if not self._diffusion:
+            own = field[idx]
+            return (own, own, own, own), (own, own, own, own)
+        o, d = self._ortho[idx], self._diag[idx]
+        return (
+            (field[o[0]], field[o[1]], field[o[2]], field[o[3]]),
+            (field[d[0]], field[d[1]], field[d[2]], field[d[3]]),
+        )
+
+    # -- long-range signalling ----------------------------------------------
+
+    def establish_morphogen_gradient(self, source_width=3, decay=0.965):
+        """A tissue-scale gradient from a boundary source.
+
+        This is the legitimate long-range input the corrected invariant
+        permits — the computational analogue of Bicoid. The field spans the
+        whole tissue, but each cell reads only the scalar at its own location
+        and has no access to the field's shape, extent, or its own position
+        within it.
+        """
+        self.morphogen = [0.0] * self.n
+        for y in range(self.height):
+            for x in range(self.width):
+                distance = min(x, self.width - x)
+                value = decay ** max(0, distance - source_width)
+                self.morphogen[x + y * self.width] = value
 
     # -- topology -----------------------------------------------------------
 
@@ -85,22 +148,18 @@ class Substrate:
     def tick(self, dt=1.0):
         """One synchronous update of every cell, using only local rules."""
         u, v = self.u, self.v
-        ortho, diag = self._ortho, self._diag
         step = cell.step
+        morphogen = self.morphogen
 
         nu = [0.0] * self.n
         nv = [0.0] * self.n
 
         for idx in range(self.n):
-            o = ortho[idx]
-            d = diag[idx]
+            ou, du_ = self._neighbour_values(u, idx)
+            ov, dv_ = self._neighbour_values(v, idx)
             nu[idx], nv[idx] = step(
-                u[idx], v[idx],
-                (u[o[0]], u[o[1]], u[o[2]], u[o[3]]),
-                (u[d[0]], u[d[1]], u[d[2]], u[d[3]]),
-                (v[o[0]], v[o[1]], v[o[2]], v[o[3]]),
-                (v[d[0]], v[d[1]], v[d[2]], v[d[3]]),
-                dt,
+                u[idx], v[idx], ou, du_, ov, dv_, dt,
+                None if morphogen is None else morphogen[idx],
             )
 
         self.u, self.v = nu, nv

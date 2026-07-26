@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  kernel:
+    name: Kernel unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Kernel suite
+        run: python -m pytest tests/unit -q
+
+  morphogenesis-fast:
+    name: Track B — invariant and inertness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Developmental invariant (fast)
+        run: python -m pytest morphogenesis/tests -q -m "not slow"
+      - name: Inertness under denial
+        run: python -m pytest morphogenesis/tests/test_inertness.py -q
+
+  morphogenesis-slow:
+    name: Track B — Stage 1 dynamics and Stage 2 HFRR
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Stage 2 — Held-Out Functional Recovery Rate
+        run: python -m pytest morphogenesis/tests/test_stage2.py -q
+      - name: Stage 1 — pattern formation and reconstitution
+        run: python -m pytest morphogenesis/tests/test_stage1.py -q

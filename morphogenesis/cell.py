@@ -1,14 +1,22 @@
 """The digital cell.
 
-STRUCTURAL INVARIANT — enforced by test T1, verified by AST inspection:
+DEVELOPMENTAL INVARIANT — see invariant.py, enforced by tests T1a/T1b/T1c:
 
-    This module may not import the substrate, may not read any global lattice,
-    and may not accept a position argument. A cell knows its own state and the
-    states of its immediate neighbours. Nothing else.
+    No cell may access the complete target structure, receive a centrally
+    assigned final fate, or use privileged omniscient state.
 
-That constraint is the whole point. A cell that can read global state is a
-worker executing a plan. A cell that cannot is the only thing that can
-produce morphology nobody wrote down.
+What that permits, and biology requires: local morphogen fields sampled at
+the cell's own location, tissue-scale gradients from boundary sources,
+accumulated signals, boundary cues, and long-range signalling. The Bicoid
+gradient spans an entire Drosophila embryo and is not a violation — range is
+not the issue. Omniscience and assignment are.
+
+What it prohibits: reading a stored morphology, having a fate written from
+outside, and unbounded input arity. A cell samples its surroundings; it is
+never handed the tissue.
+
+Absolute coordinates are treated as a violation by proxy: in a lattice of
+known size, fate = f(x, y) is a blueprint lookup wearing different clothes.
 
 Every cell in the substrate runs THIS code. There are no cell classes, no
 subtypes, no role parameters. Differentiation is a dynamical outcome (see
@@ -46,23 +54,31 @@ def laplacian(own, ortho, diag):
     return total
 
 
-def step(u, v, ortho_u, diag_u, ortho_v, diag_v, dt=1.0):
+def step(u, v, ortho_u, diag_u, ortho_v, diag_v, dt=1.0, morphogen=None):
     """Advance one cell by one tick.
 
-    Returns the cell's next (u, v). Pure function of local information.
+    Returns the cell's next (u, v). Pure function of local information plus,
+    optionally, a long-range morphogen concentration sampled AT THIS CELL'S
+    OWN LOCATION.
+
+    `morphogen` is the legitimate case the corrected invariant exists to
+    permit. It is a tissue-scale field produced by diffusion from a boundary
+    source. The cell reads one scalar — its own local concentration — and has
+    no way to learn the field's shape, extent, or where it sits within it.
+    That is positional information in Wolpert's sense, not omniscience.
 
     NOTE FOR REVIEWERS: there is no damage branch here, no wound detection,
-    no repair routine, no 'if regenerating' path. Test T4 excises a region of
-    the substrate at random and requires the pattern to return. If it returns,
-    it returns because of these four lines and nothing else. That is what
-    'unscripted' has to mean to be worth claiming.
+    no repair routine, no 'if perturbed' path. The perturbation tests excise
+    regions at random; if pattern returns, it returns from these lines alone.
     """
     lap_u = laplacian(u, ortho_u, diag_u)
     lap_v = laplacian(v, ortho_v, diag_v)
 
+    feed = FEED if morphogen is None else FEED * (0.75 + 0.5 * morphogen)
+
     reaction = u * v * v
-    du = DU * lap_u - reaction + FEED * (1.0 - u)
-    dv = DV * lap_v + reaction - (FEED + KILL) * v
+    du = DU * lap_u - reaction + feed * (1.0 - u)
+    dv = DV * lap_v + reaction - (feed + KILL) * v
 
     next_u = u + dt * du
     next_v = v + dt * dv

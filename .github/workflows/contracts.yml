@@ -1,0 +1,73 @@
+name: contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "reality/**"
+      - "scripts/verify_ivio_v1.py"
+      - "scripts/verify_ivio_v1_node.mjs"
+      - "closure/kernel_registry.py"
+      - "verifier/v2/criteria.json"
+      - "tests/unit/**"
+      - "requirements-dev.txt"
+      - ".github/workflows/contracts.yml"
+  push:
+    branches:
+      - main
+      - "build/**"
+      - "agent/**"
+    paths:
+      - "contracts/**"
+      - "reality/**"
+      - "scripts/verify_ivio_v1.py"
+      - "scripts/verify_ivio_v1_node.mjs"
+      - "closure/kernel_registry.py"
+      - "verifier/v2/criteria.json"
+      - "tests/unit/**"
+      - "requirements-dev.txt"
+      - ".github/workflows/contracts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel-parity:
+    name: contracts/kernel-parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install verifier dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+
+      - name: Compile Python sources
+        run: python -m compileall -q reality scripts tests/unit
+
+      - name: Run dependency-free contract preflight
+        run: python scripts/verify_ivio_v1.py
+
+      - name: Verify JavaScript canonicalization parity
+        run: node scripts/verify_ivio_v1_node.mjs
+
+      - name: Verify IVIO contracts and full kernel regression suite
+        run: python -m pytest tests/unit -q

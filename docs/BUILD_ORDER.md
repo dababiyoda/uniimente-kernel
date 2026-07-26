@@ -38,6 +38,17 @@ Run one complete signal-to-buyer-response workflow for 30 consecutive days: sign
 
 Exit evidence: one verified external buyer response; 100% identity, legal-principal, authorization, provenance, budget, and outcome coverage; zero unauthorized external effects; no manual reconstruction of lost context. No additional Venture Cell receives Level 3 autonomy before this loop succeeds.
 
+Phase 6 is decomposed into non-skippable gates:
+
+1. **6A - Canonical IVIO contracts and compiler.** Publish one `ivio.v1` schema package and a deterministic, compile-only instruction boundary. Exit: all contract, mutation, authority, negative-evidence, and five-closure tests pass; founder reviews the diff.
+2. **6B - Cross-organ parity.** CHARIO, TGH-CONTROL-RAIL, WealthMachineIntelligence, and DALEOBANKS consume the same contract bytes or generated bindings. Exit: no handwritten authoritative mirror; identical vectors and digests in every consuming language.
+3. **6C - Case event and proof projection.** CHARIO emits append-only ride OutcomeEvents; replay reconstructs the same Case projection; the payable-ready gate requires every proof or a signed, unexpired exception. Exit: replay, stale approval, missing-proof, and crash tests pass.
+4. **6D - Operator and verifier surfaces.** TGH-CONTROL-RAIL renders the Action Inbox, Trip Case, Variance Console, and Proof Packet from live projections; OutcomeCredential issuance and verifier accept/reject are wired. Exit: static placeholders removed and one independent dry-run verifier decision recorded.
+5. **6E - Settlement and reconciliation.** A sandbox adapter creates idempotent SettlementIntents, verifies callbacks, captures receipts, reconciles expected versus actual, and propagates invalidations. Exit: duplicate callback, mismatch, reversal, and black-start tests pass with zero duplicate consequence.
+6. **6F - Supervised live pilot.** A named external stakeholder pre-commits acceptance criteria and the decision that valid proof will change. Exit: one real decision changes, all coverage is complete, unauthorized effects remain zero, and founder intervention is measured.
+
+The active gate is 6A. Later gates may be designed in documentation but may not be represented as operationally complete.
+
 ## Phase 7: Causal Memory and Affect
 
 Add decision precedent, outcome weighting, confidence calibration, Identity Homeostasis, functional affect, institutional learning.

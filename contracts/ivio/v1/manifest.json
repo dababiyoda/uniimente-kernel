@@ -1,0 +1,29 @@
+{
+  "version": "ivio.v1",
+  "schema": "https://uniimente.internal/contracts/ivio/v1/schema.json",
+  "canonicalization": "UNIIMENTE-C14N-v1",
+  "canonicalization_vectors": "canonicalization-vectors.json",
+  "status": "proposed",
+  "objects": {
+    "case": "#/$defs/Case",
+    "outcome_event": "#/$defs/OutcomeEvent",
+    "evidence_blob": "#/$defs/EvidenceBlob",
+    "compiled_instruction": "#/$defs/CompiledInstruction",
+    "capability_grant": "#/$defs/CapabilityGrant",
+    "exception_request": "#/$defs/ExceptionRequest",
+    "exception_decision": "#/$defs/ExceptionDecision",
+    "action_attempt": "#/$defs/ActionAttempt",
+    "receipt": "#/$defs/Receipt",
+    "outcome_credential": "#/$defs/OutcomeCredential",
+    "settlement_intent": "#/$defs/SettlementIntent",
+    "settlement_receipt": "#/$defs/SettlementReceipt",
+    "reconciliation_record": "#/$defs/ReconciliationRecord",
+    "invalidation": "#/$defs/Invalidation",
+    "metrics_sample": "#/$defs/MetricsSample"
+  },
+  "compatibility": {
+    "breaking_changes": "require a new major contract namespace",
+    "additive_changes": "require a new manifest version and parity tests",
+    "unknown_fields": "fail closed"
+  }
+}

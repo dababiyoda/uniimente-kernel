@@ -1,0 +1,64 @@
+{
+  "profile": "UNIIMENTE-C14N-v1",
+  "vectors": [
+    {
+      "name": "object-order-and-money",
+      "value": {
+        "z": true,
+        "budget": {
+          "currency": "USD",
+          "amount_minor": 18000
+        },
+        "a": null
+      },
+      "canonical_utf8": "{\"a\":null,\"budget\":{\"amount_minor\":18000,\"currency\":\"USD\"},\"z\":true}",
+      "sha256": "sha256:339d2e25a054fba36b354dedaa28195a015eb46d731c8babb9ab9618212ed6c8"
+    },
+    {
+      "name": "unicode-preserved",
+      "value": {
+        "message": "acción verificable",
+        "actor": "Alfonso López",
+        "count": 1
+      },
+      "canonical_utf8": "{\"actor\":\"Alfonso López\",\"count\":1,\"message\":\"acción verificable\"}",
+      "sha256": "sha256:2e9f673e394958c587c59149521bf535d84e3562b21f8362dd3a20359e695f19"
+    },
+    {
+      "name": "arrays-and-nested-state",
+      "value": {
+        "events": [
+          {
+            "type": "ride.completed",
+            "ok": true
+          },
+          {
+            "type": "settlement.pending",
+            "ok": false
+          }
+        ],
+        "status": "sandbox"
+      },
+      "canonical_utf8": "{\"events\":[{\"ok\":true,\"type\":\"ride.completed\"},{\"ok\":false,\"type\":\"settlement.pending\"}],\"status\":\"sandbox\"}",
+      "sha256": "sha256:efffc2bcd20582c772bc6dbe96e111753bac8312ce9b39ca9052d61389ee93b3"
+    }
+  ],
+  "refusals": [
+    {
+      "name": "empty-object-key",
+      "value": {"": 1}
+    },
+    {
+      "name": "delete-control-key",
+      "value": {"\u007f": 1}
+    },
+    {
+      "name": "floating-point-value",
+      "value": {"confidence": 0.5}
+    },
+    {
+      "name": "unsafe-range-integer",
+      "value": {"count": 9007199254740992}
+    }
+  ]
+}

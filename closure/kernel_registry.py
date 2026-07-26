@@ -914,4 +914,96 @@ def build_registry() -> ClosureRegistry:
         "evidence": memory_evidence, "economic": memory_economic,
         "regenerative": memory_regenerative}))
 
+    # ------------------------------------------------------- IVIO Reality Compiler
+    def _ivio_intent():
+        return {
+            "case_id": "case:REQ-88421", "requested_at": "2026-07-22T12:00:00Z",
+            "purpose": "complete-nemt-ride", "legal_principal": "alfonso_lopez",
+            "actor": {"workload_spiffe_id":
+                      "spiffe://uniimente.internal/cells/ride-outcome-verifier",
+                      "human_delegate": "founder:alfonso-lopez"},
+            "action": "ride.complete", "resource": "ride:REQ-88421",
+            "parameters": {"dropoff_facility": "facility:TGH-clinic-3"},
+            "data_rights": {"allowed": ["dispatch.write", "receipt.write"],
+                            "forbidden": ["marketing.use", "model_training.use"]},
+            "budget": {"currency": "USD", "amount_minor": 18000},
+            "ttl_seconds": 7200,
+            "evidence_requirements": ["pickup.attested", "arrival.attested"],
+            "approvals_required": ["policy:auto", "human:ops-manager"],
+            "expected_effect": "ride_service_completed",
+            "receipt_type": "verified_ride_outcome",
+            "reconciliation_contract": "match_receipt_to_request_and_gps.v1",
+            "reversibility": "economic_only", "compensation_path": "manual_exception_case",
+            "settlement_path": "healthcare_claims",
+            "kill_conditions": ["identity_expired", "grant_revoked"],
+            "policy_version": "policy.ride.v0.4.2",
+            "constitution_digest": "sha256:" + "a" * 64,
+            "reality_status": "sandbox"}
+
+    def _ivio_schema():
+        import json
+        path = os.path.join(KERNEL_ROOT, "contracts", "ivio", "v1", "schema.json")
+        with open(path, encoding="utf-8") as stream:
+            return json.load(stream)
+
+    def ivio_technical():
+        from reality.ivio import compile_instruction, verify_integrity
+        first = compile_instruction(_ivio_intent())
+        second = compile_instruction(_ivio_intent())
+        mapped = _ivio_schema()["oneOf"]
+        ok = first == second and verify_integrity(first) and len(mapped) == 15
+        return ok, "same intent compiles to the same bound instruction; 15 wire objects mapped"
+
+    def ivio_authority():
+        from reality.ivio import CompileError, compile_instruction
+        candidate = _ivio_intent()
+        candidate["legal_principal"] = "UNIIMENTE"
+        refused = False
+        try:
+            compile_instruction(candidate)
+        except CompileError:
+            refused = True
+        compiled = compile_instruction(_ivio_intent())
+        runtime = {"approved", "grant_id", "executed", "payable_ready", "settled"}
+        return refused and runtime.isdisjoint(compiled), \
+            "compiler rejects institutional self-principal and cannot authorize or execute"
+
+    def ivio_evidence():
+        from reality.ivio import compile_instruction, verify_integrity
+        compiled = compile_instruction(_ivio_intent())
+        compiled["resource"] = "ride:mutated"
+        defs = _ivio_schema()["$defs"]
+        has_negative = "invalidated" in defs["EvidenceBlob"]["properties"]["claim_status"]["enum"]
+        return not verify_integrity(compiled) and "Invalidation" in defs and has_negative, \
+            "material mutation is detectable; negative evidence and invalidation stay first-class"
+
+    def ivio_economic():
+        defs = _ivio_schema()["$defs"]
+        money = defs["money"]["properties"]
+        ready = defs["SettlementIntent"]["properties"]["authorization"]["properties"]
+        closed = all(k in defs for k in ("OutcomeCredential", "SettlementIntent",
+                                         "SettlementReceipt", "ReconciliationRecord"))
+        return money["amount_minor"]["type"] == "integer" and \
+            ready["payable_ready"]["const"] is True and closed, \
+            "integer money plus proof-gated intent, receipt, and reconciliation close the contract path"
+
+    def ivio_regenerative():
+        from reality.ivio import CompileError, compile_instruction
+        candidate = _ivio_intent()
+        candidate.update(reality_status="live", reversibility="irreversible")
+        refused = False
+        try:
+            compile_instruction(candidate)
+        except CompileError:
+            refused = True
+        defs = _ivio_schema()["$defs"]
+        status = defs["realityStatus"]["enum"]
+        return refused and status == ["live", "sandbox", "simulated", "proposed"], \
+            "live irreversible action is unrepresentable; reality status remains explicit"
+
+    reg.register(ModuleClosures("ivio", {
+        "technical": ivio_technical, "authority": ivio_authority,
+        "evidence": ivio_evidence, "economic": ivio_economic,
+        "regenerative": ivio_regenerative}))
+
     return reg

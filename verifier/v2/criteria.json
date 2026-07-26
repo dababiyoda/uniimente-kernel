@@ -1,7 +1,7 @@
 {
  "version": "v2",
  "created_utc": "2026-07-20T00:00:00Z",
- "source": "Build document: '100% buildable / 100% sci-fi level' + UNIIMENTE Final Plan objective (13 orthogonal loops, 14-condition buildability standard)",
+ "source": "UNIIMENTE canonical architecture plus IVIO v1 proof-to-settlement objective (14 orthogonal modules, 14-condition buildability standard)",
  "checks": [
   {
    "id": "V1",
@@ -50,7 +50,8 @@
     "twins/README.md",
     "capabilities/README.md",
     "embassy/README.md",
-    "memory/README.md"
+    "memory/README.md",
+    "reality/README.md"
    ]
   }
  ]

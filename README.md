@@ -32,7 +32,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 |---|---|
 | `/constitution` | The Constitution as executable UCL: purpose, rights, prohibitions, sovereignty hierarchy, amendment and shutdown policy |
 | `/authority` | Authority matrix, legal principals, reserved matters (permanently non-delegable) |
-| `/contracts` | Versioned JSON Schemas shared by every organ: events, evidence, decisions, outcomes, capability grants, packets, charters |
+| `/contracts` | Versioned JSON Schemas shared by every organ, including the canonical `ivio.v1` proof-to-settlement object package |
 | `/identity` | Organ registry, agent registry, service identities (SPIFFE-style) + executable machine passports (Layer 2) |
 | `/affect` | Functional affect policy: bounded machine control states, identity coherence, pathological-state tests |
 | `/capital` | Allocation waterfall, liquidity policy, concentration limits, acquisition gates |
@@ -41,7 +41,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/compiler` | UCL compiler (Layer 1): doctrine → deterministic policy decisions, relationship tuples, invariants, grant contract |
 | `/policy` | Policy engine + Consequence Gate (Layer 3): the sole path to external effects |
 | `/provenance` | Evidence Ledger + Commit Witness + Merkle proofs (Layers 3+10): hash-chained, HMAC-signed, checkpoint-anchored institutional memory |
-| `/closure` | Orthogonal loop closure: five closures per module + Whole-Body Closure Controller (13 loops) |
+| `/closure` | Orthogonal loop closure: five closures per module + Whole-Body Closure Controller (14 registered modules on the IVIO branch) |
 | `/evolution` | Recursive self-improvement: strategy trees, spider-web audits, experiments, capsules, the ClosureLoop, and the Phase 3 machine-paced auto-cycle |
 | `/events` | Event spine + durable workflows (Layer 4): typed events, idempotent inbox, mediated outbox, replay, kill-and-resume workflows |
 | `/autonomy` | Autonomy licensing (Layer 13): evidence-earned A0–A8 levels on exact 9-dimension tuples; A9 reserved human sovereignty |
@@ -50,6 +50,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
 | `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
+| `/reality` | IVIO Reality Compiler boundary: strict intent -> deterministic, content-bound instruction; never approval or execution |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
@@ -64,9 +65,11 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+**Phase 6A — IVIO v1 contracts + Reality Compiler: implemented on the active build branch, pending authoritative GitHub CI before promotion.** The branch adds 15 strict proof-to-settlement wire objects, deterministic content binding, a compile-only institutional instruction boundary, payable-ready settlement prerequisites, explicit exception/invalidation paths, a dependency-free preflight, a full schema/adversarial suite, and a 14th five-closure module. No live adapter, credential, PHI flow, or money movement is activated by this milestone.
 
-Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+Verified baseline before this branch: 172 unit tests and 13 modules × 5 orthogonal closures green. The IVIO branch is not promoted to verified status until `contracts/kernel-parity` and the full verifier pass on GitHub.
+
+Next after CI and founder review: Phase 6B cross-repository `ivio.v1` parity, then CHARIO append-only outcome events and the payable-ready projection. DALEOBANKS remains proposal/signal-only and WealthMachineIntelligence remains planning/underwriting-only until the proof-to-settlement rail works.
 
 ## The doctrine
 

@@ -1,0 +1,823 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/ivio/v1/schema.json",
+  "title": "UNIIMENTE IVIO v1 Proof-to-Settlement Contracts",
+  "description": "Canonical immutable objects for one governed case path from evidence through reconciled external consequence. Cryptographic integrity proves bytes and issuer binding, not underlying truth.",
+  "type": "object",
+  "oneOf": [
+    {"$ref": "#/$defs/Case"},
+    {"$ref": "#/$defs/OutcomeEvent"},
+    {"$ref": "#/$defs/EvidenceBlob"},
+    {"$ref": "#/$defs/CompiledInstruction"},
+    {"$ref": "#/$defs/CapabilityGrant"},
+    {"$ref": "#/$defs/ExceptionRequest"},
+    {"$ref": "#/$defs/ExceptionDecision"},
+    {"$ref": "#/$defs/ActionAttempt"},
+    {"$ref": "#/$defs/Receipt"},
+    {"$ref": "#/$defs/OutcomeCredential"},
+    {"$ref": "#/$defs/SettlementIntent"},
+    {"$ref": "#/$defs/SettlementReceipt"},
+    {"$ref": "#/$defs/ReconciliationRecord"},
+    {"$ref": "#/$defs/Invalidation"},
+    {"$ref": "#/$defs/MetricsSample"}
+  ],
+  "$defs": {
+    "typedId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{1,31}:[A-Za-z0-9._~-]{1,128}$"
+    },
+    "caseId": {
+      "type": "string",
+      "pattern": "^case:[A-Za-z0-9._~-]{1,128}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "spiffeId": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/[A-Za-z0-9._~:/-]+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "legalPrincipal": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{1,127}$",
+      "not": {"pattern": "^[Uu][Nn][Ii][Ii][Mm][Ee][Nn][Tt][Ee]$"}
+    },
+    "realityStatus": {
+      "type": "string",
+      "enum": ["live", "sandbox", "simulated", "proposed"]
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": ["public", "internal", "confidential", "restricted"]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "digestArray": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/digest"},
+      "uniqueItems": true
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 255,
+      "pattern": "^[A-Za-z0-9._~-]+$"
+    },
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "amount_minor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["currency", "amount_minor"]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "canonicalization": {"const": "UNIIMENTE-C14N-v1"},
+        "digest": {"$ref": "#/$defs/digest"}
+      },
+      "required": ["canonicalization", "digest"]
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "workload_spiffe_id": {"$ref": "#/$defs/spiffeId"},
+        "human_delegate": {"type": "string", "minLength": 1}
+      },
+      "required": ["workload_spiffe_id"]
+    },
+    "dataRights": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {"$ref": "#/$defs/stringArray"},
+        "forbidden": {"$ref": "#/$defs/stringArray"}
+      },
+      "required": ["allowed", "forbidden"]
+    },
+    "Case": {
+      "title": "Case",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "case"},
+        "version": {"const": "ivio.v1"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "case_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+        },
+        "opened_at": {"$ref": "#/$defs/timestamp"},
+        "opened_by": {"$ref": "#/$defs/spiffeId"},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "subject_ref": {"$ref": "#/$defs/typedId"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "required_proof_types": {"$ref": "#/$defs/stringArray"},
+        "verifier_ids": {"$ref": "#/$defs/stringArray"},
+        "sensitivity": {"$ref": "#/$defs/sensitivity"},
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "case_id", "case_type", "opened_at", "opened_by",
+        "legal_principal", "subject_ref", "policy_version", "required_proof_types",
+        "verifier_ids", "sensitivity", "reality_status", "integrity"
+      ]
+    },
+    "OutcomeEvent": {
+      "title": "OutcomeEvent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "outcome_event"},
+        "version": {"const": "ivio.v1"},
+        "specversion": {"const": "1.0"},
+        "event_id": {"$ref": "#/$defs/typedId"},
+        "event_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+        },
+        "source": {"type": "string", "minLength": 1},
+        "actor_identity": {"type": "string", "minLength": 1},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "occurred_at": {"$ref": "#/$defs/timestamp"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "causal_parent": {
+          "oneOf": [
+            {"$ref": "#/$defs/typedId"},
+            {"type": "null"}
+          ]
+        },
+        "policy_version": {"type": "string", "minLength": 1},
+        "idempotency_key": {"$ref": "#/$defs/idempotencyKey"},
+        "evidence_refs": {"$ref": "#/$defs/digestArray"},
+        "sensitivity": {"$ref": "#/$defs/sensitivity"},
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "data": {"type": "object"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "specversion", "event_id", "event_type", "source",
+        "actor_identity", "legal_principal", "occurred_at", "case_id", "causal_parent",
+        "policy_version", "idempotency_key", "evidence_refs", "sensitivity",
+        "reality_status", "data", "integrity"
+      ]
+    },
+    "EvidenceBlob": {
+      "title": "EvidenceBlob",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "evidence_blob"},
+        "version": {"const": "ivio.v1"},
+        "evidence_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "captured_at": {"$ref": "#/$defs/timestamp"},
+        "captured_by": {"type": "string", "minLength": 1},
+        "media_type": {"type": "string", "minLength": 3},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "storage_ref": {"type": "string", "minLength": 1},
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "primary", "secondary", "self_reported", "system_generated",
+            "external_receipt", "unknown"
+          ]
+        },
+        "source_uri": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "claim_status": {
+          "type": "string",
+          "enum": ["claimed", "observed", "verified", "disputed", "invalidated"]
+        },
+        "contains_phi": {"type": "boolean"},
+        "minimization_applied": {"type": "boolean"},
+        "sensitivity": {"$ref": "#/$defs/sensitivity"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "evidence_id", "case_id", "captured_at",
+        "captured_by", "media_type", "content_digest", "storage_ref", "source_type",
+        "source_uri", "claim_status", "contains_phi", "minimization_applied",
+        "sensitivity", "integrity"
+      ]
+    },
+    "CompiledInstruction": {
+      "title": "CompiledInstruction",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "compiled_instruction"},
+        "version": {"const": "ivio.v1"},
+        "instruction_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "source_intent_digest": {"$ref": "#/$defs/digest"},
+        "compiled_at": {"$ref": "#/$defs/timestamp"},
+        "compiler_version": {"type": "string", "minLength": 1},
+        "purpose": {"type": "string", "minLength": 1},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "actor": {"$ref": "#/$defs/actor"},
+        "action": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+        },
+        "resource": {"type": "string", "minLength": 1},
+        "parameters": {"type": "object"},
+        "parameter_digest": {"$ref": "#/$defs/digest"},
+        "data_rights": {"$ref": "#/$defs/dataRights"},
+        "budget": {"$ref": "#/$defs/money"},
+        "ttl_seconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+        "not_before": {"$ref": "#/$defs/timestamp"},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "evidence_requirements": {"$ref": "#/$defs/stringArray"},
+        "approvals_required": {"$ref": "#/$defs/stringArray"},
+        "expected_effect": {"type": "string", "minLength": 1},
+        "receipt_type": {"type": "string", "minLength": 1},
+        "reconciliation_contract": {"type": "string", "minLength": 1},
+        "reversibility": {
+          "type": "string",
+          "enum": ["reversible", "economic_only", "costly_to_reverse", "irreversible"]
+        },
+        "compensation_path": {"type": "string", "minLength": 1},
+        "settlement_path": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "kill_conditions": {"$ref": "#/$defs/stringArray"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "constitution_digest": {"$ref": "#/$defs/digest"},
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "instruction_id", "case_id", "source_intent_digest",
+        "compiled_at", "compiler_version", "purpose", "legal_principal", "actor",
+        "action", "resource", "parameters", "parameter_digest", "data_rights",
+        "budget", "ttl_seconds", "not_before", "expires_at", "evidence_requirements",
+        "approvals_required", "expected_effect", "receipt_type",
+        "reconciliation_contract", "reversibility", "compensation_path",
+        "settlement_path", "kill_conditions", "policy_version",
+        "constitution_digest", "reality_status", "integrity"
+      ]
+    },
+    "CapabilityGrant": {
+      "title": "CapabilityGrant",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "capability_grant"},
+        "version": {"const": "ivio.v1"},
+        "grant_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "instruction_digest": {"$ref": "#/$defs/digest"},
+        "subject_spiffe_id": {"$ref": "#/$defs/spiffeId"},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "allowed_action": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+        },
+        "resource": {"type": "string", "minLength": 1},
+        "parameter_digest": {"$ref": "#/$defs/digest"},
+        "budget": {"$ref": "#/$defs/money"},
+        "issued_at": {"$ref": "#/$defs/timestamp"},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "approval_refs": {"$ref": "#/$defs/digestArray"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "issued_by": {"type": "string", "minLength": 1},
+        "revocable": {"const": true},
+        "non_transferable": {"const": true},
+        "single_use": {"const": true},
+        "revoked": {"type": "boolean"},
+        "revoked_at": {
+          "oneOf": [
+            {"$ref": "#/$defs/timestamp"},
+            {"type": "null"}
+          ]
+        },
+        "revocation_reason": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "grant_id", "case_id", "instruction_digest",
+        "subject_spiffe_id", "legal_principal", "allowed_action", "resource",
+        "parameter_digest", "budget", "issued_at", "expires_at", "approval_refs",
+        "policy_version", "issued_by", "revocable", "non_transferable",
+        "single_use", "revoked", "revoked_at", "revocation_reason", "integrity"
+      ]
+    },
+    "ExceptionRequest": {
+      "title": "ExceptionRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "exception_request"},
+        "version": {"const": "ivio.v1"},
+        "exception_request_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "requested_at": {"$ref": "#/$defs/timestamp"},
+        "requested_by": {"type": "string", "minLength": 1},
+        "missing_requirements": {"$ref": "#/$defs/stringArray"},
+        "proposed_deviation": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "consequence_if_denied": {"type": "string", "minLength": 1},
+        "consequence_if_approved": {"type": "string", "minLength": 1},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "status": {"const": "pending"},
+        "evidence_refs": {"$ref": "#/$defs/digestArray"},
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "exception_request_id", "case_id",
+        "requested_at", "requested_by", "missing_requirements",
+        "proposed_deviation", "reason", "consequence_if_denied",
+        "consequence_if_approved", "expires_at", "status", "evidence_refs",
+        "reality_status", "integrity"
+      ]
+    },
+    "ExceptionDecision": {
+      "title": "ExceptionDecision",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "exception_decision"},
+        "version": {"const": "ivio.v1"},
+        "exception_decision_id": {"$ref": "#/$defs/typedId"},
+        "exception_request_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "decided_at": {"$ref": "#/$defs/timestamp"},
+        "decided_by": {"type": "string", "minLength": 1},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "outcome": {
+          "type": "string",
+          "enum": ["approved", "denied", "needs_more_evidence"]
+        },
+        "rationale": {"type": "string", "minLength": 1},
+        "conditions": {"$ref": "#/$defs/stringArray"},
+        "authorized_substitutions": {"$ref": "#/$defs/stringArray"},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "policy_version": {"type": "string", "minLength": 1},
+        "signature": {"type": "string", "minLength": 1},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "exception_decision_id",
+        "exception_request_id", "case_id", "decided_at", "decided_by",
+        "legal_principal", "outcome", "rationale", "conditions",
+        "authorized_substitutions", "expires_at", "policy_version",
+        "signature", "integrity"
+      ]
+    },
+    "ActionAttempt": {
+      "title": "ActionAttempt",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "action_attempt"},
+        "version": {"const": "ivio.v1"},
+        "attempt_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "instruction_digest": {"$ref": "#/$defs/digest"},
+        "grant_id": {"$ref": "#/$defs/typedId"},
+        "attempted_at": {"$ref": "#/$defs/timestamp"},
+        "executor_spiffe_id": {"$ref": "#/$defs/spiffeId"},
+        "idempotency_key": {"$ref": "#/$defs/idempotencyKey"},
+        "action": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$"
+        },
+        "resource": {"type": "string", "minLength": 1},
+        "parameter_digest": {"$ref": "#/$defs/digest"},
+        "commit_witness_digest": {"$ref": "#/$defs/digest"},
+        "status": {
+          "type": "string",
+          "enum": ["started", "succeeded", "failed", "refused", "unknown"]
+        },
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "attempt_id", "case_id",
+        "instruction_digest", "grant_id", "attempted_at", "executor_spiffe_id",
+        "idempotency_key", "action", "resource", "parameter_digest",
+        "commit_witness_digest", "status", "reality_status", "integrity"
+      ]
+    },
+    "Receipt": {
+      "title": "Receipt",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "receipt"},
+        "version": {"const": "ivio.v1"},
+        "receipt_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "attempt_id": {"$ref": "#/$defs/typedId"},
+        "received_at": {"$ref": "#/$defs/timestamp"},
+        "receipt_type": {"type": "string", "minLength": 1},
+        "issuer": {"type": "string", "minLength": 1},
+        "external_id": {"type": "string", "minLength": 1},
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "rejected", "pending", "unknown"]
+        },
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "raw_storage_ref": {"type": "string", "minLength": 1},
+        "signature_verified": {"type": "boolean"},
+        "evidence_refs": {"$ref": "#/$defs/digestArray"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "receipt_id", "case_id", "attempt_id",
+        "received_at", "receipt_type", "issuer", "external_id", "status",
+        "content_digest", "raw_storage_ref", "signature_verified",
+        "evidence_refs", "integrity"
+      ]
+    },
+    "OutcomeCredential": {
+      "title": "OutcomeCredential",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "outcome_credential"},
+        "version": {"const": "ivio.v1"},
+        "id": {"$ref": "#/$defs/typedId"},
+        "@context": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "https://www.w3.org/ns/credentials/v2"},
+            {"const": "https://uniimente.internal/contexts/ivio/v1"}
+          ],
+          "items": false
+        },
+        "type": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "VerifiableCredential"},
+            {"const": "IVIOVerifiedOutcomeCredential"}
+          ],
+          "items": false
+        },
+        "issuer": {"type": "string", "minLength": 1},
+        "validFrom": {"$ref": "#/$defs/timestamp"},
+        "credentialSubject": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "caseId": {"$ref": "#/$defs/caseId"},
+            "outcomeStatus": {
+              "type": "string",
+              "enum": [
+                "verified", "rejected", "disputed", "invalidated",
+                "payment_eligible", "not_payment_eligible"
+              ]
+            },
+            "proofChecklistDigest": {"$ref": "#/$defs/digest"},
+            "exceptionDecisionRefs": {"$ref": "#/$defs/digestArray"},
+            "policyVersion": {"type": "string", "minLength": 1},
+            "evidenceDigests": {"$ref": "#/$defs/digestArray"},
+            "verificationResult": {"type": "string", "minLength": 1},
+            "finalConsequence": {"type": "string", "minLength": 1},
+            "realityStatus": {"$ref": "#/$defs/realityStatus"}
+          },
+          "required": [
+            "caseId", "outcomeStatus", "proofChecklistDigest",
+            "exceptionDecisionRefs", "policyVersion", "evidenceDigests",
+            "verificationResult", "finalConsequence", "realityStatus"
+          ]
+        },
+        "credentialStatus": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "type": {"type": "string", "minLength": 1},
+            "statusPurpose": {
+              "type": "string",
+              "enum": ["revocation", "suspension"]
+            },
+            "statusListCredential": {"type": "string", "minLength": 1}
+          },
+          "required": ["id", "type", "statusPurpose", "statusListCredential"]
+        },
+        "credentialSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {"const": "https://uniimente.internal/contracts/ivio/v1/schema.json#/$defs/OutcomeCredential"},
+            "type": {"const": "JsonSchema"}
+          },
+          "required": ["id", "type"]
+        },
+        "proof": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {"const": "DataIntegrityProof"},
+            "cryptosuite": {"type": "string", "minLength": 1},
+            "created": {"$ref": "#/$defs/timestamp"},
+            "verificationMethod": {"type": "string", "minLength": 1},
+            "proofPurpose": {"const": "assertionMethod"},
+            "proofValue": {"type": "string", "minLength": 1}
+          },
+          "required": [
+            "type", "cryptosuite", "created", "verificationMethod",
+            "proofPurpose", "proofValue"
+          ]
+        },
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "id", "@context", "type", "issuer",
+        "validFrom", "credentialSubject", "credentialStatus",
+        "credentialSchema", "proof", "integrity"
+      ]
+    },
+    "SettlementIntent": {
+      "title": "SettlementIntent",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "settlement_intent"},
+        "version": {"const": "ivio.v1"},
+        "settlement_intent_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "outcome_credential_digest": {"$ref": "#/$defs/digest"},
+        "created_at": {"$ref": "#/$defs/timestamp"},
+        "created_by": {"$ref": "#/$defs/spiffeId"},
+        "legal_principal": {"$ref": "#/$defs/legalPrincipal"},
+        "rail": {
+          "type": "string",
+          "enum": [
+            "stripe_connect", "healthcare_claims", "accounts_payable",
+            "accounts_receivable", "manual_submission"
+          ]
+        },
+        "consequence_type": {
+          "type": "string",
+          "enum": [
+            "payment", "payout", "claim_submission", "invoice_submission",
+            "permission_change", "contract_state_change"
+          ]
+        },
+        "amount": {
+          "oneOf": [
+            {"$ref": "#/$defs/money"},
+            {"type": "null"}
+          ]
+        },
+        "counterparty_ref": {"type": "string", "minLength": 1},
+        "idempotency_key": {"$ref": "#/$defs/idempotencyKey"},
+        "authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "payable_ready": {"const": true},
+            "proof_checklist_digest": {"$ref": "#/$defs/digest"},
+            "verifier_receipt_id": {"$ref": "#/$defs/typedId"},
+            "commit_witness_digest": {"$ref": "#/$defs/digest"}
+          },
+          "required": [
+            "payable_ready", "proof_checklist_digest",
+            "verifier_receipt_id", "commit_witness_digest"
+          ]
+        },
+        "status": {"const": "created"},
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "settlement_intent_id", "case_id",
+        "outcome_credential_digest", "created_at", "created_by",
+        "legal_principal", "rail", "consequence_type", "amount",
+        "counterparty_ref", "idempotency_key", "authorization", "status",
+        "reality_status", "integrity"
+      ]
+    },
+    "SettlementReceipt": {
+      "title": "SettlementReceipt",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "settlement_receipt"},
+        "version": {"const": "ivio.v1"},
+        "settlement_receipt_id": {"$ref": "#/$defs/typedId"},
+        "settlement_intent_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "received_at": {"$ref": "#/$defs/timestamp"},
+        "rail": {
+          "type": "string",
+          "enum": [
+            "stripe_connect", "healthcare_claims", "accounts_payable",
+            "accounts_receivable", "manual_submission"
+          ]
+        },
+        "external_event_id": {"type": "string", "minLength": 1},
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "pending", "succeeded", "failed", "reversed"]
+        },
+        "amount": {
+          "oneOf": [
+            {"$ref": "#/$defs/money"},
+            {"type": "null"}
+          ]
+        },
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "raw_storage_ref": {"type": "string", "minLength": 1},
+        "signature_verified": {"type": "boolean"},
+        "idempotency_key": {"$ref": "#/$defs/idempotencyKey"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "settlement_receipt_id",
+        "settlement_intent_id", "case_id", "received_at", "rail",
+        "external_event_id", "status", "amount", "content_digest",
+        "raw_storage_ref", "signature_verified", "idempotency_key", "integrity"
+      ]
+    },
+    "ReconciliationRecord": {
+      "title": "ReconciliationRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "reconciliation_record"},
+        "version": {"const": "ivio.v1"},
+        "reconciliation_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "settlement_intent_id": {"$ref": "#/$defs/typedId"},
+        "settlement_receipt_refs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/typedId"},
+          "uniqueItems": true
+        },
+        "reconciled_at": {"$ref": "#/$defs/timestamp"},
+        "reconciled_by": {"$ref": "#/$defs/spiffeId"},
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {"type": "string", "minLength": 1},
+            "amount": {
+              "oneOf": [
+                {"$ref": "#/$defs/money"},
+                {"type": "null"}
+              ]
+            },
+            "effect_digest": {"$ref": "#/$defs/digest"}
+          },
+          "required": ["status", "amount", "effect_digest"]
+        },
+        "actual": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {"type": "string", "minLength": 1},
+            "amount": {
+              "oneOf": [
+                {"$ref": "#/$defs/money"},
+                {"type": "null"}
+              ]
+            },
+            "effect_digest": {"$ref": "#/$defs/digest"}
+          },
+          "required": ["status", "amount", "effect_digest"]
+        },
+        "result": {
+          "type": "string",
+          "enum": ["matched", "mismatch", "partial", "unresolved", "reversed"]
+        },
+        "discrepancy_codes": {"$ref": "#/$defs/stringArray"},
+        "next_action": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "economic_finality": {"type": "boolean"},
+        "outcome_credential_status": {
+          "type": "string",
+          "enum": ["active", "suspended", "revoked"]
+        },
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "reconciliation_id", "case_id",
+        "settlement_intent_id", "settlement_receipt_refs", "reconciled_at",
+        "reconciled_by", "expected", "actual", "result", "discrepancy_codes",
+        "next_action", "economic_finality", "outcome_credential_status",
+        "integrity"
+      ]
+    },
+    "Invalidation": {
+      "title": "Invalidation",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "invalidation"},
+        "version": {"const": "ivio.v1"},
+        "invalidation_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {"$ref": "#/$defs/caseId"},
+        "target_digest": {"$ref": "#/$defs/digest"},
+        "issued_at": {"$ref": "#/$defs/timestamp"},
+        "issued_by": {"type": "string", "minLength": 1},
+        "reason_code": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence_refs": {"$ref": "#/$defs/digestArray"},
+        "propagates_to": {"$ref": "#/$defs/digestArray"},
+        "action": {
+          "type": "string",
+          "enum": [
+            "mark_disputed", "suspend_credential", "revoke_credential",
+            "freeze_settlement", "reverse_if_possible"
+          ]
+        },
+        "resolution_status": {
+          "type": "string",
+          "enum": ["open", "resolved", "superseded"]
+        },
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "invalidation_id", "case_id",
+        "target_digest", "issued_at", "issued_by", "reason_code", "reason",
+        "evidence_refs", "propagates_to", "action", "resolution_status",
+        "integrity"
+      ]
+    },
+    "MetricsSample": {
+      "title": "MetricsSample",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_type": {"const": "metrics_sample"},
+        "version": {"const": "ivio.v1"},
+        "metric_sample_id": {"$ref": "#/$defs/typedId"},
+        "case_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/caseId"},
+            {"type": "null"}
+          ]
+        },
+        "recorded_at": {"$ref": "#/$defs/timestamp"},
+        "metric_name": {
+          "type": "string",
+          "enum": [
+            "founder_intervention_seconds", "override_count",
+            "unauthorized_external_effect_count", "payable_ready_count",
+            "missing_proof_count", "verifier_acceptance_count",
+            "packet_invalidation_count", "settlement_intent_count",
+            "settlement_reconciled_count", "settlement_mismatch_count",
+            "duplicate_callback_count", "completion_to_finality_seconds"
+          ]
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "labels": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+          "additionalProperties": {"type": "string", "maxLength": 128}
+        },
+        "reality_status": {"$ref": "#/$defs/realityStatus"},
+        "integrity": {"$ref": "#/$defs/integrity"}
+      },
+      "required": [
+        "object_type", "version", "metric_sample_id", "case_id",
+        "recorded_at", "metric_name", "value", "labels",
+        "reality_status", "integrity"
+      ]
+    }
+  }
+}

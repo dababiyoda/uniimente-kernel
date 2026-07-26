@@ -38,19 +38,49 @@ def _future():
     return (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
 
 
-def _opportunity():
+def build_opportunity(
+    *,
+    legal_operator,
+    buyer="buyer_role",
+    beneficiary="end_beneficiary",
+    pain_owner="operations_owner",
+    budget_owner="budget_owner_role",
+    mandate_actor="mandate_owner",
+    recurring_transaction="recurring_service_event",
+    broken_state="missing verifiable proof of service",
+    trapped_value_usd=250000.0,
+    accepted_artifact="evidence packet",
+    external_consequence="accepted and reconciled service outcome",
+    lawful_path="written agreement plus fair-market-value evidence service",
+    opportunity_id="closure-opportunity",
+):
+    """Generic opportunity fixture. Domain-neutral by default.
+
+    `legal_operator` is REQUIRED and has no default. A fixture must never
+    silently select an accountable party — the caller states who is
+    accountable, deliberately.
+
+    The IVIO-NEMT healthcare instance this replaced is preserved verbatim at
+    ventures/ivio_nemt/fixtures.py.
+    """
     return OpportunitySpec(
-        opportunity_id="closure-opportunity", buyer="facility CFO",
-        beneficiary="patient", pain_owner="case management",
-        budget_owner="facility CFO", mandate_actor="compliance executive",
-        recurring_transaction="patient transport discharge",
-        broken_state="missing payer-grade transport proof",
-        trapped_value_usd=250000.0,
-        accepted_artifact="Request-Accept-Evidence packet",
-        external_consequence="accepted and reconciled transport outcome",
-        lawful_path="BAA plus fair-market-value evidence service",
-        evidence_refs=(HASH,), legal_operator="alfonso_lopez",
+        opportunity_id=opportunity_id, buyer=buyer,
+        beneficiary=beneficiary, pain_owner=pain_owner,
+        budget_owner=budget_owner, mandate_actor=mandate_actor,
+        recurring_transaction=recurring_transaction,
+        broken_state=broken_state,
+        trapped_value_usd=trapped_value_usd,
+        accepted_artifact=accepted_artifact,
+        external_consequence=external_consequence,
+        lawful_path=lawful_path,
+        evidence_refs=(HASH,), legal_operator=legal_operator,
     )
+
+
+def _opportunity():
+    # Core closure checks require a valid registered principal. alfonso_lopez
+    # is passed deliberately and explicitly here, never chosen by a default.
+    return build_opportunity(legal_operator="alfonso_lopez")
 
 
 def _branches():
@@ -88,15 +118,43 @@ def _capability():
     )
 
 
-def _composition_request(max_budget=100.0, legal_principal="alfonso_lopez"):
+def build_composition_request(
+    *,
+    legal_principal,
+    max_budget=100.0,
+    market_failure="missing verifiable proof of service",
+    beneficiaries=("end_beneficiary",),
+    payer="payer_role",
+    control_surfaces=("proof",),
+    desired_metrics=("clean_verified_outcome_count",),
+    requested_technology_ids=(5,),
+    kill_conditions=("no buyer commitment",),
+):
+    """Generic composition-request fixture. Domain-neutral by default.
+
+    `legal_principal` is REQUIRED and has no default, for the same reason as
+    build_opportunity: a production helper must not silently choose who is
+    accountable merely because a value happens to pass registry validation
+    (policy/engine.py rejects unregistered principals, which is a validity
+    check, not an accountability decision).
+    """
     return CompositionRequest(
-        market_failure="missing payer-grade transport proof",
-        beneficiaries=("patient",), payer="facility CFO",
-        control_surfaces=("proof",),
-        desired_metrics=("clean_verified_outcome_count",),
+        market_failure=market_failure,
+        beneficiaries=beneficiaries, payer=payer,
+        control_surfaces=control_surfaces,
+        desired_metrics=desired_metrics,
         legal_principal=legal_principal, max_budget_usd=max_budget,
-        requested_technology_ids=(5,), evidence_refs=(HASH,),
-        kill_conditions=("no buyer commitment",),
+        requested_technology_ids=requested_technology_ids, evidence_refs=(HASH,),
+        kill_conditions=kill_conditions,
+    )
+
+
+def _composition_request(max_budget=100.0, legal_principal=None):
+    # Explicit, never silent. Core closure checks state accountability.
+    if legal_principal is None:
+        legal_principal = "alfonso_lopez"
+    return build_composition_request(
+        legal_principal=legal_principal, max_budget=max_budget
     )
 
 

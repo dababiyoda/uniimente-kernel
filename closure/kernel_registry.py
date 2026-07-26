@@ -83,7 +83,11 @@ def build_registry() -> ClosureRegistry:
     def identity_evidence():
         from identity.machine_passport import PassportRegistry
         r = PassportRegistry()
-        p = r.issue(kind="workflow", creator="c", owner_organ="o", legal_principal="IVIO_NEMT_LLC",
+        # This check needs A VALID REGISTERED PRINCIPAL, not a specific venture.
+        # alfonso_lopez is chosen deliberately and stated here; it is never a
+        # silent default. Previously this read IVIO_NEMT_LLC, which made a
+        # Venture Cell's legal entity the implicit default inside a core module.
+        p = r.issue(kind="workflow", creator="c", owner_organ="o", legal_principal="alfonso_lopez",
                     declared_capabilities=[], budget_ceiling_usd=10, consequence_class="internal_write")
         d = r.to_dict(p.passport_id)
         same = all(d[k] == getattr(p, k) for k in ("passport_id", "creator", "legal_principal", "expires_at"))

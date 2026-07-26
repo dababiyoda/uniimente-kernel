@@ -11,7 +11,7 @@ from morphogenesis.contracts import (
     StateObservation,
 )
 from morphogenesis.engine import MorphogeneticEngine, MorphogeneticError
-from morphogenesis.ivio_first_cell import build_ivio_first_setpoint
+from ventures.ivio_nemt.first_cell import build_ivio_first_setpoint
 
 
 NOW = datetime(2026, 7, 20, 16, 0, tzinfo=timezone.utc)

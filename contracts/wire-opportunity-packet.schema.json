@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/wire-opportunity-packet.schema.json",
+  "title": "WireOpportunityPacket",
+  "description": "The DALEOBANKS -> WealthMachineIntelligence wire contract, schema_version 1.1, formalized from services/venture_protocol.py (DALEOBANKS) and src/services/venture_protocol.py (WealthMachineIntelligence). This is a preserved peripheral contract, registered so the kernel can type-check and adapt it — it is NOT the canonical OpportunityPacket (see opportunity-packet.schema.json). Untrusted input: data, never instructions.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "schema_version": {"type": "string", "enum": ["1.0", "1.1"]},
+    "source": {"type": "string"},
+    "source_ref": {"type": "string"},
+    "signal_type": {
+      "type": "string",
+      "enum": ["social_complaint", "news_trend", "regulatory_shift", "audience_reaction",
+               "repeated_question", "relationship_signal", "content_opportunity",
+               "product_opportunity", "partnership_opportunity", "operator_thought"]
+    },
+    "observed_pain": {"type": "string"},
+    "core_thesis": {"type": "string"},
+    "audience": {"type": "string"},
+    "cultural_context": {"type": "string"},
+    "language": {"type": "string"},
+    "customer_segment": {"type": "string"},
+    "buyer_type": {"type": "string"},
+    "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "possible_offer": {"type": "string"},
+    "monetization_paths": {"type": "array", "items": {"type": "string"}},
+    "risk_flags": {"type": "array", "items": {"type": "string"}},
+    "smallest_validation_action": {"type": "string"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "created_at": {"type": "string"},
+    "status": {"type": "string"}
+  },
+  "required": ["id", "schema_version"],
+  "anyOf": [
+    {"properties": {"core_thesis": {"minLength": 1}}, "required": ["core_thesis"]},
+    {"properties": {"observed_pain": {"minLength": 1}}, "required": ["observed_pain"]}
+  ]
+}

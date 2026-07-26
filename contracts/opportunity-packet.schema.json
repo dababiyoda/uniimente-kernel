@@ -91,12 +91,6 @@
       "items": {
         "$ref": "#/$defs/hash"
       }
-    },
-    "$defs": {
-      "hash": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
-      }
     }
   },
   "required": [
@@ -110,5 +104,11 @@
     "governing_bottleneck",
     "cheapest_decisive_test",
     "key_risks"
-  ]
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
 }

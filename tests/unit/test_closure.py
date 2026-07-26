@@ -1,6 +1,6 @@
 """Orthogonal closure tests: the five-closure standard itself."""
 from closure.framework import ClosureRegistry, ModuleClosures, CLOSURE_NAMES
-from closure.kernel_registry import build_registry
+from closure.integration_registry import build_registry
 
 
 def test_five_closures_named_exactly():
@@ -8,38 +8,46 @@ def test_five_closures_named_exactly():
 
 
 def test_a_module_with_only_technical_closure_is_not_finished():
-    reg = ClosureRegistry()
-    reg.register(ModuleClosures("demo", {
+    registry = ClosureRegistry()
+    registry.register(ModuleClosures("demo", {
         "technical": lambda: (True, "runs"),
         "authority": lambda: (False, "cannot prove authority"),
         "evidence": lambda: (True, "reconstructable"),
         "economic": lambda: (True, "saves cost"),
         "regenerative": lambda: (True, "no hidden harm"),
     }))
-    ok, reports = reg.verify()
-    report = reports[0]
+    ok, reports = registry.verify()
     assert not ok
-    assert not report.complete
-    assert report.open_closures == ["authority"]
+    assert not reports[0].complete
+    assert reports[0].open_closures == ["authority"]
 
 
 def test_crashing_check_fails_closed():
-    reg = ClosureRegistry()
+    registry = ClosureRegistry()
+
     def explode():
         raise RuntimeError("boom")
-    reg.register(ModuleClosures("demo", {n: (explode if n == "technical" else (lambda: (True, "ok")))
-                                         for n in CLOSURE_NAMES}))
-    ok, reports = reg.verify()
+
+    registry.register(ModuleClosures("demo", {
+        name: (explode if name == "technical" else (lambda: (True, "ok")))
+        for name in CLOSURE_NAMES
+    }))
+    ok, reports = registry.verify()
     assert not ok
-    assert any("raised" in c.detail for c in reports[0].closures if c.closure == "technical")
+    assert any("raised" in closure.detail for closure in reports[0].closures
+               if closure.closure == "technical")
 
 
-def test_kernel_modules_close_all_five():
-    """The Stage A modules must pass every orthogonal closure."""
-    reg = build_registry()
-    ok, reports = reg.verify()
-    failed = {r.module: r.open_closures for r in reports if not r.complete}
+def test_integrated_modules_close_all_five():
+    registry = build_registry()
+    ok, reports = registry.verify()
+    failed = {report.module: report.open_closures for report in reports if not report.complete}
     assert ok, f"open closures: {failed}"
-    assert set(reg.modules()) == {"compiler", "identity", "consequence_gate", "evidence_ledger",
-                                  "evolution", "events", "autonomy", "proof",
-                                  "loom", "twins", "capabilities", "embassy", "memory"}
+    required = {
+        "compiler", "identity", "consequence_gate", "evidence_ledger",
+        "evolution", "events", "autonomy", "proof", "loom", "twins",
+        "capabilities", "embassy", "memory", "linker",
+        "foundry", "business", "treasury",
+        "advantage_foundry", "omnimorph", "developmental_substrate",
+    }
+    assert required.issubset(set(registry.modules()))

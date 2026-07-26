@@ -1,0 +1,89 @@
+name: Canonical CI
+
+# The single official workflow for the canonical line.
+#
+# EXACTLY ONE RUN PER CHANGE. `pull_request` validates every proposed change;
+# `push` fires only on `main`, after merge. A branch with an open PR therefore
+# produces one run, not two. `workflow_dispatch` exists so an unchanged commit
+# can be re-run in a clean environment for release evidence.
+#
+# The four jobs below are the required checks named in the Package 1 order.
+# The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
+# preserved but reduced to manual dispatch so they cannot double-execute.
+# They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
+# destructive simplification.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: "1 · Kernel and organ tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Full unit and integration suite
+        run: python -m pytest -q
+      - name: Institutional verifier V1-V5
+        run: python verifier/v2/verify.py
+
+  contracts:
+    name: "2 · Contract schema references resolve"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Every document-local $ref resolves across contracts/**
+        run: python scripts/ci/check_schema_refs.py
+
+  authority:
+    name: "3 · One source of authority"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: No second Constitution, Gate, identity or authority registry
+        run: python scripts/ci/check_authority_singleton.py
+
+  sealed:
+    name: "4 · Developmental work stays sealed"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - name: Zero external effects, no self-granted authority
+        run: python scripts/ci/check_sealed_developmental.py
+      - name: TARGET_FORM_001 benchmark evidence
+        run: python -m developmental > target_form_001_report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: target-form-001-report
+          path: target_form_001_report.json
+          if-no-files-found: error
+          retention-days: 90

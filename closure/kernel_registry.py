@@ -83,7 +83,11 @@ def build_registry() -> ClosureRegistry:
     def identity_evidence():
         from identity.machine_passport import PassportRegistry
         r = PassportRegistry()
-        p = r.issue(kind="workflow", creator="c", owner_organ="o", legal_principal="IVIO_NEMT_LLC",
+        # This check needs A VALID REGISTERED PRINCIPAL, not a specific venture.
+        # alfonso_lopez is chosen deliberately and stated here; it is never a
+        # silent default. Previously this read IVIO_NEMT_LLC, which made a
+        # Venture Cell's legal entity the implicit default inside a core module.
+        p = r.issue(kind="workflow", creator="c", owner_organ="o", legal_principal="alfonso_lopez",
                     declared_capabilities=[], budget_ceiling_usd=10, consequence_class="internal_write")
         d = r.to_dict(p.passport_id)
         same = all(d[k] == getattr(p, k) for k in ("passport_id", "creator", "legal_principal", "expires_at"))
@@ -328,19 +332,20 @@ def build_registry() -> ClosureRegistry:
         return refused == 2, "non-spiffe emissions and UNIIMENTE-as-principal both refused"
 
     def events_evidence():
-        from events.spine import DurableWorkflow, WorkflowStep, WorkflowKilled
+        from events.spine import (WorkflowStep, WorkflowKilled,
+                                  durable_workflow, resume_workflow)
         spine = _spine()
         calls = []
         def mk(name):
             return WorkflowStep(name=name, run=lambda s: (calls.append(name) or {name: 1}),
                                 compensate=lambda s: None)
-        wf = DurableWorkflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")],
+        wf = durable_workflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")],
                              actor="alfonso", legal_principal="alfonso_lopez")
         try:
             wf.execute(kill_at_step="b")
         except WorkflowKilled:
             pass
-        resumed = DurableWorkflow.resume(spine, "wf-closure", steps=[mk("a"), mk("b"), mk("c")])
+        resumed = resume_workflow(spine, "wf-closure", [mk("a"), mk("b"), mk("c")])
         resumed.execute()
         return resumed.status == "completed" and calls.count("a") == 1 and calls == ["a", "b", "c"], \
             "killed workflow resumed from checkpoint; finished steps never re-executed"
@@ -355,7 +360,7 @@ def build_registry() -> ClosureRegistry:
             "idempotent inbox: duplicate deliveries cost nothing, ledger stays lean"
 
     def events_regenerative():
-        from events.spine import DurableWorkflow, WorkflowStep, WorkflowFailed
+        from events.spine import WorkflowStep, WorkflowFailed, durable_workflow
         spine = _spine()
         undone = []
         def boom(s):
@@ -363,7 +368,7 @@ def build_registry() -> ClosureRegistry:
         steps = [WorkflowStep(name="s1", run=lambda s: {"s1": 1},
                               compensate=lambda s: undone.append("s1")),
                  WorkflowStep(name="s2", run=boom, max_retries=0)]
-        wf = DurableWorkflow(spine, "wf-fail", steps, actor="alfonso",
+        wf = durable_workflow(spine, "wf-fail", steps, actor="alfonso",
                              legal_principal="alfonso_lopez")
         try:
             wf.execute()
@@ -913,5 +918,78 @@ def build_registry() -> ClosureRegistry:
         "technical": memory_technical, "authority": memory_authority,
         "evidence": memory_evidence, "economic": memory_economic,
         "regenerative": memory_regenerative}))
+
+    # ---------------------------------------------------------------- linker
+    def linker_technical():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        report = InstitutionalLinker(load_all()).link()
+        bridge_a = any(e.contract == "wire-opportunity-packet" for e in report.edges)
+        return bridge_a and report.untyped == [], \
+            f"{len(report.edges)} typed edges resolved across 3 organ manifests; Bridge A linked"
+
+    def linker_authority():
+        from linker.manifest import ManifestError, load_manifest
+        import os, tempfile
+        src = open(os.path.join(KERNEL_ROOT, "organs", "kernel.manifest.yaml")).read()
+        refused = 0
+        for bad in (src.replace("may_self_promote: false", "may_self_promote: true"),
+                    src.replace("legal_operators: [alfonso_lopez]",
+                                "legal_operators: [UNIIMENTE]")):
+            with tempfile.TemporaryDirectory() as d:
+                p = os.path.join(d, "x.manifest.yaml")
+                open(p, "w").write(bad)
+                try:
+                    load_manifest(p)
+                except ManifestError:
+                    refused += 1
+        return refused == 2, \
+            "self-promotion and UNIIMENTE-as-operator both unrepresentable in a valid manifest"
+
+    def linker_evidence():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        r1 = InstitutionalLinker(load_all()).link()
+        r2 = InstitutionalLinker(load_all()).link()
+        same = [(e.producer, e.contract, e.consumer) for e in r1.edges] == \
+               [(e.producer, e.contract, e.consumer) for e in r2.edges]
+        carried = all(any(o == m.organ_id for o, _ in r1.unresolved)
+                      for m in load_all() if m.unresolved)
+        return same and carried, \
+            "link graph deterministic; every manifest's open questions carried verbatim"
+
+    def linker_economic():
+        from linker.linker import InstitutionalLinker
+        from linker.manifest import load_all
+        manifests = load_all()
+        manifests[0].consumes = manifests[0].consumes + ["business-genome"]
+        report = InstitutionalLinker(manifests).link()
+        return not report.fully_connected and \
+            any(c == "business-genome" for _, c in report.untyped), \
+            "missing integrations surface at link time, before any runtime cost is spent"
+
+    def linker_regenerative():
+        from linker.linker import InstitutionalLinker, LinkerError
+        try:
+            InstitutionalLinker([])
+            return False, "linked an empty organism"
+        except LinkerError:
+            pass
+        from linker.manifest import ManifestError, load_manifest
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.manifest.yaml")
+            open(p, "w").write("manifest_version: '1.0'\n")
+            try:
+                load_manifest(p)
+                return False, "incomplete manifest accepted"
+            except ManifestError as exc:
+                named = "authority" in str(exc) and "health" in str(exc)
+        return named, "invalid manifests fail closed naming every missing field; no partial links"
+
+    reg.register(ModuleClosures("linker", {
+        "technical": linker_technical, "authority": linker_authority,
+        "evidence": linker_evidence, "economic": linker_economic,
+        "regenerative": linker_regenerative}))
 
     return reg

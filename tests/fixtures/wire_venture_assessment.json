@@ -1,0 +1,81 @@
+{
+  "id": "8523488b-9feb-4cc2-8375-3e7ad17731fb",
+  "opportunity_packet_id": "7d8a56b2-4a86-4a83-9a5d-2f43cf7f1a20",
+  "go_no_go": "go",
+  "opportunity_score": 0.9,
+  "market_alignment": 0.9,
+  "expected_roi": "unknown until validation; no revenue promises",
+  "risk_level": "low",
+  "legal_readiness": "standard",
+  "product_hypothesis": "verifiable trip-evidence log that exports broker-ready dispute packets",
+  "pricing_hypothesis": "$15-29 one-time or $9/mo; test willingness before building",
+  "validation_plan": [
+    "Offer 5 engaged operators a hand-built dispute packet for one contested trip and ask for $25 if it is accepted by the broker",
+    "Draft landing-page copy and collect waitlist interest (no payment yet)",
+    "Run 3-5 buyer interviews from engaged repliers"
+  ],
+  "monetization_paths": [
+    "$19/mo per vehicle subscription",
+    "paid dispute-packet exports"
+  ],
+  "recommended_next_action": "Offer 5 engaged operators a hand-built dispute packet for one contested trip and ask for $25 if it is accepted by the broker",
+  "requires_human_approval": true,
+  "reasons": [
+    "score 0.9 with offer and monetization paths",
+    "[bear] willingness to pay is untested until a buyer commits value",
+    "[incumbent_response] an incumbent with distribution can copy verifiable trip-evidence log that exports broker-ready dispute packets quickly; the durable edge must be trust and cultural specificity, not the artifact itself"
+  ],
+  "cases": [
+    {
+      "case": "bull",
+      "stance": "for",
+      "severity": "medium",
+      "argument": "opportunity score 0.9 clears threshold; urgency is high \u2014 the pain is current, not hypothetical; 2 monetization paths identified",
+      "resolved": false
+    },
+    {
+      "case": "bear",
+      "stance": "against",
+      "severity": "medium",
+      "argument": "willingness to pay is untested until a buyer commits value",
+      "resolved": false
+    },
+    {
+      "case": "fraud_manipulation",
+      "stance": "neutral",
+      "severity": "low",
+      "argument": "no sybil indicators in the evidence set; keep verifying provenance",
+      "resolved": false
+    },
+    {
+      "case": "incumbent_response",
+      "stance": "against",
+      "severity": "medium",
+      "argument": "an incumbent with distribution can copy verifiable trip-evidence log that exports broker-ready dispute packets quickly; the durable edge must be trust and cultural specificity, not the artifact itself",
+      "resolved": false
+    },
+    {
+      "case": "adoption_friction",
+      "stance": "against",
+      "severity": "low",
+      "argument": "audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause",
+      "resolved": false
+    },
+    {
+      "case": "do_nothing",
+      "stance": "against",
+      "severity": "low",
+      "argument": "skipping this preserves founder attention for a stronger signal; the cost of waiting is one cycle of learning, not the market",
+      "resolved": false
+    },
+    {
+      "case": "opportunity_cost",
+      "stance": "against",
+      "severity": "low",
+      "argument": "score 0.9 vs. alignment 0.9: compare against the best alternative use of the same attention and budget",
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-07-20T22:13:39.220718+00:00",
+  "schema_version": "1.1"
+}

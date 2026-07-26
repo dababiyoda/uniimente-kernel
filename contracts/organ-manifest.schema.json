@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/organ-manifest.schema.json",
+  "title": "OrganManifest",
+  "description": "Machine-readable declaration an organ publishes about itself. Discovery, never authority: listing a capability here grants nothing. Evidence fields record what was actually verified, with the commit it was verified at.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "organ_id": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/",
+      "description": "SPIFFE-style institutional identity"
+    },
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "repository": {
+      "type": ["string", "null"],
+      "description": "owner/repo, or null for organs that are not code"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "branch": {"type": "string"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"}
+      },
+      "required": ["commit"]
+    },
+    "legal_operators": {
+      "type": "array",
+      "items": {"type": "string", "not": {"const": "UNIIMENTE"}},
+      "minItems": 1,
+      "description": "The institution itself is never a legal operator"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "capability_id": {"type": "string"},
+          "description": {"type": "string"},
+          "implementation_path": {"type": "string"},
+          "consumes": {"type": "array", "items": {"type": "string"}},
+          "produces": {"type": "array", "items": {"type": "string"}},
+          "lifecycle": {
+            "type": "string",
+            "enum": ["DISCOVERED", "SPECIFIED", "WRAPPED", "TESTED", "SANDBOXED",
+                     "SHADOW", "CANARY", "ACTIVE", "SPECIALIZED", "FALLBACK",
+                     "SUPERSEDED", "HISTORICAL", "QUARANTINED"]
+          }
+        },
+        "required": ["capability_id", "description", "implementation_path", "lifecycle"]
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "consumes": {"type": "array", "items": {"type": "string"}},
+        "produces": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["consumes", "produces"]
+    },
+    "prohibited_actions": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_consequence_class": {
+          "type": "string",
+          "enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]
+        },
+        "external_actions_require_kernel_gate": {"type": "boolean", "const": true},
+        "may_self_promote": {"type": "boolean", "const": false}
+      },
+      "required": ["max_consequence_class", "external_actions_require_kernel_gate", "may_self_promote"]
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "test_command": {"type": "string"},
+        "last_verified": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "date": {"type": "string", "format": "date"},
+            "commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+            "tests_passed": {"type": "integer", "minimum": 0},
+            "tests_failed": {"type": "integer", "minimum": 0},
+            "notes": {"type": "string"}
+          },
+          "required": ["date", "commit", "tests_passed", "tests_failed"]
+        }
+      },
+      "required": ["test_command"]
+    },
+    "shutdown_behavior": {"type": "string"},
+    "recovery": {"type": "string"},
+    "status": {
+      "type": "string",
+      "enum": ["active", "planned", "this_repository"]
+    },
+    "unresolved": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Explicitly open questions. Missing information is declared, never invented."
+    }
+  },
+  "required": ["manifest_version", "organ_id", "name", "role", "legal_operators",
+               "capabilities", "contracts", "prohibited_actions", "authority",
+               "health", "status"]
+}

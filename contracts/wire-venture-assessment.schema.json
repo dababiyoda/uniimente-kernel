@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/wire-venture-assessment.schema.json",
+  "title": "WireVentureAssessment",
+  "description": "The WealthMachineIntelligence -> DALEOBANKS wire contract, schema_version 1.1, formalized from the mirrored venture_protocol modules. Preserved peripheral contract, registered for kernel type-checking and adaptation — NOT the canonical VentureAssessment (see venture-assessment.schema.json). Assessments recommend; they never execute.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string"},
+    "opportunity_packet_id": {"type": "string", "minLength": 1},
+    "go_no_go": {"type": "string", "enum": ["go", "defer", "kill", "needs_more_evidence"]},
+    "opportunity_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "market_alignment": {"type": "number", "minimum": 0, "maximum": 1},
+    "expected_roi": {"type": "string"},
+    "risk_level": {"type": "string", "enum": ["low", "medium", "high"]},
+    "legal_readiness": {"type": "string"},
+    "product_hypothesis": {"type": "string"},
+    "pricing_hypothesis": {"type": "string"},
+    "validation_plan": {"type": "array", "items": {"type": "string"}},
+    "monetization_paths": {"type": "array", "items": {"type": "string"}},
+    "recommended_next_action": {"type": "string"},
+    "requires_human_approval": {"type": "boolean", "const": true},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "case": {
+            "type": "string",
+            "enum": ["bull", "bear", "fraud_manipulation", "incumbent_response",
+                     "adoption_friction", "do_nothing", "opportunity_cost"]
+          },
+          "stance": {"type": "string", "enum": ["for", "against", "neutral"]},
+          "severity": {"type": "string", "enum": ["low", "medium", "high"]},
+          "argument": {"type": "string"},
+          "resolved": {"type": "boolean"}
+        },
+        "required": ["case", "stance", "severity", "argument"]
+      }
+    },
+    "created_at": {"type": "string"},
+    "schema_version": {"type": "string", "enum": ["1.0", "1.1"]}
+  },
+  "required": ["opportunity_packet_id", "go_no_go", "requires_human_approval"]
+}

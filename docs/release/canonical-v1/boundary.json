@@ -1,0 +1,64 @@
+{
+  "record": "core-venture-boundary",
+  "version": "1.0.0",
+  "candidate_commit": "a4fa43e8c74b56130314c21736dfaf767567f3de",
+  "baseline_ci_commit": "8b55efa6393d811ff544d22006f441f03dc8dc19",
+  "rule": "UNIIMENTE may create and govern ventures. No venture may define UNIIMENTE.",
+  "classes": ["core", "generic_extension_candidate", "developmental_research", "venture_cell", "venture_specific_adapter", "historical_evidence", "duplicate", "blocked"],
+  "paths": {
+    "constitution": "core", "authority": "core", "identity": "core", "policy": "core",
+    "events": "core", "provenance": "core", "memory": "core", "capabilities": "core",
+    "autonomy": "core", "embassy": "core", "affect": "core", "capital": "core",
+    "compiler": "core", "loom": "core", "twins": "core", "evolution": "core",
+    "closure": "core", "verifier": "core", "observability": "core", "sandbox": "core",
+    "sdk-python": "core", "sdk-typescript": "core", "linker": "core", "organs": "core",
+    "scripts/ci": "core",
+    "developmental": "developmental_research",
+    "morphogenesis": "core",
+    "foundry": "generic_extension_candidate",
+    "omnimorph": "generic_extension_candidate",
+    "business": "generic_extension_candidate",
+    "egregore": "generic_extension_candidate",
+    "adapters": "venture_specific_adapter",
+    "integration": "core",
+    "contracts": "mixed",
+    "tests": "mixed",
+    "docs": "mixed"
+  },
+  "leakage": [
+    {"id": "L1", "path": "closure/advantage_registry.py", "class_declared": "core",
+     "issue": "healthcare roles as in-code values (facility CFO, patient, case management, patient transport discharge)",
+     "severity": "high", "disposition": "parameterise; move healthcare instance to venture fixture", "remediated": false},
+    {"id": "L2", "path": "closure/kernel_registry.py", "line": 86, "class_declared": "core",
+     "issue": "legal_principal=IVIO_NEMT_LLC used as demonstration data inside a core registry module",
+     "severity": "medium", "disposition": "neutral placeholder principal; venture case moves to venture test", "remediated": false},
+    {"id": "L3", "path": "morphogenesis/ivio_first_cell.py", "class_declared": "core",
+     "issue": "venture setpoint (IVIO-NEMT) inside the core morphogenesis package",
+     "severity": "medium", "reclassify_as": "venture_cell",
+     "disposition": "relocate; morphogenesis/contracts.py and engine.py remain core and unchanged", "remediated": false},
+    {"id": "L4", "path": "integration/egregore-v1.yaml", "class_declared": "core",
+     "issue": "manifest names venture as owner (ivio_obvio_nemt) and a venture-named core role",
+     "severity": "medium", "disposition": "re-point to neutral owner", "remediated": false}
+  ],
+  "not_leakage": [
+    {"path": "authority/legal-principals.yaml", "reason": "generic registry; venture entries are data. Gate cannot function without real principals. IVIO_NEMT_LLC correctly marked proving_ground with unconfirmed jurisdiction."},
+    {"path": "identity/organ-registry.yaml", "reason": "generic registry, venture rows"},
+    {"path": "identity/agent-registry.yaml", "reason": "generic registry, venture rows"},
+    {"path": "events/README.md", "reason": "false positive: 'round-trip' matched trip"}
+  ],
+  "clean_core_evidence": {
+    "tests_with_zero_healthcare_assertions": ["tests/unit/test_closure.py", "tests/unit/test_consequence_gate.py", "tests/unit/test_capabilities.py"],
+    "governing_layers_venture_neutral": ["constitution", "authority", "policy", "events", "provenance", "memory"]
+  },
+  "prohibited_records": [
+    {"statement": "UNIIMENTE may act as a legal principal", "state": "prohibited",
+     "evidence": ["authority/legal-principals.yaml", "compiler invariant never_uniimente_principal"],
+     "basis": "actual rejection with lineage, not an invented entry"}
+  ],
+  "remediation_performed_in_package_1": false,
+  "open_questions": [
+    "Must foundry/omnimorph/business/egregore prove genericity before or after the canonical merge?",
+    "Re-scope docs/TARGET_FORM_001.md, or preserve and write 002 clean?",
+    "Do L1-L4 relocate to adapters/ or to a separate venture repository?"
+  ]
+}

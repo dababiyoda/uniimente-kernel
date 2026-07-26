@@ -1,0 +1,604 @@
+{
+  "base_commit": "5e02e47f604770fdee2c05b25418ef003f5b2b92",
+  "capsule": {
+    "audit": {},
+    "beats_baseline": true,
+    "bottleneck": "stateful replacement through the canonical runtime boundary had never been performed",
+    "capsule_id": "a7e7010b-de96-4e4b-a7a2-e020fcc7ab00",
+    "created_at": "2026-07-26T17:56:48.592302Z",
+    "decision": {
+      "decided_at": "2026-07-26T17:56:48.592189Z",
+      "decided_by": "package4 harness",
+      "decision": "regress",
+      "reason": "Stateful replacement through the canonical runtime is PROVEN: W1-projection took over at the real construction sites, migrated state, preserved exactly-once on every held-out case, and handed control back. Promotion is DECLINED: the original is the default by construction and remains cheaper and simpler. W1-projection is retained as a proven governed fallback. Recommendation only \u2014 this decision promotes nothing and activates nothing.",
+      "verifier": {
+        "decided_at": "2026-07-26T17:56:48.592165Z",
+        "decided_by": "package4 harness under Canonical CI",
+        "evidence": "deterministic invariant: exactly-once execution across 5 held-out cases through the real canonical construction sites; malformed checkpoints refused before append; continuity fingerprint unchanged",
+        "level": "formal_proof"
+      }
+    },
+    "experiment": {
+      "authority_requirements": [
+        "founder_ratification"
+      ],
+      "baseline": 0.0,
+      "budget_usd": 0.0,
+      "decisive_unknown": "Can UNIIMENTE replace a stateful, non-authority specialist through its actual canonical runtime boundary, migrate its state into a materially different implementation, preserve exactly-once behaviour, and roll back without losing identity, authority, evidence, shutdown or prior valid state?",
+      "direction": "gte",
+      "experiment_id": "package4-stateful-canonical-replacement-v1",
+      "hypothesis": "A materially different engine can take over at the real construction sites, carry the migrated state, preserve exactly-once execution on every corpus case, refuse malformed checkpoints before they reach the ledger, and hand control back to the original intact.",
+      "kill_condition": "a malformed checkpoint reaches the ledger; a candidate attempts an external effect; a candidate attempts to grant itself authority or become the permanent default; a continuity artifact changes; shutdown becomes unenforceable; the frozen spec hash no longer matches this module",
+      "metric": "exactly_once_score: 1.0 only when every corpus case matches the original's behaviour AND zero completed steps re-execute AND all required state survives migration; 0.0 otherwise",
+      "prediction": "W1, W2 and W3 all preserve exactly-once; W2 is the most expensive and the most likely to expose a genuine migration defect; W1 is at risk on HO-3; the original W0 remains the cheapest and the recommended operational default.",
+      "required_capabilities": [
+        "events.spine",
+        "events.engine",
+        "evolution.comparison",
+        "evolution.experiment",
+        "evolution.capsule",
+        "capabilities.genome",
+        "provenance.ledger",
+        "memory.causal",
+        "closure.framework",
+        "loom.weaver"
+      ],
+      "reversible": true,
+      "rollback_path": "1. deactivate the replacement provider (leaving the activation scope does this automatically, and a crash does it by default); 2. the original becomes the resolved engine again \u2014 it is the default, not a restored backup; 3. resume the workflow from the last valid checkpoint, which the append-only ledger guarantees still exists; 4. assert the original's behaviour is byte-identical to baseline",
+      "threshold": 1.0,
+      "verification": "formal_proof",
+      "workflow": "package4.stateful_canonical_replacement"
+    },
+    "measured_value": 1.0,
+    "notes": "Failed predictions are reported, not edited.",
+    "outcome_class": "positive",
+    "tree": {},
+    "verifier": {
+      "decided_at": "2026-07-26T17:56:48.592165Z",
+      "decided_by": "package4 harness under Canonical CI",
+      "evidence": "deterministic invariant: exactly-once execution across 5 held-out cases through the real canonical construction sites; malformed checkpoints refused before append; continuity fingerprint unchanged",
+      "level": "formal_proof"
+    }
+  },
+  "comparison": {
+    "ranking": [
+      {
+        "candidate": "W0-original",
+        "measured": 1.0,
+        "resolves": true
+      },
+      {
+        "candidate": "W1-projection",
+        "measured": 1.0,
+        "resolves": true
+      },
+      {
+        "candidate": "W2-token",
+        "measured": 1.0,
+        "resolves": true
+      },
+      {
+        "candidate": "W3-journal",
+        "measured": 0.0,
+        "resolves": false
+      }
+    ],
+    "threshold": 1.0
+  },
+  "continuity": {
+    "after": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+    "before": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+    "unchanged": true
+  },
+  "decision": {
+    "decided_at": "2026-07-26T17:56:48.592189Z",
+    "decided_by": "package4 harness",
+    "decision": "regress",
+    "reason": "Stateful replacement through the canonical runtime is PROVEN: W1-projection took over at the real construction sites, migrated state, preserved exactly-once on every held-out case, and handed control back. Promotion is DECLINED: the original is the default by construction and remains cheaper and simpler. W1-projection is retained as a proven governed fallback. Recommendation only \u2014 this decision promotes nothing and activates nothing.",
+    "verifier": {
+      "decided_at": "2026-07-26T17:56:48.592165Z",
+      "decided_by": "package4 harness under Canonical CI",
+      "evidence": "deterministic invariant: exactly-once execution across 5 held-out cases through the real canonical construction sites; malformed checkpoints refused before append; continuity fingerprint unchanged",
+      "level": "formal_proof"
+    }
+  },
+  "default_before": true,
+  "events": [
+    {
+      "candidate": "W0-original",
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "score": 1.0,
+      "type": "workflow.candidate_trial"
+    },
+    {
+      "candidate": "W1-projection",
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "score": 1.0,
+      "type": "workflow.candidate_trial"
+    },
+    {
+      "candidate": "W2-token",
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "score": 1.0,
+      "type": "workflow.candidate_trial"
+    },
+    {
+      "candidate": "W3-journal",
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": false
+      },
+      "score": 0.0,
+      "type": "workflow.candidate_trial"
+    },
+    {
+      "chain_detail": "chain intact: 2 records",
+      "chain_verifies": true,
+      "default_restored": true,
+      "malformed_checkpoints_in_ledger": 0,
+      "records_added": 1,
+      "refusal_events_appended": 1,
+      "refusal_problems": [
+        "schema[workflow-checkpoint-w0] actor: '' should be non-empty",
+        "workflow identity mismatch: seam resolved 'p4x-malformed', checkpoint claims 'somebody-elses-workflow'",
+        "checkpoint carries no actor",
+        "UNIIMENTE is never a legal principal",
+        "cursor 99 outside [0, 2]"
+      ],
+      "refused_before_append": true,
+      "type": "workflow.malformed_checkpoint_control"
+    }
+  ],
+  "experiment_id": "package4-stateful-canonical-replacement-v1",
+  "isolation": {
+    "ledger": "experiment-local instance",
+    "rationale": "the canonical construction sites are real and are genuinely exercised; only the LEDGER INSTANCE and the workflow-id namespace are experiment-local. Substituting the provider is real; polluting institutional history would not have made it more real, only less reversible.",
+    "workflow_prefix": "p4x-"
+  },
+  "ledger": {
+    "chain_verifies": true,
+    "detail": "chain intact: 38 records",
+    "head": "sha256:8064756ddf1ac1d5e54eaa4fe5ebe20f0f06944326477b2cb2f270fbf7dcb450",
+    "records": 38
+  },
+  "limitations": [
+    "All candidates and the seam were authored in one development session by one author. 'Materially different' is bounded by one author's imagination.",
+    "State is process-local over an in-memory ledger. This is NOT a distributed or crash-consistent migration and must not be described as one.",
+    "The candidate set is fixed in advance. Nothing generates novel implementations, so this is not unscripted morphogenesis or open-ended self-repair.",
+    "The experiment uses an isolated ledger instance and an experiment-specific workflow-id namespace. The provider substitution at the canonical construction sites is real; the durable history it writes to is not the institution's own.",
+    "No external effect, deployment, spending or real-world data. The strongest available verifier is a deterministic invariant.",
+    "Activation is scoped and temporary by construction, so this demonstrates governed replacement, not sustained operation of a replacement."
+  ],
+  "malformed_checkpoint_control": {
+    "chain_detail": "chain intact: 2 records",
+    "chain_verifies": true,
+    "default_restored": true,
+    "malformed_checkpoints_in_ledger": 0,
+    "problems_seen": [
+      "checkpoint refused before append: [\"schema[workflow-checkpoint-w0] actor: '' should be non-empty\", \"workflow identity mismatch: seam resolved 'p4x-malformed', checkpoint claims 'somebody-elses-workflow'\", 'checkpoint carries no actor', 'UNIIMENTE is never a legal principal', 'cursor 99 outside [0, 2]']"
+    ],
+    "records_added": 1,
+    "refusal_events_appended": 1,
+    "refusal_problems": [
+      "schema[workflow-checkpoint-w0] actor: '' should be non-empty",
+      "workflow identity mismatch: seam resolved 'p4x-malformed', checkpoint claims 'somebody-elses-workflow'",
+      "checkpoint carries no actor",
+      "UNIIMENTE is never a legal principal",
+      "cursor 99 outside [0, 2]"
+    ],
+    "refused_before_append": true
+  },
+  "prediction_review": {
+    "W0-original": {
+      "actual_exactly_once": true,
+      "actual_qualifies": false,
+      "held": true,
+      "predicted_exactly_once": true,
+      "predicted_qualifies": false
+    },
+    "W1-projection": {
+      "actual_exactly_once": true,
+      "actual_qualifies": true,
+      "held": true,
+      "predicted_exactly_once": true,
+      "predicted_qualifies": true
+    },
+    "W2-token": {
+      "actual_exactly_once": true,
+      "actual_qualifies": true,
+      "held": true,
+      "predicted_exactly_once": true,
+      "predicted_qualifies": true
+    },
+    "W3-journal": {
+      "actual_exactly_once": true,
+      "actual_qualifies": false,
+      "held": false,
+      "predicted_exactly_once": true,
+      "predicted_qualifies": true
+    },
+    "summary": {
+      "held": 3,
+      "total": 4
+    }
+  },
+  "rollback": {
+    "default_is_original_after_all_scopes": true,
+    "original_class_intact": true,
+    "simulated_restart_default": true
+  },
+  "selection": {
+    "qualifying_replacements": [
+      "W1-projection",
+      "W2-token"
+    ],
+    "reason": "frozen primary metric; the author did not choose",
+    "rejected": [
+      "W3-journal"
+    ],
+    "selected": "W1-projection"
+  },
+  "spec_sha256": "24643845becdcbd2cbedc192aad73bf990c28c189fb162795a0b6098ac4df44b",
+  "trials": {
+    "W0-original": {
+      "candidate": "W0-original",
+      "cases": [
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-1",
+          "detail": "calls=['only'] state={'only': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "only": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-2",
+          "detail": "calls=['s1', 's2', 's3'] state={'s1': 1, 's2': 1, 's3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "s1": 1,
+            "s2": 1,
+            "s3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-3",
+          "detail": "calls=['a1', 'a2', 'a3'] state={'a1': 1, 'a2': 1, 'a3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "a1": 1,
+            "a2": 1,
+            "a3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-4",
+          "detail": "terminal workflow refused resume",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "g1": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-5",
+          "detail": "gate stayed closed",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "p1": 1
+          },
+          "state_exact": true
+        }
+      ],
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "materially_different": "none \u2014 the original engine, retained as benchmark, default and rollback target",
+      "qualifies_as_replacement": false,
+      "score": 1.0
+    },
+    "W1-projection": {
+      "candidate": "W1-projection",
+      "cases": [
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-1",
+          "detail": "calls=['only'] state={'only': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "only": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-2",
+          "detail": "calls=['s1', 's2', 's3'] state={'s1': 1, 's2': 1, 's3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "s1": 1,
+            "s2": 1,
+            "s3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-3",
+          "detail": "calls=['a1', 'a2', 'a3'] state={'a1': 1, 'a2': 1, 'a3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "a1": 1,
+            "a2": 1,
+            "a3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-4",
+          "detail": "terminal workflow refused resume",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "g1": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-5",
+          "detail": "gate stayed closed",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "p1": 1
+          },
+          "state_exact": true
+        }
+      ],
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "materially_different": "stores no position at all: cursor and state are DERIVED by folding the checkpoint stream on every resume, where the original reads the last snapshot",
+      "qualifies_as_replacement": true,
+      "score": 1.0
+    },
+    "W2-token": {
+      "candidate": "W2-token",
+      "cases": [
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-1",
+          "detail": "calls=['only'] state={'only': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "only": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-2",
+          "detail": "calls=['s1', 's2', 's3'] state={'s1': 1, 's2': 1, 's3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "s1": 1,
+            "s2": 1,
+            "s3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-3",
+          "detail": "calls=['a1', 'a2', 'a3'] state={'a1': 1, 'a2': 1, 'a3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "a1": 1,
+            "a2": 1,
+            "a3": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-4",
+          "detail": "terminal workflow refused resume",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "g1": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-5",
+          "detail": "gate stayed closed",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "p1": 1
+          },
+          "state_exact": true
+        }
+      ],
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": true
+      },
+      "materially_different": "position by step NAME, not index. Different state schema, and the only candidate requiring a real migration and reverse migration",
+      "qualifies_as_replacement": true,
+      "score": 1.0
+    },
+    "W3-journal": {
+      "candidate": "W3-journal",
+      "cases": [
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-1",
+          "detail": "calls=['only'] state={'__undo__': ['only'], 'only': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "__undo__": [
+              "only"
+            ],
+            "only": 1
+          },
+          "state_exact": false
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-2",
+          "detail": "calls=['s1', 's2', 's3'] state={'__undo__': ['s1', 's2', 's3'], 's1': 1, 's2': 1, 's3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "__undo__": [
+              "s1",
+              "s2",
+              "s3"
+            ],
+            "s1": 1,
+            "s2": 1,
+            "s3": 1
+          },
+          "state_exact": false
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-3",
+          "detail": "calls=['a1', 'a2', 'a3'] state={'__undo__': ['a1', 'a2', 'a3'], 'a1': 1, 'a2': 1, 'a3': 1}",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "__undo__": [
+              "a1",
+              "a2",
+              "a3"
+            ],
+            "a1": 1,
+            "a2": 1,
+            "a3": 1
+          },
+          "state_exact": false
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-4",
+          "detail": "terminal workflow refused resume",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "__undo__": [
+              "g1"
+            ],
+            "g1": 1
+          },
+          "state_exact": true
+        },
+        {
+          "behaviour_exact": true,
+          "case_id": "HO-5",
+          "detail": "gate stayed closed",
+          "duplicated_steps": [],
+          "exactly_once": true,
+          "observed_state": {
+            "__undo__": [
+              "p1"
+            ],
+            "p1": 1
+          },
+          "state_exact": true
+        }
+      ],
+      "gates": {
+        "behaviour_matches_original": true,
+        "continuity_unchanged": true,
+        "default_restored_after_scope": true,
+        "exactly_once": true,
+        "migration_round_trips": true,
+        "original_class_intact": true,
+        "shutdown_succeeds": true,
+        "state_survives_migration": false
+      },
+      "materially_different": "carries an explicit undo stack in state, which the original recomputes from the step list at compensation time",
+      "qualifies_as_replacement": false,
+      "score": 0.0
+    }
+  }
+}

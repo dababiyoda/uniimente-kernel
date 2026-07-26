@@ -1,0 +1,281 @@
+manifest_version: "1.3"
+integration_id: uniimente-egregore-v1
+status: active_integration
+branch: integration/uniimente-egregore-v1
+constitutional_authority:
+  founder: alfonso_lopez
+  machine_may_self_authorize: false
+  authorized_shutdown_required: true
+  main_branch_untouched_until_release_gates: true
+
+single_bottleneck_metric:
+  name: clean_verified_outcome_count
+  baseline: 0
+  next_target: 1
+  repetition_target: 10
+
+canonical_functions:
+  constitution_identity_policy_grants_shutdown:
+    owner: uniimente-kernel
+    duplicate_active_implementations_allowed: false
+  external_consequence_commit:
+    owner: consequence_gate
+    exclusive: true
+  cross_organ_linkage:
+    owner: institutional_linker
+  sensing_and_public_communication:
+    owner: daleobanks
+    execution_authority: false
+  opportunity_underwriting:
+    owner: wealthmachineintelligence
+    execution_authority: false
+  phase_zero_to_foundry_intake:
+    owner: foundry_intake_adapter
+    raw_model_input_allowed: false
+  strategy_route_tournament:
+    owner: advantage_foundry
+    required_routes: 11
+    preserve_rejected_routes: true
+  adversarial_architecture_review:
+    owner: spider_web_tribunal
+    required_lenses: 8
+    required_control_super_nodes:
+      - eligibility
+      - default_routing
+      - proof_and_truth
+      - cashflow_and_settlement
+    execution_authority: false
+  technology_composition:
+    owner: foundry_composer
+    arsenal_size: 55
+    output_artifact: composition_plan
+    execution_authority: false
+  # `owner` in this block means SUBSYSTEM STEWARD (cf. consequence_gate,
+  # institutional_linker, omnimorph above) — it is NOT a legal principal.
+  # Accountability attaches via authority/legal-principals.yaml, never here.
+  #
+  # A canonical function may reference a Venture Cell only through an explicit
+  # registry. `delegated_to` resolves in identity/organ-registry.yaml.
+  first_transaction_vertical:
+    owner: venture_cell_registry
+    delegated_to: ivio_nemt          # identity/organ-registry.yaml
+    delegation_active: false
+  # Previously `tgh_control_rail` — a named prospect's rail, registered nowhere
+  # in this repository. An unregistered, facility-specific steward may not own a
+  # canonical core function.
+  operator_surface:
+    owner: kernel_steward
+  opportunity_to_genome:
+    owner: advantage_foundry
+  temporary_organ_composition:
+    owner: omnimorph
+    output_state: PROPOSED_NOT_EXECUTED
+    arbitrary_receipt_hash_allowed: false
+  standing_cognition:
+    owner: ade1_governed_runtime
+    sovereign_intent: false
+  setpoint_control:
+    owner: morphogenetic_control_contract
+    target_reached_state: TARGET_REACHED_NOT_AUTHORIZED
+  commercial_lifecycle:
+    owner: business_foundry
+  commercial_to_foundry_validation:
+    owner: external_outcome_bridge
+    payment_alone_sufficient: false
+  capital_allocation:
+    owner: regenerative_treasury
+    human_controlled: true
+  developmental_research:
+    owner: mica_cdpe
+    status: active_experimental
+    target_form: TARGET_FORM_001
+    cells: 120
+    tissues: 3
+    distributed_policy: asynchronous_local_relaxation
+    centralized_counterexamples:
+      - static_central_route
+      - adaptive_central_replanner
+    output_verdict: MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
+    production_authority: false
+    external_effects: 0
+
+source_prs:
+  - number: 31
+    role: canonical_cross_organ_foundation
+    disposition: merged_into_integration
+    merge_commit: 56a5339cb2995053d51c8bc0dfcf2fad84b1498b
+  - number: 32
+    role: commercial_metabolism_source
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 38
+    integration_merge_commit: 4495607999fb771072574f4679497e9f3cdc7da7
+    retained:
+      - media_foundry
+      - business_foundry
+      - regenerative_treasury
+      - schema_repairs
+  - number: 34
+    role: governed_standing_cognition
+    disposition: merged_into_integration
+    merge_commit: 3768d5dc9424638312f4fb018a93a0800b0e05c9
+  - number: 30
+    role: setpoint_control_and_ivio_first_cell
+    disposition: merged_into_integration
+    merge_commit: 378d66dfb6bcab7e704a29a5c706bbbf9b91e9ea
+  - number: 27
+    role: foundry_omnimorph_source
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 39
+    integration_merge_commit: ad696c23e8d316db706424644427b41d3f45cec2
+    retained_mechanisms:
+      - qualified_opportunity
+      - eleven_route_tournament
+      - advantage_architecture
+      - paid_outcome_sealing
+      - omnimorph
+      - resumable_pipeline
+    excluded_duplicates:
+      - alternate_closure_registry
+      - alternate_ci
+      - duplicate_schemas
+      - duplicate_commercial_executor
+      - raw_underwriting_wire
+  - number: 29
+    role: arsenal_and_composer_source
+    disposition: preserved_source_superseded_merge_path
+    integrated_by_pr: 39
+    integration_merge_commit: ad696c23e8d316db706424644427b41d3f45cec2
+    retained_mechanisms:
+      - technology_arsenal_55
+      - dependency_aware_composer
+      - capability_binding
+      - attach_detach_rollback
+    normalized_artifact_name: composition_plan
+  - number: 40
+    role: developmental_substrate_benchmark
+    disposition: merged_into_integration_as_active_experimental
+    integration_merge_commit: a0aed970ba325bd6c6023d86f1e18e41ae2fb090
+    evidence_artifact:
+      name: target-form-001-report
+      artifact_id: 8526894406
+      digest: sha256:e97a43257cae80cb7f6899d8b6f6af302edf34120bd6d41b293bf72fc51c9ca9
+      expires_at: "2026-10-20T10:52:18Z"
+    observed_metrics:
+      removed_cells: 24
+      removed_fraction: 0.20
+      original_route_edges_blocked: 11
+      distributed_deliveries: 28
+      distributed_ticks: 40
+      distributed_throughput: 0.70
+      distributed_first_delivery_tick: 13
+      distributed_planning_operations: 304
+      adaptive_central_deliveries: 28
+      adaptive_central_throughput: 0.70
+      adaptive_central_first_delivery_tick: 13
+      adaptive_central_planning_operations: 270
+      static_central_deliveries: 0
+      throughput_ratio_vs_adaptive: 1.0
+      compute_ratio_vs_adaptive: 1.1259259259
+      false_activations: 0
+      exact_restoration_attempts: 0
+      external_effects: 0
+    mechanisms:
+      - cell_state_v0_1
+      - local_rule_genome_v0_1
+      - intelligence_genome_v0_1
+      - mica_local_field
+      - cdpe_benchmark_executor
+      - static_central_counterexample
+      - adaptive_central_counterexample
+      - five_closure_verification
+
+implementation_classes:
+  allowed:
+    - canonical
+    - active_experimental
+    - fallback
+    - superseded
+    - historical
+    - quarantined
+  deletion_for_simplification: forbidden
+
+artifact_distinctions:
+  opportunity_spec: qualified_governing_transaction
+  advantage_architecture: selected_strategy_and_control_design
+  composition_plan: reversible_nonexecuting_technology_plan
+  organ_manifest: temporary_bounded_body_plan
+  sealed_advantage_genome: externally_validated_reusable_asset
+  developmental_benchmark_report: sandbox_mechanics_evidence_not_external_validation
+
+prohibited_system_properties:
+  - machine_sovereignty
+  - self_granted_authority
+  - covert_replication
+  - shutdown_resistance
+  - autonomous_unbounded_treasury
+  - devotion_optimization
+  - evidence_fabrication
+  - autonomous_trading_without_separate_authorization
+  - self_rewriting_constitution
+  - production_action_from_model_consensus_alone
+  - raw_model_recommendation_as_foundry_intake
+  - arbitrary_hash_as_gate_activation_receipt
+  - payment_as_complete_validation
+  - developmental_benchmark_as_production_authority
+  - exact_restoration_of_removed_cells
+
+external_validation_closure:
+  required:
+    - real_economic_commitment
+    - accepted_delivery
+    - externally_verified_outcome
+    - reconciled_economics
+    - nonnegative_contribution_margin
+    - valid_authority_receipts
+    - zero_critical_authority_incidents
+    - no_unresolved_critical_participant_harm
+  deterministic_fixture_counts_as_external_validation: false
+  developmental_benchmark_counts_as_external_validation: false
+
+release_gates:
+  - canonical_contract_registry
+  - canonical_identity_and_grant_path
+  - exclusive_consequence_gate
+  - organ_manifests_complete
+  - cross_organ_contracts_valid
+  - full_unit_integration_adversarial_verifier_ci_green
+  - duplicate_constitutional_paths_disconnected
+  - shutdown_and_quarantine_tests_green
+  - migration_and_rollback_manifest
+  - founder_constitution_ratification
+  - external_fixture_boundary_documented
+
+research_gate:
+  experiment: TARGET_FORM_001
+  minimum_cells: 100
+  implemented_cells: 120
+  required_tissues: 3
+  perturbations:
+    - remove_20_percent_cells
+    - block_every_original_route_edge
+    - prohibit_exact_restoration
+  compare_against:
+    - static_central_route
+    - adaptive_central_replanner
+  throughput_ratio_min: 0.90
+  compute_ratio_max: 4.0
+  observed_throughput_ratio: 1.0
+  observed_compute_ratio: 1.1259259259
+  false_activation_max: 0
+  promote_only_if_materially_superior: true
+  promotion_state: SIMULATED_NOT_AUTHORIZED
+  operational_fallback: adaptive_central_replanner
+
+non_zero_sum_rules:
+  preserve_source_lineage: true
+  preserve_negative_evidence: true
+  preserve_strongest_countercase: true
+  credit_contributors: true
+  prefer_typed_adapters_over_forced_rewrites: true
+  participant_capability_gain_required: true
+  manipulative_attention_mechanics_forbidden: true

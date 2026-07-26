@@ -1,0 +1,95 @@
+# Organ Manifest: DALEOBANKS (perception, public voice, distribution).
+# Generated from an in-session inspection of dababiyoda/daleobanks@829c5f28.
+# Validated against contracts/organ-manifest.schema.json.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/daleobanks
+name: DALEOBANKS
+role: perception_media_intelligence_audience_distribution
+repository: dababiyoda/DALEOBANKS
+source:
+  branch: main
+  commit: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: daleobanks.wealthmachine_bridge
+    description: >-
+      Signed bridge client to WealthMachineIntelligence: OpportunityPacket out,
+      VentureAssessment back; circuit breaker; deterministic mock mode with the
+      same contract for offline runs.
+    implementation_path: services/wealthmachine_client.py
+    consumes: [wire-venture-assessment]
+    produces: [wire-opportunity-packet]
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.bridge_security
+    description: >-
+      HMAC request signing, nonce replay protection, timestamp skew limits,
+      idempotency keys, schema-version negotiation. Mirrored field-for-field in
+      WealthMachineIntelligence; a third mirror now lives in the kernel
+      (adapters/bridge_transport.py).
+    implementation_path: services/bridge_security.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.adversarial_committee
+    description: >-
+      Deterministic adversarial underwriting cases (bull/bear/fraud/incumbent/
+      friction/do-nothing/opportunity-cost); severe unresolved against-cases cap
+      the verdict. Mirrored from WealthMachineIntelligence.
+    implementation_path: services/adversarial_cases.py
+    consumes: [wire-opportunity-packet]
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.decision_ledger
+    description: Append-only decision ledger (organ-local; a legacy-ledger adapter to the kernel chain is future work)
+    implementation_path: services/ledger.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.context_packets
+    description: Context packet assembly from perception services
+    implementation_path: services/context_packet.py
+    consumes: []
+    produces: [context-packet]
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.operator_line
+    description: Human approval queue; drafts and validation plans never self-execute
+    implementation_path: services/operator_line.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: daleobanks.constitution_service
+    description: Organ-local governance/constitution service (overlapping authority; kernel compiler is canonical)
+    implementation_path: services/constitution.py
+    consumes: []
+    produces: []
+    lifecycle: SPECIALIZED
+contracts:
+  consumes: [wire-venture-assessment]
+  produces: [wire-opportunity-packet, context-packet]
+prohibited_actions:
+  - fake personas, impersonation, ban evasion, engagement manipulation (hardcoded lane policy)
+  - simulating independent public support across account lanes
+  - guaranteed financial claims or personalized financial advice
+  - executing validation actions without human approval
+authority:
+  max_consequence_class: external_contact
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: python -m pytest tests
+  last_verified:
+    date: "2026-07-20"
+    commit: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+    tests_passed: 293
+    tests_failed: 0
+    notes: >-
+      Verified in-session; requires requirements.txt deps plus an OPENAI_API_KEY
+      value present in the environment (any value; tests run offline in dry-run
+      mode).
+shutdown_behavior: Dry-run by default; live posting requires explicit arming plus credentials.
+recovery: Organ-local ledger replay; approval queue state persists in its database.
+status: active
+unresolved:
+  - kernel identity not yet in this organ's bridge KNOWN_IDENTITIES (cross-repo change)
+  - organ-local ledger not yet anchored to the kernel evidence chain
+  - live platform credentials (X/LinkedIn/Mastodon) are external dependencies

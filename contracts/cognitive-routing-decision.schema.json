@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/cognitive-routing-decision.schema.json",
+  "title": "CognitiveRoutingDecision",
+  "description": "A proposal-only decision assigning bounded cognitive roles to replaceable model providers. It grants no authority and authorizes no external effect.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "founder_intent_governor",
+        "novelty_architect",
+        "institutional_compiler",
+        "implementation_specialist",
+        "adversarial_reviewer",
+        "evidence_auditor"
+      ]
+    }
+  },
+  "properties": {
+    "decision_id": {"$ref": "#/$defs/sha256"},
+    "request_id": {"type": "string", "minLength": 1},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "role": {"$ref": "#/$defs/role"},
+          "model_id": {"type": "string", "minLength": 1},
+          "provider": {"type": "string", "minLength": 1},
+          "purpose": {"type": "string", "minLength": 1},
+          "estimated_cost_usd": {"type": "number", "minimum": 0},
+          "max_calls": {"type": "integer", "minimum": 1},
+          "output_status": {"const": "PROPOSED_NOT_EXECUTED"}
+        },
+        "required": [
+          "role",
+          "model_id",
+          "provider",
+          "purpose",
+          "estimated_cost_usd",
+          "max_calls",
+          "output_status"
+        ]
+      }
+    },
+    "total_estimated_cost_usd": {"type": "number", "minimum": 0},
+    "reasons": {"type": "array", "items": {"type": "string"}},
+    "refused": {"type": "boolean"},
+    "refusal_reasons": {"type": "array", "items": {"type": "string"}},
+    "requires_human_ratification": {"type": "boolean"},
+    "model_output_is_evidence": {"const": false},
+    "external_effect_authorized": {"const": false}
+  },
+  "required": [
+    "decision_id",
+    "request_id",
+    "steps",
+    "total_estimated_cost_usd",
+    "reasons",
+    "refused",
+    "refusal_reasons",
+    "requires_human_ratification",
+    "model_output_is_evidence",
+    "external_effect_authorized"
+  ]
+}

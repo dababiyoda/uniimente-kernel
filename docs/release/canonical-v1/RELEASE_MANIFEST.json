@@ -1,0 +1,161 @@
+{
+  "archive_tag_requirement": {
+    "must_peel_to": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "required": true,
+    "status": "NOT CREATED \u2014 git proxy returns HTTP 403 on tag push; founder-operated",
+    "tag": "main-pre-canonical-v1-2026-07-19"
+  },
+  "authority_matrix_sha256": "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45",
+  "canonical_subsystems": [
+    "adapters",
+    "autonomy",
+    "business",
+    "capabilities",
+    "capital",
+    "closure",
+    "compiler",
+    "developmental",
+    "egregore",
+    "embassy",
+    "events",
+    "evolution",
+    "foundry",
+    "identity",
+    "linker",
+    "loom",
+    "memory",
+    "morphogenesis",
+    "omnimorph",
+    "policy",
+    "provenance",
+    "twins",
+    "verifier"
+  ],
+  "canonicality_audit": "PASS (12/12 claims)",
+  "consequence_gate_sha256": "0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce",
+  "constitution": {
+    "amendment-policy.ucl": "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f",
+    "constitution.ucl": "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0",
+    "participant-rights.ucl": "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687",
+    "shutdown-policy.ucl": "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54",
+    "sovereignty.ucl": "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"
+  },
+  "constitution_combined_sha256": "fd5268c69ccb4ef9f39efb6e7523a352f7f16bd2b197ff2338ebaa858a43dfad",
+  "continuity_artifacts": [
+    "constitution/constitution.ucl",
+    "constitution/sovereignty.ucl",
+    "constitution/shutdown-policy.ucl",
+    "constitution/amendment-policy.ucl",
+    "constitution/participant-rights.ucl",
+    "authority/authority-matrix.yaml",
+    "authority/legal-principals.yaml",
+    "authority/reserved-matters.yaml",
+    "identity/organ-registry.yaml",
+    "identity/agent-registry.yaml",
+    "identity/service-identities.yaml",
+    "policy/consequence_gate.py"
+  ],
+  "continuity_fingerprint": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+  "contracts": {
+    "capability-grant": "eb7fb4a01308f016fb1c15f907dfd6f3237eccf4f419ff8c3b633c9bbe179a3d",
+    "context-packet": "99db31b7a8be6dd76b40673d4c28a9400f9e6fce53423e76697aa6b0451955b3",
+    "decision": "bd73f3f57ab8ea35975db2792b82021bac007225d97b08008ccacfa14f1dafc5",
+    "egregore-cognition": "bdc34095cb6176fbaee54438fd6f8b498818970f94c195ae9960221562ba717c",
+    "event": "2a9041136e48df76d42b2de45d8b25c3a0744031904365cb1fc7f4689bfb4c41",
+    "evidence": "9fbda9f16482870e2a713b028df9a6cc0f28cb4097b84f3f68f09af1eeed0deb",
+    "opportunity-packet": "f5c529e8dca65091c4ed7dd04409717ed3f2f8864eb44fb6a2d2242caf5ad6de",
+    "organ-manifest": "38def15ae2f68b6cbb98e50020c268e6fdd7ee204f3660564eeefc9f0e078b6f",
+    "outcome": "ba91e056d386fbbd0de9ff505a7c4e342aec49e5c7691ffc3eac088b173aa796",
+    "venture-assessment": "17398c679d6c10a1b8c07a837746e66ffe36bfbff551373c031d93945e0f1d5a",
+    "venture-cell-charter": "bab42435afc2a8d000d69468da7eaa1d4106cc0c2336c11fc659f76ed584d2aa",
+    "wire-opportunity-packet": "e35e9afe02190d1192d6b389ddae8b4b6b2bd544be946ab71177e0c79d6ce7b6",
+    "wire-venture-assessment": "5d9f8f50754c0737a4db730a76d5c82d0ab7bd9e1ff13d7bd123f7b776cfa222"
+  },
+  "identity_registries": {
+    "agent-registry.yaml": "5c8b7b4775299c2c3943a4e3432798b1f864fada0070f4a5f3699400d95cd7fd",
+    "organ-registry.yaml": "7a78955247df0d8204959d0cbb38b05d6e49578e3c0a9f3f0f7d0c916fcebb40",
+    "service-identities.yaml": "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
+  },
+  "known_limitations": [
+    "The immutable archive tag does not yet exist; the archive is a BRANCH (archive/main-2026-07-19). Founder action required before merging into main.",
+    "Packages 3 and 4 are governed experiments, not autonomous regeneration and not open-ended self-repair.",
+    "Package 4's state migration is process-local over an in-memory ledger: NOT distributed and NOT crash-consistent.",
+    "Package 4 used an isolated ledger instance and the p4x- workflow namespace; the provider substitution at canonical sites is real, the durable history written is not the institution's own.",
+    "All Package 3/4 candidates and the engine seam were authored by one author in one session.",
+    "IVIO_NEMT_LLC remains unconfirmed: jurisdiction to_be_confirmed_by_founder; it may not contract or receive data.",
+    "No external effect, deployment, spending or real-world data is included in this release.",
+    "Zero Clean Verified Outcomes. The single recorded external consequence (PR #26 audit) is a Verified Mediated External Effect, not a CVO."
+  ],
+  "legal_principal_registry_sha256": "bdbe881c32353ec3546c459f7250f2bc34b40b014e7fe661f36281c7b9af5061",
+  "manifest_version": "1.0",
+  "merge_into_main": "NOT AUTHORIZED",
+  "package_lineage": [
+    {
+      "disposition": "canonical core release candidate; evidence preserved; PR remains the release surface",
+      "package": 1,
+      "pr": 47
+    },
+    {
+      "disposition": "MERGED into release/canonical-v1 @ cb234fa \u2014 venture-neutral core",
+      "package": 2,
+      "pr": 48
+    },
+    {
+      "disposition": "MERGED into release/canonical-v1 @ 5e02e47 \u2014 governed stateless functional replacement",
+      "package": 3,
+      "pr": 49
+    },
+    {
+      "disposition": "MERGED into release/canonical-v1 @ 526e320 \u2014 governed stateful replacement through the canonical runtime",
+      "package": 4,
+      "pr": 50
+    }
+  ],
+  "release": "canonical-v1",
+  "release_commit": "526e320475d7b1175c546d48147f9f49f53831e1",
+  "release_commit_parents": [
+    "5e02e47f604770fdee2c05b25418ef003f5b2b92",
+    "954556eeaa2b30a2cef74583078a3ecc1038f0f1"
+  ],
+  "reserved_matters_sha256": "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924",
+  "rollback_commit": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+  "rollback_defaults": {
+    "DurableWorkflow_class_sha256": "6ffdf672ccf426cddede1ac9e3add50ae9ea443358cf9ffb9eeced88b01dc1f8",
+    "linker/linker.py": "cc28da68d2ea5ca45faad557e82c9128ab8a76eea1d373d13f7bc2c5a6e2c181",
+    "linker/manifest.py": "b7b14a9177717ae0cdd8a5c702a1efc202b522f2e488a7666042d7e9aab8e33f"
+  },
+  "shutdown_policy_sha256": "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54",
+  "venture_cells": {
+    "ivio_nemt": {
+      "ACTIVE": false,
+      "ATTACHED": false,
+      "jurisdiction": "to_be_confirmed_by_founder",
+      "legal_principal": "IVIO_NEMT_LLC",
+      "legal_principal_status": "proving_ground"
+    },
+    "pumpstation": {
+      "note": "proposed in open PR #46; not registered, not active",
+      "registered": false
+    }
+  },
+  "verification": {
+    "full_suite": "493 passed, 2 skipped (CI); 495 passed locally \u2014 the 2 skips are the Package 3/4 git-ancestry assertions, which skip under CI's shallow checkout",
+    "job_conclusions": {
+      "1 Kernel and organ tests": "success",
+      "2 Contract schema references resolve": "success",
+      "3 One source of authority": "success",
+      "4 Developmental work stays sealed": "success"
+    },
+    "package3_post_merge_ci_run_id": 30204710584,
+    "package3_pre_merge_ci_run_ids": [
+      30203375557,
+      30203379874
+    ],
+    "package4_pre_merge_ci_run_ids": [
+      30213726966,
+      30213729081
+    ],
+    "post_merge_ci_run_id": 30214050333,
+    "verifier": "V1-V5 PASS (V2: 472 passed, 2 skipped over tests/unit)"
+  }
+}

@@ -351,14 +351,17 @@ def test_no_candidate_module_contains_a_registration_call():
     legitimately registering a double. Path-and-AST beats frame inspection for
     the same reason it beat a token blacklist.
     """
-    candidate_modules = [
-        name for name in sorted(os.listdir(REPAIR_DIR))
-        if name.endswith(".py")
-        and name not in {"__init__.py", "spec.py", "candidate.py",
-                         "detector.py", "disable.py", "cost.py",
-                         "expectations.py"}
-    ]
-    assert candidate_modules, "no candidate modules found to check"
+    # Derived from the authoritative candidate->source mapping, NOT from a
+    # hand-maintained exclusion list. An earlier version of this test listed the
+    # non-candidate modules by name; adding harness.py then tripped the guard,
+    # which is the guard working, but the fix is to define "candidate module"
+    # positively so a newly added candidate is covered automatically.
+    from evolution.repair.harness import CANDIDATES
+
+    candidate_modules = sorted(
+        {name for _, sources, _ in CANDIDATES.values() for name in sources})
+    assert len(candidate_modules) == len(spec.CANDIDATE_IDS) == 4, \
+        "every frozen candidate must contribute a source module to this check"
 
     for name in candidate_modules:
         with open(os.path.join(REPAIR_DIR, name)) as fh:

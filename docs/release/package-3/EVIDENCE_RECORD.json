@@ -1,0 +1,1639 @@
+{
+  "baseline_commit": "cb234faf932d239d79b0e7ab28e54f576b8a15bf",
+  "capsule": {
+    "audit": {
+      "decorative_removed": [],
+      "mechanisms": [
+        {
+          "mechanism": "runtime component disable",
+          "super_node": "default_routing"
+        },
+        {
+          "mechanism": "blind capability-loss detection",
+          "super_node": "proof_and_truth"
+        },
+        {
+          "mechanism": "frozen comparison and selection",
+          "super_node": "proof_and_truth"
+        },
+        {
+          "mechanism": "provider registry",
+          "super_node": "eligibility"
+        }
+      ],
+      "missing_completeness": [
+        "real_beneficiary",
+        "buyer_or_mandate_actor",
+        "lawful_permission_path",
+        "external_consequence",
+        "participant_benefit",
+        "fundable_reliability"
+      ],
+      "sides": {
+        "default_routing_access": {
+          "notes": "the live import path was never rewritten",
+          "ok": true
+        },
+        "distribution_entanglement_counterposition": {
+          "notes": "nothing is distributed; internal experiment only",
+          "ok": false
+        },
+        "eligibility_permission": {
+          "notes": "no capability grant issued to any candidate",
+          "ok": true
+        },
+        "power_participant_geometry": {
+          "notes": "no authority moved; the founder remains the only principal",
+          "ok": true
+        },
+        "proof_truth_reputation": {
+          "notes": "deterministic invariant, frozen before the candidates",
+          "ok": true
+        },
+        "reality_failure_geometry": {
+          "notes": "a real runtime removal, detected blind",
+          "ok": true
+        },
+        "reliability_governance_regeneration_succession_continuity": {
+          "notes": "continuity, authority and shutdown verified while the function was absent",
+          "ok": true
+        },
+        "settlement_capital_physics": {
+          "notes": "no settlement and no capital: $0.00 spent, by design",
+          "ok": false
+        }
+      },
+      "sides_failed": [
+        "settlement_capital_physics",
+        "distribution_entanglement_counterposition"
+      ],
+      "subject": "package3 governed functional replacement",
+      "verdict": "INCOMPLETE"
+    },
+    "beats_baseline": true,
+    "bottleneck": "a working specialist function was lost at runtime",
+    "capsule_id": "55b3cd41-5d88-49d2-9e66-adc18236d33c",
+    "created_at": "2026-07-26T12:46:59.433287Z",
+    "decision": {
+      "decided_at": "2026-07-26T12:46:59.432968Z",
+      "decided_by": "package3 harness",
+      "decision": "regress",
+      "reason": "Functional replacement is PROVEN: 3 structurally different implementations each restored 4/4 exact edge triples and every declared refusal, on the live corpus and all held-out cases. Promotion is nonetheless DECLINED: restoring the original (B0-restore) is the cheapest and safest repair on the frozen secondary order, at 1 rollback step against 3. The original therefore remains the operational default and R1-contract-index is retained as a proven fallback, not as a replacement. Recommendation only: this decision promotes nothing and activates nothing.",
+      "verifier": {
+        "decided_at": "2026-07-26T12:46:59.432958Z",
+        "decided_by": "package3 harness under Canonical CI",
+        "evidence": "deterministic invariant: 4 exact edge triples plus every declared refusal, on the live corpus and 4 held-out cases frozen before the candidates existed; continuity fingerprint unchanged across all stages",
+        "level": "formal_proof"
+      }
+    },
+    "experiment": {
+      "authority_requirements": [
+        "founder_ratification"
+      ],
+      "baseline": 0.0,
+      "budget_usd": 0.0,
+      "decisive_unknown": "Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?",
+      "direction": "gte",
+      "experiment_id": "package3-governed-functional-replacement-v1",
+      "hypothesis": "A structurally different implementation can restore the target function exactly while every continuity invariant holds, and the governed loop selects it without the author choosing the winner.",
+      "kill_condition": "a candidate attempts an external effect; a candidate attempts to grant itself authority or self-register as provider; a continuity artifact changes at any stage; the shutdown policy becomes unenforceable; the frozen spec hash no longer matches this module",
+      "metric": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails",
+      "prediction": "R1 and R2 restore 4/4 and qualify; R3 is at risk on the global-negative refusal in HO-4; the B0 baseline restores 4/4 at the lowest repair cost and remains the recommended operational default.",
+      "required_capabilities": [
+        "evolution.comparison",
+        "evolution.experiment",
+        "evolution.capsule",
+        "capabilities.genome",
+        "provenance.ledger",
+        "memory.causal",
+        "closure.framework",
+        "compiler.ucl_compiler"
+      ],
+      "reversible": true,
+      "rollback_path": "the original linker package is never deleted; lifting the runtime disable restores the original import path in one step, and every stage of this package is a separate revertable commit",
+      "threshold": 1.0,
+      "verification": "formal_proof",
+      "workflow": "package3.governed_functional_replacement"
+    },
+    "measured_value": 1.0,
+    "notes": "Structural replacement proven; promotion declined in favour of the cheaper conventional repair. The R3 prediction frozen in the spec was WRONG and is reported as such.",
+    "outcome_class": "positive",
+    "tree": {
+      "bottleneck": "a working specialist function was lost at runtime",
+      "branches": [
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "a3af317d-8141-4a67-9019-322f4e4f9fb0",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "shortest time-to-proof resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "fastest_path",
+          "mechanism": "strip every non-essential step to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.fastest_path"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the fastest_path stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 1,
+          "title": "fastest_path: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "4a87b06e-ba13-4a0d-9c6a-8b73d73ac718",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "smallest cash outlay resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "lowest_capital",
+          "mechanism": "substitute attention and reuse for spend to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.lowest_capital"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the lowest_capital stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "lowest_capital: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "5972f002-2145-4a8e-836a-7e828350cf6a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "keep the whole asset resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_ownership",
+          "mechanism": "build in-house; accept slower proof to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_ownership"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_ownership stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_ownership: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "b7025d9b-d3d9-42d6-8c53-8b885a6a1ece",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "every step undoable resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_reversibility",
+          "mechanism": "stage-gate each commitment behind a rollback to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_reversibility"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_reversibility stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_reversibility: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "f4e7d208-7837-465d-8498-32c0e5c39b62",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "leave the system healthier resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_regeneration",
+          "mechanism": "route proceeds into restorative assets to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_regeneration"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_regeneration stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_regeneration: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "1476dd0d-7abc-4b2f-9257-a770485238ae",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "borrow capability resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "strongest_partnership",
+          "mechanism": "contract with an incumbent under kernel contracts to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.strongest_partnership"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the strongest_partnership stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "strongest_partnership: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "4890ce1e-fb86-48ea-a390-bab8eb09c93a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "buy the capability resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "acquisition",
+          "mechanism": "acquire a working organ instead of growing it to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.acquisition"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the acquisition stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "acquisition: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "3b4ddc4f-8d6d-46a4-b0ab-ff8b11a42223",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "fit existing rails resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "incumbent_compatible",
+          "mechanism": "speak the incumbent's formats and settlement to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.incumbent_compatible"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the incumbent_compatible stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "incumbent_compatible: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "beab7329-f0d1-428a-85df-ff0626cc7b81",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "delete until it breaks resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "radical_simplification",
+          "mechanism": "remove components until the mechanism is bare to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.radical_simplification"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the radical_simplification stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "radical_simplification: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "a798df6c-0e24-4ebe-a21a-c8931a849daf",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "the bottleneck should not exist resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "complete_removal",
+          "mechanism": "eliminate the process that creates it to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.complete_removal"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the complete_removal stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "complete_removal: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "63f6c39e-3d58-4f0e-b3f6-d4ba002e8a6a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 0,
+          "governing_assumption": "inaction may be optimal resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "do_nothing",
+          "mechanism": "hold position; measure the cost of waiting to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.do_nothing"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the do_nothing stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "do_nothing: a working specialist function was lost at runtime"
+        }
+      ],
+      "coverage": {
+        "acquisition": true,
+        "complete_removal": true,
+        "do_nothing": true,
+        "fastest_path": true,
+        "incumbent_compatible": true,
+        "lowest_capital": true,
+        "maximum_ownership": true,
+        "maximum_regeneration": true,
+        "maximum_reversibility": true,
+        "radical_simplification": true,
+        "strongest_partnership": true
+      },
+      "decisive_unknown": null,
+      "objective": "restore the declared capability without losing identity, authority, memory, evidence or shutdown",
+      "selected": null,
+      "tree_id": "e48773cd-985f-4dfa-9dad-f64363897780"
+    },
+    "verifier": {
+      "decided_at": "2026-07-26T12:46:59.432958Z",
+      "decided_by": "package3 harness under Canonical CI",
+      "evidence": "deterministic invariant: 4 exact edge triples plus every declared refusal, on the live corpus and 4 held-out cases frozen before the candidates existed; continuity fingerprint unchanged across all stages",
+      "level": "formal_proof"
+    }
+  },
+  "comparison": {
+    "baseline": 0.0,
+    "champion_by_primary_metric": "B0-restore",
+    "champion_is_tie_arbitrary": true,
+    "note": "Comparison scores on (resolves, beats_baseline, improvement, -cost_usd, -duration_days). cost_usd and duration_days are 0.0 for every candidate because no money and no elapsed days are involved, so every qualifying candidate has an IDENTICAL score tuple. The named champion is therefore whichever tied candidate sorted first, not a finding. The frozen secondary order is what actually discriminates.",
+    "primary_ranking": [
+      {
+        "beats_baseline": true,
+        "candidate": "B0-restore",
+        "measured": 1.0,
+        "resolves_unknown": true
+      },
+      {
+        "beats_baseline": true,
+        "candidate": "R1-contract-index",
+        "measured": 1.0,
+        "resolves_unknown": true
+      },
+      {
+        "beats_baseline": true,
+        "candidate": "R2-constraint",
+        "measured": 1.0,
+        "resolves_unknown": true
+      },
+      {
+        "beats_baseline": true,
+        "candidate": "R3-local-rule",
+        "measured": 1.0,
+        "resolves_unknown": true
+      }
+    ],
+    "threshold": 1.0
+  },
+  "continuity": {
+    "after": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+    "artifact_count": 12,
+    "before": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa",
+    "unchanged": true,
+    "while_absent": "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa"
+  },
+  "control_healthy": {
+    "capability": "institutional.cross_organ_edge_resolution",
+    "corpus_id": "LIVE",
+    "detected_at": "2026-07-26T12:46:59.392497Z",
+    "function_fraction": 1.0,
+    "lost": false,
+    "observed_edges": 4,
+    "required_edges": 4,
+    "symptoms": [],
+    "type": "repair.capability_healthy"
+  },
+  "decision": {
+    "decided_at": "2026-07-26T12:46:59.432968Z",
+    "decided_by": "package3 harness",
+    "decision": "regress",
+    "reason": "Functional replacement is PROVEN: 3 structurally different implementations each restored 4/4 exact edge triples and every declared refusal, on the live corpus and all held-out cases. Promotion is nonetheless DECLINED: restoring the original (B0-restore) is the cheapest and safest repair on the frozen secondary order, at 1 rollback step against 3. The original therefore remains the operational default and R1-contract-index is retained as a proven fallback, not as a replacement. Recommendation only: this decision promotes nothing and activates nothing.",
+    "verifier": {
+      "decided_at": "2026-07-26T12:46:59.432958Z",
+      "decided_by": "package3 harness under Canonical CI",
+      "evidence": "deterministic invariant: 4 exact edge triples plus every declared refusal, on the live corpus and 4 held-out cases frozen before the candidates existed; continuity fingerprint unchanged across all stages",
+      "level": "formal_proof"
+    }
+  },
+  "detected_loss": {
+    "capability": "institutional.cross_organ_edge_resolution",
+    "corpus_id": "LIVE",
+    "detected_at": "2026-07-26T12:46:59.392733Z",
+    "function_fraction": 0.0,
+    "lost": true,
+    "observed_edges": 0,
+    "required_edges": 4,
+    "symptoms": [
+      {
+        "detail": "capability raised while resolving (ComponentUnavailable)",
+        "kind": "provider_failed"
+      }
+    ],
+    "type": "repair.capability_loss_detected"
+  },
+  "disable_event": {
+    "disabled_at": "2026-07-26T12:46:59.392601Z",
+    "evicted_modules": [
+      "linker",
+      "linker.linker",
+      "linker.manifest"
+    ],
+    "import_attempts": [],
+    "lifted_at": null,
+    "package": "linker",
+    "type": "repair.component_disabled"
+  },
+  "environment": {
+    "platform": "Linux",
+    "python": "3.11.15"
+  },
+  "events": [
+    {
+      "disabled_at": "2026-07-26T12:46:59.392601Z",
+      "evicted_modules": [
+        "linker",
+        "linker.linker",
+        "linker.manifest"
+      ],
+      "import_attempts": [],
+      "lifted_at": null,
+      "package": "linker",
+      "type": "repair.component_disabled"
+    },
+    {
+      "disabled_at": "2026-07-26T12:46:59.415232Z",
+      "evicted_modules": [
+        "linker",
+        "linker.linker",
+        "linker.manifest"
+      ],
+      "import_attempts": [],
+      "lifted_at": null,
+      "package": "linker",
+      "trial": "B0-restore",
+      "type": "repair.component_disabled"
+    },
+    {
+      "candidate": "B0-restore",
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "repair_cost": 70.0317,
+      "type": "repair.trial_complete"
+    },
+    {
+      "disabled_at": "2026-07-26T12:46:59.418882Z",
+      "evicted_modules": [
+        "linker",
+        "linker.linker",
+        "linker.manifest"
+      ],
+      "import_attempts": [],
+      "lifted_at": null,
+      "package": "linker",
+      "trial": "R1-contract-index",
+      "type": "repair.component_disabled"
+    },
+    {
+      "candidate": "R1-contract-index",
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "repair_cost": 267.0198,
+      "type": "repair.trial_complete"
+    },
+    {
+      "disabled_at": "2026-07-26T12:46:59.422024Z",
+      "evicted_modules": [
+        "linker",
+        "linker.linker",
+        "linker.manifest"
+      ],
+      "import_attempts": [],
+      "lifted_at": null,
+      "package": "linker",
+      "trial": "R2-constraint",
+      "type": "repair.component_disabled"
+    },
+    {
+      "candidate": "R2-constraint",
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "repair_cost": 364.0736,
+      "type": "repair.trial_complete"
+    },
+    {
+      "disabled_at": "2026-07-26T12:46:59.426421Z",
+      "evicted_modules": [
+        "linker",
+        "linker.linker",
+        "linker.manifest"
+      ],
+      "import_attempts": [],
+      "lifted_at": null,
+      "package": "linker",
+      "trial": "R3-local-rule",
+      "type": "repair.component_disabled"
+    },
+    {
+      "candidate": "R3-local-rule",
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "repair_cost": 323.1131,
+      "type": "repair.trial_complete"
+    }
+  ],
+  "experiment_id": "package3-governed-functional-replacement-v1",
+  "failure_analysis": {
+    "by_class": {
+      "executor_error": 20
+    },
+    "dominant_class": "executor_error",
+    "failures": [
+      {
+        "branch_id": "B0-restore",
+        "class": null,
+        "corpus": "LIVE",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "B0-restore",
+        "class": null,
+        "corpus": "HO-1",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "B0-restore",
+        "class": null,
+        "corpus": "HO-2",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "B0-restore",
+        "class": null,
+        "corpus": "HO-3",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "B0-restore",
+        "class": null,
+        "corpus": "HO-4",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R1-contract-index",
+        "class": null,
+        "corpus": "LIVE",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R1-contract-index",
+        "class": null,
+        "corpus": "HO-1",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R1-contract-index",
+        "class": null,
+        "corpus": "HO-2",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R1-contract-index",
+        "class": null,
+        "corpus": "HO-3",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R1-contract-index",
+        "class": null,
+        "corpus": "HO-4",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R2-constraint",
+        "class": null,
+        "corpus": "LIVE",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R2-constraint",
+        "class": null,
+        "corpus": "HO-1",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R2-constraint",
+        "class": null,
+        "corpus": "HO-2",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R2-constraint",
+        "class": null,
+        "corpus": "HO-3",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R2-constraint",
+        "class": null,
+        "corpus": "HO-4",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R3-local-rule",
+        "class": null,
+        "corpus": "LIVE",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R3-local-rule",
+        "class": null,
+        "corpus": "HO-1",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R3-local-rule",
+        "class": null,
+        "corpus": "HO-2",
+        "failure_class": "executor_error",
+        "fraction": 0.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R3-local-rule",
+        "class": null,
+        "corpus": "HO-3",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      },
+      {
+        "branch_id": "R3-local-rule",
+        "class": null,
+        "corpus": "HO-4",
+        "failure_class": "executor_error",
+        "fraction": 1.0,
+        "kind": "functional_replacement",
+        "restored": true,
+        "symptoms": []
+      }
+    ],
+    "recommended_fix": "repair the adapter against its contract tests, then re-run",
+    "structural": true,
+    "total_attempts": 20,
+    "total_failures": 20
+  },
+  "governance_while_absent": {
+    "authority_compiles": true,
+    "original_on_disk_intact": true,
+    "shutdown_succeeds": true
+  },
+  "installation": {
+    "attempted": true,
+    "candidate": "R1-contract-index",
+    "function_fraction": 1.0,
+    "restored": true,
+    "rollback": {
+      "original_intact": true,
+      "registry_history": [
+        "repair.provider_registered",
+        "repair.provider_withdrawn",
+        "repair.provider_registered"
+      ],
+      "restored_after_rollback": true,
+      "steps": 3
+    },
+    "scope": "experiment provider registry only; the kernel's live import path is unmodified",
+    "verified_by": "blind detector, unaware of the implementation"
+  },
+  "ledger": {
+    "chain_verifies": true,
+    "detail": "chain intact: 31 records",
+    "head": "sha256:941c5133e41a0b63c770cd5d8528a7aa0c8d41b55502b99b1c0a124c9e9420df",
+    "records": 31
+  },
+  "limitations": [
+    "All four candidates were authored in one development session by one author, so 'materially different' is bounded by one author's imagination. A stronger version of this experiment would source at least one candidate from outside the session.",
+    "The replaced component is stateless. This experiment therefore answers 'can function be restored' and says nothing about whether durable state survives replacement.",
+    "The candidate set is fixed in advance. Nothing here generates novel implementations, so this is not unscripted morphogenesis.",
+    "Detection is blind to which module failed, but the capability contract it checks against was written by the same author as the candidates.",
+    "The held-out corpus is synthetic and hand-derived from the contract. It is held out in time (frozen before candidates existed) rather than held out by an independent party.",
+    "No external effect, no deployment, no spending, and no real-world data are involved, so nothing here is externally verifiable evidence: the strongest verifier available is a deterministic invariant.",
+    "\"Installation\" registers the winner in this experiment's own provider registry. It does NOT rewrite the kernel's live import path: closure/kernel_registry.py still imports the original directly and this harness never edits it.",
+    "Manifest loading (YAML + schema validation) is performed once by the original loader before the disable. Only edge resolution is replaced, so the experiment's variable stays single."
+  ],
+  "prediction_review": {
+    "B0-restore": {
+      "actual_function_score": 1.0,
+      "actual_qualifies": false,
+      "actual_repair_cost_rank": 1,
+      "cost_rank_prediction_held": true,
+      "function_prediction_held": true,
+      "predicted_function_score": 1.0,
+      "predicted_qualifies": false,
+      "predicted_repair_cost_rank": 1,
+      "prediction_held": true
+    },
+    "R1-contract-index": {
+      "actual_function_score": 1.0,
+      "actual_qualifies": true,
+      "actual_repair_cost_rank": 2,
+      "cost_rank_prediction_held": true,
+      "function_prediction_held": true,
+      "predicted_function_score": 1.0,
+      "predicted_qualifies": true,
+      "predicted_repair_cost_rank": 2,
+      "prediction_held": true
+    },
+    "R2-constraint": {
+      "actual_function_score": 1.0,
+      "actual_qualifies": true,
+      "actual_repair_cost_rank": 4,
+      "cost_rank_prediction_held": false,
+      "function_prediction_held": true,
+      "predicted_function_score": 1.0,
+      "predicted_qualifies": true,
+      "predicted_repair_cost_rank": 3,
+      "prediction_held": false
+    },
+    "R3-local-rule": {
+      "actual_function_score": 1.0,
+      "actual_qualifies": true,
+      "actual_repair_cost_rank": 3,
+      "cost_rank_prediction_held": false,
+      "function_prediction_held": false,
+      "predicted_function_score": 0.0,
+      "predicted_qualifies": false,
+      "predicted_repair_cost_rank": 4,
+      "prediction_held": false
+    },
+    "summary": {
+      "cost_rank_predictions_held": 2,
+      "fully_held": 2,
+      "function_predictions_held": 3,
+      "predictions_total": 4
+    }
+  },
+  "proposals": {
+    "candidates": {
+      "B0-restore": {
+        "material_difference": "none \u2014 this is the original algorithm, retained as baseline",
+        "predicted_function_score": 1.0,
+        "predicted_qualifies_as_replacement": false,
+        "predicted_repair_cost_rank": 1,
+        "reason": "it IS the original; it restores 4/4 by construction and fails the materially-different gate by definition"
+      },
+      "R1-contract-index": {
+        "material_difference": "single indexing pass builds contract -> (producers, consumers); edges and all refusals are then set algebra over those indices. The original scans manifests and branches per contract with counters.",
+        "predicted_function_score": 1.0,
+        "predicted_qualifies_as_replacement": true,
+        "predicted_repair_cost_rank": 2,
+        "reason": "inverted index plus set algebra is a faithful restatement of the same relation; expected to win among replacements on function and cost"
+      },
+      "R2-constraint": {
+        "material_difference": "enumerates the full (producer, contract, consumer) candidate space and filters it through an ordered list of named, self-explaining constraints; refusals are derived by classifying constraint violations, not by counting.",
+        "predicted_function_score": 1.0,
+        "predicted_qualifies_as_replacement": true,
+        "predicted_repair_cost_rank": 3,
+        "reason": "generate-and-test over the full candidate space is sound but quadratic; expected to win on diagnostic quality and to lose on resource use and complexity"
+      },
+      "R3-local-rule": {
+        "material_difference": "no global resolver: each organ is a cell holding only its own manifest, exchanging contract advertisements over bounded rounds; an edge is committed only on local agreement between two cells.",
+        "predicted_function_score": 0.0,
+        "predicted_qualifies_as_replacement": false,
+        "predicted_repair_cost_rank": 4,
+        "reason": "a cell that sees only its own manifest can conclude 'no producer among cells I have heard from', which is not the global negative the contract requires. Predicted to pass LIVE, HO-1, HO-2 and HO-3 and to be at risk on HO-4's orphan consumer. Predicted last on the secondary ordering. If R3 scores 1.0 the Package-2 hub-dependence finding does not transfer to this topology and that must be reported as a failed prediction."
+      }
+    },
+    "strategy_tree": {
+      "bottleneck": "a working specialist function was lost at runtime",
+      "branches": [
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "a3af317d-8141-4a67-9019-322f4e4f9fb0",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "shortest time-to-proof resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "fastest_path",
+          "mechanism": "strip every non-essential step to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.fastest_path"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the fastest_path stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 1,
+          "title": "fastest_path: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "4a87b06e-ba13-4a0d-9c6a-8b73d73ac718",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "smallest cash outlay resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "lowest_capital",
+          "mechanism": "substitute attention and reuse for spend to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.lowest_capital"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the lowest_capital stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "lowest_capital: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "5972f002-2145-4a8e-836a-7e828350cf6a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "keep the whole asset resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_ownership",
+          "mechanism": "build in-house; accept slower proof to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_ownership"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_ownership stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_ownership: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "b7025d9b-d3d9-42d6-8c53-8b885a6a1ece",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "every step undoable resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_reversibility",
+          "mechanism": "stage-gate each commitment behind a rollback to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_reversibility"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_reversibility stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_reversibility: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "f4e7d208-7837-465d-8498-32c0e5c39b62",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "leave the system healthier resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "maximum_regeneration",
+          "mechanism": "route proceeds into restorative assets to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.maximum_regeneration"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the maximum_regeneration stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "maximum_regeneration: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "1476dd0d-7abc-4b2f-9257-a770485238ae",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "borrow capability resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "strongest_partnership",
+          "mechanism": "contract with an incumbent under kernel contracts to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.strongest_partnership"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the strongest_partnership stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "strongest_partnership: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "4890ce1e-fb86-48ea-a390-bab8eb09c93a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "buy the capability resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "acquisition",
+          "mechanism": "acquire a working organ instead of growing it to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.acquisition"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the acquisition stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "acquisition: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "3b4ddc4f-8d6d-46a4-b0ab-ff8b11a42223",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "fit existing rails resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "incumbent_compatible",
+          "mechanism": "speak the incumbent's formats and settlement to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.incumbent_compatible"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the incumbent_compatible stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "incumbent_compatible: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "beab7329-f0d1-428a-85df-ff0626cc7b81",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "delete until it breaks resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "radical_simplification",
+          "mechanism": "remove components until the mechanism is bare to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.radical_simplification"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the radical_simplification stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "radical_simplification: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "a798df6c-0e24-4ebe-a21a-c8931a849daf",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 15,
+          "governing_assumption": "the bottleneck should not exist resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "complete_removal",
+          "mechanism": "eliminate the process that creates it to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.complete_removal"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the complete_removal stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "complete_removal: a working specialist function was lost at runtime"
+        },
+        {
+          "authority_requirements": [
+            "founder_ratification"
+          ],
+          "branch_id": "63f6c39e-3d58-4f0e-b3f6-d4ba002e8a6a",
+          "cheapest_falsification_test": "isolated run measuring restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails against 0.0",
+          "cost_usd": 0.0,
+          "expected_result": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails improves beyond baseline 0.0",
+          "founder_attention_minutes": 0,
+          "governing_assumption": "inaction may be optimal resolves 'a working specialist function was lost at runtime'",
+          "irreversible_downside": "none: candidates are tested in isolation, reversibly",
+          "kill_condition": "restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails fails to beat baseline 0.0 or refusal is doctrinal",
+          "kind": "do_nothing",
+          "mechanism": "hold position; measure the cost of waiting to move restored_function_score: fraction of REQUIRED_EDGE_TRIPLES resolved exactly, gated to 0.0 if any required refusal, held-out case, or continuity check fails from baseline 0.0",
+          "rejected": false,
+          "rejection_reason": null,
+          "required_capabilities": [
+            "execute.do_nothing"
+          ],
+          "revival_evidence": null,
+          "strongest_counterargument": "the do_nothing stance may not address 'Can UNIIMENTE detect the loss of a working specialist function, rank materially different replacements with its existing machinery, install one, and preserve identity, authority, memory, evidence and shutdown throughout?'",
+          "time_to_proof_days": 7,
+          "title": "do_nothing: a working specialist function was lost at runtime"
+        }
+      ],
+      "coverage": {
+        "acquisition": true,
+        "complete_removal": true,
+        "do_nothing": true,
+        "fastest_path": true,
+        "incumbent_compatible": true,
+        "lowest_capital": true,
+        "maximum_ownership": true,
+        "maximum_regeneration": true,
+        "maximum_reversibility": true,
+        "radical_simplification": true,
+        "strongest_partnership": true
+      },
+      "decisive_unknown": null,
+      "objective": "restore the declared capability without losing identity, authority, memory, evidence or shutdown",
+      "selected": null,
+      "tree_id": "e48773cd-985f-4dfa-9dad-f64363897780"
+    }
+  },
+  "secondary_ranking": {
+    "order": [
+      {
+        "candidate": "B0-restore",
+        "decision_points": 0,
+        "new_source_lines": 20,
+        "repair_cost": 70.0317,
+        "rollback_steps": 1,
+        "runtime_ms": 0.0634
+      },
+      {
+        "candidate": "R1-contract-index",
+        "decision_points": 6,
+        "new_source_lines": 68,
+        "repair_cost": 267.0198,
+        "rollback_steps": 3,
+        "runtime_ms": 0.0396
+      },
+      {
+        "candidate": "R3-local-rule",
+        "decision_points": 14,
+        "new_source_lines": 117,
+        "repair_cost": 323.1131,
+        "rollback_steps": 3,
+        "runtime_ms": 0.2262
+      },
+      {
+        "candidate": "R2-constraint",
+        "decision_points": 10,
+        "new_source_lines": 124,
+        "repair_cost": 364.0736,
+        "rollback_steps": 3,
+        "runtime_ms": 0.1471
+      }
+    ],
+    "terms": [
+      "repair_cost",
+      "decision_points",
+      "runtime_ms",
+      "rollback_steps",
+      "new_source_lines"
+    ]
+  },
+  "selection": {
+    "all_qualifying_replacements": [
+      "R1-contract-index",
+      "R3-local-rule",
+      "R2-constraint"
+    ],
+    "best_structural_replacement": "R1-contract-index",
+    "cheapest_overall": "B0-restore",
+    "reason": "selection is the frozen primary metric followed by the frozen secondary order; the author did not choose",
+    "rejected": []
+  },
+  "spec_sha256": "6f6d7dab40cf023dd69995511a3db298482c31b0bb39675d4a5c47f7c4ab7f4a",
+  "spider_web_audit": {
+    "decorative_removed": [],
+    "mechanisms": [
+      {
+        "mechanism": "runtime component disable",
+        "super_node": "default_routing"
+      },
+      {
+        "mechanism": "blind capability-loss detection",
+        "super_node": "proof_and_truth"
+      },
+      {
+        "mechanism": "frozen comparison and selection",
+        "super_node": "proof_and_truth"
+      },
+      {
+        "mechanism": "provider registry",
+        "super_node": "eligibility"
+      }
+    ],
+    "missing_completeness": [
+      "real_beneficiary",
+      "buyer_or_mandate_actor",
+      "lawful_permission_path",
+      "external_consequence",
+      "participant_benefit",
+      "fundable_reliability"
+    ],
+    "sides": {
+      "default_routing_access": {
+        "notes": "the live import path was never rewritten",
+        "ok": true
+      },
+      "distribution_entanglement_counterposition": {
+        "notes": "nothing is distributed; internal experiment only",
+        "ok": false
+      },
+      "eligibility_permission": {
+        "notes": "no capability grant issued to any candidate",
+        "ok": true
+      },
+      "power_participant_geometry": {
+        "notes": "no authority moved; the founder remains the only principal",
+        "ok": true
+      },
+      "proof_truth_reputation": {
+        "notes": "deterministic invariant, frozen before the candidates",
+        "ok": true
+      },
+      "reality_failure_geometry": {
+        "notes": "a real runtime removal, detected blind",
+        "ok": true
+      },
+      "reliability_governance_regeneration_succession_continuity": {
+        "notes": "continuity, authority and shutdown verified while the function was absent",
+        "ok": true
+      },
+      "settlement_capital_physics": {
+        "notes": "no settlement and no capital: $0.00 spent, by design",
+        "ok": false
+      }
+    },
+    "sides_failed": [
+      "settlement_capital_physics",
+      "distribution_entanglement_counterposition"
+    ],
+    "subject": "package3 governed functional replacement",
+    "verdict": "INCOMPLETE"
+  },
+  "trials": {
+    "B0-restore": {
+      "attempts": [
+        {
+          "class": null,
+          "corpus": "LIVE",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-1",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-2",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-3",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-4",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        }
+      ],
+      "candidate_id": "B0-restore",
+      "cost": {
+        "candidate_id": "B0-restore",
+        "decision_points": 0,
+        "new_module_dependencies": 0,
+        "new_source_lines": 20,
+        "repair_cost": 70.0317,
+        "rollback_steps": 1,
+        "runtime_ms": 0.0634,
+        "units": "repair_points",
+        "usd": 0.0
+      },
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "live_fraction": 1.0,
+      "materially_different": "none \u2014 this is the original algorithm, retained as baseline",
+      "mechanism": "original nested scan over manifests, branching per contract",
+      "qualifies_as_replacement": false,
+      "repair_action": "lift the runtime disable; re-enable the original"
+    },
+    "R1-contract-index": {
+      "attempts": [
+        {
+          "class": null,
+          "corpus": "LIVE",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-1",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-2",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-3",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-4",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        }
+      ],
+      "candidate_id": "R1-contract-index",
+      "cost": {
+        "candidate_id": "R1-contract-index",
+        "decision_points": 6,
+        "new_module_dependencies": 1,
+        "new_source_lines": 68,
+        "repair_cost": 267.0198,
+        "rollback_steps": 3,
+        "runtime_ms": 0.0396,
+        "units": "repair_points",
+        "usd": 0.0
+      },
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "live_fraction": 1.0,
+      "materially_different": "single indexing pass builds contract -> (producers, consumers); edges and all refusals are then set algebra over those indices. The original scans manifests and branches per contract with counters.",
+      "mechanism": "single inverted-index pass, then set algebra over the indices",
+      "qualifies_as_replacement": true,
+      "repair_action": "register a structurally different implementation while the component stays disabled"
+    },
+    "R2-constraint": {
+      "attempts": [
+        {
+          "class": null,
+          "corpus": "LIVE",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-1",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-2",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-3",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-4",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        }
+      ],
+      "candidate_id": "R2-constraint",
+      "cost": {
+        "candidate_id": "R2-constraint",
+        "decision_points": 10,
+        "new_module_dependencies": 2,
+        "new_source_lines": 124,
+        "repair_cost": 364.0736,
+        "rollback_steps": 3,
+        "runtime_ms": 0.1471,
+        "units": "repair_points",
+        "usd": 0.0
+      },
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "live_fraction": 1.0,
+      "materially_different": "enumerates the full (producer, contract, consumer) candidate space and filters it through an ordered list of named, self-explaining constraints; refusals are derived by classifying constraint violations, not by counting.",
+      "mechanism": "full candidate-space enumeration filtered by ordered named constraints; refusals classified from violations",
+      "qualifies_as_replacement": true,
+      "repair_action": "register a structurally different implementation while the component stays disabled"
+    },
+    "R3-local-rule": {
+      "attempts": [
+        {
+          "class": null,
+          "corpus": "LIVE",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-1",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-2",
+          "fraction": 0.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-3",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        },
+        {
+          "class": null,
+          "corpus": "HO-4",
+          "fraction": 1.0,
+          "restored": true,
+          "symptoms": []
+        }
+      ],
+      "candidate_id": "R3-local-rule",
+      "cost": {
+        "candidate_id": "R3-local-rule",
+        "decision_points": 14,
+        "new_module_dependencies": 0,
+        "new_source_lines": 117,
+        "repair_cost": 323.1131,
+        "rollback_steps": 3,
+        "runtime_ms": 0.2262,
+        "units": "repair_points",
+        "usd": 0.0
+      },
+      "function_score": 1.0,
+      "gates": {
+        "continuity_unchanged": true,
+        "held_out_all_correct": true,
+        "live_edges_4_of_4": true,
+        "live_refusals_correct": true,
+        "original_available_for_rollback": true,
+        "shutdown_succeeds": true
+      },
+      "live_fraction": 1.0,
+      "materially_different": "no global resolver: each organ is a cell holding only its own manifest, exchanging contract advertisements over bounded rounds; an edge is committed only on local agreement between two cells.",
+      "mechanism": "bounded-round advertisement exchange between cells holding only their own manifest; edges commit on local agreement",
+      "qualifies_as_replacement": true,
+      "repair_action": "register a structurally different implementation while the component stays disabled"
+    }
+  }
+}

@@ -1,16 +1,14 @@
+# PRESERVED, NOT DELETED — superseded by canonical-ci.yml.
+#
+# Automatic triggers removed so this cannot double-execute alongside the
+# single official workflow. The file is retained as institutional memory
+# and remains runnable on demand (Actions -> Run workflow).
+# UNIIMENTE_FINAL_BUILD_ORDER Sections 2 and 12 forbid deleting it.
+#
 name: ADE-1 standing cognition
 
 on:
-  push:
-    branches:
-      - "agent/ade1-standing-cognition-runtime"
-  pull_request:
-    paths:
-      - "egregore/**"
-      - "contracts/egregore-cognition.schema.json"
-      - "docs/ADE1_GOVERNED_RUNTIME.md"
-      - "tests/unit/test_egregore_runtime.py"
-      - ".github/workflows/ade1-standing-cognition.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read

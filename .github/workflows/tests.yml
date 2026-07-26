@@ -1,11 +1,14 @@
+# PRESERVED, NOT DELETED — superseded by canonical-ci.yml.
+#
+# Automatic triggers removed so this cannot double-execute alongside the
+# single official workflow. The file is retained as institutional memory
+# and remains runnable on demand (Actions -> Run workflow).
+# UNIIMENTE_FINAL_BUILD_ORDER Sections 2 and 12 forbid deleting it.
+#
 name: tests
 
 on:
-  push:
-    branches:
-      - main
-      - "integration/**"
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:

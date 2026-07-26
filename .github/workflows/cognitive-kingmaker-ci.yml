@@ -1,0 +1,40 @@
+name: Cognitive Kingmaker CI
+
+on:
+  pull_request:
+    branches:
+      - release/canonical-v1
+    paths:
+      - "cognition/**"
+      - "contracts/cognitive-routing-decision.schema.json"
+      - "contracts/invention-packet.schema.json"
+      - "tests/unit/test_cognitive_kingmaker.py"
+      - "docs/COGNITIVE_KINGMAKER_PROTOCOL.md"
+      - ".github/workflows/cognitive-kingmaker-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out proposed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Compile Cognitive Kingmaker
+        run: python -m py_compile cognition/__init__.py cognition/kingmaker.py
+
+      - name: Run focused adversarial tests
+        run: python -m pytest -q tests/unit/test_cognitive_kingmaker.py

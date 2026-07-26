@@ -1,5 +1,9 @@
 """First vertical target: IVIO-NEMT paid facility validation.
 
+VENTURE CELL — not core. Relocated from morphogenesis/ivio_first_cell.py in
+Package 2; see LINEAGE.md. Implementation unchanged. Inactive and unattached
+by default: building a setpoint declares a target and grants no authority.
+
 This declares a target. It does not claim a facility has accepted, paid, or
 verified an outcome. Those facts must enter as provenance-backed observations.
 """
@@ -7,7 +11,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from .contracts import Direction, MetricTarget, MorphogeneticSetPoint
+# Venture imports an APPROVED CORE INTERFACE. This direction is permitted;
+# core -> ventures is forbidden and enforced by the boundary test.
+from morphogenesis.contracts import Direction, MetricTarget, MorphogeneticSetPoint
 
 
 def build_ivio_first_setpoint(*, deadline: datetime) -> MorphogeneticSetPoint:

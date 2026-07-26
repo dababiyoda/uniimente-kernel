@@ -50,10 +50,21 @@ canonical_functions:
     arsenal_size: 55
     output_artifact: composition_plan
     execution_authority: false
+  # `owner` in this block means SUBSYSTEM STEWARD (cf. consequence_gate,
+  # institutional_linker, omnimorph above) — it is NOT a legal principal.
+  # Accountability attaches via authority/legal-principals.yaml, never here.
+  #
+  # A canonical function may reference a Venture Cell only through an explicit
+  # registry. `delegated_to` resolves in identity/organ-registry.yaml.
   first_transaction_vertical:
-    owner: ivio_obvio_nemt
+    owner: venture_cell_registry
+    delegated_to: ivio_nemt          # identity/organ-registry.yaml
+    delegation_active: false
+  # Previously `tgh_control_rail` — a named prospect's rail, registered nowhere
+  # in this repository. An unregistered, facility-specific steward may not own a
+  # canonical core function.
   operator_surface:
-    owner: tgh_control_rail
+    owner: kernel_steward
   opportunity_to_genome:
     owner: advantage_foundry
   temporary_organ_composition:

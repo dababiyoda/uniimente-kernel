@@ -228,6 +228,67 @@ consequence classes are separated explicitly; and authorization in one class
 never implies another. This incident's containment becomes a designed property
 rather than an accident of what was asked.
 
+### Objection 4 — The ratification was operator-recorded, not cryptographically signed
+
+The Founder Ratification Record is text transcribed into a PR comment by the
+executor. No signing key bound to Alfonso's identity exists in this repository.
+Nothing about that record is independently authenticable: a future auditor
+cannot distinguish a genuine founder instruction from text the executor composed
+and attributed. Under this view, an unsigned authorization is a weak basis for a
+merge that was already out of sequence — two soft links in the same chain.
+
+**Why it does not currently justify a revert.** Reverting would not make the
+ratification signed. The weakness is in the identity binding, which is
+procedural today and would remain procedural after a revert. It is also
+disclosed rather than hidden: the record itself, the merge commit message, and
+the manifest all state that it is an operator-recorded founder instruction and
+not a signature. A disclosed weakness is a known limitation; an undisclosed one
+would be a misrepresentation, and only the latter would warrant undoing work.
+
+**What future evidence would change this.** Any dispute about whether the
+founder actually issued the ratification, or any instance of an instruction
+being attributed to the founder that the founder did not issue, converts this
+from a theoretical weakness into a live integrity failure. At that point every
+operator-recorded authorization becomes suspect, not just this one.
+
+**Safeguard preventing recurrence.** Guard rule 12 forbids AI-generated text
+from impersonating or silently replacing founder authorization, and rule 9
+requires the exact `instruction_id` on every consequential write. Both are
+weaker than a signature and are explicitly recorded as such in the Guard's open
+questions: **rule 12 is only as strong as the identity binding beneath it, and
+today that binding is procedural.** Whether a signing mechanism will exist is a
+founder decision, not a design choice available to this session.
+
+### Objection 5 — The archive anchor is a mutable lightweight tag
+
+The rollback story rests partly on `main-pre-canonical-v1-2026-07-19`. That tag
+is **lightweight**, carries no annotation, no signature, and no tag object. The
+GitHub release reports `immutable: false`, and no branch- or tag-protection rule
+prevents it from being deleted or repointed by anyone with write access. Calling
+it an archive overstates what it guarantees. A rollback target that can be moved
+is a convention, not a control.
+
+**Why it does not currently justify a revert.** The rollback target does not
+depend on the tag. `3d9b5779` is preserved in three independent places: as
+**parent 1 of the merge commit itself**, which cannot be altered without
+rewriting `main`'s history; as the branch `archive/main-2026-07-19`; and as the
+tag. The merge commit's parent is the strongest of the three and is a structural
+property of the commit graph rather than a mutable ref. The tag being weak
+therefore reduces convenience, not recoverability.
+
+**What future evidence would change this.** If the tag were found moved or
+deleted, or if `archive/main-2026-07-19` were force-updated, the redundancy
+would be degraded and the remaining guarantee would rest solely on the merge
+parent. That would warrant immediate re-establishment of an administratively
+protected anchor before any further consequential work — though still not a
+revert, since reverting would not protect anything.
+
+**Safeguard preventing recurrence.** None currently exists at the repository
+level: tag protection is an administrative setting this session cannot apply,
+and the tag-push path from this environment returns HTTP 403. This is recorded
+as an **open, unmitigated weakness** rather than as a solved problem. It is a
+founder-reserved action.
+
 ### Dissent that is *not* preserved here
 
 No objection was raised on the grounds that the merged content was wrong,

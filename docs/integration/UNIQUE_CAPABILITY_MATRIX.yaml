@@ -1,0 +1,119 @@
+# Unique integration capabilities required for the FIRST governed cross-repository
+# transaction (DALEOBANKS publication through the Consequence Gate).
+#
+# Branch count is not capability count. The phase branches are cumulative, so 15
+# branches collapse to this list. A capability counts toward Canonical Integration
+# Completion only when ALL FOUR conditions hold:
+#   merged + versioned + consumed from a canonical organ branch + exercised in the
+#   first governed transaction.
+#
+# Numerator today: 0 / 11. Every capability exists as code. None satisfies all four.
+
+metric: Canonical Integration Completion
+denominator: 11
+numerator: 0
+baseline: 0
+target: 11
+
+capabilities:
+  - id: CAP-01
+    name: identity and legal principal objects
+    canonical_location: uniimente-kernel identity/machine_passport.py, authority/legal-principals.yaml
+    sdk_module: uniimente_kernel/contracts.py
+    state: MERGED_ACTIVE
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-02
+    name: evidence envelope
+    canonical_location: contracts/evidence.schema.json
+    sdk_module: uniimente_kernel/contracts.py
+    state: MERGED_ACTIVE
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-03
+    name: policy decision
+    canonical_location: policy/engine.py (188 lines)
+    sdk_module: uniimente_kernel/capability.py (289 lines)
+    state: MERGED_ACTIVE
+    conflict_risk: HIGH
+    note: SDK module is larger. Verify it is not a second decision engine before merge.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-04
+    name: approval request / human-or-policy decision separation
+    canonical_location: NOT PRESENT as a distinct object on main
+    sdk_module: uniimente_kernel/approval_queue.py
+    organ_prior_art: DALEOBANKS services/capability.py ("authorizes nothing; verifies a human did")
+    state: IMPLEMENTED_UNMERGED
+    note: This object must stay distinct from CapabilityGrant. Collapsing them would
+          force per-action founder approval, which the doctrine does not require.
+    conditions: {merged: false, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-05
+    name: capability grant (effect-bound, expiring, revocable, replay-protected)
+    canonical_location: policy/consequence_gate.py bound_effect_hash (line 144, rechecked at commit)
+    sdk_module: uniimente_kernel/capability.py
+    organ_duplicate: DALEOBANKS services/capability.py (286 lines)
+    state: MERGED_ACTIVE
+    conflict_risk: CRITICAL
+    note: THREE implementations. Grant-namespace collision unverified. Contradictory
+          grants may be constructible. Gate condition before any merge.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-06
+    name: commit witness
+    canonical_location: provenance/commit_witness.py (122 lines)
+    sdk_module: uniimente_kernel/commit_witness.py (245 lines)
+    state: MERGED_ACTIVE
+    note: SDK version is larger. Determine which is canonical; do not ship both.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-07
+    name: gate client
+    canonical_location: policy/consequence_gate.py (355 lines) -- CANONICAL ENGINE
+    sdk_module: uniimente_kernel/gate.py (254 lines) -- MUST BECOME A THIN CLIENT
+    state: MERGED_ACTIVE
+    conflict_risk: CRITICAL
+    note: Merging the SDK gate unmodified creates two gate engines in one repository.
+          This is the multiple-active-authority condition arriving by merge.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-08
+    name: event envelope / spine
+    canonical_location: events/spine.py (320 lines) -- CANONICAL
+    sdk_module: uniimente_kernel/events.py (259 lines)
+    sibling_branch: phase4/event-spine (38 commits, NOT in phase7)
+    state: MERGED_ACTIVE
+    note: Main is ahead. SDK becomes a client. Sibling branch needs comparison.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-09
+    name: external receipt
+    canonical_location: policy/consequence_gate.py receipt append (line ~288)
+    sdk_module: partial
+    state: MERGED_ACTIVE
+    note: Receipt exists. INDEPENDENT VERIFICATION of the receipt does not.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-10
+    name: reconciliation
+    canonical_location: memory/causal.py (partial)
+    state: MERGED_INACTIVE
+    note: No reconciliation of receipt against externally observable state exists.
+    conditions: {merged: true, versioned: false, consumed_by_organ: false, exercised: false}
+
+  - id: CAP-11
+    name: local refusal and degraded-mode descent
+    canonical_location: constitution/shutdown-policy.ucl (8-state ladder)
+    organ_location: DALEOBANKS services/ledger.py KillSwitch, services/constitution.py ConstitutionGuard
+    state: MERGED_ACTIVE
+    disposition: STAYS LOCAL
+    note: A kill switch requiring a network call to the Kernel fails OPEN under
+          partition. Local fail-closed veto plus Kernel grant authority is defence
+          in depth, not duplicated authority. Do not centralize this.
+    conditions: {merged: true, versioned: false, consumed_by_organ: true, exercised: false}
+
+not_required_for_first_transaction:
+  - evolution/experiments, capsules, run_first_cycle.py   # Track B adjacent
+  - verifier/runs (41 records)                            # evidence artifacts, preserve
+  - fast capability evolution                             # phase7 headline feature, not on this path

@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-07-27",
+  "evidence_tier": "primary_source (git commands executed this session)",
+  "known_gap": "PR state was NOT read this pass; GitHub MCP tools were intermittently unavailable. Every pr_number/pr_state is UNKNOWN. Strategy E cannot be evaluated until this is closed.",
+  "items": [
+    {"repository":"uniimente-kernel","branch":"phase7/fast-capability-evolution","pr_number":"UNKNOWN","pr_state":"UNKNOWN","base_branch":"main","unique_commits_ahead":49,"commits_behind_main":127,"cumulative_or_sibling":"cumulative-tip","conflicts_with_current_main":4,"conflict_files":["contracts/outcome.schema.json","policy/README.md","verifier/README.md","verifier/v2/criteria.json"],"tests_after_merge":679,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"MERGE to integration branch, then convert duplicate engines to thin clients"},
+    {"repository":"uniimente-kernel","branch":"phase6/first-evolution-cycle","unique_commits_ahead":45,"commits_behind_main":127,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE with lineage"},
+    {"repository":"uniimente-kernel","branch":"phase5/consequence-gate","unique_commits_ahead":41,"commits_behind_main":127,"cumulative_or_sibling":"ancestor-of-phase7","conflicts_with_current_main":4,"institutional_state":"SUPERSEDED","note":"This is the branch DALEOBANKS pins. Pin must move to a version tag.","recommendation":"ARCHIVE after pin migration"},
+    {"repository":"uniimente-kernel","branch":"phase4/commit-witness","unique_commits_ahead":39,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase4/event-spine","unique_commits_ahead":38,"commits_behind_main":127,"cumulative_or_sibling":"SIBLING - not contained in phase7","conflicts_with_current_main":4,"institutional_state":"UNKNOWN","recommendation":"INSPECT: compare against main events/spine.py (320 lines vs SDK events.py 259) before archiving"},
+    {"repository":"uniimente-kernel","branch":"phase3/signal-contracts","unique_commits_ahead":30,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/sdk-package-absorption","unique_commits_ahead":23,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/sdk-packaging","unique_commits_ahead":11,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/guard-heartbeat-approval-extraction","unique_commits_ahead":10,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/firewall-context-extraction","unique_commits_ahead":7,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/raw-vault-capability-extraction","unique_commits_ahead":5,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"phase2/decision-ledger-extraction","unique_commits_ahead":3,"cumulative_or_sibling":"ancestor-of-phase7","institutional_state":"SUPERSEDED","recommendation":"ARCHIVE"},
+    {"repository":"uniimente-kernel","branch":"build/consequence-gate","unique_commits_ahead":12,"commits_behind_main":124,"cumulative_or_sibling":"SIBLING - not contained in phase7","conflicts_with_current_main":0,"files_staged":30,"institutional_state":"UNKNOWN","recommendation":"INSPECT: merges cleanly, 30 files, lineage unknown"},
+    {"repository":"DALEOBANKS","branch":"phase5/consequence-gate-adoption","kernel_reference_files":9,"branch_pins":["uniimente-kernel@git+...@phase5/consequence-gate#subdirectory=sdk-python"],"files_changed":["requirements.txt","services/constitution.py","services/gate.py","services/heartbeat.py","services/ledger.py","services/prompt_firewall.py","services/raw_vault.py","services/venture_protocol.py","tests/test_gate_publishing.py"],"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"RE-CUT against versioned SDK; preserve tests/test_gate_publishing.py"},
+    {"repository":"DALEOBANKS","branch":"phase3/protocol-swap","kernel_reference_files":7,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"INSPECT then likely SUPERSEDE"},
+    {"repository":"DALEOBANKS","branch":"phase2/kernel-sdk-swap-2","kernel_reference_files":6,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"SUPERSEDE"},
+    {"repository":"DALEOBANKS","branch":"phase2/kernel-sdk-swap-1","kernel_reference_files":4,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"SUPERSEDE"},
+    {"repository":"DALEOBANKS","branch":"agent/foundry-signal-envelope","kernel_reference_files":3,"institutional_state":"UNKNOWN","recommendation":"INSPECT"},
+    {"repository":"DALEOBANKS","branch":"agent/canonical-media-brand-architecture","kernel_reference_files":1,"institutional_state":"UNKNOWN","recommendation":"INSPECT"},
+    {"repository":"WealthMachineIntelligence","branch":"agent/foundry-underwriting-envelope","kernel_reference_files":5,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"INSPECT"},
+    {"repository":"WealthMachineIntelligence","branch":"phase3/protocol-swap","kernel_reference_files":2,"institutional_state":"IMPLEMENTED_UNMERGED","recommendation":"RE-CUT against versioned SDK"}
+  ]
+}

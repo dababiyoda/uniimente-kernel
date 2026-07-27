@@ -1,0 +1,364 @@
+# AUTHORITY SEMANTICS MATRIX
+#
+# Four authority implementations compared on semantics, not line count.
+# Every classification below is grounded in either an executed differential
+# case (see DIFFERENTIAL_AUTHORITY_CONFORMANCE.json) or a cited read of the
+# source. Rows where I did not obtain executable evidence say so.
+#
+# Classification vocabulary (as specified):
+#   equivalent | stronger_on_main | stronger_on_pr21 | stronger_in_phase7_sdk
+#   | stronger_locally_in_daleobanks | incompatible | absent | uncertain
+
+metadata:
+  date: "2026-07-27"
+  gate: "Gate A - ACTIVE_CANONICAL_CONSEQUENCE_ENGINES"
+  evidence_artifact: docs/integration/DIFFERENTIAL_AUTHORITY_CONFORMANCE.json
+  corpus_size: 30
+  refusals_earned: {main: 10, pr21: 24, sdk: 10}
+  cases_structurally_inexpressible: {main: 12, pr21: 2, sdk: 18}
+
+implementations:
+  main:
+    ref: origin/main @ 8cb3074
+    path: policy/consequence_gate.py  (355 lines) + policy/engine.py (188)
+    entrypoint: ConsequenceGate.run(proposal, executor, approver, standing_grant)
+    executed_this_session: true
+  pr21:
+    ref: origin/build/consequence-gate @ 5b70e24  (PR #21)
+    path: kernel/gate/pipeline.py (571 lines) + revalidate.py (122) + fingerprint.py (33)
+    entrypoint: Gate.run(intent, adapter, approval)  - 15 named stages
+    executed_this_session: true
+    note: >-
+      Requires pydantic, cryptography and cffi. NONE are declared: its
+      requirements-dev.txt is byte-identical to main's (pyyaml, pytest,
+      jsonschema). The suite cannot run from a clean clone. 36 tests pass
+      once the three are installed.
+  phase7_sdk:
+    ref: origin/phase7/fast-capability-evolution @ 640ec9d
+    path: sdk-python/uniimente_kernel/{gate,capability,commit_witness,ledger}.py
+    entrypoint: ConsequenceGate.execute(grant_id, action_type, resource, executor, ...)
+    executed_this_session: true
+  daleobanks:
+    ref: not re-executed in this session
+    path: governance/{constitution,capability,ledger,evidence_policy}.py
+    executed_this_session: false
+    evidence_tier: source_read_from_a_prior_pass
+    note: >-
+      Retained in the matrix because the target architecture depends on it, but
+      every daleobanks cell below is a source-read claim, NOT an executed result.
+      Do not treat these cells as equal in weight to the three executed columns.
+
+# ---------------------------------------------------------------------------
+authority_semantics:
+
+  - dimension: identity_verification
+    main: PassportRegistry.verify(actor) at step 1 and again at commit
+    pr21: "IDENTIFY stage checks legal_principal is non-empty only - no registry"
+    phase7_sdk: absent - execute() takes no actor argument at all
+    daleobanks: local identity checks present
+    classification: stronger_on_main
+    evidence: "main case 1 path; pr21 pipeline.py:238-240; sdk gate.py execute() signature"
+
+  - dimension: legal_principal
+    main: carried on Proposal, bound into the witness, re-checked at commit
+    pr21: bound into the intent fingerprint (11 fields) - mutation refuses (case 16)
+    phase7_sdk: EventSpine construction metadata only; never compared
+    daleobanks: present
+    classification: stronger_on_pr21
+    evidence: "case 16: main REFUSE, pr21 REFUSE, sdk ABSENT. pr21 binds it cryptographically."
+
+  - dimension: approval_provenance
+    main: "absent - approver is an in-process callable (proposal, reasons) -> (bool, str)"
+    pr21: Ed25519-signed ApprovalRecord with approver identity, nonce and expiry
+    phase7_sdk: "absent - approval_verifier(request_id) -> bool callable supplied by caller"
+    daleobanks: verifies that a human approved; does not itself authorize
+    classification: stronger_on_pr21
+    evidence: >-
+      Cases 3, 4, 5 and 8. pr21 REFUSES all four. main and sdk are ABSENT on all
+      four because neither has a signed approval artifact: there is nothing to
+      forge, nothing to expire and no nonce to replay. This is the single widest
+      capability gap in the matrix.
+
+  - dimension: policy_decision
+    main: full constitutional evaluation via compile_constitution + evaluate()
+    pr21: "default_policy_evaluator inspects consequence_class ONLY (C0/C1 permit, C2 human, C3+ deny)"
+    phase7_sdk: absent - no constitution is loaded
+    daleobanks: ConstitutionGuard re-verifies the constitution hash at runtime
+    classification: stronger_on_main
+    evidence: "pipeline.py:65-92 - pr21's evaluator ignores action_type, target and evidence content."
+
+  - dimension: evidence_requirements
+    main: evidence_confidence thresholds per consequence class
+    pr21: EvidencePacket with freshness_deadline; StaleEvidence refusal at REAUTHORIZE
+    phase7_sdk: evidence_refs carried for provenance only; no store, no rule
+    daleobanks: evidence_policy.py anti-cathedral rule (no kernel equivalent)
+    classification: stronger_on_pr21
+    evidence: "case 15: main REFUSE, pr21 REFUSE (StaleEvidence), sdk ABSENT. pr21 adds freshness."
+
+  - dimension: action_class
+    main: action_class in bound_effect_hash; mutation refuses (case 12)
+    pr21: action_type in the fingerprint; mutation refuses (case 12)
+    phase7_sdk: permitted_actions on the grant; unknown action rejected (case 26)
+    daleobanks: present
+    classification: equivalent
+    evidence: "case 12: main REFUSE, pr21 REFUSE, sdk ABSENT-but-covered-by-26"
+
+  - dimension: target_binding
+    main: target in bound_effect_hash - mutation refuses, but NO allowlist
+    pr21: target in the fingerprint - mutation refuses, but NO allowlist
+    phase7_sdk: named_targets allowlist on the grant - refuses unknown targets
+    daleobanks: present
+    classification: stronger_in_phase7_sdk
+    evidence: >-
+      Case 11 all three refuse mutation. Case 25 (a target nobody ever approved)
+      is PERMITTED by main and by pr21 and REFUSED only by the sdk. Mutation
+      detection is not the same control as an allowlist.
+
+  - dimension: payload_binding
+    main: payload in bound_effect_hash (case 10 REFUSE)
+    pr21: payload in the fingerprint (case 10 REFUSE)
+    phase7_sdk: parameters feed the fingerprint, but a change is a NEW effect, not a refusal
+    daleobanks: effect-bound
+    classification: equivalent
+    evidence: "case 10"
+
+  - dimension: effect_fingerprint
+    main: "sha256({payload, target, action_class}) - 3 fields"
+    pr21: >-
+      sha256({actor_id, organ_id, legal_principal, action_type, resource, target,
+      payload, budget, consequence_class, expected_outcome, policy_version}) - 11 fields
+    phase7_sdk: action_fingerprint(action_type, resource, target, parameters) - 4 fields
+    daleobanks: bound_effect_hash equivalent
+    classification: stronger_on_pr21
+    evidence: >-
+      consequence_gate.py:145-147 vs fingerprint.py. main's omission of the
+      grantee, the principal, the consequence class and the policy version is the
+      direct cause of verified defects 27 and 28.
+
+  - dimension: policy_version_binding
+    main: recorded on grant and witness, but NOT in bound_effect_hash and not revalidated
+    pr21: in the fingerprint AND explicitly checked at REAUTHORIZE
+    phase7_sdk: stamped on events; never bound, never checked
+    daleobanks: uncertain
+    classification: stronger_on_pr21
+    evidence: "case 13: main ABSENT, pr21 REFUSE, sdk ABSENT"
+
+  - dimension: budget_reservation
+    main: BudgetOffice with reserve / commit / release and a real release on every failure path
+    pr21: BudgetLedger with per-intent caps, reserved at the RESERVE stage
+    phase7_sdk: spending_limit_usd ceiling checked at validate_and_consume
+    daleobanks: RateGovernor
+    classification: stronger_on_main
+    evidence: >-
+      Case 14 all three refuse. main is stronger not on the refusal but on the
+      unwind: it calls budget.release() on executor exception, on reauthorization
+      failure and on effect mismatch. Neither other engine has a reservation to unwind.
+
+  - dimension: consequence_ceiling
+    main: consequence_class + ALWAYS_HUMAN_CLASSES=('irreversible',)
+    pr21: consequence_class C0-C4 drives the policy effect and is fingerprint-bound
+    phase7_sdk: absent
+    daleobanks: present
+    classification: stronger_on_pr21
+    evidence: >-
+      VERIFIED DEFECT on main (case 27): escalating consequence_class to
+      'irreversible' inside the commit window still reaches state='recorded'.
+      _reauthorize_at_commit refuses only on Verdict.DENY, so a commit-time
+      REQUIRE_HUMAN is silently discarded. pr21 refuses via fingerprint drift.
+
+  - dimension: expiration
+    main: GRANT_TTL 15 minutes, checked at commit (case 6 REFUSE)
+    pr21: grant expiry checked at REAUTHORIZE (case 6 REFUSE); witness expiry too
+    phase7_sdk: TTL exists at mint; not driven past in this session
+    daleobanks: expiring grants
+    classification: equivalent
+    evidence: "case 6: main REFUSE, pr21 REFUSE, sdk not-claimed"
+
+  - dimension: revocation
+    main: GrantIssuer.revoke; commit-time check yields state='revoked' (case 7)
+    pr21: GrantRevoked at REAUTHORIZE (case 7)
+    phase7_sdk: cap.revoke; rejected at validate_and_consume (case 7)
+    daleobanks: local revocation
+    classification: equivalent
+    evidence: "case 7: all three REFUSE. The only row where all three engines earn the refusal."
+
+  - dimension: bounded_use
+    main: single_use meta flag, marked used after commit
+    pr21: one_use enforced, plus a durable EXECUTE_BEGIN spine marker
+    phase7_sdk: maximum_uses counter
+    daleobanks: bounded
+    classification: stronger_on_pr21
+    evidence: >-
+      Case 9 all three refuse. pr21 is stronger because its marker is DURABLE:
+      the refusal survives a restart, since it is a record on the hash-chained
+      spine rather than in-memory state. main's `used` flag and the sdk's counter
+      are both process-local.
+
+  - dimension: single_use
+    main: yes, in-memory meta
+    pr21: yes, enforced and required ("grants in this slice must be one_use")
+    phase7_sdk: configurable maximum_uses
+    daleobanks: yes
+    classification: stronger_on_pr21
+    evidence: revalidate.py:97
+
+  - dimension: replay_protection
+    main: absent - no fingerprint dedup anywhere in the root engine
+    pr21: approval nonce (case 8) + durable EXECUTE_BEGIN marker (case 9)
+    phase7_sdk: fingerprint dedup that precedes authority and does not consume a grant use
+    daleobanks: replay-protected
+    classification: stronger_on_pr21
+    evidence: >-
+      grep for fingerprint|already_committed|dedup|idempot across
+      policy/consequence_gate.py and provenance/commit_witness.py returns NOTHING
+      on main. The sdk's dedup is architecturally elegant (it returns the existing
+      receipt rather than refusing) but pr21's is the only one that is durable.
+
+  - dimension: commit_time_revalidation
+    main: _reauthorize_at_commit - signature, grant, effect hash, identity, policy
+    pr21: REAUTHORIZE stage - 11 distinct refusal conditions
+    phase7_sdk: absent - execute() is a single call with no propose/commit split
+    daleobanks: local re-check
+    classification: stronger_on_pr21
+    evidence: >-
+      Both revalidate. pr21 catches strictly more: fingerprint drift, policy and
+      constitution version drift, approval principal mismatch, approval expiry,
+      witness expiry and duplicate execution. main additionally verifies the
+      witness signature, which pr21 delegates to the adapter boundary.
+
+  - dimension: state_change_between_approval_and_commit
+    main: partially - only the 3 fields in bound_effect_hash are protected
+    pr21: fully - all 11 fingerprint fields, refused at REAUTHORIZE
+    phase7_sdk: absent - no window exists
+    daleobanks: uncertain
+    classification: stronger_on_pr21
+    evidence: >-
+      VERIFIED DEFECT on main (case 17): changing expected_outcome inside the
+      commit window still reaches state='recorded', because expected_outcome is
+      not one of the three hashed fields.
+
+  - dimension: local_veto
+    main: absent
+    pr21: absent
+    phase7_sdk: KillSwitch object EXISTS but does not veto
+    daleobanks: KillSwitch, fail-closed, local
+    classification: stronger_locally_in_daleobanks
+    evidence: >-
+      VERIFIED DEFECT on the sdk (case 23): the gate executed with the KillSwitch
+      disarmed. commit_witness.py references kill_switch only at lines 233-234,
+      where it SETS the switch on postcondition failure. Nothing ever reads
+      .armed to block execution. It is a one-way failure signal, not a veto.
+      The architectural argument for a LOCAL veto is unchanged and still correct:
+      a kill switch requiring a network call to the Kernel fails OPEN under
+      partition, which is exactly when it is needed.
+
+  - dimension: degraded_mode
+    main: absent
+    pr21: absent
+    phase7_sdk: absent
+    daleobanks: local degraded mode
+    classification: stronger_locally_in_daleobanks
+    evidence: source_read only; not executed this session
+
+  - dimension: shutdown
+    main: absent
+    pr21: fail-closed refusal at every stage, but no shutdown primitive
+    phase7_sdk: KillSwitch (see local_veto - it does not gate)
+    daleobanks: KillSwitch disarms live posting
+    classification: stronger_locally_in_daleobanks
+    evidence: source_read only
+
+  - dimension: receipt_requirement
+    main: receipt appended to the gate's own EvidenceLedger on the success path
+    pr21: ExecutionReceipt required from the adapter; RECEIPT and VERIFY are distinct stages
+    phase7_sdk: witness returns a receipt on every path, including failures
+    daleobanks: local journal
+    classification: stronger_on_pr21
+    evidence: "case 19: main ABSENT (gate writes its own), pr21 REFUSE, sdk ABSENT"
+
+  - dimension: independent_receipt_verification
+    main: IMPOSSIBLE - HMAC-SHA256 is symmetric
+    pr21: Ed25519 - the adapter signs, the gate verifies against a registered public key
+    phase7_sdk: absent - receipts are unsigned in-process objects
+    daleobanks: uncertain
+    classification: stronger_on_pr21
+    evidence: >-
+      THE DECISIVE ROW. main's WitnessSigner uses hmac.new(self.key, ...) and
+      verifies by recomputing with the SAME key. Any party able to verify a
+      witness is thereby able to forge one. The development fallback key is the
+      hardcoded literal b"uniimente-dev-witness-key". pr21 registers adapter
+      PUBLIC keys and refuses a receipt signed by any other key (case 20,
+      ReceiptForgery). An institution whose whole claim is attributable autonomy
+      cannot rest attribution on a symmetric secret.
+
+  - dimension: reconciliation
+    main: expected vs observed compared; OutcomeRecord written with reconciled flag
+    pr21: ReconciliationRecord and OutcomeRecord as distinct pipeline stages
+    phase7_sdk: separate later record_outcome() call; execute() does not reconcile
+    daleobanks: local
+    classification: equivalent
+    evidence: >-
+      Case 21: main and pr21 both PERMIT and RECORD reconciled=false. Classified
+      as a deliberate policy difference, not a defect - at reconciliation the
+      external effect has already occurred and cannot be retroactively refused.
+      The obligation is to record, and both do.
+
+  - dimension: outcome_obligation
+    main: OutcomeRecord always written, feeds causal_memory and calibration
+    pr21: OutcomeRecord stage, matched_expected flag, closes the DecisionEpisode
+    phase7_sdk: optional - caller must remember to invoke record_outcome()
+    daleobanks: local
+    classification: stronger_on_pr21
+    evidence: "pr21 closes an explicit DecisionEpisode; the sdk's outcome step is caller-optional."
+
+  - dimension: audit_provenance
+    main: EvidenceLedger hash chain, verify_chain() passes
+    pr21: Spine hash chain; verify_chain() TRUE after every hostile case including refusals
+    phase7_sdk: DecisionLedger jsonl
+    daleobanks: hash-chained journal
+    classification: stronger_on_pr21
+    evidence: >-
+      pr21 appends a GATE_REFUSAL record for refused attempts, so the chain
+      records what was denied and why - not only what succeeded. Refusals are
+      themselves institutional evidence.
+
+  - dimension: failure_behavior
+    main: fail-closed; budget released; executor exception -> state='failed'
+    pr21: fail-closed at all 15 stages; every refusal is a typed GateRefusal subclass
+    phase7_sdk: fail-closed on capability errors; returns a status rather than raising
+    daleobanks: fail-closed local veto
+    classification: equivalent
+    evidence: "No engine failed open on any executed case. This row is genuinely equivalent."
+
+  - dimension: dependency_and_reproducibility
+    main: stdlib + pyyaml + jsonschema. Clean clone reproduces.
+    pr21: needs pydantic, cryptography, cffi - NONE declared. Clean clone CANNOT run the suite.
+    phase7_sdk: runs within the merged tree
+    daleobanks: not assessed
+    classification: stronger_on_main
+    evidence: >-
+      Not one of the requested rows, added because it is disqualifying if
+      unfixed. A hostile suite that does not run from a clean clone is not
+      protecting anything. This is cheap to fix and must be fixed before pr21
+      code is promoted.
+
+# ---------------------------------------------------------------------------
+row_tally:
+  stronger_on_pr21: 14
+  stronger_on_main: 4
+  stronger_in_phase7_sdk: 1
+  stronger_locally_in_daleobanks: 3
+  equivalent: 6
+  incompatible: 0
+  absent: 0
+  uncertain: 0
+
+conclusion: >-
+  No single implementation dominates every row, so the answer is not "choose one
+  file". pr21 owns the consequence semantics (14 rows, 24 of 30 refusals, only 2
+  cases it cannot express). main owns constitutional policy evaluation, identity
+  and budget unwind. The sdk owns grant scoping - named_targets and
+  permitted_actions are the only controls that refuse cases 25 and 26.
+  DALEOBANKS owns the local veto, and must keep it.
+  This is Strategy C: a composed canonical engine, with pr21's pipeline as the
+  spine.

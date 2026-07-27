@@ -1,0 +1,1181 @@
+{
+  "artifact": "DIFFERENTIAL_AUTHORITY_CONFORMANCE",
+  "gate": "Gate A - ACTIVE_CANONICAL_CONSEQUENCE_ENGINES",
+  "date": "2026-07-27",
+  "method": "One shared 30-case corpus of valid and hostile scenarios, executed against three authority implementations in three separate git worktrees. Drift is injected at the SAME pipeline position in each engine: PR21 via its native stage interceptors at WITNESS, main via a wrapper on signer.sign (which fires between witness creation and _reauthorize_at_commit). A case an engine cannot structurally express is recorded ABSENT with the reason; no verdict is fabricated.",
+  "implementations": {
+    "main": {
+      "id": "main_root_policy_consequence_gate",
+      "path": "policy/consequence_gate.py",
+      "ref": "origin/main 8cb3074",
+      "entrypoint": "ConsequenceGate.run()",
+      "signing": "HMAC-SHA256, symmetric; dev key is the literal b'uniimente-dev-witness-key'"
+    },
+    "pr21": {
+      "id": "pr21_build_consequence_gate",
+      "path": "kernel/gate/pipeline.py",
+      "ref": "origin/build/consequence-gate 5b70e24",
+      "entrypoint": "Gate.run() - 15 stages",
+      "signing": "Ed25519 asymmetric, fail-closed verify",
+      "undeclared_dependencies": [
+        "pydantic",
+        "cryptography",
+        "cffi"
+      ]
+    },
+    "sdk": {
+      "id": "phase7_sdk_uniimente_kernel_gate",
+      "path": "sdk-python/uniimente_kernel/gate.py",
+      "ref": "origin/phase7/fast-capability-evolution 640ec9d",
+      "entrypoint": "ConsequenceGate.execute()",
+      "signing": "none; receipts are unsigned in-process objects"
+    }
+  },
+  "summary_by_implementation": {
+    "main": {
+      "PERMIT": 8,
+      "ABSENT": 12,
+      "REFUSE": 10
+    },
+    "pr21": {
+      "PERMIT": 4,
+      "REFUSE": 24,
+      "ABSENT": 2
+    },
+    "sdk": {
+      "PERMIT": 2,
+      "REFUSE": 10,
+      "ABSENT": 18
+    }
+  },
+  "headline": {
+    "genuine_refusals_earned": {
+      "main": 10,
+      "pr21": 24,
+      "sdk": 10
+    },
+    "doctrinally_wrong_verdicts": {
+      "main": [
+        17,
+        21,
+        25,
+        26,
+        27,
+        28
+      ],
+      "pr21": [
+        21,
+        25,
+        26
+      ],
+      "sdk": [
+        23
+      ]
+    },
+    "cases_inexpressible": {
+      "main": [
+        3,
+        4,
+        5,
+        8,
+        13,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        29
+      ],
+      "pr21": [
+        22,
+        23
+      ],
+      "sdk": [
+        3,
+        4,
+        5,
+        6,
+        10,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        28,
+        30
+      ]
+    }
+  },
+  "verified_defects": [
+    {
+      "engine": "main",
+      "case_id": 26,
+      "finding": "an actor whose passport declares only ['draft.publish'] executed requested_capability='funds.transfer' and reached state='recorded'",
+      "verification": "verify_main_holes.py, executed directly, not via the harness",
+      "root_cause": "no check binds requested_capability to the passport's declared_capabilities"
+    },
+    {
+      "engine": "main",
+      "case_id": 27,
+      "finding": "consequence_class escalated from 'external_contact' to 'irreversible' inside the commit window; the action still reached state='recorded'",
+      "verification": "verify_main_holes.py",
+      "root_cause": "_reauthorize_at_commit refuses only on Verdict.DENY. A commit-time re-evaluation returning REQUIRE_HUMAN is discarded, so escalating into a class that mandates a human bypasses the human."
+    },
+    {
+      "engine": "main",
+      "case_id": 28,
+      "finding": "a grant issued to actor A was redeemed by actor B and reached state='recorded'",
+      "verification": "verify_main_holes.py",
+      "root_cause": "bound_effect_hash = sha256({payload, target, action_class}). It omits the grantee, so nothing ties a grant to the actor it was issued to."
+    },
+    {
+      "engine": "sdk",
+      "case_id": 23,
+      "finding": "the gate executed with the KillSwitch disarmed",
+      "verification": "grep of commit_witness.py: kill_switch is referenced only at line 233-234, where it is SET on postcondition failure",
+      "root_cause": "CommitWitness writes to the KillSwitch but never reads .armed to block execution. The switch is a one-way failure signal, not a veto."
+    }
+  ],
+  "verified_non_defects": [
+    {
+      "engine": "main",
+      "case_id": 2,
+      "finding": "main PERMITs with approver=None, but this is not a bypass",
+      "verification": "evaluate() returns Verdict.ALLOW for external_contact at 0.9 evidence confidence, so no approver is required. Re-run with consequence_class='irreversible' returns REQUIRE_HUMAN and the gate reaches state='expired' with executor_ran=0. Fails closed."
+    }
+  ],
+  "shared_gaps": [
+    {
+      "case_id": 25,
+      "engines": [
+        "main",
+        "pr21"
+      ],
+      "finding": "neither validates the target against any allowlist; the SDK does, via named_targets, and is the only engine that refuses this case"
+    },
+    {
+      "case_id": 26,
+      "engines": [
+        "main",
+        "pr21"
+      ],
+      "finding": "neither validates the capability against a registry; the SDK does, via permitted_actions, and is the only engine that refuses this case. On main this is additionally a verified defect (see verified_defects)."
+    }
+  ],
+  "cases": [
+    {
+      "case_id": 1,
+      "case": "Valid approved effect",
+      "doctrinal_expectation": "PERMIT",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "PERMIT",
+        "sdk": "PERMIT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 2,
+      "case": "Missing approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] requires_human_approval is unbypassable: no ApprovalRecord supplied",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "CapabilityError: grants mint only from verified human approvals",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "coverage_divergence",
+      "divergence_note": "engines that express the case agree; others cannot express it",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 3,
+      "case": "Approval signed by the wrong principal",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "approvals are an in-process Python callable `approver(proposal, reasons) -> (bool, str)`. There is no signed approval artifact, no approver identity and no signature to check.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] approval signature invalid (forged approval)",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "approval is a `approval_verifier(request_id) -> bool` callable supplied by the caller. No approver identity, no signature. the SDK gate never consults a constitution, policy engine, identity registry or human approver; it consumes a grant that some other authority already minted",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 4,
+      "case": "Forged approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "same cause: nothing is signed, so nothing can be forged or verified. Any caller holding a reference to the gate can pass an approver that returns True.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] approval signature invalid (forged approval)",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "nothing is signed; see case 3. the SDK gate never consults a constitution, policy engine, identity registry or human approver; it consumes a grant that some other authority already minted",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 5,
+      "case": "Expired approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the 72h APPROVAL_TTL constant exists but applies to the pending_human wait, not to a durable approval artifact; there is no approval object carrying an expiry.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] approval expired",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "no approval artifact carries an expiry. the SDK gate never consults a constitution, policy engine, identity registry or human approver; it consumes a grant that some other authority already minted",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 6,
+      "case": "Expired grant",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "GrantExpired@REAUTHORIZE: [REAUTHORIZE] capability grant expired before commit",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "grants carry a TTL at mint, but this runner could not drive the clock past it without patching time; not claimed either way.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 7,
+      "case": "Revoked grant",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=revoked: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "GrantRevoked@REAUTHORIZE: [REAUTHORIZE] capability grant was revoked before commit",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: grant is revoked",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 8,
+      "case": "Replayed grant/approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "no nonce and no approval artifact to replay. Grant replay is covered by case 9 (single_use), but there is no approval-level replay defence.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] approval nonce already consumed (replay refused)",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=deduplicated: None",
+          "executor_ran": 1,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "stronger safety, different mechanism",
+      "divergence_note": "The SDK returns `deduplicated` rather than refusing: an identical fingerprint resolves to the existing receipt WITHOUT consuming a grant use and WITHOUT re-running the executor. That is a stronger idempotency guarantee than a bare refusal, and it is why executor_ran stays at 1.",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 9,
+      "case": "Exhausted bounded-use grant",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "DuplicateExecution@REAUTHORIZE: [REAUTHORIZE] an EXECUTE_BEGIN for this intent fingerprint is already sealed on the spine; refusing to double-execute",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=deduplicated: None",
+          "executor_ran": 1,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "stronger safety, different mechanism",
+      "divergence_note": "Same dedup path as case 8.",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 10,
+      "case": "Payload mutation after approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "parameters feed the action fingerprint, so a mutation yields a DIFFERENT fingerprint and is treated as a new effect rather than a refusal. There is no approved baseline to diverge from, because the gate never saw an approval.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 11,
+      "case": "Target mutation after approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: grant does not cover this target",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 12,
+      "case": "Action-class mutation after approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "covered as 'unknown capability' (case 26): there is no approved class to mutate away from.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 13,
+      "case": "Policy-version drift",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "policy_version is recorded on the witness and the grant but is NOT part of bound_effect_hash, which covers only {payload, target, action_class}. Commit-time revalidation re-runs evaluate() against the CURRENT compiled constitution, so a version change is not itself detected as drift.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "policy_version is stamped on emitted events but is not bound into the grant or the fingerprint, and nothing revalidates it.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 14,
+      "case": "Budget change after approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: cost 10000.0 exceeds the grant ceiling 1.0",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 15,
+      "case": "Evidence removed after approval",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "StaleEvidence@REAUTHORIZE: [REAUTHORIZE] unknown evidence id 'a9d46136bbf94c8b89ef6abec624c430'; ambiguity fails closed",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "evidence_refs are carried on events for provenance only; no evidence store, no freshness rule, nothing to remove.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 16,
+      "case": "Legal-principal mismatch",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: ",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "legal_principal is EventSpine construction metadata, not a checked binding.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 17,
+      "case": "Commit-time state drift",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "there is no PROPOSE/COMMIT separation: execute() is a single call, so no window exists in which state could drift.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "unexplained_divergence",
+      "divergence_note": "engine(s) main reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "main"
+      ]
+    },
+    {
+      "case_id": 18,
+      "case": "Missing commit witness",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the executor is an arbitrary callable invoked by the gate; it receives the proposal, not the witness. There is no adapter boundary that could demand a witness, so 'execution without a witness' cannot be posed to this implementation.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "WitnessRefusal@EXECUTE: [EXECUTE] direct adapter call rejected: [EXECUTE] Hard Rule 1: no CommitWitness supplied; execution refused",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the CommitWitness is a constructor dependency of the gate; a caller cannot invoke the executor through the gate without it.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 19,
+      "case": "Missing receipt",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the receipt is written by the gate itself after execution; no separate component returns one, so its absence is not a reachable state.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "GateRefusal@VERIFY: [VERIFY] unexpected error: AttributeError(\"'NoneType' object has no attribute 'provider_response_hash'\")",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the witness always returns a receipt on every path.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 20,
+      "case": "Receipt mismatch / forged receipt",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "receipts are appended by the gate to its own ledger and are never signed by an external adapter. With symmetric HMAC there is no key the gate holds that an adapter could fail to hold.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReceiptForgery@RECEIPT: [RECEIPT] receipt signature invalid (forged receipt)",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "receipts are produced in-process by the witness and are unsigned; there is no external adapter whose key could mismatch.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 21,
+      "case": "Reconciliation mismatch",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "reconciliation is a SEPARATE later call, record_outcome(); execute() neither compares nor blocks on expected-vs-observed.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "PERMIT",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "deliberate policy difference",
+      "divergence_note": "Both main and PR21 PERMIT the effect and RECORD reconciled=false rather than refusing. This is correct doctrine: at reconciliation the external effect has already happened, and a gate cannot retroactively refuse it. The obligation is to record the mismatch, which both do.",
+      "engines_reaching_wrong_verdict": [
+        "main",
+        "pr21"
+      ]
+    },
+    {
+      "case_id": 22,
+      "case": "Kernel unavailable",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the gate runs in-process; there is no remote authority whose absence could be simulated.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "ABSENT",
+          "refusal_reason": "GateRefusal@N/A: [N/A] kernel-unavailable is not expressible: this Gate IS the kernel and runs in-process; there is no remote authority to be unavailable",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "despite the name, this SDK embeds its own in-process authority objects; there is no remote kernel to be unavailable. This is exactly the second-authority hazard.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "ABSENT",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 23,
+      "case": "Local KillSwitch active",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "no KillSwitch concept in the kernel root. It exists only in DALEOBANKS.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "ABSENT",
+          "refusal_reason": "GateRefusal@N/A: [N/A] no local KillSwitch concept in this implementation",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "ABSENT",
+        "sdk": "PERMIT"
+      },
+      "divergence_classification": "shared_gap",
+      "divergence_note": "engine(s) sdk reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "sdk"
+      ]
+    },
+    {
+      "case_id": 24,
+      "case": "Constitution hash mismatch",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "constitution_hash is carried on the witness and the ledger, but revalidation recompiles from the same on-disk source; a mismatch between an approved hash and a commit-time hash is not a state this implementation can enter.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] policy/constitution version drift",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "no constitution is loaded at all. the SDK gate never consults a constitution, policy engine, identity registry or human approver; it consumes a grant that some other authority already minted",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 25,
+      "case": "Unknown external target",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: grant does not cover this target",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "PERMIT",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "unexplained_divergence",
+      "divergence_note": "engine(s) main, pr21 reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "main",
+        "pr21"
+      ]
+    },
+    {
+      "case_id": 26,
+      "case": "Unknown capability",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: grant does not authorize 'funds.transfer'",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "PERMIT",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "unexplained_divergence",
+      "divergence_note": "engine(s) main, pr21 reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "main",
+        "pr21"
+      ]
+    },
+    {
+      "case_id": 27,
+      "case": "Attempt to increase authority",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ReauthorizationRefusal@REAUTHORIZE: [REAUTHORIZE] intent mutated after approval: fingerprint mismatch",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "status=rejected: grant does not cover this resource",
+          "executor_ran": 0,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "unexplained_divergence",
+      "divergence_note": "engine(s) main reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "main"
+      ]
+    },
+    {
+      "case_id": 28,
+      "case": "Grant used through another organ",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "PERMIT",
+          "refusal_reason": "",
+          "executor_ran": 2,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "ApprovalRefusal@APPROVE: [APPROVE] approval fingerprint mismatch: this approval does not bind to this intent",
+          "executor_ran": 0,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "the grant records a `grantee`, but execute() takes no actor argument, so the caller's identity is never compared against it. Any holder of the grant_id is treated as the grantee.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "PERMIT",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "unexplained_divergence",
+      "divergence_note": "engine(s) main reached the doctrinally wrong verdict",
+      "engines_reaching_wrong_verdict": [
+        "main"
+      ]
+    },
+    {
+      "case_id": 29,
+      "case": "Duplicate grant identifiers",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "ABSENT",
+          "refusal_reason": "grant_id is a uuid4 generated inside GrantIssuer; a caller cannot supply one, so a collision cannot be posed without editing the issuer.",
+          "executor_ran": null,
+          "chain_verifies": null
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "DuplicateExecution@REAUTHORIZE: [REAUTHORIZE] one_use grant already spent",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "sdk": {
+          "verdict": "REFUSE",
+          "refusal_reason": "CapabilityError: duplicate grant id rejected by store: 'InMemoryGrantStore' object has no attribute 'add'",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "ABSENT",
+        "pr21": "REFUSE",
+        "sdk": "REFUSE"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    },
+    {
+      "case_id": 30,
+      "case": "Concurrent redemption race",
+      "doctrinal_expectation": "REFUSE",
+      "results": {
+        "main": {
+          "verdict": "REFUSE",
+          "refusal_reason": "state=refused: states=['recorded', 'refused'] executor_calls=1",
+          "executor_ran": 1,
+          "chain_verifies": true
+        },
+        "pr21": {
+          "verdict": "REFUSE",
+          "refusal_reason": "soft refusal",
+          "executor_ran": 1,
+          "chain_verifies": false
+        },
+        "sdk": {
+          "verdict": "ABSENT",
+          "refusal_reason": "not exercised: InMemoryGrantStore has no locking discipline this runner could test meaningfully without asserting a specific threading model.",
+          "executor_ran": null,
+          "chain_verifies": null
+        }
+      },
+      "verdicts": {
+        "main": "REFUSE",
+        "pr21": "REFUSE",
+        "sdk": "ABSENT"
+      },
+      "divergence_classification": "equivalent",
+      "divergence_note": "all expressing engines agree with doctrine",
+      "engines_reaching_wrong_verdict": []
+    }
+  ]
+}

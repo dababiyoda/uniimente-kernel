@@ -2,7 +2,7 @@
 
 **Seven decisions. None executed.** No branch merged, no credential moved, no production authority changed.
 
-**One is blocking:** Decision F. PRs #11–#22 and #27, #30–#32 were **not read** this pass — the GitHub tools were intermittently unavailable. If PR #31 already supersedes the phase train, Decisions A and B change. Everything below is provisional on that.
+**Decision F is now RESOLVED.** The PRs were read (see `PR_GRAPH_FINDINGS.md`). #31 is merged but is a *different workstream* — the Phase Zero connection layer — and does **not** supersede the SDK train. However the read changed Decision A: **PR #21 `build/consequence-gate` targets main directly, merges with 0 conflicts, carries a 15-stage fail-closed gate and a 12-attack hostile suite, and bypasses the 10-deep stacked chain entirely. Land #21 before phase7.**
 
 ---
 

@@ -2,6 +2,8 @@
 
 **Date:** 2026-07-27 · **Scope:** the canonical integration bottleneck only · **Status:** analysis. Nothing merged, no production authority or credential changed.
 
+> **§10's selection is SUPERSEDED.** PRs #11–#22 were read after this document was written. See [`PR_GRAPH_FINDINGS.md`](PR_GRAPH_FINDINGS.md): the stall is a 10-deep stacked PR chain with one entry point, PR #19's declared base no longer contains PR #18's current tip, and **PR #21 (`build/consequence-gate`) lands on main with 0 conflicts and a 12-attack hostile suite, bypassing the stack entirely.** Land #21 first. Everything else in this document stands.
+
 ---
 
 ## The result, first

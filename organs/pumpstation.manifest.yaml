@@ -1,0 +1,132 @@
+# Organ Manifest: PumpStation (Web3 wealth institution, security-first).
+# Generated from an in-session inspection of dababiyoda/PumpStation@618d49e2.
+# Validated against contracts/organ-manifest.schema.json.
+#
+# This organ holds no treasury authority and no signing keys. Its capability
+# surface is one wallet-authentication feature plus the admission gate that
+# decides what may be built next. Features that do not exist are registered in
+# its own matrix as PROPOSED, not described here as capabilities.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/pumpstation
+name: PumpStation
+role: web3_wealth_institution_security_settlement_ownership
+repository: dababiyoda/PumpStation
+source:
+  branch: claude/uniimente-system-design-hczheq
+  commit: 618d49e20435c03f6adde6e6401983ca94712f5a
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: pumpstation.admission_gate
+    description: >-
+      Executable form of the founder's termination trigger: reject any feature
+      that expands authority or financial exposure without a measurable security
+      benefit, bounded failure radius and tested recovery path. Eleven rules, no
+      score, no weighting, no override flag. Runs in CI on every push. Admission
+      means "may be built" and never "may act" — it issues no grant and confers
+      no authority.
+    implementation_path: governance/admission.js
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: pumpstation.feature_control_matrix
+    description: >-
+      Threat-to-control record for every feature: authority delta, financial
+      exposure ceiling, threats mitigated with their control mechanism and
+      evidence, threats introduced with residual risk, blast radius in dollars,
+      recovery procedure and whether it has been exercised. Tests assert every
+      cited implementation, recovery and evidence path resolves to a real file,
+      so a control cannot be claimed against something never written.
+    implementation_path: governance/feature-control-matrix.json
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: pumpstation.wallet_authentication
+    description: >-
+      EIP-4361 challenge/response binding a session to a wallet: single-use
+      nonce consumed on first attempt, five-minute expiry, domain binding,
+      address binding. The server rebuilds the signed message from its own
+      stored challenge and never verifies a client-supplied string. Holds no
+      keys, signs no transactions, moves no value.
+    implementation_path: server/auth/siwe.js
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: pumpstation.rate_limiter
+    description: >-
+      Bounded fixed-window limiter for challenge flooding and signature
+      grinding. The client map is capacity-bounded and sheds oldest-first,
+      because a per-IP map with no ceiling is itself the memory-exhaustion bug
+      it was added to prevent.
+    implementation_path: server/middleware/rate-limit.js
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: pumpstation.static_message_auth
+    description: >-
+      Superseded wallet authentication. Verified signatures over the constant
+      "Connect PumpStation", so any signature over that string authenticated as
+      that wallet permanently — a complete authentication bypass. Preserved
+      unmodified as institutional memory and as the subject of a permanent
+      regression test; not wired into any route.
+    implementation_path: server/superseded/index.static-message.js
+    consumes: []
+    produces: []
+    lifecycle: HISTORICAL
+contracts:
+  consumes: []
+  produces: []
+prohibited_actions:
+  - holding, moving or approving treasury funds (no treasury exists; no key material is held)
+  - issuing, minting or launching any token
+  - connecting to external DeFi protocols or any real-value contract
+  - granting any agent a spending permission (agent_permissions is empty for every admitted feature)
+  - admitting its own features past the gate — admission is not authority to act
+  - promising price outcomes, returns, or that participants will not lose money
+authority:
+  max_consequence_class: internal_write
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: npm test
+  last_verified:
+    date: "2026-07-27"
+    commit: 618d49e20435c03f6adde6e6401983ca94712f5a
+    tests_passed: 55
+    tests_failed: 0
+    notes: >-
+      Verified in-session — 33 admission-gate tests and 22 wallet-authentication
+      and rate-limiter tests, run with node --test on Node 22. The auth tests use
+      real secp256k1 keys and real signatures; most are attacks (replay, expiry,
+      cross-domain, address mismatch, signature grinding). Requires
+      `npm install`; no network or database is needed for the suite. The gate
+      also runs standalone via `npm run gate`.
+shutdown_behavior: >-
+  Stateless apart from an in-process challenge store. Restarting invalidates
+  every pending challenge completely and immediately, which is the first
+  containment step in docs/RECOVERY.md. Setting ALLOWED_ORIGINS empty denies all
+  cross-origin traffic without stopping the process.
+recovery: >-
+  docs/RECOVERY.md, per feature. Restart clears all challenge state; restoring
+  service requires the auth suite to pass on the exact commit being served.
+status: active
+unresolved:
+  - >-
+    No connection to the kernel event spine, evidence ledger or Consequence
+    Gate. Nothing this organ does is currently recorded as an institutional
+    event, so its actions cannot appear in the Single Bottleneck Metric.
+  - >-
+    Recovery steps 1, 3 and 5 in docs/RECOVERY.md are verified by reading code
+    rather than by an integration test. The tested:true claim rests on
+    unit-level nonce-invalidation and bypass evidence. A process-level incident
+    rehearsal is not yet built.
+  - >-
+    The eight security layers in the product doctrine (contract, treasury,
+    agent, governance, market, information, human, recovery) are architecture,
+    not implementation. Only the recovery and human layers have any code.
+  - >-
+    treasury-multisig is refused by the organ's own gate on four rules. Building
+    it requires a finite exposure ceiling, a finite blast radius, a written and
+    exercised recovery procedure, and a bounded expiring agent permission.
+  - >-
+    No legal review of token issuance, securities exposure or jurisdiction has
+    been performed. That is a founder decision no build session can supply.

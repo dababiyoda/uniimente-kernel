@@ -62,6 +62,12 @@ CANDIDATES = {
 
 REPAIR_DIR = os.path.dirname(os.path.abspath(__file__))
 
+#: The three organ manifests as of BASELINE_COMMIT — the corpus spec.py's frozen
+#: tables were measured over. Every scoring path reads from here rather than
+#: organs/, so registering a new organ cannot change a finished experiment's
+#: result. See baseline_corpus/README.md.
+BASELINE_CORPUS_DIR = os.path.join(REPAIR_DIR, "baseline_corpus")
+
 
 def continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
     """One hash over the twelve artifacts that define identity and authority."""
@@ -146,10 +152,16 @@ class ReplacementExperiment:
         wrong thing. Loading once up front also means the disable removes only
         the resolver, keeping the experiment's variable single. This is a real
         scoping decision and it is recorded in the evidence as one.
+
+        The corpus is the frozen Package 3 baseline snapshot, not the live
+        organs/ directory. spec.REQUIRED_EDGE_TRIPLES and REQUIRED_REFUSALS are
+        a measurement of those three manifests; scoring against a corpus that
+        has since grown an organ would compare candidates to a target function
+        that no longer describes their input. See baseline_corpus/README.md.
         """
         from linker.manifest import load_all
 
-        return load_all(os.path.join(self.root, "organs"))
+        return load_all(BASELINE_CORPUS_DIR)
 
     def _record(self, event: dict) -> dict:
         self.events.append(event)

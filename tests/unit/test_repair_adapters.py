@@ -36,8 +36,16 @@ REPAIR_DIR = os.path.join(ROOT, "evolution", "repair")
 
 
 def _live_inputs():
+    """The frozen Package 3 baseline corpus, not organs/.
+
+    expectations.live_contract() is built from spec.MEASUREMENT_CORPUS, which
+    measured those three manifests. Feeding the detector a corpus that has since
+    grown an organ makes it report a refusal-count mismatch and fire on a
+    perfectly healthy component. See evolution/repair/baseline_corpus/README.md.
+    """
+    from evolution.repair.harness import BASELINE_CORPUS_DIR
     from linker.manifest import load_all
-    return load_all(), os.path.join(ROOT, "contracts")
+    return load_all(BASELINE_CORPUS_DIR), os.path.join(ROOT, "contracts")
 
 
 def _registry_with_original():

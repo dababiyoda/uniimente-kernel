@@ -24,6 +24,30 @@
     "verification_timestamp_utc": "2026-07-26T22:22:00.392776Z",
     "verified_release_head": "526e320475d7b1175c546d48147f9f49f53831e1"
   },
+  "archive_proof": {
+    "fail_closed_condition": "peeled commit SHA must equal 3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "fail_closed_result": "PASS",
+    "peeled_commit_sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "remote_verified": true,
+    "tag": "main-pre-canonical-v1-2026-07-19",
+    "tag_object_sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "tag_object_sha_note": "The requested field assumed an ANNOTATED tag with a distinct tag-object SHA. The tag is LIGHTWEIGHT, so no separate tag object exists: the ref points straight at the commit and rev-parse of the tag and of tag^{} return the same value. This field therefore equals peeled_commit_sha by necessity, not by coincidence, and no tag-object SHA was invented.",
+    "verification_command": "git ls-remote --tags origin \"refs/tags/main-pre-canonical-v1-2026-07-19*\"",
+    "verification_commands_all": [
+      "git fetch origin --tags",
+      "git ls-remote --tags origin \"refs/tags/main-pre-canonical-v1-2026-07-19*\"",
+      "git rev-parse \"main-pre-canonical-v1-2026-07-19^{}\"",
+      "git rev-parse \"main-pre-canonical-v1-2026-07-19\"",
+      "git cat-file -t main-pre-canonical-v1-2026-07-19"
+    ],
+    "verification_output": {
+      "cat_file_type": "commit",
+      "ls_remote": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393\trefs/tags/main-pre-canonical-v1-2026-07-19",
+      "rev_parse_direct": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+      "rev_parse_peeled": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393"
+    },
+    "verified_at": "2026-07-27T10:30:13Z"
+  },
   "archive_tag_requirement": {
     "must_peel_to": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
     "required": true,
@@ -113,8 +137,21 @@
     "Zero Clean Verified Outcomes. The single recorded external consequence (PR #26 audit) is a Verified Mediated External Effect, not a CVO."
   ],
   "legal_principal_registry_sha256": "bdbe881c32353ec3546c459f7250f2bc34b40b014e7fe661f36281c7b9af5061",
+  "manifest_self_hash_method": "sha256(json.dumps(manifest, indent=2, sort_keys=True).encode()) \u2014 note NO trailing newline, while the .json file on disk ends with one. RELEASE_MANIFEST.sha256 is written in sha256sum's two-field layout but is NOT verifiable with `sha256sum -c`, because that would digest the file bytes including the trailing newline. Stated explicitly so a future auditor does not read the mismatch as tampering.",
   "manifest_version": "1.0",
-  "merge_into_main": "NOT AUTHORIZED",
+  "merge_into_main": {
+    "authorized_by": "founder final canonical-v1 release gate instruction; ratification recorded verbatim in PR #47 as an operator-recorded founder instruction, not a cryptographic signature",
+    "expected_head_precondition": "No available tool exposes a server-side expected-head-SHA merge precondition. Enforced instead by re-reading the remote head immediately before the merge and verifying the merge commit's second parent immediately after. Both matched 526e320. This is a weaker guarantee than an atomic precondition and is recorded as such.",
+    "merge_commit": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+    "merge_method": "normal merge commit (not squash, not rebase)",
+    "parents": {
+      "base_frozen_main": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+      "certified_release_head": "526e320475d7b1175c546d48147f9f49f53831e1"
+    },
+    "pull_request": 47,
+    "status": "MERGED",
+    "supersedes_prior_value": "NOT AUTHORIZED"
+  },
   "package_lineage": [
     {
       "disposition": "canonical core release candidate; evidence preserved; PR remains the release surface",
@@ -137,6 +174,44 @@
       "pr": 50
     }
   ],
+  "post_merge_certification": {
+    "archive_tag_still_resolves": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
+    "branches_deleted": [],
+    "branches_preserved": [
+      "release/canonical-v1",
+      "release/canonical-v1-manifest",
+      "archive/main-2026-07-19",
+      "main"
+    ],
+    "canonical_ci_conclusion": "success",
+    "canonical_ci_event": "push",
+    "canonical_ci_head_sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+    "canonical_ci_note": "Ran exactly once against the new main commit, fired by the merge push. No second run was dispatched, because 'once' was already satisfied.",
+    "canonical_ci_run_id": 30223271691,
+    "canonicality_audit": "PASS (12/12), re-computed at 8cb3074",
+    "canonicality_audit_claim7_strengthened": "Claim 7 was re-run over EVERY top-level non-venture package (22 packages, 110 python files) rather than a hand-maintained list of 17. 0 offenders. The curated list was the weaker check and is superseded; 4 of its 17 names were not top-level packages at all.",
+    "clean_verified_outcomes": 0,
+    "contains_certified_release_head": true,
+    "full_suite": "493 passed, 2 skipped in 7.00s",
+    "job_conclusions": {
+      "1 Kernel and organ tests": "success",
+      "2 Contract schema references resolve": "success",
+      "3 One source of authority": "success",
+      "4 Developmental work stays sealed": "success"
+    },
+    "main_commit": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+    "main_tree": "39afd41453b59fa713aa55847bed075f86d19aae",
+    "shutdown": "AffectController.shutdown() == 'shutdown_complete' from a degraded state",
+    "unauthorized_external_effects": 0,
+    "venture_cells_activated": 0,
+    "verifier": {
+      "V1": "PASS - all v1 canonical artifacts present (45/45)",
+      "V2": "PASS - pytest tests/unit: 472 passed, 2 skipped in 5.52s",
+      "V3": "PASS - all 20 modules closed",
+      "V4": "PASS - false closure -> FALSELY_CLOSED; gate loops -> CLOSED",
+      "V5": "PASS - 18 module READMEs declare the buildability standard"
+    }
+  },
   "release": "canonical-v1",
   "release_commit": "526e320475d7b1175c546d48147f9f49f53831e1",
   "release_commit_parents": [
@@ -151,7 +226,7 @@
     "linker/manifest.py": "b7b14a9177717ae0cdd8a5c702a1efc202b522f2e488a7666042d7e9aab8e33f"
   },
   "shutdown_policy_sha256": "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54",
-  "supersedes_manifest_sha256": "6aef5a03065cd78282cd009ad98d93f264e9ed82dac8c43579a5e1a3ac8555e2",
+  "supersedes_manifest_sha256": "bb816027e9585d59f22e26598c3dc4f431ec29c3f640052c55d9bcbeaf3372ce",
   "venture_cells": {
     "ivio_nemt": {
       "ACTIVE": false,

@@ -1,3 +1,27 @@
+> # SUPERSEDED — PRESERVED AS INSTITUTIONAL EVIDENCE
+>
+> **Status of IVIO-NEMT: `PRESERVED_HISTORICAL / INACTIVE / NOT_SELECTED`.**
+>
+> By founder direction (2026-07-27), IVIO is no longer the preferred venture, CVO
+> proving ground, commercial wedge, or next operating direction. It may not be
+> activated, prioritized, developed, contacted, sold, deployed, or recommended
+> unless the founder explicitly revives it.
+>
+> This packet is **retained unmodified below** rather than deleted, per the
+> preservation doctrine. Its analytical content — particularly the finding that
+> every IVIO commercial fact in the repository is fixture data, and the
+> VMEE-versus-CVO discipline in kill condition K5 — carried directly into the
+> replacement document and remains valid.
+>
+> **Superseded by:** `docs/strategy/CVO_001_VENTURE_SELECTION.md` on branch
+> `strategy/cvo-001-venture-selection`.
+>
+> Nothing in this document should be read as a live recommendation. Its §7
+> recommendation ("do not commit IVIO before the zero-PHI question resolves") has
+> been overtaken by a stronger founder decision: IVIO is not a candidate at all.
+
+---
+
 # CVO-001 Readiness Packet
 
 **Status: PLAN ONLY.** No activation, no contact, no data, no spending, no

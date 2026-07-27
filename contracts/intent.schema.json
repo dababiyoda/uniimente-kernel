@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/intent.schema.json",
+  "title": "IntentRecord",
+  "description": "A founder intention normalized into a typed institutional object. docs/FOUNDER_INTENT_LEDGER.md specifies this record in prose; this contract is its machine-readable form. An Intent Record is the FIRST link of the Single Bottleneck Metric chain (intent -> decision -> action -> evidence -> outcome). Recording an intent grants no authority: state is a lifecycle classification, never a permission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "intent_id",
+    "statement",
+    "source_refs",
+    "owner",
+    "state",
+    "binding_scope",
+    "constitutional_constraints",
+    "success_evidence",
+    "failure_evidence",
+    "dependencies",
+    "conflicts",
+    "next_review_trigger",
+    "supersedes",
+    "superseded_by",
+    "implementation_refs"
+  ],
+  "properties": {
+    "intent_id": {
+      "type": "string",
+      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Stable identifier, e.g. intent:bounded-treasury-exposure"
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The intention in the founder's own terms. Preserved verbatim where possible; the Upward Interpretation Rule may strengthen the form but never invent scope."
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"},
+      "description": "Where this intention was found: chat, document, issue, PR, commit, repository path. At least one; an intent with no source is not an intent."
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The human legal principal accountable for this intention. Never an organ, agent or model."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "implemented",
+        "deferred",
+        "superseded",
+        "prohibited",
+        "exploratory"
+      ],
+      "description": "Lifecycle classification per docs/FOUNDER_INTENT_LEDGER.md. Only 'implemented' asserts enforcement by code, contract, test, workflow or policy, and only against implementation_refs."
+    },
+    "binding_scope": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Organs, capabilities or domains this intention binds. Empty means it binds nothing yet — it does not mean it binds everything."
+    },
+    "constitutional_constraints": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Constitutional articles or policy clauses that limit how this intention may be pursued."
+    },
+    "success_evidence": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What observable evidence would show this intention satisfied. Declared BEFORE the work, so success cannot be redefined afterwards."
+    },
+    "failure_evidence": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What observable evidence would show this intention failed or was wrong. Preserved; negative results are never deleted."
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/intent_id"},
+      "description": "Other intents this one requires."
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/intent_id"},
+      "description": "Other intents this one contradicts. Conflict is recorded, not silently resolved."
+    },
+    "next_review_trigger": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The condition, dependency or date that forces re-examination. 'never' is not permitted."
+    },
+    "supersedes": {
+      "type": ["array", "null"],
+      "items": {"$ref": "#/$defs/intent_id"},
+      "description": "Prior intents this replaces. The prior records are retained, never deleted."
+    },
+    "superseded_by": {
+      "type": ["string", "null"],
+      "$comment": "Null while this intent stands. Set to the successor intent_id when replaced.",
+      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "implementation_refs": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Paths, tests or contracts that enforce this intention. An intent in state 'implemented' with no implementation_refs is a false claim and is rejected by the verifier."
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp of normalization into the ledger."
+    }
+  },
+  "$defs": {
+    "intent_id": {
+      "type": "string",
+      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

@@ -31,7 +31,7 @@ def _ledger():
     return EvidenceLedger(GENESIS)
 
 
-def _intent(ledger, intent_id="intent:bounded-treasury", state="implemented",
+def _intent(ledger, intent_id="INTENT-9001", state="implemented",
             implementation_refs=("policy/consequence_gate.py",)):
     payload = {
         "intent_id": intent_id,
@@ -60,7 +60,7 @@ def _evidence(ledger, n=1):
     return rec.hash
 
 
-def _decision(ledger, decision_id="dec-1", intent_ref="intent:bounded-treasury",
+def _decision(ledger, decision_id="dec-1", intent_ref="INTENT-9001",
               evidence_refs=None):
     payload = {
         "decision_id": decision_id,
@@ -91,7 +91,7 @@ def _outcome(ledger, action_ref="act-1"):
                               "recorded_at": "2026-07-27T00:00:00Z"})
 
 
-def _complete_chain(ledger, intent_id="intent:bounded-treasury"):
+def _complete_chain(ledger, intent_id="INTENT-9001"):
     """One goal with all five links intact and an authorized effect."""
     _intent(ledger, intent_id)
     ref = _evidence(ledger)
@@ -115,7 +115,7 @@ class TestCompleteChain:
     def test_trace_resolves_every_link(self):
         ledger = _ledger()
         _complete_chain(ledger)
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert trace.traceable
         assert trace.broken_links == []
         assert len(trace.decisions) == 1
@@ -134,22 +134,22 @@ class TestRefusals:
 
     def test_goals_that_do_not_claim_completion_are_not_counted(self):
         ledger = _ledger()
-        _intent(ledger, "intent:someday", state="exploratory")
+        _intent(ledger, "INTENT-9003", state="exploratory")
         report = single_bottleneck_metric(ledger)
         assert report.completed_goals == 0
         assert report.rate is None
 
     def test_implemented_with_no_implementation_refs_is_a_false_completion(self):
         ledger = _ledger()
-        _intent(ledger, "intent:hollow", state="implemented", implementation_refs=())
+        _intent(ledger, "INTENT-9002", state="implemented", implementation_refs=())
         ref = _evidence(ledger)
-        _decision(ledger, "dec-1", "intent:hollow", [ref])
+        _decision(ledger, "dec-1", "INTENT-9002", [ref])
         _witness(ledger)
         _receipt(ledger, "act-1", "dec-1")
         _outcome(ledger)
         report = single_bottleneck_metric(ledger)
         assert report.rate == 0.0
-        assert report.false_completions == ["intent:hollow"]
+        assert report.false_completions == ["INTENT-9002"]
         assert report.broken_link_counts.get("intent") == 1
 
 
@@ -168,7 +168,7 @@ class TestBrokenLinks:
         _intent(ledger)
         ref = _evidence(ledger)
         _decision(ledger, "dec-1", evidence_refs=[ref])
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert "action" in trace.broken_links
         assert any("produced no recorded external action" in u.reason
                    for u in trace.unresolved)
@@ -180,7 +180,7 @@ class TestBrokenLinks:
         _witness(ledger)
         _receipt(ledger)
         _outcome(ledger)
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert "evidence" in trace.broken_links
 
     def test_evidence_ref_that_resolves_to_nothing_is_not_evidence(self):
@@ -190,7 +190,7 @@ class TestBrokenLinks:
         _witness(ledger)
         _receipt(ledger)
         _outcome(ledger)
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert "evidence" in trace.broken_links
         assert trace.evidence == []
         assert any("does not resolve" in u.reason for u in trace.unresolved)
@@ -202,12 +202,12 @@ class TestBrokenLinks:
         _decision(ledger, "dec-1", evidence_refs=[ref])
         _witness(ledger)
         _receipt(ledger)          # no outcome appended
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert "outcome" in trace.broken_links
         assert any("never reconciled" in u.reason for u in trace.unresolved)
 
     def test_missing_intent_record_reports_and_stops(self):
-        trace = TraceabilityWalker(_ledger()).trace("intent:ghost")
+        trace = TraceabilityWalker(_ledger()).trace("INTENT-9004")
         assert trace.broken_links == ["intent"]
         assert trace.intent is None
 
@@ -223,7 +223,7 @@ class TestNoInference:
         ledger.append("decision", {"decision_id": "dec-1", "intent_ref": None,
                                    "objective": "bound the treasury",
                                    "evidence_refs": [ref]})
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert trace.decisions == []
         assert "decision" in trace.broken_links
 
@@ -236,7 +236,7 @@ class TestNoInference:
         # The only receipt in the ledger, but it names no decision.
         ledger.append("receipt", {"action_id": "act-1", "decision_ref": None,
                                   "grant_id": "g", "witness_id": "wit-1"})
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert trace.actions == []
         assert "action" in trace.broken_links
 
@@ -272,7 +272,7 @@ class TestTraceLinkRecords:
     def test_without_the_link_record_the_action_stays_unresolved(self):
         ledger = _ledger()
         self._linked_chain(ledger)          # no trace_link appended
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert "action" in trace.broken_links
 
     def test_link_to_a_nonexistent_action_is_reported_not_counted(self):
@@ -298,7 +298,7 @@ class TestTraceLinkRecords:
         ledger.append("trace_link", {"decision_ref": "dec-1", "action_ref": "act-1",
                                      "asserted_by": "alfonso_lopez"})
         _outcome(ledger, "act-1")
-        trace = TraceabilityWalker(ledger).trace("intent:bounded-treasury")
+        trace = TraceabilityWalker(ledger).trace("INTENT-9001")
         assert len(trace.actions) == 1
 
     def test_link_record_cannot_launder_an_unauthorized_effect(self):
@@ -389,18 +389,18 @@ class TestUnauthorizedEffects:
 class TestAggregation:
     def test_rate_is_the_share_of_traceable_completed_goals(self):
         ledger = _ledger()
-        _complete_chain(ledger, "intent:good")
-        _intent(ledger, "intent:bad", state="implemented")   # nothing downstream
+        _complete_chain(ledger, "INTENT-9005")
+        _intent(ledger, "INTENT-9006", state="implemented")   # nothing downstream
         report = single_bottleneck_metric(ledger)
         assert report.completed_goals == 2
         assert report.traceable_goals == 1
         assert report.rate == 50.0
-        assert report.false_completions == ["intent:bad"]
+        assert report.false_completions == ["INTENT-9006"]
 
     def test_broken_link_counts_name_the_bottleneck(self):
         ledger = _ledger()
         for n in (1, 2, 3):
-            gid = f"intent:g{n}"
+            gid = f"INTENT-90{n:02d}"
             _intent(ledger, gid)
             ref = _evidence(ledger, n)
             _decision(ledger, f"dec-{n}", gid, [ref])

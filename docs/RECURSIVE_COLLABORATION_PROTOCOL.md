@@ -87,3 +87,25 @@ No document, model output, majority vote, reputation score, or reviewer enthusia
 ## 6. Recursive application
 
 This protocol applies to itself. At each major release, audit whether it improves decision quality, contributor comprehension, cycle time, defect escape rate, duplicated work, and founder-intent fidelity. Retain, revise, or regress it based on measured outcomes.
+
+## 7. Machine-readable records
+
+Sections 1-5 define the process. The record of a decision that has followed it lives in `docs/deliberations/D-NNN-*.json`, and the founder intentions it serves live in `docs/intent/ledger.json`. Both are checked by `tests/unit/test_governance_records.py` in the ordinary suite, so an omitted role, a silently dropped Pass-1 downside, erased dissent, or a decision that contradicts its own second pass fails the build rather than passing review.
+
+The five roles in section 1 are canonical and unchanged. Records use those names.
+
+### 7.1 One addition: `NEEDS_FOUNDER_DECISION`
+
+Section 4 lists five decisions: `retain`, `regress`, `kill`, `defer`, `experiment`. A sixth is added:
+
+- `NEEDS_FOUNDER_DECISION` - the deliberation is complete and its recommendation is clear, but the change is constitutional or authority-changing and no authorized human has approved it.
+
+Section 4 already says that no document, model output, majority vote, reputation score, or reviewer enthusiasm authorizes production effects. That principle previously had no way to be recorded as an outcome, so a constitutional proposal with unanimous support had to be written down as `retain` and wait. Now it is recorded as what it is.
+
+A constitutional or authority-changing record may not resolve to anything else until a named human has actually approved it. Writing `approved` without an approval is fabricated authorization. `tests/unit/test_governance_records.py::TestConstitutionalDecisionsCannotSelfApprove` enforces this, and the first record it stopped was the one installing this section.
+
+### 7.2 Relationship to the external protocol skill
+
+The machine-readable format was adapted from an external founder-intent collaboration protocol. Its record structure and the `NEEDS_FOUNDER_DECISION` state were adopted. Its role vocabulary was **not**: this repository already had five roles, `.github/pull_request_template.md` already uses them, and replacing a working vocabulary to match an imported template would destroy institutional memory for no control advantage.
+
+The external validators therefore do not run clean against these records, by design. They expect their own role names. The authoritative checks are in `tests/`, take no dependency on any file outside this repository, and are the ones that gate the build.

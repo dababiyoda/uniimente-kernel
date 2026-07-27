@@ -25,8 +25,8 @@
   "properties": {
     "intent_id": {
       "type": "string",
-      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "Stable identifier, e.g. intent:bounded-treasury-exposure"
+      "pattern": "^INTENT-[0-9]{4}$",
+      "description": "Stable identifier, e.g. INTENT-0001. This is the convention already used by docs/intent/INTENT-0001-uniimente-as-legal-principal.md, which predates this contract; the contract follows the repository rather than the other way round."
     },
     "statement": {
       "type": "string",
@@ -99,7 +99,7 @@
     "superseded_by": {
       "type": ["string", "null"],
       "$comment": "Null while this intent stands. Set to the successor intent_id when replaced.",
-      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$"
+      "pattern": "^INTENT-[0-9]{4}$"
     },
     "implementation_refs": {
       "type": "array",
@@ -115,7 +115,7 @@
   "$defs": {
     "intent_id": {
       "type": "string",
-      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$"
+      "pattern": "^INTENT-[0-9]{4}$"
     }
   }
 }

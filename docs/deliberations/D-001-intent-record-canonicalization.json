@@ -1,0 +1,443 @@
+{
+  "decision_id": "D-001",
+  "title": "One canonical Intent Record, strengthened with authority level and consequence class",
+  "problem": "Installing the recursive founder-intent collaboration protocol introduces a second Founder Intent schema alongside contracts/intent.schema.json, which was added earlier the same day and is already consumed by traceability/ and the Single Bottleneck Metric. Two active schemas for one institutional object is the multiple-active-authorities failure the Final Build Order forbids. The surface question is which schema wins. The controlling question is different: the kernel contract has no field that distinguishes a founder's aspiration from a binding requirement, so nothing structural stops a brainstorm from becoming an executable requirement by being written down and later marked implemented.",
+  "founder_intent_refs": [
+    "INTENT-0004",
+    "INTENT-0003",
+    "INTENT-0005",
+    "INTENT-0021"
+  ],
+  "baseline": "contracts/intent.schema.json as committed in 28057e6: 15 required fields and 6 lifecycle states, typed directly from docs/FOUNDER_INTENT_LEDGER.md, consumed by traceability/chain.py as link 1 of the Single Bottleneck Metric.",
+  "alternatives": [
+    {
+      "name": "Adopt the skill schema wholesale as canonical",
+      "description": "Replace contracts/intent.schema.json with the skill's founder-intent-schema.json: 19 required fields, 8 lifecycle states, authority_level and consequence_class.",
+      "advantages": [
+        "Richer governance vocabulary immediately",
+        "The skill's validator runs against it unmodified",
+        "Adds conflicted and needs_evidence states, which the ledger genuinely needed"
+      ],
+      "disadvantages": [
+        "Breaks traceability/ and the Single Bottleneck Metric on the day it was built",
+        "Discards field names already documented in docs/FOUNDER_INTENT_LEDGER.md, which the founder wrote",
+        "Imports a schema whose $id is example.invalid, so it was never intended as a canonical institutional contract"
+      ],
+      "revival_evidence": "If the kernel contract proves unable to express a governance distinction the skill schema handles cleanly, and the migration cost of traceability/ is measured as lower than the workaround cost."
+    },
+    {
+      "name": "Keep the kernel schema, ignore the skill schema",
+      "description": "Treat the skill's schema as a reference artifact only and change nothing in contracts/.",
+      "advantages": [
+        "Zero churn",
+        "traceability/ keeps working untouched",
+        "No new required fields to fill in"
+      ],
+      "disadvantages": [
+        "Loses authority_level and consequence_class, the two fields that prevent aspiration becoming authority",
+        "Leaves the ledger unable to state that a household-egregore record is a brainstorm rather than a requirement",
+        "The founder's own rule, that no aspiration becomes executable merely because it appears in prose, stays unenforceable"
+      ],
+      "revival_evidence": "If authority_level proves to be noise that nobody sets accurately, and misclassification causes more harm than the field prevents."
+    },
+    {
+      "name": "Extend the kernel schema with the two decisive fields",
+      "description": "Add authority_level and consequence_class to contracts/intent.schema.json, add conflicted and needs_evidence states, and implement the status/authority coupling rule as an executable check inside the kernel. One schema, strengthened by the skill's best idea.",
+      "advantages": [
+        "One canonical mechanism, as the Final Build Order requires",
+        "traceability/ keeps working; the added fields are additive to its walk",
+        "The coupling rule becomes executable rather than a documented intention",
+        "The rule is corroborated by an independent implementation, though the vocabularies differ"
+      ],
+      "disadvantages": [
+        "New required fields mean every existing intent record must be classified",
+        "Two validators over one file can drift apart"
+      ],
+      "revival_evidence": "Chosen. Revisited if the two validators disagree on a record that is genuinely valid."
+    },
+    {
+      "name": "Maintain both schemas behind an adapter",
+      "description": "Keep contracts/intent.schema.json canonical and add adapters/founder_intent_protocol.py translating to and from the skill's shape.",
+      "advantages": [
+        "No field changes anywhere",
+        "Follows the established adapter pattern in adapters/",
+        "Both toolchains keep working"
+      ],
+      "disadvantages": [
+        "An adapter cannot invent authority_level, so the translation would either fabricate the field or drop the rule that depends on it",
+        "Adds a permanent moving part to gain nothing the extension does not give directly",
+        "Two shapes for one object is precisely the condition the decision exists to end"
+      ],
+      "revival_evidence": "If an external consumer requires the skill's exact shape and cannot be changed."
+    },
+    {
+      "name": "Reversible experiment: add the fields as optional first",
+      "description": "Add authority_level and consequence_class as optional properties, observe whether they are set accurately over several packages, then make them required.",
+      "advantages": [
+        "No forced reclassification",
+        "Cheap to reverse",
+        "Produces evidence about whether the fields are used honestly"
+      ],
+      "disadvantages": [
+        "An optional authority_level is exactly as strong as no authority_level: an intent can omit it and dodge the coupling rule entirely",
+        "The failure it prevents is silent, so the observation window would produce no signal",
+        "Twenty-one records exist today and classifying them costs one pass"
+      ],
+      "revival_evidence": "If required classification is found to block contribution in practice."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Two Founder Intent schemas coexist. Contributors pick whichever their tooling reaches first, and the two populations diverge silently until someone tries to compute the Single Bottleneck Metric across both.",
+    "advantages": [
+      "No work",
+      "No risk of a migration error",
+      "Both toolchains keep working today"
+    ],
+    "disadvantages": [
+      "Directly violates the one-canonical-authority rule in the Final Build Order section 3",
+      "Divergence is silent and gets more expensive with every record written",
+      "The Single Bottleneck Metric would eventually read from a schema that does not describe half the ledger"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Constitutional Reviewer",
+      "position": "Extend rather than replace. docs/FOUNDER_INTENT_LEDGER.md is the founder's own writing and its 15 field names are his vocabulary; discarding them for a schema whose $id is example.invalid would substitute a template's language for the founder's. But the ledger cannot currently say that the household-egregore record is a brainstorm, and it must be able to.",
+      "material_concerns": [
+        "Founder vocabulary must survive the merge",
+        "Aspiration must be distinguishable from requirement in the record itself, not only in a reader's judgement",
+        "The superseded no-live-players record must stay visible rather than be deleted"
+      ],
+      "evidence_refs": [
+        "docs/FOUNDER_INTENT_LEDGER.md",
+        "docs/intent/ledger.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Builder",
+      "position": "One schema in contracts/, consumed by traceability/ and validated by two independent implementations. The adapter option is worse than either extreme here: an adapter that cannot populate authority_level would have to fabricate it, and fabricated fields are prohibited.",
+      "material_concerns": [
+        "Two schemas for one object breaks the single-authority rule",
+        "contracts/ is the canonical home; governance tooling consumes it and does not fork it",
+        "Adding fields must not break the Single Bottleneck Metric walk"
+      ],
+      "evidence_refs": [
+        "docs/UNIIMENTE_FINAL_BUILD_ORDER.md section 3",
+        "traceability/chain.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversary",
+      "position": "The coupling rule is worth having, but do not oversell it. authority_level is self-assigned, so the rule stops an accident and does not stop an author who wants to authorize their own work. It raises the cost of self-authorization from zero to one visible edit in a reviewable diff. That is a real gain and it is not integrity.",
+      "material_concerns": [
+        "Self-assigned authority is gameable by anyone willing to edit two fields",
+        "A required field that people fill in carelessly is worse than no field, because it looks like a control",
+        "The kernel must not depend at runtime on a validator living outside the repository"
+      ],
+      "evidence_refs": [
+        "scripts/validate_intent_ledger.py status/authority coupling rule"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator",
+      "position": "Nineteen required fields per intent is real friction. Accept it only because the ledger is small, written rarely, and every field earns its place. Reject any further field additions without the same test.",
+      "material_concerns": [
+        "Contribution friction may cause contributors to stop recording intents rather than record them badly",
+        "Twenty existing records must all be reclassified in this change, not later",
+        "CI must fail closed, or the ledger drifts out of validity unnoticed"
+      ],
+      "evidence_refs": [
+        "docs/intent/ledger.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Beneficiary Representative",
+      "position": "The status/authority coupling is the executable form of the founder's rule that no aspiration becomes executable merely because it appears in prose. Without it the ledger is a document. With it, marking a brainstorm implemented is an error rather than an edit. Note that the coupling rule and the implemented-requires-implementation_refs rule were arrived at independently in the kernel and in the skill, which is weak corroboration that both are load-bearing.",
+      "material_concerns": [
+        "A ledger that cannot refuse a false completion claim provides no protection",
+        "Records must preserve counterevidence and superseded framings rather than resolve them",
+        "Evidence tiers must not be flattened: a README claim is not a passing test"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_traceability.py::test_implemented_with_no_implementation_refs_is_a_false_completion"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The kernel contract is already consumed by the Single Bottleneck Metric, so replacing it has a measurable cost.",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_traceability.py::TestIntentContract (4 cases)",
+      "finding": "The contract's 15 required fields and 6 states are asserted against docs/FOUNDER_INTENT_LEDGER.md. Replacing the schema fails these tests."
+    },
+    {
+      "claim": "The skill's status/authority coupling rule has no equivalent in the kernel.",
+      "tier": "primary_source",
+      "reference": "scripts/validate_intent_ledger.py lines 212-219",
+      "finding": "status in {active, implemented} with authority_level in {aspiration, exploratory, advisory, unknown} is an error. contracts/intent.schema.json has no authority_level field, so it cannot express the rule at all."
+    },
+    {
+      "claim": "Both schemas independently require implementation_refs for an implemented intent.",
+      "tier": "primary_source",
+      "reference": "scripts/validate_intent_ledger.py line 202; traceability/chain.py trace() intent link",
+      "finding": "Two implementations written without knowledge of each other converged on the same false-completion check."
+    },
+    {
+      "claim": "The extension does not break the metric.",
+      "tier": "unit_test",
+      "reference": "python -m pytest, full kernel suite after the change",
+      "finding": "Recorded in the verification section of the pull request."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "authority_level is a meaningful control.",
+      "tier": "model_output",
+      "reference": "Adversarial Reviewer position in this record",
+      "finding": "It is self-assigned. It raises the cost of self-authorization from zero to one visible edit; it does not prevent it. No external attestation binds an author's chosen authority level to any real grant."
+    },
+    {
+      "claim": "Requiring 19 fields improves intent quality.",
+      "tier": "other",
+      "reference": "no evidence available",
+      "finding": "Unmeasured. The opposite is plausible: heavier records may be written less often or filled in mechanically. There is no data either way, and this decision does not claim any."
+    },
+    {
+      "claim": "The skill's schema is a canonical institutional artifact.",
+      "tier": "primary_source",
+      "reference": "references/founder-intent-schema.json $id field",
+      "finding": "Its $id is https://example.invalid/schemas/founder-intent-record.schema.json. It is a template, which is an argument against adopting it wholesale and no argument at all against borrowing its best rule."
+    },
+    {
+      "claim": "Two independent validators agree on these governance records.",
+      "tier": "sandbox_execution",
+      "reference": "the external protocol skill's validate_deliberation.py run against this record",
+      "finding": "False as stated, and corrected here. The external validator rejects BOTH artifacts: the deliberation on role names, and the ledger on field names. Both divergences are deliberate — this repository kept the five roles from docs/RECURSIVE_COLLABORATION_PROTOCOL.md section 1 and the 15 field names from docs/FOUNDER_INTENT_LEDGER.md, rather than adopt an imported template's vocabulary. What genuinely corroborates is the rules, not the tooling. Any claim of external validator agreement should be read as narrowly as this."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "One canonical Intent Record contract in contracts/, carrying the founder's field vocabulary plus the two fields that make the aspiration-versus-authority distinction executable, with the coupling rule enforced by a test inside the kernel.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One canonical mechanism for one institutional object.",
+        "amplified_value": "Every future governance tool, adapter and organ reads one shape. The cost of adding the fifth organ does not include reconciling two intent formats."
+      },
+      {
+        "id": "A2",
+        "statement": "Aspiration cannot silently become authority.",
+        "amplified_value": "The founder's most-repeated concern becomes a failing test rather than a documented intention. Marking the household-egregore brainstorm implemented now requires also raising its authority level, in a diff a reviewer sees."
+      },
+      {
+        "id": "A3",
+        "statement": "The coupling rule is corroborated by an implementation written in ignorance of this one.",
+        "amplified_value": "The external protocol and this kernel arrived independently at the same two refusals: implemented-requires-implementation_refs, and non-binding-authority-cannot-claim-a-binding-state. Two designs converging on the same refusal is weak but real evidence that both are load-bearing rather than decorative. The corroboration is in the RULES; the field and role vocabularies deliberately differ, so neither external validator runs clean against these records."
+      },
+      {
+        "id": "A4",
+        "statement": "The conflicted and needs_evidence states let the ledger hold an unresolved question honestly.",
+        "amplified_value": "The Golden Kernel import record can say needs_evidence with the exact missing archive named, instead of being forced into active and looking like work in progress."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "X1",
+        "statement": "New required fields force reclassification of every existing intent record and churn an open pull request.",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "Twenty-one records exist and all are classified in this same change, so no record is ever valid-but-unclassified. The pull request is a draft and has not been reviewed."
+      },
+      {
+        "id": "X2",
+        "statement": "Two validators over one file can drift apart, and the repository does not control one of them.",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "The kernel's own test is authoritative and runs in CI. The skill validator is an optional external conformance check, documented as such. The repository takes no runtime dependency on a file outside itself."
+      },
+      {
+        "id": "X3",
+        "statement": "authority_level and consequence_class are judgement calls, and the schema cannot detect a misclassification.",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Not solvable by schema. Bounded instead: the coupling rule catches the specific misclassification that matters, which is a low-authority intent claiming a high-authority status. Everything else is left to review, and this record says so rather than implying the field is self-policing."
+      },
+      {
+        "id": "X4",
+        "statement": "The ledger becomes a second place where implementation is claimed, competing with the Single Bottleneck Metric's own implementation_refs check.",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "They are the same check applied to the same field, deliberately. The ledger is the source and the metric is the auditor; both refuse an implemented record with empty implementation_refs, so the two cannot disagree."
+      }
+    ],
+    "comparisons": {
+      "baseline": "The baseline contract cannot express authority level at all, so the founder's aspiration-versus-authority rule is unenforceable under it. Everything else about the baseline is retained.",
+      "do_nothing": "Two schemas diverge silently and the metric eventually reads from a schema describing half the ledger. Rejected on the single-authority rule.",
+      "simplest_viable_alternative": "Keeping the kernel schema unchanged is simpler and loses the only mechanism that stops a brainstorm becoming a requirement. The extension costs two fields and one test.",
+      "strongest_competing_architecture": "Adopting the skill schema wholesale is the strongest competitor: it is more complete and its validator is already written. It loses because it breaks the Single Bottleneck Metric on the day it shipped, and because it substitutes a template's vocabulary for the founder's own.",
+      "reversible_experiment": "Adding the fields as optional first was considered and rejected on its merits: an optional authority_level is exactly as strong as none, because any record can omit it and escape the coupling rule."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Adopt the skill schema wholesale as canonical",
+        "rejection_reason": "Breaks traceability/ and replaces founder vocabulary with a template whose $id is example.invalid.",
+        "revival_evidence": "A governance distinction the extended kernel contract cannot express, plus a measured migration cost lower than the workaround."
+      },
+      {
+        "name": "Keep the kernel schema and ignore the skill schema",
+        "rejection_reason": "Leaves the founder's aspiration-versus-authority rule unenforceable.",
+        "revival_evidence": "Evidence that authority_level is set carelessly often enough that it misleads more than it protects."
+      },
+      {
+        "name": "Maintain both schemas behind an adapter",
+        "rejection_reason": "The adapter would have to fabricate authority_level or drop the rule depending on it. Fabricated fields are prohibited.",
+        "revival_evidence": "An external consumer that requires the skill's exact shape and cannot be changed."
+      },
+      {
+        "name": "Add the fields as optional first",
+        "rejection_reason": "An optional authority_level provides no protection, and the failure it guards against is silent, so the observation window would yield no signal.",
+        "revival_evidence": "Required classification measurably blocking contribution."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The strengthened design was attacked on three fronts. First, does it centralize governance into contracts/ to the point where an organ cannot express an intent the kernel did not anticipate? Second, is the coupling rule security theatre, given that authority_level is self-assigned? Third, does the repository now depend on a validator that lives in a skill directory outside version control, which would make CI unreproducible and quietly reintroduce the external-dependency failure the whole architecture exists to avoid?",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "bureaucracy",
+        "statement": "Nineteen required fields per intent may cause contributors to stop recording intents, or to fill fields mechanically, which is worse than a shorter honest record.",
+        "strengthening_response": "The ledger is deliberately small and written rarely, not per commit. No further field may be added to this contract without a deliberation showing which failure it prevents. Recorded here as the standing bar."
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "authority_level is self-assigned, so an author who wants to authorize their own aspiration can raise the field and satisfy the coupling rule.",
+        "strengthening_response": "Bounded, not eliminated, and stated plainly rather than papered over. The rule converts silent self-authorization into a visible two-field edit in a reviewable diff. Real integrity would require binding authority_level to an external grant, which does not exist yet and is recorded as a residual risk rather than claimed."
+      },
+      {
+        "id": "W3",
+        "category": "dependency",
+        "statement": "Validating the ledger with a script under ~/.claude/skills would make CI depend on a file outside the repository, unreproducible on a fresh clone and invisible to review.",
+        "strengthening_response": "Refused. The kernel's authoritative check is a test inside tests/, over the kernel's own contract, running in the existing suite. The skill validator is documented as an optional external conformance tool. This directly serves the Golden Kernel clean-reproducibility condition: a fresh clone must validate without hidden workspace state."
+      },
+      {
+        "id": "W4",
+        "category": "centralization",
+        "statement": "Placing the only Intent Record contract in the kernel means an organ cannot record an intent shape the kernel did not anticipate.",
+        "strengthening_response": "Correct and intended. Intent is constitutional, and the Final Build Order centralizes constitutional law and shared contracts while decentralizing specialist behaviour. An organ needing a different intent shape is evidence of a constitutional gap and should raise one, not fork the schema."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "X1",
+        "outcome": "resolved",
+        "rationale": "All twenty-one records are classified in the same change, so no window exists in which a record is valid but unclassified. The pull request is a draft and unreviewed, so the churn costs nobody a re-read.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "next intent record added"
+      },
+      {
+        "disadvantage_id": "X2",
+        "outcome": "resolved",
+        "rationale": "Resolved by W3's response: the kernel's in-repo test is authoritative and the external validator is advisory. Drift in the external tool cannot break the build or change what the institution considers valid.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "any change to the skill's validator that the kernel test does not also enforce"
+      },
+      {
+        "disadvantage_id": "X3",
+        "outcome": "accepted",
+        "rationale": "Misclassification is not detectable by schema and this record does not pretend otherwise. Accepted with the coupling rule catching the one case that matters and human review carrying the rest.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first observed misclassification in review"
+      },
+      {
+        "disadvantage_id": "X4",
+        "outcome": "resolved",
+        "rationale": "The two checks are the same rule over the same field, applied at source and at audit. They cannot disagree, and duplication of a refusal is the intended redundancy.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "any divergence between the ledger check and the metric's intent-link check"
+      }
+    ],
+    "final_design": "PROPOSED, NOT APPLIED. contracts/intent.schema.json remains the single canonical Intent Record and is left unmodified pending founder approval. The proposal is: add authority_level (8 values) and consequence_class (4 values) as required fields, add conflicted and needs_evidence as lifecycle states, and enforce the status/authority coupling rule plus the conflicted/needs_evidence obligations by tests inside the kernel suite, over the kernel's own contract, with no runtime dependency on any file outside the repository. The exact change is written out in docs/adr/ADR-001-intent-record-canonicalization.md so it can be approved in one step. docs/intent/ledger.json already holds the twenty classified records, which validate today against the external protocol schema and would validate against the extended kernel contract unchanged. docs/FOUNDER_INTENT_LEDGER.md is retained and updated to point at the executable contract rather than restate it.",
+    "residual_risks": [
+      {
+        "risk": "authority_level is self-assigned and binds to no external grant, so it deters accidental self-authorization but not deliberate self-authorization.",
+        "mitigation": "Visible in every diff; reviewable. Binding authority_level to an issued capability grant is the real fix and is not attempted here.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "when capability grants can reference an intent_id"
+      },
+      {
+        "risk": "Nineteen required fields may suppress intent recording rather than improve it. No data exists either way.",
+        "mitigation": "No further fields without a deliberation. Revisit if records stop being written.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "a build package that records no new intents"
+      },
+      {
+        "risk": "The ledger currently covers one session's founder material plus two build-order doctrines. Intentions in DALEOBANKS and WealthMachineIntelligence history are not yet extracted, so absence from the ledger does not mean absence of intent.",
+        "mitigation": "Stated in docs/intent/README.md so the ledger is not mistaken for complete.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "before any claim that founder intent is fully captured"
+      },
+      {
+        "risk": "Twenty-one records were classified by the author of this change, not by the founder. The authority levels are proposals until ratified.",
+        "mitigation": "Recorded here and in the ledger README. Constitutional-class records in particular need founder confirmation.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder review of the ledger"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded and proceeding. The dissent does not block, because it argues the change is oversold rather than wrong, and the response is to state the limitation in the artifact rather than to weaken the change.",
+    "entries": [
+      {
+        "role": "Adversary",
+        "position": "The coupling rule should not be described as preventing aspiration from becoming authority. It prevents an accident, not an actor.",
+        "rationale": "authority_level is chosen by whoever writes the record. Any author who wants status implemented can set authority_level to active_requirement in the same edit. Calling this a control invites the institution to trust it more than it has earned, which is the failure mode of building apparatus where proof belongs.",
+        "evidence_threshold": "A record reaching main with an authority level raised solely to satisfy the coupling rule.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first review of an intent whose authority level changed in the same commit as its status"
+      },
+      {
+        "role": "Operator",
+        "position": "Nineteen required fields is past the point where a contributor writes a record willingly.",
+        "rationale": "Governance that is expensive to comply with produces either non-compliance or mechanical compliance, and mechanical compliance is more dangerous because it looks like the real thing.",
+        "evidence_threshold": "A build package that adds implementation but records no intent, or intent records whose fields are visibly filled in to pass validation.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "end of the next build package"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "alfonso_lopez"
+  },
+  "migration_plan": "One step, no staging required. Add authority_level and consequence_class as required properties and the two new lifecycle states to contracts/intent.schema.json. Classify all twenty-one records in docs/intent/ledger.json in the same commit, so no window exists in which a record is valid but unclassified. Add kernel tests for the coupling rule and the conflicted/needs_evidence obligations. Update docs/FOUNDER_INTENT_LEDGER.md to point at the contract. No production system consumes intent records yet, so there is no data to migrate and no consumer to coordinate with.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Nothing to roll back until the founder approves: contracts/intent.schema.json is unmodified by this record.",
+      "If approved and later reverted, revert the single commit that adds authority_level and consequence_class; the contract returns to its 15-field form.",
+      "Remove the two fields from the twenty-one records in docs/intent/ledger.json, which the reverted schema would otherwise reject under additionalProperties false.",
+      "No consumer changes are needed: traceability/ never reads authority_level, and no production system emits intent records yet."
+    ],
+    "reason_impossible": ""
+  },
+  "kill_criteria": [
+    "An intent record reaches main whose authority_level was raised in the same commit as its status, purely to satisfy the coupling rule, and review did not catch it.",
+    "A build package completes with implementation but records no intent, indicating the field burden has suppressed recording.",
+    "The kernel test and the external validator disagree on a record that is genuinely valid, showing the two implementations have diverged in substance rather than in strictness.",
+    "An organ demonstrates a legitimate intent shape the canonical contract cannot express, and the constitutional gap cannot be closed by amending it."
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "founder approval or rejection of ADR-001. On approval the decision becomes RETAIN and the contract change is applied in one commit; the kill criteria then govern."
+}

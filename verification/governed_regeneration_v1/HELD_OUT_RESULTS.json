@@ -1,0 +1,103 @@
+{
+  "held_out": [
+    {
+      "episode": 7,
+      "held_out": true,
+      "damage_class": "authority_invalidation",
+      "unavailable": [
+        "decide.score",
+        "ingest.stream"
+      ],
+      "organ_a": "organ:function:evidence-routing:b372662aaf71",
+      "organ_b": "organ:function:evidence-routing:39ff01d4e947",
+      "candidates_formed": 6,
+      "candidates_rejected": 1,
+      "topology_signature_a": "sha256:1b99b160cbf77234a015ea0b5085cf4781163c41b54afb233fa1fcfaab3360a6",
+      "topology_signature_b": "sha256:6f51092b4081d79182ad816b822c3f5da50f785e756a7ad97fc214b57b472eae",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour"
+      ],
+      "organ_a_worked": true,
+      "old_certificate_refused": true,
+      "old_certificate_refusal_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_refusal_reason": "actor_mismatch",
+      "new_authority_record": "auth-000002",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "obligations_still_owed": 1,
+      "obligation_now_owed_by_b": true,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 8,
+      "held_out": true,
+      "damage_class": "topology_disruption",
+      "unavailable": [
+        "decide.rules",
+        "emit.queue"
+      ],
+      "organ_a": "organ:function:evidence-routing:626efb24e646",
+      "organ_b": "organ:function:evidence-routing:ab6c897d5840",
+      "candidates_formed": 6,
+      "candidates_rejected": 0,
+      "topology_signature_a": "sha256:1b99b160cbf77234a015ea0b5085cf4781163c41b54afb233fa1fcfaab3360a6",
+      "topology_signature_b": "sha256:35f802a6cd4c1a434b5112ca68ae039a2abdfb00c055014f1e1953c97e1a1453",
+      "material_differences": [
+        "capabilities",
+        "verification"
+      ],
+      "organ_a_worked": true,
+      "old_certificate_refused": true,
+      "old_certificate_refusal_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_refusal_reason": "actor_mismatch",
+      "new_authority_record": "auth-000002",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "obligations_still_owed": 1,
+      "obligation_now_owed_by_b": true,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 9,
+      "held_out": true,
+      "damage_class": "capability_loss",
+      "unavailable": [
+        "decide.rules",
+        "emit.direct",
+        "ingest.poll"
+      ],
+      "organ_a": "organ:function:evidence-routing:7f9629653dd7",
+      "organ_b": "organ:function:evidence-routing:f106dcefb377",
+      "candidates_formed": 6,
+      "candidates_rejected": 1,
+      "topology_signature_a": "sha256:1b99b160cbf77234a015ea0b5085cf4781163c41b54afb233fa1fcfaab3360a6",
+      "topology_signature_b": "sha256:f344c7bad462d7c4dda5d5dfc6beb824d0f29d02f6eeb241a1ad687b6cd4ea92",
+      "material_differences": [
+        "capabilities",
+        "verification"
+      ],
+      "organ_a_worked": true,
+      "old_certificate_refused": true,
+      "old_certificate_refusal_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_refusal_reason": "actor_mismatch",
+      "new_authority_record": "auth-000002",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "obligations_still_owed": 1,
+      "obligation_now_owed_by_b": true,
+      "function_restored": true,
+      "recovered": true
+    }
+  ],
+  "recovered": 3,
+  "of": 3
+}

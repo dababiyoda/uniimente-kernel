@@ -20,9 +20,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from aperture import (Aperture, ApprovalRecord, AuthorityIssuer, BudgetOffice,
-                      CertificateError, Ed25519SigningProvider, LocalVeto,
-                      Presenter, Principal, Proposal, VerificationRegistry)
+from aperture import (Aperture, CertificateError, LocalVeto, Presenter, VerificationRegistry)
+from aperture_issuer import (ApprovalRecord, AuthorityIssuer, BudgetOffice, Ed25519SigningProvider, Principal, Proposal)
 
 OUT = pathlib.Path(__file__).resolve().parent
 POLICY, CONSTITUTION = "policy-1.0", "const-1.0"

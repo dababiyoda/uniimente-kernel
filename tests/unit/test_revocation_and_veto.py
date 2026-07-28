@@ -17,10 +17,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from aperture import (Aperture, AuthorityIssuer, BudgetOffice,
-                      Ed25519SigningProvider, LocalVeto, Presenter, Principal,
-                      Proposal, VerificationRegistry, manifest)
-from aperture.revocation import (RevocationAuthority, RevocationEscalation,
+from aperture import (Aperture, LocalVeto, Presenter, VerificationRegistry, manifest)
+from aperture_issuer import (AuthorityIssuer, BudgetOffice, Ed25519SigningProvider, Principal, Proposal)
+from aperture_issuer import RevocationAuthority
+from aperture.revocation import (RevocationEscalation,
                                  RevocationRefusal, RevocationState,
                                  StaleRevocationState, max_ttl_for)
 

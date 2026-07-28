@@ -11,12 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-from aperture import (Aperture, AuthorityIssuer, AuthorizationCertificate,
-                      BudgetOffice, CertificateError, Ed25519SigningProvider,
-                      Presenter, Principal, Proposal, UnknownKey,
-                      VerificationRegistry, build_certificate, manifest)
-from aperture.keys import (DEVELOPMENT, EnvironmentRefusal, PRODUCTION, SHADOW,
-                           TEST)
+from aperture import (Aperture, AuthorizationCertificate, CertificateError, Presenter, UnknownKey, VerificationRegistry, build_certificate, manifest)
+from aperture_issuer import (AuthorityIssuer, BudgetOffice, Ed25519SigningProvider, Principal, Proposal)
+from aperture.verification import (DEVELOPMENT, EnvironmentRefusal, PRODUCTION, SHADOW, TEST)
 
 POLICY, CONSTITUTION = "policy-1.0", "const-1.0"
 ORG = "spiffe://uniimente.internal/organ/daleobanks"

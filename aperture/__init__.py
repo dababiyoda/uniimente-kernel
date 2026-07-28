@@ -4,7 +4,8 @@ Authority is a portable, signed, independently verifiable artifact rather than
 ambient state inside one engine's process. One issuer signs. Everyone verifies.
 Every organ may refuse.
 
-    from aperture import AuthorityIssuer, Aperture, LocalVeto
+    from aperture import Aperture, LocalVeto          # client
+    from aperture_issuer import AuthorityIssuer     # issuer only
 
 See docs/authority/CANONICAL_AUTHORITY_ARCHITECTURE.md.
 """
@@ -12,13 +13,10 @@ from . import manifest  # noqa: F401
 from .certificate import (AuthorizationCertificate, CertificateError,
                           BINDING_FIELDS, build_certificate, hash_payload,
                           hash_evidence_set)
-from .keys import (SigningProvider, Ed25519SigningProvider,
-                   VerificationRegistry, SigningUnavailable, KeyRevoked,
-                   UnknownKey, AlgorithmRefused)
-from .issuer import (AuthorityIssuer, Principal, Proposal, ApprovalRecord,
-                     BudgetOffice, PolicyRefusal, ApprovalRequired,
-                     ScopeRefusal, UnknownEntity, BudgetRefusal,
-                     CONSEQUENCE_ORDER)
+from .verification import (VerificationRegistry, KeyRevoked, UnknownKey,
+                           AlgorithmRefused, EnvironmentRefusal,
+                           current_environment, TEST, DEVELOPMENT, SHADOW,
+                           PRODUCTION)
 from .effector import (Aperture, Presenter, LocalVeto, ExecutionReceipt,
                        VerificationRefusal, IdentityMismatch, VersionDrift,
                        Expired, Replay, VetoRefusal, ReadbackMismatch)
@@ -31,11 +29,9 @@ __all__ = [
     "manifest",
     "AuthorizationCertificate", "CertificateError", "BINDING_FIELDS",
     "build_certificate", "hash_payload", "hash_evidence_set",
-    "SigningProvider", "Ed25519SigningProvider", "VerificationRegistry",
-    "SigningUnavailable", "KeyRevoked", "UnknownKey", "AlgorithmRefused",
-    "AuthorityIssuer", "Principal", "Proposal", "ApprovalRecord",
-    "BudgetOffice", "PolicyRefusal", "ApprovalRequired", "ScopeRefusal",
-    "UnknownEntity", "BudgetRefusal", "CONSEQUENCE_ORDER",
+    "VerificationRegistry", "KeyRevoked", "UnknownKey", "AlgorithmRefused",
+    "EnvironmentRefusal", "current_environment",
+    "TEST", "DEVELOPMENT", "SHADOW", "PRODUCTION",
     "Aperture", "Presenter", "LocalVeto", "ExecutionReceipt",
     "VerificationRefusal", "IdentityMismatch", "VersionDrift", "Expired",
     "Replay", "VetoRefusal", "ReadbackMismatch",

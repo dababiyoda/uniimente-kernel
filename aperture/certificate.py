@@ -164,6 +164,28 @@ class AuthorizationCertificate:
 
     @classmethod
     def from_dict(cls, d: dict) -> "AuthorizationCertificate":
+        """Parse a certificate, failing closed on anything not understood.
+
+        An UNKNOWN FIELD IS A REFUSAL, not something to ignore. A newer issuer
+        that adds a security-critical constraint must not have that constraint
+        silently dropped by an older verifier - that is how a downgrade attack
+        becomes a permit. Refusing costs an upgrade; ignoring costs the
+        invariant.
+        """
+        known = set(BINDING_FIELDS) | {"algorithm", "key_id", "signature"}
+        unknown = sorted(set(d) - known)
+        if unknown:
+            raise CertificateError(
+                f"certificate carries fields this verifier does not understand: "
+                f"{unknown}. Refusing rather than ignoring them - an unknown "
+                "security-critical field must never be silently dropped.",
+                code="unknown_certificate_field")
+        got = d.get("schema_version")
+        if got != SCHEMA_VERSION:
+            raise CertificateError(
+                f"certificate schema {got!r} is not {SCHEMA_VERSION!r}; this "
+                "verifier refuses rather than guessing at compatibility",
+                code="certificate_schema_mismatch")
         return cls(**d)
 
 

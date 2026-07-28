@@ -18,8 +18,9 @@ canonical_authority:
   architecture: proof_carrying_authorization
   protocol_name: reality_aperture
   canonical_package: aperture
+  issuer_package: aperture_issuer
   certificate_type: aperture.certificate.AuthorizationCertificate
-  issuer: aperture.issuer.AuthorityIssuer
+  issuer: aperture_issuer.issuer.AuthorityIssuer
   verifier: aperture.effector.Aperture
   signing_algorithm: Ed25519
   active_issuers_allowed: 1
@@ -29,16 +30,16 @@ canonical_authority:
 # The one module permitted to mint authority. Anything else that produces a
 # signature over a certificate is a second government.
 issuance:
-  module: aperture.issuer
+  module: aperture_issuer.issuer
   symbol: AuthorityIssuer
   requires_signing_provider: true
-  signing_provider_interface: aperture.keys.SigningProvider
+  signing_provider_interface: aperture_issuer.signing.SigningProvider
 
 # Verification is distributed everywhere. It must never imply signing.
 verification:
   module: aperture.effector
   symbol: Aperture
-  registry: aperture.keys.VerificationRegistry
+  registry: aperture.verification.VerificationRegistry
   registry_may_sign: false
 
 # Modules that must never appear on the canonical authority path.
@@ -50,7 +51,7 @@ forbidden_on_canonical_path:
 # Every authority-capable implementation in the tree, with exactly one role.
 # `may_issue_authority: true` is permitted for exactly one entry.
 implementations:
-  - module: aperture.issuer
+  - module: aperture_issuer.issuer
     classification: CANONICAL_ACTIVE
     may_issue_authority: true
 

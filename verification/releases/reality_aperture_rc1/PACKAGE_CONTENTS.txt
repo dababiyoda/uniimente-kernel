@@ -1,0 +1,23 @@
+=== client (uniimente_aperture_client-0.1.0-py3-none-any.whl) sha256=7e82a271beb8cb9c1c01a8e3877fc60dad86ab7f878a31f35e97706b665ca663
+  aperture/__init__.py
+  aperture/canonical-authority.yaml
+  aperture/certificate.py
+  aperture/dispositions.py
+  aperture/effector.py
+  aperture/legacy.py
+  aperture/manifest.py
+  aperture/revocation.py
+  aperture/verification.py
+  uniimente_aperture_client-0.1.0.dist-info/METADATA
+  uniimente_aperture_client-0.1.0.dist-info/RECORD
+  uniimente_aperture_client-0.1.0.dist-info/WHEEL
+  uniimente_aperture_client-0.1.0.dist-info/top_level.txt
+=== issuer (uniimente_aperture_issuer-0.1.0-py3-none-any.whl) sha256=28b3eff846fd6d1cffac667f7f6430328d949e6f22c38b0b3917d305cfdc69af
+  aperture_issuer/__init__.py
+  aperture_issuer/issuer.py
+  aperture_issuer/revocation_authority.py
+  aperture_issuer/signing.py
+  uniimente_aperture_issuer-0.1.0.dist-info/METADATA
+  uniimente_aperture_issuer-0.1.0.dist-info/RECORD
+  uniimente_aperture_issuer-0.1.0.dist-info/WHEEL
+  uniimente_aperture_issuer-0.1.0.dist-info/top_level.txt

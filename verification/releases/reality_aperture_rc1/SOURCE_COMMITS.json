@@ -1,0 +1,8 @@
+{
+  "kernel_commit": "44e2d94324774d3519026c37475dd79582c5c818",
+  "kernel_branch": "agent/canonical-authority-rc1",
+  "kernel_dirty": true,
+  "daleobanks_commit": "3a782c30b2da32b06634b15d7add66a6ca86120b",
+  "daleobanks_branch": "claude/uniimente-system-design-hczheq",
+  "daleobanks_dirty": true
+}

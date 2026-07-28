@@ -13,15 +13,8 @@ from __future__ import annotations
 import pytest
 from datetime import datetime, timedelta, timezone
 
-from aperture import (Aperture, ApprovalRecord, ApprovalRequired,
-                      AuthorityIssuer, BudgetOffice, CertificateError,
-                      Ed25519SigningProvider, KeyRevoked, LocalVeto,
-                      Presenter, Principal, Proposal, ScopeRefusal,
-                      SigningUnavailable, UnknownEntity, VerificationRegistry,
-                      classify_legacy_record, refuse_as_authority,
-                      attest_migration, LegacyAuthorityRefused,
-                      LEGACY_INTEGRITY_CHECKED, LEGACY_UNVERIFIABLE,
-                      MIGRATION_ATTESTED, BINDING_FIELDS)
+from aperture import (Aperture, BINDING_FIELDS, CertificateError, KeyRevoked, LEGACY_INTEGRITY_CHECKED, LEGACY_UNVERIFIABLE, LegacyAuthorityRefused, LocalVeto, MIGRATION_ATTESTED, Presenter, VerificationRegistry, attest_migration, classify_legacy_record, refuse_as_authority)
+from aperture_issuer import (ApprovalRecord, ApprovalRequired, AuthorityIssuer, BudgetOffice, Ed25519SigningProvider, Principal, Proposal, ScopeRefusal, SigningUnavailable, UnknownEntity)
 
 POLICY = "policy-1.0"
 CONSTITUTION = "const-1.0"
@@ -191,7 +184,7 @@ def test_defect_2d_human_refusal_is_honoured(world):
     no = ApprovalRecord(approval_id="ap-no", request_id="req-1",
                         approver_id="alfonso_lopez", granted=False,
                         issued_at="2026-07-27T00:00:00Z")
-    from aperture import PolicyRefusal
+    from aperture_issuer import PolicyRefusal
     with pytest.raises(PolicyRefusal) as e:
         world["issuer"].issue(
             actor_id=ACTOR, proposal=proposal(consequence_class="irreversible"),

@@ -22,7 +22,15 @@ import yaml
 from .certificate import CertificateError
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-MANIFEST_PATH = REPO_ROOT / "authority" / "canonical-authority.yaml"
+
+# The manifest travels WITH the installed client. A verifier running far from
+# this repository must still be able to say which protocol it speaks, so the
+# package-local copy is authoritative when present and the repo copy is used
+# during development. Checking package-local FIRST means an installed artifact
+# never silently reads a different repository's manifest off the path.
+_PACKAGE_LOCAL = pathlib.Path(__file__).resolve().parent / "canonical-authority.yaml"
+_REPO_LOCAL = REPO_ROOT / "authority" / "canonical-authority.yaml"
+MANIFEST_PATH = _PACKAGE_LOCAL if _PACKAGE_LOCAL.exists() else _REPO_LOCAL
 
 
 class ManifestError(CertificateError):

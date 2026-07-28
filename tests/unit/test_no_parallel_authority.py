@@ -29,7 +29,7 @@ def test_exactly_one_implementation_may_issue_authority():
 
 def test_exactly_one_canonical_active_classification():
     assert len(D.canonical_active()) == 1
-    assert D.canonical_active()[0].module == "aperture.issuer"
+    assert D.canonical_active()[0].module == "aperture_issuer.issuer"
 
 
 def test_every_implementation_has_an_explicit_disposition():

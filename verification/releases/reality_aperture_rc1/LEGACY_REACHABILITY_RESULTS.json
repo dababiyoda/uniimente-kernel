@@ -1,0 +1,7 @@
+{
+  "LEGACY_GATE_CAN_BE_USED_AS_REGRESSION_ORACLE": true,
+  "LEGACY_GATE_CAN_BE_IMPORTED_BY_CANONICAL_RUNTIME": false,
+  "LEGACY_GATE_CAN_CREATE_NEW_AUTHORITY": false,
+  "LEGACY_GATE_INCLUDED_IN_DEPLOYABLE_APERTURE_ARTIFACT": false,
+  "evidence": "wheel inspection + client-only venv probe from a neutral directory"
+}

@@ -1,0 +1,26 @@
+{
+  "gate": "Gate D - reproducible cross-repository release",
+  "metric": "REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES",
+  "baseline": 0,
+  "status": "OPEN",
+  "result": 0,
+  "target": 1,
+  "conditions": {
+    "aperture_is_packaged": true,
+    "package_contents_inspected": true,
+    "issuer_unavailable_to_daleobanks": true,
+    "legacy_engine_absent_from_deployable_artifacts": true,
+    "stale_singleton_check_replaced": true,
+    "kernel_ci_green": true,
+    "daleobanks_ci_exists_and_is_green": false,
+    "exact_versions_and_commits_pinned": true,
+    "cross_version_refusal_works": true,
+    "revocation_works_across_the_package_boundary": true,
+    "shadow_proof_runs_using_the_installed_artifact": true,
+    "release_capsule_is_reproducible": false,
+    "real_external_effects_zero": true
+  },
+  "smallest_blocker": "DALEOBANKS CI has never executed. The workflow .github/workflows/aperture-shadow.yml is written and pushed but no check run exists yet, so 'DALEOBANKS CI is green' cannot be asserted. Until a run completes, cross-repository reproducibility is demonstrated only on this machine.",
+  "second_blocker": "The capsule was produced from a working tree in this session, not regenerated from a fresh clone at the pinned commits. Reproducibility is claimed for the BUILD (wheel hashes recorded) and not yet for the CAPSULE.",
+  "evidence_tier": "executed_in_session"
+}

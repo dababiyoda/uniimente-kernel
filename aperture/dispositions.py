@@ -51,7 +51,7 @@ class Disposition:
 DISPOSITIONS: tuple[Disposition, ...] = (
     Disposition(
         implementation="Reality Aperture (proof-carrying authorization)",
-        module="aperture.issuer",
+        module="aperture_issuer.issuer",
         classification=CANONICAL_ACTIVE,
         may_issue_authority=True,
         rationale=(

@@ -64,8 +64,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: No second Constitution, Gate, identity or authority registry
-        run: python scripts/ci/check_authority_singleton.py
+      # The filename-counting singleton check was retired by founder
+      # Decision A and lives at scripts/ci/historical/ as provenance. It is
+      # deliberately NOT run: two machine checks must not express contradictory
+      # definitions of canonical authority.
       # Added by RC1. The check above counts FILENAMES; this one checks the
       # actual institutional invariant (one issuer, one protocol, zero organ
       # -local issuers, zero active legacy authorizers) and reads the canonical

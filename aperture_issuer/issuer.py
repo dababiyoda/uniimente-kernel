@@ -1,4 +1,9 @@
-"""The single canonical authority issuer.
+"""The single canonical authority issuer. ISSUER DISTRIBUTION ONLY.
+
+    This module is absent from `uniimente-aperture-client`. DALEOBANKS cannot
+    import it because it is not installed, which is a stronger guarantee than
+    any runtime refusal.
+
 
 One object in the whole institution may turn a proposal into a signed
 Authorization Certificate. Everything else proposes, verifies, refuses, or
@@ -24,9 +29,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
-from .certificate import (AuthorizationCertificate, CertificateError,
+from aperture.certificate import (AuthorizationCertificate, CertificateError,
                           build_certificate, hash_evidence_set, hash_payload)
-from .keys import SigningProvider
+from .signing import SigningProvider
 
 # Ordered weakest to strongest. A certificate may never carry a consequence
 # class above the ceiling its principal is entitled to.

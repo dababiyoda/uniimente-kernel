@@ -28,7 +28,7 @@ from typing import Any, Callable, Optional
 
 from .certificate import (AuthorizationCertificate, CertificateError,
                           hash_payload, rfc3339)
-from .keys import VerificationRegistry
+from .verification import VerificationRegistry
 
 
 class VerificationRefusal(CertificateError):

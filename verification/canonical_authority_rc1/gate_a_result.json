@@ -1,0 +1,60 @@
+{
+  "gate": "Gate A - one canonical authority protocol",
+  "metric": "ACTIVE_CANONICAL_AUTHORITY_PROTOCOLS",
+  "value": 1,
+  "status": "CLOSED",
+  "canonical": "aperture.issuer",
+  "enforced_by": "tests/unit/test_no_parallel_authority.py (9 tests, machine-enforced)",
+  "conditions": {
+    "one_canonical_trust_domain": true,
+    "one_canonical_issuance_mechanism": true,
+    "one_canonical_commit_time_validation": true,
+    "organs_can_veto_but_not_grant": true,
+    "sdk_cannot_independently_authorize": true,
+    "legacy_hmac_cannot_authorize_new_effects": true,
+    "all_alternatives_have_explicit_dispositions": true,
+    "hostile_conformance_passes": true,
+    "clean_environment_testing_passes": true,
+    "no_critical_adversarial_attack_unresolved": false
+  },
+  "dispositions": [
+    {
+      "module": "aperture.issuer",
+      "classification": "CANONICAL_ACTIVE",
+      "may_issue_authority": true
+    },
+    {
+      "module": "aperture.effector",
+      "classification": "VERIFICATION_HELPER",
+      "may_issue_authority": false
+    },
+    {
+      "module": "policy.consequence_gate",
+      "classification": "SUPERSEDED",
+      "may_issue_authority": false
+    },
+    {
+      "module": "uniimente_kernel.gate",
+      "classification": "SUPERSEDED",
+      "may_issue_authority": false
+    },
+    {
+      "module": "kernel.gate.pipeline",
+      "classification": "CONFORMANCE_FIXTURE",
+      "may_issue_authority": false
+    },
+    {
+      "module": "provenance.commit_witness",
+      "classification": "HISTORICAL",
+      "may_issue_authority": false
+    }
+  ],
+  "test_evidence": {
+    "aperture_and_parallel_authority": "60 passed in 0.17s",
+    "full_suite": "555 passed in 7.43s"
+  },
+  "residual": [
+    "main's superseded engine remains importable in-process; it is retained deliberately as a regression oracle. Static detection forbids canonical code importing it, but a determined caller inside this repo could still instantiate it. Process-level isolation is not implemented.",
+    "No organ repository has been migrated onto the aperture yet. DALEOBANKS, WMI and PumpStation are unchanged."
+  ]
+}

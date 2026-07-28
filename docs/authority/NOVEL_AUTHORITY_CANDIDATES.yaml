@@ -1,0 +1,346 @@
+# NOVEL AUTHORITY ARCHITECTURE CANDIDATES
+#
+# Eleven materially distinct control geometries, generated before implementation
+# and before assuming Strategy C was correct. Scored 1-10 on the 24 supersession
+# dimensions. Scores are NOT summed blindly; fatal defects are listed separately
+# and disqualify regardless of total.
+#
+# Rejected routes are preserved with revival conditions. None is deleted.
+
+metadata:
+  date: "2026-07-27"
+  generated_before_implementation: true
+  winner: C6_proof_carrying_authorization
+  decision: "C - a new architecture superseded Strategy C"
+
+# ---------------------------------------------------------------------------
+candidates:
+
+  - name: C1_strategy_c_baseline
+    central_mechanism: PR21's 15-stage pipeline as spine, main's policy and identity, SDK grant scoping
+    what_is_genuinely_different: "nothing structural - it is a better-composed version of what exists"
+    trust_root: Ed25519 (from PR21)
+    identity_model: PassportRegistry (from main)
+    authorization_model: in-process grant object held by the engine
+    capability_model: permitted_actions list on the grant
+    commit_time_control: REAUTHORIZE stage re-reads engine state
+    local_veto: none in the kernel; DALEOBANKS keeps its own
+    offline_behavior: "the engine IS the authority; if the organ cannot reach it, nothing runs"
+    partition_behavior: FAILS - remote effectors cannot obtain or check authority
+    degraded_mode: not expressible
+    receipt_model: adapter-signed ExecutionReceipt
+    independent_verification: yes, within the process
+    reconciliation: pipeline stage
+    key_custody: in-process
+    key_rotation: not designed
+    key_revocation: not designed
+    replay_protection: durable EXECUTE_BEGIN marker
+    budget_control: BudgetLedger + main's reserve/commit/release
+    shutdown: fail-closed refusal
+    recovery: spine replay
+    migration_from_current_repositories: lowest cost - it is composition of existing code
+    compatibility_with_daleobanks: good
+    compatibility_with_wmi: good
+    compatibility_with_pumpstation: "poor - a smart contract cannot call into a Python engine"
+    compatibility_with_iot: poor
+    compatibility_with_robotics: poor
+    compatibility_with_morphogenetic_organs: "poor - authority binds to process-local state"
+    support_for_dynamic_organ_composition: weak
+    failure_geometry: single point; the engine is both decider and executor
+    attack_surfaces: one large in-process surface holding both roles
+    implementation_burden: low
+    operational_burden: low
+    founder_attention_required: low
+    reversibility: high
+    unique_capabilities_unlocked: none beyond today
+    reasons_to_reject: >-
+      It keeps the deciding and the doing in one process. That is the root of the
+      partition hazard, the remote-effector limitation and the availability
+      objection that survived the last adversarial pass. Every other weakness is
+      downstream of that one choice.
+    scores: {prevention: 8, attribution: 7, scope: 7, separation: 6, commit_revalidation: 8,
+             local_veto: 3, independent_receipt: 6, reconciliation: 7, compartmentalization: 4,
+             availability: 3, partition_safety: 2, key_lifecycle: 2, migration_safety: 9,
+             comprehensibility: 7, testability: 8, reversibility: 8, maintainability: 6,
+             many_organs: 4, iot_effectors: 2, morphogenesis: 3, vendor_independence: 7,
+             memory_preservation: 7, founder_attention: 7, economics: 7}
+    fatal_defects: []
+    revival_conditions: "if asymmetric verification proves impossible at every effector"
+
+  - name: C2_canonical_central_authority_service
+    central_mechanism: one authoritative execution service; organs call it over RPC
+    what_is_genuinely_different: authority becomes a network service rather than a library
+    trust_root: service TLS identity + signing key
+    authorization_model: request/response; the service decides and executes
+    partition_behavior: "FATAL - an unreachable service means either total stall or a bypass"
+    local_veto: possible but the service still executes
+    compatibility_with_iot: poor - every effector needs live connectivity
+    implementation_burden: high - a service to run, secure, scale and monitor
+    operational_burden: high
+    reasons_to_reject: >-
+      Concentrates both authority and availability in one process. It converts a
+      correctness property into an uptime problem, and an authority system that
+      is down is an authority system that will be routed around.
+    scores: {prevention: 8, attribution: 8, scope: 7, separation: 7, commit_revalidation: 8,
+             local_veto: 5, independent_receipt: 6, reconciliation: 7, compartmentalization: 6,
+             availability: 2, partition_safety: 1, key_lifecycle: 6, migration_safety: 5,
+             comprehensibility: 7, testability: 6, reversibility: 5, maintainability: 5,
+             many_organs: 7, iot_effectors: 3, morphogenesis: 5, vendor_independence: 6,
+             memory_preservation: 6, founder_attention: 4, economics: 4}
+    fatal_defects:
+      - "availability becomes a constitutional dependency: founder or service downtime stalls the institution"
+    revival_conditions: "if all effectors turn out to be permanently online first-party services"
+
+  - name: C3_federated_authority_protocol
+    central_mechanism: signed grants, locally bounded effectors, no central execution server
+    what_is_genuinely_different: execution is fully distributed; only issuance is central
+    partition_behavior: good
+    reasons_to_reject: >-
+      Not rejected on merit - this is the correct direction, and C6 is its
+      disciplined form. On its own the term "federated" does not specify what a
+      grant IS, how it binds, or what the effector must check. C6 answers those.
+    scores: {prevention: 8, attribution: 8, scope: 8, separation: 8, commit_revalidation: 7,
+             local_veto: 8, independent_receipt: 8, reconciliation: 7, compartmentalization: 8,
+             availability: 8, partition_safety: 8, key_lifecycle: 7, migration_safety: 6,
+             comprehensibility: 6, testability: 7, reversibility: 7, maintainability: 7,
+             many_organs: 8, iot_effectors: 7, morphogenesis: 7, vendor_independence: 8,
+             memory_preservation: 7, founder_attention: 6, economics: 7}
+    fatal_defects: []
+    revival_conditions: "absorbed into C6"
+
+  - name: C4_capability_native
+    central_mechanism: unforgeable capability objects; possession is necessary
+    what_is_genuinely_different: authority is an object, not a lookup
+    reasons_to_reject: >-
+      Pure capability systems make possession sufficient. That is precisely the
+      defect that let a grant issued to actor A be redeemed by actor B. A bearer
+      token cannot express "this actor, this organ, this workload". C6 keeps the
+      object but binds identity INTO it, so possession is necessary and not
+      sufficient.
+    scores: {prevention: 6, attribution: 4, scope: 8, separation: 6, commit_revalidation: 5,
+             local_veto: 7, independent_receipt: 7, reconciliation: 5, compartmentalization: 9,
+             availability: 9, partition_safety: 9, key_lifecycle: 6, migration_safety: 6,
+             comprehensibility: 6, testability: 7, reversibility: 6, maintainability: 7,
+             many_organs: 8, iot_effectors: 8, morphogenesis: 8, vendor_independence: 8,
+             memory_preservation: 5, founder_attention: 6, economics: 7}
+    fatal_defects:
+      - "bearer semantics destroy attribution, which is the whole thesis of an Attributable Autonomy System"
+    revival_conditions: "for internal_read effects where attribution genuinely does not matter"
+
+  - name: C5_event_sourced_authority_state_machine
+    central_mechanism: authority exists only as valid transitions in an append-only log
+    what_is_genuinely_different: no authority object at all; validity is a function of log position
+    reasons_to_reject: >-
+      Excellent audit properties, fatal coupling: an effector must read the whole
+      log to know whether it may act. That is a network dependency wearing a
+      different hat, and it reintroduces C2's partition problem. C6 borrows the
+      append-only receipt discipline without making permission a log query.
+    scores: {prevention: 8, attribution: 9, scope: 6, separation: 7, commit_revalidation: 8,
+             local_veto: 6, independent_receipt: 9, reconciliation: 9, compartmentalization: 4,
+             availability: 3, partition_safety: 3, key_lifecycle: 5, migration_safety: 4,
+             comprehensibility: 5, testability: 6, reversibility: 6, maintainability: 5,
+             many_organs: 5, iot_effectors: 2, morphogenesis: 4, vendor_independence: 7,
+             memory_preservation: 10, founder_attention: 5, economics: 5}
+    fatal_defects:
+      - "an effector cannot determine permission without reading shared state"
+    revival_conditions: "as the receipt and reconciliation substrate underneath C6 - partially adopted"
+
+  - name: C6_proof_carrying_authorization
+    central_mechanism: >-
+      Intent, evidence, policy, identity and scope compile into ONE signed,
+      self-contained Authorization Certificate. The effector validates it
+      independently with a public key and refuses if anything fails.
+    what_is_genuinely_different: >-
+      Authority stops being ambient state inside an engine and becomes a portable
+      artifact. The decider and the doer are separated by a verifiable object
+      rather than a function call. Verification is distributed to every organ,
+      device and auditor; signing stays in exactly one place. This is the
+      difference between a bouncer at a door and a signed ticket - the ticket
+      works when the bouncer is unreachable, and the ticket names its holder.
+    trust_root: one Ed25519 issuing key; public keys distributed everywhere
+    identity_model: actor + organ + workload, all three inside the signature
+    policy_model: evaluated at issuance; policy_version bound into the certificate
+    authorization_model: twenty-field bound certificate, single-use, expiring
+    capability_model: capability_id checked against the principal's declared set at issuance
+    commit_time_control: >-
+      the effector re-verifies signature, expiry, use count, identity match and
+      policy/constitution version currency before executing
+    local_veto: independent AND-gate at the effector, read before execution, Kernel cannot reach it
+    offline_behavior: "verification needs only a public key and a clock"
+    partition_behavior: "SAFE - an effector that cannot verify refuses; it never fails open"
+    degraded_mode: organ may engage its veto and keep refusing indefinitely
+    receipt_model: receipt + independent readback; executor self-report is insufficient
+    independent_verification: "yes, by anyone holding the public key, forever"
+    key_custody: SigningProvider interface - HSM/KMS/test, never in the repository
+    key_rotation: registry supports supersedes chains
+    key_revocation: registry revokes; revoked keys refuse at verification
+    replay_protection: use_limit enforced at the effector
+    budget_control: reserved at issuance, released on every refusal path
+    shutdown: local veto engaged = permanent refusal, no Kernel involvement
+    recovery: certificates are self-describing; state can be rebuilt from receipts
+    migration_from_current_repositories: >-
+      moderate. The certificate is new, but PR21's fingerprint breadth, main's
+      policy and identity, and the SDK's scoping all map onto it directly.
+    compatibility_with_pumpstation: >-
+      STRONG. An Ed25519 signature is verifiable on-chain. A smart contract can
+      be the effector and check the certificate itself.
+    compatibility_with_iot: strong - a device needs a public key and a clock
+    compatibility_with_robotics: strong - same property
+    compatibility_with_morphogenetic_organs: >-
+      strong. A newly composed organ acquires a workload identity and is issued
+      certificates bounded to it. A replacement organ cannot inherit authority,
+      because workload_identity is a signed field - proven by sandbox Proof D.
+    support_for_dynamic_organ_composition: strong
+    failure_geometry: "refusals are local and independent; no single point permits"
+    attack_surfaces: the signing key; the policy evaluator; the effector's veto state
+    implementation_burden: moderate
+    operational_burden: low - no service to run
+    founder_attention_required: low - approvals only for REQUIRE_HUMAN classes
+    reversibility: high - superseded engines retained
+    unique_capabilities_unlocked:
+      - "an effector can act correctly while partitioned from the Kernel"
+      - "an external auditor can verify attribution without any UNIIMENTE access"
+      - "an on-chain contract can be a first-class effector"
+      - "a replacement organ provably cannot inherit authority"
+    reasons_to_reject: >-
+      More moving parts than C1. A certificate that is valid for 15 minutes is a
+      15-minute window in which revocation depends on the effector checking a
+      registry it may not be able to reach. Short TTLs mitigate but do not
+      eliminate this. See the surviving attacks in the decision document.
+    scores: {prevention: 9, attribution: 10, scope: 9, separation: 9, commit_revalidation: 9,
+             local_veto: 10, independent_receipt: 10, reconciliation: 8, compartmentalization: 9,
+             availability: 9, partition_safety: 9, key_lifecycle: 8, migration_safety: 7,
+             comprehensibility: 7, testability: 9, reversibility: 8, maintainability: 8,
+             many_organs: 9, iot_effectors: 9, morphogenesis: 9, vendor_independence: 9,
+             memory_preservation: 8, founder_attention: 8, economics: 8}
+    fatal_defects: []
+
+  - name: C7_threshold_authorization
+    central_mechanism: m-of-n independently held shares for high consequence classes
+    what_is_genuinely_different: no single key can authorize the most dangerous actions
+    reasons_to_reject: >-
+      Not rejected - DEFERRED. It is strictly complementary to C6: the certificate
+      does not care whether one key or three signed it. Adding it now would couple
+      an unproven ceremony to an unproven architecture. It is the obvious next
+      increment for the financial and irreversible classes, and PumpStation
+      treasury actions are its natural first use.
+    scores: {prevention: 10, attribution: 9, scope: 8, separation: 10, commit_revalidation: 8,
+             local_veto: 8, independent_receipt: 9, reconciliation: 7, compartmentalization: 9,
+             availability: 5, partition_safety: 6, key_lifecycle: 7, migration_safety: 5,
+             comprehensibility: 5, testability: 6, reversibility: 6, maintainability: 6,
+             many_organs: 7, iot_effectors: 6, morphogenesis: 6, vendor_independence: 8,
+             memory_preservation: 7, founder_attention: 3, economics: 6}
+    fatal_defects:
+      - "founder unavailability can permanently stall the institution if m cannot be reached"
+    revival_conditions: "REVIVE for consequence_class in {financial, irreversible} once C6 is proven"
+
+  - name: C8_workload_identity_hardware_rooted
+    central_mechanism: authority binds to attested workload identity and hardware-held keys
+    what_is_genuinely_different: identity is attested by hardware rather than asserted
+    reasons_to_reject: >-
+      Partially ADOPTED. workload_identity is one of C6's twenty bound fields, so
+      the architecture is ready for attestation. Full hardware rooting is deferred
+      because it requires infrastructure that does not exist yet and would make
+      local development impossible.
+    scores: {prevention: 9, attribution: 10, scope: 8, separation: 8, commit_revalidation: 8,
+             local_veto: 7, independent_receipt: 9, reconciliation: 7, compartmentalization: 9,
+             availability: 6, partition_safety: 7, key_lifecycle: 9, migration_safety: 3,
+             comprehensibility: 5, testability: 4, reversibility: 4, maintainability: 5,
+             many_organs: 7, iot_effectors: 8, morphogenesis: 6, vendor_independence: 4,
+             memory_preservation: 6, founder_attention: 5, economics: 4}
+    fatal_defects: []
+    revival_conditions: "when production infrastructure exists; the field is already bound"
+
+  - name: C9_nuclear_command_and_control_transfer
+    central_mechanism: >-
+      Borrowed from nuclear C2 and aviation: sealed authenticators, two-person
+      rule, positive control, fail-safe toward inaction, and the principle that
+      the weapon verifies the order rather than trusting the courier.
+    what_is_genuinely_different: >-
+      The discipline that the EFFECTOR validates the order independently - the
+      permissive action link - rather than trusting the chain that delivered it.
+    reasons_to_reject: >-
+      ADOPTED as the governing doctrine of C6. The Authorization Certificate is a
+      sealed authenticator; the effector's independent verification is a
+      permissive action link; the local veto is positive control; "fail toward
+      silence" is the refusal default. The two-person rule is C7, deferred.
+    scores: {prevention: 10, attribution: 9, scope: 9, separation: 9, commit_revalidation: 9,
+             local_veto: 10, independent_receipt: 9, reconciliation: 7, compartmentalization: 9,
+             availability: 7, partition_safety: 9, key_lifecycle: 7, migration_safety: 6,
+             comprehensibility: 8, testability: 8, reversibility: 7, maintainability: 8,
+             many_organs: 8, iot_effectors: 9, morphogenesis: 7, vendor_independence: 9,
+             memory_preservation: 8, founder_attention: 7, economics: 7}
+    fatal_defects: []
+    revival_conditions: "already adopted"
+
+  - name: C10_radically_simplified_conventional
+    central_mechanism: "a permissions table, a policy function, an allowlist, an audit log"
+    what_is_genuinely_different: nothing - deliberately the smallest ordinary design
+    reasons_to_reject: >-
+      Genuinely tempting, and it would satisfy several invariants. It fails on
+      attribution and on independent verification: a database row saying "allowed"
+      is not evidence anyone outside the system can check, and the whole claim of
+      an Attributable Autonomy System is that an outside party can verify what was
+      authorized and by whom. It also cannot reach an on-chain or offline effector.
+    scores: {prevention: 6, attribution: 3, scope: 6, separation: 5, commit_revalidation: 4,
+             local_veto: 5, independent_receipt: 2, reconciliation: 5, compartmentalization: 4,
+             availability: 6, partition_safety: 3, key_lifecycle: 3, migration_safety: 9,
+             comprehensibility: 10, testability: 8, reversibility: 9, maintainability: 9,
+             many_organs: 5, iot_effectors: 3, morphogenesis: 3, vendor_independence: 6,
+             memory_preservation: 4, founder_attention: 8, economics: 9}
+    fatal_defects:
+      - "no independent verification: authority cannot be checked from outside the system"
+    revival_conditions: >-
+      if the institution ever concludes that external verifiability is not
+      required, this is the correct design and everything else is over-engineering.
+
+  - name: C11_paradigm_rejection_obligation_first
+    central_mechanism: >-
+      Reject permission entirely. Model only OBLIGATIONS and CONSEQUENCES: an
+      organ may attempt anything, and the institution's power is the ability to
+      reverse, compensate and hold to account after the fact.
+    what_is_genuinely_different: >-
+      Inverts the control geometry from prior restraint to posterior accounting -
+      how tort law and settlement systems actually work, as opposed to how
+      permission systems are usually built.
+    reasons_to_reject: >-
+      Violates the hard invariant. UNAUTHORIZED_EXTERNAL_EFFECTS = 0 is not
+      compatible with an architecture whose premise is that unauthorized effects
+      happen and are cleaned up afterwards. It is genuinely the right model for
+      REVERSIBLE effects and genuinely fatal for irreversible ones, and UNIIMENTE
+      has irreversible classes.
+    scores: {prevention: 1, attribution: 8, scope: 3, separation: 4, commit_revalidation: 1,
+             local_veto: 2, independent_receipt: 7, reconciliation: 10, compartmentalization: 3,
+             availability: 10, partition_safety: 10, key_lifecycle: 4, migration_safety: 3,
+             comprehensibility: 6, testability: 4, reversibility: 2, maintainability: 6,
+             many_organs: 9, iot_effectors: 8, morphogenesis: 9, vendor_independence: 8,
+             memory_preservation: 9, founder_attention: 9, economics: 8}
+    fatal_defects:
+      - "structurally incompatible with UNAUTHORIZED_EXTERNAL_EFFECTS = 0"
+    revival_conditions: >-
+      for the internal_read and internal_write classes, where prior restraint costs
+      more than it prevents. Worth revisiting if permission overhead ever measurably
+      suppresses legitimate internal work.
+
+# ---------------------------------------------------------------------------
+non_architecture_options_considered:
+  do_nothing:
+    result: "three active engines with three verified defects remain in the tree"
+    rejected_because: "the defects are real, executed and reproducible"
+    revival_conditions: none
+  containment_only:
+    description: "leave the engines, wrap them in a refusing proxy"
+    rejected_because: "a proxy in front of three engines is a fourth engine"
+    revival_conditions: "if implementation time collapses to near zero"
+  clean_re_cut:
+    description: "delete everything, start from main"
+    rejected_because: >-
+      discards PR21's 24 earned refusals and the SDK's scoping. Also forbidden by
+      the Final Build Order's preservation rule.
+    revival_conditions: "if the preserved implementations are shown to be unsalvageable"
+  preserve_current_temporarily:
+    description: "ship nothing, keep main's engine, revisit later"
+    rejected_because: >-
+      main's engine has three verified authority defects. "Temporarily" is how a
+      known-defective authority path becomes permanent.
+    revival_conditions: "if RC1 is shown to be less safe than main under real load"

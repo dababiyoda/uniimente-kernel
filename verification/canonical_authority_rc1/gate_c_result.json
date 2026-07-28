@@ -1,0 +1,14 @@
+{
+  "gate": "Gate C - first canonical sandbox transaction",
+  "status": "CLOSED",
+  "proofs": {
+    "proof_a": true,
+    "proof_b": true,
+    "proof_c": true,
+    "proof_d": true
+  },
+  "no_production_credentials": true,
+  "no_real_external_action": true,
+  "readback_independent_of_executor": true,
+  "executor_self_report_insufficient": true
+}

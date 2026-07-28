@@ -1,0 +1,38 @@
+{
+  "proof": "A - governed publication",
+  "steps": [
+    "proposal",
+    "evidence",
+    "policy PERMIT",
+    "bounded certificate",
+    "independent verification at the aperture",
+    "local veto clear",
+    "fake platform execution",
+    "independent readback",
+    "receipt",
+    "reconciliation"
+  ],
+  "certificate": {
+    "authority_record_id": "auth-000001",
+    "effect_binding_hash": "sha256:21c414255ae823c0f836f220f1fb204c0ad34eab6212e7882820f7232f8a3a56",
+    "bound_fields": 20,
+    "key_id": "kernel-sandbox-key-1",
+    "algorithm": "ed25519",
+    "signature_prefix": "ea5b6f787c292b1b700fa02f5173ce12"
+  },
+  "receipt": {
+    "status": "committed",
+    "readback_verified": true
+  },
+  "platform_state": [
+    {
+      "id": "post-1",
+      "text": "UNIIMENTE sandbox publication. No real platform was contacted."
+    }
+  ],
+  "readback_is_independent": true,
+  "budget_state": "committed",
+  "no_production_credential": true,
+  "no_real_external_effect": true,
+  "passed": true
+}

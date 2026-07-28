@@ -1,4 +1,6 @@
 {
-  "result": "605 passed in 6.23s",
-  "clean_env": true
+  "result": "605 passed in 5.90s",
+  "expected": "605 passed",
+  "matches_reported": true,
+  "environment": "fresh clone, declared deps only, PYTHONPATH unset"
 }

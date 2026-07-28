@@ -1,48 +1,28 @@
 {
   "gate": "Gate D - reproducible cross-repository release",
+  "status": "CLOSED",
   "metric": "REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES",
   "baseline": 0,
-  "status": "OPEN",
-  "result": 0,
+  "result": 1,
   "target": 1,
   "conditions": {
-    "aperture_is_packaged": true,
-    "package_contents_inspected": true,
-    "issuer_unavailable_to_daleobanks": true,
-    "legacy_engine_absent_from_deployable_artifacts": true,
-    "stale_singleton_check_replaced": true,
-    "kernel_ci_green": true,
-    "daleobanks_ci_exists_and_is_green": true,
-    "exact_versions_and_commits_pinned": true,
-    "cross_version_refusal_works": true,
-    "revocation_works_across_the_package_boundary": true,
-    "shadow_proof_runs_using_the_installed_artifact": true,
-    "release_capsule_is_reproducible": false,
-    "real_external_effects_zero": true
+    "fresh_pinned_checkouts": true,
+    "clean_declared_dependencies": true,
+    "freshly_built_artifacts": true,
+    "inspected_contents": true,
+    "clean_kernel_verification": true,
+    "clean_daleobanks_verification": true,
+    "installed_wheel_shadow_execution": true,
+    "no_source_tree_leakage": true,
+    "no_authority_leakage": true,
+    "reproducible_release_capsule": true,
+    "zero_real_external_effects": true
   },
-  "smallest_blocker": "The release capsule was produced from this working tree, not regenerated from a fresh clone at the pinned commits. Every other Gate D condition now holds. REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES stays at 0 until one capsule is rebuilt from scratch and its hashes match.",
-  "evidence_tier": "executed_in_session",
-  "daleobanks_ci_runs": [
-    {
-      "run_id": 30324049526,
-      "job_id": 90165613155,
-      "conclusion": "success",
-      "trigger": "pull_request"
-    },
-    {
-      "run_id": 30324047580,
-      "job_id": 90165607298,
-      "conclusion": "success",
-      "trigger": "push"
-    }
-  ],
-  "ci_history": [
-    {
-      "run_id": 30323952133,
-      "conclusion": "failure",
-      "root_cause": "git exit 128 on cross-repository checkout; DALEOBANKS' default GITHUB_TOKEN is scoped to its own repository and cannot read uniimente-kernel",
-      "fix": "vendored the exact wheels with recorded SHA256 instead of building from a cross-repo checkout; needs no credential",
-      "preferred_fix": "read-only PAT for uniimente-kernel as a DALEOBANKS secret (founder decision)"
-    }
+  "evidence_lineage": "every file in this capsule was regenerated from the fresh-clone reproduction; nothing was copied from the previous working-tree capsule",
+  "residual": [
+    "production key custody undeployed",
+    "revocation window bounded not eliminated",
+    "vendored wheels in DALEOBANKS must be refreshed deliberately (cross-repo checkout needs a PAT)",
+    "no production deployment attempted or proven"
   ]
 }

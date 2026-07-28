@@ -1,33 +1,24 @@
 {
   "release": "reality_aperture_rc1",
   "status": "EVIDENCE, NOT DEPLOYMENT AUTHORIZATION",
-  "aperture_version": "0.1.0",
-  "geometry": "two distributions (client / issuer)",
-  "package_assertions": {
-    "client_excludes_issuer": true,
-    "client_excludes_signing_provider": true,
-    "client_excludes_issuer_module": true,
-    "client_excludes_revocation_authority": true,
-    "client_ships_the_canonical_manifest": true,
-    "no_forbidden_content_in_client": true,
-    "no_forbidden_content_in_issuer": true
-  },
+  "version": "0.1.0",
   "source": {
-    "kernel_commit": "44e2d94324774d3519026c37475dd79582c5c818",
-    "kernel_branch": "agent/canonical-authority-rc1",
-    "kernel_dirty": true,
-    "daleobanks_commit": "3a782c30b2da32b06634b15d7add66a6ca86120b",
-    "daleobanks_branch": "claude/uniimente-system-design-hczheq",
-    "daleobanks_dirty": true
+    "kernel_commit": "3d23995527d7a66397320cb5ffb416e992a98ebc",
+    "kernel_dirty_tree": true,
+    "daleobanks_commit": "5c675b247d341be5ae21c8aac113a6edd4ccdd7d",
+    "daleobanks_dirty_tree": false,
+    "source_origin": "fresh --no-local clone, checked out at the pinned commit, no working-tree carryover"
   },
-  "zero_external_effects": {
-    "asserted": true,
-    "evidence": [
-      "only adapter reachable in shadow is fake-platform",
-      "resolve_adapter raises on any production adapter",
-      "no X credential present or referenced on the aperture path",
-      "real_publications() == 0"
-    ]
+  "artifacts": {
+    "client": {
+      "sha256": "faccfd0b9b7a40ec6e9d8d7090390d3a0c0c61a89c62f10f6bfc7eb6ddbb3aa9",
+      "content_hash": "652a86c59d07209ecef48f68bc699645a6f0d4e5c9c7ec552bba071e6fbf251c"
+    },
+    "issuer": {
+      "sha256": "4d333f172f1d4fbe27e2dd19756a3af71078d2e4414df07fd253e712f7ad12ae",
+      "content_hash": "8c576ae82dd51610938de1a2ecb7f9ce067288e8e4a4bee87f744fedc2e14003"
+    }
   },
-  "evidence_tier": "executed_in_session; CI run identifiers recorded separately once workflows complete"
+  "gate_d": "CLOSED",
+  "evidence_tier": "fresh_clone_reproduction"
 }

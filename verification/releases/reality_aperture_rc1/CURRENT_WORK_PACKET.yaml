@@ -7,18 +7,20 @@ work_packet:
     shadow_organ_proven: true
     production_deployment_proven: false
     note: These are DIFFERENT states. Do not compress them into 'working'.
+    reproducible_release_proven: true
   gates:
     A: CLOSED
     B: CLOSED
     C_SANDBOX: CLOSED
     C_ORGAN_SHADOW: CLOSED
-    D: OPEN
+    D: CLOSED
   single_bottleneck_metric:
     name: REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES
     baseline: 0
-    result: 0
+    result: 1
     target: 1
-    blocker: DALEOBANKS CI has never executed; capsule not regenerated from a fresh clone
+    evidence: fresh --no-local clones at pinned commits; byte-identical wheels; 605 kernel; 22 organ;
+      capsule regenerated
   files_inspected_this_pass:
   - aperture/*
   - aperture_issuer/*
@@ -48,6 +50,12 @@ work_packet:
     uniimente-kernel: aperture, aperture_issuer, manifest, CI, capsule
     DALEOBANKS: governance/aperture_shadow.py, shadow tests, aperture-shadow CI
   rollback: delete both branches; main untouched in both repositories
-  next_model_assignment: Run the DALEOBANKS workflow and record actual check-run IDs, then regenerate
-    the capsule from a fresh clone at the pinned commits. Those two close Gate D. Do not start new architecture
-    work first.
+  next_model_assignment: 'Gate D is closed. Phase 2 (Proof-Carrying Organogenesis) was NOT started: no
+    candidate architectures generated, no mechanism cards extracted, no Organ A/B experiment built, Gate
+    E not created. Begin there on a NEW branch agent/proof-carrying-organogenesis-v1. Do not mix it into
+    PR #56.'
+  next_single_bottleneck_metric:
+    name: GOVERNED_ALTERNATIVE_TOPOLOGY_RECOVERIES
+    baseline: 0
+    target: 1
+    status: NOT STARTED - Phase 2 of the current execution order was not begun

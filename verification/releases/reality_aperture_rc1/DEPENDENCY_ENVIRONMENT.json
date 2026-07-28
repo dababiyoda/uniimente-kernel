@@ -1,6 +1,11 @@
 {
-  "python": "3.11.15",
-  "declared": [
+  "python_version": "3.11.15",
+  "operating_system": "Linux-6.18.5-x86_64-with-glibc2.39",
+  "package_manager": "pip + venv",
+  "source_date_epoch": "1750000000",
+  "pythonpath": "unset (env -u PYTHONPATH)",
+  "editable_installs": "none",
+  "declared_dependencies": [
     "pyyaml>=6.0",
     "pytest>=8.0",
     "jsonschema>=4.20",
@@ -10,6 +15,5 @@
     "# could not run from a clean clone. A hostile suite that cannot execute is not",
     "# protecting anything.",
     "cryptography>=41.0"
-  ],
-  "clean_env_verified": true
+  ]
 }

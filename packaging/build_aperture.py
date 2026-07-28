@@ -35,12 +35,26 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+
+# Deterministic builds. Without this the wheel's zip member timestamps are the
+# wall-clock time of the build, so two builds of identical source produce
+# different bytes. That was measured, not assumed: a fresh-clone rebuild
+# differed from the working-tree build in 13 member timestamps and in ZERO
+# content hashes.
+#
+# SOURCE_DATE_EPOCH is the reproducible-builds convention; setuptools honours
+# it. Pinned to the UNIIMENTE constitutional epoch rather than "now" so the
+# value does not drift.
+SOURCE_DATE_EPOCH = "1750000000"
+os.environ.setdefault("SOURCE_DATE_EPOCH", SOURCE_DATE_EPOCH)
+os.environ.setdefault("PYTHONHASHSEED", "0")
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "dist"
@@ -122,6 +136,23 @@ def build(d: pathlib.Path) -> pathlib.Path:
     return wheels[-1]
 
 
+def content_hash(wheel: pathlib.Path) -> str:
+    """Identity of what the wheel CONTAINS, independent of archive metadata.
+
+    Two wheels with the same version MUST have the same content_hash. The
+    archive sha256 can legitimately differ across build environments; the
+    content hash cannot. This is the stronger equivalence test: it refuses a
+    same-version-different-contents substitution even where byte-level
+    reproducibility is unavailable.
+    """
+    with zipfile.ZipFile(wheel) as z:
+        members = sorted(
+            (i.filename, hashlib.sha256(z.read(i.filename)).hexdigest())
+            for i in z.infolist())
+    return hashlib.sha256(
+        json.dumps(members, sort_keys=True).encode()).hexdigest()
+
+
 def inspect(wheel: pathlib.Path) -> dict:
     with zipfile.ZipFile(wheel) as z:
         names = sorted(z.namelist())
@@ -130,6 +161,7 @@ def inspect(wheel: pathlib.Path) -> dict:
     return {
         "wheel": wheel.name,
         "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
+        "content_hash": content_hash(wheel),
         "size_bytes": wheel.stat().st_size,
         "contents": names,
         "forbidden_content_found": sorted(set(violations)),
@@ -141,6 +173,7 @@ def main() -> int:
         shutil.rmtree(OUT)
     OUT.mkdir()
     report = {"version": VERSION, "geometry": "two distributions",
+              "source_date_epoch": os.environ["SOURCE_DATE_EPOCH"],
               "artifacts": {}}
     with tempfile.TemporaryDirectory() as t:
         tmp = pathlib.Path(t)

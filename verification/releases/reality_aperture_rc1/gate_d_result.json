@@ -12,7 +12,7 @@
     "legacy_engine_absent_from_deployable_artifacts": true,
     "stale_singleton_check_replaced": true,
     "kernel_ci_green": true,
-    "daleobanks_ci_exists_and_is_green": false,
+    "daleobanks_ci_exists_and_is_green": true,
     "exact_versions_and_commits_pinned": true,
     "cross_version_refusal_works": true,
     "revocation_works_across_the_package_boundary": true,
@@ -20,7 +20,29 @@
     "release_capsule_is_reproducible": false,
     "real_external_effects_zero": true
   },
-  "smallest_blocker": "DALEOBANKS CI has never executed. The workflow .github/workflows/aperture-shadow.yml is written and pushed but no check run exists yet, so 'DALEOBANKS CI is green' cannot be asserted. Until a run completes, cross-repository reproducibility is demonstrated only on this machine.",
-  "second_blocker": "The capsule was produced from a working tree in this session, not regenerated from a fresh clone at the pinned commits. Reproducibility is claimed for the BUILD (wheel hashes recorded) and not yet for the CAPSULE.",
-  "evidence_tier": "executed_in_session"
+  "smallest_blocker": "The release capsule was produced from this working tree, not regenerated from a fresh clone at the pinned commits. Every other Gate D condition now holds. REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES stays at 0 until one capsule is rebuilt from scratch and its hashes match.",
+  "evidence_tier": "executed_in_session",
+  "daleobanks_ci_runs": [
+    {
+      "run_id": 30324049526,
+      "job_id": 90165613155,
+      "conclusion": "success",
+      "trigger": "pull_request"
+    },
+    {
+      "run_id": 30324047580,
+      "job_id": 90165607298,
+      "conclusion": "success",
+      "trigger": "push"
+    }
+  ],
+  "ci_history": [
+    {
+      "run_id": 30323952133,
+      "conclusion": "failure",
+      "root_cause": "git exit 128 on cross-repository checkout; DALEOBANKS' default GITHUB_TOKEN is scoped to its own repository and cannot read uniimente-kernel",
+      "fix": "vendored the exact wheels with recorded SHA256 instead of building from a cross-repo checkout; needs no credential",
+      "preferred_fix": "read-only PAT for uniimente-kernel as a DALEOBANKS secret (founder decision)"
+    }
+  ]
 }

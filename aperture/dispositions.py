@@ -28,12 +28,13 @@ CLASSIFICATIONS = (CANONICAL_ACTIVE, THIN_CLIENT, VERIFICATION_HELPER,
                    COMPATIBILITY_ADAPTER, CONFORMANCE_FIXTURE, EXPERIMENTAL,
                    HISTORICAL, QUARANTINED, SUPERSEDED)
 
-# Modules a canonical organ must never import to obtain authority.
-FORBIDDEN_ON_CANONICAL_PATH = (
-    "policy.consequence_gate",
-    "uniimente_kernel.gate",
-    "kernel.gate.pipeline",
-)
+# Read from the canonical manifest. NOT a second hardcoded list - that
+# duplication is exactly what let Gate A close dishonestly.
+from . import manifest as _manifest
+
+
+def FORBIDDEN_ON_CANONICAL_PATH() -> tuple[str, ...]:  # noqa: N802
+    return _manifest.forbidden_on_canonical_path()
 
 
 @dataclass(frozen=True)
@@ -135,5 +136,33 @@ def canonical_active() -> tuple[Disposition, ...]:
 
 
 def active_authority_count() -> int:
-    """The Gate A metric. Must be exactly 1."""
-    return sum(1 for d in DISPOSITIONS if d.may_issue_authority)
+    """The Gate A metric, read from the manifest rather than from this file."""
+    return _manifest.active_issuer_count()
+
+
+def agrees_with_manifest() -> list[str]:
+    """Every disagreement between this registry and the canonical manifest.
+
+    Empty means the two agree. Non-empty is the drift condition that
+    invalidated the previous Gate A closure, now detectable.
+    """
+    problems: list[str] = []
+    for d in DISPOSITIONS:
+        try:
+            m = _manifest.implementation(d.module)
+        except _manifest.ManifestError:
+            problems.append(f"{d.module} has a disposition but no manifest entry")
+            continue
+        if bool(m.get("may_issue_authority")) != d.may_issue_authority:
+            problems.append(
+                f"{d.module}: manifest may_issue_authority="
+                f"{m.get('may_issue_authority')} vs registry {d.may_issue_authority}")
+        if m.get("classification") != d.classification:
+            problems.append(
+                f"{d.module}: manifest classification={m.get('classification')!r} "
+                f"vs registry {d.classification!r}")
+    declared = {d.module for d in DISPOSITIONS}
+    for m in _manifest.implementations():
+        if m["module"] not in declared:
+            problems.append(f"{m['module']} is in the manifest but has no disposition")
+    return problems

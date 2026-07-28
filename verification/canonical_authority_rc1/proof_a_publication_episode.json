@@ -14,11 +14,11 @@
   ],
   "certificate": {
     "authority_record_id": "auth-000001",
-    "effect_binding_hash": "sha256:21c414255ae823c0f836f220f1fb204c0ad34eab6212e7882820f7232f8a3a56",
+    "effect_binding_hash": "sha256:d8eceef58c0d8318007c171db357065d186b2e2209dcc0cdc0366bc76f012be3",
     "bound_fields": 20,
     "key_id": "kernel-sandbox-key-1",
     "algorithm": "ed25519",
-    "signature_prefix": "ea5b6f787c292b1b700fa02f5173ce12"
+    "signature_prefix": "66b500a81853439a2c7a63dec79872e0"
   },
   "receipt": {
     "status": "committed",

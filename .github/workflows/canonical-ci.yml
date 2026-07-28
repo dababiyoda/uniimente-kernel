@@ -66,6 +66,16 @@ jobs:
           python-version: "3.11"
       - name: No second Constitution, Gate, identity or authority registry
         run: python scripts/ci/check_authority_singleton.py
+      # Added by RC1. The check above counts FILENAMES; this one checks the
+      # actual institutional invariant (one issuer, one protocol, zero organ
+      # -local issuers, zero active legacy authorizers) and reads the canonical
+      # manifest rather than its own list. The older check is deliberately NOT
+      # removed or rewritten here: a component must not alter its own approval
+      # requirements, and its proposed replacement is preserved for review.
+      - name: Canonical authority - one valid certificate issuer
+        run: |
+          pip install -r requirements-dev.txt
+          python scripts/ci/check_canonical_authority.py
 
   sealed:
     name: "4 · Developmental work stays sealed"

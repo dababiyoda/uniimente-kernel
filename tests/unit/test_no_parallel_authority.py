@@ -74,7 +74,7 @@ def test_canonical_path_does_not_import_a_superseded_engine():
     for d in CANONICAL_DIRS:
         for py in (ROOT / d).rglob("*.py"):
             for imp in _imports(py):
-                for forbidden in D.FORBIDDEN_ON_CANONICAL_PATH:
+                for forbidden in D.FORBIDDEN_ON_CANONICAL_PATH():
                     if imp == forbidden or imp.startswith(forbidden + "."):
                         offenders.append(f"{py.relative_to(ROOT)} imports {imp}")
     assert not offenders, (

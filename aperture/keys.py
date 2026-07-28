@@ -38,6 +38,32 @@ from .certificate import CertificateError
 
 SUPPORTED_ALGORITHMS = frozenset({"ed25519"})
 
+# Key custody environments. PRODUCTION is deliberately unreachable in this pass.
+TEST = "TEST"
+DEVELOPMENT = "DEVELOPMENT"
+SHADOW = "SHADOW"
+PRODUCTION = "PRODUCTION"
+ENVIRONMENTS = (TEST, DEVELOPMENT, SHADOW, PRODUCTION)
+
+ENV_VAR = "UNIIMENTE_APERTURE_ENV"
+
+# Keys generated in-process are ephemeral and institutionally worthless. They
+# are permitted only where nothing institutional is at stake.
+EPHEMERAL_ALLOWED = frozenset({TEST, DEVELOPMENT})
+
+
+class EnvironmentRefusal(CertificateError):
+    """The requested key does not belong in the requested environment."""
+
+
+def current_environment() -> str:
+    env = os.environ.get(ENV_VAR, TEST)
+    if env not in ENVIRONMENTS:
+        raise EnvironmentRefusal(
+            f"{ENV_VAR}={env!r} is not one of {ENVIRONMENTS}; refusing rather "
+            "than guessing which custody rules apply", code="unknown_environment")
+    return env
+
 
 class SigningUnavailable(CertificateError):
     """No usable signing key. Fails closed - never degrades to unsigned."""
@@ -85,13 +111,35 @@ class Ed25519SigningProvider(SigningProvider):
     implementation of the same interface.
     """
 
-    def __init__(self, private_key: Ed25519PrivateKey, key_id: str):
+    def __init__(self, private_key: Ed25519PrivateKey, key_id: str,
+                 environment: str = TEST):
+        if environment == PRODUCTION:
+            raise EnvironmentRefusal(
+                "PRODUCTION key custody is disabled in this pass. It requires "
+                "separate founder authorization plus custody, rotation, "
+                "revocation, backup, recovery and compromise procedures. See "
+                "docs/authority/KEY_CUSTODY_READINESS.md.",
+                code="production_custody_disabled")
         self._sk = private_key
         self._key_id = key_id
+        self.environment = environment
 
     @classmethod
-    def generate(cls, key_id: str) -> "Ed25519SigningProvider":
-        return cls(Ed25519PrivateKey.generate(), key_id)
+    def generate(cls, key_id: str, environment: str = TEST
+                 ) -> "Ed25519SigningProvider":
+        """Ephemeral in-process key. Permitted only in TEST and DEVELOPMENT.
+
+        SHADOW deliberately refuses: a shadow run must use an auditable key
+        identifier so its signatures can be traced afterwards. An ephemeral key
+        that vanishes when the process exits cannot be audited.
+        """
+        if environment not in EPHEMERAL_ALLOWED:
+            raise EnvironmentRefusal(
+                f"ephemeral generated keys are not permitted in {environment}; "
+                f"allowed only in {sorted(EPHEMERAL_ALLOWED)}. Load an "
+                "auditable key via from_env() instead.",
+                code="ephemeral_key_refused")
+        return cls(Ed25519PrivateKey.generate(), key_id, environment)
 
     @classmethod
     def from_env(cls, var: str = "UNIIMENTE_APERTURE_SIGNING_KEY_HEX",
@@ -101,6 +149,12 @@ class Ed25519SigningProvider(SigningProvider):
         There is deliberately no development fallback key. A build that cannot
         find a signing key must not be able to authorize anything.
         """
+        env = current_environment()
+        if env == PRODUCTION:
+            raise EnvironmentRefusal(
+                "PRODUCTION key custody is disabled in this pass; see "
+                "docs/authority/KEY_CUSTODY_READINESS.md.",
+                code="production_custody_disabled")
         raw = os.environ.get(var)
         if not raw:
             raise SigningUnavailable(
@@ -111,12 +165,18 @@ class Ed25519SigningProvider(SigningProvider):
             raise SigningUnavailable(
                 f"{key_id_var} is required so that receipts name the key that "
                 "signed them.", code="signing_unavailable")
+        # A key marked as a test key must never load outside TEST. Otherwise a
+        # deterministic fixture key could silently become a shadow signer.
+        if key_id.startswith("test-") and env != TEST:
+            raise EnvironmentRefusal(
+                f"key_id {key_id!r} is a test key and cannot load in {env}",
+                code="test_key_outside_test")
         try:
             sk = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw))
         except (ValueError, TypeError) as e:
             raise SigningUnavailable(f"unusable signing key: {e}",
                                      code="signing_unavailable") from None
-        return cls(sk, key_id)
+        return cls(sk, key_id, env)
 
     @property
     def key_id(self) -> str:

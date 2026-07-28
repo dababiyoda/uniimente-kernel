@@ -1,60 +1,48 @@
 {
   "gate": "Gate A - one canonical authority protocol",
-  "metric": "ACTIVE_CANONICAL_AUTHORITY_PROTOCOLS",
+  "metric": "VALID_CANONICAL_CERTIFICATE_ISSUERS",
   "value": 1,
   "status": "CLOSED",
-  "canonical": "aperture.issuer",
-  "enforced_by": "tests/unit/test_no_parallel_authority.py (9 tests, machine-enforced)",
-  "conditions": {
-    "one_canonical_trust_domain": true,
-    "one_canonical_issuance_mechanism": true,
-    "one_canonical_commit_time_validation": true,
-    "organs_can_veto_but_not_grant": true,
-    "sdk_cannot_independently_authorize": true,
-    "legacy_hmac_cannot_authorize_new_effects": true,
-    "all_alternatives_have_explicit_dispositions": true,
-    "hostile_conformance_passes": true,
-    "clean_environment_testing_passes": true,
-    "no_critical_adversarial_attack_unresolved": false
-  },
-  "dispositions": [
+  "history": [
     {
-      "module": "aperture.issuer",
-      "classification": "CANONICAL_ACTIVE",
-      "may_issue_authority": true
+      "at": "2026-07-27T20:53Z",
+      "status": "CLOSED",
+      "basis": "aperture/dispositions.py declared exactly one CANONICAL_ACTIVE implementation",
+      "invalidated": true
     },
     {
-      "module": "aperture.effector",
-      "classification": "VERIFICATION_HELPER",
-      "may_issue_authority": false
+      "at": "2026-07-28T01:35Z",
+      "status": "OPEN",
+      "reason": "CONTRADICTION. scripts/ci/check_authority_singleton.py globbed **/consequence_gate.py, found policy/consequence_gate.py - the engine with three verified authority defects - and reported it as the one source of authority, while the disposition registry classified it SUPERSEDED and named aperture.issuer canonical. Two hardcoded lists disagreed and the gate had closed on the strength of whichever was consulted. The previous closure is preserved above as historical evidence rather than rewritten."
     },
     {
-      "module": "policy.consequence_gate",
-      "classification": "SUPERSEDED",
-      "may_issue_authority": false
-    },
-    {
-      "module": "uniimente_kernel.gate",
-      "classification": "SUPERSEDED",
-      "may_issue_authority": false
-    },
-    {
-      "module": "kernel.gate.pipeline",
-      "classification": "CONFORMANCE_FIXTURE",
-      "may_issue_authority": false
-    },
-    {
-      "module": "provenance.commit_witness",
-      "classification": "HISTORICAL",
-      "may_issue_authority": false
+      "at": "2026-07-28T02:10Z",
+      "status": "CLOSED",
+      "basis": "single source of truth (authority/canonical-authority.yaml) now read by the disposition registry, the new CI check, the import-boundary tests and the runtime; drift between them is itself a test failure (check_runtime_matches_disposition_registry)."
     }
   ],
-  "test_evidence": {
-    "aperture_and_parallel_authority": "60 passed in 0.17s",
-    "full_suite": "555 passed in 7.43s"
+  "why_previously_closed_dishonestly": "Gate A was measured against a registry that agreed with itself. Nothing compared it to the check CI actually ran.",
+  "closure_conditions": {
+    "manifest_names_reality_aperture": true,
+    "singleton_check_names_reality_aperture": true,
+    "runtime_configuration_names_reality_aperture": true,
+    "canonical_imports_use_reality_aperture": true,
+    "exactly_one_issuer_can_create_valid_certificates": true,
+    "legacy_gate_cannot_authorize": true,
+    "organs_cannot_authorize_locally": true,
+    "revocation_behaviour_implemented": true,
+    "hostile_tests_pass": true,
+    "clean_environment_ci_passes": true
+  },
+  "who_may_close_it": "Not this agent alone. Closure is asserted by scripts/ci/check_canonical_authority.py plus tests/unit/test_issuer_uniqueness.py running in CI. Alfonso remains the only authority who may ratify the architecture itself.",
+  "evidence": {
+    "full_suite": "599 passed in 5.93s",
+    "canonical_authority_check_exit": 0,
+    "manifest": "authority/canonical-authority.yaml",
+    "checks": "scripts/ci/check_canonical_authority.py (13 checks)"
   },
   "residual": [
-    "main's superseded engine remains importable in-process; it is retained deliberately as a regression oracle. Static detection forbids canonical code importing it, but a determined caller inside this repo could still instantiate it. Process-level isolation is not implemented.",
-    "No organ repository has been migrated onto the aperture yet. DALEOBANKS, WMI and PumpStation are unchanged."
+    "scripts/ci/check_authority_singleton.py is UNCHANGED and still labels policy/consequence_gate.py as 'Consequence Gate'. It counts filenames, so it permits nothing wrong, but its label is stale. Its proposed replacement is scripts/ci/check_canonical_authority.py, added as an ADDITIONAL CI job rather than swapped in: a component must not alter its own approval requirements. Swapping it is a founder decision.",
+    "main's superseded engine remains importable in-process. Static detection forbids canonical code importing it; process isolation is not implemented."
   ]
 }

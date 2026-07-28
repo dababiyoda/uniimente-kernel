@@ -21,6 +21,7 @@ KillSwitch that was only ever written to, so it could not stop anything.
 """
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional
@@ -133,6 +134,7 @@ class Aperture:
         current_constitution_version: str,
         veto: Optional[LocalVeto] = None,
         budget: Any = None,
+        revocation: Any = None,
     ) -> None:
         self.registry = registry
         self.organ_id = organ_id
@@ -140,8 +142,11 @@ class Aperture:
         self.current_constitution_version = current_constitution_version
         self.veto = veto or LocalVeto(engaged=False, reason="")
         self.budget = budget
+        self.revocation = revocation
         self._spent: dict[str, int] = {}
         self.receipts: list[ExecutionReceipt] = []
+        self._lease = threading.Lock()
+        self.veto_checks: list[str] = []
 
     # -- verification only: no side effects, safe for auditors -------------
     def verify(self, cert: AuthorizationCertificate,
@@ -210,10 +215,23 @@ class Aperture:
             self.receipts.append(r)
             return r
 
+        # Veto check 1 of 3: before ANY preparation work is done.
+        self.veto_checks.append("before_preparation")
+        blocked, why = self.veto.blocks()
+        if blocked:
+            return refuse("local_veto", f"local veto engaged ({why}) before preparation")
+
         try:
             self.verify(cert, presenter, now=now)
         except CertificateError as e:
             return refuse(e.code, str(e))
+
+        # Revocation, per the manifest's policy for this consequence class.
+        if self.revocation is not None:
+            try:
+                self.revocation.check(cert, now=now)
+            except CertificateError as e:
+                return refuse(e.code, str(e))
 
         # The payload actually handed to the executor must be the one that was
         # authorized. A mutated payload is a different effect.
@@ -228,21 +246,47 @@ class Aperture:
                           f"certificate {cert.authority_record_id} already used "
                           f"{spent} of {cert.use_limit} permitted times")
 
-        # LOCAL VETO. Read before execution. This is the check the previous SDK
-        # KillSwitch never performed.
+        # Veto check 2 of 3: after preparation, before commit.
+        self.veto_checks.append("after_preparation_before_commit")
         blocked, why = self.veto.blocks()
         if blocked:
             return refuse("local_veto",
                           f"local veto engaged ({why}); valid constitutional "
                           "authority does not override an organ's refusal")
 
-        self._spent[cert.authority_record_id] = spent + 1
+        # EXECUTION LEASE. The smallest enforceable critical section: the final
+        # veto read and the adapter invocation happen under one lock, so the
+        # veto cannot flip between the last check and the effect.
+        #
+        # Residual race, stated rather than hidden: an operator engaging the
+        # veto DURING the executor call cannot retract an effect already in
+        # flight. Nothing in software can. The lease bounds the window to the
+        # duration of a single adapter invocation and no wider.
+        with self._lease:
+            # Veto check 3 of 3: immediately before adapter invocation.
+            self.veto_checks.append("immediately_before_adapter")
+            blocked, why = self.veto.blocks()
+            if blocked:
+                return refuse("local_veto",
+                              f"local veto engaged ({why}) inside the execution "
+                              "lease; no adapter was invoked")
 
-        try:
-            executor()
-        except Exception as e:  # noqa: BLE001
-            return refuse("executor_failed",
-                          f"executor raised {type(e).__name__}: {e}")
+            self._spent[cert.authority_record_id] = spent + 1
+            try:
+                executor()
+            except Exception as e:  # noqa: BLE001
+                return refuse("executor_failed",
+                              f"executor raised {type(e).__name__}: {e}")
+            except BaseException as e:  # noqa: BLE001
+                # Shutdown during commit (KeyboardInterrupt, SystemExit).
+                # `except Exception` does not catch these, and an uncaught one
+                # would leave the budget reserved and no receipt written - the
+                # institution would have spent authority with no record of it.
+                # Unwind and record, then RE-RAISE: a shutdown must still
+                # shut down. Swallowing it would be worse than the leak.
+                refuse("shutdown_during_commit",
+                       f"shutdown during commit: {type(e).__name__}: {e}")
+                raise
 
         # Independent readback. The executor's own claim is not evidence.
         observed = readback()

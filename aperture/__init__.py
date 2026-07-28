@@ -8,6 +8,7 @@ Every organ may refuse.
 
 See docs/authority/CANONICAL_AUTHORITY_ARCHITECTURE.md.
 """
+from . import manifest  # noqa: F401
 from .certificate import (AuthorizationCertificate, CertificateError,
                           BINDING_FIELDS, build_certificate, hash_payload,
                           hash_evidence_set)
@@ -27,6 +28,7 @@ from .legacy import (LegacyRecord, classify_legacy_record, attest_migration,
                      MIGRATION_ATTESTED, CANONICAL_ASYMMETRIC)
 
 __all__ = [
+    "manifest",
     "AuthorizationCertificate", "CertificateError", "BINDING_FIELDS",
     "build_certificate", "hash_payload", "hash_evidence_set",
     "SigningProvider", "Ed25519SigningProvider", "VerificationRegistry",

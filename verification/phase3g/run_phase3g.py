@@ -62,6 +62,29 @@ def interior_pool(organ, produced):
     return sorted(c for c in produced if c in consumed and c not in (ENV, SINK))
 
 
+def _twin_pre_repair_loss(ep, victim) -> bool:
+    """Independent twin. Nothing here touches the scored organ."""
+    rng = random.Random(ep["seed"])
+    build = (F.HELD_OUT[ep["fixture"]] if ep["held_out"]
+             else (F.RESILIENCE if ep["cohort"] == "resilience" else F.development))
+    twin = build(rng)
+    F.prepare(twin)
+    saved = C.snapshot()
+    try:
+        twin.commission()
+        if not twin.result_ok(twin.run_item(PAYLOAD_A)):
+            return True
+        if victim not in twin.units:
+            return True
+        F.inject(twin, victim, ep["damage_class"], rng)
+        for u in twin.units.values():
+            u.repair_budget = 0.0          # repair prohibited on the twin
+        return not twin.result_ok(twin.run_item(PAYLOAD_B))
+    finally:
+        for k, v in saved.items():         # the twin must not move the counters
+            C.d[k] = v
+
+
 def episode(ep, results, *, certificate=True):
     rng = random.Random(ep["seed"])
     build = (F.HELD_OUT[ep["fixture"]] if ep["held_out"]
@@ -108,14 +131,16 @@ def episode(ep, results, *, certificate=True):
                 u.prohibited.append(MeasuredMotif(u.capability.klass(),
                                                   supplier_count=1))
 
-    # Evaluator probe BEFORE repair: with the damage applied, could the
-    # downstream path still yield a current valid sink result? Run on a
-    # throwaway copy of the produced map so it changes nothing.
+    # PRE-REPAIR PROBE ON AN INDEPENDENT TWIN. Running it on the scored organ
+    # mutated receipts, messages, memory, produced values and need state, and
+    # its traffic was being counted as repair traffic. The twin is rebuilt from
+    # the same seed, forms the same structure, selects the same victim by the
+    # same preregistered rule, takes the same damage, is denied repair, and is
+    # then discarded. Zero shared mutable state with the scored episode.
+    pre_loss = _twin_pre_repair_loss(ep, victim)
+
     reset()
     before_msgs = organ.messages
-    pre = organ._probe_current_result(PAYLOAD_B)
-    pre_loss = not organ.result_ok(pre)
-    reset()
     restored = organ.run_item(PAYLOAD_B)
     snap = C.snapshot()
 

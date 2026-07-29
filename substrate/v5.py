@@ -89,6 +89,11 @@ WAIT_TOLERANCE = 6
 # what produced amplification of 52 against a ceiling of 12.
 FORMATION_HOPS = 40
 REPAIR_HOPS = 14
+# Local bounded routing. Repair starts at an evidence-selected frontier and
+# widens one ring at a time; a single large TTL over a dense neighbourhood is
+# what produced amplification of 47.65 against a ceiling of 12.
+FRONTIER_WIDTH = 3
+REPAIR_SEARCH_BUDGET = 18.0
 
 COUNTER_NAMES = (
     "BOUNDARY_TRIGGERED_REPAIR_EVENTS",
@@ -374,6 +379,13 @@ class Unit:
     consumers: set = field(default_factory=set)
     closed_needs: set = field(default_factory=set)
     late_messages: int = 0
+    # LOCAL ROUTING EVIDENCE, accumulated from this unit's own experience:
+    # (required_type) -> {neighbour: [offers_seen, settlements, last_cost]}.
+    # It is not a provider index: it records only neighbours THIS unit heard
+    # from, and only for types it has itself required.
+    routes: dict = field(default_factory=dict)
+    search_budget: float = 0.0
+    frontier_expansions: int = 0
     escalations: list[str] = field(default_factory=list)
     memory: Memory = field(default_factory=Memory)
     stale_rejections: int = 0
@@ -548,15 +560,59 @@ class Unit:
         return bool(prod) and prod <= self.refused
 
     def _emit_need(self, slot: int) -> None:
+        """LOCAL BOUNDED ROUTING, not a broadcast.
+
+        Start with the neighbours this unit has itself seen deliver a settled
+        offer of the required type, excluding the route that just failed. Widen
+        by one ring only when the current frontier yields nothing. Every message
+        and every expansion is charged against a search budget.
+        """
         if slot in self.open_needs:
             return
         nid = f"{self.unit_id}:{slot}:{self.local_activations}"
         self.open_needs[slot] = nid
-        need = Need(nid, self.capability.accepts[slot], self.unit_id, slot,
-                    (self.unit_id,), self.repair_budget, frozenset(self.refused),
-                    hops=REPAIR_HOPS)
-        for n in sorted(self.neighbours):
+        self.search_budget = REPAIR_SEARCH_BUDGET
+        self.frontier_expansions = 0
+        self._send_to_frontier(slot, nid)
+
+    def _frontier(self, want: str) -> list[str]:
+        known = self.routes.get(want, {})
+        good = [n for n, e in known.items()
+                if e["settled"] > 0 and n not in self.refused
+                and n in self.neighbours]
+        if good:
+            return sorted(good, key=lambda n: (-known[n]["settled"],
+                                               known[n]["cost"], n))
+        heard = [n for n in known if n in self.neighbours and n not in self.refused]
+        return sorted(heard) if heard else []
+
+    def _send_to_frontier(self, slot: int, nid: str) -> bool:
+        want = self.capability.accepts[slot]
+        ring = self._frontier(want)
+        if self.frontier_expansions or not ring:
+            # Widen by one ring: neighbours not yet tried this round.
+            tried = set(ring) | self.refused
+            ring = ring + [n for n in sorted(self.neighbours) if n not in tried][
+                : max(1, FRONTIER_WIDTH * (self.frontier_expansions + 1))]
+        ring = ring[: FRONTIER_WIDTH * (self.frontier_expansions + 1)]
+        if not ring or self.search_budget <= 0:
+            return False
+        need = Need(nid, want, self.unit_id, slot, (self.unit_id,),
+                    self.repair_budget, frozenset(self.refused), hops=REPAIR_HOPS)
+        for n in ring:
+            if self.search_budget <= 0:
+                break
+            self.search_budget -= 1.0
             self.outbox.append((n, need))
+        return True
+
+    def widen(self, slot: int) -> bool:
+        """Called only when the current frontier produced no valid offer."""
+        nid = self.open_needs.get(slot)
+        if nid is None or self.search_budget <= 0:
+            return False
+        self.frontier_expansions += 1
+        return self._send_to_frontier(slot, nid)
 
     def commission_needs(self, budget: float) -> None:
         for slot in self.unmet():
@@ -575,6 +631,7 @@ class Unit:
         if self.dissolved:
             self.inbox.clear()
             return
+        got_offer = False
         for sender, msg in self.inbox:
             if isinstance(msg, tuple) and msg and msg[0] == "__bonded__":
                 self.consumers.add(msg[1])
@@ -586,7 +643,15 @@ class Unit:
                 self._on_need(sender, msg)
             elif isinstance(msg, Offer):
                 self._on_offer(msg, caps)
+                got_offer = True
         self.inbox.clear()
+        # ITERATIVE WIDENING, decided locally: if I am still waiting on my own
+        # requirement and this step brought me no offer for it, widen by one
+        # ring. Bounded by my search budget, so it cannot become a broadcast.
+        if self.open_needs and not got_offer and self.search_budget > 0:
+            for slot in sorted(self.open_needs):
+                if self.widen(slot):
+                    break
 
     def _on_need(self, sender: str, need: Need) -> None:
         if need.budget <= 0 or need.hops <= 0 or self.unit_id in need.lineage:
@@ -623,15 +688,16 @@ class Unit:
                         if n != sender:
                             self.outbox.append((n, sub))
             return
-        # Bound propagation by HOPS, not by a neighbour cap. Capping fanout
-        # stops a need reaching any producer in a dense neighbourhood - it
-        # prevented formation entirely in development. Depth, lineage loop
-        # suppression, duplicate suppression and generation closure are what
-        # bound the traffic.
+        # A RELAY IS ALSO ROUTED, not broadcast. Bounding only the originating
+        # emission left every intermediate unit forwarding to all neighbours,
+        # which is where the amplification actually came from: the frontier fix
+        # alone moved it 47.65 -> 47.06.
         relayed = need.relay(self.unit_id)
-        for n in sorted(self.neighbours):
-            if n != sender:
-                self.outbox.append((n, relayed))
+        ring = [n for n in self._frontier(need.wanted) if n != sender]
+        if not ring:
+            ring = [n for n in sorted(self.neighbours) if n != sender]
+        for n in ring[:FRONTIER_WIDTH]:
+            self.outbox.append((n, relayed))
 
     def _derives_from(self) -> frozenset[str]:
         return frozenset({self.unit_id}) | frozenset(
@@ -658,27 +724,34 @@ class Unit:
                     offer.firm, offer.chain | {self.unit_id})))
             return
         slot = mine[0]
+        want = self.capability.accepts[slot]
+        via = self.reverse.get(offer.need_id, (offer.supplier, want))[0]
+        ev = self.routes.setdefault(want, {}).setdefault(
+            via, {"offers": 0, "settled": 0, "cost": offer.cost})
+        ev["offers"] += 1
+        ev["cost"] = offer.cost
         if not offer.firm or slot in self.bonds:
             return
-        self._settle(slot, offer, caps)
+        if self._settle(slot, offer, caps):
+            ev["settled"] += 1
 
-    def _settle(self, slot: int, offer: Offer, caps: dict[str, Capability]) -> None:
+    def _settle(self, slot: int, offer: Offer, caps: dict[str, Capability]) -> bool:
         if offer.offered_type != self.capability.accepts[slot]:
-            return
+            return False
         if any(b.supplier == offer.supplier for b in self.bonds.values()):
-            return
+            return False
         if offer.chain & self.refused:
             self.stale_rejections += 1
             C.incr("STALE_DERIVATIONS_REJECTED")
             self.receipts.append(Receipt("stale_rejected", self.unit_id, slot,
                                          STALE_RETURN, "offer derivation refused",
                                          offer.supplier, offer.supplier_class))
-            return
+            return False
         if not self.memory.admits(offer.supplier):
             self.receipts.append(Receipt("cooldown", self.unit_id, slot,
                                          COOLDOWN_RETURN, "supplier cooling down",
                                          offer.supplier, offer.supplier_class))
-            return
+            return False
         sup = caps.get(offer.supplier)
         shares = sup is not None and sup.domain == self.capability.domain
         already = {b.supplier for b in self.bonds.values()}
@@ -691,7 +764,7 @@ class Unit:
             self.prohibited_proposals += 1
             if self.constraint_enabled:
                 self.blocked_commits += 1
-                return
+                return False
         self.bonds[slot] = Bond(slot, offer.supplier, offer.supplier_class,
                                 offer.offered_type, offer.cost, offer.chain)
         closed = self.open_needs.pop(slot, None)

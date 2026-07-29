@@ -116,6 +116,11 @@ COUNTER_NAMES = (
     "BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS",
     "INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS",
     "INDEPENDENCE_VIOLATIONS",
+    # Hierarchical branch accounting.
+    "BRANCH_TREES_OPENED",
+    "CHILD_BRANCHES_COMPLETED",
+    "PREMATURE_PARENT_BRANCH_COMPLETIONS",
+    "PARENT_BRANCH_COMPLETIONS_PROPAGATED",
 )
 
 
@@ -482,11 +487,15 @@ class Unit:
     # Needs this unit has already acknowledged as a dead branch, so an
     # acknowledgement is sent at most once per unit per need.
     _exhausted_reported: set = field(default_factory=set)
-    # Needs this unit has relayed onward. A later duplicate delivery of the same
-    # need must NOT be acknowledged as exhausted: a live sub-branch still carries
-    # it, and telling the origin otherwise would complete the branch early,
-    # under-count consumed credit, and let a round widen while it is still open.
+    # (need_id, branch_id) pairs this unit has relayed onward. Keyed by BRANCH,
+    # not by need: two legitimate branches of one need that both reach this unit
+    # are separate obligations, and collapsing them by need id alone left one of
+    # them permanently outstanding with nobody to acknowledge it.
     _forwarded: set = field(default_factory=set)
+    # Aggregation state for the child branches THIS unit created by fanning a
+    # parent branch out. parent_branch_id -> record. A relay owns the subtree it
+    # opened; the origin owns only its own top-level branches.
+    _relay_branches: dict = field(default_factory=dict)
     # Which work item is currently being processed. Stamped by the organ at
     # dispatch, recorded into settlement provenance, never branched on.
     item_seq: int = 0
@@ -768,6 +777,30 @@ class Unit:
         st["credits"] = st["reserve"]
         st["outstanding"].discard(bid)
 
+    def _subtree_alive(self, nid: str, bid: str) -> bool:
+        """Does a subtree I opened beneath `bid` still have live children?
+
+        Local only: it consults this unit's own relay records. A relay that
+        aggregates its own children reports upward once, so the origin normally
+        never sees a live subtree here. The check exists so that if it ever
+        does, the premature completion is counted rather than silently taken.
+        """
+        rec = self._relay_branches.get(bid)
+        return bool(rec and rec["need_id"] == nid and rec["children_outstanding"])
+
+    def _cancel_subtrees(self, nid: str) -> None:
+        """Release descendant allocations once the obligation is settled.
+
+        Idempotent: a record already terminal is left alone, so a late
+        acknowledgement cannot reopen it, widen anything, or refund twice.
+        """
+        for rec in self._relay_branches.values():
+            if rec["need_id"] != nid or rec["status"] != "open":
+                continue
+            rec["cancelled_credit"] += rec["child_allocations"] - rec["returned_credit"]
+            rec["children_outstanding"].clear()
+            rec["status"] = "cancelled"
+
     def _close_search(self, st: dict) -> None:
         """Release unused reserve explicitly rather than leaving it dangling."""
         st["cancelled"] += st["reserve"]
@@ -858,12 +891,21 @@ class Unit:
                 nid = msg[1]
                 bid = msg[2] if len(msg) > 2 else ""
                 refund = msg[3] if len(msg) > 3 else 0.0
+                answered = msg[4] if len(msg) > 4 else False
                 if nid in self.closed_needs:
                     self.late_messages += 1
                     continue
                 st = self._search.get(nid)
                 if st is not None and bid in st.get("branches", {}):
-                    self._complete_branch(st, bid, refund)
+                    # A top-level branch I opened. Guard against completing it
+                    # while a descendant subtree I know of is still live.
+                    if self._subtree_alive(nid, bid):
+                        C.incr("PREMATURE_PARENT_BRANCH_COMPLETIONS")
+                    else:
+                        self._complete_branch(st, bid, refund)
+                elif "/c" in bid and self._on_child_terminal(nid, bid, refund,
+                                                             answered):
+                    pass                       # aggregated by the relay that owns it
                 else:
                     # Not mine to account for: pass it back toward the origin so
                     # the requester, not an intermediate, credits the refund.
@@ -904,7 +946,28 @@ class Unit:
         # The unspent remainder travels home with the acknowledgement so the
         # origin can return it to reserve instead of writing it off.
         self.outbox.append((sender, ("__exhausted__", need.need_id,
-                                     need.branch_id, max(0.0, need.credits))))
+                                     need.branch_id, max(0.0, need.credits),
+                                     False)))
+
+    def _report_branch_answered(self, sender: str, need: Need) -> None:
+        """Terminal outcome EligibleOffer / NeedClosed, not BranchExhausted.
+
+        Only BranchExhausted used to be reported. An eligible producer replied
+        and returned, and a closed need was silently dropped, so those child
+        branches never reached their relay: the parent waited on them forever and
+        89 top-level branches ended with no terminal outcome at all. Every branch
+        must terminate exactly once, and a branch that answered must NOT let its
+        parent be declared exhausted.
+        """
+        if not need.branch_id:
+            return
+        key = (need.need_id, need.branch_id)
+        if key in self._exhausted_reported:
+            return
+        self._exhausted_reported.add(key)
+        self.outbox.append((sender, ("__exhausted__", need.need_id,
+                                     need.branch_id, max(0.0, need.credits),
+                                     True)))
 
     def _on_need(self, sender: str, need: Need) -> None:
         if (need.budget <= 0 or need.hops <= 0 or need.credits < 0
@@ -913,10 +976,23 @@ class Unit:
             return
         if need.need_id in self.closed_needs:
             self.late_messages += 1      # the obligation is already settled
+            self._report_branch_answered(sender, need)
             return
-        key = f"{need.need_id}|{need.wanted}"
+        # BRANCH-AWARE, BUT ONLY WHERE BRANCHES ARE ACCOUNTED FOR.
+        #
+        # Keyed by need id alone, a second legitimate branch of the same need
+        # arriving here was discarded as a duplicate, so its allocation was never
+        # acknowledged and the origin waited on it forever. Keying EVERY need by
+        # branch instead removed need-level collapse from FORMATION, which
+        # carries 400 credits over 40 hops: each unit re-processed and re-fanned
+        # every distinct branch id, taking the healthy run from 16 events and
+        # 1012 messages to the 3000-event cap and 103888 messages, and formation
+        # stopped succeeding at all. Formation needs carry no branch identity and
+        # have no per-branch ledger to protect, so they keep need-level collapse.
+        key = (f"{need.need_id}|{need.wanted}|{need.branch_id}"
+               if need.branch_id else f"{need.need_id}|{need.wanted}")
         if key in self.seen:
-            if need.need_id not in self._forwarded:
+            if (need.need_id, need.branch_id) not in self._forwarded:
                 self._report_exhausted(sender, need)
             return
         self.seen.add(key)
@@ -956,6 +1032,7 @@ class Unit:
             firm = not self.unmet()
             if firm:
                 C.incr("DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED")
+                self._report_branch_answered(sender, need)
             self._reply(need, firm, cost, mine)
             if not firm:
                 share = max(0.0, (need.budget - cost) / max(1, len(self.unmet())))
@@ -986,13 +1063,84 @@ class Unit:
             if back:
                 self._report_exhausted(back[0], need)
             return
-        # Branching DIVIDES the remaining credit. No path mints credit.
+        # HIERARCHICAL FANOUT. Every child gets its OWN branch identity.
+        #
+        # `dataclasses.replace` preserved the parent's branch_id for every child,
+        # so the first child to exhaust closed the whole parent at the origin
+        # while its siblings were still searching. The ledger stayed balanced
+        # while the search tree was still causally alive, and the origin could
+        # widen or declare exhaustion on a live subtree.
         share = need.credits / len(ring)
-        self._forwarded.add(need.need_id)
-        for n in ring:
+        self._forwarded.add((need.need_id, need.branch_id))
+        if not need.branch_id:
+            # Formation: no branch ledger to keep, so relay without opening a
+            # subtree. Only repair needs carry branch identity.
+            for n in ring:
+                self.outbox.append((n, dataclasses.replace(
+                    need, lineage=need.lineage + (self.unit_id,),
+                    hops=need.hops - 1, credits=share - 1.0)))
+            return
+        parent = need.branch_id
+        rec = self._relay_branches.setdefault(parent, {
+            "need_id": need.need_id, "branch_id": parent,
+            "parent_branch_id": need.branch_id, "round_id": need.hops,
+            "relay_unit": self.unit_id, "route": sender,
+            "allocated_credit": need.credits, "local_relay_cost": 0.0,
+            "child_branch_ids": [], "children_outstanding": set(),
+            "children_completed": set(), "child_allocations": 0.0,
+            "returned_credit": 0.0, "cancelled_credit": 0.0,
+            "eligible_offer_observed": False, "status": "open",
+            "reply_to": sender})
+        C.incr("BRANCH_TREES_OPENED")
+        for i, n in enumerate(ring):
+            child = f"{parent}/c{i}"
+            rec["child_branch_ids"].append(child)
+            rec["children_outstanding"].add(child)
+            rec["local_relay_cost"] += 1.0
+            rec["child_allocations"] += share - 1.0
             self.outbox.append((n, dataclasses.replace(
                 need, lineage=need.lineage + (self.unit_id,),
-                hops=need.hops - 1, credits=share - 1.0)))
+                hops=need.hops - 1, credits=share - 1.0, branch_id=child)))
+
+    def _on_child_terminal(self, nid: str, child: str, refund: float,
+                           answered: bool = False) -> bool:
+        """Aggregate one child outcome. Report the parent ONLY when all are in.
+
+        One exhausted child is not evidence that a parent branch is dead. The
+        parent is reported exhausted only after every child it created is
+        terminal, none produced a viable offer, and none remains in flight.
+        """
+        parent = child.rsplit("/c", 1)[0]
+        rec = self._relay_branches.get(parent)
+        if rec is None or rec["need_id"] != nid:
+            return False
+        if child in rec["children_completed"]:
+            return True                        # exact replay: idempotent, no refund
+        if child not in rec["children_outstanding"]:
+            return True
+        rec["children_outstanding"].discard(child)
+        rec["children_completed"].add(child)
+        rec["returned_credit"] += max(0.0, refund)
+        if answered:
+            rec["eligible_offer_observed"] = True
+        C.incr("CHILD_BRANCHES_COMPLETED")
+        if rec["status"] != "open":
+            return True
+        if rec["children_outstanding"]:
+            return True                        # siblings still live: hold
+        rec["status"] = "answered" if rec["eligible_offer_observed"] else "exhausted"
+        C.incr("PARENT_BRANCH_COMPLETIONS_PROPAGATED")
+        back = self.reverse.get(nid)
+        dest = back[0] if back else rec["reply_to"]
+        if dest:
+            # Exactly one terminal outcome travels up, carrying whether the
+            # subtree answered. A parent whose subtree answered must terminate
+            # too -- otherwise its own parent hangs -- but must never be counted
+            # as exhausted.
+            self.outbox.append((dest, ("__exhausted__", nid, parent,
+                                       rec["returned_credit"],
+                                       rec["eligible_offer_observed"])))
+        return True
 
     def _derives_from(self) -> frozenset[str]:
         return frozenset({self.unit_id}) | frozenset(
@@ -1018,6 +1166,12 @@ class Unit:
             return
         mine = [s for s, nid in self.open_needs.items() if nid == offer.need_id]
         if not mine:
+            # A viable answer is travelling home through me. Any parent branch I
+            # opened for this need is NOT exhausted, whatever its other children
+            # report, so record that before forwarding.
+            for rec in self._relay_branches.values():
+                if rec["need_id"] == offer.need_id and offer.firm:
+                    rec["eligible_offer_observed"] = True
             back = self.reverse.get(offer.need_id)
             if back and back[0] != self.unit_id:
                 self.outbox.append((back[0], Offer(
@@ -1116,6 +1270,7 @@ class Unit:
             # and offers for this generation are discarded rather than
             # circulating and reopening the same slot from another route.
             self.closed_needs.add(closed)
+            self._cancel_subtrees(closed)
         # Tell the supplier it now has me as a consumer. This is how a producer
         # knows exactly whom to wake when it produces - without anybody
         # scanning the organ for consumers.

@@ -46,7 +46,7 @@ DAMAGE = (GONE, SILENT, ISOLATED, COSTLY, WRONG, INTERMITTENT, DELAYED, EXPIRED,
 assert len(DAMAGE) == 14
 
 
-def frozen_sha() -> str:
+def implementation_sha() -> str:
     try:
         return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                               text=True, cwd=HERE.parents[1]).stdout.strip()
@@ -108,13 +108,24 @@ def episode(ep, results, *, certificate=True):
                 u.prohibited.append(MeasuredMotif(u.capability.klass(),
                                                   supplier_count=1))
 
+    # Evaluator probe BEFORE repair: with the damage applied, could the
+    # downstream path still yield a current valid sink result? Run on a
+    # throwaway copy of the produced map so it changes nothing.
     reset()
     before_msgs = organ.messages
+    pre = organ._probe_current_result(PAYLOAD_B)
+    pre_loss = not organ.result_ok(pre)
+    reset()
     restored = organ.run_item(PAYLOAD_B)
     snap = C.snapshot()
 
     rec["damage_class_observed"] = bool(observed())
-    rec["semantic_loss"] = not organ.result_ok(restored) or snap["EVENT_DRIVEN_LOCAL_ACTIVATIONS"] > 0
+    # PRE-REPAIR SEMANTIC LOSS, proved from evidence rather than inferred from
+    # the fact that something activated. An activation shows detection; it does
+    # not show the business-facing output was lost. Evaluator-only: this never
+    # triggers repair.
+    rec["pre_repair_semantic_loss_proven"] = bool(pre_loss)
+    rec["semantic_loss"] = rec["pre_repair_semantic_loss_proven"]
     rec["event_driven_local_activations"] = snap["EVENT_DRIVEN_LOCAL_ACTIVATIONS"]
     rec["boundary_triggered_repair_events"] = snap["BOUNDARY_TRIGGERED_REPAIR_EVENTS"]
     rec["supervisor_restart_events"] = snap["SUPERVISOR_RESTART_EVENTS"]
@@ -212,6 +223,16 @@ def plan(cohorts):
     return eps
 
 
+FAIL_KEYS = ("episode", "cohort", "fixture", "damage_class", "void_reason",
+             "event_driven_local_activations", "semantic_restoration",
+             "over_refusal", "inferred_class", "repair_amplification",
+             "events_dispatched", "pre_repair_semantic_loss_proven")
+
+
+def _fails(rows):
+    return [{k: r.get(k) for k in FAIL_KEYS} for r in rows if not r.get("success")]
+
+
 def summarise(res, paired, cohorts):
     gf = [r for r in res if r.get("gate") == "F" and r["held_out"]]
     gg = [r for r in res if r.get("gate") == "G" and r["held_out"]]
@@ -229,7 +250,8 @@ def summarise(res, paired, cohorts):
                         "observed": sum(1 for r in got if r.get("damage_class_observed"))}
 
     s = {
-        "frozen_implementation_sha": frozen_sha(),
+        "implementation_sha_at_development_run": implementation_sha(),
+        "frozen": False,   # set only by the freeze commit + heldout run
         "cohorts_run": sorted(cohorts),
         "HELD_OUT_EVENT_DRIVEN_LOCAL_SEMANTIC_REGENERATIONS": {
             "n": sum(1 for r in gf if r.get("success")), "of": len(gf),
@@ -300,11 +322,10 @@ def summarise(res, paired, cohorts):
             "ALTERNATIVE_SUCCESSFUL_COMMITS_WITH_CERTIFICATE": sum(
                 1 for p in paired if p["with"].get("semantic_restoration")
                 and p["with"].get("form_changed"))},
-        "failures": [{k: r.get(k) for k in
-                      ("episode", "cohort", "fixture", "damage_class", "void_reason",
-                       "event_driven_local_activations", "semantic_restoration",
-                       "over_refusal", "inferred_class")}
-                     for r in gf + gg if not r.get("success")],
+        "development_failures": _fails(dev),
+        "heldout_failures": _fails(gf),
+        "gate_g_failures": _fails(gg),
+        "mixed_failures": _fails(mixed),
     }
     return s
 
@@ -340,7 +361,9 @@ def main() -> int:
             json.dumps(paired, indent=2) + "\n")
     print(json.dumps({k: v for k, v in s.items()
                       if k not in ("failures", "damage_classes_exercised")}, indent=2))
-    print("failures:", len(s["failures"]))
+    print("development failures:", len(s["development_failures"]),
+          "| heldout:", len(s["heldout_failures"]),
+          "| gate G:", len(s["gate_g_failures"]))
     return 0
 
 

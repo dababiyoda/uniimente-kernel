@@ -83,6 +83,13 @@ SINK = "@sink"
 # consumer treats its own waiting as evidence of non-delivery.
 WAIT_TOLERANCE = 6
 
+# Propagation depth. Formation must reach the full contract chain; repair is a
+# local search and is deliberately shallower. These bound message volume in a
+# dense neighbourhood, where preserving a need's full budget across relays is
+# what produced amplification of 52 against a ceiling of 12.
+FORMATION_HOPS = 40
+REPAIR_HOPS = 14
+
 COUNTER_NAMES = (
     "BOUNDARY_TRIGGERED_REPAIR_EVENTS",
     "SUPERVISOR_RESTART_EVENTS",
@@ -262,16 +269,23 @@ class Need:
     origin: str
     slot: int
     lineage: tuple[str, ...]
-    budget: float
+    budget: float                 # what a supplier may cost
     refused: frozenset[str]
+    hops: int = 24                # how far this need may travel
+    fanout: int = 0               # unused; hops bound propagation
 
     def relay(self, through: str) -> "Need":
+        """A relay SPENDS. Preserving the full budget across relays is what let
+        one need saturate a dense neighbourhood; supplier cost was bounded but
+        propagation was not."""
         return Need(self.need_id, self.wanted, self.origin, self.slot,
-                    self.lineage + (through,), self.budget, self.refused)
+                    self.lineage + (through,), self.budget, self.refused,
+                    self.hops - 1, self.fanout)
 
     def sub(self, wanted: str, by: str, slot: int, share: float) -> "Need":
         return Need(f"{self.need_id}/{by}:{slot}", wanted, by, slot,
-                    self.lineage + (by,), share, self.refused)
+                    self.lineage + (by,), share, self.refused,
+                    self.hops - 1, self.fanout)
 
 
 @dataclass
@@ -358,6 +372,8 @@ class Unit:
     receipts: list[Receipt] = field(default_factory=list)
     refusal_evidence: list[dict] = field(default_factory=list)
     consumers: set = field(default_factory=set)
+    closed_needs: set = field(default_factory=set)
+    late_messages: int = 0
     escalations: list[str] = field(default_factory=list)
     memory: Memory = field(default_factory=Memory)
     stale_rejections: int = 0
@@ -537,7 +553,8 @@ class Unit:
         nid = f"{self.unit_id}:{slot}:{self.local_activations}"
         self.open_needs[slot] = nid
         need = Need(nid, self.capability.accepts[slot], self.unit_id, slot,
-                    (self.unit_id,), self.repair_budget, frozenset(self.refused))
+                    (self.unit_id,), self.repair_budget, frozenset(self.refused),
+                    hops=REPAIR_HOPS)
         for n in sorted(self.neighbours):
             self.outbox.append((n, need))
 
@@ -548,7 +565,8 @@ class Unit:
             nid = f"{self.unit_id}:{slot}:c"
             self.open_needs[slot] = nid
             need = Need(nid, self.capability.accepts[slot], self.unit_id, slot,
-                        (self.unit_id,), budget, frozenset(self.refused))
+                        (self.unit_id,), budget, frozenset(self.refused),
+                        hops=FORMATION_HOPS)
             for n in sorted(self.neighbours):
                 self.outbox.append((n, need))
 
@@ -571,7 +589,10 @@ class Unit:
         self.inbox.clear()
 
     def _on_need(self, sender: str, need: Need) -> None:
-        if need.budget <= 0 or self.unit_id in need.lineage:
+        if need.budget <= 0 or need.hops <= 0 or self.unit_id in need.lineage:
+            return
+        if need.need_id in self.closed_needs:
+            self.late_messages += 1      # the obligation is already settled
             return
         key = f"{need.need_id}|{need.wanted}"
         if key in self.seen:
@@ -602,9 +623,15 @@ class Unit:
                         if n != sender:
                             self.outbox.append((n, sub))
             return
+        # Bound propagation by HOPS, not by a neighbour cap. Capping fanout
+        # stops a need reaching any producer in a dense neighbourhood - it
+        # prevented formation entirely in development. Depth, lineage loop
+        # suppression, duplicate suppression and generation closure are what
+        # bound the traffic.
+        relayed = need.relay(self.unit_id)
         for n in sorted(self.neighbours):
             if n != sender:
-                self.outbox.append((n, need.relay(self.unit_id)))
+                self.outbox.append((n, relayed))
 
     def _derives_from(self) -> frozenset[str]:
         return frozenset({self.unit_id}) | frozenset(
@@ -618,6 +645,9 @@ class Unit:
                 self.capability.produces, cost, firm, chain)))
 
     def _on_offer(self, offer: Offer, caps: dict[str, Capability]) -> None:
+        if offer.need_id in self.closed_needs:
+            self.late_messages += 1
+            return
         mine = [s for s, nid in self.open_needs.items() if nid == offer.need_id]
         if not mine:
             back = self.reverse.get(offer.need_id)
@@ -664,7 +694,12 @@ class Unit:
                 return
         self.bonds[slot] = Bond(slot, offer.supplier, offer.supplier_class,
                                 offer.offered_type, offer.cost, offer.chain)
-        self.open_needs.pop(slot, None)
+        closed = self.open_needs.pop(slot, None)
+        if closed:
+            # NEED-GENERATION CLOSURE. The obligation is satisfied; later needs
+            # and offers for this generation are discarded rather than
+            # circulating and reopening the same slot from another route.
+            self.closed_needs.add(closed)
         # Tell the supplier it now has me as a consumer. This is how a producer
         # knows exactly whom to wake when it produces - without anybody
         # scanning the organ for consumers.
@@ -732,6 +767,8 @@ class Organ:
         # Recipients that hold undelivered work. Maintained as messages are
         # delivered, so run_item never scans the organ to find them.
         self._msg_pending: set = set()
+        # Last observed readiness per unit, for edge-triggered scheduling.
+        self._unmet_state: dict = {}
         self._payload: Any = None
         self._produced: dict[str, Value] = {}
         self._delayed: dict[str, int] = {}
@@ -839,6 +876,9 @@ class Organ:
         self.events_dispatched = 0
         self.ready: deque = deque()
         self._queued: set = set()
+        self._unmet_state = {uid: bool(u.unmet()) for uid, u in self.units.items()}
+        self.suppressed_late: int = 0
+        self.suppressed_duplicates: int = 0
 
         # Seed from ENV's own consumer set - the units that bonded to ENV told
         # it so at settlement. No search.
@@ -902,10 +942,17 @@ class Organ:
                 self._msg_pending.add(dest)
                 self._schedule(dest, "message")
         u.outbox.clear()
-        if (u.unit_id != ENV and u.slots() and not u.unmet()
-                and u.unit_id not in self._produced):
-            # Its prerequisites just closed, so it now has work to attempt.
-            self._schedule(u.unit_id, "prereq_settled")
+        # EDGE-TRIGGERED. Schedule only on the TRANSITION from unmet to
+        # satisfied. Scheduling whenever a unit merely "is fully bonded and has
+        # not produced" is level-triggered: a unit whose pull returns NotYet
+        # returns without producing and is immediately requeued, spinning until
+        # max_events. Episode 0 of the development cohort hit exactly 3000.
+        if u.unit_id != ENV and u.slots():
+            was_unmet = self._unmet_state.get(u.unit_id, True)
+            now_unmet = bool(u.unmet())
+            self._unmet_state[u.unit_id] = now_unmet
+            if was_unmet and not now_unmet and u.unit_id not in self._produced:
+                self._schedule(u.unit_id, "prereq_settled")
 
     # ------------------------------------------------------------------
     # Instrumented names for the operations this design forbids. Nothing in
@@ -924,6 +971,25 @@ class Organ:
         C.incr("FULL_PROVIDER_INDEX_READS")
         return sorted(u.unit_id for u in self.units.values()
                       if u.capability.produces == type_)
+
+    def _probe_current_result(self, payload: Any) -> Optional[Value]:
+        """EVALUATOR PROBE. Can the CURRENT structure still yield a result?
+
+        Runs a work item with every repair budget set to zero, so no unit can
+        reopen: it measures what the damaged structure produces WITHOUT repair.
+        Used only to prove pre-repair semantic loss. It cannot trigger repair,
+        and it restores all budgets and clears the escalations it caused.
+        """
+        saved = {u.unit_id: u.repair_budget for u in self.units.values()}
+        esc = {u.unit_id: list(u.escalations) for u in self.units.values()}
+        for u in self.units.values():
+            u.repair_budget = 0.0
+        try:
+            return self.run_item(payload)
+        finally:
+            for u in self.units.values():
+                u.repair_budget = saved[u.unit_id]
+                u.escalations[:] = esc[u.unit_id]
 
     def result_ok(self, v: Optional[Value]) -> bool:
         """READOUT ONLY. Never consulted to trigger repair."""

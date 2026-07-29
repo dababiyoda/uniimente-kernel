@@ -191,12 +191,6 @@ def episode(ep, results, *, certificate=True):
     rec["credit_ledger"] = EV.credit_ledger_reconciliation(organ)
     rec["credit_conservation_ok"] = rec["credit_ledger"]["ok"]
     rec["bounded_escalation_proven"] = EV.bounded_escalation_proven(organ)
-    rec["tree_ledger"] = EV.tree_credit_reconciliation(organ)
-    rec["unacknowledged_terminal_branches"] = EV.unacknowledged_terminal_branches(organ)
-    for k in ("BRANCH_TREES_OPENED", "CHILD_BRANCHES_COMPLETED",
-              "PREMATURE_PARENT_BRANCH_COMPLETIONS",
-              "PARENT_BRANCH_COMPLETIONS_PROPAGATED"):
-        rec[k.lower()] = snap[k]
     rec["events_dispatched"] = organ.events_dispatched
     rec["repair_messages"] = organ.messages - before_msgs
     rec["repair_amplification"] = EV.repair_amplification(
@@ -372,21 +366,6 @@ def summarise(res, paired, cohorts):
             r.get("credit_ledger", {}).get("needs", 0) for r in res),
         "BOUNDED_ESCALATION_PROVEN_EPISODES": sum(
             1 for r in res if r.get("bounded_escalation_proven")),
-        "BRANCH_TREES_OPENED": sum(r.get("branch_trees_opened", 0) for r in res),
-        "CHILD_BRANCHES_COMPLETED": sum(
-            r.get("child_branches_completed", 0) for r in res),
-        "PARENT_BRANCH_COMPLETIONS_PROPAGATED": sum(
-            r.get("parent_branch_completions_propagated", 0) for r in res),
-        "PREMATURE_PARENT_BRANCH_COMPLETIONS": sum(
-            r.get("premature_parent_branch_completions", 0) for r in res)
-            + sum(r.get("tree_ledger", {}).get("premature_parent_completions", 0)
-                  for r in res),
-        "UNACKNOWLEDGED_TERMINAL_BRANCHES": sum(
-            r.get("unacknowledged_terminal_branches", 0) for r in res)
-            + sum(r.get("tree_ledger", {}).get(
-                "unacknowledged_terminal_branches", 0) for r in res),
-        "TREE_CREDIT_LEDGER_FAILURES": sum(
-            r.get("tree_ledger", {}).get("invariant_failures", 0) for r in res),
         "VOID_REGENERATION_EPISODES": {
             "n": sum(1 for r in gf + gg if r.get("void")), "of": len(gf) + len(gg),
             "reasons": sorted({r["void_reason"] for r in gf + gg if r.get("void")})},

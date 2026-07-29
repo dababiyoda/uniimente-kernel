@@ -148,68 +148,6 @@ def credits_conserved(organ) -> bool:
     return credit_ledger_reconciliation(organ)["ok"]
 
 
-def tree_credit_reconciliation(organ) -> dict:
-    """Recursive reconciliation over the whole descendant search tree.
-
-    Origin-level reconciliation can balance while the tree beneath a branch is
-    still causally alive, because the origin only ever saw its own top-level
-    allocations. For every relay record:
-
-        parent_allocation == local_relay_cost + child_allocations
-                             + returned + cancelled  (at closure)
-
-    while a record is still open, `returned` and `cancelled` are not yet due, so
-    the open form is the first two terms alone.
-    """
-    trees = failures = premature = unacked = 0
-    worst = 0.0
-    for u in organ.units.values():
-        for bid, rec in u._relay_branches.items():
-            trees += 1
-            spent = rec["local_relay_cost"] + rec["child_allocations"]
-            if rec["status"] == "open":
-                drift = abs(rec["allocated_credit"] - spent)
-            else:
-                drift = abs(rec["allocated_credit"] - spent)
-            worst = max(worst, drift)
-            if drift > 1e-6:
-                failures += 1
-            # A record declared terminal while it still lists live children is
-            # exactly the premature completion the hierarchy exists to prevent.
-            if rec["status"] == "exhausted" and rec["children_outstanding"]:
-                premature += 1
-            # A branch nobody ever accounted for: open, with children that never
-            # completed, on a need that is finished.
-            if (rec["status"] == "open" and rec["children_outstanding"]
-                    and rec["need_id"] in u.closed_needs):
-                unacked += 1
-    return {"branch_trees": trees, "invariant_failures": failures,
-            "worst_drift": round(worst, 6),
-            "premature_parent_completions": premature,
-            "unacknowledged_terminal_branches": unacked,
-            "ok": failures == 0 and premature == 0 and unacked == 0}
-
-
-def unacknowledged_terminal_branches(organ) -> int:
-    """Top-level branches left open on a need that has closed.
-
-    An origin branch that never received a terminal outcome means the search
-    tree beneath it went silent, which is the failure mode that makes a
-    "proved" exhaustion unprovable.
-    """
-    n = 0
-    for u in organ.units.values():
-        for nid, st in u._search.items():
-            if "branches" not in st:
-                continue
-            finished = st.get("settled") or st.get("closed")
-            if not finished:
-                continue
-            n += sum(1 for br in st["branches"].values()
-                     if br["status"] == "open")
-    return n
-
-
 def bounded_escalation_proven(organ) -> bool:
     """A proved, attributable exhaustion, not merely an unrestored episode.
 

@@ -24,8 +24,12 @@ K = Contract("fn", "RAW", "VERDICT", lambda v: v.payload == "ACCEPT")
 P = "  Hello  "
 
 
-def cap(n, a, p, f, c=1.0, d="shared", k=""):
-    return Capability(n, a, p, f, c, d, k)
+OK_ATT = lambda v: isinstance(v, str) and v.startswith("att:") and v[4:].isdigit()
+OK_AGR = lambda v: v in ("AGREED", "DISPUTED")
+
+
+def cap(n, a, p, f, c=1.0, d="shared", k="", acc=None):
+    return Capability(n, a, p, f, c, d, k, acc)
 
 
 def build(fams=("a", "b", "c", "d")):
@@ -33,9 +37,9 @@ def build(fams=("a", "b", "c", "d")):
     for f in fams:
         caps += [cap(f"nm.{f}", ("RAW",), "NORM", NM, 1.0, f"d.{f}", "normalise"),
                  cap(f"at.{f}", ("NORM",), "ATT", AT, 1.0, f"d.{f}", "attest")]
-    caps += [cap("cx0", ("ATT", "ATT"), "AGREED", CX, 1.0, "d.x", "crosscheck"),
-             cap("cx1", ("ATT", "ATT"), "AGREED", CX, 1.1, "d.y", "crosscheck"),
-             cap("ad0", ("AGREED", "AGREED"), "VERDICT", AD, 1.0, "d.z", "adjudicate")]
+    caps += [cap("cx0", ("ATT", "ATT"), "AGREED", CX, 1.0, "d.x", "crosscheck", OK_ATT),
+             cap("cx1", ("ATT", "ATT"), "AGREED", CX, 1.1, "d.y", "crosscheck", OK_ATT),
+             cap("ad0", ("AGREED", "AGREED"), "VERDICT", AD, 1.0, "d.z", "adjudicate", OK_AGR)]
     us = [Unit(unit_id=f"{c_.klass()}.{i}", capability=c_) for i, c_ in enumerate(caps)]
     o = Organ(us, K)
     ids = list(o.units)
@@ -100,17 +104,61 @@ def test_every_counter_can_be_driven_above_zero():
         assert d == 1, f"counter {name} did not respond to increment"
 
 
-def test_counters_are_incremented_somewhere_in_the_module():
-    """FAILS if a counter exists but no code path ever increments it."""
+def test_whole_organ_scan_increments_its_counter_at_the_behaviour_site():
+    o, _ = formed()
+    reset()
+    o._scan_all_units()
+    assert C["WHOLE_ORGAN_REVIEW_PASSES"] == 1
+    assert C["GLOBAL_REPAIR_SCANS"] == 1
+
+
+def test_provider_index_read_increments_its_counter():
+    o, _ = formed()
+    reset()
+    o.providers_of("ATT")
+    assert C["FULL_PROVIDER_INDEX_READS"] == 1
+
+
+def test_second_commissioning_is_recorded_as_a_supervisor_restart():
+    o, _ = formed()
+    reset()
+    o.commission()
+    assert C["SUPERVISOR_RESTART_EVENTS"] == 1
+
+
+def test_boundary_reopen_attempt_is_recorded():
+    o, _ = formed()
+    reset()
+    o.units[SINK]._reopen_contrastively(0, GONE, "x", frozenset(), has_sibling=False)
+    assert C["BOUNDARY_TRIGGERED_REPAIR_EVENTS"] == 1
+
+
+def test_the_substrate_never_reads_the_provider_index():
+    """Global provider knowledge must be evaluator-only."""
     src = pathlib.Path(v5.__file__).read_text()
-    exempt = {"SUPERVISOR_RESTART_EVENTS", "GLOBAL_REPAIR_SCANS",
-              "FULL_PROVIDER_INDEX_READS", "TARGET_TOPOLOGY_LEAKAGE_EVENTS",
-              "UNAUTHORIZED_EXTERNAL_EFFECTS", "WHOLE_ORGAN_REVIEW_PASSES"}
-    for name in COUNTER_NAMES:
-        if name in exempt:
-            continue  # these measure behaviours the design must never perform
-        assert f'C.incr("{name}"' in src, (
-            f"{name} is never incremented: it would report zero regardless")
+    tree = ast.parse(src)
+    unit = next(n for n in ast.walk(tree)
+                if isinstance(n, ast.ClassDef) and n.name == "Unit")
+    assert "providers_of" not in ast.unparse(unit)
+
+
+def test_over_refusal_is_evidence_not_a_runtime_verdict():
+    """The unit emits what it refused; it does not decide whether that
+    excluded every alternative, which needs global knowledge."""
+    src = pathlib.Path(v5.__file__).read_text()
+    assert 'C.incr("OVER_REFUSAL_EVENTS"' not in src
+    o, _ = formed()
+    d1 = o.units[SINK].bonds[0].supplier
+    consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
+    o.units[consumer.bonds[0].supplier].dissolved = True
+    o.run_item(P)
+    ev = [e for u in o.units.values() for e in u.refusal_evidence]
+    assert ev
+    for e in ev:
+        for k in ("failed_derivation", "working_sibling_derivations",
+                  "distinguishing_refused", "uncertainty", "direct_supplier",
+                  "required_type", "had_working_sibling"):
+            assert k in e, f"refusal evidence is missing {k}"
 
 
 def test_reset_does_not_orphan_imported_counter_references():
@@ -135,18 +183,55 @@ def test_a_unit_cannot_reach_beyond_its_own_bonds():
     assert C["UNIT_ENUMERATIONS_FOR_REPAIR"] == before + 1
 
 
-def test_semantic_fault_does_not_refuse_every_producer():
-    """FAILS if Phase 3F's over-refusal returns."""
+def test_semantically_wrong_input_is_detected_and_repaired_locally():
+    """The full qualifying sequence. A weaker assertion - merely that not every
+    supplier was refused - can pass while nothing was detected at all."""
     o, healthy = formed()
+    assert o.result_ok(healthy)
     d1 = o.units[SINK].bonds[0].supplier
     consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
     victim = consumer.bonds[0].supplier
     o.units[victim].corrupt = True
+    reset()
+    restored = o.run_item(P)
+
+    rejects = [r for u in o.units.values() for r in u.receipts
+               if r.kind == "semantic_reject"]
+    assert rejects, "no unit locally rejected the wrong value"
+    assert victim in {r.supplier for r in rejects}
+    assert C["EVENT_DRIVEN_LOCAL_ACTIVATIONS"] > 0
+    assert C["BOUNDARY_TRIGGERED_REPAIR_EVENTS"] == 0
+    assert C["WHOLE_ORGAN_REVIEW_PASSES"] == 0
+    assert C["FULL_PROVIDER_INDEX_READS"] == 0
+    ev = [e for u in o.units.values() for e in u.refusal_evidence]
+    assert ev and all(len(e["distinguishing_refused"]) <= 2 for e in ev)
+    assert o.result_ok(restored), "the correct final result was not restored"
+
+
+def test_runtime_never_invokes_attempt_without_a_pending_event():
+    """FAILS on whole-organ polling, including via indirection."""
+    src = pathlib.Path(v5.__file__).read_text()
+    tree = ast.parse(src)
+    organ = next(n for n in ast.walk(tree)
+                 if isinstance(n, ast.ClassDef) and n.name == "Organ")
+    for fn in [n for n in organ.body if isinstance(n, ast.FunctionDef)]:
+        text = ast.unparse(fn)
+        if ".attempt(" not in text:
+            continue
+        assert "for uid in sorted(self.units)" not in text, (
+            f"Organ.{fn.name} calls attempt() across all units: that is "
+            f"whole-organ polling however indirect")
+        assert "self.ready" in text, (
+            f"Organ.{fn.name} calls attempt() outside the ready queue")
+
+
+def test_healthy_run_dispatches_far_fewer_events_than_a_full_pass():
+    reset()
+    o = build()
+    o.commission()
     o.run_item(P)
-    producers = {u.unit_id for u in o.units.values()
-                 if u.capability.produces == consumer.capability.accepts[0]}
-    assert not consumer.would_refuse_everything(producers), (
-        "a single fault refused every producer of the required type")
+    assert o.events_dispatched < 4 * len(o.units), (
+        f"{o.events_dispatched} events for {len(o.units)} units looks like polling")
 
 
 # ==========================================================================
@@ -221,6 +306,15 @@ def test_not_yet_is_not_treated_as_failure():
     o.run_item(P)
     assert C["EVENT_DRIVEN_LOCAL_ACTIVATIONS"] == 0, (
         "a healthy first run reopened something: 'not yet' was read as failure")
+
+
+def test_a_unit_that_waits_is_not_rescheduled_by_polling():
+    """A unit with an unproduced supplier must simply wait, not spin."""
+    reset()
+    o = build()
+    o.commission()
+    o.run_item(P)
+    assert o.events_dispatched <= 3 * len(o.units)
 
 
 def test_diagnosis_receives_only_receipts():

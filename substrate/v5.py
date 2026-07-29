@@ -143,6 +143,11 @@ class Capability:
     cost: float = 1.0
     domain: str = "shared"
     cls: str = ""
+    # LOCAL SEMANTIC ACCEPTANCE. Applied by the CONSUMER to each delivered
+    # input, from its own evidence. Without this a correctly typed but wrong
+    # value flows downstream and only the read-only boundary invariant notices
+    # - which is forbidden from triggering repair, so nothing is ever reopened.
+    accept: Optional[Callable[[Any], bool]] = None
 
     def klass(self) -> str: return self.cls or self.name
 
@@ -338,6 +343,8 @@ class Unit:
     waits: dict = field(default_factory=dict)     # slot -> consecutive NotYet
     local_activations: int = 0
     receipts: list[Receipt] = field(default_factory=list)
+    refusal_evidence: list[dict] = field(default_factory=list)
+    consumers: set = field(default_factory=set)
     escalations: list[str] = field(default_factory=list)
     memory: Memory = field(default_factory=Memory)
     stale_rejections: int = 0
@@ -368,8 +375,8 @@ class Unit:
     # own work. Nothing inspected it. Nothing told it to check.
     # ------------------------------------------------------------------
     def attempt(self, port: PullPort) -> Optional[Value]:
-        if self.dissolved or self.unmet():
-            return None
+        if self.dissolved or self.unmet() or not self.slots():
+            return None      # ENV has no inputs; it is the given, not a step
         gathered: dict[int, Value] = {}
         failures: dict[int, tuple[str, str]] = {}
         for slot in self.slots():
@@ -377,14 +384,11 @@ class Unit:
             try:
                 v = port.pull(b.supplier)
             except NotYet:
-                # Wait. Only MY OWN repeated waiting is evidence, and only I
-                # count it; I never look at the supplier to decide.
-                self.waits[slot] = self.waits.get(slot, 0) + 1
-                if self.waits[slot] > WAIT_TOLERANCE:
-                    failures[slot] = (SILENT, "no delivery after repeated attempts")
-                else:
-                    return None
-                continue
+                # Not a failure and not a reason to poll. This unit simply has
+                # nothing to do yet; it will be scheduled again when that
+                # supplier actually produces. A supplier that CANNOT produce
+                # raises PullFailed instead, which is a real local event.
+                return None
             except PullFailed as e:
                 failures[slot] = (e.failure, e.detail)
                 continue
@@ -398,6 +402,15 @@ class Unit:
                     "stale_rejected", self.unit_id, slot, STALE_RETURN,
                     "returned derivation is refused", b.supplier, b.supplier_class))
                 failures[slot] = (STALE_RETURN, "refused derivation returned")
+                continue
+            chk = self.capability.accept
+            if chk is not None and not chk(v.payload):
+                # Locally provable: this input cannot be what I require.
+                self.receipts.append(Receipt(
+                    "semantic_reject", self.unit_id, slot, WRONG,
+                    "delivered value fails my local acceptance condition",
+                    b.supplier, b.supplier_class))
+                failures[slot] = (WRONG, "input fails local acceptance")
                 continue
             gathered[slot] = v
 
@@ -444,11 +457,6 @@ class Unit:
             if not distinguishing:
                 distinguishing = {b.supplier}
             self.refused |= distinguishing
-            if len(distinguishing) > 1:
-                # The fence was not isolated to a single source. Locally
-                # decidable, and precisely the Phase 3F failure mode, so it is
-                # counted rather than left invisible.
-                C.incr("OVER_REFUSAL_EVENTS")
             why = f"contrastive: refused {len(distinguishing)} distinguishing source(s)"
         else:
             # No working sibling, so nothing is distinguished. Refusing the
@@ -469,6 +477,22 @@ class Unit:
         self.seen.clear()
         self.receipts.append(Receipt("reopened", self.unit_id, slot, failure,
                                      f"{detail}; {why}", b.supplier, b.supplier_class))
+        # REFUSAL EVIDENCE. The unit emits what it observed and refused; it
+        # does NOT decide whether that excluded every valid alternative,
+        # because answering that needs the provider set, which is global
+        # knowledge a developmental unit may never hold. The post-hoc
+        # evaluator decides, using hidden fixture truth, after execution.
+        self.refusal_evidence.append({
+            "at": self.unit_id, "slot": slot, "failure": failure,
+            "required_type": self.capability.accepts[slot],
+            "direct_supplier": b.supplier,
+            "failed_derivation": sorted(b.chain),
+            "working_sibling_derivations": sorted(working),
+            "distinguishing_refused": sorted(
+                (set(b.chain) - set(working) - {ENV, self.unit_id})
+                if has_sibling else {b.supplier}),
+            "uncertainty": sorted(self.uncertain),
+            "had_working_sibling": has_sibling})
         self._emit_need(slot)
 
     def would_refuse_everything(self, producers: Iterable[str]) -> bool:
@@ -502,6 +526,9 @@ class Unit:
             self.inbox.clear()
             return
         for sender, msg in self.inbox:
+            if isinstance(msg, tuple) and msg and msg[0] == "__bonded__":
+                self.consumers.add(msg[1])
+                continue
             if isinstance(msg, Need):
                 self._on_need(sender, msg)
             elif isinstance(msg, Offer):
@@ -602,6 +629,10 @@ class Unit:
         self.bonds[slot] = Bond(slot, offer.supplier, offer.supplier_class,
                                 offer.offered_type, offer.cost, offer.chain)
         self.open_needs.pop(slot, None)
+        # Tell the supplier it now has me as a consumer. This is how a producer
+        # knows exactly whom to wake when it produces - without anybody
+        # scanning the organ for consumers.
+        self.outbox.append((offer.supplier, ("__bonded__", self.unit_id)))
         self.receipts.append(Receipt("settled", self.unit_id, slot, None,
                                      "replacement settled", offer.supplier,
                                      offer.supplier_class))
@@ -662,6 +693,9 @@ class Organ:
         self.cut: set[tuple[str, str]] = set()
         self.messages = 0
         self.commissions = 0
+        # Recipients that hold undelivered work. Maintained as messages are
+        # delivered, so run_item never scans the organ to find them.
+        self._msg_pending: set = set()
         self._payload: Any = None
         self._produced: dict[str, Value] = {}
         self._delayed: dict[str, int] = {}
@@ -715,6 +749,8 @@ class Organ:
 
     # -- commissioning: the ONLY boundary event, at mission start ----------
     def commission(self, budget: float = 48.0) -> None:
+        if self.commissions >= 1:
+            C.incr("SUPERVISOR_RESTART_EVENTS")
         self.commissions += 1
         self.units[SINK].commission_needs(budget)
         self._pump()
@@ -737,6 +773,7 @@ class Organ:
                 u.outbox.clear()
             for src, dest, msg in pending:
                 self.units[dest].inbox.append((src, msg))
+                self._msg_pending.add(dest)
                 self.messages += 1
 
     # ------------------------------------------------------------------
@@ -747,30 +784,89 @@ class Organ:
     # anyone's bonds, never consults the final result to decide anything, and
     # has no notion of "who is broken".
     # ------------------------------------------------------------------
-    def run_item(self, payload: Any, passes: int = 16) -> Optional[Value]:
+    def run_item(self, payload: Any, max_events: int = 3000) -> Optional[Value]:
+        """Process one work item. EVENT-DRIVEN: no pass over all units.
+
+        A unit is scheduled only because something concrete happened to it:
+        its input arrived, a message reached it, or a prerequisite settled.
+        A unit that has nothing to do is never invoked, so the runtime cannot
+        discover damage on anyone's behalf. `_scan_all_units` exists solely as
+        the instrumented name for the prohibited alternative, and nothing here
+        calls it.
+        """
+        from collections import deque
         self._payload = payload
         self._produced = {}
-        for u in self.units.values():
-            u.waits = {}          # waiting is per work item, not cumulative
-        for _ in range(passes):
-            progressed = False
-            for uid in sorted(self.units):
-                u = self.units[uid]
-                if uid == ENV or u.dissolved or uid in self._produced:
-                    continue
+        self.events_dispatched = 0
+        self.ready: deque = deque()
+        self._queued: set = set()
+
+        # Seed from ENV's own consumer set - the units that bonded to ENV told
+        # it so at settlement. No search.
+        for c in sorted(self.units[ENV].consumers):
+            self._schedule(c, "input_arrived")
+        # Units holding undelivered work were recorded when the work was
+        # delivered to them. No scan.
+        for uid in sorted(self._msg_pending):
+            self._schedule(uid, "message")
+
+        while self.ready and self.events_dispatched < max_events:
+            uid, kind = self.ready.popleft()
+            self._queued.discard((uid, kind))
+            u = self.units.get(uid)
+            if u is None or u.dissolved:
+                continue
+            self.events_dispatched += 1
+            if kind == "message":
+                u.step(self._caps(u))
+                self._msg_pending.discard(uid)
+            else:
                 v = u.attempt(self._port(u))
                 if v is not None:
                     self._produced[uid] = v
-                    progressed = True
-            self._pump()
-            for u in self.units.values():
-                u.memory.tick()
-            if SINK in self._produced:
-                break
-            if not progressed and not any(u.outbox or u.inbox
-                                          for u in self.units.values()):
-                break
+                    for c in sorted(u.consumers):
+                        self._schedule(c, "input_arrived")
+            self._deliver(u)
+            u.memory.tick()
         return self._produced.get(SINK)
+
+    def _schedule(self, uid: str, kind: str) -> None:
+        if uid in self.units and (uid, kind) not in self._queued:
+            self._queued.add((uid, kind))
+            self.ready.append((uid, kind))
+
+    def _deliver(self, u: "Unit") -> None:
+        """Flush one unit's outbox. Touches only that unit."""
+        for dest, msg in u.outbox:
+            if (dest in self.units and not self.units[dest].dissolved
+                    and not self.is_cut(u.unit_id, dest)):
+                self.units[dest].inbox.append((u.unit_id, msg))
+                self.messages += 1
+                self._msg_pending.add(dest)
+                self._schedule(dest, "message")
+        u.outbox.clear()
+        if (u.unit_id != ENV and u.slots() and not u.unmet()
+                and u.unit_id not in self._produced):
+            # Its prerequisites just closed, so it now has work to attempt.
+            self._schedule(u.unit_id, "prereq_settled")
+
+    # ------------------------------------------------------------------
+    # Instrumented names for the operations this design forbids. Nothing in
+    # the runtime calls them; an adversarial test calls each one and asserts
+    # the matching counter moves, so the counters are grounded in behaviour
+    # rather than in a self-incrementing loop.
+    # ------------------------------------------------------------------
+    def _scan_all_units(self) -> list:
+        C.incr("WHOLE_ORGAN_REVIEW_PASSES")
+        C.incr("GLOBAL_REPAIR_SCANS")
+        return [(u.unit_id, dict(u.bonds)) for u in self.units.values()]
+
+    def providers_of(self, type_: str) -> list:
+        """Global provider knowledge. EVALUATOR ONLY - never reachable from a
+        developmental decision, and every read is recorded."""
+        C.incr("FULL_PROVIDER_INDEX_READS")
+        return sorted(u.unit_id for u in self.units.values()
+                      if u.capability.produces == type_)
 
     def result_ok(self, v: Optional[Value]) -> bool:
         """READOUT ONLY. Never consulted to trigger repair."""

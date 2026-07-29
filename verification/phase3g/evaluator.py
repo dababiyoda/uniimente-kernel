@@ -81,6 +81,38 @@ def unauthorised_external_effects() -> int:
     return len(forbidden) + len({"open", "eval", "exec"} & calls)
 
 
+def duplicate_supplier_blocked(organ) -> int:
+    """Open requirements whose recorded refusals are dominated by ineligibility.
+
+    This is the measured baseline the mechanism has to move: an unsettled slot
+    where the only thing that answered was a structurally ineligible candidate.
+    """
+    n = 0
+    for u in organ.units.values():
+        for st in u._search.values():
+            if st.get("settled"):
+                continue
+            if st.get("rejected", {}).get("duplicate_supplier"):
+                n += 1
+    return n
+
+
+def credits_conserved(organ) -> bool:
+    """No branch, relay, widening round or exhaustion reply may mint credit.
+
+    A need's remaining credit can never exceed what it started with, and can
+    never go negative -- either would mean the end-to-end budget was not a
+    budget.
+    """
+    for u in organ.units.values():
+        for st in u._search.values():
+            init = st.get("initial_credits", 0.0)
+            left = st.get("credits", 0.0)
+            if left < -1e-9 or left > init + 1e-9:
+                return False
+    return True
+
+
 def semantic_restoration(organ, value) -> bool:
     return organ.result_ok(value)
 

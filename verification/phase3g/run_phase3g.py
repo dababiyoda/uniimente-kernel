@@ -180,6 +180,15 @@ def episode(ep, results, *, certificate=True):
     rec["unit_enumerations_for_repair"] = snap["UNIT_ENUMERATIONS_FOR_REPAIR"]
     rec["developmental_provider_index_reads"] = snap["FULL_PROVIDER_INDEX_READS"]
     rec["stale_derivations_rejected"] = EV.stale_derivations_rejected(organ)
+    # Constraint-preserving distinct replacement search.
+    for k in ("DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED",
+              "DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED",
+              "BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS",
+              "INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS",
+              "INDEPENDENCE_VIOLATIONS"):
+        rec[k.lower()] = snap[k]
+    rec["duplicate_supplier_blocked_repair"] = EV.duplicate_supplier_blocked(organ)
+    rec["credit_conservation_ok"] = EV.credits_conserved(organ)
     rec["events_dispatched"] = organ.events_dispatched
     rec["repair_messages"] = organ.messages - before_msgs
     rec["repair_amplification"] = EV.repair_amplification(
@@ -331,6 +340,20 @@ def summarise(res, paired, cohorts):
         "STALE_DERIVATIONS_REJECTED": sum(
             r.get("stale_derivations_rejected", 0) for r in res),
         "OVER_REFUSAL_EVENTS": sum(r.get("over_refusal", 0) for r in res),
+        "DUPLICATE_SUPPLIER_BLOCKED_REPAIR_EPISODES": sum(
+            1 for r in res if r.get("duplicate_supplier_blocked")),
+        "DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED": sum(
+            r.get("distinct_eligible_replacements_discovered", 0) for r in res),
+        "DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED": sum(
+            r.get("distinct_eligible_replacements_settled", 0) for r in res),
+        "BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS": sum(
+            r.get("bounded_distinct_replacement_exhaustions", 0) for r in res),
+        "INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS": sum(
+            r.get("ineligible_candidate_branch_continuations", 0) for r in res),
+        "INDEPENDENCE_VIOLATIONS": sum(
+            r.get("independence_violations", 0) for r in res),
+        "CREDIT_CONSERVATION_FAILURES": sum(
+            1 for r in res if r.get("credit_conservation_ok") is False),
         "VOID_REGENERATION_EPISODES": {
             "n": sum(1 for r in gf + gg if r.get("void")), "of": len(gf) + len(gg),
             "reasons": sorted({r["void_reason"] for r in gf + gg if r.get("void")})},
@@ -409,6 +432,19 @@ def main() -> int:
         print("This script takes a POSITIONAL argument and accepts no flags.")
         return 2
     cohorts = COHORT_ARGS[which]
+    if "heldout" in cohorts:
+        retired = json.loads((HERE / "RETIRED_DRAWS.json").read_text())
+        active = M.get("draw_id", "phase3g-heldout-draw-1")
+        for d in retired["retired_draws"]:
+            if d["draw_id"] == active:
+                print(f"REFUSING TO RUN: draw {active!r} is {d['status']} and "
+                      f"{d['admissibility']}. It may never instantiate a gate run.")
+                print(f"Reason: {d['retired_because']}")
+                print("See FRESH_DRAW_PROTOCOL.md.")
+                return 2
+        if active in retired.get("spent_draws", []):
+            print(f"REFUSING TO RUN: draw {active!r} has already been spent.")
+            return 2
     if "heldout" in cohorts and os.environ.get("PHASE3G_SPEND_HELDOUT") != "1":
         print("REFUSING TO RUN: running the held-out cohort spends the "
               "preregistered draw, which is valid exactly once and only after "

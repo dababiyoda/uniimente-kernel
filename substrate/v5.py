@@ -110,6 +110,12 @@ COUNTER_NAMES = (
     "TARGET_TOPOLOGY_LEAKAGE_EVENTS",
     "UNAUTHORIZED_EXTERNAL_EFFECTS",
     "EVENT_DRIVEN_LOCAL_ACTIVATIONS",
+    # Constraint-preserving distinct replacement search.
+    "DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED",
+    "DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED",
+    "BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS",
+    "INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS",
+    "INDEPENDENCE_VIOLATIONS",
 )
 
 
@@ -281,6 +287,19 @@ class Need:
     hops: int = 24                # how far this need may travel
     credits: float = 0.0          # END-TO-END message budget; branching divides it
     fanout: int = 0               # unused; hops and credits bound propagation
+    # SLOT INELIGIBILITY, held strictly apart from `refused`.
+    #
+    # `refused` is CAUSAL BLAME: this supplier or derivation is implicated in a
+    # failure. `must_differ_from` is a STRUCTURAL COMPATIBILITY CONSTRAINT: this
+    # supplier is healthy and trustworthy but already fills another slot on the
+    # origin, so it cannot also fill this one without destroying the
+    # independence a multi-input join exists to provide.
+    #
+    # Merging them would poison failure memory against a blameless supplier and
+    # would make a structural fact look like evidence of fault. It is derived
+    # only from the origin's OWN currently settled sibling slots -- local
+    # evidence, not a provider index and not topology.
+    must_differ_from: frozenset[str] = frozenset()
 
     def relay(self, through: str) -> "Need":
         """A relay SPENDS. Preserving the full budget across relays is what let
@@ -288,12 +307,16 @@ class Need:
         propagation was not."""
         return Need(self.need_id, self.wanted, self.origin, self.slot,
                     self.lineage + (through,), self.budget, self.refused,
-                    self.hops - 1, self.credits - 1.0, self.fanout)
+                    self.hops - 1, self.credits - 1.0, self.fanout,
+                    self.must_differ_from)
 
     def sub(self, wanted: str, by: str, slot: int, share: float) -> "Need":
+        # A sub-need is a DIFFERENT slot on a DIFFERENT unit, so the origin's
+        # sibling exclusions do not apply to it and must not leak across.
         return Need(f"{self.need_id}/{by}:{slot}", wanted, by, slot,
                     self.lineage + (by,), share, self.refused,
-                    self.hops - 1, self.credits - 1.0, self.fanout)
+                    self.hops - 1, self.credits - 1.0, self.fanout,
+                    frozenset())
 
 
 @dataclass
@@ -403,6 +426,9 @@ class Unit:
     stale_rejections: int = 0
     # Why the last settlement attempt was refused. Evaluator-only diagnostics.
     _last_refusal: str = ""
+    # Needs this unit has already acknowledged as a dead branch, so an
+    # acknowledgement is sent at most once per unit per need.
+    _exhausted_reported: set = field(default_factory=set)
     # Which work item is currently being processed. Stamped by the organ at
     # dispatch, recorded into settlement provenance, never branched on.
     item_seq: int = 0
@@ -590,7 +616,9 @@ class Unit:
         self.open_needs[slot] = nid
         self._search[nid] = {"credits": REPAIR_SEARCH_BUDGET, "round": 0,
                              "tried": set(), "offers": 0, "settled": False,
-                             "rejected": {}, "initial_credits": REPAIR_SEARCH_BUDGET}
+                             "rejected": {}, "initial_credits": REPAIR_SEARCH_BUDGET,
+                             "exhausted_branches": 0, "exhaustion_recorded": False,
+                             "must_differ_from": []}
         self._send_to_frontier(slot, nid)
 
     def _frontier(self, want: str) -> list[str]:
@@ -609,19 +637,31 @@ class Unit:
         if st is None or st["credits"] <= 0:
             return False
         want = self.capability.accepts[slot]
-        preferred = [n for n in self._frontier(want) if n not in st["tried"]]
+        # The boundary cannot supply an interior repair type, so spending a
+        # round-0 slot on ENV or SINK wasted a third of the fan-out and helped
+        # a round end with no answer and no acknowledgement.
+        boundary = {ENV, SINK}
+        preferred = [n for n in self._frontier(want)
+                     if n not in st["tried"] and n not in boundary]
         rest = [n for n in sorted(self.neighbours)
                 if n not in st["tried"] and n not in self.refused
-                and n not in preferred]
+                and n not in preferred and n not in boundary]
         ring = (preferred + rest)[:FRONTIER_WIDTH]
         if not ring:
             return False
         # 4. Message credits are END TO END: the need carries the remainder, and
         # branching DIVIDES it so no path can mint credit.
         per = max(1.0, st["credits"] / max(1, len(ring)))
+        # The suppliers already filling this consumer's OTHER slots. Derived from
+        # this unit's own bonds and nothing else, so it is local evidence rather
+        # than a provider index or a view of topology. Carried separately from
+        # `refused`: these suppliers are not blamed, only ineligible HERE.
         need = Need(nid, want, self.unit_id, slot, (self.unit_id,),
                     self.repair_budget, frozenset(self.refused),
-                    hops=REPAIR_HOPS, credits=per)
+                    hops=REPAIR_HOPS, credits=per,
+                    must_differ_from=frozenset(
+                        b.supplier for s, b in self.bonds.items() if s != slot))
+        st["must_differ_from"] = sorted(need.must_differ_from)
         for n in ring:
             if st["credits"] <= 0:
                 break
@@ -663,6 +703,21 @@ class Unit:
             if isinstance(msg, tuple) and msg and msg[0] == "__retired__":
                 self.consumers.discard(msg[1])
                 continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__exhausted__":
+                nid = msg[1]
+                if nid in self.closed_needs:
+                    self.late_messages += 1
+                    continue
+                st = self._search.get(nid)
+                if st is not None and not st["settled"]:
+                    st["exhausted_branches"] = st.get("exhausted_branches", 0) + 1
+                else:
+                    # Not mine to widen: pass the exhaustion back toward the
+                    # origin so the requester, not an intermediate, decides.
+                    back = self.reverse.get(nid)
+                    if back:
+                        self.outbox.append((back[0], msg))
+                continue
             if isinstance(msg, Need):
                 self._on_need(sender, msg)
             elif isinstance(msg, Offer):
@@ -678,21 +733,74 @@ class Unit:
             if st and not st["settled"]:
                 if self.widen(slot):
                     break
+                # Widening is impossible and every branch reported back: this is
+                # a PROVED bounded exhaustion, not a stall. Record it once so a
+                # correct "no eligible distinct replacement exists" outcome is
+                # attributable and distinguishable from silent stalling.
+                if (st.get("exhausted_branches") and not st.get("exhaustion_recorded")
+                        and st["credits"] <= 0):
+                    st["exhaustion_recorded"] = True
+                    C.incr("BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS")
+                    self.escalations.append(
+                        f"no eligible distinct supplier for slot {slot}: "
+                        f"{st.get('exhausted_branches', 0)} branches exhausted, "
+                        f"excluded {st.get('must_differ_from', [])}")
+                    self.receipts.append(Receipt(
+                        "branch_exhausted", self.unit_id, slot, None,
+                        "bounded distinct replacement exhaustion"))
+
+    def _report_exhausted(self, sender: str, need: Need) -> None:
+        """Tell the immediate requester this branch is dead.
+
+        Every early return here used to drop the need silently, so a search
+        whose branches all died reported nothing at all: the origin was never
+        woken again, never widened, and ended with unspent credits and no
+        explanation. Deduped per unit per need so acknowledgement traffic cannot
+        exceed the need traffic that caused it.
+        """
+        if need.need_id in self._exhausted_reported:
+            return
+        self._exhausted_reported.add(need.need_id)
+        self.outbox.append((sender, ("__exhausted__", need.need_id)))
 
     def _on_need(self, sender: str, need: Need) -> None:
         if (need.budget <= 0 or need.hops <= 0 or need.credits < 0
                 or self.unit_id in need.lineage):
+            self._report_exhausted(sender, need)
             return
         if need.need_id in self.closed_needs:
             self.late_messages += 1      # the obligation is already settled
             return
         key = f"{need.need_id}|{need.wanted}"
         if key in self.seen:
+            self._report_exhausted(sender, need)
             return
         self.seen.add(key)
         self.reverse[need.need_id] = (sender, need.wanted)
 
-        if self.capability.produces == need.wanted and not self.silent:
+        # MATCHING BUT INELIGIBLE IS NOT AN ANSWER, AND NOT A DEAD END.
+        #
+        # Previously any producer of the wanted type replied and returned. When
+        # the only reachable producer was the origin's own sibling supplier, it
+        # returned an Offer that `_settle` was always going to refuse as a
+        # duplicate, and the branch stopped there. That is the measured cause of
+        # 18 of 19 unrestored development episodes: a type-compatible but
+        # structurally ineligible candidate consumed the branch as though
+        # discovery had succeeded.
+        #
+        # Such a unit now submits no usable Offer and instead keeps carrying the
+        # need outward on the remaining credits, so a genuinely distinct
+        # producer beyond it can still be found.
+        ineligible = (self.capability.produces == need.wanted
+                      and self.unit_id in need.must_differ_from)
+        if ineligible:
+            C.incr("INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS")
+            self.receipts.append(Receipt(
+                "candidate_ineligible", self.unit_id, need.slot, None,
+                "candidate_ineligible_duplicate_supplier", need.origin,
+                self.capability.klass()))
+        if (self.capability.produces == need.wanted and not self.silent
+                and not ineligible):
             mine = self._derives_from()
             if mine & need.refused:
                 self.receipts.append(Receipt("withheld", self.unit_id, None, None,
@@ -702,6 +810,8 @@ class Unit:
             if cost > need.budget:
                 return
             firm = not self.unmet()
+            if firm:
+                C.incr("DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED")
             self._reply(need, firm, cost, mine)
             if not firm:
                 share = max(0.0, (need.budget - cost) / max(1, len(self.unmet())))
@@ -724,6 +834,13 @@ class Unit:
             ring = [n for n in sorted(self.neighbours) if n != sender]
         ring = ring[:FRONTIER_WIDTH]
         if not ring or need.credits <= 0:
+            # BOUNDED EXHAUSTION, reported rather than silent. A branch that
+            # cannot continue tells the requester so, which is what turns "no
+            # eligible replacement was found" into an attributable result
+            # instead of a stall with unspent credits.
+            back = self.reverse.get(need.need_id)
+            if back:
+                self.outbox.append((back[0], ("__exhausted__", need.need_id)))
             return
         # Branching DIVIDES the remaining credit. No path mints credit.
         share = need.credits / len(ring)
@@ -790,6 +907,14 @@ class Unit:
             ev["settled"] += 1
             if st is not None:
                 st["settled"] = True
+            if st is not None and st.get("must_differ_from"):
+                C.incr("DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED")
+            # POST-CONDITION on the property the whole guard exists to protect.
+            # Counted here, at the only place a bond is created, so a regression
+            # cannot pass by being invisible.
+            sups = [b.supplier for b in self.bonds.values()]
+            if len(sups) != len(set(sups)):
+                C.incr("INDEPENDENCE_VIOLATIONS")
         elif st is not None:
             why = self._last_refusal or "unrecorded_refusal"
             st["rejected"][why] = st["rejected"].get(why, 0) + 1

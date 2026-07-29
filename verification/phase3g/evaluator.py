@@ -97,20 +97,71 @@ def duplicate_supplier_blocked(organ) -> int:
     return n
 
 
-def credits_conserved(organ) -> bool:
-    """No branch, relay, widening round or exhaustion reply may mint credit.
+def credit_ledger_reconciliation(organ) -> dict:
+    """Full per-need reconciliation. Replaces the range check, which was blind.
 
-    A need's remaining credit can never exceed what it started with, and can
-    never go negative -- either would mean the end-to-end budget was not a
-    budget.
+    The old check tested only `0 <= origin_remaining <= initial`. That says
+    nothing about credit handed to in-flight branches, and the origin used to
+    debit 1.0 per branch while handing each `reserve/len(ring)`: an 18-credit
+    budget put 18 into three branches while the origin still held 15, so the
+    system possessed 33. The range check passed the whole time.
+
+    The invariant that actually holds the budget shut:
+
+        initial_credits == reserve + in_flight + consumed + cancelled
+
+    `returned` is deliberately absent: a refund moves credit from in_flight back
+    into reserve, so it is already counted there. Including it would double-count
+    every refund and hide exactly the defect this function exists to catch.
     """
+    needs = failures = 0
+    worst = 0.0
+    negative = overspent = double_refund = 0
     for u in organ.units.values():
-        for st in u._search.values():
-            init = st.get("initial_credits", 0.0)
-            left = st.get("credits", 0.0)
-            if left < -1e-9 or left > init + 1e-9:
-                return False
-    return True
+        for nid, st in u._search.items():
+            if "reserve" not in st:
+                continue
+            needs += 1
+            init = st["initial_credits"]
+            total = st["reserve"] + st["in_flight"] + st["consumed"] + st["cancelled"]
+            drift = abs(total - init)
+            worst = max(worst, drift)
+            if drift > 1e-6:
+                failures += 1
+                if total > init:
+                    overspent += 1
+            for f in ("reserve", "in_flight", "consumed", "cancelled", "returned"):
+                if st[f] < -1e-9:
+                    negative += 1
+            for br in st["branches"].values():
+                paid = br["consumed_credit"] + br["refundable_credit"]
+                if paid > br["allocated_credit"] + 1e-9:
+                    double_refund += 1
+    return {"needs": needs, "invariant_failures": failures,
+            "worst_drift": round(worst, 6), "negative_fields": negative,
+            "budget_exceeded": overspent, "branch_overpayments": double_refund,
+            "ok": failures == 0 and negative == 0 and double_refund == 0}
+
+
+def credits_conserved(organ) -> bool:
+    """Kept as the boolean face of `credit_ledger_reconciliation`."""
+    return credit_ledger_reconciliation(organ)["ok"]
+
+
+def bounded_escalation_proven(organ) -> bool:
+    """A proved, attributable exhaustion, not merely an unrestored episode.
+
+    Requires the behaviour-site counter to have fired AND a matching receipt AND
+    a recorded escalation naming what was excluded. A structurally unsatisfiable
+    episode that simply fails to restore does not qualify.
+    """
+    if C["BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS"] <= 0:
+        return False
+    has_receipt = any(r.kind == "branch_exhausted"
+                      for u in organ.units.values() for r in u.receipts)
+    has_reason = any("no eligible distinct supplier" in e
+                     for u in organ.units.values() for e in u.escalations)
+    return has_receipt and has_reason
 
 
 def semantic_restoration(organ, value) -> bool:

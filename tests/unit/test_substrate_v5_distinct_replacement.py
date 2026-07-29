@@ -355,3 +355,166 @@ def test_H_renaming_units_does_not_materially_change_discovery():
     assert all(indep for indep, _, _ in outcomes), (
         "independence held for some unit namings and not others")
     assert all(v == 0 for _, v, _ in outcomes)
+
+
+# ---------------------------------------------------------------------------
+# Item 6: both formerly-zero counters must become nonzero at behaviour sites
+# ---------------------------------------------------------------------------
+
+def test_distinct_settlement_counter_becomes_nonzero_with_spare_capacity():
+    """DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED read 0 on the whole cohort.
+
+    It must fire when a join actually settles a distinct replacement, and the
+    increment must come from the settlement site, not from an expected outcome.
+    """
+    fired = 0
+    for seed in range(40):
+        o, ok = _organ_with_auth_producers(4, seed)
+        j = _join(o)
+        if not ok or j is None or len(j.bonds) != 2:
+            continue
+        if len({b.supplier for b in j.bonds.values()}) != 2:
+            continue
+        slot = min(j.bonds)
+        victim = j.bonds[slot].supplier
+        o.units[victim].silent = True
+        reset()
+        o.run_item(PAYLOAD)
+        if C["DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED"] > 0:
+            fired += 1
+            b = j.bonds.get(slot)
+            assert b is not None and b.supplier != victim, (
+                "the counter fired without a distinct replacement being bonded")
+    assert fired > 0, (
+        "DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED never incremented even with "
+        "ample spare independent capacity")
+
+
+def test_bounded_exhaustion_counter_fires_with_attributable_escalation():
+    """BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS read 0 on the whole cohort.
+
+    The old condition also demanded `reserve <= 0`, so a fully searched finite
+    neighbourhood with credit left never recorded an exhaustion. A structurally
+    unsatisfiable episode must end PROVED, not merely unrestored.
+    """
+    import evaluator as EV
+    proven = 0
+    for seed in range(40):
+        o, ok = _organ_with_auth_producers(2, seed)
+        j = _join(o)
+        if not ok or j is None or len(j.bonds) != 2:
+            continue
+        if len({b.supplier for b in j.bonds.values()}) != 2:
+            continue
+        slot = min(j.bonds)
+        victim = j.bonds[slot].supplier
+        o.units[victim].silent = True
+        reset()
+        result = o.run_item(PAYLOAD)
+        if C["BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS"] > 0:
+            proven += 1
+            assert EV.bounded_escalation_proven(o), (
+                "the counter fired without a receipt and an attributable reason")
+            assert not o.result_ok(result), "false restoration on an unsatisfiable join"
+            assert C["INDEPENDENCE_VIOLATIONS"] == 0
+    assert proven > 0, (
+        "no structurally unsatisfiable episode produced a proved bounded "
+        "exhaustion; escalation cannot be scored as an outcome")
+
+
+# ---------------------------------------------------------------------------
+# Item 3: the ledger must fail under the OLD allocation pattern
+# ---------------------------------------------------------------------------
+
+def test_ledger_invariant_holds_across_a_full_repair():
+    import evaluator as EV
+    for n_auth in (2, 3, 4):
+        o, join, seed = _formed_join(n_auth)
+        victim = join.bonds[min(join.bonds)].supplier
+        o.units[victim].silent = True
+        reset()
+        o.run_item(PAYLOAD)
+        rec = EV.credit_ledger_reconciliation(o)
+        assert rec["needs"] > 0, "no need ledger was produced to reconcile"
+        assert rec["invariant_failures"] == 0, rec
+        assert rec["budget_exceeded"] == 0, rec
+        assert rec["branch_overpayments"] == 0, rec
+        assert rec["worst_drift"] <= 1e-6, rec
+
+
+def test_the_old_allocation_pattern_is_caught_by_the_ledger():
+    """Reproduce the exact defect: debit 1.0 per branch, hand out reserve/ring.
+
+    With an 18-credit budget and a ring of three the system held 33. The old
+    evaluator checked only `0 <= origin <= initial` and passed; the ledger must
+    fail.
+    """
+    import evaluator as EV
+    o, join, seed = _formed_join(3)
+    st = v5.new_search_ledger(18.0)
+    ring, per = 3, 18.0 / 3
+    for i in range(ring):
+        st["reserve"] -= 1.0                     # the defect: debit one, not `per`
+        st["allocated"] += per
+        st["in_flight"] += per
+        st["branches"][f"b{i}"] = {
+            "need_id": "n", "round_id": 0, "branch_id": f"b{i}", "route": "x",
+            "allocated_credit": per, "consumed_credit": 0.0,
+            "refundable_credit": 0.0, "status": "open"}
+    assert st["reserve"] + st["in_flight"] == 33.0, "defect not reproduced"
+    assert 0 <= st["reserve"] <= st["initial_credits"], (
+        "the OLD range check must still pass, which is why it was insufficient")
+    join._search["probe"] = st
+    rec = EV.credit_ledger_reconciliation(o)
+    assert rec["invariant_failures"] >= 1, (
+        "the ledger did not catch 33 credits existing from a budget of 18")
+    assert rec["budget_exceeded"] >= 1
+    assert rec["ok"] is False
+
+
+def test_a_replayed_completion_cannot_refund_twice():
+    o, join, seed = _formed_join(3)
+    st = v5.new_search_ledger(12.0)
+    per = 4.0
+    st["reserve"] -= per; st["allocated"] += per; st["in_flight"] += per
+    st["branches"]["b0"] = {"need_id": "n", "round_id": 0, "branch_id": "b0",
+                            "route": "x", "allocated_credit": per,
+                            "consumed_credit": 0.0, "refundable_credit": 0.0,
+                            "status": "open"}
+    st["outstanding"].add("b0")
+    for _ in range(4):
+        join._complete_branch(st, "b0", per)      # same completion, replayed
+    assert st["reserve"] == 12.0, f"refund applied more than once: {st['reserve']}"
+    assert st["in_flight"] == 0.0
+    assert st["returned"] == per
+    total = st["reserve"] + st["in_flight"] + st["consumed"] + st["cancelled"]
+    assert abs(total - st["initial_credits"]) < 1e-9
+
+
+# ---------------------------------------------------------------------------
+# Item 4: a round may not widen while any of its branches is still open
+# ---------------------------------------------------------------------------
+
+def test_widening_requires_the_whole_round_to_have_completed():
+    o, join, seed = _formed_join(3)
+    slot = min(join.bonds)
+    reset()
+    join._reopen_contrastively(slot, v5.SILENT, "probe", frozenset(),
+                               has_sibling=False, observed_chain=None)
+    nid = join.open_needs.get(slot)
+    if nid is None:
+        pytest.skip("reopen did not create a need")
+    st = join._search[nid]
+    if not st["outstanding"]:
+        pytest.skip("no branches were opened")
+    opened = set(st["outstanding"])
+    assert join.widen(slot) is False, (
+        "widened while branches from the current round were still outstanding")
+    round_before = st["round"]
+    for bid in list(opened)[:-1]:
+        join._complete_branch(st, bid, 0.0)
+    assert join.widen(slot) is False, "widened with one branch still open"
+    join._complete_branch(st, list(opened)[-1], 0.0)
+    assert st["round"] == round_before
+    join.widen(slot)   # may or may not open a new round, depending on routes left
+    assert st["in_flight"] >= -1e-9

@@ -300,6 +300,10 @@ class Need:
     # only from the origin's OWN currently settled sibling slots -- local
     # evidence, not a provider index and not topology.
     must_differ_from: frozenset[str] = frozenset()
+    # Which allocation of the origin's budget this message is spending. Refunds
+    # are credited back to exactly one branch, so a duplicate or replayed
+    # completion cannot refund twice.
+    branch_id: str = ""
 
     def relay(self, through: str) -> "Need":
         """A relay SPENDS. Preserving the full budget across relays is what let
@@ -308,7 +312,7 @@ class Need:
         return Need(self.need_id, self.wanted, self.origin, self.slot,
                     self.lineage + (through,), self.budget, self.refused,
                     self.hops - 1, self.credits - 1.0, self.fanout,
-                    self.must_differ_from)
+                    self.must_differ_from, self.branch_id)
 
     def sub(self, wanted: str, by: str, slot: int, share: float) -> "Need":
         # A sub-need is a DIFFERENT slot on a DIFFERENT unit, so the origin's
@@ -316,7 +320,7 @@ class Need:
         return Need(f"{self.need_id}/{by}:{slot}", wanted, by, slot,
                     self.lineage + (by,), share, self.refused,
                     self.hops - 1, self.credits - 1.0, self.fanout,
-                    frozenset())
+                    frozenset(), self.branch_id)
 
 
 @dataclass
@@ -346,6 +350,55 @@ class Bond:
     # and duplicate instrumentation all look identical.
     settled_by: str = ""        # the need generation that closed this slot
     settled_item: int = 0       # the work item during which it settled
+
+
+# The share of the origin's remaining reserve that one search round may commit.
+# The origin must DEBIT what it allocates, so committing the whole reserve in
+# round 0 would leave nothing to widen with.
+ROUND_SHARE = 0.5
+
+
+def new_search_ledger(initial: float = REPAIR_SEARCH_BUDGET) -> dict:
+    """Per-need credit ledger with first-class rounds and branches.
+
+    The previous state kept a single `credits` number at the origin and debited
+    only 1.0 per branch while handing each branch `credits/len(ring)`. With an
+    18-credit budget and a ring of three that put 18 into branches while the
+    origin still held 15, so the system possessed 33 credits from a budget of
+    18. Calling that end-to-end conservation was wrong, and an evaluator that
+    only checked `0 <= origin <= initial` could not see it.
+
+    Invariant, checked by the evaluator over every need:
+
+        initial_credits == reserve + in_flight + consumed + cancelled
+
+    A branch that dies returns its unspent credit, which moves from in_flight
+    back to reserve. That is a transfer, never an issue of new credit.
+    """
+    return {
+        "initial_credits": initial,
+        "reserve": initial,          # held at the origin, available to allocate
+        "allocated": 0.0,            # cumulative, for audit only
+        "in_flight": 0.0,            # outstanding in live branches
+        "consumed": 0.0,             # spent on hops and reported back
+        "returned": 0.0,             # cumulative refunds, for audit only
+        "cancelled": 0.0,            # unused reserve released at closure
+        "round": 0,
+        "branches": {},              # branch_id -> record
+        "outstanding": set(),        # opened this round, not yet completed
+        "tried": set(),
+        "offers": 0,
+        "eligible_offers": 0,
+        "ineligible_seen": 0,
+        "settled": False,
+        "closed": False,
+        "exhaustion_recorded": False,
+        "no_untried_routes": False,
+        "rejected": {},
+        "must_differ_from": [],
+        # Retained so existing readers keep working; it mirrors `reserve`.
+        "credits": initial,
+    }
 
 
 # ==========================================================================
@@ -429,6 +482,11 @@ class Unit:
     # Needs this unit has already acknowledged as a dead branch, so an
     # acknowledgement is sent at most once per unit per need.
     _exhausted_reported: set = field(default_factory=set)
+    # Needs this unit has relayed onward. A later duplicate delivery of the same
+    # need must NOT be acknowledged as exhausted: a live sub-branch still carries
+    # it, and telling the origin otherwise would complete the branch early,
+    # under-count consumed credit, and let a round widen while it is still open.
+    _forwarded: set = field(default_factory=set)
     # Which work item is currently being processed. Stamped by the organ at
     # dispatch, recorded into settlement provenance, never branched on.
     item_seq: int = 0
@@ -614,11 +672,7 @@ class Unit:
             return
         nid = f"{self.unit_id}:{slot}:{self.local_activations}"
         self.open_needs[slot] = nid
-        self._search[nid] = {"credits": REPAIR_SEARCH_BUDGET, "round": 0,
-                             "tried": set(), "offers": 0, "settled": False,
-                             "rejected": {}, "initial_credits": REPAIR_SEARCH_BUDGET,
-                             "exhausted_branches": 0, "exhaustion_recorded": False,
-                             "must_differ_from": []}
+        self._search[nid] = new_search_ledger()
         self._send_to_frontier(slot, nid)
 
     def _frontier(self, want: str) -> list[str]:
@@ -632,52 +686,149 @@ class Unit:
         heard = [n for n in known if n in self.neighbours and n not in self.refused]
         return sorted(heard) if heard else []
 
-    def _send_to_frontier(self, slot: int, nid: str) -> bool:
-        st = self._search.get(nid)
-        if st is None or st["credits"] <= 0:
-            return False
-        want = self.capability.accepts[slot]
-        # The boundary cannot supply an interior repair type, so spending a
-        # round-0 slot on ENV or SINK wasted a third of the fan-out and helped
-        # a round end with no answer and no acknowledgement.
+    def _untried_routes(self, st: dict, want: str) -> list[str]:
+        """Local routes for `want` this search has not yet spent a branch on."""
         boundary = {ENV, SINK}
         preferred = [n for n in self._frontier(want)
                      if n not in st["tried"] and n not in boundary]
         rest = [n for n in sorted(self.neighbours)
                 if n not in st["tried"] and n not in self.refused
                 and n not in preferred and n not in boundary]
-        ring = (preferred + rest)[:FRONTIER_WIDTH]
-        if not ring:
+        return preferred + rest
+
+    def _send_to_frontier(self, slot: int, nid: str) -> bool:
+        st = self._search.get(nid)
+        if st is None or st["closed"] or st["reserve"] <= 0:
             return False
-        # 4. Message credits are END TO END: the need carries the remainder, and
-        # branching DIVIDES it so no path can mint credit.
-        per = max(1.0, st["credits"] / max(1, len(ring)))
+        want = self.capability.accepts[slot]
+        # The boundary cannot supply an interior repair type, so spending a
+        # round-0 slot on ENV or SINK wasted a third of the fan-out.
+        ring = self._untried_routes(st, want)[:FRONTIER_WIDTH]
+        if not ring:
+            st["no_untried_routes"] = True
+            return False
+        # The origin DEBITS exactly what it commits. Allocating the whole reserve
+        # in one round would leave nothing to widen with, so a round may commit
+        # only ROUND_SHARE of what remains, and never more than it holds.
+        budget = st["reserve"] * ROUND_SHARE
+        per = budget / len(ring)
+        if per < 1.0:                      # too little to split: spend it as one
+            ring, per = ring[:1], min(st["reserve"], max(1.0, budget))
         # The suppliers already filling this consumer's OTHER slots. Derived from
         # this unit's own bonds and nothing else, so it is local evidence rather
         # than a provider index or a view of topology. Carried separately from
         # `refused`: these suppliers are not blamed, only ineligible HERE.
-        need = Need(nid, want, self.unit_id, slot, (self.unit_id,),
-                    self.repair_budget, frozenset(self.refused),
-                    hops=REPAIR_HOPS, credits=per,
-                    must_differ_from=frozenset(
-                        b.supplier for s, b in self.bonds.items() if s != slot))
-        st["must_differ_from"] = sorted(need.must_differ_from)
-        for n in ring:
-            if st["credits"] <= 0:
+        excluded = frozenset(b.supplier for s, b in self.bonds.items() if s != slot)
+        st["must_differ_from"] = sorted(excluded)
+        rnd = st["round"]
+        opened = False
+        for i, n in enumerate(ring):
+            if st["reserve"] < per:
                 break
-            st["credits"] -= 1.0
+            bid = f"{nid}#r{rnd}b{i}"
+            st["reserve"] -= per
+            st["allocated"] += per
+            st["in_flight"] += per
+            st["credits"] = st["reserve"]
+            st["branches"][bid] = {"need_id": nid, "round_id": rnd, "branch_id": bid,
+                                   "route": n, "allocated_credit": per,
+                                   "consumed_credit": 0.0, "refundable_credit": 0.0,
+                                   "status": "open"}
+            st["outstanding"].add(bid)
             st["tried"].add(n)
-            self.outbox.append((n, need))
-        return True
+            opened = True
+            self.outbox.append((n, Need(
+                nid, want, self.unit_id, slot, (self.unit_id,),
+                self.repair_budget, frozenset(self.refused),
+                hops=REPAIR_HOPS, credits=per, must_differ_from=excluded,
+                branch_id=bid)))
+        if not opened:
+            st["no_untried_routes"] = not self._untried_routes(st, want)
+        return opened
+
+    def _complete_branch(self, st: dict, bid: str, refund: float) -> None:
+        """Close one branch and move its unspent credit back to reserve.
+
+        Guarded on status, so a duplicate or replayed completion -- which happens
+        whenever a relay fans one branch into several sub-branches that all die
+        -- cannot refund the same allocation twice.
+        """
+        br = st["branches"].get(bid)
+        if br is None or br["status"] != "open":
+            return
+        alloc = br["allocated_credit"]
+        refund = max(0.0, min(refund, alloc))
+        br["status"] = "completed"
+        br["refundable_credit"] = refund
+        br["consumed_credit"] = alloc - refund
+        st["in_flight"] -= alloc
+        st["consumed"] += alloc - refund
+        st["reserve"] += refund
+        st["returned"] += refund
+        st["credits"] = st["reserve"]
+        st["outstanding"].discard(bid)
+
+    def _close_search(self, st: dict) -> None:
+        """Release unused reserve explicitly rather than leaving it dangling."""
+        st["cancelled"] += st["reserve"]
+        st["reserve"] = 0.0
+        st["credits"] = 0.0
+        st["closed"] = True
 
     def widen(self, slot: int) -> bool:
-        """Only on failure to SETTLE - never merely on failure to receive."""
+        """Widen only when the CURRENT ROUND is fully accounted for.
+
+        Widening on the first acknowledgement to arrive would open a new round
+        while earlier branches were still in flight, so rounds would overlap and
+        the round bookkeeping would mean nothing. The rule is: every branch
+        opened this round has completed, nothing settled, and reserve remains.
+        """
         nid = self.open_needs.get(slot)
         st = self._search.get(nid) if nid else None
-        if st is None or st["settled"] or st["credits"] <= 0:
+        if st is None or st["settled"] or st["closed"]:
+            return False
+        if st["outstanding"] or st["in_flight"] > 1e-9:
+            return False                      # the round is not finished
+        if st["reserve"] <= 0:
             return False
         st["round"] += 1
         return self._send_to_frontier(slot, nid)
+
+    def _prove_exhaustion(self, slot: int, nid: str) -> bool:
+        """A search is exhausted when the SEARCH SPACE is, not when credit is.
+
+        The earlier condition also required `reserve <= 0`, so a finite
+        neighbourhood that had been fully searched while credit remained never
+        recorded an exhaustion at all: BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS
+        stayed at zero and a structurally unsatisfiable episode ended merely as
+        "not restored" instead of as a proved bounded escalation.
+        """
+        st = self._search.get(nid)
+        if st is None or st["settled"] or st["closed"]:
+            return False
+        if st["outstanding"] or st["in_flight"] > 1e-9:
+            return False                      # branches still live
+        want = self.capability.accepts[slot]
+        if self._untried_routes(st, want):
+            return False                      # an eligible local route remains
+        st["no_untried_routes"] = True
+        if st["exhaustion_recorded"]:
+            return False
+        st["exhaustion_recorded"] = True
+        searched = len(st["branches"])
+        self._close_search(st)
+        self.closed_needs.add(nid)            # late messages suppressed from here
+        self.open_needs.pop(slot, None)
+        C.incr("BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS")
+        self.escalations.append(
+            f"no eligible distinct supplier for slot {slot}: "
+            f"{searched} branches searched, excluded {st['must_differ_from']}, "
+            f"credits consumed {st['consumed']:.1f} returned {st['returned']:.1f} "
+            f"cancelled {st['cancelled']:.1f}")
+        self.receipts.append(Receipt(
+            "branch_exhausted", self.unit_id, slot, None,
+            "bounded distinct replacement exhaustion"))
+        return True
 
     def commission_needs(self, budget: float) -> None:
         for slot in self.unmet():
@@ -705,15 +856,17 @@ class Unit:
                 continue
             if isinstance(msg, tuple) and msg and msg[0] == "__exhausted__":
                 nid = msg[1]
+                bid = msg[2] if len(msg) > 2 else ""
+                refund = msg[3] if len(msg) > 3 else 0.0
                 if nid in self.closed_needs:
                     self.late_messages += 1
                     continue
                 st = self._search.get(nid)
-                if st is not None and not st["settled"]:
-                    st["exhausted_branches"] = st.get("exhausted_branches", 0) + 1
+                if st is not None and bid in st.get("branches", {}):
+                    self._complete_branch(st, bid, refund)
                 else:
-                    # Not mine to widen: pass the exhaustion back toward the
-                    # origin so the requester, not an intermediate, decides.
+                    # Not mine to account for: pass it back toward the origin so
+                    # the requester, not an intermediate, credits the refund.
                     back = self.reverse.get(nid)
                     if back:
                         self.outbox.append((back[0], msg))
@@ -730,24 +883,10 @@ class Unit:
         for slot in sorted(self.open_needs):
             nid = self.open_needs[slot]
             st = self._search.get(nid)
-            if st and not st["settled"]:
+            if st and not st["settled"] and not st["closed"]:
                 if self.widen(slot):
                     break
-                # Widening is impossible and every branch reported back: this is
-                # a PROVED bounded exhaustion, not a stall. Record it once so a
-                # correct "no eligible distinct replacement exists" outcome is
-                # attributable and distinguishable from silent stalling.
-                if (st.get("exhausted_branches") and not st.get("exhaustion_recorded")
-                        and st["credits"] <= 0):
-                    st["exhaustion_recorded"] = True
-                    C.incr("BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS")
-                    self.escalations.append(
-                        f"no eligible distinct supplier for slot {slot}: "
-                        f"{st.get('exhausted_branches', 0)} branches exhausted, "
-                        f"excluded {st.get('must_differ_from', [])}")
-                    self.receipts.append(Receipt(
-                        "branch_exhausted", self.unit_id, slot, None,
-                        "bounded distinct replacement exhaustion"))
+                self._prove_exhaustion(slot, nid)
 
     def _report_exhausted(self, sender: str, need: Need) -> None:
         """Tell the immediate requester this branch is dead.
@@ -758,10 +897,14 @@ class Unit:
         explanation. Deduped per unit per need so acknowledgement traffic cannot
         exceed the need traffic that caused it.
         """
-        if need.need_id in self._exhausted_reported:
+        key = (need.need_id, need.branch_id)
+        if key in self._exhausted_reported:
             return
-        self._exhausted_reported.add(need.need_id)
-        self.outbox.append((sender, ("__exhausted__", need.need_id)))
+        self._exhausted_reported.add(key)
+        # The unspent remainder travels home with the acknowledgement so the
+        # origin can return it to reserve instead of writing it off.
+        self.outbox.append((sender, ("__exhausted__", need.need_id,
+                                     need.branch_id, max(0.0, need.credits))))
 
     def _on_need(self, sender: str, need: Need) -> None:
         if (need.budget <= 0 or need.hops <= 0 or need.credits < 0
@@ -773,7 +916,8 @@ class Unit:
             return
         key = f"{need.need_id}|{need.wanted}"
         if key in self.seen:
-            self._report_exhausted(sender, need)
+            if need.need_id not in self._forwarded:
+                self._report_exhausted(sender, need)
             return
         self.seen.add(key)
         self.reverse[need.need_id] = (sender, need.wanted)
@@ -840,10 +984,11 @@ class Unit:
             # instead of a stall with unspent credits.
             back = self.reverse.get(need.need_id)
             if back:
-                self.outbox.append((back[0], ("__exhausted__", need.need_id)))
+                self._report_exhausted(back[0], need)
             return
         # Branching DIVIDES the remaining credit. No path mints credit.
         share = need.credits / len(ring)
+        self._forwarded.add(need.need_id)
         for n in ring:
             self.outbox.append((n, dataclasses.replace(
                 need, lineage=need.lineage + (self.unit_id,),
@@ -988,6 +1133,21 @@ class Unit:
                     nid, self.unit_id, self.capability.klass(),
                     self.capability.produces,
                     self.capability.cost * self.cost_multiplier, True, chain)))
+        # A SUCCESSFUL SETTLEMENT MUST SAY SO. Without this the function created
+        # the bond and then fell off the end returning None, so every caller took
+        # the failure branch. Consequences, all silent:
+        #
+        #   - st["settled"] was never set, so a search that had already succeeded
+        #     kept widening and spending credit;
+        #   - ev["settled"] was never incremented, so `_frontier()`'s evidence
+        #     list (settled > 0) was permanently empty and route memory never
+        #     learned which neighbour actually worked;
+        #   - the independence post-condition at the settlement site never ran,
+        #     so INDEPENDENCE_VIOLATIONS reading zero proved nothing there;
+        #   - DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED could never fire;
+        #   - each success was recorded as an "unrecorded_refusal", corrupting
+        #     the refusal taxonomy with one bogus entry per settlement.
+        return True
 
 
 @dataclass(frozen=True)

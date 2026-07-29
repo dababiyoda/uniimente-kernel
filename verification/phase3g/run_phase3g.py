@@ -188,7 +188,9 @@ def episode(ep, results, *, certificate=True):
               "INDEPENDENCE_VIOLATIONS"):
         rec[k.lower()] = snap[k]
     rec["duplicate_supplier_blocked_repair"] = EV.duplicate_supplier_blocked(organ)
-    rec["credit_conservation_ok"] = EV.credits_conserved(organ)
+    rec["credit_ledger"] = EV.credit_ledger_reconciliation(organ)
+    rec["credit_conservation_ok"] = rec["credit_ledger"]["ok"]
+    rec["bounded_escalation_proven"] = EV.bounded_escalation_proven(organ)
     rec["events_dispatched"] = organ.events_dispatched
     rec["repair_messages"] = organ.messages - before_msgs
     rec["repair_amplification"] = EV.repair_amplification(
@@ -354,6 +356,16 @@ def summarise(res, paired, cohorts):
             r.get("independence_violations", 0) for r in res),
         "CREDIT_CONSERVATION_FAILURES": sum(
             1 for r in res if r.get("credit_conservation_ok") is False),
+        "CREDIT_LEDGER_INVARIANT_FAILURES": sum(
+            r.get("credit_ledger", {}).get("invariant_failures", 0) for r in res),
+        "CREDIT_LEDGER_BUDGET_EXCEEDED": sum(
+            r.get("credit_ledger", {}).get("budget_exceeded", 0) for r in res),
+        "CREDIT_LEDGER_BRANCH_OVERPAYMENTS": sum(
+            r.get("credit_ledger", {}).get("branch_overpayments", 0) for r in res),
+        "CREDIT_LEDGER_NEEDS_RECONCILED": sum(
+            r.get("credit_ledger", {}).get("needs", 0) for r in res),
+        "BOUNDED_ESCALATION_PROVEN_EPISODES": sum(
+            1 for r in res if r.get("bounded_escalation_proven")),
         "VOID_REGENERATION_EPISODES": {
             "n": sum(1 for r in gf + gg if r.get("void")), "of": len(gf) + len(gg),
             "reasons": sorted({r["void_reason"] for r in gf + gg if r.get("void")})},

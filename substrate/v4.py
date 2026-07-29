@@ -589,10 +589,16 @@ class Organ:
                 and not self.is_cut(u.unit_id, n)}
 
     # -- the ONLY boundary event, at mission start ------------------------
-    def commission(self) -> None:
-        COUNTERS["BOUNDARY_RESTART_EVENTS"] += 0    # commissioning is not a restart
+    def commission(self, budget: float = 48.0) -> None:
+        """The ONLY boundary event, at mission start. Never called again.
+
+        The budget must fund the deepest chain the contract can require: each
+        hop spends its own cost and DIVIDES the remainder among its unmet
+        slots, so a depth-8 structure with two joins needs real headroom.
+        Under-funding it looks exactly like an unsatisfiable contract.
+        """
         self.boundary_demands += 1
-        self.units[SINK].emit_needs(ttl_budget=14.0)
+        self.units[SINK].emit_needs(ttl_budget=budget)
         self._pump()
 
     def _pump(self, max_ticks: int = 60) -> None:

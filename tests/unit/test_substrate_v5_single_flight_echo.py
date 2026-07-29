@@ -374,16 +374,29 @@ def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
 # ---------------------------------------------------------------------------
 # E. Forced mixed-child order: A exhausts, then B answers
 # ---------------------------------------------------------------------------
+@spec
+def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
+    """PROTOCOL_SEMANTICS_CORRECTION.
 
-def test_E_exhausted_child_then_late_offer_never_terminates_parent_early():
-    """Forces the ordering instead of inspecting whatever a dense run produced."""
+    The earlier version of this test asserted that a child SearchOffer made the
+    parent immediately ANSWERED. It was activated on that basis, and it
+    contradicted the live-path requirement that a rejected settlement leaves the
+    search open with other candidates intact. Both cannot be true.
+
+    A candidate is a PROPOSAL. The root may reject it for duplicate supplier,
+    stale derivation, cooldown, a prohibited motif, changed slot state, policy
+    mismatch, or a race with another accepted candidate. So a proposal must not
+    terminate the parent edge, must not mark the node ANSWERED, and must not
+    cancel siblings. Only an accepted settlement closes the wave.
+
+    No evaluation run relied on the prior interpretation: R8 has never been run
+    and the activated version produced no recorded evidence.
+    """
     o, j, slot, victim, seed = _damaged(4)
     reset()
-    key = v5.SearchKey(need_id="probe:E", work_item_generation=2,
-                       origin_unit=j.unit_id, origin_slot=slot,
-                       wanted_type=j.capability.accepts[slot],
-                       causal_refusal_digest="", must_differ_from_digest="",
-                       constraint_generation=0)
+    key = v5.SearchKey.build(need_id="probe:E", work_item_generation=2,
+                             origin_unit=j.unit_id, origin_slot=slot,
+                             wanted_type=j.capability.accepts[slot])
     unit = next(u for u in o.units.values()
                 if u.unit_id not in (ENV, SINK) and u.unit_id != j.unit_id)
     node = unit.open_canonical_search(key, parent_edge="e/adopted", allocation=9.0)
@@ -392,7 +405,7 @@ def test_E_exhausted_child_then_late_offer_never_terminates_parent_early():
         f"the canonical node opened {len(kids)} children; this test needs at "
         f"least two to force a mixed outcome")
     a, b = kids[0], kids[1]
-    echoes_before = C["TERMINAL_ECHOS_SENT"]
+    terminals_before = len(o.search_edge_terminals)
 
     unit.deliver_terminal(key, a, "SearchExhausted", refund=1.0)
 
@@ -400,19 +413,32 @@ def test_E_exhausted_child_then_late_offer_never_terminates_parent_early():
         f"parent went {node['status']} after ONE child exhausted while "
         f"{len(node['children_outstanding'])} remain outstanding")
     assert b in node["children_outstanding"], "the live child was dropped"
-    assert C["TERMINAL_ECHOS_SENT"] == echoes_before, (
-        "an exhaustion echo was sent upward while a child was still live")
-    assert C["PREMATURE_TERMINATION_SIGNALS"] == 0
 
-    unit.deliver_terminal(key, b, "SearchOffer", refund=0.5)
+    # A PROPOSAL, not a terminal outcome.
+    unit.deliver_proposal(key, b, v5.SearchOfferPayload(
+        supplier="probe.supplier", supplier_class="authorise",
+        offered_type=key.wanted_type, cost=1.0, firm=True,
+        derivation_chain=frozenset({"probe.supplier"}),
+        search_key=key, edge_id=b))
 
-    assert node["status"] == "ANSWERED", (
-        f"parent is {node['status']} after a child returned an eligible offer")
-    assert node["eligible_offer"], "the offer was not recorded on the parent"
-    assert node["adopted_parent_edge"] == "e/adopted", (
-        "the offer did not follow the immutable adopted-parent edge")
-    assert C["SEARCH_SPACE_EXHAUSTED"] == 0, (
-        "a subtree that answered was also counted as exhausted")
+    assert node["status"] in ("OPEN", "PROPOSAL_PENDING"), (
+        f"a candidate proposal put the node in {node['status']}; a proposal is "
+        f"not a terminal success")
+    assert node["children_outstanding"] or node["children_completed"], (
+        "sibling accounting was discarded on a proposal")
+    assert not node.get("wave_cancelled"), (
+        "the wave was cancelled by a proposal rather than by an accepted "
+        "settlement")
+    assert b not in o.search_edge_terminals, (
+        "the proposal was recorded as the edge's terminal outcome; proposals "
+        "belong in search_edge_events")
+    events = o.search_edge_events.get(b, [])
+    assert any(_kind(e) == "SearchProposal" for e in events), (
+        "the proposal was not recorded as a nonterminal edge event")
+    assert len(o.search_edge_terminals) == terminals_before + 1, (
+        "a proposal added a terminal outcome; only child A's exhaustion should "
+        "have produced one")
+    assert C["PREMATURE_PROPOSAL_CANCELLATIONS"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -506,7 +532,7 @@ def test_H_each_answered_node_returns_its_offer_through_its_adopted_edge():
     probes, terminals = _edge_telemetry(o)
 
     answered = {(uid, key): n for (uid, key), n in nodes.items()
-                if n.get("eligible_offer")}
+                if n.get("status") == "COMMITTED"}
     assert answered, (
         "no canonical node recorded an eligible offer, so this run cannot "
         "demonstrate that offers return through the adopted edge")
@@ -519,7 +545,7 @@ def test_H_each_answered_node_returns_its_offer_through_its_adopted_edge():
         # Offers emitted BY THIS NODE, identified by edge records.
         mine = [(eid, rec) for eid, rec in terminals.items()
                 if rec["from_unit"] == uid and rec["search_key"] == key
-                and any(_kind(x) == "SearchOffer" for x in rec["outcomes"])]
+                and any(_kind(x) == "SearchCommitted" for x in rec["outcomes"])]
         assert len(mine) == 1, (
             f"{uid} emitted {len(mine)} SearchOffer terminals for {key}; a node "
             f"must emit exactly one")
@@ -534,7 +560,7 @@ def test_H_each_answered_node_returns_its_offer_through_its_adopted_edge():
         others = [e for e, r in terminals.items()
                   if r["from_unit"] == uid and r["search_key"] == key
                   and e != adopted
-                  and any(_kind(x) == "SearchOffer" for x in r["outcomes"])]
+                  and any(_kind(x) == "SearchCommitted" for x in r["outcomes"])]
         assert not others, (
             f"{uid} also emitted offers on alternative parent edges: {others}")
 

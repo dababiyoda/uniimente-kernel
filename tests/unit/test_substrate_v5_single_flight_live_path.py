@@ -174,7 +174,7 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     outcome = unit.deliver_search(key, "e/remote", allocation=6.0,
                                  lineage=(j.unit_id,), sender=j.unit_id,
                                  context=ctx)
-    assert _kind(outcome) != "SearchOffer", (
+    assert _kind(outcome) != "SearchProposal", (
         f"{sibling} is excluded by must_differ_from yet offered itself remotely; "
         f"this is the duplicate-supplier defect returning through the digest gap")
     assert getattr(outcome, "payload", None) is None
@@ -203,8 +203,8 @@ def test_remote_candidate_enforces_the_origins_causal_refusals():
     outcome = candidate.deliver_search(key, "e/refused", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
                                       context=ctx)
-    assert _kind(outcome) != "SearchOffer", (
-        "a candidate whose own derivation is refused by the origin offered itself")
+    assert _kind(outcome) != "SearchProposal", (
+        "a candidate whose own derivation is refused by the origin proposed itself")
 
 
 @live
@@ -239,13 +239,17 @@ def test_search_offer_carries_enough_evidence_for_settlement():
     o, j, slot, victim, seed = _damaged(4)
     reset()
     o.run_item(PAYLOAD_B)
-    terminals = o.search_edge_terminals
-    offers = [t for rec in terminals.values() for t in rec["outcomes"]
-              if _kind(t) == "SearchOffer"]
-    assert offers, "no SearchOffer was produced by a live repair"
+    events = o.search_edge_events
+    offers = [e for evs in events.values() for e in evs
+              if _kind(e) == "SearchProposal"]
+    assert offers, "no SearchProposal was produced by a live repair"
+    for edge, rec in o.search_edge_terminals.items():
+        for t in rec["outcomes"]:
+            assert _kind(t) != "SearchProposal", (
+                f"edge {edge} stored a proposal as its terminal outcome")
     for t in offers:
         p = getattr(t, "payload", None)
-        assert p is not None, "a SearchOffer carried no payload"
+        assert p is not None, "a SearchProposal carried no payload"
         for f in ("supplier", "supplier_class", "offered_type", "cost", "firm",
                   "derivation_chain", "search_key", "edge_id"):
             assert hasattr(p, f), f"SearchOfferPayload lacks {f!r}"
@@ -322,7 +326,9 @@ def test_a_locally_eligible_producer_opens_zero_children():
     outcome = producer.deliver_search(key, "e/elig", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
                                       context=ctx)
-    assert _kind(outcome) == "SearchOffer", f"an eligible producer returned {_kind(outcome)}"
+    assert _kind(outcome) == "SearchProposal", (
+        f"an eligible producer returned {_kind(outcome)}; a candidate is a "
+        f"proposal, not a terminal answer")
     node = producer.canonical_searches[key]
     assert node["children_opened"] == [], (
         f"an eligible producer opened {len(node['children_opened'])} children "
@@ -359,7 +365,8 @@ def test_widening_rounds_produce_globally_unique_child_edge_ids():
                              wanted_type=j.capability.accepts[slot])
     reset()
     node = j.open_canonical_search(key, "e/root", 40.0)
-    seen = list(node["children_opened"])
+    first_round = list(node["children_opened"])
+    seen = list(first_round)
     for _ in range(3):
         for child in list(node["children_outstanding"]):
             j.deliver_terminal(key, child, "SearchExhausted", refund=0.0)
@@ -368,7 +375,19 @@ def test_widening_rounds_produce_globally_unique_child_edge_ids():
     assert len(allc) == len(set(allc)), (
         f"child edge ids repeat across widening rounds: "
         f"{[c for c in allc if allc.count(c) > 1][:4]}")
-    assert len(allc) > len(node["children_from"].get("e/root", []) or []) or True
+    # The earlier version ended in `... or True`, so an implementation that
+    # opened only ONE round satisfied the uniqueness assertion and the test
+    # proved nothing about widening.
+    assert node["round"] >= 2, (
+        f"only {node['round']} expansion round(s) occurred, so uniqueness across "
+        f"rounds was never exercised")
+    assert len(allc) > len(first_round), (
+        f"children_opened did not grow after the first round "
+        f"({len(allc)} vs {len(first_round)})")
+    rounds = {c.rsplit("/c", 1)[0] for c in allc}
+    assert len(rounds) >= 2, (
+        f"all child ids share one round prefix {rounds}; round identity does not "
+        f"differ across expansions")
 
 
 @live
@@ -403,21 +422,28 @@ def test_accepted_settlement_reconciles_every_outstanding_child_allocation():
     # VACUITY GUARD. With no nodes the loop body never runs and the test passes
     # having checked nothing.
     assert nodes, "no canonical nodes were created"
-    finished = [n for n in nodes.values() if n["status"] in ("ANSWERED", "CLOSED")]
+    finished = [n for n in nodes.values()
+                if n["status"] in ("COMMITTED", "CLOSED", "EXHAUSTED")]
     assert finished, (
-        "no canonical node reached ANSWERED or CLOSED, so no settlement "
+        "no canonical node reached a terminal status, so no settlement "
         "reconciliation was exercised")
     for (uid, key), node in nodes.items():
-        if node["status"] not in ("ANSWERED", "CLOSED"):
+        if node["status"] not in ("COMMITTED", "CLOSED", "EXHAUSTED"):
             continue
         assert not node["children_outstanding"], (
             f"{uid} finished with children still outstanding")
-        accounted = (node["local_reserve"] + node["returned_credit"]
-                     + node["consumed_credit"] + node["cancelled_credit"])
+        assert node["child_allocations_in_flight"] == 0, (
+            f"{uid} finished with {node['child_allocations_in_flight']} still in "
+            f"flight; outstanding allocations were discarded, not cancelled")
+        # `child_refunds_received` is cumulative AUDIT telemetry. A refund is
+        # transferred INTO local_reserve, so adding both double-counts the same
+        # credit -- which is what the earlier version of this assertion did.
+        accounted = (node["local_reserve"] + node["child_allocations_in_flight"]
+                     + node["consumed_credit"] + node["cancelled_credit"]
+                     + node["returned_to_parent"])
         assert abs(accounted - node["incoming_allocation"]) < 1e-6, (
-            f"{uid} finished with {accounted} accounted against an allocation of "
-            f"{node['incoming_allocation']}; outstanding child allocations were "
-            f"discarded rather than cancelled")
+            f"{uid}: {accounted} accounted against an allocation of "
+            f"{node['incoming_allocation']}")
 
 
 # ---------------------------------------------------------------------------
@@ -451,3 +477,163 @@ def test_formation_still_uses_the_legacy_need_path_unchanged():
         f"formation event count moved from 16 to {o.events_dispatched}")
     assert o.messages == 1012, (
         f"formation message count moved from 1012 to {o.messages}")
+
+
+# ---------------------------------------------------------------------------
+# Full context binding: every enforcement field must be inside the key digest
+# ---------------------------------------------------------------------------
+
+def _ctx(**kw):
+    base = dict(causally_refused_sources=frozenset(),
+                must_differ_from_suppliers=frozenset(),
+                maximum_supplier_cost=99.0,
+                cooldown_excluded_suppliers=frozenset(),
+                constraint_generation=0,
+                policy_snapshot=())
+    base.update(kw)
+    return v5.SearchContext(**base)
+
+
+def _key_for(j, slot, ctx, need_id):
+    return v5.SearchKey.build(
+        need_id=need_id, work_item_generation=2, origin_unit=j.unit_id,
+        origin_slot=slot, wanted_type=j.capability.accepts[slot], context=ctx)
+
+
+@live
+@pytest.mark.parametrize("field,tampered", [
+    ("maximum_supplier_cost", 0.01),
+    ("cooldown_excluded_suppliers", frozenset({"someone.else"})),
+    ("constraint_generation", 7),
+    ("policy_snapshot", ("forged-policy",)),
+])
+def test_tampering_with_any_enforcement_field_is_rejected(field, tampered):
+    """V1 bound only the refusal and must-differ digests into SearchKey.
+
+    A relay could therefore change the cost ceiling, the cooldown set, the
+    constraint generation or the policy snapshot while keeping the same
+    SearchKey -- an unenforced constraint wearing a valid identity. One
+    `context_digest` must cover every enforcement field.
+    """
+    o, j, slot, victim, seed = _damaged(4)
+    honest = _ctx(must_differ_from_suppliers=frozenset({"x.1"}))
+    key = _key_for(j, slot, honest, f"probe:tamper:{field}")
+    assert honest.matches(key), "the honest context does not match its own key"
+
+    forged = _ctx(must_differ_from_suppliers=frozenset({"x.1"}),
+                  **{field: tampered})
+    assert not forged.matches(key), (
+        f"tampering with {field} left the context matching the SearchKey, so "
+        f"that field is not bound by context_digest")
+
+    unit = next(u for u in o.units.values() if u.unit_id not in (ENV, SINK))
+    reset()
+    outcome = unit.deliver_search(key, f"e/tamper/{field}", allocation=6.0,
+                                  lineage=(j.unit_id,), sender=j.unit_id,
+                                  context=forged)
+    assert _kind(outcome) == "SearchContextRejected", (
+        f"a context with a tampered {field} was accepted ({_kind(outcome)})")
+
+
+# ---------------------------------------------------------------------------
+# Remote eligibility: cost ceiling, cooldown, and DERIVATION-CHAIN refusal
+# ---------------------------------------------------------------------------
+
+@live
+def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
+    o, j, slot, victim, seed = _damaged(4)
+    want = j.capability.accepts[slot]
+    producer = next(u for u in o.units.values()
+                    if u.capability.produces == want and u.unit_id != victim)
+    ctx = _ctx(maximum_supplier_cost=producer.capability.cost / 10.0)
+    key = _key_for(j, slot, ctx, "probe:cost")
+    reset()
+    outcome = producer.deliver_search(key, "e/cost", allocation=6.0,
+                                      lineage=(j.unit_id,), sender=j.unit_id,
+                                      context=ctx)
+    assert _kind(outcome) != "SearchProposal", (
+        f"{producer.unit_id} costs {producer.capability.cost} against a ceiling "
+        f"of {ctx.maximum_supplier_cost} yet proposed itself")
+
+
+@live
+def test_a_cooldown_excluded_candidate_proposes_nothing():
+    o, j, slot, victim, seed = _damaged(4)
+    want = j.capability.accepts[slot]
+    producer = next(u for u in o.units.values()
+                    if u.capability.produces == want and u.unit_id != victim)
+    ctx = _ctx(cooldown_excluded_suppliers=frozenset({producer.unit_id}))
+    key = _key_for(j, slot, ctx, "probe:cooldown")
+    reset()
+    outcome = producer.deliver_search(key, "e/cooldown", allocation=6.0,
+                                      lineage=(j.unit_id,), sender=j.unit_id,
+                                      context=ctx)
+    assert _kind(outcome) != "SearchProposal", (
+        f"{producer.unit_id} is cooldown-excluded yet proposed itself")
+
+
+@live
+def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
+    """Proves DERIVATION intersection, not just direct candidate exclusion.
+
+    The earlier causal-refusal test refused the candidate's OWN id, which any
+    trivial identity check satisfies and which says nothing about whether the
+    candidate's derivation chain was examined.
+    """
+    o, j, slot, victim, seed = _damaged(4)
+    want = j.capability.accepts[slot]
+    producer = next(u for u in o.units.values()
+                    if u.capability.produces == want and u.unit_id != victim
+                    and u.bonds)
+    ancestors = sorted({b.supplier for b in producer.bonds.values()} - {ENV})
+    assert ancestors, (
+        f"{producer.unit_id} has no upstream ancestor, so derivation-chain "
+        f"enforcement cannot be exercised on it")
+    ancestor = ancestors[0]
+    assert ancestor != producer.unit_id
+    ctx = _ctx(causally_refused_sources=frozenset({ancestor}))
+    key = _key_for(j, slot, ctx, "probe:ancestor")
+    reset()
+    outcome = producer.deliver_search(key, "e/ancestor", allocation=6.0,
+                                      lineage=(j.unit_id,), sender=j.unit_id,
+                                      context=ctx)
+    assert _kind(outcome) != "SearchProposal", (
+        f"{producer.unit_id} proposed itself although its ancestor {ancestor} is "
+        f"in the origin's refusal set; the derivation chain was not checked")
+
+
+# ---------------------------------------------------------------------------
+# Legacy projection is one-way and holds no decision authority
+# ---------------------------------------------------------------------------
+
+@live
+def test_mutating_the_legacy_projection_cannot_change_canonical_behaviour():
+    """`_search` survives only as a one-way audit projection."""
+    o, j, slot, victim, seed = _damaged(4)
+    reset()
+    o.run_item(PAYLOAD_B)
+    baseline_bonds = {(u.unit_id, s): b.supplier
+                      for u in o.units.values() for s, b in u.bonds.items()}
+    projections = [(u, nid, st) for u in o.units.values()
+                   for nid, st in u._search.items()]
+    assert projections, (
+        "no legacy projection was produced, so this test cannot prove the "
+        "projection is inert")
+
+    for u, nid, st in projections:
+        st["settled"] = not st.get("settled", False)
+        st["credits"] = -999.0
+        st["rejected"] = {"forged": 99}
+        if "reserve" in st:
+            st["reserve"] = -999.0
+
+    reset()
+    o.run_item(PAYLOAD_B)
+    after = {(u.unit_id, s): b.supplier
+             for u in o.units.values() for s, b in u.bonds.items()}
+    assert after == baseline_bonds, (
+        "mutating the legacy projection changed settlement, so `_search` still "
+        "holds decision authority")
+    assert C["LEGACY_PROJECTION_DECISION_READS"] == 0, (
+        "canonical routing read a legacy projection field to make a decision")
+    assert C["DUAL_REPAIR_SEARCHES"] == 0

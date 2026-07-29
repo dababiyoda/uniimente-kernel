@@ -54,6 +54,26 @@ def implementation_sha() -> str:
         return "unknown"
 
 
+def require_clean_tree() -> None:
+    """A run whose recorded SHA does not reproduce it is not evidence.
+
+    R3 recorded 1d7349c while the tested changes were uncommitted. Bypass is
+    possible with PHASE3G_ALLOW_DIRTY=1, and the result is then marked
+    exploratory rather than reproducible.
+    """
+    import os
+    out = subprocess.run(["git", "status", "--porcelain"], capture_output=True,
+                         text=True, cwd=HERE.parents[1]).stdout.strip()
+    tracked = [l for l in out.splitlines() if not l.startswith("??")]
+    if tracked and os.environ.get("PHASE3G_ALLOW_DIRTY") != "1":
+        print("REFUSING TO RUN: working tree is dirty, so the recorded SHA "
+              "would not reproduce this run.")
+        for l in tracked[:10]:
+            print("   ", l)
+        raise SystemExit(2)
+    return bool(tracked)
+
+
 def interior_pool(organ, produced):
     """Preregistered rule: carriers in the trace bonded as a supplier by a
     consumer that is not the boundary."""
@@ -258,6 +278,9 @@ def _fails(rows):
     return [{k: r.get(k) for k in FAIL_KEYS} for r in rows if not r.get("success")]
 
 
+DIRTY = [False]
+
+
 def summarise(res, paired, cohorts):
     gf = [r for r in res if r.get("gate") == "F" and r["held_out"]]
     gg = [r for r in res if r.get("gate") == "G" and r["held_out"]]
@@ -277,6 +300,7 @@ def summarise(res, paired, cohorts):
     s = {
         "implementation_sha_at_development_run": implementation_sha(),
         "frozen": False,   # set only by the freeze commit + heldout run
+        "reproducible_from_recorded_sha": not DIRTY[0],
         "cohorts_run": sorted(cohorts),
         "HELD_OUT_EVENT_DRIVEN_LOCAL_SEMANTIC_REGENERATIONS": {
             "n": sum(1 for r in gf if r.get("success")), "of": len(gf),
@@ -331,6 +355,16 @@ def summarise(res, paired, cohorts):
         "damage_classes_exercised": exercised,
         "damage_classes_not_observed": sorted(
             k for k, v in exercised.items() if v["episodes"] and not v["observed"]),
+        # PER-EPISODE, not per-class. Reporting only classes with zero
+        # observations hid partial injector failures: a class could be counted
+        # as exercised while most of its episodes never saw the condition.
+        "damage_episodes_assigned": len([r for r in res if not r.get("void")]),
+        "damage_episodes_observed": len([r for r in res
+                                         if r.get("damage_class_observed")]),
+        "damage_episodes_not_observed": [
+            {"episode": r["episode"], "damage_class": r["damage_class"],
+             "fixture": r["fixture"]}
+            for r in res if not r.get("void") and not r.get("damage_class_observed")],
         "development_success": {"n": sum(1 for r in dev if r.get("success")),
                                 "of": len(dev)},
         "paired_intervention": {
@@ -357,6 +391,7 @@ def summarise(res, paired, cohorts):
 
 def main() -> int:
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    DIRTY[0] = require_clean_tree()
     cohorts = {"development"} if which == "development" else (
         {"heldout"} if which == "heldout" else {"development", "heldout"})
     res: list[dict] = []

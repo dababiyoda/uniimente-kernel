@@ -27,3 +27,5 @@ jobs:
         run: python3 scripts/ci/check_phase3e_preregistration.py
       - name: Phase 3F pre-registration
         run: python3 scripts/ci/check_phase3f_preregistration.py
+      - name: Phase 3G pre-registration
+        run: python3 scripts/ci/check_phase3g_preregistration.py

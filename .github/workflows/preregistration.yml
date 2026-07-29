@@ -18,3 +18,8 @@ jobs:
           git merge-base --is-ancestor "$M" "$R" \
             && echo "OK: manifest is an ancestor of results" \
             || { echo "FAIL: results not descended from the manifest commit"; exit 1; }
+      - name: Phase 3D pre-registration
+        # Stronger than the inline check above: also asserts the manifest commit
+        # touched NOTHING but the manifest, and that the manifest has not been
+        # edited since. Skips cleanly on histories without the Phase 3D files.
+        run: python3 scripts/ci/check_phase3d_preregistration.py

@@ -44,15 +44,27 @@ B. CONTRASTIVE CAUSAL FENCING. Phase 3F refused the whole upstream derivation
    That is the smallest set the local evidence supports. When there is no
    working sibling, the evidence cannot isolate anything, so the unit refuses
    only the direct supplier, records uncertainty, and escalates rather than
-   refusing broadly. `OVER_REFUSAL_EVENTS` counts any refusal that would
-   exclude every known producer of the required type.
+   refusing broadly.
+
+   A unit does NOT decide whether its refusal excluded every valid
+   alternative: answering that needs the provider set, which is global
+   knowledge a developmental unit may never hold. Units emit refusal
+   EVIDENCE (failed derivation, working-sibling derivations, distinguishing
+   set, uncertainty, direct supplier, required type) and the post-hoc
+   evaluator judges over-refusal using hidden fixture truth after execution.
 
 INSTRUMENTATION
 ---------------
 
-Every counter is incremented AT THE SITE of the behaviour it measures.
-`counters_are_live()` proves each one can be driven above zero, and an
-adversarial test asserts it.
+Every counter is incremented AT THE SITE of the behaviour it measures, and each
+has an adversarial test that TRIGGERS that behaviour and asserts the increment:
+`_scan_all_units()`, `providers_of()`, a second `commission()`, a boundary
+reopen attempt, and a pull outside a unit's own bonds.
+
+`counters_are_live()` proves counter-container arithmetic ONLY. It increments
+every counter by hand, so it demonstrates that dictionary arithmetic works and
+nothing more. It is never evidence that a measured behaviour drives its
+counter.
 """
 from __future__ import annotations
 
@@ -999,7 +1011,12 @@ def motif_from(d: Diagnosis) -> MeasuredMotif:
 
 
 def counters_are_live() -> dict:
-    """Proves each counter can be driven above zero. Asserted by test."""
+    """CONTAINER ARITHMETIC ONLY - not evidence of grounded instrumentation.
+
+    This increments every counter by hand. It proves the container works. It
+    proves nothing about whether the measured behaviour reaches the counter;
+    only the behaviour-site tests do that.
+    """
     before = C.snapshot()
     for name in COUNTER_NAMES:
         C.incr(name)

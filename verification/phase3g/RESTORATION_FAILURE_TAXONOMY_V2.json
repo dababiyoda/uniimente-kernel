@@ -1,0 +1,1161 @@
+{
+  "note": "Evaluator-only. No runtime behaviour changed. V1 preserved.",
+  "implementation_sha": "ef3cba3699ea0cff50a5631bdf15c94ab6850391",
+  "development_episodes": 48,
+  "mutually_exclusive_groups": {
+    "damage_observed_and_not_restored": 18,
+    "formation_failed": 7,
+    "damage_observed_and_restored": 15,
+    "damage_not_observed_but_reported_success": 3,
+    "damage_not_observed_and_failed": 5
+  },
+  "VALID_FORMATION_AND_OBSERVED_DAMAGE_EPISODES": 33,
+  "VALID_OBSERVED_DAMAGE_RESTORATIONS": 15,
+  "diagnostic_only": "This denominator is diagnostic. It does NOT replace or alter the preregistered Gate F denominator.",
+  "reported_success_without_observed_damage": 3,
+  "edge_classification": {
+    "replacement_settled_supplier_not_produced": {
+      "edge_occurrences": 0,
+      "episodes": 0,
+      "episodes_of": 48,
+      "unique_suppliers": 0,
+      "unique_consumers": 0
+    },
+    "preexisting_active_supplier_not_produced": {
+      "edge_occurrences": 41,
+      "episodes": 22,
+      "episodes_of": 48,
+      "unique_suppliers": 8,
+      "unique_consumers": 7
+    },
+    "off_path_idle_bonded_supplier": {
+      "edge_occurrences": 2,
+      "episodes": 2,
+      "episodes_of": 48,
+      "unique_suppliers": 2,
+      "unique_consumers": 2
+    }
+  },
+  "edge_classification_by_outcome": {
+    "replacement_settled_supplier_not_produced": {
+      "restored_episodes": {
+        "edge_occurrences": 0,
+        "episodes": 0,
+        "episodes_of": 18,
+        "unique_suppliers": 0,
+        "unique_consumers": 0
+      },
+      "unrestored_episodes": {
+        "edge_occurrences": 0,
+        "episodes": 0,
+        "episodes_of": 23,
+        "unique_suppliers": 0,
+        "unique_consumers": 0
+      }
+    },
+    "preexisting_active_supplier_not_produced": {
+      "restored_episodes": {
+        "edge_occurrences": 0,
+        "episodes": 0,
+        "episodes_of": 18,
+        "unique_suppliers": 0,
+        "unique_consumers": 0
+      },
+      "unrestored_episodes": {
+        "edge_occurrences": 41,
+        "episodes": 22,
+        "episodes_of": 23,
+        "unique_suppliers": 8,
+        "unique_consumers": 7
+      }
+    },
+    "off_path_idle_bonded_supplier": {
+      "restored_episodes": {
+        "edge_occurrences": 0,
+        "episodes": 0,
+        "episodes_of": 18,
+        "unique_suppliers": 0,
+        "unique_consumers": 0
+      },
+      "unrestored_episodes": {
+        "edge_occurrences": 2,
+        "episodes": 2,
+        "episodes_of": 23,
+        "unique_suppliers": 2,
+        "unique_consumers": 2
+      }
+    }
+  },
+  "discriminative_note": "An edge class occurring at a similar episode rate in restored and unrestored episodes is background, not a terminal cause.",
+  "episodes": [
+    {
+      "episode": 0,
+      "seed": 4000,
+      "damage_class": "supplier_disappearance",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "receive.0",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "authorise.12",
+          "slot": 0,
+          "supplier": "price.2",
+          "need_generation": "price",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "authorise.12",
+          "slot": 1,
+          "supplier": "price.5",
+          "need_generation": "price",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "authorise.9",
+          "slot": 0,
+          "supplier": "price.2",
+          "need_generation": "price",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "authorise.9",
+          "slot": 1,
+          "supplier": "price.5",
+          "need_generation": "price",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.13",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": false,
+          "classification": "off_path_idle_bonded_supplier"
+        },
+        {
+          "consumer": "reconcile.10",
+          "slot": 0,
+          "supplier": "authorise.12",
+          "need_generation": "authorise",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "reconcile.10",
+          "slot": 1,
+          "supplier": "authorise.9",
+          "need_generation": "authorise",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "reconcile.13",
+          "slot": 0,
+          "supplier": "authorise.9",
+          "need_generation": "authorise",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "reconcile.13",
+          "slot": 1,
+          "supplier": "authorise.12",
+          "need_generation": "authorise",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 1
+    },
+    {
+      "episode": 1,
+      "seed": 4001,
+      "damage_class": "supplier_present_not_delivering",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 2,
+      "seed": 4002,
+      "damage_class": "separated_communication_path",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 3,
+      "seed": 4003,
+      "damage_class": "excessive_resource_cost",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "reconcile.13",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 4,
+      "seed": 4004,
+      "damage_class": "wrong_semantic_output",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 5,
+      "seed": 4005,
+      "damage_class": "intermittent_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 6,
+      "seed": 4006,
+      "damage_class": "delayed_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.2",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.14",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": false,
+          "classification": "off_path_idle_bonded_supplier"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.13",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 1
+    },
+    {
+      "episode": 7,
+      "seed": 4007,
+      "damage_class": "expired_delivery_proof",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "reconcile.13",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 8,
+      "seed": 4008,
+      "damage_class": "stale_supplier_return",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": true,
+      "victim": "receive.0",
+      "group": "damage_not_observed_but_reported_success",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 9,
+      "seed": 4009,
+      "damage_class": "false_positive_suspicion",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 10,
+      "seed": 4010,
+      "damage_class": "conflicting_failure_evidence",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.2",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 11,
+      "seed": 4011,
+      "damage_class": "missing_failure_receipt",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "reconcile.10",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 12,
+      "seed": 4012,
+      "damage_class": "repeated_failure_across_two_repairs",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_not_observed_and_failed",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.14",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 13,
+      "seed": 4013,
+      "damage_class": "supplier_returns_during_cooldown",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 14,
+      "seed": 4014,
+      "damage_class": "supplier_disappearance",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.14",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 15,
+      "seed": 4015,
+      "damage_class": "supplier_present_not_delivering",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "receive.0",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 16,
+      "seed": 4016,
+      "damage_class": "separated_communication_path",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "reconcile.10",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 17,
+      "seed": 4017,
+      "damage_class": "excessive_resource_cost",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.1",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 18,
+      "seed": 4018,
+      "damage_class": "wrong_semantic_output",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 19,
+      "seed": 4019,
+      "damage_class": "intermittent_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "reconcile.10",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 20,
+      "seed": 4020,
+      "damage_class": "delayed_delivery",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 21,
+      "seed": 4021,
+      "damage_class": "expired_delivery_proof",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.1",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 22,
+      "seed": 4022,
+      "damage_class": "stale_supplier_return",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": true,
+      "victim": "reconcile.13",
+      "group": "damage_not_observed_but_reported_success",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 23,
+      "seed": 4023,
+      "damage_class": "false_positive_suspicion",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.1",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 24,
+      "seed": 4024,
+      "damage_class": "conflicting_failure_evidence",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.14",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 25,
+      "seed": 4025,
+      "damage_class": "missing_failure_receipt",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.4",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 26,
+      "seed": 4026,
+      "damage_class": "repeated_failure_across_two_repairs",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": true,
+      "victim": "price.2",
+      "group": "damage_not_observed_but_reported_success",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 27,
+      "seed": 4027,
+      "damage_class": "supplier_returns_during_cooldown",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "victim": "price.5",
+      "group": "damage_not_observed_and_failed",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 28,
+      "seed": 4028,
+      "damage_class": "supplier_disappearance",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "receive.0",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 29,
+      "seed": 4029,
+      "damage_class": "supplier_present_not_delivering",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.1",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 30,
+      "seed": 4030,
+      "damage_class": "separated_communication_path",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 31,
+      "seed": 4031,
+      "damage_class": "excessive_resource_cost",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 32,
+      "seed": 4032,
+      "damage_class": "wrong_semantic_output",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "price.2",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 33,
+      "seed": 4033,
+      "damage_class": "intermittent_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.14",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 34,
+      "seed": 4034,
+      "damage_class": "delayed_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "price.2",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 35,
+      "seed": 4035,
+      "damage_class": "expired_delivery_proof",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.5",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 36,
+      "seed": 4036,
+      "damage_class": "stale_supplier_return",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 37,
+      "seed": 4037,
+      "damage_class": "false_positive_suspicion",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 38,
+      "seed": 4038,
+      "damage_class": "conflicting_failure_evidence",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "victim": "reconcile.13",
+      "group": "damage_not_observed_and_failed",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 39,
+      "seed": 4039,
+      "damage_class": "missing_failure_receipt",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "verify.1",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 40,
+      "seed": 4040,
+      "damage_class": "repeated_failure_across_two_repairs",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "victim": "authorise.12",
+      "group": "damage_not_observed_and_failed",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 41,
+      "seed": 4041,
+      "damage_class": "supplier_returns_during_cooldown",
+      "healthy_formation": true,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_not_observed_and_failed",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 42,
+      "seed": 4042,
+      "damage_class": "supplier_disappearance",
+      "healthy_formation": false,
+      "assigned_damage_observed": false,
+      "semantic_restoration": false,
+      "group": "formation_failed",
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ]
+    },
+    {
+      "episode": 43,
+      "seed": 4043,
+      "damage_class": "supplier_present_not_delivering",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.2",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 44,
+      "seed": 4044,
+      "damage_class": "separated_communication_path",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.8",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.13",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.13",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 45,
+      "seed": 4045,
+      "damage_class": "excessive_resource_cost",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "price.8",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.11",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        },
+        {
+          "consumer": "disburse.14",
+          "slot": 0,
+          "supplier": "reconcile.10",
+          "need_generation": "reconcile",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 46,
+      "seed": 4046,
+      "damage_class": "wrong_semantic_output",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": true,
+      "victim": "reconcile.10",
+      "group": "damage_observed_and_restored",
+      "edge_occurrences": [],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    },
+    {
+      "episode": 47,
+      "seed": 4047,
+      "damage_class": "intermittent_delivery",
+      "healthy_formation": true,
+      "assigned_damage_observed": true,
+      "semantic_restoration": false,
+      "victim": "authorise.9",
+      "group": "damage_observed_and_not_restored",
+      "edge_occurrences": [
+        {
+          "consumer": "@sink",
+          "slot": 0,
+          "supplier": "disburse.11",
+          "need_generation": "disburse",
+          "work_item": "B",
+          "newly_settled": false,
+          "on_active_path": true,
+          "classification": "preexisting_active_supplier_not_produced"
+        }
+      ],
+      "active_path_replacement_idle": [],
+      "off_path_idle": 0
+    }
+  ]
+}

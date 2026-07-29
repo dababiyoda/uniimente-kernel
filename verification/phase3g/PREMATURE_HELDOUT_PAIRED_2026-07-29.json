@@ -1,0 +1,1870 @@
+[
+  {
+    "seed": 4300,
+    "fixture": "costly_supplier_with_working_sibling",
+    "damage_class": "supplier_disappearance",
+    "without": {
+      "episode": 9000,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "costly_supplier_with_working_sibling",
+      "damage_class": "supplier_disappearance",
+      "certificate": false,
+      "seed": 4300,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 33,
+      "repair_messages": 38,
+      "repair_amplification": 2.24,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9000,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "costly_supplier_with_working_sibling",
+      "damage_class": "supplier_disappearance",
+      "certificate": true,
+      "seed": 4300,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 33,
+      "repair_messages": 38,
+      "repair_amplification": 2.24,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4301,
+    "fixture": "deep_shared_ancestor",
+    "damage_class": "supplier_present_not_delivering",
+    "without": {
+      "episode": 9001,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "deep_shared_ancestor",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": false,
+      "seed": 4301,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "authorise.15",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.13",
+        "reconcile.16"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 32,
+      "repair_messages": 50,
+      "repair_amplification": 2.5,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.15",
+          "failed_derivation": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.15"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.16",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.15",
+          "failed_derivation": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.15"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9001,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "deep_shared_ancestor",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": true,
+      "seed": 4301,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "authorise.15",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.13",
+        "reconcile.16"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 32,
+      "repair_messages": 50,
+      "repair_amplification": 2.5,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.15",
+          "failed_derivation": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.15"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.16",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.15",
+          "failed_derivation": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.15"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4302,
+    "fixture": "isolated_supplier_with_working_sibling",
+    "damage_class": "separated_communication_path",
+    "without": {
+      "episode": 9002,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "isolated_supplier_with_working_sibling",
+      "damage_class": "separated_communication_path",
+      "certificate": false,
+      "seed": 4302,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 36,
+      "repair_messages": 59,
+      "repair_amplification": 3.47,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9002,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "isolated_supplier_with_working_sibling",
+      "damage_class": "separated_communication_path",
+      "certificate": true,
+      "seed": 4302,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 20,
+      "repair_messages": 64,
+      "repair_amplification": 3.76,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "prohibited_proposals": 4,
+      "blocked_commits": 4,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4303,
+    "fixture": "join_arm_break_with_working_sibling",
+    "damage_class": "excessive_resource_cost",
+    "without": {
+      "episode": 9003,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "join_arm_break_with_working_sibling",
+      "damage_class": "excessive_resource_cost",
+      "certificate": false,
+      "seed": 4303,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    },
+    "with": {
+      "episode": 9003,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "join_arm_break_with_working_sibling",
+      "damage_class": "excessive_resource_cost",
+      "certificate": true,
+      "seed": 4303,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    }
+  },
+  {
+    "seed": 4304,
+    "fixture": "no_valid_replacement",
+    "damage_class": "wrong_semantic_output",
+    "without": {
+      "episode": 9004,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "no_valid_replacement",
+      "damage_class": "wrong_semantic_output",
+      "certificate": false,
+      "seed": 4304,
+      "healthy_ok": true,
+      "initial_form": "585afbd105e8",
+      "victim": "authorise.6",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.7"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 22,
+      "repair_messages": 22,
+      "repair_amplification": 1.57,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.7",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.6",
+          "failed_derivation": [
+            "@env",
+            "authorise.6",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.6"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9004,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "no_valid_replacement",
+      "damage_class": "wrong_semantic_output",
+      "certificate": true,
+      "seed": 4304,
+      "healthy_ok": true,
+      "initial_form": "585afbd105e8",
+      "victim": "authorise.6",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.7"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 22,
+      "repair_messages": 22,
+      "repair_amplification": 1.57,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.7",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.6",
+          "failed_derivation": [
+            "@env",
+            "authorise.6",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.6"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4305,
+    "fixture": "semantic_fault_no_working_sibling",
+    "damage_class": "intermittent_delivery",
+    "without": {
+      "episode": 9005,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "semantic_fault_no_working_sibling",
+      "damage_class": "intermittent_delivery",
+      "certificate": false,
+      "seed": 4305,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    },
+    "with": {
+      "episode": 9005,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "semantic_fault_no_working_sibling",
+      "damage_class": "intermittent_delivery",
+      "certificate": true,
+      "seed": 4305,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    }
+  },
+  {
+    "seed": 4306,
+    "fixture": "semantic_fault_with_working_sibling",
+    "damage_class": "delayed_delivery",
+    "without": {
+      "episode": 9006,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "semantic_fault_with_working_sibling",
+      "damage_class": "delayed_delivery",
+      "certificate": false,
+      "seed": 4306,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "price.11",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.15"
+      ],
+      "injection": "delayed",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 37,
+      "repair_messages": 42,
+      "repair_amplification": 2.1,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.11",
+          "failed_derivation": [
+            "@env",
+            "price.11",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.11"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.15",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.11",
+          "failed_derivation": [
+            "@env",
+            "price.11",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.11"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "7f686322b662",
+      "form_changed": false,
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9006,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "semantic_fault_with_working_sibling",
+      "damage_class": "delayed_delivery",
+      "certificate": true,
+      "seed": 4306,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "price.11",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.15"
+      ],
+      "injection": "delayed",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 37,
+      "repair_messages": 42,
+      "repair_amplification": 2.1,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.11",
+          "failed_derivation": [
+            "@env",
+            "price.11",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.11"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.15",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.11",
+          "failed_derivation": [
+            "@env",
+            "price.11",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.11"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "7f686322b662",
+      "form_changed": false,
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4307,
+    "fixture": "shared_ancestor_two_consumers",
+    "damage_class": "expired_delivery_proof",
+    "without": {
+      "episode": 9007,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "shared_ancestor_two_consumers",
+      "damage_class": "expired_delivery_proof",
+      "certificate": false,
+      "seed": 4307,
+      "healthy_ok": true,
+      "initial_form": "2fc487d9a22b",
+      "victim": "receive.3",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.4"
+      ],
+      "injection": "proof expired",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 33,
+      "repair_messages": 19,
+      "repair_amplification": 1.12,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "expired_delivery_proof",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.3",
+          "failed_derivation": [
+            "@env",
+            "receive.3"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.3"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "2fc487d9a22b",
+      "form_changed": false,
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9007,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "shared_ancestor_two_consumers",
+      "damage_class": "expired_delivery_proof",
+      "certificate": true,
+      "seed": 4307,
+      "healthy_ok": true,
+      "initial_form": "2fc487d9a22b",
+      "victim": "receive.3",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.4"
+      ],
+      "injection": "proof expired",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 23,
+      "repair_messages": 22,
+      "repair_amplification": 1.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "expired_delivery_proof",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.3",
+          "failed_derivation": [
+            "@env",
+            "receive.3"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.3"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "prohibited_proposals": 1,
+      "blocked_commits": 1,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4308,
+    "fixture": "single_input_chain_break",
+    "damage_class": "stale_supplier_return",
+    "without": {
+      "episode": 9008,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "single_input_chain_break",
+      "damage_class": "stale_supplier_return",
+      "certificate": false,
+      "seed": 4308,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    },
+    "with": {
+      "episode": 9008,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "single_input_chain_break",
+      "damage_class": "stale_supplier_return",
+      "certificate": true,
+      "seed": 4308,
+      "healthy_ok": false,
+      "void": true,
+      "void_reason": "no healthy semantic output",
+      "success": false
+    }
+  },
+  {
+    "seed": 4309,
+    "fixture": "two_simultaneous_breaks_different_causes",
+    "damage_class": "false_positive_suspicion",
+    "without": {
+      "episode": 9009,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "two_simultaneous_breaks_different_causes",
+      "damage_class": "false_positive_suspicion",
+      "certificate": false,
+      "seed": 4309,
+      "healthy_ok": true,
+      "initial_form": "0f63493cf633",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.14",
+        "price.2",
+        "price.5",
+        "price.8"
+      ],
+      "injection": "transient miss",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 32,
+      "repair_messages": 11,
+      "repair_amplification": 0.48,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.14",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.0"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "0f63493cf633",
+      "form_changed": false,
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9009,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "two_simultaneous_breaks_different_causes",
+      "damage_class": "false_positive_suspicion",
+      "certificate": true,
+      "seed": 4309,
+      "healthy_ok": true,
+      "initial_form": "0f63493cf633",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.14",
+        "price.2",
+        "price.5",
+        "price.8"
+      ],
+      "injection": "transient miss",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 33,
+      "repair_messages": 28,
+      "repair_amplification": 1.22,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.14",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.0"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "prohibited_proposals": 4,
+      "blocked_commits": 4,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4310,
+    "fixture": "costly_supplier_with_working_sibling",
+    "damage_class": "conflicting_failure_evidence",
+    "without": {
+      "episode": 9010,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "costly_supplier_with_working_sibling",
+      "damage_class": "conflicting_failure_evidence",
+      "certificate": false,
+      "seed": 4310,
+      "healthy_ok": true,
+      "initial_form": "a47c46cb8106",
+      "victim": "reconcile.13",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "two different causes",
+      "damage_class_observed": false,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 26,
+      "repair_messages": 48,
+      "repair_amplification": 2.82,
+      "local_evidence_at_direct_consumer": false,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": false,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9010,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "costly_supplier_with_working_sibling",
+      "damage_class": "conflicting_failure_evidence",
+      "certificate": true,
+      "seed": 4310,
+      "healthy_ok": true,
+      "initial_form": "a47c46cb8106",
+      "victim": "reconcile.13",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "two different causes",
+      "damage_class_observed": false,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 26,
+      "repair_messages": 48,
+      "repair_amplification": 2.82,
+      "local_evidence_at_direct_consumer": false,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": false,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  },
+  {
+    "seed": 4311,
+    "fixture": "deep_shared_ancestor",
+    "damage_class": "missing_failure_receipt",
+    "without": {
+      "episode": 9011,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "deep_shared_ancestor",
+      "damage_class": "missing_failure_receipt",
+      "certificate": false,
+      "seed": 4311,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.13",
+        "reconcile.16"
+      ],
+      "injection": "receipts suppressed",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 31,
+      "repair_messages": 37,
+      "repair_amplification": 1.85,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.16",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    },
+    "with": {
+      "episode": 9011,
+      "cohort": "regeneration",
+      "gate": "G",
+      "held_out": true,
+      "fixture": "deep_shared_ancestor",
+      "damage_class": "missing_failure_receipt",
+      "certificate": true,
+      "seed": 4311,
+      "healthy_ok": true,
+      "initial_form": "7f686322b662",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.13",
+        "reconcile.16"
+      ],
+      "injection": "receipts suppressed",
+      "damage_class_observed": true,
+      "pre_repair_semantic_loss_proven": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 31,
+      "repair_messages": 37,
+      "repair_amplification": 1.85,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.16",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.15",
+            "price.11",
+            "price.2",
+            "receive.0",
+            "verify.1",
+            "verify.10"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "prohibited_proposals": 0,
+      "blocked_commits": 0,
+      "success": false,
+      "causal_escape": false
+    }
+  }
+]

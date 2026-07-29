@@ -73,8 +73,12 @@ spec = pytest.mark.xfail(strict=True,
 # fixtures: deterministic, or seed-scanned then HARD ASSERTED. Never skipped.
 # ---------------------------------------------------------------------------
 
-def _build(n_auth=4, seed=7, density=0.8):
-    """A two-input reconcile join fed by `n_auth` distinct AUTH producers."""
+def _build_raw(n_auth=4, seed=7, density=0.8):
+    """Construct only. No prepare, no commission, no work item.
+
+    Unit-ID permutation relabels here, when the only structural state is
+    `unit_id` and `neighbours`, so nothing can be silently regenerated.
+    """
     caps = F._spine("alpha2") + F._spine("beta2") + F._spine("gamma2")
     for i in range(n_auth):
         caps.append(F.cap(f"au{i}", ("PX", "PX"), "AUTH", F.AUTHORISE,
@@ -83,7 +87,12 @@ def _build(n_auth=4, seed=7, density=0.8):
                       1.0, "d.p", "reconcile", F.OK_AUTH))
     caps.append(F.cap("db0", ("RECON",), "VERDICT", F.DISBURSE,
                       1.0, "d.r", "disburse", F.OK_RECON))
-    o = F._organ(caps, random.Random(seed), density)
+    return F._organ(caps, random.Random(seed), density)
+
+
+def _build(n_auth=4, seed=7, density=0.8):
+    """A two-input reconcile join fed by `n_auth` distinct AUTH producers."""
+    o = _build_raw(n_auth, seed, density)
     F.prepare(o)
     reset()
     o.commission()
@@ -435,17 +444,52 @@ def test_G_search_credit_starvation_never_claims_no_replacement(monkeypatch):
 
 @spec
 def test_H_offer_returns_through_the_originally_adopted_edge():
+    """Requires the advertised events to have HAPPENED.
+
+    Asserting only `OFFER_RETURN_ROUTE_MISMATCHES == 0` and an unchanged adopted
+    edge is satisfied by a mechanism that emitted no offer at all and received no
+    competing arrival, which proves nothing about return-route stability.
+    """
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()
     o.run_item(PAYLOAD_B)
+
+    nodes = _nodes(o)
+    assert nodes, "no canonical nodes were created"
+    terminals = getattr(o, "search_edge_terminals", None)
+    assert terminals is not None, "the organ records no per-edge terminal outcomes"
+
+    def kind(x):
+        return getattr(x, "kind", x)
+
+    offers = [(edge, out) for edge, outs in terminals.items() for out in outs
+              if kind(out) == "SearchOffer"]
+    assert offers, (
+        "no SearchOffer was emitted anywhere, so this run cannot demonstrate "
+        "that offers return through the adopted edge")
+
+    # A competing arrival must actually have tried to take the route over.
+    assert C["COALESCED_DUPLICATE_ARRIVALS"] + C["CYCLE_EDGES_CLOSED"] > 0, (
+        "no duplicate or cross-edge arrival reached any canonical node, so no "
+        "attempt to overwrite a return route occurred")
+
+    answered = [n for n in nodes.values() if n.get("eligible_offer")]
+    assert answered, "no canonical node recorded an eligible offer"
+    for node in answered:
+        adopted = node["adopted_parent_edge"]
+        assert adopted == node["adopted_parent_edge_initial"], (
+            "a node rebound its adopted parent edge after adoption")
+        key = node["search_key"]
+        for_this_key = [edge for edge, out in offers if key in edge]
+        assert len(for_this_key) == 1, (
+            f"the offer for {key} was recorded on {len(for_this_key)} edges; it "
+            f"must appear exactly once, on the adopted parent edge")
+        assert adopted in for_this_key[0], (
+            f"the offer for {key} was recorded on {for_this_key[0]}, not on the "
+            f"adopted parent edge {adopted}")
     assert C["OFFER_RETURN_ROUTE_MISMATCHES"] == 0, (
         "an offer travelled home through an edge that was not the adopted "
         "parent; `reverse` keyed by need_id alone allows exactly this")
-    nodes = _nodes(o)
-    assert nodes, "no canonical nodes were created"
-    for (uid, key), node in nodes.items():
-        assert node["adopted_parent_edge"] == node["adopted_parent_edge_initial"], (
-            f"{uid} rebound its adopted parent edge after adoption")
 
 
 # ---------------------------------------------------------------------------
@@ -557,20 +601,135 @@ def test_arrival_order_alone_does_not_change_the_outcome():
     # The adopted parents MAY differ -- that is expected under first-arrival
     # adoption, and is recorded rather than asserted away.
 
+# ---------------------------------------------------------------------------
+# Unit-ID permutation: a real topology-preserving bijection
+#
+# The test previously carrying this name did NOT permute identifiers. It ran the
+# same fixture twice with n_auth 2 and 4, so the known lexical-ordering risk was
+# claimed as covered while going completely untested. The substrate sorts unit
+# ids in several places -- sorted(neighbours), sorted(consumers), the interior
+# pool -- so this is load-bearing, not cosmetic.
+#
+# MEASURED AT R6 over 12 permutations of this fixture:
+#
+#     capability topology changed      0 / 12   (the relabelling is honest)
+#     formation FAILED                 4 / 12
+#     formed structure differed        8 / 12   (in capability terms)
+#     repair outcome differed          2 / 12
+#
+# So lexical unit-ID ordering already affects the R6 baseline, at formation and
+# at repair. This test is therefore strict xfail: it is a real invariance the
+# mechanism must eventually satisfy, and it does not hold today.
+# ---------------------------------------------------------------------------
 
-def test_unit_id_permutation_is_a_separate_variable_from_arrival_order():
-    """Naming order and arrival order are different causal variables.
+PERMUTATION_SEED = 4242
+PERMUTATIONS = 5
 
-    Kept plain: it holds against the R6 baseline and must keep holding.
+
+def _relabel(o, mapping):
+    """Rename units in place. Topology is preserved; only identifiers move.
+
+    Called before `prepare`/`commission`, when the only structural state is
+    `unit_id` and `neighbours`, so nothing is silently regenerated. ENV and SINK
+    are never permuted.
     """
-    results = []
-    for n_auth in (2, 4):
-        o, j, slot, victim, seed = _damaged(n_auth)
+    units = list(o.units.values())
+    remapped = {u.unit_id: {mapping.get(n, n) for n in u.neighbours}
+                for u in units}
+    for u in units:
+        u.neighbours = remapped[u.unit_id]
+        u.unit_id = mapping.get(u.unit_id, u.unit_id)
+    o.units = {u.unit_id: u for u in units}
+    return o
+
+
+def _capability_topology(o):
+    """Adjacency expressed in CAPABILITY terms, so renaming cannot change it.
+
+    This is what proves a permutation did not accidentally regenerate a
+    different structure.
+    """
+    return sorted((u.capability.name,
+                   tuple(sorted(o.units[n].capability.name
+                                for n in u.neighbours if n in o.units)))
+                  for u in o.units.values())
+
+
+def _formed_structure(o):
+    """Settled bonds in CAPABILITY terms: consumer, slot, supplier."""
+    return sorted((u.capability.name, s,
+                   o.units[b.supplier].capability.name
+                   if b.supplier in o.units else b.supplier)
+                  for u in o.units.values() for s, b in u.bonds.items())
+
+
+@spec
+def test_unit_id_permutation_preserves_semantics():
+    o = _build_raw(4, 7)
+    ids = [i for i in o.units if i not in (ENV, SINK)]
+    assert len(ids) >= 6, "too few permutable units to be a real test"
+
+    base = _build_raw(4, 7)
+    F.prepare(base)
+    reset()
+    base.commission()
+    assert base.result_ok(base.run_item(PAYLOAD_A)), "base fixture did not form"
+    base_topology = _capability_topology(base)
+    base_structure = _formed_structure(base)
+    join = _join(base)
+    assert join is not None and len(join.bonds) == 2, "base join did not form"
+    slot = min(join.bonds)
+    base_victim = join.bonds[slot].supplier
+    base_victim_cap = base.units[base_victim].capability.name
+    base.units[base_victim].silent = True
+    reset()
+    base_outcome = base.result_ok(base.run_item(PAYLOAD_B))
+    base_independent = len({b.supplier for b in join.bonds.values()}) == len(join.bonds)
+
+    rng = random.Random(PERMUTATION_SEED)
+    failures = []
+    for k in range(PERMUTATIONS):
+        perm = ids[:]
+        rng.shuffle(perm)
+        mapping = dict(zip(ids, perm))
+        assert len(set(mapping.values())) == len(ids), "mapping is not a bijection"
+        assert ENV not in mapping and SINK not in mapping
+
+        o = _relabel(_build_raw(4, 7), mapping)
+        # The relabelling must not have regenerated a different structure.
+        assert _capability_topology(o) == base_topology, (
+            f"permutation {k} changed the capability topology, so it is a "
+            f"different fixture rather than a renaming")
+        F.prepare(o)
         reset()
-        o.run_item(PAYLOAD_B)
-        sups = [b.supplier for b in j.bonds.values()]
-        assert len(sups) == len(set(sups)), (
-            f"independence violated with n_auth={n_auth}")
-        results.append((n_auth, o.result_ok(o._produced.get(SINK))
-                        if SINK in o._produced else False))
-    assert results, "no structures were exercised"
+        o.commission()
+
+        if not o.result_ok(o.run_item(PAYLOAD_A)):
+            failures.append(f"perm {k}: formation failed under renaming alone")
+            continue
+        if _formed_structure(o) != base_structure:
+            failures.append(f"perm {k}: formed structure differs under renaming alone")
+            continue
+
+        victim = mapping[base_victim]           # the same UNIT, renamed
+        assert o.units[victim].capability.name == base_victim_cap, (
+            "the permutation did not damage the same semantic role")
+        o.units[victim].silent = True
+        reset()
+        before = o.messages
+        outcome = o.result_ok(o.run_item(PAYLOAD_B))
+        j = _join(o)
+        independent = len({b.supplier for b in j.bonds.values()}) == len(j.bonds)
+        amp = round((o.messages - before) / max(1, len(o.units)), 2)
+
+        if outcome != base_outcome:
+            failures.append(f"perm {k}: restoration/escalation outcome "
+                            f"{outcome} != base {base_outcome}")
+        if independent != base_independent:
+            failures.append(f"perm {k}: independence outcome differs")
+        if amp > 12:
+            failures.append(f"perm {k}: amplification {amp} exceeds 12")
+        assert o.units[victim].silent, "the damage was not applied"
+
+    assert not failures, (
+        "renaming units changed behaviour:\n  " + "\n  ".join(failures))

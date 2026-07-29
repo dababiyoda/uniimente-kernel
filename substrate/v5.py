@@ -116,6 +116,19 @@ COUNTER_NAMES = (
     "BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS",
     "INELIGIBLE_CANDIDATE_BRANCH_CONTINUATIONS",
     "INDEPENDENCE_VIOLATIONS",
+    # Single-Flight Echo Search.
+    "UNIQUE_CANONICAL_SEARCH_NODES",
+    "CANONICAL_SEARCH_EXPANSIONS",
+    "COALESCED_DUPLICATE_ARRIVALS",
+    "CYCLE_EDGES_CLOSED",
+    "DUPLICATE_SUBTREES_OPENED",
+    "DIRECTED_SEARCH_EDGES_PROBED",
+    "TERMINAL_ECHOS_SENT",
+    "OFFER_RETURN_ROUTE_MISMATCHES",
+    "ORPHANED_SEARCH_EDGES",
+    "PREMATURE_TERMINATION_SIGNALS",
+    "SEARCH_SPACE_EXHAUSTED",
+    "SEARCH_BUDGET_EXHAUSTED",
 )
 
 
@@ -357,6 +370,109 @@ class Bond:
 # round 0 would leave nothing to widen with.
 ROUND_SHARE = 0.5
 
+# Test-harness seam: the ONLY correct way to starve search credit. `repair_budget`
+# is a supplier COST ceiling, so setting it low does not exercise the message
+# credit ledger and cannot distinguish budget exhaustion from space exhaustion.
+ROOT_SEARCH_CREDIT_OVERRIDE = None
+
+# Cost a unit charges itself for answering a duplicate arrival. Small, explicit,
+# and NOT pooled into the canonical node's reserve.
+COALESCE_HANDLING_COST = 1.0
+
+
+def _digest(items: Iterable[str]) -> str:
+    """Deterministic digest of an unordered collection.
+
+    Python's `hash()` is process-randomized for str, so using it here would make
+    one semantic search produce different SearchKeys between runs. Sets are
+    sorted before digesting so iteration order cannot leak into identity.
+    """
+    return _h("|".join(sorted(items)))
+
+
+@dataclass(frozen=True)
+class SearchKey:
+    """SEMANTIC identity of one search. Transport properties are excluded.
+
+    Two arrivals with the same SearchKey are requests for the same local
+    computation. `edge_id`, immediate sender, lineage and arrival order identify
+    transport paths, not distinct work, so none of them appear here -- that
+    conflation is what made the hierarchical attempt open a fresh subtree per
+    path and drove amplification to 526.71.
+    """
+    need_id: str
+    work_item_generation: int
+    origin_unit: str
+    origin_slot: int
+    wanted_type: str
+    causal_refusal_digest: str = ""
+    must_differ_from_digest: str = ""
+    constraint_generation: int = 0
+
+    @staticmethod
+    def build(need_id, work_item_generation, origin_unit, origin_slot, wanted_type,
+              refused=(), must_differ_from=(), constraint_generation=0) -> "SearchKey":
+        return SearchKey(need_id, work_item_generation, origin_unit, origin_slot,
+                         wanted_type, _digest(refused), _digest(must_differ_from),
+                         constraint_generation)
+
+    def __str__(self) -> str:
+        return (f"{self.origin_unit}[{self.origin_slot}]:{self.wanted_type}"
+                f"@{self.work_item_generation}/{self.need_id}")
+
+
+@dataclass(frozen=True)
+class Terminal:
+    """Exactly one of these ends each transport edge.
+
+    Only SearchExhausted contributes to a no-replacement proof. SearchCoalesced
+    means "this path created no additional work because equivalent work is
+    already active", which is not evidence about the search space.
+    """
+    kind: str
+    search_key: SearchKey
+    edge_id: str
+    refund: float = 0.0
+    handling_cost: float = 0.0
+    from_unit: str = ""
+    to_unit: str = ""
+
+
+TERMINAL_KINDS = ("SearchOffer", "SearchExhausted", "SearchCoalesced",
+                  "SearchCycleClosed", "SearchNeedClosed", "SearchCancelled")
+
+
+def new_canonical_node(key: SearchKey, parent_edge: str, parent_sender: str,
+                       allocation: float) -> dict:
+    """One canonical local computation per (unit, SearchKey).
+
+    The adopted parent fields are immutable after first adoption: a later arrival
+    must never redirect where a result travels home. `reverse[need_id]` allowed
+    exactly that, because a second arrival overwrote the earlier return route.
+    """
+    return {
+        "search_key": key,
+        "status": "OPEN",
+        "adopted_parent_edge": parent_edge,
+        "adopted_parent_edge_initial": parent_edge,
+        "adopted_parent_sender": parent_sender,
+        "incoming_edges": [parent_edge],
+        "incoming_allocation": allocation,
+        "local_reserve": allocation,
+        "handling_cost": 0.0,
+        "neighbours_tried": set(),
+        "eligible_untried_routes": 0,
+        "children_opened": [],
+        "children_from": {parent_edge: []},
+        "children_outstanding": set(),
+        "children_completed": set(),
+        "eligible_offer": False,
+        "returned_credit": 0.0,
+        "consumed_credit": 0.0,
+        "cancelled_credit": 0.0,
+        "terminal_signal_sent": False,
+    }
+
 
 def new_search_ledger(initial: float = REPAIR_SEARCH_BUDGET) -> dict:
     """Per-need credit ledger with first-class rounds and branches.
@@ -490,6 +606,11 @@ class Unit:
     # Which work item is currently being processed. Stamped by the organ at
     # dispatch, recorded into settlement provenance, never branched on.
     item_seq: int = 0
+    # SINGLE-FLIGHT: one canonical computation per SearchKey at this unit.
+    canonical_searches: dict = field(default_factory=dict)
+    # Set at commission. Used ONLY to record edge telemetry, never to inspect
+    # other units, their bonds, or the topology.
+    _organ: Any = None
 
     # damage state, set only by the injector
     dissolved: bool = False
@@ -655,6 +776,234 @@ class Unit:
             "uncertainty": sorted(self.uncertain),
             "had_working_sibling": has_sibling})
         self._emit_need(slot)
+
+    # -- SINGLE-FLIGHT ECHO SEARCH -------------------------------------
+    #
+    # One canonical local computation per (unit, SearchKey). A later arrival
+    # carrying the same semantic search registers, refunds and terminates; it
+    # never opens another subtree. That is the whole correction over the failed
+    # hierarchical tree, which opened a fresh subtree per transport path.
+
+    def _record_probe(self, edge_id: str, frm: str, to: str, key: SearchKey) -> None:
+        o = self._organ
+        if o is None:
+            return
+        rec = o.search_edge_probes.setdefault(
+            edge_id, {"from_unit": frm, "to_unit": to, "search_key": key, "count": 0})
+        rec["count"] += 1
+        o.search_edges.setdefault(edge_id, {
+            "edge_id": edge_id, "parent_edge_id": "", "from_unit": frm,
+            "to_unit": to, "search_key": key, "allocation": 0.0,
+            "terminal_status": "open", "terminal_outcome": None,
+            "refunded_credit": 0.0, "consumed_credit": 0.0})
+        C.incr("DIRECTED_SEARCH_EDGES_PROBED")
+
+    def _record_terminal(self, t: Terminal) -> None:
+        """Exactly one terminal outcome per transport edge."""
+        o = self._organ
+        if o is None:
+            return
+        rec = o.search_edge_terminals.setdefault(
+            t.edge_id, {"from_unit": t.from_unit, "to_unit": t.to_unit,
+                        "search_key": t.search_key, "outcomes": []})
+        rec["outcomes"].append(t)
+        e = o.search_edges.get(t.edge_id)
+        if e is not None:
+            e["terminal_status"] = "terminal"
+            e["terminal_outcome"] = t.kind
+            e["refunded_credit"] = t.refund
+            e["consumed_credit"] = t.handling_cost
+        C.incr("TERMINAL_ECHOS_SENT")
+
+    def _emit_terminal(self, kind: str, key: SearchKey, edge_id: str, to: str,
+                       refund: float = 0.0, handling_cost: float = 0.0) -> Terminal:
+        t = Terminal(kind, key, edge_id, refund, handling_cost, self.unit_id, to)
+        self._record_terminal(t)
+        if to:
+            self.outbox.append((to, t))
+        return t
+
+    def open_canonical_search(self, key: SearchKey, parent_edge: str,
+                              allocation: float, parent_sender: str = "") -> dict:
+        """First-arrival adoption. At most one node per SearchKey per unit."""
+        node = self.canonical_searches.get(key)
+        if node is not None:
+            C.incr("DUPLICATE_SUBTREES_OPENED")   # must never fire
+            return node
+        node = new_canonical_node(key, parent_edge, parent_sender, allocation)
+        self.canonical_searches[key] = node
+        C.incr("UNIQUE_CANONICAL_SEARCH_NODES")
+        self._expand_canonical(node)
+        return node
+
+    def _expand_canonical(self, node: dict) -> None:
+        """Evaluate local eligibility ONCE and open at most one child frontier."""
+        C.incr("CANONICAL_SEARCH_EXPANSIONS")
+        key = node["search_key"]
+        want = key.wanted_type
+        boundary = {ENV, SINK}
+        ring = [n for n in self._frontier(want)
+                if n not in node["neighbours_tried"] and n not in boundary]
+        ring += [n for n in sorted(self.neighbours)
+                 if n not in node["neighbours_tried"] and n not in self.refused
+                 and n not in ring and n not in boundary]
+        node["eligible_untried_routes"] = len(ring)
+        ring = ring[:FRONTIER_WIDTH]
+        if not ring or node["local_reserve"] <= 0:
+            return
+        per = (node["local_reserve"] * ROUND_SHARE) / len(ring)
+        if per < 1.0:
+            ring, per = ring[:1], min(node["local_reserve"], 1.0)
+        adopted = node["adopted_parent_edge"]
+        for i, n in enumerate(ring):
+            if node["local_reserve"] < per:
+                break
+            child = f"{adopted}/c{i}"
+            node["local_reserve"] -= per
+            node["children_opened"].append(child)
+            node["children_outstanding"].add(child)
+            node["children_from"].setdefault(adopted, []).append(child)
+            node["neighbours_tried"].add(n)
+            self._record_probe(child, self.unit_id, n, key)
+            self.outbox.append((n, ("__search__", key, child, per,
+                                    (self.unit_id,))))
+        node["eligible_untried_routes"] = max(
+            0, node["eligible_untried_routes"] - len(ring))
+
+    def deliver_search(self, key: SearchKey, edge_id: str, allocation: float,
+                       lineage: tuple = (), sender: str = "") -> Terminal:
+        """One arrival on one transport edge. Returns its single terminal outcome."""
+        o = self._organ
+        if o is not None and edge_id in o.search_edge_terminals:
+            # Exact replay of an edge already answered: no reprocessing, no
+            # second terminal, and CRUCIALLY no second refund. Returning the
+            # original terminal object would report its original refund again,
+            # which reads as a second payment; the replay is reported as a
+            # zero-value echo of the same outcome.
+            first = o.search_edge_terminals[edge_id]["outcomes"][0]
+            return Terminal(first.kind, first.search_key, edge_id, 0.0, 0.0,
+                            self.unit_id, first.to_unit)
+        self._record_probe(edge_id, sender or key.origin_unit, self.unit_id, key)
+
+        if self.unit_id in lineage:
+            C.incr("CYCLE_EDGES_CLOSED")
+            return self._emit_terminal("SearchCycleClosed", key, edge_id, sender,
+                                       refund=max(0.0, allocation))
+        if key.need_id in self.closed_needs:
+            return self._emit_terminal("SearchNeedClosed", key, edge_id, sender,
+                                       refund=max(0.0, allocation))
+        node = self.canonical_searches.get(key)
+        if node is not None:
+            # DUPLICATE. No new node, no reopened frontier, no adopted-parent
+            # change, and the allocation is NOT pooled into the canonical
+            # reserve: only an explicit handling cost is charged.
+            cost = min(COALESCE_HANDLING_COST, max(0.0, allocation))
+            node["incoming_edges"].append(edge_id)
+            node["children_from"].setdefault(edge_id, [])
+            node["handling_cost"] += cost
+            C.incr("COALESCED_DUPLICATE_ARRIVALS")
+            return self._emit_terminal("SearchCoalesced", key, edge_id, sender,
+                                       refund=max(0.0, allocation - cost),
+                                       handling_cost=cost)
+        # First arrival: adopt, and answer immediately if I can supply.
+        node = self.open_canonical_search(key, edge_id, allocation, sender)
+        if (self.capability.produces == key.wanted_type and not self.silent
+                and self.unit_id not in self._must_differ(key)
+                and not self.unmet()):
+            node["eligible_offer"] = True
+            node["status"] = "ANSWERED"
+            C.incr("DISTINCT_ELIGIBLE_REPLACEMENTS_DISCOVERED")
+            return self._emit_terminal("SearchOffer", key, edge_id, sender)
+        return Terminal("SearchPending", key, edge_id, 0.0, 0.0, self.unit_id, sender)
+
+    def _must_differ(self, key: SearchKey) -> frozenset[str]:
+        """Sibling exclusions for a key I originated. Empty for keys I relay."""
+        if key.origin_unit != self.unit_id:
+            return frozenset()
+        return frozenset(b.supplier for s, b in self.bonds.items()
+                         if s != key.origin_slot)
+
+    def deliver_terminal(self, key: SearchKey, edge_id: str, kind: str,
+                         refund: float = 0.0) -> None:
+        """Aggregate one child outcome. Echo upward only when ALL are terminal."""
+        node = self.canonical_searches.get(key)
+        if node is None:
+            C.incr("ORPHANED_SEARCH_EDGES")
+            return
+        if edge_id in node["children_completed"]:
+            return                              # replay: idempotent, no refund
+        if edge_id not in node["children_outstanding"]:
+            return
+        node["children_outstanding"].discard(edge_id)
+        node["children_completed"].add(edge_id)
+        node["returned_credit"] += max(0.0, refund)
+        node["local_reserve"] += max(0.0, refund)
+        if node["status"] != "OPEN" or node["terminal_signal_sent"]:
+            return
+        if kind == "SearchOffer":
+            # AN ANSWER SHORT-CIRCUITS. Waiting for the remaining children to die
+            # before forwarding good news is wrong: the subtree has produced a
+            # viable result, so it echoes home immediately and the rest of the
+            # subtree is cancelled. Only EXHAUSTION has to wait for every child.
+            node["eligible_offer"] = True
+            node["status"] = "ANSWERED"
+            node["terminal_signal_sent"] = True
+            node["cancelled_credit"] += node["local_reserve"]
+            node["local_reserve"] = 0.0
+            node["children_outstanding"].clear()
+            self._emit_terminal("SearchOffer", key, node["adopted_parent_edge"],
+                                node["adopted_parent_sender"])
+            return
+        if node["children_outstanding"]:
+            return                              # siblings still live
+        if node["eligible_offer"]:
+            node["status"] = "ANSWERED"
+            node["terminal_signal_sent"] = True
+            self._emit_terminal("SearchOffer", key, node["adopted_parent_edge"],
+                                node["adopted_parent_sender"])
+            return
+        # No answer and every actual child is terminal. Is the SPACE closed, or
+        # did credit run out first? These are different claims.
+        if node["eligible_untried_routes"] > 0 and node["local_reserve"] < 1.0:
+            node["status"] = "EXHAUSTED"
+            node["terminal_signal_sent"] = True
+            C.incr("SEARCH_BUDGET_EXHAUSTED")
+            if self._organ is not None:
+                self._organ.budget_exhaustion_records.append(key)
+            self.escalations.append(
+                f"search budget exhausted for {key}: "
+                f"{node['eligible_untried_routes']} eligible routes untried")
+            self._emit_terminal("SearchExhausted", key, node["adopted_parent_edge"],
+                                node["adopted_parent_sender"],
+                                refund=node["local_reserve"])
+            return
+        if node["eligible_untried_routes"] > 0 and node["local_reserve"] >= 1.0:
+            self._expand_canonical(node)        # widen: the round is complete
+            if node["children_outstanding"]:
+                return
+        node["status"] = "EXHAUSTED"
+        node["terminal_signal_sent"] = True
+        node["cancelled_credit"] += node["local_reserve"]
+        node["local_reserve"] = 0.0
+        C.incr("SEARCH_SPACE_EXHAUSTED")
+        if self._organ is not None:
+            self._organ.space_exhaustion_proofs.append(key)
+        self.escalations.append(
+            f"no eligible distinct supplier for slot {key.origin_slot}: "
+            f"{len(node['children_completed'])} branches searched, "
+            f"excluded {sorted(self._must_differ(key))}")
+        self.receipts.append(Receipt("branch_exhausted", self.unit_id,
+                                     key.origin_slot, None,
+                                     "bounded distinct replacement exhaustion"))
+        self._emit_terminal("SearchExhausted", key, node["adopted_parent_edge"],
+                            node["adopted_parent_sender"])
+
+    def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
+        """Exact replay of an already-answered edge is a no-op."""
+        o = self._organ
+        if o is not None and edge_id in o.search_edge_terminals:
+            return
+        self.deliver_search(key, edge_id, 0.0)
 
     def would_refuse_everything(self, producers: Iterable[str]) -> bool:
         prod = set(producers)
@@ -853,6 +1202,14 @@ class Unit:
                 continue
             if isinstance(msg, tuple) and msg and msg[0] == "__retired__":
                 self.consumers.discard(msg[1])
+                continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__search__":
+                _, key, edge_id, allocation, lineage = msg
+                self.deliver_search(key, edge_id, allocation, lineage, sender)
+                continue
+            if isinstance(msg, Terminal):
+                self.deliver_terminal(msg.search_key, msg.edge_id, msg.kind,
+                                      msg.refund)
                 continue
             if isinstance(msg, tuple) and msg and msg[0] == "__exhausted__":
                 nid = msg[1]
@@ -1195,6 +1552,16 @@ class Organ:
         self.cut: set[tuple[str, str]] = set()
         self.messages = 0
         self.commissions = 0
+        # SINGLE-FLIGHT telemetry, keyed by EDGE ID with explicit fields. Keying
+        # by (from, to, SearchKey) while nodes stored an edge identifier meant the
+        # two identities were compared by tuple membership, which proved nothing.
+        self.search_edges: dict = {}
+        self.search_edge_probes: dict = {}
+        self.search_edge_terminals: dict = {}
+        self.space_exhaustion_proofs: list = []
+        self.budget_exhaustion_records: list = []
+        for u in self.units.values():
+            u._organ = self
         # Recipients that hold undelivered work. Maintained as messages are
         # delivered, so run_item never scans the organ to find them.
         self._msg_pending: set = set()

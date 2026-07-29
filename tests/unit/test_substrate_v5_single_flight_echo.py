@@ -605,6 +605,12 @@ def test_J_amplification_scales_with_units_not_paths(density):
     before = o.messages
     o.run_item(PAYLOAD_B)
     amp = round((o.messages - before) / max(1, len(o.units)), 2)
+    # Without this the test passes on 0 == 0 while no canonical node exists at
+    # all, which is exactly how it XPASSed once the counters were merely defined.
+    assert C["UNIQUE_CANONICAL_SEARCH_NODES"] > 0, (
+        f"no canonical search node was created at density {density}, so this "
+        f"test would pass vacuously")
+    assert C["DIRECTED_SEARCH_EDGES_PROBED"] > 0, "no search edge was probed"
     assert amp <= 12, (
         f"repair amplification {amp} exceeds the ceiling of 12 at density "
         f"{density} (seed {seed})")
@@ -671,6 +677,10 @@ def test_arrival_order_alone_does_not_change_the_outcome():
         assert len(sups) == len(set(sups)), (
             f"independence was violated under arrival-order rotation {rotation}")
         assert C["DUPLICATE_SUBTREES_OPENED"] == 0
+        # Guard against a vacuous pass: the protocol must actually have run.
+        assert C["UNIQUE_CANONICAL_SEARCH_NODES"] > 0, (
+            f"no canonical search node under rotation {rotation}; this test "
+            f"would pass without the protocol running at all")
 
     assert len(set(outcomes)) == 1, (
         f"whether a distinct replacement was found depended on arrival order "

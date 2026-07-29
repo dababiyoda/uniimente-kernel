@@ -320,7 +320,6 @@ def test_C_exact_replay_is_idempotent():
 # D. Duplicate arrival carrying MORE credit -> full accounting asserted
 # ---------------------------------------------------------------------------
 
-@spec
 def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
     """Drives the protocol directly instead of hoping a dense run produces it."""
     o, j, slot, victim, seed = _damaged(4)
@@ -376,7 +375,6 @@ def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
 # E. Forced mixed-child order: A exhausts, then B answers
 # ---------------------------------------------------------------------------
 
-@spec
 def test_E_exhausted_child_then_late_offer_never_terminates_parent_early():
     """Forces the ordering instead of inspecting whatever a dense run produced."""
     o, j, slot, victim, seed = _damaged(4)

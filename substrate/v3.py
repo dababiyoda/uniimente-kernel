@@ -550,6 +550,14 @@ class Tissue3:
                 args, ready = [], True
                 for slot in c.slots():
                     b = c.bonds[slot]
+                    if self.blocked(b.supplier, cid):
+                        # The bond exists and the supplier may be perfectly
+                        # healthy; the value simply cannot cross. Recording the
+                        # refusal is what makes a partition DIAGNOSABLE instead
+                        # of indistinguishable from the supplier being gone.
+                        self.blocked_deliveries.append((b.supplier, cid))
+                        ready = False
+                        break
                     sup = tr.values.get(b.supplier)
                     if sup is None:
                         ready = False
@@ -810,11 +818,23 @@ def diagnose(healthy: ExecutionTrace, broken: ExecutionTrace,
     # 3. Partition evidence: edges that carried traffic before are now blocked,
     #    and the lost cell sits on one of them.
     blocked_pairs = {tuple(sorted(p)) for p in broken.messages_blocked}
-    touching = [p for p in blocked_pairs if focus in p]
+    healthy_blocked = {tuple(sorted(p)) for p in healthy.messages_blocked}
+    new_blocked = blocked_pairs - healthy_blocked
+    # The starved consumer is what we observe; the unreachable supplier is on
+    # the other end of the refused edge. Attribute the fault to the supplier.
+    touching = [p for p in new_blocked if focus in p]
+    if not touching and new_blocked:
+        starved = {c for pair in new_blocked for c in pair} & set(healthy.values)
+        if starved - set(broken.values):
+            touching = sorted(new_blocked)
     if touching:
-        ev.append(f"{len(blocked_pairs)} edge(s) refused delivery; "
-                  f"{len(touching)} touch the earliest lost value")
-        return Diagnosis(PARTITION_ISOLATION, observed_classes.get(focus, "?"),
+        ev.append(f"{len(new_blocked)} edge(s) newly refused delivery; "
+                  f"{len(touching)} implicate the earliest lost value")
+        # The blamed cell is the far end of a refused edge, not the consumer
+        # that noticed. A consumer starved by isolation is a symptom.
+        far = [a for pair in touching for a in pair if a != focus]
+        blame = sorted(far)[0] if far else focus
+        return Diagnosis(PARTITION_ISOLATION, observed_classes.get(blame, "?"),
                          tuple(ev))
 
     # 4. Otherwise the producer simply stopped existing.
@@ -874,10 +894,10 @@ def partition_around(tissue: Tissue3, cell_id: str) -> int:
         if other.cell_id != cell_id and cell_id in other.neighbours and n < 3:
             tissue.partition(cell_id, other.cell_id)
             n += 1
-    # Bonds through a now-unreachable supplier no longer deliver.
+    # The bonds are deliberately LEFT IN PLACE. A partition is not a deletion:
+    # the consumer still believes it has a supplier, and only a failed delivery
+    # reveals otherwise. Clearing seen_needs lets the consumer ask again.
     for other in tissue.cells.values():
-        for slot, b in list(other.bonds.items()):
-            if b.supplier == cell_id:
-                del other.bonds[slot]
-                other.seen_needs.clear()
+        if any(b.supplier == cell_id for b in other.bonds.values()):
+            other.seen_needs.clear()
     return n

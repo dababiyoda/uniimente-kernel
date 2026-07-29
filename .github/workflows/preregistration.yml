@@ -23,3 +23,5 @@ jobs:
         # touched NOTHING but the manifest, and that the manifest has not been
         # edited since. Skips cleanly on histories without the Phase 3D files.
         run: python3 scripts/ci/check_phase3d_preregistration.py
+      - name: Phase 3E pre-registration
+        run: python3 scripts/ci/check_phase3e_preregistration.py

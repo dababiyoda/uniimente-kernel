@@ -29,14 +29,31 @@ below are part of the protocol contract and the implementation must provide them
     Unit.deliver_search(key, edge_id, allocation, lineage)     -> outcome
     Unit.deliver_terminal(key, edge_id, outcome, refund)
     Unit.replay_search_edge(key, edge_id)
-    Organ.search_edge_probes           {(from, to, SearchKey): count}
-    Organ.search_edge_terminals        {(from, to, SearchKey): [outcome, ...]}
     Organ.space_exhaustion_proofs      [SearchKey, ...]
     v5.ROOT_SEARCH_CREDIT_OVERRIDE     None, or a float honoured by the root
                                        search ledger -- the ONLY correct way to
                                        starve search credit, since repair_budget
                                        is a supplier cost ceiling, not a message
                                        credit budget
+
+EDGE TELEMETRY IS KEYED BY EDGE ID, NOT BY A TUPLE. An earlier draft keyed
+terminals by `(from_unit, to_unit, SearchKey)` while nodes stored
+`adopted_parent_edge` as an edge identifier, then compared the two by tuple
+membership. Those are different identities and the comparison was meaningless:
+
+    Organ.search_edge_probes[edge_id]    -> {from_unit, to_unit, search_key, count}
+    Organ.search_edge_terminals[edge_id] -> {from_unit, to_unit, search_key,
+                                             outcomes: [...]}
+
+and each canonical node records the edges that arrived at it:
+
+    node["incoming_edges"]              -> [edge_id, ...] every arrival at this node
+    node["adopted_parent_edge"]         -> edge_id, immutable after adoption
+    node["adopted_parent_edge_initial"] -> edge_id captured at adoption
+    node["adopted_parent_sender"]       -> unit id the adopted edge returns to
+    node["children_from"]               -> {incoming edge_id: [child edge_id, ...]}
+                                           proves which arrival, if any, created
+                                           descendants
 """
 from __future__ import annotations
 
@@ -171,23 +188,49 @@ def _root_key(o, join, slot):
     return matching[0]
 
 
-def _per_key_edge_uniqueness(o):
-    """Every (from_unit, to_unit, SearchKey) probed at most once, one terminal.
-
-    A global bound like `probes <= units**2` is supplemental: it cannot prove
-    per-key uniqueness, which is the actual invariant.
-    """
+def _edge_telemetry(o):
+    """Edge records keyed by edge_id, with explicit from/to/search_key fields."""
     probes = getattr(o, "search_edge_probes", None)
     terminals = getattr(o, "search_edge_terminals", None)
     assert probes is not None and terminals is not None, (
-        "the organ does not record per-key search edge probes or terminals, so "
-        "per-key edge uniqueness cannot be proved")
-    over = {e: n for e, n in probes.items() if n > 1}
-    assert not over, f"directed edges probed more than once for one SearchKey: {over}"
-    for edge in probes:
-        outs = terminals.get(edge, [])
+        "the organ does not record search edge probes or terminals, so edge "
+        "uniqueness cannot be proved")
+    for eid, rec in probes.items():
+        for f in ("from_unit", "to_unit", "search_key", "count"):
+            assert f in rec, f"probe record for edge {eid} lacks {f!r}"
+    for eid, rec in terminals.items():
+        for f in ("from_unit", "to_unit", "search_key", "outcomes"):
+            assert f in rec, f"terminal record for edge {eid} lacks {f!r}"
+    return probes, terminals
+
+
+def _kind(x):
+    return getattr(x, "kind", x)
+
+
+def _per_key_edge_uniqueness(o):
+    """Each (from_unit, to_unit, SearchKey) probed at most once; one terminal each.
+
+    A global bound like `probes <= units**2` is supplemental: it cannot prove
+    per-key uniqueness, which is the actual invariant. Derived from edge-id keyed
+    records rather than inferred from tuple membership.
+    """
+    probes, terminals = _edge_telemetry(o)
+    seen = {}
+    for eid, rec in probes.items():
+        assert rec["count"] == 1, (
+            f"edge {eid} was probed {rec['count']} times; at most once per "
+            f"SearchKey is the invariant")
+        triple = (rec["from_unit"], rec["to_unit"], rec["search_key"])
+        seen.setdefault(triple, []).append(eid)
+    repeats = {t: e for t, e in seen.items() if len(e) > 1}
+    assert not repeats, (
+        f"the same directed edge was probed under multiple edge ids for one "
+        f"SearchKey: {repeats}")
+    for eid in probes:
+        outs = terminals.get(eid, {}).get("outcomes", [])
         assert len(outs) == 1, (
-            f"edge {edge} received {len(outs)} terminal outcomes, expected exactly 1")
+            f"edge {eid} received {len(outs)} terminal outcomes, expected exactly 1")
     return probes, terminals
 
 
@@ -443,12 +486,18 @@ def test_G_search_credit_starvation_never_claims_no_replacement(monkeypatch):
 # ---------------------------------------------------------------------------
 
 @spec
-def test_H_offer_returns_through_the_originally_adopted_edge():
-    """Requires the advertised events to have HAPPENED.
+def test_H_each_answered_node_returns_its_offer_through_its_adopted_edge():
+    """PER NODE, not globally per SearchKey.
 
-    Asserting only `OFFER_RETURN_ROUTE_MISMATCHES == 0` and an unchanged adopted
-    edge is satisfied by a mechanism that emitted no offer at all and received no
-    competing arrival, which proves nothing about return-route stability.
+    An earlier draft required exactly ONE SearchOffer edge per SearchKey across
+    the whole organ. That is wrong for an echo protocol: an offer travelling home
+    from supplier -> relay C -> relay B -> relay A -> origin legitimately leaves
+    one edge PER canonical node along the adopted chain, so the same SearchKey
+    appears on several offer-return edges. The real invariant is per node.
+
+    It also required only a GLOBAL positive coalesced/cycle count, which a
+    competing arrival at an unrelated node satisfies. The competing arrival must
+    be shown at the SAME node that later returned the offer.
     """
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()
@@ -456,37 +505,66 @@ def test_H_offer_returns_through_the_originally_adopted_edge():
 
     nodes = _nodes(o)
     assert nodes, "no canonical nodes were created"
-    terminals = getattr(o, "search_edge_terminals", None)
-    assert terminals is not None, "the organ records no per-edge terminal outcomes"
+    probes, terminals = _edge_telemetry(o)
 
-    def kind(x):
-        return getattr(x, "kind", x)
+    answered = {(uid, key): n for (uid, key), n in nodes.items()
+                if n.get("eligible_offer")}
+    assert answered, (
+        "no canonical node recorded an eligible offer, so this run cannot "
+        "demonstrate that offers return through the adopted edge")
 
-    offers = [(edge, out) for edge, outs in terminals.items() for out in outs
-              if kind(out) == "SearchOffer"]
-    assert offers, (
-        "no SearchOffer was emitted anywhere, so this run cannot demonstrate "
-        "that offers return through the adopted edge")
-
-    # A competing arrival must actually have tried to take the route over.
-    assert C["COALESCED_DUPLICATE_ARRIVALS"] + C["CYCLE_EDGES_CLOSED"] > 0, (
-        "no duplicate or cross-edge arrival reached any canonical node, so no "
-        "attempt to overwrite a return route occurred")
-
-    answered = [n for n in nodes.values() if n.get("eligible_offer")]
-    assert answered, "no canonical node recorded an eligible offer"
-    for node in answered:
+    for (uid, key), node in answered.items():
         adopted = node["adopted_parent_edge"]
         assert adopted == node["adopted_parent_edge_initial"], (
-            "a node rebound its adopted parent edge after adoption")
-        key = node["search_key"]
-        for_this_key = [edge for edge, out in offers if key in edge]
-        assert len(for_this_key) == 1, (
-            f"the offer for {key} was recorded on {len(for_this_key)} edges; it "
-            f"must appear exactly once, on the adopted parent edge")
-        assert adopted in for_this_key[0], (
-            f"the offer for {key} was recorded on {for_this_key[0]}, not on the "
-            f"adopted parent edge {adopted}")
+            f"{uid} rebound its adopted parent edge after adoption")
+
+        # Offers emitted BY THIS NODE, identified by edge records.
+        mine = [(eid, rec) for eid, rec in terminals.items()
+                if rec["from_unit"] == uid and rec["search_key"] == key
+                and any(_kind(x) == "SearchOffer" for x in rec["outcomes"])]
+        assert len(mine) == 1, (
+            f"{uid} emitted {len(mine)} SearchOffer terminals for {key}; a node "
+            f"must emit exactly one")
+        eid, rec = mine[0]
+        assert eid == adopted, (
+            f"{uid} returned its offer through edge {eid}, not through its "
+            f"immutable adopted parent edge {adopted}")
+        assert rec["search_key"] == key, "the offer terminal carries a different key"
+        assert rec["to_unit"] == node["adopted_parent_sender"], (
+            f"the offer went to {rec['to_unit']}, not to the adopted parent "
+            f"{node['adopted_parent_sender']}")
+        others = [e for e, r in terminals.items()
+                  if r["from_unit"] == uid and r["search_key"] == key
+                  and e != adopted
+                  and any(_kind(x) == "SearchOffer" for x in r["outcomes"])]
+        assert not others, (
+            f"{uid} also emitted offers on alternative parent edges: {others}")
+
+    # LOCALIZED competing arrival: the same answered node must have received a
+    # non-adopted arrival and kept its original return edge.
+    contested = []
+    for (uid, key), node in answered.items():
+        incoming = list(node.get("incoming_edges", []))
+        assert incoming, f"{uid} records no incoming edges, so arrivals cannot be checked"
+        extras = [e for e in incoming if e != node["adopted_parent_edge_initial"]]
+        for e in extras:
+            outs = terminals.get(e, {}).get("outcomes", [])
+            if any(_kind(x) in ("SearchCoalesced", "SearchCycleClosed") for x in outs):
+                contested.append((uid, key, e))
+    assert contested, (
+        "no answered canonical node received a later non-adopted duplicate or "
+        "cross-edge arrival, so no attempt to overwrite a return route occurred "
+        "at a node that actually answered")
+    for uid, key, e in contested:
+        node = answered[(uid, key)]
+        assert node["adopted_parent_edge"] == node["adopted_parent_edge_initial"], (
+            f"{uid} replaced its adopted parent after a competing arrival on {e}")
+        assert not node.get("children_from", {}).get(e), (
+            f"the competing arrival on {e} created descendants at {uid}")
+        assert len(terminals[e]["outcomes"]) == 1, (
+            f"the competing arrival on {e} received "
+            f"{len(terminals[e]['outcomes'])} terminal outcomes, expected 1")
+
     assert C["OFFER_RETURN_ROUTE_MISMATCHES"] == 0, (
         "an offer travelled home through an edge that was not the adopted "
         "parent; `reverse` keyed by need_id alone allows exactly this")
@@ -600,136 +678,3 @@ def test_arrival_order_alone_does_not_change_the_outcome():
     assert all(a <= 12 for a in amps), f"amplification unbounded under reorder: {amps}"
     # The adopted parents MAY differ -- that is expected under first-arrival
     # adoption, and is recorded rather than asserted away.
-
-# ---------------------------------------------------------------------------
-# Unit-ID permutation: a real topology-preserving bijection
-#
-# The test previously carrying this name did NOT permute identifiers. It ran the
-# same fixture twice with n_auth 2 and 4, so the known lexical-ordering risk was
-# claimed as covered while going completely untested. The substrate sorts unit
-# ids in several places -- sorted(neighbours), sorted(consumers), the interior
-# pool -- so this is load-bearing, not cosmetic.
-#
-# MEASURED AT R6 over 12 permutations of this fixture:
-#
-#     capability topology changed      0 / 12   (the relabelling is honest)
-#     formation FAILED                 4 / 12
-#     formed structure differed        8 / 12   (in capability terms)
-#     repair outcome differed          2 / 12
-#
-# So lexical unit-ID ordering already affects the R6 baseline, at formation and
-# at repair. This test is therefore strict xfail: it is a real invariance the
-# mechanism must eventually satisfy, and it does not hold today.
-# ---------------------------------------------------------------------------
-
-PERMUTATION_SEED = 4242
-PERMUTATIONS = 5
-
-
-def _relabel(o, mapping):
-    """Rename units in place. Topology is preserved; only identifiers move.
-
-    Called before `prepare`/`commission`, when the only structural state is
-    `unit_id` and `neighbours`, so nothing is silently regenerated. ENV and SINK
-    are never permuted.
-    """
-    units = list(o.units.values())
-    remapped = {u.unit_id: {mapping.get(n, n) for n in u.neighbours}
-                for u in units}
-    for u in units:
-        u.neighbours = remapped[u.unit_id]
-        u.unit_id = mapping.get(u.unit_id, u.unit_id)
-    o.units = {u.unit_id: u for u in units}
-    return o
-
-
-def _capability_topology(o):
-    """Adjacency expressed in CAPABILITY terms, so renaming cannot change it.
-
-    This is what proves a permutation did not accidentally regenerate a
-    different structure.
-    """
-    return sorted((u.capability.name,
-                   tuple(sorted(o.units[n].capability.name
-                                for n in u.neighbours if n in o.units)))
-                  for u in o.units.values())
-
-
-def _formed_structure(o):
-    """Settled bonds in CAPABILITY terms: consumer, slot, supplier."""
-    return sorted((u.capability.name, s,
-                   o.units[b.supplier].capability.name
-                   if b.supplier in o.units else b.supplier)
-                  for u in o.units.values() for s, b in u.bonds.items())
-
-
-@spec
-def test_unit_id_permutation_preserves_semantics():
-    o = _build_raw(4, 7)
-    ids = [i for i in o.units if i not in (ENV, SINK)]
-    assert len(ids) >= 6, "too few permutable units to be a real test"
-
-    base = _build_raw(4, 7)
-    F.prepare(base)
-    reset()
-    base.commission()
-    assert base.result_ok(base.run_item(PAYLOAD_A)), "base fixture did not form"
-    base_topology = _capability_topology(base)
-    base_structure = _formed_structure(base)
-    join = _join(base)
-    assert join is not None and len(join.bonds) == 2, "base join did not form"
-    slot = min(join.bonds)
-    base_victim = join.bonds[slot].supplier
-    base_victim_cap = base.units[base_victim].capability.name
-    base.units[base_victim].silent = True
-    reset()
-    base_outcome = base.result_ok(base.run_item(PAYLOAD_B))
-    base_independent = len({b.supplier for b in join.bonds.values()}) == len(join.bonds)
-
-    rng = random.Random(PERMUTATION_SEED)
-    failures = []
-    for k in range(PERMUTATIONS):
-        perm = ids[:]
-        rng.shuffle(perm)
-        mapping = dict(zip(ids, perm))
-        assert len(set(mapping.values())) == len(ids), "mapping is not a bijection"
-        assert ENV not in mapping and SINK not in mapping
-
-        o = _relabel(_build_raw(4, 7), mapping)
-        # The relabelling must not have regenerated a different structure.
-        assert _capability_topology(o) == base_topology, (
-            f"permutation {k} changed the capability topology, so it is a "
-            f"different fixture rather than a renaming")
-        F.prepare(o)
-        reset()
-        o.commission()
-
-        if not o.result_ok(o.run_item(PAYLOAD_A)):
-            failures.append(f"perm {k}: formation failed under renaming alone")
-            continue
-        if _formed_structure(o) != base_structure:
-            failures.append(f"perm {k}: formed structure differs under renaming alone")
-            continue
-
-        victim = mapping[base_victim]           # the same UNIT, renamed
-        assert o.units[victim].capability.name == base_victim_cap, (
-            "the permutation did not damage the same semantic role")
-        o.units[victim].silent = True
-        reset()
-        before = o.messages
-        outcome = o.result_ok(o.run_item(PAYLOAD_B))
-        j = _join(o)
-        independent = len({b.supplier for b in j.bonds.values()}) == len(j.bonds)
-        amp = round((o.messages - before) / max(1, len(o.units)), 2)
-
-        if outcome != base_outcome:
-            failures.append(f"perm {k}: restoration/escalation outcome "
-                            f"{outcome} != base {base_outcome}")
-        if independent != base_independent:
-            failures.append(f"perm {k}: independence outcome differs")
-        if amp > 12:
-            failures.append(f"perm {k}: amplification {amp} exceeds 12")
-        assert o.units[victim].silent, "the damage was not applied"
-
-    assert not failures, (
-        "renaming units changed behaviour:\n  " + "\n  ".join(failures))

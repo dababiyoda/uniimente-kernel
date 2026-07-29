@@ -316,6 +316,13 @@ class Bond:
     cost: float
     chain: frozenset[str] = frozenset()
     good_deliveries: int = 0
+    # SETTLEMENT PROVENANCE, read by the evaluator only. Nothing in the runtime
+    # branches on either field. Without them an edge can only be keyed by
+    # supplier name, so two occurrences of the same supplier cannot be told
+    # apart: distinct legitimate edges, a re-settlement in a later work item,
+    # and duplicate instrumentation all look identical.
+    settled_by: str = ""        # the need generation that closed this slot
+    settled_item: int = 0       # the work item during which it settled
 
 
 # ==========================================================================
@@ -394,6 +401,11 @@ class Unit:
     escalations: list[str] = field(default_factory=list)
     memory: Memory = field(default_factory=Memory)
     stale_rejections: int = 0
+    # Why the last settlement attempt was refused. Evaluator-only diagnostics.
+    _last_refusal: str = ""
+    # Which work item is currently being processed. Stamped by the organ at
+    # dispatch, recorded into settlement provenance, never branched on.
+    item_seq: int = 0
 
     # damage state, set only by the injector
     dissolved: bool = False
@@ -769,16 +781,33 @@ class Unit:
             return
         ev["firm"] += 1
         if slot in self.bonds:
+            if st is not None:
+                st["rejected"]["slot_already_bonded"] = (
+                    st["rejected"].get("slot_already_bonded", 0) + 1)
             return
+        self._last_refusal = ""
         if self._settle(slot, offer, caps):
             ev["settled"] += 1
             if st is not None:
                 st["settled"] = True
+        elif st is not None:
+            why = self._last_refusal or "unrecorded_refusal"
+            st["rejected"][why] = st["rejected"].get(why, 0) + 1
 
     def _settle(self, slot: int, offer: Offer, caps: dict[str, Capability]) -> bool:
+        """Sets `_last_refusal` on every rejecting path.
+
+        Only `nonfirm`, `stale` and `cooldown` were ever recorded, so an offer
+        refused for type, duplicate supplier or prohibition showed up in the
+        taxonomy as `offers=1, rejected={}` -- counted as received and then
+        silently dropped, with no way to tell which of four paths took it.
+        Reasons only; no control flow is changed.
+        """
         if offer.offered_type != self.capability.accepts[slot]:
+            self._last_refusal = "type_mismatch"
             return False
         if any(b.supplier == offer.supplier for b in self.bonds.values()):
+            self._last_refusal = "duplicate_supplier"
             return False
         if offer.chain & self.refused:
             self.stale_rejections += 1
@@ -786,11 +815,13 @@ class Unit:
             self.receipts.append(Receipt("stale_rejected", self.unit_id, slot,
                                          STALE_RETURN, "offer derivation refused",
                                          offer.supplier, offer.supplier_class))
+            self._last_refusal = "stale"
             return False
         if not self.memory.admits(offer.supplier):
             self.receipts.append(Receipt("cooldown", self.unit_id, slot,
                                          COOLDOWN_RETURN, "supplier cooling down",
                                          offer.supplier, offer.supplier_class))
+            self._last_refusal = "cooldown"
             return False
         sup = caps.get(offer.supplier)
         shares = sup is not None and sup.domain == self.capability.domain
@@ -804,10 +835,12 @@ class Unit:
             self.prohibited_proposals += 1
             if self.constraint_enabled:
                 self.blocked_commits += 1
+                self._last_refusal = "prohibited"
                 return False
-        self.bonds[slot] = Bond(slot, offer.supplier, offer.supplier_class,
-                                offer.offered_type, offer.cost, offer.chain)
         closed = self.open_needs.pop(slot, None)
+        self.bonds[slot] = Bond(slot, offer.supplier, offer.supplier_class,
+                                offer.offered_type, offer.cost, offer.chain,
+                                settled_by=closed or "", settled_item=self.item_seq)
         if closed:
             # NEED-GENERATION CLOSURE. The obligation is satisfied; later needs
             # and offers for this generation are discarded rather than
@@ -986,6 +1019,7 @@ class Organ:
         from collections import deque
         self._payload = payload
         self._produced = {}
+        self.item_seq = getattr(self, "item_seq", 0) + 1
         self.events_dispatched = 0
         self.ready: deque = deque()
         self._queued: set = set()
@@ -1019,6 +1053,7 @@ class Organ:
                     self._schedule(c, "supplier_failed")
                 continue
             self.events_dispatched += 1
+            u.item_seq = self.item_seq     # provenance stamp, one unit, no scan
             if kind == "message":
                 u.step(self._caps(u))
                 self._msg_pending.discard(uid)

@@ -453,3 +453,43 @@ def test_a_replaced_supplier_stops_waking_its_former_consumer():
     assert consumer.unit_id not in o.units[old].consumers, (
         "the replaced supplier still holds its former consumer and will keep "
         "scheduling it")
+
+
+def test_every_settlement_refusal_path_records_a_reason():
+    """`offers=1, rejected={}` hid which of four paths dropped an offer.
+
+    Only nonfirm, stale and cooldown were recorded, so a type mismatch, a
+    duplicate supplier or a prohibition read as "offer received, nothing
+    refused it, slot never settled" -- indistinguishable in the taxonomy.
+    """
+    o, _ = formed()
+    d1 = o.units[SINK].bonds[0].supplier
+    consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
+    slot = 0
+    supplier = consumer.bonds[slot].supplier
+    want = consumer.capability.accepts[slot]
+
+    nid = "probe:need"
+    consumer._search[nid] = {"credits": 5.0, "round": 0, "tried": set(),
+                             "offers": 0, "settled": False, "rejected": {},
+                             "initial_credits": 5.0}
+    consumer.open_needs[slot] = nid
+    del consumer.bonds[slot]
+
+    # DUPLICATE SUPPLIER: the offering unit already fills another slot here.
+    other = next((s for s, b in consumer.bonds.items() if s != slot), None)
+    if other is not None:
+        dup = consumer.bonds[other].supplier
+        consumer._on_offer(
+            v5.Offer(nid, dup, o.units[dup].capability.klass(), want, 1.0,
+                     True, frozenset({dup})), o._caps(consumer), dup)
+        assert consumer._search[nid]["rejected"].get("duplicate_supplier"), (
+            "a duplicate-supplier refusal recorded no reason")
+
+    # TYPE MISMATCH must also name itself.
+    consumer._search[nid]["rejected"].clear()
+    consumer._on_offer(
+        v5.Offer(nid, supplier, "x", want + "_WRONG", 1.0, True, frozenset()),
+        o._caps(consumer), supplier)
+    assert consumer._search[nid]["rejected"], (
+        "a refused offer left no recorded reason at all")

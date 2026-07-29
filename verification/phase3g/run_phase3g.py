@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import random
 import subprocess
@@ -389,11 +390,32 @@ def summarise(res, paired, cohorts):
     return s
 
 
+COHORT_ARGS = {"development": {"development"},
+               "heldout": {"heldout"},
+               "all": {"development", "heldout"}}
+
+
 def main() -> int:
-    which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    # FAIL CLOSED. This previously read `sys.argv[1]` and sent ANY unrecognised
+    # value to the else branch, whose value was {"development", "heldout"}. So a
+    # typo -- `--cohorts development` -- silently consumed the entire
+    # preregistered held-out draw. An unknown argument now aborts, and the
+    # held-out cohorts require an explicit acknowledgement that the draw is
+    # spent by running them, because that draw can only be spent once.
+    which = sys.argv[1] if len(sys.argv) > 1 else "development"
+    if which not in COHORT_ARGS:
+        print(f"REFUSING TO RUN: unknown cohort argument {which!r}.")
+        print(f"Expected exactly one of: {', '.join(sorted(COHORT_ARGS))}")
+        print("This script takes a POSITIONAL argument and accepts no flags.")
+        return 2
+    cohorts = COHORT_ARGS[which]
+    if "heldout" in cohorts and os.environ.get("PHASE3G_SPEND_HELDOUT") != "1":
+        print("REFUSING TO RUN: running the held-out cohort spends the "
+              "preregistered draw, which is valid exactly once and only after "
+              "the implementation is frozen.")
+        print("Set PHASE3G_SPEND_HELDOUT=1 to spend it deliberately.")
+        return 2
     DIRTY[0] = require_clean_tree()
-    cohorts = {"development"} if which == "development" else (
-        {"heldout"} if which == "heldout" else {"development", "heldout"})
     res: list[dict] = []
     for ep in plan(cohorts):
         episode(ep, res)

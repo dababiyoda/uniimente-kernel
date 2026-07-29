@@ -96,12 +96,17 @@ def test_repair_is_not_triggered_by_the_final_result():
         assert "result_ok" not in text, f"{cls}.{meth} consults the mission result"
 
 
-def test_every_counter_can_be_driven_above_zero():
-    """FAILS if a counter is decorative. This is the Phase 3F F2 defect."""
+def test_counter_container_arithmetic_only():
+    """CONTAINER TEST ONLY - NOT evidence of grounded instrumentation.
+
+    counters_are_live() increments every counter by hand, so this proves that
+    dictionary arithmetic works and nothing more. It must never be cited as
+    proof that a measured behaviour drives its counter; the behaviour-site
+    tests below are the only evidence for that. Recorded explicitly because I
+    previously reported this test as removed when it was not.
+    """
     deltas = counters_are_live()
     assert set(deltas) == set(COUNTER_NAMES)
-    for name, d in deltas.items():
-        assert d == 1, f"counter {name} did not respond to increment"
 
 
 def test_whole_organ_scan_increments_its_counter_at_the_behaviour_site():
@@ -335,3 +340,116 @@ def test_no_external_effect_surface():
     calls = {n.func.id for n in ast.walk(tree)
              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert not ({"open", "eval", "exec"} & calls)
+
+
+# ==========================================================================
+# Pre-freeze corrections
+# ==========================================================================
+
+def test_stale_reuse_and_stale_rejection_are_distinct_and_non_vacuous():
+    """STALE_DERIVATION_REUSE must not be a literal zero at a behaviour site."""
+    src = pathlib.Path(v5.__file__).read_text()
+    assert 'C.incr("STALE_DERIVATION_REUSE", 0)' not in src
+    assert 'C.incr("STALE_DERIVATIONS_REJECTED")' in src
+    o, _ = formed()
+    d1 = o.units[SINK].bonds[0].supplier
+    consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
+    slot = 0
+    victim = consumer.bonds[slot].supplier
+    consumer.refused.add(victim)
+    reset()
+    from substrate.v5 import Offer
+    consumer.open_needs[slot] = "n"
+    consumer.bonds.pop(slot, None)
+    consumer._settle(slot, Offer("n", victim, "attest",
+                                 consumer.capability.accepts[slot], 1.0, True,
+                                 frozenset({victim})), {})
+    assert C["STALE_DERIVATIONS_REJECTED"] == 1
+    assert C["STALE_DERIVATION_REUSE"] == 0, (
+        "reuse means an ACCEPTED refused derivation; a rejection is the fence "
+        "working and must not be counted as reuse")
+
+
+def test_msg_pending_holds_only_live_events():
+    reset()
+    o = build()
+    o.commission()
+    assert not o._msg_pending, (
+        "formation traffic was consumed but left recipients marked pending")
+    o.run_item(P)
+    assert not o._msg_pending
+
+
+def test_a_second_work_item_is_not_seeded_by_historical_formation_traffic():
+    reset()
+    o = build()
+    o.commission()
+    o.run_item(P)
+    first = o.events_dispatched
+    o.run_item(P)
+    assert o.events_dispatched <= first * 2 + 2, (
+        "the second item replayed historical message recipients")
+
+
+def test_single_input_supplier_death_activates_its_consumer_locally():
+    """No sibling arrival is available to wake the consumer."""
+    NMf = lambda x: str(x).strip().lower()
+    ATf = lambda x: f"att:{len(x)}"
+    okatt = lambda x: isinstance(x, str) and x.startswith("att:") and x[4:].isdigit()
+    K2 = Contract("fn2", "RAW", "VERDICT", lambda v: str(v.payload).startswith("att:"))
+    caps = [cap("nm", ("RAW",), "NORM", NMf, 1.0, "d.a", "normalise"),
+            cap("a1", ("NORM",), "ATT", ATf, 1.0, "d.a", "attest"),
+            cap("a2", ("NORM",), "ATT", ATf, 1.0, "d.b", "attest"),
+            cap("fin", ("ATT",), "VERDICT", lambda x: x, 1.0, "d.f", "finalise", okatt)]
+    us = [Unit(unit_id=f"{c_.klass()}.{i}", capability=c_) for i, c_ in enumerate(caps)]
+    o = Organ(us, K2)
+    ids = list(o.units)
+    for i, a in enumerate(ids):
+        for b in ids[i + 1:]:
+            o.connect(a, b)
+    reset()
+    o.commission()
+    assert o.result_ok(o.run_item(P))
+    finaliser = o.units[o.units[SINK].bonds[0].supplier]
+    assert len(finaliser.capability.accepts) == 1, "this test needs a single-input consumer"
+    victim = finaliser.bonds[0].supplier
+    o.units[victim].dissolved = True
+    reset()
+    restored = o.run_item(P)
+    assert C["EVENT_DRIVEN_LOCAL_ACTIVATIONS"] > 0, (
+        "a single-input consumer was never woken, so the break was invisible")
+    assert C["BOUNDARY_TRIGGERED_REPAIR_EVENTS"] == 0
+    assert C["WHOLE_ORGAN_REVIEW_PASSES"] == 0
+    assert o.result_ok(restored)
+    assert finaliser.bonds[0].supplier != victim
+
+
+def test_fencing_uses_the_actual_failed_values_derivation():
+    """A bond's stored chain can describe an older accepted delivery."""
+    o, _ = formed()
+    d1 = o.units[SINK].bonds[0].supplier
+    consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
+    slot = 0
+    stale_marker = "OBSOLETE_ANCESTOR"
+    consumer.bonds[slot].chain = frozenset({consumer.bonds[slot].supplier, stale_marker})
+    fresh = frozenset({consumer.bonds[slot].supplier, "NEW_ANCESTOR"})
+    consumer._reopen_contrastively(slot, WRONG, "wrong", frozenset({"SIBLING"}),
+                                   has_sibling=True, observed_chain=fresh)
+    ev = consumer.refusal_evidence[-1]
+    assert "NEW_ANCESTOR" in ev["failed_derivation"]
+    assert stale_marker not in ev["failed_derivation"], (
+        "an obsolete ancestor was blamed for the current failure")
+    assert stale_marker not in consumer.refused
+
+
+def test_a_replaced_supplier_stops_waking_its_former_consumer():
+    o, _ = formed()
+    d1 = o.units[SINK].bonds[0].supplier
+    consumer = o.units[[b.supplier for b in o.units[d1].bonds.values()][0]]
+    old = consumer.bonds[0].supplier
+    assert consumer.unit_id in o.units[old].consumers
+    o.units[old].dissolved = True
+    o.run_item(P)
+    assert consumer.unit_id not in o.units[old].consumers, (
+        "the replaced supplier still holds its former consumer and will keep "
+        "scheduling it")

@@ -78,6 +78,7 @@ COUNTER_NAMES = (
     "GLOBAL_REPAIR_SCANS",
     "UNIT_ENUMERATIONS_FOR_REPAIR",
     "FULL_PROVIDER_INDEX_READS",
+    "STALE_DERIVATIONS_REJECTED",
     "STALE_DERIVATION_REUSE",
     "OVER_REFUSAL_EVENTS",
     "TARGET_TOPOLOGY_LEAKAGE_EVENTS",
@@ -378,7 +379,7 @@ class Unit:
         if self.dissolved or self.unmet() or not self.slots():
             return None      # ENV has no inputs; it is the given, not a step
         gathered: dict[int, Value] = {}
-        failures: dict[int, tuple[str, str]] = {}
+        failures: dict[int, tuple] = {}   # slot -> (failure, detail[, chain])
         for slot in self.slots():
             b = self.bonds[slot]
             try:
@@ -397,7 +398,12 @@ class Unit:
                 # A stale derivation came back. Refusing it here is what stops
                 # a superseded source satisfying a reopened obligation.
                 self.stale_rejections += 1
-                C.incr("STALE_DERIVATION_REUSE", 0)     # counted only if ACCEPTED
+                # A REJECTED stale derivation is not stale reuse; it is the
+                # fence working. STALE_DERIVATION_REUSE means an ACCEPTED value
+                # whose derivation intersects the refusal set, and it is
+                # derived post hoc by the evaluator from accepted-value
+                # evidence, never asserted here.
+                C.incr("STALE_DERIVATIONS_REJECTED")
                 self.receipts.append(Receipt(
                     "stale_rejected", self.unit_id, slot, STALE_RETURN,
                     "returned derivation is refused", b.supplier, b.supplier_class))
@@ -410,7 +416,9 @@ class Unit:
                     "semantic_reject", self.unit_id, slot, WRONG,
                     "delivered value fails my local acceptance condition",
                     b.supplier, b.supplier_class))
-                failures[slot] = (WRONG, "input fails local acceptance")
+                # Fence on THIS value's derivation, not on the bond's stored
+                # chain, which may describe an older accepted delivery.
+                failures[slot] = (WRONG, "input fails local acceptance", v.chain)
                 continue
             gathered[slot] = v
 
@@ -429,13 +437,17 @@ class Unit:
         # ---- B. CONTRASTIVE CAUSAL FENCING --------------------------------
         working = frozenset().union(*(v.chain for v in gathered.values())) \
             if gathered else frozenset()
-        for slot, (failure, detail) in sorted(failures.items()):
+        for slot, rec in sorted(failures.items()):
+            failure, detail = rec[0], rec[1]
+            observed = rec[2] if len(rec) > 2 else None
             self._reopen_contrastively(slot, failure, detail, working,
-                                       has_sibling=bool(gathered))
+                                       has_sibling=bool(gathered),
+                                       observed_chain=observed)
         return None
 
     def _reopen_contrastively(self, slot: int, failure: str, detail: str,
-                              working: frozenset[str], *, has_sibling: bool) -> None:
+                              working: frozenset[str], *, has_sibling: bool,
+                              observed_chain: Optional[frozenset] = None) -> None:
         if self.unit_id == SINK:
             # The boundary holds no repair authority. If it could reopen, that
             # would be a boundary-triggered repair, which this phase forbids.
@@ -449,11 +461,19 @@ class Unit:
         b = self.bonds.pop(slot, None)
         if b is None:
             return
+        # 6. The relationship is over: tell the former supplier so it stops
+        # waking me. Without this an replaced supplier keeps scheduling its
+        # ex-consumer, inflating events and polluting the stale-return test.
+        self.outbox.append((b.supplier, ("__retired__", self.unit_id)))
+        # 5. Blame what actually failed. b.chain can describe an older
+        # accepted delivery, so an upstream that changed since would be
+        # fenced on obsolete ancestry.
+        failed_chain = observed_chain if observed_chain is not None else b.chain
 
         if has_sibling:
             # The smallest set the evidence supports: what the failing input
             # derived from that a WORKING sibling did not.
-            distinguishing = set(b.chain) - set(working) - {ENV, self.unit_id}
+            distinguishing = set(failed_chain) - set(working) - {ENV, self.unit_id}
             if not distinguishing:
                 distinguishing = {b.supplier}
             self.refused |= distinguishing
@@ -463,7 +483,7 @@ class Unit:
             # chain here is exactly the Phase 3F defect. Refuse the direct
             # supplier only and carry the uncertainty forward.
             self.refused.add(b.supplier)
-            self.uncertain |= (set(b.chain) - {ENV, self.unit_id, b.supplier})
+            self.uncertain |= (set(failed_chain) - {ENV, self.unit_id, b.supplier})
             why = "no working sibling: refused the direct supplier only"
 
         self.memory.record(b.supplier, b.supplier_class, failure)
@@ -486,10 +506,10 @@ class Unit:
             "at": self.unit_id, "slot": slot, "failure": failure,
             "required_type": self.capability.accepts[slot],
             "direct_supplier": b.supplier,
-            "failed_derivation": sorted(b.chain),
+            "failed_derivation": sorted(failed_chain),
             "working_sibling_derivations": sorted(working),
             "distinguishing_refused": sorted(
-                (set(b.chain) - set(working) - {ENV, self.unit_id})
+                (set(failed_chain) - set(working) - {ENV, self.unit_id})
                 if has_sibling else {b.supplier}),
             "uncertainty": sorted(self.uncertain),
             "had_working_sibling": has_sibling})
@@ -528,6 +548,9 @@ class Unit:
         for sender, msg in self.inbox:
             if isinstance(msg, tuple) and msg and msg[0] == "__bonded__":
                 self.consumers.add(msg[1])
+                continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__retired__":
+                self.consumers.discard(msg[1])
                 continue
             if isinstance(msg, Need):
                 self._on_need(sender, msg)
@@ -604,6 +627,7 @@ class Unit:
             return
         if offer.chain & self.refused:
             self.stale_rejections += 1
+            C.incr("STALE_DERIVATIONS_REJECTED")
             self.receipts.append(Receipt("stale_rejected", self.unit_id, slot,
                                          STALE_RETURN, "offer derivation refused",
                                          offer.supplier, offer.supplier_class))
@@ -764,6 +788,9 @@ class Organ:
             for u in sorted(active, key=lambda x: x.unit_id):
                 if u.inbox:
                     u.step(self._caps(u))
+                    # Consumed. It is no longer pending, and must not seed a
+                    # later work item as if it still held undelivered work.
+                    self._msg_pending.discard(u.unit_id)
             pending = []
             for u in sorted(self.units.values(), key=lambda x: x.unit_id):
                 for dest, msg in u.outbox:
@@ -814,7 +841,17 @@ class Organ:
             uid, kind = self.ready.popleft()
             self._queued.discard((uid, kind))
             u = self.units.get(uid)
-            if u is None or u.dissolved:
+            if u is None:
+                continue
+            if u.dissolved:
+                # This unit will never produce, so its consumers would never be
+                # woken by a delivery and a single-input consumer would never
+                # discover the break. The dead unit's OWN consumer registry -
+                # local data it already holds, one hop - routes the failure to
+                # exactly the units that depend on it. This is not a scan and
+                # not a heartbeat.
+                for c in sorted(u.consumers):
+                    self._schedule(c, "supplier_failed")
                 continue
             self.events_dispatched += 1
             if kind == "message":
@@ -838,7 +875,15 @@ class Organ:
     def _deliver(self, u: "Unit") -> None:
         """Flush one unit's outbox. Touches only that unit."""
         for dest, msg in u.outbox:
-            if (dest in self.units and not self.units[dest].dissolved
+            if dest not in self.units:
+                continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__retired__":
+                # Bookkeeping, not work: a retirement must land even on a
+                # supplier that is gone or unreachable, or its stale consumer
+                # registry keeps waking a consumer it no longer serves.
+                self.units[dest].consumers.discard(msg[1])
+                continue
+            if (not self.units[dest].dissolved
                     and not self.is_cut(u.unit_id, dest)):
                 self.units[dest].inbox.append((u.unit_id, msg))
                 self.messages += 1

@@ -1,0 +1,2869 @@
+{
+  "summary": {
+    "manifest_1": "verification/phase3d/EVALUATION_MANIFEST.json",
+    "manifest_2": "verification/phase3d/EVALUATION_MANIFEST_2.json",
+    "holdout_note": "manifest 1 structures were demoted to development; held-out results below use manifest 2 structures only",
+    "episodes_planned": 68,
+    "episodes_void": 25,
+    "void_reasons": [
+      "damage produced no output loss; nothing to regenerate",
+      "healthy tissue produced no output"
+    ],
+    "gate_f_held_out": {
+      "recovered": 11,
+      "of": 11,
+      "threshold": 13,
+      "pass": false
+    },
+    "gate_g_held_out": {
+      "escaped": 5,
+      "of": 11,
+      "threshold": 12,
+      "pass": false
+    },
+    "healthy_output_before_damage": {
+      "n": 62,
+      "of": 68
+    },
+    "observed_output_loss_after_damage": {
+      "n": 43,
+      "of": 43
+    },
+    "restored_through_a_different_route": 43,
+    "distinct_forms": 38,
+    "premature_join_differentiations": 0,
+    "global_redundancy_scans": 0,
+    "prohibited_attachments_blocked": 0,
+    "solution_leakage_events": 0,
+    "global_topology_leakage_events": 0,
+    "inherited_authority_events": 0,
+    "unauthorized_external_effects": 0,
+    "total_messages": 248092,
+    "failures": [
+      {
+        "episode": 0,
+        "gate": "F",
+        "structure": "asymmetric_depth_join",
+        "cause": "capability_loss",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 2,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 3,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 4,
+        "gate": "F",
+        "structure": "asymmetric_depth_join",
+        "cause": "capability_loss",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 6,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 7,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 10,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 11,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 14,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 15,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 18,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 19,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 22,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 23,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 24,
+        "gate": "F",
+        "structure": "asymmetric_depth_join",
+        "cause": "capability_loss",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 26,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 27,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 30,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 31,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 34,
+        "gate": "F",
+        "structure": "local_quorum",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 35,
+        "gate": "G",
+        "structure": "nested_branch",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 39,
+        "gate": "F",
+        "structure": "diamond_reconverge",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      },
+      {
+        "episode": 40,
+        "gate": "F",
+        "structure": "dual_quorum_series",
+        "cause": "capability_loss",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 45,
+        "gate": "F",
+        "structure": "diamond_reconverge",
+        "cause": "partition",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      },
+      {
+        "episode": 46,
+        "gate": "F",
+        "structure": "dual_quorum_series",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 51,
+        "gate": "F",
+        "structure": "diamond_reconverge",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      },
+      {
+        "episode": 52,
+        "gate": "G",
+        "structure": "combined_causal_failure",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'guard_a' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 54,
+        "gate": "G",
+        "structure": "deep_chain_join",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 's3' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 55,
+        "gate": "G",
+        "structure": "diamond_reconverge",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      },
+      {
+        "episode": 56,
+        "gate": "G",
+        "structure": "dual_quorum_series",
+        "cause": "capability_loss",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 58,
+        "gate": "G",
+        "structure": "combined_causal_failure",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'guard_b' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 59,
+        "gate": "G",
+        "structure": "cross_family_join",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'merge' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 61,
+        "gate": "G",
+        "structure": "diamond_reconverge",
+        "cause": "partition",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      },
+      {
+        "episode": 62,
+        "gate": "G",
+        "structure": "dual_quorum_series",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": "damage produced no output loss; nothing to regenerate",
+        "roles_filled": null,
+        "causal_reason": null
+      },
+      {
+        "episode": 64,
+        "gate": "G",
+        "structure": "combined_causal_failure",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 'gate' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 66,
+        "gate": "G",
+        "structure": "deep_chain_join",
+        "cause": "resource",
+        "failure": null,
+        "void_reason": null,
+        "roles_filled": null,
+        "causal_reason": "reproduces prohibited motif for role 's1' (shared_resource_exhaustion)"
+      },
+      {
+        "episode": 67,
+        "gate": "G",
+        "structure": "diamond_reconverge",
+        "cause": "combined",
+        "failure": null,
+        "void_reason": "healthy tissue produced no output",
+        "roles_filled": [
+          "ingest",
+          "left_a",
+          "right_a"
+        ],
+        "causal_reason": null
+      }
+    ]
+  },
+  "episodes": [
+    {
+      "episode": 0,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "verify_a.alpha",
+        "verify_a.beta"
+      ],
+      "output_after_damage": "routed:adff48b6e8dde501",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 1,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "d8cb1caa62c07e0c",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:71808a51ca267667",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 12,
+      "messages": 1591,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "09c33309a7f32a2f",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 2,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v3.alpha",
+        "v3.beta"
+      ],
+      "output_after_damage": "routed:7f777e9b351ed7fd",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 3,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "a6c9108011a25baf",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:03bc8150984a20c6",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 11,
+      "messages": 4402,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "734e1341fbfbfc23",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 4,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:c04930198231de34",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 5,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 1,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "fab20b4a55133111",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:90fa7144542d1fa9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 1,
+      "messages": 1779,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e8cb42404e4a150d",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 6,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v2.alpha",
+        "v2.beta"
+      ],
+      "output_after_damage": "routed:036a87f24dbc7a4a",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 7,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "sub_x.alpha",
+        "sub_x.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "f5064119ab7f86bc",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:f6ab781bb54770c5",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 3,
+      "messages": 5693,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "98b6594697507d08",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 8,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "reconcile.alpha",
+        "reconcile.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:d1ce62e301216107",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 10,
+      "messages": 2940,
+      "ticks": 15,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "bd6b4bd187ed8213",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 9,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "9fc4e967e5cb0f33",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:90fa7144542d1fa9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 0,
+      "messages": 1531,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e8cb42404e4a150d",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 10,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v1.alpha",
+        "v1.beta"
+      ],
+      "output_after_damage": "routed:4997ae8a49d42852",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 11,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:e6ff6230f3575404",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 12,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "stage2.alpha",
+        "stage2.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:798a2fbb9db6b94a",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 24,
+      "messages": 3111,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "657e4288c5fa0ded",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 13,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "484a969deb37b44a",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:d62ef1ea9cbe240e",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 24,
+      "messages": 1603,
+      "ticks": 14,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "7a12cbbaf0518338",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 14,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:4ef63b529508f5eb",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 15,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "e6c34bc2ada1f802",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:78769b29c930d303",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 12,
+      "messages": 4659,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "85fbcf45c4335ed0",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 16,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "stage1.alpha",
+        "stage1.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:4ec7c7d9489fa708",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 6,
+      "messages": 2582,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "8d1d6789ad3a1cdb",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 17,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "e151447ef6074cd4",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:1f94e11a4caccd73",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 11,
+      "messages": 1770,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "8cc60b0761d64e32",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 18,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "reconcile.alpha",
+        "reconcile.beta"
+      ],
+      "output_after_damage": "routed:deab924e41dfb9ae",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 19,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "sub_x.alpha",
+        "sub_x.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "b710050029752845",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:fa23d3fbd9909956",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 34,
+      "messages": 5093,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "331ce4c9864517bb",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 20,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "verify_a.alpha",
+        "verify_a.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.3333,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:49ce37ac81526137",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 3,
+      "messages": 2685,
+      "ticks": 14,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "184a16babb64b238",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 21,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "51aa9246e328c3c9",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:90fa7144542d1fa9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 1,
+      "messages": 1915,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e8cb42404e4a150d",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 22,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v3.alpha",
+        "v3.beta"
+      ],
+      "output_after_damage": "routed:7f777e9b351ed7fd",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 23,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:e6ff6230f3575404",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 24,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:c04930198231de34",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 25,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "5fb69424458bd529",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:90fa7144542d1fa9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 0,
+      "messages": 1681,
+      "ticks": 11,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e8cb42404e4a150d",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 26,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v2.alpha",
+        "v2.beta"
+      ],
+      "output_after_damage": "routed:036a87f24dbc7a4a",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 27,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 1,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "f0c2b9941046491b",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:c0b6c338fb5bdfd2",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 34,
+      "messages": 5622,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "99b2cf75a46861d5",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'verify_b' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 28,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "reconcile.alpha",
+        "reconcile.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:a3bdd97f28f21276",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 8,
+      "messages": 2762,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "3991399826012c30",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 29,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.4,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "90b37cdfa6e263ad",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:90fa7144542d1fa9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 0,
+      "messages": 1619,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e8cb42404e4a150d",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 30,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "v1.alpha",
+        "v1.beta"
+      ],
+      "output_after_damage": "routed:4997ae8a49d42852",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 31,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "sub_x.alpha",
+        "sub_x.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2857,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "672785349cad6e39",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:f6ab781bb54770c5",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 3,
+      "messages": 5707,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "98b6594697507d08",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'sub_x' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 32,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "asymmetric_depth_join",
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:854d252bda305ffd",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "stage2.alpha",
+        "stage2.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:ef40f5eb69931da3",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 12,
+      "messages": 2852,
+      "ticks": 15,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "bfb6c043794e1248",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 33,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "fork_join",
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61e570563a8bfdf5",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 1,
+      "killed": [
+        "verify_b.alpha",
+        "verify_b.beta"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.2,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "ffbbc0f20671145c",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:353e6d89a452c2b9",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 7,
+      "messages": 1825,
+      "ticks": 11,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "188af935a623b4cc",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 34,
+      "gate": "F",
+      "condition": "A",
+      "held_out": false,
+      "structure": "local_quorum",
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:61b15df25a199f94",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:4ef63b529508f5eb",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 35,
+      "gate": "G",
+      "condition": "B",
+      "held_out": false,
+      "structure": "nested_branch",
+      "cause": "combined",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "healthy_output": "routed:fe8205bba8644414",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "gamma"
+      ],
+      "killed": [
+        "emit.alpha",
+        "emit.beta"
+      ],
+      "output_after_damage": "routed:e6ff6230f3575404",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 36,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "guard_a.iota",
+        "guard_a.kappa",
+        "guard_a.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:115d316166522bd6",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 0,
+      "messages": 4499,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "d6faa906531ac9d5",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 37,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "probe_b.iota",
+        "probe_b.kappa",
+        "probe_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:1bd9d25a413bd122",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 0,
+      "messages": 4651,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "72d0a20030f7a46d",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 38,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "s3.iota",
+        "s3.kappa",
+        "s3.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.375,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:fba01f46e85a9225",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 36,
+      "messages": 10462,
+      "ticks": 16,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "9d4d31c8db021ac2",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 39,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    },
+    {
+      "episode": 40,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "dual_quorum_series",
+      "cause": "capability_loss",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:2afa7fc5fa0ff5d3",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "q2a.iota",
+        "q2a.kappa",
+        "q2a.lam"
+      ],
+      "output_after_damage": "routed:f63f8509534f8fd0",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 41,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "partitioned_nested_branch",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:69d3ce4a5ab790c6",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "top.iota",
+        "top.kappa",
+        "top.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.125,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:93fa417478c89572",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 11,
+      "messages": 14564,
+      "ticks": 16,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "720c255e0871583e",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 42,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "guard_b.iota",
+        "guard_b.kappa",
+        "guard_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:62a9e60e70366c57",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 7,
+      "messages": 5119,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "61b83011c3bbf933",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 43,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "merge.iota",
+        "merge.kappa",
+        "merge.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.3333,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:ecd0880efed714f0",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 22,
+      "messages": 5054,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "bf14a3a38280a7bb",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 44,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "capability_loss",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "s2.iota",
+        "s2.kappa",
+        "s2.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:3ff4293ee0722cc8",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 43,
+      "messages": 10807,
+      "ticks": 17,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "b1dfe78cc2f2e664",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 45,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    },
+    {
+      "episode": 46,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "dual_quorum_series",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:2afa7fc5fa0ff5d3",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "q1b.iota",
+        "q1b.kappa",
+        "q1b.lam"
+      ],
+      "output_after_damage": "routed:6c7d26b89393e613",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 47,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "partitioned_nested_branch",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:69d3ce4a5ab790c6",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "outer_b.iota",
+        "outer_b.kappa",
+        "outer_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.25,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:14252444b0e35f82",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 17,
+      "messages": 14967,
+      "ticks": 15,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "74ab1949b73e5646",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 48,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "gate.iota",
+        "gate.kappa",
+        "gate.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.3333,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:0eeda21a6f0e0b14",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 8,
+      "messages": 5214,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "6ca620560c473431",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 49,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "audit.iota",
+        "audit.kappa",
+        "audit.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:9c79451f8945d498",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 8,
+      "messages": 5565,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e371985dbdc3260e",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 50,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "s1.iota",
+        "s1.kappa",
+        "s1.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.625,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:7f50f358f8415d0f",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 40,
+      "messages": 10881,
+      "ticks": 19,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "0b00ac37caca8bda",
+      "recovered": true,
+      "reason": "output restored; predecessor form remains causally valid"
+    },
+    {
+      "episode": 51,
+      "gate": "F",
+      "condition": "A",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    },
+    {
+      "episode": 52,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "guard_a.iota",
+        "guard_a.kappa",
+        "guard_a.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "1caa9f6c39db21c6",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:6161f0d1d7eeda8f",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 8,
+      "messages": 4789,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "af06d044c448ab57",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'guard_a' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 53,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "probe_b.iota",
+        "probe_b.kappa",
+        "probe_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "69ee92ebd7bbbc09",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:09d8fbc22c150d7d",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 21,
+      "messages": 4703,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "e49008d6f69cf531",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 54,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "s3.iota",
+        "s3.kappa",
+        "s3.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.375,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "31db10582ac46652",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:1b475e6faa25dc5c",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 28,
+      "messages": 11499,
+      "ticks": 18,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "d485eb9e39a95a08",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 's3' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 55,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    },
+    {
+      "episode": 56,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "dual_quorum_series",
+      "cause": "capability_loss",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:2afa7fc5fa0ff5d3",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "q2a.iota",
+        "q2a.kappa",
+        "q2a.lam"
+      ],
+      "output_after_damage": "routed:f63f8509534f8fd0",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 57,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "partitioned_nested_branch",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:69d3ce4a5ab790c6",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 2,
+      "killed": [
+        "top.iota",
+        "top.kappa",
+        "top.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.125,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "2ff8cd46ececa36b",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:759a6ccc285b22dd",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 12,
+      "messages": 14565,
+      "ticks": 15,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "d3ee37d9099a8c29",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 58,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "guard_b.iota",
+        "guard_b.kappa",
+        "guard_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "b7d97278088c5fdb",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:fd91b66a441b5ccc",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 7,
+      "messages": 4970,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "1846b92f64240074",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'guard_b' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 59,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "merge.iota",
+        "merge.kappa",
+        "merge.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.3333,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "46ea07cd12a6ddfb",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:7822fb81d2f27494",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 6,
+      "messages": 5059,
+      "ticks": 14,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "223881857b5e3236",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'merge' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 60,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "capability_loss",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "killed": [
+        "s2.iota",
+        "s2.kappa",
+        "s2.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.5,
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "dfec149e7639ac6a",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:60e1d34b0e560185",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 26,
+      "messages": 11292,
+      "ticks": 16,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "7c89fd676e75c742",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 61,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    },
+    {
+      "episode": 62,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "dual_quorum_series",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:2afa7fc5fa0ff5d3",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "q1b.iota",
+        "q1b.kappa",
+        "q1b.lam"
+      ],
+      "output_after_damage": "routed:6c7d26b89393e613",
+      "observed_output_loss": false,
+      "void": true,
+      "recovered": false,
+      "void_reason": "damage produced no output loss; nothing to regenerate"
+    },
+    {
+      "episode": 63,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "partitioned_nested_branch",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:69d3ce4a5ab790c6",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "outer_b.iota",
+        "outer_b.kappa",
+        "outer_b.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.25,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "9d559c5b14fb6f01",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:c59b746acd6d8f16",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 59,
+      "messages": 14817,
+      "ticks": 15,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "44e21e44c8faacb1",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 64,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "combined_causal_failure",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:6b49c184f43a0617",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "gate.iota",
+        "gate.kappa",
+        "gate.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.3333,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "4e324e803eeb1ea4",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:042800219370f0cc",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 4,
+      "messages": 4986,
+      "ticks": 12,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "0cace8190d17dd43",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'gate' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 65,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "cross_family_join",
+      "cause": "partition",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:40d21d127f3889e9",
+      "premature_join_differentiations_healthy": 0,
+      "partitioned_pairs": 3,
+      "killed": [
+        "audit.iota",
+        "audit.kappa",
+        "audit.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.1667,
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "2b4fd00ac128acfd",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:a048b35c41d5785c",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 4,
+      "messages": 5078,
+      "ticks": 13,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "aa6b26c7a7b5ed68",
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "recovered": true
+    },
+    {
+      "episode": 66,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "deep_chain_join",
+      "cause": "resource",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": "routed:bff75f0bdf13e2b6",
+      "premature_join_differentiations_healthy": 0,
+      "starved": [
+        "mu"
+      ],
+      "killed": [
+        "s1.iota",
+        "s1.kappa",
+        "s1.lam"
+      ],
+      "output_after_damage": null,
+      "observed_output_loss": true,
+      "deficit_severity": 0.625,
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "01e5a203e349b79e",
+      "certificate_carries_solution": false,
+      "global_redundancy_scans": 0,
+      "output_after_regeneration": "routed:fb0b3f1e37f6818d",
+      "restored": true,
+      "restored_differs_from_healthy": true,
+      "premature_join_differentiations": 0,
+      "blocked_attachments": 0,
+      "refused_attempts": 42,
+      "messages": 11129,
+      "ticks": 17,
+      "control_topology": "fan_in",
+      "verification": "dual_read",
+      "form_signature": "5e3a3d0c313e4acf",
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 's1' (shared_resource_exhaustion)",
+      "recovered": false
+    },
+    {
+      "episode": 67,
+      "gate": "G",
+      "condition": "B",
+      "held_out": true,
+      "structure": "diamond_reconverge",
+      "cause": "combined",
+      "families": [
+        "iota",
+        "kappa",
+        "lam",
+        "mu"
+      ],
+      "healthy_output": null,
+      "void": true,
+      "void_reason": "healthy tissue produced no output",
+      "roles_filled": [
+        "ingest",
+        "left_a",
+        "right_a"
+      ],
+      "recovered": false
+    }
+  ]
+}

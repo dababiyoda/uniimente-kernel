@@ -201,7 +201,11 @@ class Cell2:
         # Bind any locally observed upstream that fills one of my requirements.
         # Evidence, not instruction: I look at my own neighbours and see which
         # of them have become what I need. Nobody tells me to attach.
-        for nid, prov in neighbour_provides.items():
+        #
+        # Sorted, because `bind` is first-wins and `neighbours` is a set: over
+        # unsorted iteration the chosen upstream varies with PYTHONHASHSEED and
+        # the whole experiment stops being reproducible.
+        for nid, prov in sorted(neighbour_provides.items()):
             if prov in self.interface.requires and neighbour_roles.get(nid):
                 self.receptor.bind(prov, nid)
 
@@ -305,13 +309,23 @@ class Tissue2:
     def blocked(self, a: str, b: str) -> bool:
         return tuple(sorted((a, b))) in self.partitioned
 
+    # Neighbour views are built in sorted order so that formation does not
+    # depend on set iteration order, which varies with PYTHONHASHSEED.
+    #
+    # A partitioned neighbour is excluded. A cell cannot take evidence from
+    # something it cannot reach: a partition that blocks messages but still
+    # permits binding is a partition in name only, which is precisely the
+    # defect that made PR #59's Gate F meaningless.
+    def _visible(self, c: Cell2) -> list[str]:
+        return [n for n in sorted(c.neighbours)
+                if n in self.cells and not self.cells[n].dissolved
+                and not self.blocked(c.cell_id, n)]
+
     def _nroles(self, c: Cell2) -> dict[str, Optional[str]]:
-        return {n: self.cells[n].differentiated_role for n in c.neighbours
-                if n in self.cells and not self.cells[n].dissolved}
+        return {n: self.cells[n].differentiated_role for n in self._visible(c)}
 
     def _nprov(self, c: Cell2) -> dict[str, str]:
-        return {n: self.cells[n].interface.provides for n in c.neighbours
-                if n in self.cells and not self.cells[n].dissolved}
+        return {n: self.cells[n].interface.provides for n in self._visible(c)}
 
     def inject(self, cell_id: str, sig: BranchSignal) -> None:
         self.cells[cell_id].inbox.append(("field", sig))

@@ -1,0 +1,900 @@
+{
+  "note": "Evaluator-only. No runtime behaviour was changed.",
+  "development_episodes": 48,
+  "unsuccessful_episodes": 30,
+  "count_per_terminal_cause": {
+    "bond_settled_supplier_not_produced": 39,
+    "healthy_formation_failed": 7,
+    "assigned_damage_not_observed": 5,
+    "search_stalled_with_unspent_credit": 3,
+    "no_eligible_frontier": 2,
+    "consumer_resumed_downstream_not_completed": 1,
+    "offer_rejected_stale": 1
+  },
+  "episodes": [
+    {
+      "episode": 0,
+      "seed": 4000,
+      "damage_class": "supplier_disappearance",
+      "victim": "receive.0",
+      "terminal_causes": [
+        "search_stalled_with_unspent_credit",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 15.0,
+        "max_round": 0,
+        "stalled_needs": 1,
+        "settled_not_produced": [
+          "disburse.11",
+          "price.2",
+          "authorise.12",
+          "reconcile.10",
+          "price.2",
+          "authorise.9",
+          "reconcile.13"
+        ]
+      },
+      "produced": [
+        "receive.3",
+        "receive.6",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 1,
+      "seed": 4001,
+      "damage_class": "supplier_present_not_delivering",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 2,
+      "seed": 4002,
+      "damage_class": "separated_communication_path",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 4,
+      "seed": 4004,
+      "damage_class": "wrong_semantic_output",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 5,
+      "seed": 4005,
+      "damage_class": "intermittent_delivery",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 6,
+      "seed": 4006,
+      "damage_class": "delayed_delivery",
+      "victim": "price.2",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 12.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.14",
+          "reconcile.10",
+          "reconcile.13"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 7,
+      "seed": 4007,
+      "damage_class": "expired_delivery_proof",
+      "victim": "reconcile.13",
+      "terminal_causes": [
+        "search_stalled_with_unspent_credit",
+        "consumer_resumed_downstream_not_completed"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 15.0,
+        "max_round": 0,
+        "stalled_needs": 1
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "disburse.11",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "reconcile.10",
+        "reconcile.13",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 9,
+      "seed": 4009,
+      "damage_class": "false_positive_suspicion",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 10,
+      "seed": 4010,
+      "damage_class": "conflicting_failure_evidence",
+      "victim": "price.2",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 3,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4"
+      ]
+    },
+    {
+      "episode": 12,
+      "seed": 4012,
+      "damage_class": "repeated_failure_across_two_repairs",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "assigned_damage_not_observed",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 3,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.14"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 13,
+      "seed": 4013,
+      "damage_class": "supplier_returns_during_cooldown",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 14,
+      "seed": 4014,
+      "damage_class": "supplier_disappearance",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 12.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.14"
+        ]
+      },
+      "produced": [
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 18,
+      "seed": 4018,
+      "damage_class": "wrong_semantic_output",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 20,
+      "seed": 4020,
+      "damage_class": "delayed_delivery",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "receive.0",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 24,
+      "seed": 4024,
+      "damage_class": "conflicting_failure_evidence",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "offer_rejected_stale",
+        "search_stalled_with_unspent_credit",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {
+          "stale": 1
+        },
+        "open_needs": 2,
+        "credits_remaining": 27.0,
+        "max_round": 1,
+        "stalled_needs": 1,
+        "settled_not_produced": [
+          "disburse.14"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 27,
+      "seed": 4027,
+      "damage_class": "supplier_returns_during_cooldown",
+      "victim": "price.5",
+      "terminal_causes": [
+        "assigned_damage_not_observed",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 9.0,
+        "max_round": 2,
+        "settled_not_produced": [
+          "disburse.11",
+          "reconcile.10",
+          "reconcile.10"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 30,
+      "seed": 4030,
+      "damage_class": "separated_communication_path",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 4,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "receive.0",
+        "receive.6",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 31,
+      "seed": 4031,
+      "damage_class": "excessive_resource_cost",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 33,
+      "seed": 4033,
+      "damage_class": "intermittent_delivery",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 12.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.14"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 35,
+      "seed": 4035,
+      "damage_class": "expired_delivery_proof",
+      "victim": "price.5",
+      "terminal_causes": [
+        "no_eligible_frontier",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 13.0,
+        "max_round": 4,
+        "settled_not_produced": [
+          "disburse.11",
+          "reconcile.10",
+          "reconcile.10"
+        ]
+      },
+      "produced": [
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 36,
+      "seed": 4036,
+      "damage_class": "stale_supplier_return",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 37,
+      "seed": 4037,
+      "damage_class": "false_positive_suspicion",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.9",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 38,
+      "seed": 4038,
+      "damage_class": "conflicting_failure_evidence",
+      "victim": "reconcile.13",
+      "terminal_causes": [
+        "assigned_damage_not_observed",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 40,
+      "seed": 4040,
+      "damage_class": "repeated_failure_across_two_repairs",
+      "victim": "authorise.12",
+      "terminal_causes": [
+        "assigned_damage_not_observed",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 41,
+      "seed": 4041,
+      "damage_class": "supplier_returns_during_cooldown",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "assigned_damage_not_observed",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 2,
+        "credits_remaining": 24.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 42,
+      "seed": 4042,
+      "damage_class": "supplier_disappearance",
+      "victim": null,
+      "terminal_causes": [
+        "healthy_formation_failed"
+      ],
+      "evidence": {},
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 43,
+      "seed": 4043,
+      "damage_class": "supplier_present_not_delivering",
+      "victim": "price.2",
+      "terminal_causes": [
+        "no_eligible_frontier",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 3,
+        "credits_remaining": 14.0,
+        "max_round": 4,
+        "settled_not_produced": [
+          "disburse.11",
+          "reconcile.10"
+        ]
+      },
+      "produced": [
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 44,
+      "seed": 4044,
+      "damage_class": "separated_communication_path",
+      "victim": "price.8",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 9.0,
+        "max_round": 2,
+        "settled_not_produced": [
+          "disburse.11",
+          "reconcile.13",
+          "reconcile.13"
+        ]
+      },
+      "produced": [
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 45,
+      "seed": 4045,
+      "damage_class": "excessive_resource_cost",
+      "victim": "price.8",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced",
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 9.0,
+        "max_round": 2,
+        "settled_not_produced": [
+          "disburse.11",
+          "reconcile.10",
+          "reconcile.10"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    },
+    {
+      "episode": 47,
+      "seed": 4047,
+      "damage_class": "intermittent_delivery",
+      "victim": "authorise.9",
+      "terminal_causes": [
+        "bond_settled_supplier_not_produced"
+      ],
+      "evidence": {
+        "offers_rejected": {},
+        "open_needs": 1,
+        "credits_remaining": 12.0,
+        "max_round": 1,
+        "settled_not_produced": [
+          "disburse.11"
+        ]
+      },
+      "produced": [
+        "authorise.12",
+        "authorise.9",
+        "price.2",
+        "price.5",
+        "price.8",
+        "receive.0",
+        "receive.3",
+        "receive.6",
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ]
+    }
+  ]
+}

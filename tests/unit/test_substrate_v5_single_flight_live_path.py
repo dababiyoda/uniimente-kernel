@@ -1390,10 +1390,28 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
 # Pause/resume must be observationally transparent
 # ---------------------------------------------------------------------------
 
+def _normalized_value(o, v):
+    """The ACTUAL result, in name-independent terms.
+
+    `result_ok` only asks whether the contract invariant returned true, so two
+    runs that consumed DIFFERENT INPUTS both satisfy it and compare equal. That
+    made the pause twin blind to the one thing it most needed to control: the
+    experimental organ was resuming a different work item's payload.
+    """
+    if v is None:
+        return None
+    return (v.type, v.payload,
+            o.units[v.producer].capability.name
+            if v.producer in o.units else v.producer,
+            tuple(sorted(o.units[c].capability.name if c in o.units else c
+                         for c in v.chain)))
+
+
 def _normalized_run_state(o):
     """Everything a pause must not perturb, in name-independent terms."""
     return {
         "result_ok": o.result_ok(o._produced.get(SINK)),
+        "result_value": _normalized_value(o, o._produced.get(SINK)),
         "bonds": sorted((u.capability.name, s,
                          o.units[b.supplier].capability.name
                          if b.supplier in o.units else b.supplier,
@@ -1435,8 +1453,18 @@ def test_pausing_at_the_root_does_not_change_execution():
         "the twins are not identical, so any difference is not attributable to "
         "the pause")
     reset()
-    paused = experiment.run_until_repair_root(je.unit_id, slot_e, max_events=3000)
+    # THE SAME INPUT, STATED EXPLICITLY. The harness default reuses whatever
+    # payload the organ last held -- PAYLOAD_A, left by the fixture run -- so the
+    # twin silently compared a PAYLOAD_B control against a PAYLOAD_A experiment.
+    # Nothing in the old comparison could see that, because `result_ok` is true
+    # for both inputs.
+    paused = experiment.run_until_repair_root(je.unit_id, slot_e,
+                                              max_events=3000,
+                                              payload=PAYLOAD_B)
     assert paused is not None, "no root appeared in the experimental twin"
+    assert paused.payload == PAYLOAD_B, (
+        f"the paused item is carrying {paused.payload!r}, not the control's "
+        f"{PAYLOAD_B!r}; the twins are not processing the same work item")
     queued_at_pause = list(paused.ready)
     assert queued_at_pause, (
         "the ready queue was empty at the pause, so nothing about event "

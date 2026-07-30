@@ -66,7 +66,16 @@ test_substrate_v5_single_flight_echo.py:
                                          decision. It is a TEST DRIVER.
     PausedRun                            payload, item_seq, produced, ready,
                                          queued, msg_pending, unmet_state,
-                                         events_dispatched, root
+                                         events_dispatched, root. Its `ready`
+                                         entries carry stable event identities.
+    Organ.scheduler_event_log[event_id]  {unit_id, event_kind,
+                                         work_item_generation, scheduled_count,
+                                         dispatch_count} -- HARNESS TELEMETRY.
+                                         It records; it must never influence a
+                                         scheduling decision.
+    node["accepted_proposal_id"]         the proposal the root actually accepted;
+                                         acceptance is READ, never inferred from
+                                         node status
     Unit.deliver_proposal(key, edge, payload)   nonterminal
     Unit.settle_search_offer(payload)    -> bool, builds an Offer, calls _settle
     node["proposal_routes"]              {proposal_id: child_edge_id}
@@ -997,8 +1006,32 @@ def test_an_exact_proposal_replay_settles_only_once():
     assert len(events) == 1, f"{len(events)} proposal events recorded, expected 1"
 
     first = j.settle_search_offer(pay)
-    decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
+
+    # POSITIVE ACCEPTANCE FIRST. Without these, an implementation that always
+    # REJECTS passes the whole "settles only once" test: first=False,
+    # accepted=None, no bond, replays stay False, nothing changes. That is
+    # rejection idempotence, which the separate rejected-replay test covers.
+    assert first is True, (
+        "the proposal was not accepted, so this test would only be proving "
+        "rejection idempotence")
+    assert node["accepted_proposal_id"] == pay.proposal_id, (
+        f"the root accepted {node['accepted_proposal_id']!r}, not "
+        f"{pay.proposal_id!r}")
     settled_bond = j.bonds.get(slot)
+    assert settled_bond is not None, "acceptance did not bond the slot"
+    assert settled_bond.supplier == pay.supplier, (
+        f"the slot bonded {settled_bond.supplier}, not the accepted "
+        f"{pay.supplier}")
+    commits = [x for x in o.search_edge_terminals.get(kids[0], {}).get(
+        "outcomes", []) if _kind(x) == "SearchCommitted"]
+    assert len(commits) == 1 and getattr(commits[0], "proposal_id", None) == \
+        pay.proposal_id, (
+        f"the registered child edge holds {len(commits)} commits for "
+        f"{pay.proposal_id!r}")
+    assert C["UNIQUE_PROPOSAL_DECISIONS"] == 1, (
+        f"{C['UNIQUE_PROPOSAL_DECISIONS']} decisions recorded for one proposal")
+
+    decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
     accepted = node["accepted_proposal_id"]
     routes = dict(node["proposal_routes"])
     terminals = {k: list(v["outcomes"]) for k, v in o.search_edge_terminals.items()}
@@ -1150,14 +1183,30 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
     j.deliver_proposal(root, kids[0], pay)
     assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
         "the rejected proposal was never registered against its child edge")
+    # Zero initial events must FAIL. Recording the count and only requiring it to
+    # stay unchanged is satisfied by 0 -> 0.
+    initial = [e for e in o.search_edge_events.get(kids[0], [])
+               if _kind(e) == "SearchProposal"]
+    assert len(initial) == 1, (
+        f"{len(initial)} SearchProposal events on the arrival edge, expected "
+        f"exactly one before the first rejection")
+    assert getattr(initial[0], "payload", None) is not None and \
+        initial[0].payload.proposal_id == pay.proposal_id, (
+        "the recorded event does not carry this proposal's identity")
 
     assert j.settle_search_offer(pay) is False, (
         "the sibling supplier was accepted into a second slot")
     rejections = C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"]
     assert rejections == 1, f"one rejection expected, recorded {rejections}"
+    assert node["accepted_proposal_id"] is None, (
+        "a rejected proposal was recorded as accepted")
+    assert not [x for x in o.search_edge_terminals.get(kids[0], {}).get(
+        "outcomes", []) if _kind(x) == "SearchCommitted"], (
+        "a rejected proposal produced a SearchCommitted")
     routes = dict(node["proposal_routes"])
     events = len([e for e in o.search_edge_events.get(kids[0], [])
                   if _kind(e) == "SearchProposal"])
+    assert events == 1
     for _ in range(4):
         j.deliver_proposal(root, kids[0], pay)      # replayed ARRIVAL
         assert j.settle_search_offer(pay) is False  # replayed DECISION
@@ -1173,8 +1222,14 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
 
 
 @live
-def test_a_committed_proposal_routes_the_commit_down_the_accepted_child():
-    """`proposal_routes` is what makes commit/cancel addressable."""
+def test_delivered_proposal_is_registered_on_the_arrival_edge():
+    """LOCAL ROUTE REGISTRATION ONLY -- renamed, because it never committed.
+
+    It was called `test_a_committed_proposal_routes_the_commit_down_the_accepted_child`
+    while calling no settlement, requiring no accepted_proposal_id and requiring
+    no SearchCommitted. A test name must not claim a commit it never exercises.
+    Full commit propagation is covered by the multi-hop specification.
+    """
     o, j, slot, victim, seed = _damaged(4)
     ctx = _ctx()
     reset()
@@ -1226,12 +1281,29 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
     assert pid, (
         f"the root records no accepted_proposal_id (status {node.get('status')}); "
         f"a wave that only exhausted cannot satisfy this specification")
-    matching = [e for _, e in proposals
+    # PER-EDGE, NOT GLOBAL. `search_edge_events` is edge-scoped telemetry, and
+    # the accepted proposal legitimately traverses source -> intermediate ->
+    # root, so a correct echo records the same immutable proposal_id ONCE ON
+    # EACH traversed edge. Demanding exactly one event organ-wide is the same
+    # error as the earlier "one Offer edge per SearchKey globally", on the
+    # proposal side.
+    matching = [(eid, e) for eid, e in proposals
                 if getattr(e, "payload", None)
                 and e.payload.proposal_id == pid]
-    assert len(matching) == 1, (
-        f"{len(matching)} proposal events carry the accepted id {pid}")
-    ev = matching[0]
+    assert matching, f"no proposal event carries the accepted id {pid}"
+    per_edge = {}
+    for eid, e in matching:
+        per_edge.setdefault(eid, []).append(e)
+    for eid, evs in per_edge.items():
+        assert len(evs) == 1, (
+            f"edge {eid} recorded {len(evs)} events for proposal {pid}; a "
+            f"proposal may appear once per edge, never twice on one edge")
+    payloads = {(e.payload.supplier, e.payload.offered_type, e.payload.cost,
+                 e.payload.derivation_chain, e.payload.source_edge_id)
+                for _, e in matching}
+    assert len(payloads) == 1, (
+        f"the accepted proposal's evidence mutated in transit: {payloads}")
+    ev = matching[0][1]
     payload = ev.payload
     source_edge = payload.source_edge_id
 
@@ -1289,6 +1361,17 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
             assert len(outs) == 1, (
                 f"deep edge {child} at {uid} received {len(outs)} terminals; a "
                 f"subtree was stranded rather than closed")
+
+    # Every edge on the accepted route -- source, intermediates and the
+    # root-facing child -- must be represented exactly once.
+    for e in set(route_edges) | {source_edge}:
+        evs = [x for x in o.search_edge_events.get(e, [])
+               if _kind(x) == "SearchProposal"
+               and getattr(x, "payload", None)
+               and x.payload.proposal_id == pid]
+        assert len(evs) == 1, (
+            f"accepted-route edge {e} recorded {len(evs)} proposal events for "
+            f"{pid}; every route edge must carry exactly one")
 
     # Local routing only: no node may terminate an edge it does not own.
     for eid, rec in terminals.items():
@@ -1355,11 +1438,38 @@ def test_pausing_at_the_root_does_not_change_execution():
     paused = experiment.run_until_repair_root(je.unit_id, slot_e, max_events=3000)
     assert paused is not None, "no root appeared in the experimental twin"
     queued_at_pause = list(paused.ready)
+    assert queued_at_pause, (
+        "the ready queue was empty at the pause, so nothing about event "
+        "preservation is being tested")
     experiment.resume_paused_item(paused, max_events=3000)
 
     assert _normalized_run_state(experiment) == control_state, (
         "pausing at the repair root changed the observable execution; the "
         "resume did not restore the scheduler faithfully")
-    # Every event queued at the pause must be accounted for exactly once.
-    leftover = [e for e in queued_at_pause if e in experiment.ready]
-    assert not leftover, f"events queued at pause were never dispatched: {leftover}"
+
+    # EXACTLY ONCE, not merely "no longer queued". An empty queue proves removal,
+    # not dispatch: a resume could drop event A, dispatch event B twice, end with
+    # an empty queue, and hide the difference in an aggregate count. Event-level
+    # identity is the only way to tell. This telemetry records; it must never
+    # influence scheduling.
+    log = getattr(experiment, "scheduler_event_log", None)
+    assert log is not None, (
+        "the organ records no per-event scheduler telemetry, so exactly-once "
+        "dispatch cannot be proved")
+    for ev in queued_at_pause:
+        eid = getattr(ev, "event_id", None) or (
+            ev if isinstance(ev, str) else None)
+        assert eid is not None, f"queued entry {ev!r} carries no event identity"
+        rec = log.get(eid)
+        assert rec is not None, (
+            f"event {eid} was queued at the pause but never appears in the "
+            f"dispatch log; the resume dropped it")
+        assert rec["scheduled_count"] == 1, (
+            f"event {eid} was scheduled {rec['scheduled_count']} times")
+        assert rec["dispatch_count"] == 1, (
+            f"event {eid} was dispatched {rec['dispatch_count']} times; the "
+            f"resume duplicated it")
+        assert rec["work_item_generation"] == paused.item_seq, (
+            f"event {eid} was dispatched under generation "
+            f"{rec['work_item_generation']}, not the paused item "
+            f"{paused.item_seq}")

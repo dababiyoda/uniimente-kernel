@@ -194,6 +194,11 @@ COUNTER_NAMES = (
     "UNAUTHENTICATED_SEARCH_ACKS",
     "UNAUTHENTICATED_TERMINAL_CONTROLS",
     "MALFORMED_SEARCH_ACKS",
+    # 2C: fail-closed identity, semantically valid controls, sealed lifecycle.
+    "MALFORMED_TERMINAL_EVIDENCE",
+    "UNKNOWN_COMMIT_PROPOSALS",
+    "LATE_CONTROLS_AFTER_CLOSURE",
+    "UNAUTHENTICATED_TERMINAL_EMISSIONS",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -623,6 +628,51 @@ PROPOSAL_ID_PREFIX = "sfp1:"
 _UNSPECIFIED_SENDER = object()
 
 
+class _HarnessDelivery:
+    """An EXPLICIT capability to bypass transport authentication.
+
+    A test that drives a control handler directly has no transport and therefore
+    no immediate sender. It must still say so deliberately: an omitted argument
+    is not authority, and reading absence as trust is how every one of these
+    gates fails open. Production code has no reason to construct this, and every
+    use is counted.
+    """
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return "HARNESS_DELIVERY"
+
+
+HARNESS_DELIVERY = _HarnessDelivery()
+
+
+def _authenticated(sender: Any, expected: Any) -> bool:
+    """True only for a present identity that matches, or the harness capability.
+
+    Missing identity is REFUSED. `Unit.step` always supplies a sender, so this
+    closes a fail-open entrypoint rather than changing live behaviour.
+    """
+    if sender is HARNESS_DELIVERY:
+        C.incr("UNAUTHENTICATED_PROPOSAL_DELIVERIES")
+        return True
+    return sender is not _UNSPECIFIED_SENDER and sender == expected
+
+
+def _evidence_reconciles(refund: float, consumed: float, per: float) -> bool:
+    """One standard of raw closure evidence, whichever door it arrives through.
+
+    NaN is the sharpest case: every comparison against it is false, so an
+    unguarded check passes it straight through and it poisons the ledger
+    silently.
+    """
+    try:
+        if not math.isfinite(refund) or not math.isfinite(consumed):
+            return False
+    except TypeError:
+        return False
+    return refund >= 0.0 and consumed >= 0.0 and abs(refund + consumed - per) <= 1e-6
+
+
 @dataclass(frozen=True)
 class SearchOfferPayload:
     """A candidate's complete evidence, carried by a SearchProposal.
@@ -816,6 +866,10 @@ def new_canonical_node(key: SearchKey, parent_edge: str, parent_sender: str,
         # entry here records a second, incompatible history of the same credit.
         "child_confirmed": {},
         "ack_sent": False,
+        # What became of each proposal once the wave closed: accepted, rejected,
+        # cancelled or need_closed. A proposal left merely "outstanding" on a
+        # closed node is an obligation nobody will ever answer.
+        "proposal_disposition": {},
     }
 
 
@@ -1221,11 +1275,35 @@ class Unit:
         C.incr("TERMINAL_ECHOS_SENT")
         return True
 
+    def _may_emit(self, key: SearchKey, edge_id: str, kind: str) -> bool:
+        """May THIS unit assert this outcome on this edge, in this direction?
+
+        `_record_terminal` writes organ-wide evidence and flips the edge's
+        `terminal_status` BEFORE delivery, so a unit emitting an unowned or
+        wrong-direction terminal poisoned shared evidence even when the receiver
+        correctly refused the transition. Edge closure is what a receiver
+        accepted, not what a sender asserted -- so the assertion is checked at
+        the point it becomes authoritative.
+        """
+        o = self._organ
+        rec = o.search_edge_probes.get(edge_id) if o is not None else None
+        if rec is None:
+            # An edge nobody has registered yet. Nothing to contradict.
+            return True
+        if rec["to_unit"] == self.unit_id:
+            return kind in CHILD_OUTCOME_KINDS      # I ANSWER what reached me
+        if rec["from_unit"] == self.unit_id:
+            return kind in PARENT_CONTROL_KINDS     # I COMMAND what I opened
+        return False                                # neither end of this edge
+
     def _emit_terminal(self, kind: str, key: SearchKey, edge_id: str, to: str,
                        refund: float = 0.0, handling_cost: float = 0.0,
                        reason: str = "", proposal_id: str = "") -> Terminal:
         t = Terminal(kind, key, edge_id, refund, handling_cost, self.unit_id, to,
                      reason, proposal_id)
+        if not self._may_emit(key, edge_id, kind):
+            C.incr("UNAUTHENTICATED_TERMINAL_EMISSIONS")
+            return t
         self._record_terminal(t)
         if to:
             self.outbox.append((to, t))
@@ -1518,6 +1596,23 @@ class Unit:
         return frozenset(b.supplier for s, b in self.bonds.items()
                          if s != key.origin_slot)
 
+    def _knows_proposal(self, node: dict, pid: str) -> bool:
+        """The three ways a proposal is legitimately known at this node.
+
+        A relay RECEIVED it on a child edge; the origin already resolved it; the
+        SOURCE minted it and holds it as `local_candidate`, so it never appears
+        in that node's routes at all. A rule consulting routes alone would make
+        every accepted candidate uncommittable at exactly the node that produced
+        it -- the same shape of defect that made rejections unroutable.
+        """
+        if not pid:
+            return False
+        mine = node.get("local_candidate")
+        return (pid in node["proposal_routes"]
+                or pid in node["proposals_rejected"]
+                or pid in node["proposal_disposition"]
+                or (mine is not None and mine.proposal_id == pid))
+
     def deliver_proposal(self, key: SearchKey, edge_id: str,
                          payload: SearchOfferPayload,
                          sender: Any = _UNSPECIFIED_SENDER):
@@ -1541,6 +1636,15 @@ class Unit:
         if node is None:
             C.incr("ORPHANED_SEARCH_EDGES")
             return None
+        if node["wave_cancelled"] or node["terminal_signal_sent"]:
+            # A CLOSED WAVE ADMITS NO NEW CANDIDATE. Registering one would put a
+            # fresh obligation on a node that has already reported its outcome,
+            # and forwarding it would carry that obligation upward to a search
+            # that is over.
+            C.incr("LATE_CONTROLS_AFTER_CLOSURE")
+            return self._record_event(edge_id, "SearchNeedClosed", key,
+                                      reason="wave_already_closed",
+                                      payload=payload)
         # 1. THE EDGE MUST BE MINE. An edge this node never opened is not a
         #    route it can commit or cancel through.
         if edge_id not in node["child_allocations"]:
@@ -1550,11 +1654,7 @@ class Unit:
                                       payload=payload)
         # 2. THE SENDER MUST BE THAT EDGE'S TARGET.
         target = node["child_targets"].get(edge_id)
-        if sender is _UNSPECIFIED_SENDER:
-            # A harness seam, not an authenticated delivery. Instrumented so a
-            # live path that ever used it is visible rather than assumed absent.
-            C.incr("UNAUTHENTICATED_PROPOSAL_DELIVERIES")
-        elif sender != target:
+        if not _authenticated(sender, target):
             C.incr("UNOWNED_PROPOSAL_ROUTES")
             return self._record_event(edge_id, "SearchProposalRejected", key,
                                       reason="proposal_sender_mismatch",
@@ -1583,7 +1683,7 @@ class Unit:
         # 4. AT THE SOURCE HOP the proposing unit must be the unit that is
         #    actually offering itself. Further up, the payload is relayed
         #    evidence and the sender is the relay, so this cannot apply.
-        if (sender is not _UNSPECIFIED_SENDER
+        if (sender is not _UNSPECIFIED_SENDER and sender is not HARNESS_DELIVERY
                 and payload.source_edge_id == edge_id
                 and (payload.source_node != sender or payload.supplier != sender)):
             C.incr("UNOWNED_PROPOSAL_ROUTES")
@@ -1667,7 +1767,7 @@ class Unit:
         # primitive: suppress a valid candidate and the wave behaves as though
         # the origin had decided. The adopted parent is immutable after adoption
         # and is the only party entitled to answer on that edge.
-        if sender is not _UNSPECIFIED_SENDER and sender != node["adopted_parent_sender"]:
+        if not _authenticated(sender, node["adopted_parent_sender"]):
             C.incr("UNAUTHENTICATED_REJECTION_CONTROLS")
             return self._record_event(edge_id, "SearchProposalRejected", key,
                                       reason="rejection_sender_not_adopted_parent")
@@ -1683,6 +1783,14 @@ class Unit:
             C.incr("UNAUTHENTICATED_REJECTION_CONTROLS")
             return self._record_event(edge_id, "SearchProposalRejected", key,
                                       reason="rejection_of_unknown_proposal")
+        if node["wave_cancelled"] or node["terminal_signal_sent"]:
+            # CLOSED MEANS CAUSALLY SEALED. A decision after closure cannot
+            # change what the wave already resolved, and letting it mutate
+            # `proposals_rejected` or the accepted identity would reopen a
+            # settled obligation from a late message.
+            C.incr("LATE_CONTROLS_AFTER_CLOSURE")
+            return self._record_event(edge_id, "SearchNeedClosed", key,
+                                      reason="wave_already_closed")
         if pid in node["proposals_rejected"]:
             return None                          # replay: idempotent
         node["proposals_rejected"].add(pid)
@@ -1821,6 +1929,17 @@ class Unit:
 
     # -- closure and credit ----------------------------------------------
 
+    def _seal(self, node: dict, accepted: str, reason: str) -> None:
+        """Give every outstanding proposal an explicit terminal disposition."""
+        for p in list(node["proposals_outstanding"]):
+            node["proposal_disposition"][p] = (
+                "accepted" if p == accepted else reason)
+        node["proposals_outstanding"].clear()
+        for p in node["proposals_rejected"]:
+            node["proposal_disposition"].setdefault(p, "rejected")
+        if accepted:
+            node["proposal_disposition"][accepted] = "accepted"
+
     def _commit_wave(self, node: dict, pid: str) -> None:
         """Close the wave AFTER an accepted settlement, never on a proposal.
 
@@ -1846,6 +1965,7 @@ class Unit:
         # Only reserve this node never transferred may be written off here.
         node["cancelled_credit"] += node["local_reserve"]
         node["local_reserve"] = 0.0
+        self._seal(node, pid, "cancelled")
 
     def _close_wave_from_parent(self, node: dict, kind: str, pid: str) -> None:
         """A commit or cancellation arrived from my adopted parent.
@@ -1876,6 +1996,8 @@ class Unit:
                                 reason="wave_closed", proposal_id=pid)
         node["cancelled_credit"] += node["local_reserve"]
         node["local_reserve"] = 0.0
+        self._seal(node, pid if kind == "SearchCommitted" else "",
+                   "need_closed" if kind == "SearchNeedClosed" else "cancelled")
         self._acknowledge_to_parent(node)
 
     def _acknowledge_to_parent(self, node: dict) -> None:
@@ -1922,7 +2044,7 @@ class Unit:
         # neighbour can settle somebody else's branch: complete the edge, move
         # its credit and drive the search onward. That is the proposal-route
         # forgery 2A removed, committed through accounting instead.
-        if sender is not _UNSPECIFIED_SENDER and sender != node["child_targets"].get(edge_id):
+        if not _authenticated(sender, node["child_targets"].get(edge_id)):
             C.incr("UNAUTHENTICATED_SEARCH_ACKS")
             self._record_event(edge_id, "SearchProposalRejected", key,
                                reason="ack_sender_not_child_target")
@@ -1937,9 +2059,7 @@ class Unit:
         # is worse -- every comparison against it is false, so it passes each
         # guard untouched and poisons the ledger without tripping anything. A
         # violation counter is evidence; it is not authorization to mutate.
-        if (not math.isfinite(refund) or not math.isfinite(consumed)
-                or refund < 0.0 or consumed < 0.0
-                or abs(refund + consumed - per) > 1e-6):
+        if not _evidence_reconciles(refund, consumed, per):
             C.incr("MALFORMED_SEARCH_ACKS")
             self._record_event(edge_id, "SearchProposalRejected", key,
                                reason="ack_does_not_reconcile")
@@ -2060,7 +2180,7 @@ class Unit:
         if node is None:
             C.incr("ORPHANED_SEARCH_EDGES")
             return
-        if sender is not _UNSPECIFIED_SENDER:
+        if sender is not HARNESS_DELIVERY:
             if from_unit and from_unit != sender:
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
                 return
@@ -2071,9 +2191,16 @@ class Unit:
             if kind not in PARENT_CONTROL_KINDS:
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
                 return
-            if (sender is not _UNSPECIFIED_SENDER
-                    and sender != node["adopted_parent_sender"]):
+            if not _authenticated(sender, node["adopted_parent_sender"]):
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
+                return
+            if kind == "SearchCommitted" and not self._knows_proposal(node,
+                                                                     proposal_id):
+                # AUTHENTICATION ANSWERS WHO, NOT WHETHER THE COMMAND MEANS
+                # ANYTHING. Committing a proposal this node never saw leaves no
+                # route to the supposed winner, so the wave would close around a
+                # candidate that never existed on this branch.
+                C.incr("UNKNOWN_COMMIT_PROPOSALS")
                 return
             self._close_wave_from_parent(node, kind, proposal_id)
             return
@@ -2082,11 +2209,10 @@ class Unit:
                 # A child cannot command its parent to close the wave.
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
                 return
-            if (sender is not _UNSPECIFIED_SENDER
-                    and sender != node["child_targets"].get(edge_id)):
+            if not _authenticated(sender, node["child_targets"].get(edge_id)):
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
                 return
-        elif sender is not _UNSPECIFIED_SENDER:
+        else:
             # Neither my adopted parent edge nor an edge I opened.
             C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
             return
@@ -2094,8 +2220,17 @@ class Unit:
             return                              # replay: idempotent, no refund
         if edge_id not in node["children_outstanding"]:
             return
-        per = node["child_allocations"].get(edge_id, max(0.0, refund))
-        credited = max(0.0, min(refund, per))
+        per = node["child_allocations"].get(edge_id, 0.0)
+        # ONE STANDARD OF EVIDENCE, BOTH DOORS. This writes the same
+        # `child_confirmed` ledger as `deliver_search_ack`, so clamping here
+        # while that path fails closed let an authenticated child launder a
+        # negative, oversized, NaN or infinite refund by choosing the terminal.
+        if not _evidence_reconciles(refund, per - refund, per):
+            C.incr("MALFORMED_TERMINAL_EVIDENCE")
+            self._record_event(edge_id, "SearchProposalRejected", key,
+                               reason="terminal_evidence_does_not_reconcile")
+            return
+        credited = refund
         # A terminal that ends a child edge IS the child's own evidence about
         # that allocation: it carries what came back and, by difference, what
         # the subtree used. Recorded in the same ledger an explicit

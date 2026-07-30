@@ -200,8 +200,15 @@ def _relay(o, rounds=24):
                     continue
                 d = o.units[dest]
                 if isinstance(msg, Terminal):
+                    # The immediate sender travels with a terminal exactly as it
+                    # does with a proposal. Dropping it here would leave the
+                    # relay authenticating the data plane and not the control
+                    # plane, which is the whole subject of the 2B specs.
                     d.deliver_terminal(msg.search_key, msg.edge_id, msg.kind,
-                                       msg.refund, msg.proposal_id)
+                                       msg.refund, msg.proposal_id,
+                                       sender=u.unit_id,
+                                       from_unit=msg.from_unit,
+                                       to_unit=msg.to_unit)
                     moved += 1
                 elif isinstance(msg, tuple) and msg:
                     tag = msg[0]

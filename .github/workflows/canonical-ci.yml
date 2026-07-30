@@ -39,7 +39,19 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Full unit and integration suite
         run: python -m pytest -q
+      # RUNS EVEN THOUGH THE SUITE ABOVE IS EXPECTED TO FAIL.
+      #
+      # Every specification on this branch is xfail(strict=True), so a spec that
+      # starts passing is reported as a FAILURE until its marker is removed in a
+      # reviewable commit. That makes the pytest step intentionally red, and a
+      # verifier step that only runs on success silently stops running the
+      # moment the discipline starts working. "Canonical CI ran" would then mean
+      # the unit suite produced the intended red signal and nothing more.
+      #
+      # The job still fails overall: `if: always()` changes what EXECUTES, not
+      # what the job concludes.
       - name: Institutional verifier V1-V5
+        if: always()
         run: python verifier/v2/verify.py
 
   contracts:

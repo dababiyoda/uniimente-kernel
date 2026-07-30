@@ -865,6 +865,11 @@ def _reopened(n_auth=4, density=0.8):
     assert node["status"] == "OPEN", (
         f"the root is already {node['status']}; the driver did not pause before "
         f"the wave resolved")
+    assert "accepted_proposal_id" in node, (
+        "the root does not expose accepted_proposal_id, so in a multi-proposal "
+        "wave a commit cannot be correlated with the proposal that won")
+    assert node["accepted_proposal_id"] is None, (
+        "the paused root already records an accepted proposal")
     assert "search_context" in node, (
         "the canonical node does not expose its immutable search_context, so a "
         "proposal cannot be built against the root's actual constraints")
@@ -944,19 +949,29 @@ def _root_payload(o, j, node, supplier, pid, source_edge, expect_eligible=True):
         source_node=supplier, source_edge_id=source_edge)
 
 
-def _payload(o, j, slot, ctx, need_id, supplier, pid):
+def _payload(o, j, slot, ctx, need_id, supplier, pid, source_edge=None,
+             forged_chain=None):
+    """ONE evidence-construction path.
+
+    `frozenset({supplier})` is not a derivation; the runtime computes the real
+    one as `_derives_from()`. A truncated chain manufactures eligibility a
+    candidate does not have. `forged_chain` exists only for a test that is
+    explicitly constructing forged evidence and says so.
+    """
+    cand = o.units[supplier]
     return v5.SearchOfferPayload(
         proposal_id=pid,
         search_key=_key_for(j, slot, ctx, need_id),
         context_digest=ctx.context_digest(),
         supplier=supplier,
-        supplier_class=o.units[supplier].capability.klass(),
+        supplier_class=cand.capability.klass(),
         offered_type=j.capability.accepts[slot],
-        cost=o.units[supplier].capability.cost,
-        firm=True,
-        derivation_chain=frozenset({supplier}),
+        cost=cand.capability.cost,
+        firm=not cand.unmet(),
+        derivation_chain=(forged_chain if forged_chain is not None
+                          else cand._derives_from()),
         source_node=supplier,
-        source_edge_id=f"e/{pid}")
+        source_edge_id=source_edge or f"e/{pid}")
 
 
 @live
@@ -972,20 +987,62 @@ def test_an_exact_proposal_replay_settles_only_once():
     pay = _root_payload(o, j, node, spare, "p/replay", kids[0])
     assert pay.search_key is root, "the payload does not belong to the live root"
 
+    # DELIVERY FIRST. Settling an undelivered payload would license an
+    # implementation that accepts an arbitrary unregistered proposal.
+    j.deliver_proposal(root, kids[0], pay)
+    assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
+        "the proposal was not registered against the child edge it arrived on")
+    events = [e for e in o.search_edge_events.get(kids[0], [])
+              if _kind(e) == "SearchProposal"]
+    assert len(events) == 1, f"{len(events)} proposal events recorded, expected 1"
+
     first = j.settle_search_offer(pay)
     decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
     settled_bond = j.bonds.get(slot)
+    accepted = node["accepted_proposal_id"]
+    routes = dict(node["proposal_routes"])
+    terminals = {k: list(v["outcomes"]) for k, v in o.search_edge_terminals.items()}
+
     for _ in range(4):
-        again = j.settle_search_offer(pay)
-        assert again is first, (
-            "a replayed proposal produced a different decision")
+        j.deliver_proposal(root, kids[0], pay)          # replayed ARRIVAL
+        again = j.settle_search_offer(pay)              # replayed DECISION
+        assert again is first, "a replayed proposal produced a different decision"
+
+    assert len([e for e in o.search_edge_events.get(kids[0], [])
+                if _kind(e) == "SearchProposal"]) == 1, (
+        "a replayed arrival recorded a second proposal event")
     assert C["UNIQUE_PROPOSAL_DECISIONS"] == decisions, (
         "a replayed proposal was decided more than once")
     assert C["UNIQUE_PROPOSAL_IDS_RECEIVED"] == 1, (
-        f"one proposal id was counted "
-        f"{C['UNIQUE_PROPOSAL_IDS_RECEIVED']} times")
-    assert j.bonds.get(slot) is settled_bond, (
-        "a replayed proposal re-bonded the slot")
+        f"one proposal id was counted {C['UNIQUE_PROPOSAL_IDS_RECEIVED']} times")
+    assert node["accepted_proposal_id"] == accepted, "acceptance changed on replay"
+    assert dict(node["proposal_routes"]) == routes, "replay altered a route"
+    assert {k: list(v["outcomes"])
+            for k, v in o.search_edge_terminals.items()} == terminals, (
+        "replay produced additional terminal outcomes")
+    assert j.bonds.get(slot) is settled_bond, "a replayed proposal re-bonded the slot"
+
+
+@live
+def test_settlement_refuses_an_unregistered_proposal():
+    """A payload that never arrived on a child edge has no route and no event."""
+    o, j, slot, victim, seed, root, node, paused = _reopened(4)
+    want = j.capability.accepts[slot]
+    spare = next(u.unit_id for u in o.units.values()
+                 if u.capability.produces == want
+                 and u.unit_id not in {b.supplier for b in j.bonds.values()}
+                 and u.unit_id != victim)
+    pay = _root_payload(o, j, node, spare, "p/unregistered", "e/never-delivered")
+    assert pay.proposal_id not in node["proposal_routes"]
+
+    assert j.settle_search_offer(pay) is False, (
+        "an unregistered proposal was settled; settlement must follow a "
+        "registered arrival on a real child edge")
+    assert slot not in j.bonds, "an unregistered proposal bonded the slot"
+    reasons = [getattr(x, "reason", None)
+               for evs in o.search_edge_events.values() for x in evs]
+    assert "proposal_not_registered" in reasons, (
+        f"no attributable proposal_not_registered reason: {reasons}")
 
 
 @live
@@ -1070,14 +1127,8 @@ def test_settlement_refuses_an_occupied_slot_with_an_attributable_reason():
                  and u.unit_id not in {b.supplier for b in j.bonds.values()})
     ctx = _ctx()
     reset()
-    key = _key_for(j, slot, ctx, "probe:occupied")
-    pay = v5.SearchOfferPayload(
-        proposal_id="p/occupied", search_key=key,
-        context_digest=ctx.context_digest(), supplier=spare,
-        supplier_class=o.units[spare].capability.klass(),
-        offered_type=key.wanted_type, cost=o.units[spare].capability.cost,
-        firm=True, derivation_chain=frozenset({spare}),
-        source_node=spare, source_edge_id="e/occupied")
+    pay = _payload(o, j, slot, ctx, "probe:occupied", spare, "p/occupied",
+                   source_edge="e/occupied")
 
     assert j.settle_search_offer(pay) is False, (
         "a proposal was settled into an occupied slot, overwriting the bond")
@@ -1096,15 +1147,26 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
     assert kids, "the root opened no child edge"
     pay = _root_payload(o, j, node, sibling, "p/rej", kids[0],
                         expect_eligible=False)
+    j.deliver_proposal(root, kids[0], pay)
+    assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
+        "the rejected proposal was never registered against its child edge")
 
     assert j.settle_search_offer(pay) is False, (
         "the sibling supplier was accepted into a second slot")
     rejections = C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"]
     assert rejections == 1, f"one rejection expected, recorded {rejections}"
+    routes = dict(node["proposal_routes"])
+    events = len([e for e in o.search_edge_events.get(kids[0], [])
+                  if _kind(e) == "SearchProposal"])
     for _ in range(4):
-        assert j.settle_search_offer(pay) is False
+        j.deliver_proposal(root, kids[0], pay)      # replayed ARRIVAL
+        assert j.settle_search_offer(pay) is False  # replayed DECISION
     assert C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"] == rejections, (
         "replaying a rejected proposal incremented the rejection count again")
+    assert dict(node["proposal_routes"]) == routes, "replay altered a route"
+    assert len([e for e in o.search_edge_events.get(kids[0], [])
+                if _kind(e) == "SearchProposal"]) == events, (
+        "a replayed arrival recorded a second proposal event")
     assert node["status"] == "OPEN", (
         f"a rejected proposal closed the search (status {node['status']})")
     assert pay.search_key.need_id not in j.closed_needs
@@ -1156,22 +1218,20 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
         "commit reaches a proposal's source edge")
 
     nodes = _nodes(o)
-    committed = [(pid, p) for pid, p in
-                 ((getattr(e, "payload", None) and e.payload.proposal_id, e)
-                  for _, e in proposals) if pid]
-    assert committed, "no proposal carried an identity"
 
-    # Find the proposal the root actually accepted.
-    accepted = None
-    for pid, e in committed:
-        if node["proposal_routes"].get(pid) and node.get("status") == "COMMITTED":
-            accepted = (pid, e)
-            break
-    assert accepted is not None, (
-        f"no proposal was accepted by the root (root status "
-        f"{node.get('status')}); a wave that only exhausted cannot satisfy this "
-        f"specification")
-    pid, ev = accepted
+    # THE ROOT NAMES ITS WINNER. Inferring acceptance from `status == COMMITTED`
+    # is unsound in a multi-proposal wave: the node can be COMMITTED because
+    # proposal B won while the loop happens to select proposal A.
+    pid = node["accepted_proposal_id"]
+    assert pid, (
+        f"the root records no accepted_proposal_id (status {node.get('status')}); "
+        f"a wave that only exhausted cannot satisfy this specification")
+    matching = [e for _, e in proposals
+                if getattr(e, "payload", None)
+                and e.payload.proposal_id == pid]
+    assert len(matching) == 1, (
+        f"{len(matching)} proposal events carry the accepted id {pid}")
+    ev = matching[0]
     payload = ev.payload
     source_edge = payload.source_edge_id
 
@@ -1188,6 +1248,20 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
         f"the proposal's source edge {source_edge} received "
         f"{[_kind(x) for x in src_outs]}, expected exactly one SearchCommitted; "
         f"closing only the root-facing child strands the deeper subtree")
+    assert getattr(src_outs[0], "proposal_id", None) == pid, (
+        f"the SearchCommitted on {source_edge} carries proposal id "
+        f"{getattr(src_outs[0], 'proposal_id', None)!r}, not the accepted {pid!r}")
+    # Every commit along the accepted route names the same proposal.
+    route_edges = [node["proposal_routes"][pid]] + [
+        n["proposal_routes"][pid] for _, _, n in hops]
+    for e in route_edges:
+        outs = terminals.get(e, {}).get("outcomes", [])
+        commits = [x for x in outs if _kind(x) == "SearchCommitted"]
+        assert len(commits) == 1, (
+            f"accepted-route edge {e} carries {len(commits)} commits")
+        assert getattr(commits[0], "proposal_id", None) == pid, (
+            f"accepted-route edge {e} committed a different proposal "
+            f"{getattr(commits[0], 'proposal_id', None)!r}")
 
     elsewhere = [eid for eid, rec in terminals.items()
                  if eid != source_edge and rec["search_key"] == root
@@ -1227,3 +1301,65 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
             f"one of its own child edges nor its adopted parent edge -- a global "
             f"shortcut, not local routing")
     assert C["ORPHANED_SEARCH_EDGES"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Pause/resume must be observationally transparent
+# ---------------------------------------------------------------------------
+
+def _normalized_run_state(o):
+    """Everything a pause must not perturb, in name-independent terms."""
+    return {
+        "result_ok": o.result_ok(o._produced.get(SINK)),
+        "bonds": sorted((u.capability.name, s,
+                         o.units[b.supplier].capability.name
+                         if b.supplier in o.units else b.supplier,
+                         b.settled_by, b.settled_item)
+                        for u in o.units.values() for s, b in u.bonds.items()),
+        "terminals": sorted(
+            (rec["from_unit"], rec["to_unit"], _kind(x))
+            for rec in o.search_edge_terminals.values() for x in rec["outcomes"]),
+        "messages": o.messages,
+        "events": o.events_dispatched,
+        "accepted": sorted(
+            str(n.get("accepted_proposal_id")) for n in _nodes(o).values()),
+        "locality": (C["WHOLE_ORGAN_REVIEW_PASSES"], C["GLOBAL_REPAIR_SCANS"],
+                     C["UNIT_ENUMERATIONS_FOR_REPAIR"],
+                     C["SUPERVISOR_RESTART_EVENTS"],
+                     C["UNAUTHORIZED_EXTERNAL_EFFECTS"],
+                     C["INDEPENDENCE_VIOLATIONS"]),
+    }
+
+
+@live
+def test_pausing_at_the_root_does_not_change_execution():
+    """Declared continuity is not proved continuity.
+
+    `_resume` checks item_seq, generation, commissions and two counters. A broken
+    resume that reconstructs only part of the scheduler -- dropping a queued
+    event, losing a pending recipient, or rebuilding `_produced` -- satisfies all
+    of those and still alters execution. The only sound proof is a twin: one
+    organ runs uninterrupted, the other pauses at the same root and resumes, and
+    their observable state must match.
+    """
+    control, jc, slot_c, victim_c, seed_c = _damaged(4)
+    reset()
+    control.run_item(PAYLOAD_B)
+    control_state = _normalized_run_state(control)
+
+    experiment, je, slot_e, victim_e, seed_e = _damaged(4)
+    assert (seed_e, slot_e, victim_e) == (seed_c, slot_c, victim_c), (
+        "the twins are not identical, so any difference is not attributable to "
+        "the pause")
+    reset()
+    paused = experiment.run_until_repair_root(je.unit_id, slot_e, max_events=3000)
+    assert paused is not None, "no root appeared in the experimental twin"
+    queued_at_pause = list(paused.ready)
+    experiment.resume_paused_item(paused, max_events=3000)
+
+    assert _normalized_run_state(experiment) == control_state, (
+        "pausing at the repair root changed the observable execution; the "
+        "resume did not restore the scheduler faithfully")
+    # Every event queued at the pause must be accounted for exactly once.
+    leftover = [e for e in queued_at_pause if e in experiment.ready]
+    assert not leftover, f"events queued at pause were never dispatched: {leftover}"

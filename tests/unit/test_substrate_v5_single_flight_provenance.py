@@ -418,7 +418,17 @@ def test_a_search_delivered_without_its_context_creates_nothing():
 # 2. Identity is not provenance
 # ---------------------------------------------------------------------------
 
-def _proposal_for(o, node, supplier, edge):
+def _proposal_for(o, node, supplier, edge, source_edge=None):
+    """A payload whose SOURCE HOP is coherent.
+
+    `source_edge_id` says where the proposal ORIGINATED. When it equals the edge
+    the proposal arrives on, this delivery IS the source hop and the supplier
+    must be that edge's target -- otherwise the payload claims a unit proposed
+    itself over an edge it does not sit on, which a correct receiver refuses.
+    Naming an arbitrary supplier while pointing `source_edge_id` at the arrival
+    edge made the POSITIVE CONTROLS below unsatisfiable, so the negative results
+    they exist to attribute proved nothing.
+    """
     key = node["search_key"]
     ctx = node["search_context"]
     cand = o.units[supplier]
@@ -427,7 +437,8 @@ def _proposal_for(o, node, supplier, edge):
         supplier=supplier, supplier_class=cand.capability.klass(),
         offered_type=key.wanted_type, cost=cand.capability.cost,
         firm=not cand.unmet(), derivation_chain=cand._derives_from(),
-        source_node=supplier, source_edge_id=edge)
+        source_node=supplier,
+        source_edge_id=source_edge if source_edge is not None else edge)
 
 
 @core
@@ -445,19 +456,18 @@ def test_a_proposal_on_an_edge_the_node_does_not_own_is_refused():
     node = j.open_canonical_search(key, "e/root", 12.0, context=ctx)
     kids = list(node["children_opened"])
     assert len(kids) >= 2, f"the root opened {len(kids)} children; need two"
-    spare = next(u.unit_id for u in o.units.values()
-                 if u.capability.produces == key.wanted_type
-                 and u.unit_id != victim)
+    # The SOURCE of a source-hop proposal is the arrival edge's own target.
+    origin_unit = node["child_targets"][kids[0]]
 
     # PAIRED POSITIVE CONTROL: the real child edge, from that edge's real target.
-    good = _proposal_for(o, node, spare, kids[0])
-    j.deliver_proposal(key, kids[0], good, node["child_targets"][kids[0]])
+    good = _proposal_for(o, node, origin_unit, kids[0])
+    j.deliver_proposal(key, kids[0], good, origin_unit)
     assert node["proposal_routes"].get(good.proposal_id) == kids[0], (
         "a proposal arriving on a real child edge from that edge's real target "
         "was not registered, so refusing the forged routes below proves nothing")
 
     routes_before = dict(node["proposal_routes"])
-    forged = _proposal_for(o, node, spare, "e/fabricated")
+    forged = _proposal_for(o, node, origin_unit, "e/fabricated")
     assert forged.proposal_id != good.proposal_id, (
         "the two payloads share an id, so this test cannot distinguish them")
     reset()
@@ -472,9 +482,15 @@ def test_a_proposal_on_an_edge_the_node_does_not_own_is_refused():
                for evs in o.search_edge_events.values() for x in evs]
     assert "proposal_edge_not_owned" in reasons, (
         f"no attributable proposal_edge_not_owned reason: {reasons}")
+    # `_damaged` silences the victim but leaves its BOND in place, so the slot is
+    # occupied throughout this test. The assertion is therefore that the existing
+    # bond is untouched -- demanding an EMPTY slot asserted a state the fixture
+    # never produces, and would have failed against a correct implementation.
+    held = j.bonds[slot].supplier
     assert j.settle_search_offer(forged) is False, (
         "an unowned proposal was settled")
-    assert slot not in j.bonds, "an unowned proposal bonded the slot"
+    assert j.bonds[slot].supplier == held, (
+        "an unowned proposal replaced the slot's existing bond")
 
 
 @core
@@ -495,10 +511,9 @@ def test_a_proposal_from_the_wrong_immediate_sender_is_refused():
     real = node["child_targets"][kids[0]]
     impostor = node["child_targets"][kids[1]]
     assert real != impostor, "the two child edges share a target"
-    spare = next(u.unit_id for u in o.units.values()
-                 if u.capability.produces == key.wanted_type
-                 and u.unit_id != victim)
-    pay = _proposal_for(o, node, spare, kids[0])
+    # A payload that is correct in every other respect, so the ONLY thing the
+    # receiver can object to is who handed it over.
+    pay = _proposal_for(o, node, real, kids[0])
 
     j.deliver_proposal(key, kids[0], pay, impostor)
 
@@ -598,12 +613,31 @@ def test_a_firm_proposal_refused_at_settlement_releases_every_hop():
         "origin refused, so it will never continue or exhaust")
     assert src_node.get("local_candidate") is None
 
+    # SCOPED TO THE REJECTED PROPOSAL'S OWN BRANCH. Requiring EVERY probed edge
+    # to be terminated was wrong: the root's other branches carry candidates it
+    # has not yet decided, and an undecided candidate is a live search path, not
+    # a stranded one. Demanding their closure would have failed correct
+    # behaviour and, worse, could be "fixed" by cancelling branches a rejection
+    # has no business touching.
+    #
+    # ONE EDGE MAY CARRY SEVERAL PROPOSALS. A relay forwards every candidate its
+    # subtree produced up its single adopted parent edge, so the rejected
+    # proposal's own branch can still be live because a DIFFERENT candidate came
+    # home the same way. Asserting that branch is no longer undecided was
+    # therefore wrong. What the rejection must guarantee is proved above, per
+    # proposal: cleared at every hop, and the source released.
+    undecided = set(node["proposal_routes"][p]
+                    for p in node["proposals_outstanding"]
+                    if p in node["proposal_routes"])
     for eid, rec in o.search_edge_probes.items():
-        if rec["search_key"] != root:
+        if rec["search_key"] != root or eid in undecided:
             continue
+        if any(eid.startswith(u + "/") for u in undecided):
+            continue        # a descendant of a branch still awaiting a decision
         assert eid in o.search_edge_terminals, (
             f"edge {eid} was probed and never terminated after the rejection "
-            f"resolved; the branch is stranded")
+            f"resolved, and it carries no undecided candidate; the branch is "
+            f"stranded")
 
 
 @core

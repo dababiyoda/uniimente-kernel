@@ -157,12 +157,19 @@ def _pair():
         strangers = sorted(u for u in o.units
                            if u not in (ENV, SINK, target.unit_id)
                            and u not in target.neighbours)
-        if strangers:
-            return (o, j, target, o.units[nbrs[1]], o.units[strangers[0]],
+        # The bogus OPENER for `wrong_from` must itself be a real neighbour of
+        # the RECEIVER. Picking a second neighbour of the ORIGIN left it
+        # possibly non-adjacent to the receiver, so a runtime could reject on
+        # adjacency alone and never compare the recorded opener with the
+        # immediate sender -- the only fact that case exists to isolate.
+        others = sorted(n for n in target.neighbours
+                        if n not in (ENV, SINK, j.unit_id))
+        if strangers and others and j.unit_id in target.neighbours:
+            return (o, j, target, o.units[others[0]], o.units[strangers[0]],
                     ctx, key, seed)
     raise AssertionError(
-        "no origin with two neighbours and a unit that does not neighbour the "
-        "receiver, across the pre-registered seeds; failing to build the "
+        "no origin adjacent to a receiver that also has a second neighbour and "
+        "a non-neighbour, across the pre-registered seeds; failing to build the "
         "structure is a failure of this specification, not a reason to skip it")
 
 
@@ -232,6 +239,9 @@ def test_an_unauthenticated_search_arrival_adopts_nothing(attack):
         # fact is that it does not neighbour the receiver.
         sender = stranger
     if attack != "no_probe":
+        # `other` neighbours the RECEIVER, so `wrong_from` differs from a valid
+        # arrival in exactly one fact: the recorded opener is not the unit that
+        # delivered it.
         frm = sender if attack != "wrong_from" else other
         to = target if attack != "wrong_to" else other
         pkey = key
@@ -546,6 +556,77 @@ def test_a_losing_source_candidate_is_dispositioned_and_deactivated(closure,
     assert _counter("UNDISPOSITIONED_LOCAL_PROPOSALS") == 0
 
 
+def _source_with_rival():
+    """A source whose candidate can actually LOSE to a routed rival.
+
+    `_source_node` returns the first producer holding a `local_candidate`, which
+    may be FIRM -- and a firm candidate deliberately opens zero descendants,
+    because eligibility is evaluated before expansion. Iterating
+    `children_opened` on such a node finds nothing, so the rival case would fail
+    on fixture selection against a CORRECT runtime. Scanned until every
+    precondition is proved, then hard asserted.
+    """
+    for seed in SEEDS:
+        o = _build_raw(4, seed, 0.8)
+        F.prepare(o)
+        reset()
+        o.commission()
+        if not o.result_ok(o.run_item(PAYLOAD_A)):
+            continue
+        j = _join(o)
+        if j is None or len(j.bonds) != 2:
+            continue
+        slot = min(j.bonds)
+        o.units[j.bonds[slot].supplier].silent = True
+        reset()
+        ctx = _ctx()
+        key = v5.SearchKey.build(
+            need_id="probe:rival", work_item_generation=2,
+            origin_unit=j.unit_id, origin_slot=slot,
+            wanted_type=j.capability.accepts[slot], context=ctx)
+        for producer in o.units.values():
+            if (producer.unit_id in (ENV, SINK)
+                    or producer.capability.produces != key.wanted_type
+                    or producer.silent or not producer.unmet()):
+                continue        # NONFIRM only: a firm source opens no children
+            producer.deliver_search(key, "e/src", allocation=12.0,
+                                    lineage=(j.unit_id,), sender=j.unit_id,
+                                    context=ctx, transport=v5.HARNESS_DELIVERY)
+            node = producer.canonical_searches.get(key)
+            if node is None or node.get("local_candidate") is None:
+                continue
+            if not node["children_opened"]:
+                continue
+            # Drive the rival through the CHILD'S OWN delivery path, so Q is a
+            # real proposal that travelled, not one fabricated at the parent.
+            for edge in node["children_opened"]:
+                child = o.units.get(node["child_targets"][edge])
+                if child is None or child.capability.produces != key.wanted_type:
+                    continue
+                if child.silent or child.unit_id == producer.unit_id:
+                    continue
+                child.deliver_search(key, edge, node["child_allocations"][edge],
+                                     lineage=node["lineage"] + (producer.unit_id,),
+                                     sender=producer.unit_id, context=ctx,
+                                     transport=v5.HARNESS_DELIVERY)
+                cnode = child.canonical_searches.get(key)
+                if cnode is None or cnode.get("local_candidate") is None:
+                    continue
+                q = cnode["local_candidate"]
+                producer.deliver_proposal(key, edge, q, child.unit_id)
+                if node["proposal_routes"].get(q.proposal_id) != edge:
+                    continue
+                p_id = node["local_candidate"].proposal_id
+                if p_id == q.proposal_id:
+                    continue
+                return o, j, producer, ctx, key, node, p_id, q, seed
+    raise AssertionError(
+        "no source holding an active local candidate alongside a rival "
+        "registered through one of its own child edges, across the "
+        "pre-registered seeds; failing to build the structure is a failure of "
+        "this specification, not a reason to skip it")
+
+
 @admission
 def test_a_source_candidate_that_loses_to_another_proposal_is_cancelled():
     """The case a generic cancellation does not cover.
@@ -556,30 +637,9 @@ def test_a_source_candidate_that_loses_to_another_proposal_is_cancelled():
     proposal the sealing pass can silently walk past while still reporting a
     fully dispositioned wave.
     """
-    o, j, producer, ctx, key, node, seed = _source_node()
-    losing = node["local_candidate"].proposal_id
-    # A SECOND, routed proposal that the parent will commit instead.
-    rival = None
-    for edge in node["children_opened"]:
-        target = node["child_targets"][edge]
-        cand = o.units[target]
-        if cand.capability.produces != key.wanted_type or cand.silent:
-            continue
-        pay = v5.SearchOfferPayload(
-            proposal_id="rival", search_key=key,
-            context_digest=ctx.context_digest(), supplier=target,
-            supplier_class=cand.capability.klass(),
-            offered_type=key.wanted_type, cost=cand.capability.cost,
-            firm=not cand.unmet(), derivation_chain=cand._derives_from(),
-            source_node=target, source_edge_id=edge)
-        producer.deliver_proposal(key, edge, pay, target)
-        if node["proposal_routes"].get(pay.proposal_id) == edge:
-            rival = pay
-            break
-    assert rival is not None, (
-        "no routed rival proposal could be registered at the source, so losing "
-        "to another candidate cannot be exercised here")
-    assert rival.proposal_id != losing
+    o, j, producer, ctx, key, node, losing, rival, seed = _source_with_rival()
+    assert node.get("local_candidate") is not None
+    assert node["proposal_routes"].get(rival.proposal_id) in node["children_opened"]
     reset()
 
     producer.deliver_terminal(key, node["adopted_parent_edge"],
@@ -706,8 +766,45 @@ def test_the_harness_bypass_is_counted_and_never_taken_by_live_delivery():
             f"{src} delivered a message carrying the harness capability")
     assert _counter("HARNESS_DELIVERIES_USED") == 0, (
         "a healthy live run took the harness bypass")
+
+
+@admission
+def test_the_scheduler_ingress_path_adopts_only_authenticated_searches():
+    """THE METRIC, MEASURED ON THE TRANSPORT PATH.
+
+    An undamaged formation run is NOT evidence for this ratio. Formation
+    deliberately keeps the legacy `Need` mechanism, so
+    `TOTAL_CANONICAL_SEARCH_ADOPTIONS` can stay at zero there permanently -- even
+    after Commit 3 -- and a `if total:` guard would make the assertion pass
+    without the scheduler ever having adopted anything.
+
+    So the search is put on the wire: the sender creates its own probe, queues an
+    ordinary `__search__` message, `Organ._deliver` moves it, and `step` handles
+    it. No bypass anywhere on the path.
+    """
+    o, j, nbr, other, stranger, ctx, key, seed = _pair()
+    edge, alloc = "e/wire", 6.0
+    _open_probe(o, j, nbr, key, edge, alloc)
+    j.outbox.append((nbr.unit_id, ("__search__", key, edge, alloc,
+                                   (j.unit_id,), ctx)))
+    reset()
+
+    o._deliver(j)
+    assert any(m for _, m in nbr.inbox
+               if isinstance(m, tuple) and m and m[0] == "__search__"), (
+        "the transport did not carry the search to the receiver's inbox")
+    nbr.step(o._caps(nbr))
+
+    assert key in nbr.canonical_searches, (
+        "a properly announced search delivered over the real transport was not "
+        "adopted")
     total = _counter("TOTAL_CANONICAL_SEARCH_ADOPTIONS")
-    if total:
-        assert _counter("AUTHENTICATED_SEARCH_ADOPTIONS") == total, (
-            f"AUTHENTICATED_SEARCH_ADOPTIONS / TOTAL_CANONICAL_SEARCH_ADOPTIONS "
-            f"= {_counter('AUTHENTICATED_SEARCH_ADOPTIONS')}/{total}, not 1.0")
+    assert total == 1, f"{total} canonical adoptions recorded, expected exactly 1"
+    assert _counter("AUTHENTICATED_SEARCH_ADOPTIONS") == 1, (
+        "an adoption over the authenticated scheduler path was not counted as "
+        "authenticated, so the Single Bottleneck Metric cannot reach 1.0")
+    assert _counter("HARNESS_DELIVERIES_USED") == 0, (
+        "the scheduler path took the harness bypass")
+    for _, msg in nbr.inbox:
+        parts = msg if isinstance(msg, tuple) else (msg,)
+        assert v5.HARNESS_DELIVERY not in parts

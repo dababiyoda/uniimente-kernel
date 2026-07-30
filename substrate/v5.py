@@ -194,6 +194,17 @@ COUNTER_NAMES = (
     "UNAUTHENTICATED_SEARCH_ACKS",
     "UNAUTHENTICATED_TERMINAL_CONTROLS",
     "MALFORMED_SEARCH_ACKS",
+    # 2D SEAM. Defined here and driven by 2D-runtime. A counter that exists
+    # before the gate it measures lets the specification name the gate without
+    # the specification itself creating one.
+    "UNAUTHENTICATED_SEARCH_DELIVERIES",
+    "MALFORMED_SEARCH_DELIVERIES",
+    "UNKNOWN_EDGE_TERMINAL_EMISSIONS",
+    "COMMIT_OF_RESOLVED_PROPOSAL",
+    "UNDISPOSITIONED_LOCAL_PROPOSALS",
+    "HARNESS_DELIVERIES_USED",
+    "TOTAL_CANONICAL_SEARCH_ADOPTIONS",
+    "AUTHENTICATED_SEARCH_ADOPTIONS",
     # 2C: fail-closed identity, semantically valid controls, sealed lifecycle.
     "MALFORMED_TERMINAL_EVIDENCE",
     "UNKNOWN_COMMIT_PROPOSALS",
@@ -1210,15 +1221,17 @@ class Unit:
     # invariant, while the direct-seam tests missed it because they call the
     # receiver themselves.
 
-    def _edge_record(self, edge_id: str, frm: str, to: str, key: SearchKey):
+    def _edge_record(self, edge_id: str, frm: str, to: str, key: SearchKey,
+                     allocation: Optional[float] = None):
         o = self._organ
         if o is None:
             return None
         rec = o.search_edge_probes.get(edge_id)
         if rec is None:
             rec = {"from_unit": frm, "to_unit": to, "search_key": key,
-                   "count": 0, "delivered": 0}
+                   "count": 0, "delivered": 0, "allocation": 0.0}
             o.search_edge_probes[edge_id] = rec
+        rec.setdefault("allocation", 0.0)
         o.search_edges.setdefault(edge_id, {
             "edge_id": edge_id, "parent_edge_id": "", "from_unit": frm,
             "to_unit": to, "search_key": key, "allocation": 0.0,
@@ -1226,12 +1239,24 @@ class Unit:
             "refunded_credit": 0.0, "consumed_credit": 0.0})
         return rec
 
-    def _record_probe(self, edge_id: str, frm: str, to: str, key: SearchKey) -> None:
-        """CREATION. Called by the sender, exactly once per directed edge."""
-        rec = self._edge_record(edge_id, frm, to, key)
+    def _record_probe(self, edge_id: str, frm: str, to: str, key: SearchKey,
+                      allocation: Optional[float] = None) -> None:
+        """CREATION. Called by the sender, exactly once per directed edge.
+
+        The sender records the ALLOCATION it committed, so a receiver has
+        something to check an arriving amount against. `allocation` is optional
+        during this seam commit so existing callers keep working; 2D-runtime
+        makes the check mandatory.
+        """
+        rec = self._edge_record(edge_id, frm, to, key, allocation)
         if rec is None:
             return
         rec["count"] += 1
+        if allocation is not None:
+            rec["allocation"] = allocation
+            e = self._organ.search_edges.get(edge_id) if self._organ else None
+            if e is not None:
+                e["allocation"] = allocation
         C.incr("DIRECTED_SEARCH_EDGES_PROBED")
 
     def _record_delivery(self, edge_id: str, frm: str, to: str, key: SearchKey) -> None:
@@ -1403,7 +1428,7 @@ class Unit:
             node["neighbours_tried"].add(n)
             node["child_sequence"] += 1
             opened += 1
-            self._record_probe(child, self.unit_id, n, key)
+            self._record_probe(child, self.unit_id, n, key, allocation=per)
             self.outbox.append((n, ("__search__", key, child, per,
                                     node["lineage"] + (self.unit_id,),
                                     node["search_context"])))
@@ -1492,8 +1517,17 @@ class Unit:
 
     def deliver_search(self, key: SearchKey, edge_id: str, allocation: float,
                        lineage: tuple = (), sender: str = "",
-                       context: Optional[SearchContext] = None):
+                       context: Optional[SearchContext] = None,
+                       transport: Any = None):
         """One arrival on one transport edge. Returns its single outcome.
+
+        `transport` is SEPARATE from `sender`, and never replaces it: the sender
+        still names the claimed immediate unit, while `transport` carries an
+        explicit `HARNESS_DELIVERY` declaration that no sender-created probe
+        exists. Substituting the capability for the identity would destroy the
+        return route and hide which unit is being trusted. ACCEPTED BUT NOT YET
+        ENFORCED -- this commit adds the seam only, so admission behaviour is
+        unchanged and the suite composition must not move.
 
         A first arrival that is locally eligible returns a nonterminal
         SearchProposal; the edge stays open until the origin commits or cancels

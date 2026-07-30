@@ -174,6 +174,17 @@ COUNTER_NAMES = (
     "LEGACY_REPAIR_NEED_MESSAGES",
     "DUAL_REPAIR_SEARCHES",
     "LEGACY_PROJECTION_DECISION_READS",
+    # 2A: provenance, rejection continuation and distributed credit
+    # conservation. A derived proposal id proves the evidence was not altered;
+    # it says nothing about who delivered it or over which edge, and a ledger
+    # that balances locally can still record a false distributed history.
+    "UNOWNED_PROPOSAL_ROUTES",
+    "CONTEXTLESS_CANONICAL_NODES",
+    "STRANDED_REJECTED_PROPOSALS",
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT",
+    "REJECTED_PROPOSALS_TOTAL",
+    "REJECTED_PROPOSALS_RESOLVED",
+    "UNAUTHENTICATED_PROPOSAL_DELIVERIES",
 )
 
 
@@ -589,6 +600,11 @@ class SearchKey:
 
 PROPOSAL_ID_PREFIX = "sfp1:"
 
+# "no immediate sender was supplied", distinguished from the empty string, which
+# is a claim that the sender is nobody. A delivery without a sender cannot be
+# authenticated, so it is counted rather than quietly trusted.
+_UNSPECIFIED_SENDER = object()
+
 
 @dataclass(frozen=True)
 class SearchOfferPayload:
@@ -772,9 +788,17 @@ def new_canonical_node(key: SearchKey, parent_edge: str, parent_sender: str,
         # rejection feedback returns to the actual proposer.
         "proposal_routes": {},
         "proposal_digests": {},
+        "proposal_payloads": {},
         "proposals_outstanding": set(),
+        "proposals_rejected": set(),
         "accepted_proposal_id": None,
         "terminal_signal_sent": False,
+        # What each child CONFIRMED about the allocation it was given:
+        # child edge -> (refund, consumed). A parent may close an allocation only
+        # from this. Writing a transferred allocation off as cancelled without an
+        # entry here records a second, incompatible history of the same credit.
+        "child_confirmed": {},
+        "ack_sent": False,
     }
 
 
@@ -1228,6 +1252,11 @@ class Unit:
             return node
         node = new_canonical_node(key, parent_edge, parent_sender, allocation,
                                   context, lineage)
+        if context is None:
+            # A node holding no context can enforce no constraint its key
+            # advertises. The live path can no longer produce one; a direct
+            # harness call still can, and it is measured rather than assumed.
+            C.incr("CONTEXTLESS_CANONICAL_NODES")
         self.canonical_searches[key] = node
         C.incr("UNIQUE_CANONICAL_SEARCH_NODES")
         self._count_canonical_computation(node)
@@ -1390,14 +1419,6 @@ class Unit:
                             first.proposal_id)
         self._record_delivery(edge_id, sender or key.origin_unit, self.unit_id, key)
 
-        # CONTEXT FIRST. A forged or stale context must not be able to hide
-        # behind a cycle check, a duplicate check or an eligibility rule, and it
-        # must never be honoured: it is an unenforced constraint wearing a valid
-        # identity.
-        if context is not None and not context.matches(key):
-            return self._emit_terminal("SearchContextRejected", key, edge_id,
-                                       sender, refund=max(0.0, allocation),
-                                       reason="context_digest_mismatch")
         if self.unit_id in lineage:
             C.incr("CYCLE_EDGES_CLOSED")
             return self._emit_terminal("SearchCycleClosed", key, edge_id, sender,
@@ -1418,6 +1439,30 @@ class Unit:
             return self._emit_terminal("SearchCoalesced", key, edge_id, sender,
                                        refund=max(0.0, allocation - cost),
                                        handling_cost=cost)
+
+        # THE CONTEXT GATE GUARDS ADOPTION, AND FAILS CLOSED.
+        #
+        # It sits exactly here, after the paths that create nothing -- an edge
+        # replay, a cycle, a closed need and a duplicate arrival all refuse to
+        # compute, refuse to expand and refuse to adopt, so no context of theirs
+        # is ever honoured -- and immediately before the only path that does.
+        #
+        # A MISMATCHED context is a forgery: an unenforced constraint wearing a
+        # valid identity. A MISSING one is the same defect reached by omission.
+        # The key advertises bound refusals, a must-differ set, a cost ceiling, a
+        # cooldown set, a constraint generation and a policy snapshot; a node
+        # that received none of them can enforce none of them, and adopting the
+        # search anyway -- which is what returning SearchPending and expanding
+        # did -- manufactures a wave claiming constraints nobody holds. Absence
+        # of evidence is not absence of constraint.
+        if context is None:
+            return self._emit_terminal("SearchContextRejected", key, edge_id,
+                                       sender, refund=max(0.0, allocation),
+                                       reason="context_absent")
+        if not context.matches(key):
+            return self._emit_terminal("SearchContextRejected", key, edge_id,
+                                       sender, refund=max(0.0, allocation),
+                                       reason="context_digest_mismatch")
 
         # FIRST ARRIVAL. Eligibility is evaluated BEFORE expansion: an eligible
         # supplier used to open descendants first and answer second, spending
@@ -1457,19 +1502,54 @@ class Unit:
                          if s != key.origin_slot)
 
     def deliver_proposal(self, key: SearchKey, edge_id: str,
-                         payload: SearchOfferPayload):
+                         payload: SearchOfferPayload,
+                         sender: Any = _UNSPECIFIED_SENDER):
         """Register a candidate that arrived on `edge_id`. NONTERMINAL.
 
+        PROVENANCE, NOT ONLY INTEGRITY. The derived `proposal_id` proves the
+        evidence was not altered in transit. It proves nothing about who
+        delivered it or over which edge: a relay that cannot mutate a proposal
+        can still MINT a new, internally consistent one and register it against
+        a route this node never opened, or inject a candidate onto a
+        neighbour's branch so the commit for that branch is later routed to a
+        unit that never carried it. A hash is integrity; the checks below are
+        authentication.
+
         The arrival edge is the route home for a commit and for rejection
-        feedback, so it is recorded against the immutable proposal identity. It
-        is NOT `payload.source_edge_id`: that says where the proposal
-        ORIGINATED, several hops away, and using it here would let this node
-        write terminals on edges it does not own.
+        feedback. It is NOT `payload.source_edge_id`: that says where the
+        proposal ORIGINATED, possibly several hops away, and using it here would
+        let this node write terminals on edges it does not own.
         """
         node = self.canonical_searches.get(key)
         if node is None:
             C.incr("ORPHANED_SEARCH_EDGES")
             return None
+        # 1. THE EDGE MUST BE MINE. An edge this node never opened is not a
+        #    route it can commit or cancel through.
+        if edge_id not in node["child_allocations"]:
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return self._record_event(edge_id, "SearchProposalRejected", key,
+                                      reason="proposal_edge_not_owned",
+                                      payload=payload)
+        # 2. THE SENDER MUST BE THAT EDGE'S TARGET.
+        target = node["child_targets"].get(edge_id)
+        if sender is _UNSPECIFIED_SENDER:
+            # A harness seam, not an authenticated delivery. Instrumented so a
+            # live path that ever used it is visible rather than assumed absent.
+            C.incr("UNAUTHENTICATED_PROPOSAL_DELIVERIES")
+        elif sender != target:
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return self._record_event(edge_id, "SearchProposalRejected", key,
+                                      reason="proposal_sender_mismatch",
+                                      payload=payload)
+        # 3. THE EDGE MUST CARRY THIS SEARCH.
+        o = self._organ
+        rec = o.search_edge_probes.get(edge_id) if o is not None else None
+        if rec is not None and rec["search_key"] != key:
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return self._record_event(edge_id, "SearchProposalRejected", key,
+                                      reason="proposal_edge_key_mismatch",
+                                      payload=payload)
         if payload.search_key != key:
             return self._record_event(edge_id, "SearchProposalRejected", key,
                                       reason="wrong_search_key", payload=payload)
@@ -1482,6 +1562,16 @@ class Unit:
             # and kept the identity.
             return self._record_event(edge_id, "SearchProposalRejected", key,
                                       reason="proposal_payload_mutated",
+                                      payload=payload)
+        # 4. AT THE SOURCE HOP the proposing unit must be the unit that is
+        #    actually offering itself. Further up, the payload is relayed
+        #    evidence and the sender is the relay, so this cannot apply.
+        if (sender is not _UNSPECIFIED_SENDER
+                and payload.source_edge_id == edge_id
+                and (payload.source_node != sender or payload.supplier != sender)):
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return self._record_event(edge_id, "SearchProposalRejected", key,
+                                      reason="proposal_source_not_sender",
                                       payload=payload)
         pid = payload.proposal_id
         digest = payload.derived_id()
@@ -1502,6 +1592,7 @@ class Unit:
             return None          # exact replay: no second event, no second count
         node["proposal_routes"][pid] = edge_id
         node["proposal_digests"][pid] = digest
+        node["proposal_payloads"][pid] = payload
         node["proposals_outstanding"].add(pid)
         C.incr("UNIQUE_PROPOSAL_IDS_RECEIVED")
         ev = self._record_event(edge_id, "SearchProposal", key, payload=payload)
@@ -1513,6 +1604,73 @@ class Unit:
             # does not answer, and does not cancel anything.
             self._propose_upward(node, payload)
         return ev
+
+    # -- rejection feedback ----------------------------------------------
+
+    def _reject_downward(self, node: dict, pid: str, reason: str) -> None:
+        """Send a refusal back along the route the proposal actually came in on.
+
+        Without this the origin's decision never leaves the origin. Every relay
+        that forwarded the proposal keeps it in `proposals_outstanding`, and the
+        exhaustion path refuses to terminate while any proposal is outstanding,
+        so the subtree waits forever on a decision that was already made. That
+        is not a slow search; it is a search that can never report a result.
+        """
+        edge = node["proposal_routes"].get(pid)
+        if edge is None:
+            C.incr("STRANDED_REJECTED_PROPOSALS")
+            return
+        to = node["child_targets"].get(edge)
+        if not to:
+            C.incr("STRANDED_REJECTED_PROPOSALS")
+            return
+        self.outbox.append((to, ("__proposal_rejected__", node["search_key"],
+                                 edge, pid, reason)))
+
+    def deliver_proposal_rejected(self, key: SearchKey, edge_id: str, pid: str,
+                                  reason: str, sender: Any = _UNSPECIFIED_SENDER):
+        """A refusal arriving from my parent. NONTERMINAL, routed hop by hop.
+
+        Clears exactly the proposal named, at exactly this node, and forwards it
+        one more hop through this node's OWN mapping. It closes no unrelated
+        branch, never rebinds the adopted parent, and never terminates an edge:
+        the branch that carried the candidate is still a legal search path and
+        may continue.
+        """
+        node = self.canonical_searches.get(key)
+        if node is None:
+            C.incr("ORPHANED_SEARCH_EDGES")
+            return None
+        if edge_id != node["adopted_parent_edge"]:
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return self._record_event(edge_id, "SearchProposalRejected", key,
+                                      reason="rejection_edge_not_adopted")
+        if pid in node["proposals_rejected"]:
+            return None                          # replay: idempotent
+        node["proposals_rejected"].add(pid)
+        node["proposals_outstanding"].discard(pid)
+        payload = node["proposal_payloads"].get(pid)
+        self._record_event(edge_id, "SearchProposalRejected", key, reason=reason,
+                           payload=payload)
+        if node.get("local_candidate") is not None and \
+                node["local_candidate"].proposal_id == pid:
+            # THIS unit was the candidate. Its offer was refused, so it must stop
+            # advertising one -- otherwise its own exhaustion path, which will
+            # not terminate while an eligible offer is recorded, can never fire.
+            node["local_candidate"] = None
+            node["eligible_offer"] = False
+            C.incr("REJECTED_PROPOSALS_RESOLVED")
+            if (not node["children_outstanding"]
+                    and not node["terminal_signal_sent"]):
+                # Continue the bounded frontier if routes and credit remain;
+                # otherwise report the correct exhaustion.
+                if node["local_reserve"] >= 1.0:
+                    self._expand_canonical(node)
+                if not node["children_outstanding"]:
+                    self._echo_exhaustion(node)
+            return None
+        self._reject_downward(node, pid, reason)
+        return None
 
     # -- settlement -------------------------------------------------------
 
@@ -1535,6 +1693,23 @@ class Unit:
         self._record_event(edge or payload.source_edge_id,
                            "SearchProposalRejected", key, reason=reason,
                            payload=payload)
+
+    def _refuse_proposal(self, node: dict, payload: SearchOfferPayload,
+                         reason: str) -> None:
+        """One refused settlement: counted, recorded, and ROUTED HOME."""
+        pid = payload.proposal_id
+        C.incr("UNIQUE_PROPOSAL_DECISIONS")
+        C.incr("SEARCH_OFFER_SETTLEMENT_REJECTIONS")
+        C.incr("REJECTED_PROPOSALS_TOTAL")
+        self._proposal_decisions[pid] = False
+        node["proposals_outstanding"].discard(pid)
+        # A rejection does NOT close the Need, does NOT cancel unrelated children
+        # and does NOT end the wave. Remaining candidates and bounded
+        # continuation stay available.
+        node["status"] = "OPEN"
+        self._record_event(node["proposal_routes"][pid], "SearchProposalRejected",
+                           node["search_key"], reason=reason, payload=payload)
+        self._reject_downward(node, pid, reason)
 
     def settle_search_offer(self, payload: SearchOfferPayload) -> bool:
         """Resolve one proposal EXACTLY ONCE. Returns the decision.
@@ -1576,15 +1751,8 @@ class Unit:
             self._reject_precondition(payload, "wrong_need_generation")
             return False
 
-        route = node["proposal_routes"][pid]
-        node["proposals_outstanding"].discard(pid)
         if not payload.firm:
-            C.incr("UNIQUE_PROPOSAL_DECISIONS")
-            C.incr("SEARCH_OFFER_SETTLEMENT_REJECTIONS")
-            self._proposal_decisions[pid] = False
-            node["status"] = "OPEN"
-            self._record_event(route, "SearchProposalRejected", key,
-                               reason="nonfirm", payload=payload)
+            self._refuse_proposal(node, payload, "nonfirm")
             return False
         offer = Offer(key.need_id, payload.supplier, payload.supplier_class,
                       payload.offered_type, payload.cost, payload.firm,
@@ -1592,18 +1760,13 @@ class Unit:
         caps = self._organ._caps(self) if self._organ is not None else {}
         self._last_refusal = ""
         ok = self._settle(slot, offer, caps)
-        C.incr("UNIQUE_PROPOSAL_DECISIONS")
-        self._proposal_decisions[pid] = ok
         if not ok:
-            C.incr("SEARCH_OFFER_SETTLEMENT_REJECTIONS")
-            # A rejection does NOT close the Need, does NOT cancel unrelated
-            # children and does NOT end the wave. Remaining candidates and
-            # bounded continuation stay available.
-            node["status"] = "OPEN"
-            self._record_event(route, "SearchProposalRejected", key,
-                               reason=self._last_refusal or "unrecorded_refusal",
-                               payload=payload)
+            self._refuse_proposal(node, payload,
+                                  self._last_refusal or "unrecorded_refusal")
             return False
+        C.incr("UNIQUE_PROPOSAL_DECISIONS")
+        self._proposal_decisions[pid] = True
+        node["proposals_outstanding"].discard(pid)
         b = self.bonds.get(slot)
         if b is not None:
             b.settled_from_search_offer = True
@@ -1613,42 +1776,38 @@ class Unit:
         if node.get("search_context") is not None or self._must_differ(key):
             C.incr("DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED")
         node["accepted_proposal_id"] = pid
-        self._record_event(route, "SearchProposalAccepted", key, payload=payload)
+        self._record_event(node["proposal_routes"][pid], "SearchProposalAccepted",
+                           key, payload=payload)
         self._commit_wave(node, pid)
         return True
+
+    # -- closure and credit ----------------------------------------------
 
     def _commit_wave(self, node: dict, pid: str) -> None:
         """Close the wave AFTER an accepted settlement, never on a proposal.
 
-        Reconciliation is not the same as forgetting: every outstanding child
-        allocation is explicitly cancelled and accounted, so the node's ledger
-        still balances against what it was given.
+        The commit and the cancellations are COMMANDS. They travel down and each
+        edge records its one terminal, but the credit those edges carry is not
+        reclassified here: a child may already have consumed credit, opened
+        descendants or transferred allocations further down, and only the child
+        knows. See `deliver_search_ack`.
         """
         key = node["search_key"]
         win = node["proposal_routes"][pid]
         node["status"] = "COMMITTED"
         node["terminal_signal_sent"] = True
         node["wave_cancelled"] = True
-        self._release_child(node, win)
         self._emit_terminal("SearchCommitted", key, win,
                             node["child_targets"].get(win, ""), proposal_id=pid)
         for c in list(node["children_outstanding"]):
-            self._release_child(node, c)
+            if c == win:
+                continue
             self._emit_terminal("SearchCancelled", key, c,
                                 node["child_targets"].get(c, ""),
                                 reason="wave_committed", proposal_id=pid)
+        # Only reserve this node never transferred may be written off here.
         node["cancelled_credit"] += node["local_reserve"]
         node["local_reserve"] = 0.0
-
-    def _release_child(self, node: dict, edge_id: str) -> None:
-        """Move one child's committed credit out of flight, as cancelled."""
-        if edge_id not in node["children_outstanding"]:
-            return
-        per = node["child_allocations"].get(edge_id, 0.0)
-        node["children_outstanding"].discard(edge_id)
-        node["children_completed"].add(edge_id)
-        node["child_allocations_in_flight"] -= per
-        node["cancelled_credit"] += per
 
     def _close_wave_from_parent(self, node: dict, kind: str, pid: str) -> None:
         """A commit or cancellation arrived from my adopted parent.
@@ -1658,6 +1817,8 @@ class Unit:
         as a shortcut, not local routing.
         """
         key = node["search_key"]
+        if node["wave_cancelled"]:
+            return                              # replay: idempotent
         node["terminal_signal_sent"] = True
         node["wave_cancelled"] = True
         win = node["proposal_routes"].get(pid) if pid else None
@@ -1667,16 +1828,152 @@ class Unit:
         else:
             node["status"] = "CLOSED"
         if win is not None:
-            self._release_child(node, win)
             self._emit_terminal(kind, key, win, node["child_targets"].get(win, ""),
                                 proposal_id=pid)
         for c in list(node["children_outstanding"]):
-            self._release_child(node, c)
+            if c == win:
+                continue
             self._emit_terminal("SearchCancelled", key, c,
                                 node["child_targets"].get(c, ""),
                                 reason="wave_closed", proposal_id=pid)
         node["cancelled_credit"] += node["local_reserve"]
         node["local_reserve"] = 0.0
+        self._acknowledge_to_parent(node)
+
+    def _acknowledge_to_parent(self, node: dict) -> None:
+        """Report to my parent EXACTLY what became of the credit it sent me.
+
+        Only sent once every child of mine has itself acknowledged, so what I
+        report is evidence rather than a guess about work still in flight.
+        """
+        if node["ack_sent"] or node["children_outstanding"]:
+            return
+        to = node["adopted_parent_sender"]
+        if not to:
+            node["ack_sent"] = True
+            return
+        refund = node["local_reserve"] + node["cancelled_credit"]
+        consumed = max(0.0, node["incoming_allocation"] - refund)
+        node["ack_sent"] = True
+        node["local_reserve"] = 0.0
+        node["cancelled_credit"] = 0.0
+        node["returned_to_parent"] += refund
+        node["consumed_credit"] = consumed
+        self.outbox.append((to, ("__search_ack__", node["search_key"],
+                                 node["adopted_parent_edge"], refund, consumed)))
+
+    def deliver_search_ack(self, key: SearchKey, edge_id: str, refund: float,
+                           consumed: float, sender: Any = _UNSPECIFIED_SENDER):
+        """A child's closure evidence. NOT a terminal.
+
+        The edge's single terminal is the commit or cancellation command that
+        travelled DOWN it; this is what came back. Until it arrives the parent
+        may not classify that allocation at all -- writing it off as cancelled
+        while the child accounts the same credit as consumed produces two
+        ledgers that each balance and together describe incompatible histories.
+        """
+        node = self.canonical_searches.get(key)
+        if node is None:
+            C.incr("ORPHANED_SEARCH_EDGES")
+            return None
+        if edge_id in node["child_confirmed"]:
+            return None                          # replay: idempotent
+        per = node["child_allocations"].get(edge_id)
+        if per is None:
+            C.incr("UNOWNED_PROPOSAL_ROUTES")
+            return None
+        refund = max(0.0, min(refund, per))
+        consumed = max(0.0, min(consumed, per - refund))
+        if abs(refund + consumed - per) > 1e-6:
+            # The child cannot account for everything it was given. The
+            # difference is not silently absorbed as cancelled here.
+            C.incr("UNSUPPORTED_CHILD_CANCELLATION_CREDIT")
+        node["child_confirmed"][edge_id] = (refund, consumed)
+        node["children_outstanding"].discard(edge_id)
+        node["children_completed"].add(edge_id)
+        node["child_allocations_in_flight"] -= per
+        node["child_refunds_received"] += refund
+        node["returned_credit"] = node["child_refunds_received"]
+        node["consumed_credit"] += consumed
+        if node["wave_cancelled"] or node["terminal_signal_sent"]:
+            node["cancelled_credit"] += refund
+            self._acknowledge_to_parent(node)
+            return None
+        node["local_reserve"] += refund
+        self._continue_after_child(node)
+        return None
+
+    def _echo_exhaustion(self, node: dict) -> None:
+        """Report the correct failure: space closed, or credit ended first."""
+        if node["terminal_signal_sent"]:
+            return
+        key = node["search_key"]
+        budget_bound = (node["eligible_untried_routes"] > 0
+                        and node["local_reserve"] < 1.0)
+        node["status"] = "EXHAUSTED"
+        node["terminal_signal_sent"] = True
+        back = node["local_reserve"]
+        node["returned_to_parent"] += back
+        node["local_reserve"] = 0.0
+        node["ack_sent"] = True
+        if budget_bound:
+            C.incr("SEARCH_BUDGET_EXHAUSTED")
+            if self._organ is not None:
+                self._organ.budget_exhaustion_records.append(key)
+            self.escalations.append(
+                f"search budget exhausted for {key}: "
+                f"{node['eligible_untried_routes']} eligible routes untried")
+            self._emit_terminal("SearchBudgetExhausted", key,
+                                node["adopted_parent_edge"],
+                                node["adopted_parent_sender"], refund=back)
+            return
+        C.incr("SEARCH_SPACE_EXHAUSTED")
+        if self._organ is not None:
+            self._organ.space_exhaustion_proofs.append(key)
+        self.escalations.append(
+            f"no eligible distinct supplier for slot {key.origin_slot}: "
+            f"{len(node['children_completed'])} branches searched, "
+            f"excluded {sorted(self._must_differ(key))}")
+        self.receipts.append(Receipt("branch_exhausted", self.unit_id,
+                                     key.origin_slot, None,
+                                     "bounded distinct replacement exhaustion"))
+        self._emit_terminal("SearchExhausted", key, node["adopted_parent_edge"],
+                            node["adopted_parent_sender"], refund=back)
+
+    def _continue_after_child(self, node: dict) -> None:
+        """One child finished. Widen, wait, or report -- decided locally."""
+        if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
+            return
+        if node["terminal_signal_sent"] or node["children_outstanding"]:
+            return
+        if node["proposals_outstanding"] or node["eligible_offer"]:
+            # A candidate is in flight toward the origin. Reporting exhaustion
+            # now would claim the space is closed while an unresolved proposal
+            # is still travelling.
+            return
+        if node["eligible_untried_routes"] > 0 and node["local_reserve"] >= 1.0:
+            self._expand_canonical(node)        # widen: the round is complete
+            if node["children_outstanding"]:
+                return
+        self._echo_exhaustion(node)
+
+    def _release_child(self, node: dict, edge_id: str) -> None:
+        """PRESERVED, UNUSED, and instrumented.
+
+        This is what Commit 2 did at every commit and cancellation: move a
+        child's entire allocation from in-flight to cancelled with no evidence
+        from the child. It is kept as the instrumented name for the prohibited
+        operation, in the same style as the organ's other forbidden-operation
+        stubs. Nothing in the runtime calls it.
+        """
+        if edge_id not in node["children_outstanding"]:
+            return
+        per = node["child_allocations"].get(edge_id, 0.0)
+        C.incr("UNSUPPORTED_CHILD_CANCELLATION_CREDIT")
+        node["children_outstanding"].discard(edge_id)
+        node["children_completed"].add(edge_id)
+        node["child_allocations_in_flight"] -= per
+        node["cancelled_credit"] += per
 
     def deliver_terminal(self, key: SearchKey, edge_id: str, kind: str,
                          refund: float = 0.0, proposal_id: str = "") -> None:
@@ -1702,6 +1999,11 @@ class Unit:
             return
         per = node["child_allocations"].get(edge_id, max(0.0, refund))
         credited = max(0.0, min(refund, per))
+        # A terminal that ends a child edge IS the child's own evidence about
+        # that allocation: it carries what came back and, by difference, what
+        # the subtree used. Recorded in the same ledger an explicit
+        # acknowledgement would fill, so both routes are auditable alike.
+        node["child_confirmed"][edge_id] = (credited, per - credited)
         node["children_outstanding"].discard(edge_id)
         node["children_completed"].add(edge_id)
         node["child_allocations_in_flight"] -= per
@@ -1714,56 +2016,10 @@ class Unit:
         self._record_terminal(Terminal(kind, key, edge_id, credited, 0.0,
                                        node["child_targets"].get(edge_id, ""),
                                        self.unit_id, "", proposal_id))
-        if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
+        if node["wave_cancelled"] or node["terminal_signal_sent"]:
+            self._acknowledge_to_parent(node)
             return
-        if node["terminal_signal_sent"]:
-            return
-        if node["children_outstanding"]:
-            return                              # siblings still live
-        if node["proposals_outstanding"] or node["eligible_offer"]:
-            # A candidate is in flight toward the origin. Reporting exhaustion
-            # now would claim the space is closed while an unresolved proposal
-            # is still travelling.
-            return
-        # No answer and every actual child is terminal. Is the SPACE closed, or
-        # did credit run out first? These are different claims.
-        if node["eligible_untried_routes"] > 0 and node["local_reserve"] < 1.0:
-            node["status"] = "EXHAUSTED"
-            node["terminal_signal_sent"] = True
-            C.incr("SEARCH_BUDGET_EXHAUSTED")
-            if self._organ is not None:
-                self._organ.budget_exhaustion_records.append(key)
-            self.escalations.append(
-                f"search budget exhausted for {key}: "
-                f"{node['eligible_untried_routes']} eligible routes untried")
-            back = node["local_reserve"]
-            node["returned_to_parent"] += back
-            node["local_reserve"] = 0.0
-            self._emit_terminal("SearchBudgetExhausted", key,
-                                node["adopted_parent_edge"],
-                                node["adopted_parent_sender"], refund=back)
-            return
-        if node["eligible_untried_routes"] > 0 and node["local_reserve"] >= 1.0:
-            self._expand_canonical(node)        # widen: the round is complete
-            if node["children_outstanding"]:
-                return
-        node["status"] = "EXHAUSTED"
-        node["terminal_signal_sent"] = True
-        back = node["local_reserve"]
-        node["returned_to_parent"] += back
-        node["local_reserve"] = 0.0
-        C.incr("SEARCH_SPACE_EXHAUSTED")
-        if self._organ is not None:
-            self._organ.space_exhaustion_proofs.append(key)
-        self.escalations.append(
-            f"no eligible distinct supplier for slot {key.origin_slot}: "
-            f"{len(node['children_completed'])} branches searched, "
-            f"excluded {sorted(self._must_differ(key))}")
-        self.receipts.append(Receipt("branch_exhausted", self.unit_id,
-                                     key.origin_slot, None,
-                                     "bounded distinct replacement exhaustion"))
-        self._emit_terminal("SearchExhausted", key, node["adopted_parent_edge"],
-                            node["adopted_parent_sender"], refund=back)
+        self._continue_after_child(node)
 
     def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
         """Exact replay of an already-answered edge is a no-op."""
@@ -1991,7 +2247,15 @@ class Unit:
                 continue
             if isinstance(msg, tuple) and msg and msg[0] == "__proposal__":
                 _, key, edge_id, payload = msg
-                self.deliver_proposal(key, edge_id, payload)
+                self.deliver_proposal(key, edge_id, payload, sender)
+                continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__proposal_rejected__":
+                _, key, edge_id, pid, reason = msg
+                self.deliver_proposal_rejected(key, edge_id, pid, reason, sender)
+                continue
+            if isinstance(msg, tuple) and msg and msg[0] == "__search_ack__":
+                _, key, edge_id, refund, consumed = msg
+                self.deliver_search_ack(key, edge_id, refund, consumed, sender)
                 continue
             if isinstance(msg, Terminal):
                 self.deliver_terminal(msg.search_key, msg.edge_id, msg.kind,

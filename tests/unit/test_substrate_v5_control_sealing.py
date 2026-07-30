@@ -420,8 +420,16 @@ def test_a_closed_wave_admits_no_late_proposal_or_rejection():
     assert late.proposal_id not in node["proposal_routes"], (
         "a proposal was registered on a wave that had already closed")
     assert _snapshot(o, relay, node) == before, "a late proposal mutated state"
-    assert not [m for m in relay.outbox
-                if isinstance(m[1], tuple) and m[1] and m[1][0] == "__proposal__"], (
+    # NOTHING NEW WAS FORWARDED. Requiring the outbox to hold no `__proposal__`
+    # at all was wrong: the WINNING proposal, registered earlier in this test,
+    # legitimately forwarded one before the wave closed, so the assertion failed
+    # against correct behaviour. The snapshot comparison above already covers
+    # the outbox, and this states the specific claim the test is making.
+    forwarded = [m for m in relay.outbox
+                 if isinstance(m[1], tuple) and m[1]
+                 and m[1][0] == "__proposal__"
+                 and m[1][3].proposal_id == late.proposal_id]
+    assert not forwarded, (
         "a late proposal was forwarded upward from a closed wave")
 
     relay.deliver_proposal_rejected(key, node["adopted_parent_edge"],

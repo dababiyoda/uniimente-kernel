@@ -174,6 +174,45 @@ def _nodes(o):
     return out
 
 
+def _ctx(**kw):
+    """THE canonical SearchContext schema, identical to the live-path file.
+
+    This file previously built context-free SearchKeys and a SearchOfferPayload
+    with the obsolete `edge_id` field and no proposal_id / context_digest /
+    source_node / source_edge_id. Keeping that would have forced the
+    implementation to retain the partial constructor and payload alias that
+    commit 1A explicitly rejected.
+    """
+    base = dict(causally_refused_sources=frozenset(),
+                must_differ_from_suppliers=frozenset(),
+                maximum_supplier_cost=99.0,
+                cooldown_excluded_suppliers=frozenset(),
+                constraint_generation=0,
+                policy_snapshot=())
+    base.update(kw)
+    return v5.SearchContext(**base)
+
+
+def _key_for(unit, slot, ctx, need_id, wanted=None):
+    """Every key is built from the COMPLETE context. No partial constructor."""
+    return v5.SearchKey.build(
+        need_id=need_id, work_item_generation=2, origin_unit=unit.unit_id,
+        origin_slot=slot,
+        wanted_type=wanted or unit.capability.accepts[slot], context=ctx)
+
+
+def _payload(o, key, ctx, supplier, pid, source_edge):
+    return v5.SearchOfferPayload(
+        proposal_id=pid, search_key=key, context_digest=ctx.context_digest(),
+        supplier=supplier,
+        supplier_class=o.units[supplier].capability.klass()
+        if supplier in o.units else "probe",
+        offered_type=key.wanted_type,
+        cost=o.units[supplier].capability.cost if supplier in o.units else 1.0,
+        firm=True, derivation_chain=frozenset({supplier}),
+        source_node=supplier, source_edge_id=source_edge)
+
+
 def _root_key(o, join, slot):
     """The SearchKey of the damaged obligation itself, not any other search."""
     keys = [k for (uid, k) in _nodes(o) if uid == join.unit_id]
@@ -394,9 +433,8 @@ def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
     """
     o, j, slot, victim, seed = _damaged(4)
     reset()
-    key = v5.SearchKey.build(need_id="probe:E", work_item_generation=2,
-                             origin_unit=j.unit_id, origin_slot=slot,
-                             wanted_type=j.capability.accepts[slot])
+    ctx = _ctx()
+    key = _key_for(j, slot, ctx, "probe:E")
     unit = next(u for u in o.units.values()
                 if u.unit_id not in (ENV, SINK) and u.unit_id != j.unit_id)
     node = unit.open_canonical_search(key, parent_edge="e/adopted", allocation=9.0)
@@ -415,11 +453,8 @@ def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
     assert b in node["children_outstanding"], "the live child was dropped"
 
     # A PROPOSAL, not a terminal outcome.
-    unit.deliver_proposal(key, b, v5.SearchOfferPayload(
-        supplier="probe.supplier", supplier_class="authorise",
-        offered_type=key.wanted_type, cost=1.0, firm=True,
-        derivation_chain=frozenset({"probe.supplier"}),
-        search_key=key, edge_id=b))
+    unit.deliver_proposal(key, b, _payload(o, key, ctx, "probe.supplier",
+                                           "p/E", b))
 
     assert node["status"] in ("OPEN", "PROPOSAL_PENDING"), (
         f"a candidate proposal put the node in {node['status']}; a proposal is "

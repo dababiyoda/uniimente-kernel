@@ -202,6 +202,9 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     assert _kind(outcome) != "SearchProposal", (
         f"{sibling} is excluded by must_differ_from yet offered itself remotely; "
         f"this is the duplicate-supplier defect returning through the digest gap")
+    assert getattr(outcome, "reason", None) == "candidate_must_differ", (
+        f"exclusion reason was {getattr(outcome, 'reason', None)!r}, expected "
+        f"'candidate_must_differ'")
     assert getattr(outcome, "payload", None) is None
 
 
@@ -540,6 +543,20 @@ def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
     want = j.capability.accepts[slot]
     producer = next(u for u in o.units.values()
                     if u.capability.produces == want and u.unit_id != victim)
+    # PAIRED POSITIVE CONTROL. Without it, a candidate that is merely nonfirm,
+    # unmet or silent satisfies the negative assertion and the named field is
+    # never shown to be the cause.
+    control_ctx = _ctx()
+    control_key = _key_for(j, slot, control_ctx, "probe:cost:control")
+    reset()
+    control = producer.deliver_search(control_key, "e/cost/control",
+                                      allocation=6.0, lineage=(j.unit_id,),
+                                      sender=j.unit_id, context=control_ctx)
+    assert _kind(control) == "SearchProposal", (
+        f"the control candidate {producer.unit_id} did not propose under a "
+        f"neutral context ({_kind(control)}), so the exclusion test below "
+        f"cannot attribute anything to maximum_supplier_cost")
+
     ctx = _ctx(maximum_supplier_cost=producer.capability.cost / 10.0)
     key = _key_for(j, slot, ctx, "probe:cost")
     reset()
@@ -549,6 +566,9 @@ def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} costs {producer.capability.cost} against a ceiling "
         f"of {ctx.maximum_supplier_cost} yet proposed itself")
+    assert getattr(outcome, "reason", None) == "candidate_above_cost_ceiling", (
+        f"exclusion reason was {getattr(outcome, 'reason', None)!r}, expected "
+        f"'candidate_above_cost_ceiling'; a blanket refusal must not satisfy this")
 
 
 @live
@@ -557,6 +577,20 @@ def test_a_cooldown_excluded_candidate_proposes_nothing():
     want = j.capability.accepts[slot]
     producer = next(u for u in o.units.values()
                     if u.capability.produces == want and u.unit_id != victim)
+    # PAIRED POSITIVE CONTROL. Without it, a candidate that is merely nonfirm,
+    # unmet or silent satisfies the negative assertion and the named field is
+    # never shown to be the cause.
+    control_ctx = _ctx()
+    control_key = _key_for(j, slot, control_ctx, "probe:cooldown:control")
+    reset()
+    control = producer.deliver_search(control_key, "e/cooldown/control",
+                                      allocation=6.0, lineage=(j.unit_id,),
+                                      sender=j.unit_id, context=control_ctx)
+    assert _kind(control) == "SearchProposal", (
+        f"the control candidate {producer.unit_id} did not propose under a "
+        f"neutral context ({_kind(control)}), so the exclusion test below "
+        f"cannot attribute anything to cooldown_excluded_suppliers")
+
     ctx = _ctx(cooldown_excluded_suppliers=frozenset({producer.unit_id}))
     key = _key_for(j, slot, ctx, "probe:cooldown")
     reset()
@@ -565,6 +599,12 @@ def test_a_cooldown_excluded_candidate_proposes_nothing():
                                       context=ctx)
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} is cooldown-excluded yet proposed itself")
+    assert getattr(outcome, "reason", None) == "candidate_in_cooldown", (
+        f"exclusion reason was {getattr(outcome, 'reason', None)!r}, expected "
+        f"'candidate_in_cooldown'; a blanket refusal must not satisfy this test")
+    assert getattr(outcome, "reason", None) == "candidate_above_cost_ceiling", (
+        f"exclusion reason was {getattr(outcome, 'reason', None)!r}, expected "
+        f"'candidate_above_cost_ceiling'; a blanket refusal must not satisfy this test")
 
 
 @live
@@ -586,6 +626,17 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
         f"enforcement cannot be exercised on it")
     ancestor = ancestors[0]
     assert ancestor != producer.unit_id
+    control_ctx = _ctx()
+    control_key = _key_for(j, slot, control_ctx, "probe:ancestor:control")
+    reset()
+    control = producer.deliver_search(control_key, "e/ancestor/control",
+                                      allocation=6.0, lineage=(j.unit_id,),
+                                      sender=j.unit_id, context=control_ctx)
+    assert _kind(control) == "SearchProposal", (
+        f"the control candidate {producer.unit_id} did not propose under a "
+        f"neutral context ({_kind(control)}), so refusing it below proves "
+        f"nothing about derivation-chain enforcement")
+
     ctx = _ctx(causally_refused_sources=frozenset({ancestor}))
     key = _key_for(j, slot, ctx, "probe:ancestor")
     reset()
@@ -595,6 +646,9 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} proposed itself although its ancestor {ancestor} is "
         f"in the origin's refusal set; the derivation chain was not checked")
+    assert getattr(outcome, "reason", None) == "candidate_derivation_refused", (
+        f"exclusion reason was {getattr(outcome, 'reason', None)!r}, expected "
+        f"'candidate_derivation_refused'")
 
 
 # ---------------------------------------------------------------------------
@@ -606,13 +660,47 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
 # Legacy projection inertness, proved with a CONTROL/EXPERIMENTAL TWIN
 # ---------------------------------------------------------------------------
 
-def _second_victim(o, j, first_victim):
-    """A second, distinct, observable damage target on the same organ."""
-    for u in sorted(o.units.values(), key=lambda x: x.unit_id):
-        if u.unit_id in (ENV, SINK) or u.unit_id == first_victim:
+def _active_cone(o):
+    """Units the CURRENT accepted result actually depends on.
+
+    Walk back from SINK's accepted bond through settled bonds. A unit outside
+    this cone can be silenced with no effect on the result, so damaging one
+    proves nothing about repair.
+    """
+    seen, stack = set(), [SINK]
+    while stack:
+        uid = stack.pop()
+        if uid in seen or uid not in o.units:
             continue
-        if u.unit_id in o._produced and u.bonds:
-            return u.unit_id
+        seen.add(uid)
+        for b in o.units[uid].bonds.values():
+            stack.append(b.supplier)
+    return seen - {ENV, SINK}
+
+
+def _second_victim(o, j, first_victim):
+    """A second damage target that is CAUSALLY NECESSARY to the current result.
+
+    Choosing the first produced bonded unit in lexical order could pick a unit
+    the accepted result does not depend on. Silencing it would then cause no
+    repair even with a correct implementation, so the twin test would fail on
+    fixture selection while appearing to prove projection inertness.
+    """
+    sink = o.units[SINK]
+    if 0 not in sink.bonds:
+        return None
+    final = o._produced.get(SINK)
+    chain = final.chain if final is not None else frozenset()
+    cone = _active_cone(o)
+    for uid in sorted(cone):
+        if uid == first_victim or uid not in o._produced:
+            continue
+        if not o.units[uid].bonds:
+            continue
+        # Prefer a unit that appears in the accepted value's own derivation.
+        if chain and uid not in chain:
+            continue
+        return uid
     return None
 
 
@@ -680,7 +768,11 @@ def test_legacy_projection_is_inert_across_a_SECOND_real_repair():
 
     assert control_nodes > nodes_after_first_control, (
         "the second damage triggered no new canonical repair in the control, so "
-        "the corrupted projection was never near a live decision")
+        "the corrupted projection was never near a live decision; if the target "
+        "is outside the active dependency cone this is a fixture-selection "
+        "failure rather than evidence about the projection")
+    assert C["REPAIR_REOPENS"] > 0, (
+        "the second damage produced no reopen, so it was not causally active")
     assert experiment_nodes == control_nodes, (
         f"canonical node counts diverged: control {control_nodes}, experiment "
         f"{experiment_nodes}")
@@ -696,6 +788,39 @@ def test_legacy_projection_is_inert_across_a_SECOND_real_repair():
 # ---------------------------------------------------------------------------
 # Exactly-once proposal resolution
 # ---------------------------------------------------------------------------
+
+def _reopened(n_auth=4, density=0.8):
+    """A REAL open obligation, not merely a silenced supplier.
+
+    `_damaged` only silences the victim; the victim's bond is still in the slot.
+    Calling `settle_search_offer` in that state can exercise "overwrite a bonded
+    slot" rather than proposal resolution, because `_settle` writes
+    `self.bonds[slot] = Bond(...)` and the slot-open check lives in `_on_offer`,
+    not in `_settle`. Every resolution spec must start from the real precondition:
+
+        observed failure -> bond removed -> open Need generation -> canonical root
+    """
+    o, j, slot, victim, seed = _damaged(n_auth, density)
+    reset()
+    o.run_item(PAYLOAD_B)          # the consumer observes its own failure
+
+    assert slot not in j.bonds, (
+        f"slot {slot} is still bonded to {j.bonds.get(slot) and j.bonds[slot].supplier}; "
+        f"the failure was not observed and the obligation was never reopened, so "
+        f"a settlement here would be a bond OVERWRITE, not proposal resolution")
+    nid = j.open_needs.get(slot)
+    assert nid is not None, (
+        f"no open Need generation for slot {slot}; there is no obligation to "
+        f"resolve a proposal against")
+    assert nid not in j.closed_needs, "the Need generation is already closed"
+    roots = [k for (uid, k) in _nodes(o) if uid == j.unit_id
+             and getattr(k, "origin_slot", None) == slot]
+    assert roots, (
+        f"no canonical root at {j.unit_id} for slot {slot}; the reopen did not "
+        f"create a Single-Flight root")
+    assert C["DUAL_REPAIR_SEARCHES"] == 0, "a legacy repair search is also active"
+    return o, j, slot, victim, seed, roots[0]
+
 
 def _payload(o, j, slot, ctx, need_id, supplier, pid):
     return v5.SearchOfferPayload(
@@ -714,16 +839,14 @@ def _payload(o, j, slot, ctx, need_id, supplier, pid):
 
 @live
 def test_an_exact_proposal_replay_settles_only_once():
-    o, j, slot, victim, seed = _damaged(4)
+    o, j, slot, victim, seed, root = _reopened(4)
     want = j.capability.accepts[slot]
     spare = next(u.unit_id for u in o.units.values()
                  if u.capability.produces == want
                  and u.unit_id not in {b.supplier for b in j.bonds.values()}
                  and u.unit_id != victim)
     ctx = _ctx()
-    reset()
     pay = _payload(o, j, slot, ctx, "probe:replay", spare, "p/replay")
-    j.open_canonical_search(pay.search_key, "e/root", 9.0)
 
     first = j.settle_search_offer(pay)
     decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
@@ -742,21 +865,40 @@ def test_an_exact_proposal_replay_settles_only_once():
 
 
 @live
-def test_two_competing_proposals_produce_at_most_one_commitment():
-    o, j, slot, victim, seed = _damaged(4)
+def test_two_competing_proposals_race_through_real_child_edges():
+    """Routed through `proposal_routes`, not settled by direct call.
+
+    The earlier version called `settle_search_offer` twice and then expected a
+    terminal on `payload.source_edge_id`. That bypasses the echo topology and
+    would license an implementation where the root writes directly to an
+    arbitrary source edge using organ-global telemetry. `source_edge_id` says
+    where a proposal ORIGINATED; it is not the root's cancellation edge.
+    """
+    o, j, slot, victim, seed, root = _reopened(4)
     want = j.capability.accepts[slot]
     bonded = {b.supplier for b in j.bonds.values()}
     spares = [u.unit_id for u in o.units.values()
               if u.capability.produces == want and u.unit_id not in bonded
               and u.unit_id != victim]
-    assert len(spares) >= 2, (
-        f"only {len(spares)} spare producers; this race needs two")
+    assert len(spares) >= 2, f"only {len(spares)} spare producers; need two"
+
+    node = next(n for (uid, k), n in _nodes(o).items()
+                if uid == j.unit_id and k == root)
+    kids = list(node["children_opened"])
+    assert len(kids) >= 2, (
+        f"the root opened {len(kids)} child edges; a race needs at least two "
+        f"distinct arrival paths")
+    child_a, child_b = kids[0], kids[1]
     ctx = _ctx()
-    reset()
-    key = _key_for(j, slot, ctx, "probe:race")
-    j.open_canonical_search(key, "e/root", 9.0)
     a = _payload(o, j, slot, ctx, "probe:race", spares[0], "p/raceA")
     b = _payload(o, j, slot, ctx, "probe:race", spares[1], "p/raceB")
+
+    j.deliver_proposal(root, child_a, a)
+    j.deliver_proposal(root, child_b, b)
+    assert node["proposal_routes"].get(a.proposal_id) == child_a, (
+        "proposal A was not correlated with the child edge it arrived on")
+    assert node["proposal_routes"].get(b.proposal_id) == child_b, (
+        "proposal B was not correlated with the child edge it arrived on")
 
     first = j.settle_search_offer(a)
     second = j.settle_search_offer(b)
@@ -764,25 +906,66 @@ def test_two_competing_proposals_produce_at_most_one_commitment():
         "both competing proposals committed; a slot took two bonds")
     committed = j.bonds.get(slot)
     assert committed is not None, "neither proposal committed"
-    winner = spares[0] if first else spares[1]
-    assert committed.supplier == winner
-    loser_edge = b.source_edge_id if first else a.source_edge_id
-    outs = o.search_edge_terminals.get(loser_edge, {}).get("outcomes", [])
-    assert outs and _kind(outs[0]) in ("SearchNeedClosed", "SearchCancelled"), (
-        f"the race loser received {[_kind(x) for x in outs]}, expected "
-        f"SearchNeedClosed or SearchCancelled")
-    assert j.bonds.get(slot).supplier == winner, (
+    winner, loser = ((a, b) if first else (b, a))
+    assert committed.supplier == winner.supplier
+
+    win_edge = node["proposal_routes"][winner.proposal_id]
+    lose_edge = node["proposal_routes"][loser.proposal_id]
+    win_outs = o.search_edge_terminals.get(win_edge, {}).get("outcomes", [])
+    lose_outs = o.search_edge_terminals.get(lose_edge, {}).get("outcomes", [])
+    assert [_kind(x) for x in win_outs] == ["SearchCommitted"], (
+        f"the winner child edge {win_edge} received "
+        f"{[_kind(x) for x in win_outs]}, expected exactly SearchCommitted")
+    assert lose_outs and _kind(lose_outs[0]) in ("SearchCancelled",
+                                                 "SearchNeedClosed"), (
+        f"the loser child edge {lose_edge} received "
+        f"{[_kind(x) for x in lose_outs]}")
+    # The root must NOT shortcut to an edge that is not one of its own children.
+    for eid, rec in o.search_edge_terminals.items():
+        if rec["from_unit"] != j.unit_id:
+            continue
+        assert eid in node["children_opened"] or eid == node["adopted_parent_edge"], (
+            f"the root emitted a terminal on {eid}, which is neither one of its "
+            f"own child edges nor its adopted parent edge")
+    assert j.bonds.get(slot).supplier == winner.supplier, (
         "the committed bond was later replaced by the race loser")
 
 
 @live
-def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
-    o, j, slot, victim, seed = _damaged(4)
-    sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
+def test_settlement_refuses_an_occupied_slot_with_an_attributable_reason():
+    """`_settle` writes the bond without an independent slot-open check.
+
+    The slot-open guard lives in `_on_offer`, so a proposal resolved directly
+    against a still-bonded slot would OVERWRITE it.
+    """
+    o, j, slot, victim, seed = _damaged(4)      # silenced, but STILL BONDED
+    assert slot in j.bonds, "this test requires the slot to still be occupied"
+    existing = j.bonds[slot].supplier
+    want = j.capability.accepts[slot]
+    spare = next(u.unit_id for u in o.units.values()
+                 if u.capability.produces == want
+                 and u.unit_id not in {b.supplier for b in j.bonds.values()})
     ctx = _ctx()
     reset()
+    pay = _payload(o, j, slot, ctx, "probe:occupied", spare, "p/occupied")
+
+    assert j.settle_search_offer(pay) is False, (
+        "a proposal was settled into an occupied slot, overwriting the bond")
+    assert j.bonds[slot].supplier == existing, "the existing bond was replaced"
+    reasons = [getattr(x, "reason", None)
+               for rec in o.search_edge_events.values() for x in rec]
+    assert "slot_already_bonded" in reasons, (
+        f"no attributable slot_already_bonded reason was recorded: {reasons}")
+
+
+@live
+def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
+    o, j, slot, victim, seed, root = _reopened(4)
+    sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
+    ctx = _ctx()
     pay = _payload(o, j, slot, ctx, "probe:rejrep", sibling, "p/rej")
-    node = j.open_canonical_search(pay.search_key, "e/root", 9.0)
+    node = next(n for (uid, k), n in _nodes(o).items()
+                if uid == j.unit_id and k == root)
 
     assert j.settle_search_offer(pay) is False, (
         "the sibling supplier was accepted into a second slot")

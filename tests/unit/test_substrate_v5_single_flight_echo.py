@@ -445,7 +445,8 @@ def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
     a, b = kids[0], kids[1]
     terminals_before = len(o.search_edge_terminals)
 
-    unit.deliver_terminal(key, a, "SearchExhausted", refund=1.0)
+    unit.deliver_terminal(key, a, "SearchExhausted", refund=1.0,
+                          sender=v5.HARNESS_DELIVERY)
 
     assert node["status"] == "OPEN", (
         f"parent went {node['status']} after ONE child exhausted while "
@@ -454,7 +455,7 @@ def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
 
     # A PROPOSAL, not a terminal outcome.
     unit.deliver_proposal(key, b, _payload(o, key, ctx, "probe.supplier",
-                                           "p/E", b))
+                                           "p/E", b), v5.HARNESS_DELIVERY)
 
     assert node["status"] in ("OPEN", "PROPOSAL_PENDING"), (
         f"a candidate proposal put the node in {node['status']}; a proposal is "

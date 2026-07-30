@@ -348,7 +348,7 @@ def test_a_rejected_proposal_leaves_the_real_root_open_with_candidates_intact():
     assert pay.search_key is root
     assert pay.context_digest == node["search_context"].context_digest()
 
-    j.deliver_proposal(root, kids[0], pay)
+    j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)
     ok = j.settle_search_offer(pay)
 
     assert ok is False, "the sibling supplier was accepted into a second slot"
@@ -421,7 +421,8 @@ def test_widening_rounds_produce_globally_unique_child_edge_ids():
     seen = list(first_round)
     for _ in range(3):
         for child in list(node["children_outstanding"]):
-            j.deliver_terminal(key, child, "SearchExhausted", refund=0.0)
+            j.deliver_terminal(key, child, "SearchExhausted", refund=0.0,
+                               sender=v5.HARNESS_DELIVERY)
         seen += [c for c in node["children_opened"] if c not in seen]
     allc = list(node["children_opened"])
     assert len(allc) == len(set(allc)), (
@@ -998,7 +999,7 @@ def test_an_exact_proposal_replay_settles_only_once():
 
     # DELIVERY FIRST. Settling an undelivered payload would license an
     # implementation that accepts an arbitrary unregistered proposal.
-    j.deliver_proposal(root, kids[0], pay)
+    j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)
     assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
         "the proposal was not registered against the child edge it arrived on")
     events = [e for e in o.search_edge_events.get(kids[0], [])
@@ -1037,7 +1038,7 @@ def test_an_exact_proposal_replay_settles_only_once():
     terminals = {k: list(v["outcomes"]) for k, v in o.search_edge_terminals.items()}
 
     for _ in range(4):
-        j.deliver_proposal(root, kids[0], pay)          # replayed ARRIVAL
+        j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)  # replayed ARRIVAL
         again = j.settle_search_offer(pay)              # replayed DECISION
         assert again is first, "a replayed proposal produced a different decision"
 
@@ -1106,8 +1107,8 @@ def test_two_competing_proposals_race_through_real_child_edges():
     assert a.search_key is root and b.search_key is root, (
         "a racing payload does not belong to the live root generation")
 
-    j.deliver_proposal(root, child_a, a)
-    j.deliver_proposal(root, child_b, b)
+    j.deliver_proposal(root, child_a, a, v5.HARNESS_DELIVERY)
+    j.deliver_proposal(root, child_b, b, v5.HARNESS_DELIVERY)
     assert node["proposal_routes"].get(a.proposal_id) == child_a, (
         "proposal A was not correlated with the child edge it arrived on")
     assert node["proposal_routes"].get(b.proposal_id) == child_b, (
@@ -1180,7 +1181,7 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
     assert kids, "the root opened no child edge"
     pay = _root_payload(o, j, node, sibling, "p/rej", kids[0],
                         expect_eligible=False)
-    j.deliver_proposal(root, kids[0], pay)
+    j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)
     assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
         "the rejected proposal was never registered against its child edge")
     # Zero initial events must FAIL. Recording the count and only requiring it to
@@ -1208,7 +1209,7 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
                   if _kind(e) == "SearchProposal"])
     assert events == 1
     for _ in range(4):
-        j.deliver_proposal(root, kids[0], pay)      # replayed ARRIVAL
+        j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)  # replayed ARRIVAL
         assert j.settle_search_offer(pay) is False  # replayed DECISION
     assert C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"] == rejections, (
         "replaying a rejected proposal incremented the rejection count again")
@@ -1244,7 +1245,7 @@ def test_delivered_proposal_is_registered_on_the_arrival_edge():
     pay = _payload(o, j, slot, ctx, "probe:routes",
                    [b.supplier for s, b in j.bonds.items() if s != slot][0],
                    "p/routes")
-    j.deliver_proposal(key, kids[0], pay)
+    j.deliver_proposal(key, kids[0], pay, v5.HARNESS_DELIVERY)
     assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
         "the proposal was not correlated with the child edge it arrived on")
 

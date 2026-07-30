@@ -49,9 +49,37 @@ A `SearchProposal` carries the complete payload the root needs to build an
 `Offer`:
 
 ```
+proposal_id         search_key          context_digest
 supplier            supplier_class      offered_type
 cost                firm                derivation_chain
-search_key          context_digest      source_edge_id
+source_node         source_edge_id
+```
+
+### Proposal identity is load-bearing
+
+`proposal_id` is immutable and derived deterministically from the proposal's own
+evidence bound to `search_key` and source identity — never from Python's
+`hash()`. Without it:
+
+- a replay can drive `_settle` twice;
+- one proposal echoed through several nodes looks like several proposals;
+- rejection feedback cannot be correlated with the candidate that caused it;
+- a commit cannot say which child path was accepted;
+- two competing proposals cannot be arbitrated idempotently.
+
+Each canonical node therefore records
+
+```
+proposal_routes[proposal_id] = child_edge_id
+```
+
+which is how `SearchCommitted` follows the accepted path while every other branch
+receives `SearchCancelled`, and how a rejection returns to the actual proposer.
+
+Exactly-once resolution is the current Single Bottleneck Metric:
+
+```
+UNIQUE_PROPOSAL_DECISIONS / UNIQUE_PROPOSAL_IDS_RECEIVED == 1.0
 ```
 
 It may traverse several adopted-parent edges on the way home. It does **not**:
@@ -111,8 +139,31 @@ therefore alter the cost ceiling or the cooldown set while keeping the same
 causally_refused_sources        must_differ_from_suppliers
 maximum_supplier_cost           cooldown_excluded_suppliers
 constraint_generation           policy_snapshot
-origin_independence_evidence
 ```
+
+### `origin_independence_evidence` is REMOVED
+
+V2 originally declared it a bound enforcement field, but the helper and the tamper
+matrix omitted it — a field declared security-relevant and left semantically
+undefined. Resolved by removing it, not by inventing a schema for it:
+
+- **A remote candidate cannot evaluate it more correctly than the origin.**
+  Prohibited-motif checks need `shares_domain`, `supplier_count` and
+  `paths_independent` over the origin's *other* live suppliers. `_settle` computes
+  those from origin-local `caps` at commit time, which is the only place the
+  answer is current — a candidate's copy could be stale by the time it proposes.
+- **Shipping it would be a topology leak.** Sending every reachable candidate the
+  origin's occupied supplier domains discloses origin structure to units that have
+  no need for it, which is exactly what `TARGET_TOPOLOGY_LEAKAGE_EVENTS` exists to
+  forbid. Buying a marginal pre-filter with a structural disclosure is the wrong
+  trade.
+- **Identity distinctness already travels.** `must_differ_from_suppliers` carries
+  the part a remote candidate *can* enforce, and it is bound by `context_digest`.
+
+So remote candidates enforce refusals, must-differ, cost ceiling, cooldown,
+constraint generation and policy snapshot. Domain-independence and prohibited
+motifs remain enforced at settlement by `_settle`, which is the final enforcement
+layer regardless of what any probe carried.
 
 `SearchKey` gains a single deterministic **`context_digest`** covering all of
 them, and `SearchContext.matches(key)` verifies the **complete** context, not

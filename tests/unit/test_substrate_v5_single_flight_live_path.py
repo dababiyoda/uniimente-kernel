@@ -39,19 +39,28 @@ repair traffic:
 DECLARED SEAMS the live wiring must provide, beyond those already declared in
 test_substrate_v5_single_flight_echo.py:
 
-    v5.SearchContext                    immutable, carries the ACTUAL values whose
-                                        digests appear in SearchKey, plus
-                                        max_supplier_cost and cooldown exclusions
-    SearchContext.digests()              -> (refusal_digest, must_differ_digest)
-    SearchContext.matches(key)           -> bool, verified by every receiver
-    v5.SearchOfferPayload                supplier, supplier_class, offered_type,
-                                        cost, firm, derivation_chain, search_key,
-                                        edge_id
-    Terminal.payload                     the SearchOfferPayload on a SearchOffer
-    Unit.settle_search_offer(payload)    -> bool, builds an Offer and calls _settle
+    v5.SearchContext                     ONE schema, carrying every
+                                         decision-relevant field:
+                                           causally_refused_sources
+                                           must_differ_from_suppliers
+                                           maximum_supplier_cost
+                                           cooldown_excluded_suppliers
+                                           constraint_generation
+                                           policy_snapshot
+    SearchContext.context_digest()       -> one canonical digest over ALL of them
+    SearchContext.matches(key)           -> verifies the COMPLETE context
+    v5.SearchKey.build(..., context=ctx) -> the only key constructor
+    v5.SearchOfferPayload                proposal_id, search_key, context_digest,
+                                         supplier, supplier_class, offered_type,
+                                         cost, firm, derivation_chain,
+                                         source_node, source_edge_id
+    Unit.deliver_proposal(key, edge, payload)   nonterminal
+    Unit.settle_search_offer(payload)    -> bool, builds an Offer, calls _settle
+    node["proposal_routes"]              {proposal_id: child_edge_id}
     node["lineage"]                      adopted lineage preserved at the node
+    Organ.search_edge_events[e]          nonterminal proposals and control events
     Organ.search_edge_probes[e]["delivered"]  delivery count, SEPARATE from
-                                             "count", which is creation only
+                                              "count", which is creation only
 
 New counters the live path must expose:
 
@@ -142,6 +151,32 @@ def _kind(x):
     return getattr(x, "kind", x)
 
 
+def _ctx(**kw):
+    """THE canonical SearchContext schema. There is no second one.
+
+    Two schemas existed in this file -- `max_supplier_cost` / `cooldown_excluded`
+    in the first tests and `maximum_supplier_cost` /
+    `cooldown_excluded_suppliers` in the later ones -- and some keys were built
+    from only `refused` and `must_differ_from`. Implementing aliases to satisfy
+    both would have made the contradiction permanent, so all tests use this one.
+    """
+    base = dict(causally_refused_sources=frozenset(),
+                must_differ_from_suppliers=frozenset(),
+                maximum_supplier_cost=99.0,
+                cooldown_excluded_suppliers=frozenset(),
+                constraint_generation=0,
+                policy_snapshot=())
+    base.update(kw)
+    return v5.SearchContext(**base)
+
+
+def _key_for(j, slot, ctx, need_id):
+    """Every key is built from the COMPLETE context. No partial constructor."""
+    return v5.SearchKey.build(
+        need_id=need_id, work_item_generation=2, origin_unit=j.unit_id,
+        origin_slot=slot, wanted_type=j.capability.accepts[slot], context=ctx)
+
+
 # ---------------------------------------------------------------------------
 # 1-2. Constraints must TRAVEL, not just be hashed
 # ---------------------------------------------------------------------------
@@ -155,18 +190,8 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     """
     o, j, slot, victim, seed = _damaged(4)
     sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
-    ctx = v5.SearchContext(
-        causally_refused_sources=frozenset(),
-        must_differ_from_suppliers=frozenset({sibling}),
-        max_supplier_cost=99.0,
-        cooldown_excluded=frozenset(),
-        constraint_generation=0)
-    key = v5.SearchKey.build(
-        need_id="probe:mustdiffer", work_item_generation=2,
-        origin_unit=j.unit_id, origin_slot=slot,
-        wanted_type=j.capability.accepts[slot],
-        refused=ctx.causally_refused_sources,
-        must_differ_from=ctx.must_differ_from_suppliers)
+    ctx = _ctx(must_differ_from_suppliers=frozenset({sibling}))
+    key = _key_for(j, slot, ctx, "probe:mustdiffer")
     assert ctx.matches(key), "the context does not canonicalize to the key digests"
 
     reset()
@@ -187,18 +212,8 @@ def test_remote_candidate_enforces_the_origins_causal_refusals():
                      if u.capability.produces == j.capability.accepts[slot]
                      and u.unit_id != victim)
     own = candidate.unit_id
-    ctx = v5.SearchContext(
-        causally_refused_sources=frozenset({own}),
-        must_differ_from_suppliers=frozenset(),
-        max_supplier_cost=99.0,
-        cooldown_excluded=frozenset(),
-        constraint_generation=0)
-    key = v5.SearchKey.build(
-        need_id="probe:refused", work_item_generation=2,
-        origin_unit=j.unit_id, origin_slot=slot,
-        wanted_type=j.capability.accepts[slot],
-        refused=ctx.causally_refused_sources,
-        must_differ_from=ctx.must_differ_from_suppliers)
+    ctx = _ctx(causally_refused_sources=frozenset({own}))
+    key = _key_for(j, slot, ctx, "probe:refused")
     reset()
     outcome = candidate.deliver_search(key, "e/refused", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
@@ -211,14 +226,9 @@ def test_remote_candidate_enforces_the_origins_causal_refusals():
 def test_a_receiver_rejects_a_context_that_does_not_match_the_key():
     """A forged or stale context must not be honoured."""
     o, j, slot, victim, seed = _damaged(4)
-    honest = v5.SearchContext(frozenset(), frozenset({"someone"}), 99.0,
-                              frozenset(), 0)
-    key = v5.SearchKey.build(
-        need_id="probe:forge", work_item_generation=2, origin_unit=j.unit_id,
-        origin_slot=slot, wanted_type=j.capability.accepts[slot],
-        refused=honest.causally_refused_sources,
-        must_differ_from=honest.must_differ_from_suppliers)
-    forged = v5.SearchContext(frozenset(), frozenset(), 99.0, frozenset(), 0)
+    honest = _ctx(must_differ_from_suppliers=frozenset({"someone"}))
+    key = _key_for(j, slot, honest, "probe:forge")
+    forged = _ctx()
     assert not forged.matches(key), "an empty context matched a constrained key"
     unit = next(u for u in o.units.values() if u.unit_id not in (ENV, SINK))
     reset()
@@ -250,9 +260,13 @@ def test_search_offer_carries_enough_evidence_for_settlement():
     for t in offers:
         p = getattr(t, "payload", None)
         assert p is not None, "a SearchProposal carried no payload"
-        for f in ("supplier", "supplier_class", "offered_type", "cost", "firm",
-                  "derivation_chain", "search_key", "edge_id"):
+        for f in ("proposal_id", "search_key", "context_digest", "supplier",
+                  "supplier_class", "offered_type", "cost", "firm",
+                  "derivation_chain", "source_node", "source_edge_id"):
             assert hasattr(p, f), f"SearchOfferPayload lacks {f!r}"
+        assert p.proposal_id, "a proposal carried no immutable identity"
+        assert p.context_digest, "a proposal carried no context binding"
+        assert p.source_edge_id, "a proposal carried no source edge identity"
         assert p.offered_type == t.search_key.wanted_type
         assert isinstance(p.derivation_chain, frozenset)
 
@@ -288,11 +302,12 @@ def test_a_rejected_offer_leaves_the_search_open_and_keeps_other_candidates():
         supplier=sibling, supplier_class=o.units[sibling].capability.klass(),
         offered_type=j.capability.accepts[slot], cost=1.0, firm=True,
         derivation_chain=frozenset({sibling}),
-        search_key=v5.SearchKey.build(
-            need_id="probe:reject", work_item_generation=2,
-            origin_unit=j.unit_id, origin_slot=slot,
-            wanted_type=j.capability.accepts[slot]),
-        edge_id="e/reject")
+        search_key=_key_for(j, slot, _ctx(), "probe:reject"),
+        edge_id="e/reject",
+        proposal_id="p/reject",
+        context_digest=_ctx().context_digest(),
+        source_node=sibling,
+        source_edge_id="e/reject")
     key = payload.search_key
     node = j.open_canonical_search(key, "e/root", 9.0)
     outstanding = set(node["children_outstanding"])
@@ -318,10 +333,8 @@ def test_a_locally_eligible_producer_opens_zero_children():
     producer = next(u for u in o.units.values()
                     if u.capability.produces == want and u.unit_id != victim
                     and not u.unmet())
-    ctx = v5.SearchContext(frozenset(), frozenset(), 99.0, frozenset(), 0)
-    key = v5.SearchKey.build(need_id="probe:eligible", work_item_generation=2,
-                             origin_unit=j.unit_id, origin_slot=slot,
-                             wanted_type=want)
+    ctx = _ctx()
+    key = _key_for(j, slot, ctx, "probe:eligible")
     reset()
     outcome = producer.deliver_search(key, "e/elig", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
@@ -359,10 +372,8 @@ def test_every_live_edge_is_probed_exactly_once():
 @live
 def test_widening_rounds_produce_globally_unique_child_edge_ids():
     o, j, slot, victim, seed = _damaged(4)
-    ctx = v5.SearchContext(frozenset(), frozenset(), 99.0, frozenset(), 0)
-    key = v5.SearchKey.build(need_id="probe:widen", work_item_generation=2,
-                             origin_unit=j.unit_id, origin_slot=slot,
-                             wanted_type=j.capability.accepts[slot])
+    ctx = _ctx()
+    key = _key_for(j, slot, ctx, "probe:widen")
     reset()
     node = j.open_canonical_search(key, "e/root", 40.0)
     first_round = list(node["children_opened"])
@@ -483,22 +494,6 @@ def test_formation_still_uses_the_legacy_need_path_unchanged():
 # Full context binding: every enforcement field must be inside the key digest
 # ---------------------------------------------------------------------------
 
-def _ctx(**kw):
-    base = dict(causally_refused_sources=frozenset(),
-                must_differ_from_suppliers=frozenset(),
-                maximum_supplier_cost=99.0,
-                cooldown_excluded_suppliers=frozenset(),
-                constraint_generation=0,
-                policy_snapshot=())
-    base.update(kw)
-    return v5.SearchContext(**base)
-
-
-def _key_for(j, slot, ctx, need_id):
-    return v5.SearchKey.build(
-        need_id=need_id, work_item_generation=2, origin_unit=j.unit_id,
-        origin_slot=slot, wanted_type=j.capability.accepts[slot], context=ctx)
-
 
 @live
 @pytest.mark.parametrize("field,tampered", [
@@ -606,34 +601,219 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
 # Legacy projection is one-way and holds no decision authority
 # ---------------------------------------------------------------------------
 
+
+# ---------------------------------------------------------------------------
+# Legacy projection inertness, proved with a CONTROL/EXPERIMENTAL TWIN
+# ---------------------------------------------------------------------------
+
+def _second_victim(o, j, first_victim):
+    """A second, distinct, observable damage target on the same organ."""
+    for u in sorted(o.units.values(), key=lambda x: x.unit_id):
+        if u.unit_id in (ENV, SINK) or u.unit_id == first_victim:
+            continue
+        if u.unit_id in o._produced and u.bonds:
+            return u.unit_id
+    return None
+
+
+def _normalized_settlement(o):
+    """Settlement in CAPABILITY terms, so twin comparison is name-independent."""
+    return sorted((o.units[u].capability.name, s,
+                   o.units[b.supplier].capability.name
+                   if b.supplier in o.units else b.supplier)
+                  for u in o.units for s, b in o.units[u].bonds.items())
+
+
 @live
-def test_mutating_the_legacy_projection_cannot_change_canonical_behaviour():
-    """`_search` survives only as a one-way audit projection."""
-    o, j, slot, victim, seed = _damaged(4)
+def test_legacy_projection_is_inert_across_a_SECOND_real_repair():
+    """The earlier version of this test was vacuous.
+
+    It repaired once, corrupted `_search`, then ran another work item on an
+    ALREADY REPAIRED organ. With the obligation satisfied, the second run may
+    initiate no canonical repair at all, so the corrupted projection is never put
+    anywhere near a decision and the test proves nothing.
+
+    Two identical organs now take the same first repair; only the experimental
+    one has its projections corrupted; both then take the SAME second distinct
+    damage and repair again. Inertness is proved by the second repair, not by an
+    absence of activity.
+    """
+    control, j_c, slot_c, victim_c, seed = _damaged(4)
     reset()
-    o.run_item(PAYLOAD_B)
-    baseline_bonds = {(u.unit_id, s): b.supplier
-                      for u in o.units.values() for s, b in u.bonds.items()}
-    projections = [(u, nid, st) for u in o.units.values()
+    control.run_item(PAYLOAD_B)
+    nodes_after_first_control = len(_nodes(control))
+
+    experiment, j_e, slot_e, victim_e, seed_e = _damaged(4)
+    assert seed_e == seed and victim_e == victim_c and slot_e == slot_c, (
+        "the twins are not identical, so any difference is not attributable to "
+        "the corrupted projection")
+    reset()
+    experiment.run_item(PAYLOAD_B)
+
+    projections = [(u, nid, st) for u in experiment.units.values()
                    for nid, st in u._search.items()]
     assert projections, (
         "no legacy projection was produced, so this test cannot prove the "
         "projection is inert")
-
     for u, nid, st in projections:
         st["settled"] = not st.get("settled", False)
         st["credits"] = -999.0
         st["rejected"] = {"forged": 99}
-        if "reserve" in st:
-            st["reserve"] = -999.0
+        for f in ("reserve", "in_flight", "consumed", "cancelled"):
+            if f in st:
+                st[f] = -999.0
 
+    second_c = _second_victim(control, j_c, victim_c)
+    second_e = _second_victim(experiment, j_e, victim_e)
+    assert second_c is not None and second_c == second_e, (
+        f"no identical second damage target ({second_c} vs {second_e})")
+
+    control.units[second_c].silent = True
+    experiment.units[second_e].silent = True
     reset()
-    o.run_item(PAYLOAD_B)
-    after = {(u.unit_id, s): b.supplier
-             for u in o.units.values() for s, b in u.bonds.items()}
-    assert after == baseline_bonds, (
-        "mutating the legacy projection changed settlement, so `_search` still "
-        "holds decision authority")
+    control.run_item(PAYLOAD_B)
+    control_nodes = len(_nodes(control))
+    control_out = _normalized_settlement(control)
+    reset()
+    experiment.run_item(PAYLOAD_B)
+    experiment_nodes = len(_nodes(experiment))
+
+    assert control_nodes > nodes_after_first_control, (
+        "the second damage triggered no new canonical repair in the control, so "
+        "the corrupted projection was never near a live decision")
+    assert experiment_nodes == control_nodes, (
+        f"canonical node counts diverged: control {control_nodes}, experiment "
+        f"{experiment_nodes}")
+    assert _normalized_settlement(experiment) == control_out, (
+        "corrupting the legacy projection changed the second repair's "
+        "settlement, so `_search` still holds decision authority")
     assert C["LEGACY_PROJECTION_DECISION_READS"] == 0, (
         "canonical routing read a legacy projection field to make a decision")
+    assert C["LEGACY_REPAIR_NEED_MESSAGES"] == 0
     assert C["DUAL_REPAIR_SEARCHES"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Exactly-once proposal resolution
+# ---------------------------------------------------------------------------
+
+def _payload(o, j, slot, ctx, need_id, supplier, pid):
+    return v5.SearchOfferPayload(
+        proposal_id=pid,
+        search_key=_key_for(j, slot, ctx, need_id),
+        context_digest=ctx.context_digest(),
+        supplier=supplier,
+        supplier_class=o.units[supplier].capability.klass(),
+        offered_type=j.capability.accepts[slot],
+        cost=o.units[supplier].capability.cost,
+        firm=True,
+        derivation_chain=frozenset({supplier}),
+        source_node=supplier,
+        source_edge_id=f"e/{pid}")
+
+
+@live
+def test_an_exact_proposal_replay_settles_only_once():
+    o, j, slot, victim, seed = _damaged(4)
+    want = j.capability.accepts[slot]
+    spare = next(u.unit_id for u in o.units.values()
+                 if u.capability.produces == want
+                 and u.unit_id not in {b.supplier for b in j.bonds.values()}
+                 and u.unit_id != victim)
+    ctx = _ctx()
+    reset()
+    pay = _payload(o, j, slot, ctx, "probe:replay", spare, "p/replay")
+    j.open_canonical_search(pay.search_key, "e/root", 9.0)
+
+    first = j.settle_search_offer(pay)
+    decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
+    settled_bond = j.bonds.get(slot)
+    for _ in range(4):
+        again = j.settle_search_offer(pay)
+        assert again is first, (
+            "a replayed proposal produced a different decision")
+    assert C["UNIQUE_PROPOSAL_DECISIONS"] == decisions, (
+        "a replayed proposal was decided more than once")
+    assert C["UNIQUE_PROPOSAL_IDS_RECEIVED"] == 1, (
+        f"one proposal id was counted "
+        f"{C['UNIQUE_PROPOSAL_IDS_RECEIVED']} times")
+    assert j.bonds.get(slot) is settled_bond, (
+        "a replayed proposal re-bonded the slot")
+
+
+@live
+def test_two_competing_proposals_produce_at_most_one_commitment():
+    o, j, slot, victim, seed = _damaged(4)
+    want = j.capability.accepts[slot]
+    bonded = {b.supplier for b in j.bonds.values()}
+    spares = [u.unit_id for u in o.units.values()
+              if u.capability.produces == want and u.unit_id not in bonded
+              and u.unit_id != victim]
+    assert len(spares) >= 2, (
+        f"only {len(spares)} spare producers; this race needs two")
+    ctx = _ctx()
+    reset()
+    key = _key_for(j, slot, ctx, "probe:race")
+    j.open_canonical_search(key, "e/root", 9.0)
+    a = _payload(o, j, slot, ctx, "probe:race", spares[0], "p/raceA")
+    b = _payload(o, j, slot, ctx, "probe:race", spares[1], "p/raceB")
+
+    first = j.settle_search_offer(a)
+    second = j.settle_search_offer(b)
+    assert not (first and second), (
+        "both competing proposals committed; a slot took two bonds")
+    committed = j.bonds.get(slot)
+    assert committed is not None, "neither proposal committed"
+    winner = spares[0] if first else spares[1]
+    assert committed.supplier == winner
+    loser_edge = b.source_edge_id if first else a.source_edge_id
+    outs = o.search_edge_terminals.get(loser_edge, {}).get("outcomes", [])
+    assert outs and _kind(outs[0]) in ("SearchNeedClosed", "SearchCancelled"), (
+        f"the race loser received {[_kind(x) for x in outs]}, expected "
+        f"SearchNeedClosed or SearchCancelled")
+    assert j.bonds.get(slot).supplier == winner, (
+        "the committed bond was later replaced by the race loser")
+
+
+@live
+def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
+    o, j, slot, victim, seed = _damaged(4)
+    sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
+    ctx = _ctx()
+    reset()
+    pay = _payload(o, j, slot, ctx, "probe:rejrep", sibling, "p/rej")
+    node = j.open_canonical_search(pay.search_key, "e/root", 9.0)
+
+    assert j.settle_search_offer(pay) is False, (
+        "the sibling supplier was accepted into a second slot")
+    rejections = C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"]
+    assert rejections == 1, f"one rejection expected, recorded {rejections}"
+    for _ in range(4):
+        assert j.settle_search_offer(pay) is False
+    assert C["SEARCH_OFFER_SETTLEMENT_REJECTIONS"] == rejections, (
+        "replaying a rejected proposal incremented the rejection count again")
+    assert node["status"] == "OPEN", (
+        f"a rejected proposal closed the search (status {node['status']})")
+    assert pay.search_key.need_id not in j.closed_needs
+
+
+@live
+def test_a_committed_proposal_routes_the_commit_down_the_accepted_child():
+    """`proposal_routes` is what makes commit/cancel addressable."""
+    o, j, slot, victim, seed = _damaged(4)
+    ctx = _ctx()
+    reset()
+    key = _key_for(j, slot, ctx, "probe:routes")
+    node = j.open_canonical_search(key, "e/root", 9.0)
+    assert "proposal_routes" in node, (
+        "the canonical node records no proposal_id -> child_edge_id mapping, so "
+        "a commit cannot follow the accepted path and rejection feedback cannot "
+        "reach the actual proposer")
+    kids = list(node["children_opened"])
+    assert len(kids) >= 2, "need at least two children to distinguish routing"
+    pay = _payload(o, j, slot, ctx, "probe:routes",
+                   [b.supplier for s, b in j.bonds.items() if s != slot][0],
+                   "p/routes")
+    j.deliver_proposal(key, kids[0], pay)
+    assert node["proposal_routes"].get(pay.proposal_id) == kids[0], (
+        "the proposal was not correlated with the child edge it arrived on")

@@ -54,6 +54,19 @@ test_substrate_v5_single_flight_echo.py:
                                          supplier, supplier_class, offered_type,
                                          cost, firm, derivation_chain,
                                          source_node, source_edge_id
+    Organ.run_until_repair_root(unit, slot, max_events) -> PausedRun
+                                         stops as soon as the root exists and
+                                         BEFORE the wave commits or exhausts
+    Organ.resume_paused_item(paused, max_events)
+                                         continues the SAME work item: it must
+                                         not increment item_seq, reset _produced,
+                                         recreate ready/_queued, recommission,
+                                         start a new generation, scan the organ,
+                                         or make any routing or settlement
+                                         decision. It is a TEST DRIVER.
+    PausedRun                            payload, item_seq, produced, ready,
+                                         queued, msg_pending, unmet_state,
+                                         events_dispatched, root
     Unit.deliver_proposal(key, edge, payload)   nonterminal
     Unit.settle_search_offer(payload)    -> bool, builds an Offer, calls _settle
     node["proposal_routes"]              {proposal_id: child_edge_id}
@@ -315,13 +328,14 @@ def test_a_rejected_proposal_leaves_the_real_root_open_with_candidates_intact():
     left the slot bonded -- the exact schema and bond-overwrite geometry commit
     1B claimed to have removed.
     """
-    o, j, slot, victim, seed, root, node = _reopened(4)
+    o, j, slot, victim, seed, root, node, paused = _reopened(4)
     sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
     kids = list(node["children_opened"])
     assert len(kids) >= 2, "need a second child to prove others stay active"
     outstanding_before = set(node["children_outstanding"])
 
-    pay = _root_payload(o, j, node, sibling, "p/rejopen", kids[0])
+    pay = _root_payload(o, j, node, sibling, "p/rejopen", kids[0],
+                        expect_eligible=False)
     assert pay.search_key is root
     assert pay.context_digest == node["search_context"].context_digest()
 
@@ -826,11 +840,16 @@ def _reopened(n_auth=4, density=0.8):
     """
     o, j, slot, victim, seed = _damaged(n_auth, density)
     reset()
-    root = o.run_until_repair_root(j.unit_id, slot, max_events=3000)
+    paused = o.run_until_repair_root(j.unit_id, slot, max_events=3000)
 
-    assert root is not None, (
+    assert paused is not None, (
         f"no canonical repair root appeared for {j.unit_id}[{slot}] before the "
         f"driver stopped")
+    root = paused.root
+    # The continuation must carry the LIVE execution state, not just a key.
+    for f in ("payload", "item_seq", "produced", "ready", "queued",
+              "msg_pending", "unmet_state", "events_dispatched", "root"):
+        assert hasattr(paused, f), f"PausedRun lacks {f!r}"
     assert slot not in j.bonds, (
         f"slot {slot} is still bonded to "
         f"{j.bonds.get(slot) and j.bonds[slot].supplier}; the obligation was "
@@ -852,27 +871,76 @@ def _reopened(n_auth=4, density=0.8):
     assert node["search_context"].matches(root), (
         "the node's stored context does not match its own SearchKey digest")
     assert C["DUAL_REPAIR_SEARCHES"] == 0, "a legacy repair search is also active"
-    return o, j, slot, victim, seed, root, node
+    return o, j, slot, victim, seed, root, node, paused
 
 
-def _root_payload(o, j, node, supplier, pid, source_edge):
-    """A payload belonging to THE ACTUAL ROOT.
+def _resume(o, paused, max_events=3000):
+    """Continue the SAME work item. A fresh `run_item` is not continuation.
 
-    The replay, race and rejection tests previously invented keys such as
-    `probe:replay` and settled them against the live root. A correct
+    `run_item` resets _payload, _produced, item_seq, events_dispatched, ready,
+    _queued and _unmet_state. Calling it after a pause therefore means: pause
+    generation N, discard its scheduler continuation, start generation N+1, then
+    inspect generation N's root. That changes provenance and settled_item, drops
+    queued non-message events, and makes a restarted item look like the
+    continuation of the paused wave.
+    """
+    before_seq = paused.item_seq
+    before_commissions = o.commissions
+    before_gen = paused.root.work_item_generation
+    o.resume_paused_item(paused, max_events=max_events)
+    assert o.item_seq == before_seq, (
+        f"resume advanced the work item from {before_seq} to {o.item_seq}; that "
+        f"is a new generation, not a continuation")
+    assert paused.root.work_item_generation == before_gen, (
+        "the root's work-item generation changed across the resume")
+    assert o.commissions == before_commissions, "resume recommissioned the organ"
+    assert C["SUPERVISOR_RESTART_EVENTS"] == 0
+    assert C["WHOLE_ORGAN_REVIEW_PASSES"] == 0, "resume scanned the organ"
+    return paused
+
+
+def _root_payload(o, j, node, supplier, pid, source_edge, expect_eligible=True):
+    """A payload belonging to THE ACTUAL ROOT, carrying REAL evidence.
+
+    Two corrections over the earlier version.
+
+    The replay, race and rejection tests once invented keys such as
+    `probe:replay` and settled them against the live root; a correct
     implementation must refuse those as `wrong_need_generation`, so those
-    expectations could never pass lawfully. Every resolution payload now carries
-    the root's own SearchKey and the digest of the root's own stored context.
+    expectations could never pass lawfully. Every payload now carries the root's
+    own SearchKey and the digest of the root's own stored context.
+
+    And `derivation_chain=frozenset({supplier})` was a truncated fiction. The
+    supplier's real derivation is itself plus all bonded ancestry, which the
+    runtime already computes as `_derives_from()`. A truncated chain can make a
+    stale or causally refused candidate look acceptable during direct settlement
+    tests -- manufacturing eligibility the candidate does not have.
     """
     key = node["search_key"]
     ctx = node["search_context"]
+    cand = o.units[supplier]
+    chain = cand._derives_from()
+    if expect_eligible:
+        # The candidate must be genuinely eligible before it is injected;
+        # otherwise a later rejection proves nothing about the rule under test.
+        assert cand.capability.produces == key.wanted_type, (
+            f"{supplier} does not produce {key.wanted_type}")
+        assert not cand.unmet(), f"{supplier} has unmet slots and is not firm"
+        assert not cand.silent, f"{supplier} is silenced"
+        assert supplier not in ctx.must_differ_from_suppliers, (
+            f"{supplier} is must-differ excluded under the root context")
+        assert cand.capability.cost <= ctx.maximum_supplier_cost, (
+            f"{supplier} costs {cand.capability.cost} over the ceiling "
+            f"{ctx.maximum_supplier_cost}")
+        assert supplier not in ctx.cooldown_excluded_suppliers, (
+            f"{supplier} is cooldown excluded")
+        assert not (chain & ctx.causally_refused_sources), (
+            f"{supplier}'s derivation intersects the origin's refusals")
     return v5.SearchOfferPayload(
         proposal_id=pid, search_key=key, context_digest=ctx.context_digest(),
-        supplier=supplier,
-        supplier_class=o.units[supplier].capability.klass(),
-        offered_type=key.wanted_type,
-        cost=o.units[supplier].capability.cost,
-        firm=True, derivation_chain=frozenset({supplier}),
+        supplier=supplier, supplier_class=cand.capability.klass(),
+        offered_type=key.wanted_type, cost=cand.capability.cost,
+        firm=not cand.unmet(), derivation_chain=chain,
         source_node=supplier, source_edge_id=source_edge)
 
 
@@ -893,7 +961,7 @@ def _payload(o, j, slot, ctx, need_id, supplier, pid):
 
 @live
 def test_an_exact_proposal_replay_settles_only_once():
-    o, j, slot, victim, seed, root, node = _reopened(4)
+    o, j, slot, victim, seed, root, node, paused = _reopened(4)
     want = j.capability.accepts[slot]
     spare = next(u.unit_id for u in o.units.values()
                  if u.capability.produces == want
@@ -930,7 +998,7 @@ def test_two_competing_proposals_race_through_real_child_edges():
     arbitrary source edge using organ-global telemetry. `source_edge_id` says
     where a proposal ORIGINATED; it is not the root's cancellation edge.
     """
-    o, j, slot, victim, seed, root, node = _reopened(4)
+    o, j, slot, victim, seed, root, node, paused = _reopened(4)
     want = j.capability.accepts[slot]
     bonded = {b.supplier for b in j.bonds.values()}
     spares = [u.unit_id for u in o.units.values()
@@ -1022,11 +1090,12 @@ def test_settlement_refuses_an_occupied_slot_with_an_attributable_reason():
 
 @live
 def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
-    o, j, slot, victim, seed, root, node = _reopened(4)
+    o, j, slot, victim, seed, root, node, paused = _reopened(4)
     sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
     kids = list(node["children_opened"])
     assert kids, "the root opened no child edge"
-    pay = _root_payload(o, j, node, sibling, "p/rej", kids[0])
+    pay = _root_payload(o, j, node, sibling, "p/rej", kids[0],
+                        expect_eligible=False)
 
     assert j.settle_search_offer(pay) is False, (
         "the sibling supplier was accepted into a second slot")
@@ -1069,33 +1138,85 @@ def test_a_committed_proposal_routes_the_commit_down_the_accepted_child():
 
 @live
 def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
-    """A root-facing terminal alone can strand the deeper subtree.
+    """POSITIVE. A wave that merely exhausts must not satisfy this.
 
-    The routed-race spec checks the root's immediate child edges. That is
-    satisfiable by an implementation that closes only the edge it can see and
-    leaves every deeper edge open. Closure must travel hop by hop through each
-    node's own `proposal_routes`, never by a root shortcut through organ-global
-    telemetry.
+    The earlier version required only that every deep child edge hold exactly one
+    terminal, accepting any kind. A fully exhausted search with no proposal, no
+    settlement and no commit passed it, while the test's own name claimed commit
+    and cancellation reached the source edge. It now demands the live sequence.
     """
-    o, j, slot, victim, seed, root, node = _reopened(4, density=1.0)
-    reset()
-    o.run_item(PAYLOAD_B)
+    o, j, slot, victim, seed, root, node, paused = _reopened(4, density=1.0)
+    _resume(o, paused)              # continue the SAME item, not a new one
+
+    events = o.search_edge_events
+    proposals = [(eid, e) for eid, evs in events.items() for e in evs
+                 if _kind(e) == "SearchProposal"]
+    assert proposals, (
+        "no SearchProposal occurred, so this run cannot demonstrate that a "
+        "commit reaches a proposal's source edge")
 
     nodes = _nodes(o)
-    deep = [(uid, k, n) for (uid, k), n in nodes.items()
-            if k == root and uid != j.unit_id and n.get("children_opened")]
-    assert deep, (
-        "no intermediate canonical node opened children for this search, so "
-        "multi-hop closure was never exercised")
+    committed = [(pid, p) for pid, p in
+                 ((getattr(e, "payload", None) and e.payload.proposal_id, e)
+                  for _, e in proposals) if pid]
+    assert committed, "no proposal carried an identity"
+
+    # Find the proposal the root actually accepted.
+    accepted = None
+    for pid, e in committed:
+        if node["proposal_routes"].get(pid) and node.get("status") == "COMMITTED":
+            accepted = (pid, e)
+            break
+    assert accepted is not None, (
+        f"no proposal was accepted by the root (root status "
+        f"{node.get('status')}); a wave that only exhausted cannot satisfy this "
+        f"specification")
+    pid, ev = accepted
+    payload = ev.payload
+    source_edge = payload.source_edge_id
+
+    # The accepted route must pass through at least one INTERMEDIATE node.
+    hops = [(uid, k, n) for (uid, k), n in nodes.items()
+            if k == root and uid != j.unit_id and pid in n.get("proposal_routes", {})]
+    assert hops, (
+        "the accepted proposal was correlated only at the root, so multi-hop "
+        "closure was never exercised")
 
     terminals = o.search_edge_terminals
-    for uid, k, n in deep:
+    src_outs = terminals.get(source_edge, {}).get("outcomes", [])
+    assert [_kind(x) for x in src_outs] == ["SearchCommitted"], (
+        f"the proposal's source edge {source_edge} received "
+        f"{[_kind(x) for x in src_outs]}, expected exactly one SearchCommitted; "
+        f"closing only the root-facing child strands the deeper subtree")
+
+    elsewhere = [eid for eid, rec in terminals.items()
+                 if eid != source_edge and rec["search_key"] == root
+                 and any(_kind(x) == "SearchCommitted" for x in rec["outcomes"])
+                 and eid not in {n["proposal_routes"].get(pid)
+                                 for _, _, n in hops} | {
+                                     node["proposal_routes"].get(pid)}]
+    assert not elsewhere, (
+        f"SearchCommitted for {pid} also appeared on unrelated edges: {elsewhere}")
+
+    # A non-winning branch must be cancelled through local mappings, all the way
+    # down to its deepest open edge.
+    losers = [c for c in node["children_opened"]
+              if c != node["proposal_routes"].get(pid)]
+    assert losers, "no non-winning branch existed to cancel"
+    for c in losers:
+        outs = terminals.get(c, {}).get("outcomes", [])
+        assert len(outs) == 1 and _kind(outs[0]) in (
+            "SearchCancelled", "SearchNeedClosed", "SearchExhausted",
+            "SearchCoalesced", "SearchCycleClosed"), (
+            f"non-winning branch {c} received {[_kind(x) for x in outs]}")
+    for uid, k, n in hops:
         for child in n["children_opened"]:
             outs = terminals.get(child, {}).get("outcomes", [])
             assert len(outs) == 1, (
-                f"deep edge {child} at {uid} received {len(outs)} terminal "
-                f"outcomes; a subtree was stranded rather than closed")
+                f"deep edge {child} at {uid} received {len(outs)} terminals; a "
+                f"subtree was stranded rather than closed")
 
+    # Local routing only: no node may terminate an edge it does not own.
     for eid, rec in terminals.items():
         owner = nodes.get((rec["from_unit"], rec["search_key"]))
         if owner is None:
@@ -1103,7 +1224,6 @@ def test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop():
         allowed = set(owner["children_opened"]) | {owner["adopted_parent_edge"]}
         assert eid in allowed, (
             f"{rec['from_unit']} emitted a terminal on {eid}, which is neither "
-            f"one of its own child edges nor its adopted parent edge -- that is "
-            f"a global shortcut, not local routing")
-
+            f"one of its own child edges nor its adopted parent edge -- a global "
+            f"shortcut, not local routing")
     assert C["ORPHANED_SEARCH_EDGES"] == 0

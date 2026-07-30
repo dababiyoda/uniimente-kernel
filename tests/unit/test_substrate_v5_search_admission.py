@@ -55,6 +55,8 @@ New counters:
     COMMIT_OF_RESOLVED_PROPOSAL
     UNDISPOSITIONED_LOCAL_PROPOSALS
     HARNESS_DELIVERIES_USED
+    AUTHENTICATED_SEARCH_ADOPTIONS
+    TOTAL_CANONICAL_SEARCH_ADOPTIONS
 
 Single Bottleneck Metric:
 
@@ -146,15 +148,22 @@ def _pair():
             origin_unit=j.unit_id, origin_slot=slot,
             wanted_type=j.capability.accepts[slot], context=ctx)
         nbrs = sorted(n for n in j.neighbours if n not in (ENV, SINK))
+        if len(nbrs) < 2:
+            continue
+        target = o.units[nbrs[0]]
+        # A NON-NEIGHBOUR OF THE RECEIVER, not of the origin. The receiver is
+        # the unit whose adjacency gate is under test, so a unit that merely
+        # fails to neighbour the ORIGIN proves nothing about it.
         strangers = sorted(u for u in o.units
-                           if u not in (ENV, SINK, j.unit_id)
-                           and u not in j.neighbours)
-        if len(nbrs) >= 2 and strangers:
-            return o, j, o.units[nbrs[0]], o.units[nbrs[1]], strangers[0], ctx, key, seed
+                           if u not in (ENV, SINK, target.unit_id)
+                           and u not in target.neighbours)
+        if strangers:
+            return (o, j, target, o.units[nbrs[1]], o.units[strangers[0]],
+                    ctx, key, seed)
     raise AssertionError(
-        "no origin with two neighbours and a non-neighbour across the "
-        "pre-registered seeds; failing to build the structure is a failure of "
-        "this specification, not a reason to skip it")
+        "no origin with two neighbours and a unit that does not neighbour the "
+        "receiver, across the pre-registered seeds; failing to build the "
+        "structure is a failure of this specification, not a reason to skip it")
 
 
 def _open_probe(o, sender, target, key, edge, allocation):
@@ -167,6 +176,19 @@ def _open_probe(o, sender, target, key, edge, allocation):
         "the sender's probe does not record the allocation it committed, so a "
         "receiver cannot check the arriving amount against anything")
     return rec
+
+
+def _edge_evidence(o):
+    """The COMPLETE probe and edge records, not merely which keys exist.
+
+    Comparing key sets only forbids CREATING an edge. It still permits a
+    receiver to mutate a sender-created record before refusing the request --
+    bumping `delivered`, rewriting the allocation, the endpoints or the
+    SearchKey, or flipping the parallel `search_edges` entry. Validation has to
+    happen before any delivery telemetry moves.
+    """
+    return ({e: dict(r) for e, r in o.search_edge_probes.items()},
+            {e: dict(r) for e, r in o.search_edges.items()})
 
 
 def _quiet(o, unit):
@@ -204,8 +226,13 @@ def test_an_unauthenticated_search_arrival_adopts_nothing(attack):
     sender = j
     delivered_key, delivered_alloc = key, alloc
 
+    if attack == "not_a_neighbour":
+        # EVERY other fact is valid: the stranger opened the edge itself, to
+        # this receiver, under this key, with this allocation. The ONLY invalid
+        # fact is that it does not neighbour the receiver.
+        sender = stranger
     if attack != "no_probe":
-        frm = j if attack != "wrong_from" else other
+        frm = sender if attack != "wrong_from" else other
         to = target if attack != "wrong_to" else other
         pkey = key
         if attack == "wrong_key":
@@ -218,13 +245,10 @@ def test_an_unauthenticated_search_arrival_adopts_nothing(attack):
         delivered_alloc = alloc * 3.0
 
     before = _quiet(o, target)
+    evidence_before = _edge_evidence(o)
     reset()
     kwargs = dict(lineage=(j.unit_id,), context=ctx)
-    if attack == "no_sender":
-        pass
-    elif attack == "not_a_neighbour":
-        kwargs["sender"] = stranger
-    else:
+    if attack != "no_sender":
         kwargs["sender"] = sender.unit_id
 
     outcome = target.deliver_search(delivered_key, edge, delivered_alloc, **kwargs)
@@ -239,6 +263,10 @@ def test_an_unauthenticated_search_arrival_adopts_nothing(attack):
     assert after["probes"].keys() == before["probes"].keys(), (
         f"{attack}: the RECEIVER created a probe record, manufacturing the "
         f"evidence the sender was supposed to provide")
+    assert _edge_evidence(o) == evidence_before, (
+        f"{attack}: a REFUSED arrival still mutated edge evidence -- delivered "
+        f"count, allocation, endpoints, SearchKey or terminal status moved "
+        f"before the request was validated")
     assert (_counter("UNAUTHENTICATED_SEARCH_DELIVERIES")
             + _counter("MALFORMED_SEARCH_DELIVERIES")) == 1, (
         f"{attack}: no attributable admission violation was recorded")
@@ -264,6 +292,11 @@ def test_a_properly_announced_search_arrival_is_admitted_once():
     assert _counter("UNAUTHENTICATED_SEARCH_DELIVERIES") == 0
     assert _counter("MALFORMED_SEARCH_DELIVERIES") == 0
     assert C["UNIQUE_CANONICAL_SEARCH_NODES"] == 1
+    # THE SINGLE BOTTLENECK METRIC, measured rather than declared.
+    assert _counter("TOTAL_CANONICAL_SEARCH_ADOPTIONS") == 1
+    assert _counter("AUTHENTICATED_SEARCH_ADOPTIONS") == 1
+    assert _counter("HARNESS_DELIVERIES_USED") == 0, (
+        "an authenticated adoption was recorded as a harness bypass")
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +317,12 @@ def test_an_endpoint_cannot_record_a_terminal_it_cannot_justify(attack):
             need_id="probe:elsewhere", work_item_generation=2,
             origin_unit=j.unit_id, origin_slot=key.origin_slot,
             wanted_type=key.wanted_type, context=ctx)
-    to = nbr.unit_id if attack != "wrong_destination" else other.unit_id
+    # THE VALID DESTINATION IS THE OPENER. `nbr` is the edge's recorded target,
+    # so answering goes back to `j`. Using `nbr` as the baseline gave three of
+    # these four attacks an UNINTENDED wrong destination as well, so a runtime
+    # that validated only the destination would have passed three different
+    # security tests without implementing any of them.
+    to = j.unit_id if attack != "wrong_destination" else other.unit_id
     kind = "SearchExhausted" if attack != "wrong_direction" else "SearchCommitted"
     before = _quiet(o, nbr)
     reset()
@@ -509,6 +547,58 @@ def test_a_losing_source_candidate_is_dispositioned_and_deactivated(closure,
 
 
 @admission
+def test_a_source_candidate_that_loses_to_another_proposal_is_cancelled():
+    """The case a generic cancellation does not cover.
+
+    Here the wave is NOT cancelled -- it COMMITS, around somebody else. `_seal`
+    is called with an accepted id, and the source's own `local_candidate` is in
+    neither `proposals_outstanding` nor `proposals_rejected`, so it is the one
+    proposal the sealing pass can silently walk past while still reporting a
+    fully dispositioned wave.
+    """
+    o, j, producer, ctx, key, node, seed = _source_node()
+    losing = node["local_candidate"].proposal_id
+    # A SECOND, routed proposal that the parent will commit instead.
+    rival = None
+    for edge in node["children_opened"]:
+        target = node["child_targets"][edge]
+        cand = o.units[target]
+        if cand.capability.produces != key.wanted_type or cand.silent:
+            continue
+        pay = v5.SearchOfferPayload(
+            proposal_id="rival", search_key=key,
+            context_digest=ctx.context_digest(), supplier=target,
+            supplier_class=cand.capability.klass(),
+            offered_type=key.wanted_type, cost=cand.capability.cost,
+            firm=not cand.unmet(), derivation_chain=cand._derives_from(),
+            source_node=target, source_edge_id=edge)
+        producer.deliver_proposal(key, edge, pay, target)
+        if node["proposal_routes"].get(pay.proposal_id) == edge:
+            rival = pay
+            break
+    assert rival is not None, (
+        "no routed rival proposal could be registered at the source, so losing "
+        "to another candidate cannot be exercised here")
+    assert rival.proposal_id != losing
+    reset()
+
+    producer.deliver_terminal(key, node["adopted_parent_edge"],
+                              "SearchCommitted", 0.0, rival.proposal_id,
+                              sender=j.unit_id)
+
+    assert node["status"] == "COMMITTED"
+    assert node["accepted_proposal_id"] == rival.proposal_id
+    assert node["proposal_disposition"].get(rival.proposal_id) == "accepted"
+    assert node["proposal_disposition"].get(losing) == "cancelled", (
+        f"the source's OWN candidate was left undispositioned when the wave "
+        f"committed around another proposal: {node['proposal_disposition']}")
+    assert node.get("local_candidate") is None
+    assert not node["eligible_offer"], (
+        "the source still advertises an offer that lost to another candidate")
+    assert _counter("UNDISPOSITIONED_LOCAL_PROPOSALS") == 0
+
+
+@admission
 def test_an_accepted_source_candidate_is_dispositioned_accepted():
     o, j, producer, ctx, key, node, seed = _source_node()
     pid = node["local_candidate"].proposal_id
@@ -553,6 +643,71 @@ def test_no_live_execution_ever_uses_the_harness_capability():
             assert src is not v5.HARNESS_DELIVERY, (
                 f"{u.unit_id} received a message whose sender is the harness "
                 f"capability")
-    assert "HARNESS_DELIVERIES_USED" not in C.d or C["HARNESS_DELIVERIES_USED"] == 0, (
-        f"a healthy live run used the harness bypass "
-        f"{C['HARNESS_DELIVERIES_USED']} times")
+    # DELIBERATELY TOLERANT OF THE MISSING COUNTER. This is the plain smoke
+    # test: it must hold BEFORE the mechanism exists, so it cannot require a
+    # counter the runtime has not defined yet. The strict specification below
+    # requires the counter to exist and to be non-vacuous.
+    assert C.d.get("HARNESS_DELIVERIES_USED", 0) == 0, (
+        "a healthy live run used the harness bypass")
+
+
+@admission
+def test_the_harness_bypass_is_counted_and_never_taken_by_live_delivery():
+    """The plain test above cannot prove quarantine, and should not pretend to.
+
+    It inspects inboxes and outboxes AFTER `run_item` returns, and a scheduler
+    can deliver and drain a message in between, leaving no queue evidence. It
+    also passes when the counter does not exist at all -- which is exactly why
+    it passes today, before anything is implemented.
+
+    This one requires the counter to exist, to move when the bypass is taken,
+    and to stay at zero across a live run whose DELIVERY HISTORY is inspected
+    rather than its drained queues.
+    """
+    o, j, nbr, other, stranger, ctx, key, seed = _pair()
+    edge, alloc = "e/harness", 6.0
+    reset()
+
+    # Taking the bypass must be visible.
+    nbr.deliver_search(key, edge, alloc, lineage=(j.unit_id,), sender=j.unit_id,
+                       context=ctx, transport=v5.HARNESS_DELIVERY)
+    assert _counter("HARNESS_DELIVERIES_USED") == 1, (
+        "the explicit bypass was taken and not counted, so its use cannot be "
+        "distinguished from an authenticated adoption")
+    assert key in nbr.canonical_searches, "the declared bypass was refused"
+    assert _counter("TOTAL_CANONICAL_SEARCH_ADOPTIONS") == 1
+    assert _counter("AUTHENTICATED_SEARCH_ADOPTIONS") == 0, (
+        "a harness bypass was counted as an authenticated adoption, which would "
+        "hold the Single Bottleneck Metric at 1.0 while the gate was skipped")
+
+    # A live run must never take it, measured over DELIVERY HISTORY.
+    live = F.development(random.Random(4000))
+    F.prepare(live)
+    reset()
+    seen = []
+    original = v5.Organ._deliver
+
+    def recording(self, u, _o=original, _s=seen):
+        for dest, msg in u.outbox:
+            _s.append((u.unit_id, dest, msg))
+        return _o(self, u)
+
+    v5.Organ._deliver = recording
+    try:
+        live.commission()
+        assert live.result_ok(live.run_item(PAYLOAD_A)), "formation stopped working"
+    finally:
+        v5.Organ._deliver = original
+
+    assert seen, "no messages were delivered, so this proves nothing"
+    for src, dest, msg in seen:
+        parts = msg if isinstance(msg, tuple) else (msg,)
+        assert v5.HARNESS_DELIVERY not in parts and dest is not v5.HARNESS_DELIVERY, (
+            f"{src} delivered a message carrying the harness capability")
+    assert _counter("HARNESS_DELIVERIES_USED") == 0, (
+        "a healthy live run took the harness bypass")
+    total = _counter("TOTAL_CANONICAL_SEARCH_ADOPTIONS")
+    if total:
+        assert _counter("AUTHENTICATED_SEARCH_ADOPTIONS") == total, (
+            f"AUTHENTICATED_SEARCH_ADOPTIONS / TOTAL_CANONICAL_SEARCH_ADOPTIONS "
+            f"= {_counter('AUTHENTICATED_SEARCH_ADOPTIONS')}/{total}, not 1.0")

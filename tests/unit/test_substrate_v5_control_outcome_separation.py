@@ -1,11 +1,19 @@
 """Commit 5: a command and an outcome are two facts, not one.
 
-PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE. Strict xfail throughout.
+PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE, as strict xfail
+throughout. THIRTEEN OF SIXTEEN ARE NOW ACTIVE: each was satisfied by the 5B
+runtime split and its marker removed afterwards, in a separate commit. THREE
+REMAIN XFAIL and are named at the bottom of this docstring -- the split is in
+place, the stranded-child consequence is not yet resolved.
 
-WHY THIS FILE EXISTS. The runtime already distinguishes the two semantic
-classes -- `PARENT_CONTROL_KINDS` and `CHILD_OUTCOME_KINDS` -- and then routes
-both through `_record_terminal`, which offers ONE first-wins slot per edge and
-flips `terminal_status` the moment it is filled.
+The description below is the state of the runtime WHEN THIS FILE WAS WRITTEN,
+retained deliberately: it records what was wrong, and therefore what the active
+tests are now holding closed.
+
+WHY THIS FILE EXISTS. The runtime already distinguished the two semantic
+classes -- `PARENT_CONTROL_KINDS` and `CHILD_OUTCOME_KINDS` -- and then routed
+both through `_record_terminal`, which offered ONE first-wins slot per edge and
+flipped `terminal_status` the moment it was filled.
 
 So a parent that commands `SearchCancelled` downward occupies the edge's only
 outcome slot, marks the edge terminal, and writes `refunded_credit` and
@@ -185,7 +193,6 @@ def _edge_state(o, edge):
 # 1. A parent command is not an outcome
 # ---------------------------------------------------------------------------
 
-@separation
 @pytest.mark.parametrize("command", ["SearchCancelled", "SearchCommitted",
                                      "SearchNeedClosed"])
 def test_a_parent_command_does_not_occupy_the_child_outcome_slot(command):
@@ -211,7 +218,6 @@ def test_a_parent_command_does_not_occupy_the_child_outcome_slot(command):
     assert _counter("PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES") == 0
 
 
-@separation
 @pytest.mark.parametrize("command", ["SearchCancelled", "SearchCommitted"])
 def test_a_parent_command_does_not_close_the_edge(command):
     """OBSERVABLE TODAY, and it is what actually breaks closure.
@@ -238,7 +244,6 @@ def test_a_parent_command_does_not_close_the_edge(command):
         f"consumed) that no child ever confirmed")
 
 
-@separation
 def test_a_child_outcome_is_accepted_after_a_parent_command():
     """THE PAIRED POSITIVE CONTROL, and the whole point of the split.
 
@@ -276,7 +281,6 @@ def test_a_child_outcome_is_accepted_after_a_parent_command():
 # 2. Replay and conflict, in each channel independently
 # ---------------------------------------------------------------------------
 
-@separation
 def test_exact_command_replay_is_inert_and_conflicting_commands_are_recorded():
     o, j, nbr, other, ctx, key, seed = _pair()
     edge = "e/sep/replay/cmd"
@@ -304,7 +308,6 @@ def test_exact_command_replay_is_inert_and_conflicting_commands_are_recorded():
         "a later contradictory command overwrote the accepted one")
 
 
-@separation
 def test_exact_outcome_replay_is_inert_and_conflicting_outcomes_are_recorded():
     o, j, nbr, other, ctx, key, seed = _pair()
     edge = "e/sep/replay/out"
@@ -338,7 +341,6 @@ def test_exact_outcome_replay_is_inert_and_conflicting_outcomes_are_recorded():
 # 3. Neither channel weakens the 2D direction and identity rules
 # ---------------------------------------------------------------------------
 
-@separation
 @pytest.mark.parametrize("attack", ["unknown_edge", "wrong_key",
                                     "wrong_destination", "wrong_direction"])
 def test_a_command_that_cannot_be_justified_is_refused_in_the_control_channel(attack):
@@ -383,7 +385,6 @@ def test_a_command_that_cannot_be_justified_is_refused_in_the_control_channel(at
         f"{attack}: no attributable emission violation was recorded")
 
 
-@separation
 def test_only_the_receiving_endpoint_may_emit_an_outcome():
     """An outcome from anyone but the receiver is not evidence.
 

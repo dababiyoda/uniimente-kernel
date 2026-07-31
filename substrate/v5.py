@@ -235,6 +235,13 @@ COUNTER_NAMES = (
     # can never arrive.
     "CHILD_EDGES_RECONCILED_FROM_EVIDENCE",
     "TERMINALS_WITH_UNRECONCILED_CHILDREN",
+    "SEARCH_CONTROLS_RECORDED",
+    "CLOSED_CHILD_EDGES",
+    "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME",
+    "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE",
+    "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES",
+    "OUTCOME_SLOT_OCCUPIED_BY_CONTROL",
+    "DUPLICATE_TERMINAL_RESOLUTIONS",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -1292,27 +1299,87 @@ class Unit:
             return
         rec["delivered"] += 1
 
-    def _record_terminal(self, t: Terminal) -> bool:
-        """Exactly one terminal outcome per transport edge.
+    def _lifecycle_record(self, t: Terminal) -> dict:
+        """ONE record per edge, with two semantically distinct channels.
 
-        Idempotent by edge, because both ends observe the same closure: the
-        emitting unit records it as it sends, and a parent driven directly --
-        by the harness, or by a message that arrives after the emitter already
-        recorded -- must not append a second outcome to the same edge. A LATER
-        outcome of a DIFFERENT kind is not silently dropped; it is preserved in
-        `search_edge_terminal_conflicts`, because two ends disagreeing about how
-        an edge ended is a finding, not noise.
+        Not two registries: two registries would recreate the same ambiguity in
+        a new place. One record, in which a COMMAND and an OUTCOME are separately
+        addressable facts.
+        """
+        o = self._organ
+        rec = o.search_edge_lifecycle.get(t.edge_id)
+        if rec is None:
+            rec = {"from_unit": t.from_unit, "to_unit": t.to_unit,
+                   "search_key": t.search_key,
+                   "controls": [], "accepted_control": None,
+                   "outcomes": [], "accepted_outcome": None,
+                   "control_conflicts": [], "outcome_conflicts": []}
+            o.search_edge_lifecycle[t.edge_id] = rec
+        return rec
+
+    def _record_control(self, t: Terminal) -> bool:
+        """A COMMAND: what the opener REQUESTED. Never proof it happened.
+
+        Authentication proves who asked for the transition. It says nothing
+        about whether the transition completed, and the unit that asked is
+        exactly the unit that must not be allowed to answer. So a control is
+        recorded, is idempotent under exact replay, files a contradicting
+        second command as a conflict -- and closes nothing. It does not touch
+        `terminal_status`, `terminal_outcome`, `refunded_credit` or
+        `consumed_credit`, and it does not discharge a child allocation.
         """
         o = self._organ
         if o is None:
             return False
-        rec = o.search_edge_terminals.get(t.edge_id)
-        if rec is not None:
-            first = rec["outcomes"][0] if rec["outcomes"] else None
-            if first is not None and first.kind != t.kind:
+        rec = self._lifecycle_record(t)
+        first = rec["accepted_control"]
+        if first is not None:
+            if first.kind != t.kind:
+                rec["control_conflicts"].append((t.edge_id, first.kind, t.kind))
                 o.search_edge_terminal_conflicts.append(
                     (t.edge_id, first.kind, t.kind))
+            return False                    # exact replay: inert
+        rec["controls"].append(t)
+        rec["accepted_control"] = t
+        # COMPATIBILITY PROJECTION, and its limits are the whole point.
+        # `search_edge_terminals` remains the record of WHAT WAS SENT on an
+        # edge, so existing readers asking "did the opener command this edge"
+        # still get their answer. It is NOT closure: `terminal_status`,
+        # `terminal_outcome`, `refunded_credit` and `consumed_credit` are
+        # untouched here and are written only from an accepted child outcome.
+        # That is the separation -- a command is visible, and it settles
+        # nothing.
+        o.search_edge_terminals.setdefault(t.edge_id, {
+            "from_unit": t.from_unit, "to_unit": t.to_unit,
+            "search_key": t.search_key, "outcomes": []})["outcomes"].append(t)
+        C.incr("SEARCH_CONTROLS_RECORDED")
+        return True
+
+    def _record_outcome(self, t: Terminal) -> bool:
+        """AN OUTCOME: what the receiving endpoint OBSERVED. This closes the edge.
+
+        Only this channel writes `terminal_status` and the edge's credit, and
+        only the receiving endpoint may fill it -- which `_may_emit` has already
+        established by direction before this is reached.
+        """
+        o = self._organ
+        if o is None:
             return False
+        rec = self._lifecycle_record(t)
+        first = rec["accepted_outcome"]
+        if first is not None:
+            if first.kind != t.kind:
+                rec["outcome_conflicts"].append((t.edge_id, first.kind, t.kind))
+                o.search_edge_terminal_conflicts.append(
+                    (t.edge_id, first.kind, t.kind))
+                C.incr("DUPLICATE_TERMINAL_RESOLUTIONS")
+            return False                    # exact replay: inert, no refund
+        rec["outcomes"].append(t)
+        rec["accepted_outcome"] = t
+        # COMPATIBILITY PROJECTION, explicitly derived from the accepted OUTCOME
+        # and from nothing else. `search_edge_terminals` keeps its historical
+        # shape for existing readers, but it is now filled only by the child's
+        # answer, which is what its own consumers always assumed it meant.
         o.search_edge_terminals[t.edge_id] = {
             "from_unit": t.from_unit, "to_unit": t.to_unit,
             "search_key": t.search_key, "outcomes": [t]}
@@ -1324,6 +1391,19 @@ class Unit:
             e["consumed_credit"] = t.handling_cost
         C.incr("TERMINAL_ECHOS_SENT")
         return True
+
+    def _record_terminal(self, t: Terminal) -> bool:
+        """COMPATIBILITY DISPATCHER. It holds no authority of its own.
+
+        Retained so existing call sites keep working, reduced to classifying the
+        message by its semantic class and routing it to the channel that owns
+        it. `_may_emit` has already proved that this unit is the endpoint
+        entitled to emit this kind in this direction, so the kind determines the
+        channel unambiguously.
+        """
+        if t.kind in PARENT_CONTROL_KINDS:
+            return self._record_control(t)
+        return self._record_outcome(t)
 
     def _may_emit(self, key: SearchKey, edge_id: str, kind: str,
                   to: str = "") -> str:
@@ -3377,6 +3457,8 @@ class Organ:
         self.search_edges: dict = {}
         self.search_edge_probes: dict = {}
         self.search_edge_terminals: dict = {}
+        # ONE record per edge, two semantically distinct channels.
+        self.search_edge_lifecycle: dict = {}
         # NONTERMINAL edge telemetry: proposals and control records. Held apart
         # from terminals so a proposal can never be stored as the outcome that
         # ended an edge.

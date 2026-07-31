@@ -277,7 +277,6 @@ def _per_key_edge_uniqueness(o):
 # A. Diamond convergence -> one canonical node, one child set
 # ---------------------------------------------------------------------------
 
-@spec
 def test_A_diamond_convergence_opens_one_canonical_node():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -334,7 +333,6 @@ def test_B_an_actual_cycle_is_closed_exactly_once():
 # C. Exact replay -> one processing, one response, one refund
 # ---------------------------------------------------------------------------
 
-@spec
 def test_C_exact_replay_is_idempotent():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -671,7 +669,6 @@ def test_I_formation_is_untouched_by_the_repair_protocol():
 # J. Amplification. Every density is exercised; none may be skipped.
 # ---------------------------------------------------------------------------
 
-@spec
 @pytest.mark.parametrize("density", [0.7, 0.8, 0.9])
 def test_J_amplification_scales_with_units_not_paths(density):
     o, j, slot, victim, seed = _damaged(4, density=density)
@@ -697,7 +694,6 @@ def test_J_amplification_scales_with_units_not_paths(density):
 # Arrival order, isolated: ONE organ, only delivery order varies
 # ---------------------------------------------------------------------------
 
-@spec
 def test_arrival_order_alone_does_not_change_the_outcome():
     """Holds the graph fixed and permutes only message dequeue order.
 

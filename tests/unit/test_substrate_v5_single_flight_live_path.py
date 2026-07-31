@@ -281,7 +281,6 @@ def test_a_receiver_rejects_a_context_that_does_not_match_the_key():
 # 3-4. The offer must be settleable, and rejection must not close the search
 # ---------------------------------------------------------------------------
 
-@live
 def test_search_offer_carries_enough_evidence_for_settlement():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -308,7 +307,6 @@ def test_search_offer_carries_enough_evidence_for_settlement():
         assert isinstance(p.derivation_chain, frozenset)
 
 
-@live
 def test_the_root_settles_from_the_offer_payload():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -329,7 +327,6 @@ def test_the_root_settles_from_the_offer_payload():
         "the root settled a replacement and also proved the space exhausted")
 
 
-@live
 def test_a_rejected_proposal_leaves_the_real_root_open_with_candidates_intact():
     """Rewritten onto the real obligation.
 
@@ -392,7 +389,6 @@ def test_a_locally_eligible_producer_opens_zero_children():
         "an eligible producer created outbound probes it did not need")
 
 
-@live
 def test_every_live_edge_is_probed_exactly_once():
     """Sender creation and receiver delivery must not both count as a probe."""
     o, j, slot, victim, seed = _damaged(4)
@@ -443,7 +439,6 @@ def test_widening_rounds_produce_globally_unique_child_edge_ids():
         f"differ across expansions")
 
 
-@live
 def test_lineage_accumulates_and_a_real_cycle_closes_positively():
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()
@@ -503,7 +498,6 @@ def test_accepted_settlement_reconciles_every_outstanding_child_allocation():
 # 8-10. No dual running, formation untouched
 # ---------------------------------------------------------------------------
 
-@live
 def test_repair_uses_single_flight_only_and_emits_no_legacy_need():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -751,7 +745,6 @@ def _normalized_settlement(o):
                   for u in o.units for s, b in o.units[u].bonds.items())
 
 
-@live
 def test_legacy_projection_is_inert_across_a_SECOND_real_repair():
     """The earlier version of this test was vacuous.
 
@@ -987,7 +980,6 @@ def _payload(o, j, slot, ctx, need_id, supplier, pid, source_edge=None,
         source_edge_id=source_edge or f"e/{pid}")
 
 
-@live
 def test_an_exact_proposal_replay_settles_only_once():
     o, j, slot, victim, seed, root, node, paused = _reopened(4)
     want = j.capability.accepts[slot]
@@ -1060,7 +1052,6 @@ def test_an_exact_proposal_replay_settles_only_once():
     assert j.bonds.get(slot) is settled_bond, "a replayed proposal re-bonded the slot"
 
 
-@live
 def test_settlement_refuses_an_unregistered_proposal():
     """A payload that never arrived on a child edge has no route and no event."""
     o, j, slot, victim, seed, root, node, paused = _reopened(4)
@@ -1082,7 +1073,6 @@ def test_settlement_refuses_an_unregistered_proposal():
         f"no attributable proposal_not_registered reason: {reasons}")
 
 
-@live
 def test_two_competing_proposals_race_through_real_child_edges():
     """Routed through `proposal_routes`, not settled by direct call.
 
@@ -1175,7 +1165,6 @@ def test_settlement_refuses_an_occupied_slot_with_an_attributable_reason():
         f"no attributable slot_already_bonded reason was recorded: {reasons}")
 
 
-@live
 def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
     o, j, slot, victim, seed, root, node, paused = _reopened(4)
     sibling = [b.supplier for s, b in j.bonds.items() if s != slot][0]
@@ -1434,7 +1423,6 @@ def _normalized_run_state(o):
     }
 
 
-@live
 def test_pausing_at_the_root_does_not_change_execution():
     """Declared continuity is not proved continuity.
 

@@ -130,7 +130,6 @@ def _roots(o):
 # 1. A real deficit originates exactly one root
 # ---------------------------------------------------------------------------
 
-@origination
 def test_a_real_interior_deficit_originates_exactly_one_canonical_root():
     """THE SINGLE BOTTLENECK METRIC, measured on a live run.
 
@@ -161,7 +160,6 @@ def test_a_real_interior_deficit_originates_exactly_one_canonical_root():
             f"{uid} originated a root that claims a parent sender")
 
 
-@origination
 def test_an_undamaged_run_originates_no_root_at_all():
     """PAIRED NEGATIVE CONTROL for every positive above.
 
@@ -186,7 +184,6 @@ def test_an_undamaged_run_originates_no_root_at_all():
 # 2. The root identity is DERIVED, and therefore convergent
 # ---------------------------------------------------------------------------
 
-@origination
 def test_the_root_key_is_a_pure_function_of_local_state():
     """Two identical deficits derive one identity, with no shared bookkeeping.
 
@@ -215,7 +212,6 @@ def test_the_root_key_is_a_pure_function_of_local_state():
     assert a.context_digest and a.context_digest == b.context_digest
 
 
-@origination
 def test_reopening_the_same_deficit_twice_creates_no_second_root():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -239,7 +235,6 @@ def test_reopening_the_same_deficit_twice_creates_no_second_root():
 # 3. The originator holds no knowledge it may not hold
 # ---------------------------------------------------------------------------
 
-@origination
 def test_the_originator_reads_no_global_provider_index():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -255,7 +250,6 @@ def test_the_originator_reads_no_global_provider_index():
     assert C["BOUNDARY_TRIGGERED_REPAIR_EVENTS"] == 0
 
 
-@origination
 def test_the_root_context_names_no_provider_and_no_topology():
     """The context may carry CONSTRAINTS. It may not carry the ANSWER.
 
@@ -297,7 +291,6 @@ def test_the_root_context_names_no_provider_and_no_topology():
     assert _counter("SOLUTION_LEAKAGE_EVENTS") == 0
 
 
-@origination
 def test_origination_inherits_no_authority_and_causes_no_external_effect():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -318,7 +311,6 @@ def test_origination_inherits_no_authority_and_causes_no_external_effect():
 # 4. The originated wave is a real 2D citizen
 # ---------------------------------------------------------------------------
 
-@origination
 def test_every_edge_the_root_opens_is_sender_owned_and_authenticated():
     """Commit 3 must ENTER through the 2D gate, not around it."""
     o, j, slot, victim, seed = _damaged(4)
@@ -344,7 +336,6 @@ def test_every_edge_the_root_opens_is_sender_owned_and_authenticated():
         f"the live repair path were not authenticated")
 
 
-@origination
 def test_the_originated_search_replaces_the_legacy_need_wave():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -380,7 +371,6 @@ def test_formation_is_untouched_by_the_originator():
 # 5. Credit closes, and replay is inert
 # ---------------------------------------------------------------------------
 
-@origination
 def test_all_credit_the_root_issues_is_accounted():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -402,7 +392,6 @@ def test_all_credit_the_root_issues_is_accounted():
     assert C["UNSUPPORTED_CHILD_CANCELLATION_CREDIT"] == 0
 
 
-@origination
 def test_replaying_the_whole_repair_run_creates_nothing_new():
     o, j, slot, victim, seed = _damaged(4)
     reset()
@@ -428,7 +417,6 @@ def test_replaying_the_whole_repair_run_creates_nothing_new():
 # 6. Origination fails closed
 # ---------------------------------------------------------------------------
 
-@origination
 def test_a_unit_cannot_originate_for_another_units_slot():
     """A root names its origin. That name must be the unit that minted it."""
     o, j, slot, victim, seed = _damaged(4)
@@ -451,7 +439,6 @@ def test_a_unit_cannot_originate_for_another_units_slot():
             f"itself")
 
 
-@origination
 def test_the_boundary_never_originates_a_repair_root():
     o, j, slot, victim, seed = _damaged(4)
     reset()

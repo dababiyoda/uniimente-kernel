@@ -388,7 +388,8 @@ def test_a_search_delivered_without_its_context_creates_nothing():
     ok_key = _key_for(j, slot, ctx, "probe:context:control")
     control = unit.deliver_search(ok_key, "e/ctx/control", allocation=6.0,
                                   lineage=(j.unit_id,), sender=j.unit_id,
-                                  context=ctx)
+                                  context=ctx,
+                                  transport=v5.HARNESS_DELIVERY)
     assert _kind(control) != "SearchContextRejected", (
         f"the control arrival was rejected ({_kind(control)}) even WITH its "
         f"context, so refusing the contextless arrival below would prove "
@@ -400,7 +401,8 @@ def test_a_search_delivered_without_its_context_creates_nothing():
     reset()
     key = _key_for(j, slot, ctx, "probe:context:absent")
     outcome = unit.deliver_search(key, "e/ctx/absent", allocation=6.0,
-                                  lineage=(j.unit_id,), sender=j.unit_id)
+                                  lineage=(j.unit_id,), sender=j.unit_id,
+                                  transport=v5.HARNESS_DELIVERY)
 
     assert _kind(outcome) == "SearchContextRejected", (
         f"a search delivered without its SearchContext returned "

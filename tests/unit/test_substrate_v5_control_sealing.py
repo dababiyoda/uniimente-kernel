@@ -156,7 +156,8 @@ def _relay_node():
         if relay is None:
             continue
         relay.deliver_search(key, "e/parent", allocation=18.0,
-                             lineage=(j.unit_id,), sender=j.unit_id, context=ctx)
+                             lineage=(j.unit_id,), sender=j.unit_id, context=ctx,
+                             transport=v5.HARNESS_DELIVERY)
         node = relay.canonical_searches.get(key)
         if node is None:
             continue
@@ -371,7 +372,8 @@ def test_a_source_may_be_committed_on_its_own_candidate():
     reset()
     out = producer.deliver_search(key, "e/src", allocation=6.0,
                                   lineage=(j.unit_id,), sender=j.unit_id,
-                                  context=ctx)
+                                  context=ctx,
+                                  transport=v5.HARNESS_DELIVERY)
     src = producer.canonical_searches.get(key)
     assert src is not None, "the producer adopted no canonical node"
     assert _kind(out) == "SearchProposal", (

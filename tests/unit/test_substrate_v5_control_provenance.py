@@ -169,7 +169,8 @@ def _relay_node():
         if relay is None:
             continue
         relay.deliver_search(key, "e/parent", allocation=18.0,
-                             lineage=(j.unit_id,), sender=j.unit_id, context=ctx)
+                             lineage=(j.unit_id,), sender=j.unit_id, context=ctx,
+                             transport=v5.HARNESS_DELIVERY)
         node = relay.canonical_searches.get(key)
         if node is None:
             continue

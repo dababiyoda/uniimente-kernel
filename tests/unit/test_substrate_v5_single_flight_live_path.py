@@ -223,7 +223,8 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     control_key = _key_for(j, slot, control_ctx, "probe:mustdiffer:control")
     control = unit.deliver_search(control_key, "e/remote/control", allocation=6.0,
                                   lineage=(j.unit_id,), sender=j.unit_id,
-                                  context=control_ctx)
+                                  context=control_ctx,
+                                  transport=v5.HARNESS_DELIVERY)
     assert _kind(control) == "SearchProposal", (
         f"the control candidate {sibling} did not propose under a neutral "
         f"context ({_kind(control)}), so refusing it below proves nothing about "
@@ -231,7 +232,8 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     reset()
     outcome = unit.deliver_search(key, "e/remote", allocation=6.0,
                                  lineage=(j.unit_id,), sender=j.unit_id,
-                                 context=ctx)
+                                 context=ctx,
+                                  transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) != "SearchProposal", (
         f"{sibling} is excluded by must_differ_from yet offered itself remotely; "
         f"this is the duplicate-supplier defect returning through the digest gap")
@@ -253,7 +255,8 @@ def test_remote_candidate_enforces_the_origins_causal_refusals():
     reset()
     outcome = candidate.deliver_search(key, "e/refused", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
-                                      context=ctx)
+                                      context=ctx,
+                                       transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) != "SearchProposal", (
         "a candidate whose own derivation is refused by the origin proposed itself")
 
@@ -270,7 +273,8 @@ def test_a_receiver_rejects_a_context_that_does_not_match_the_key():
     reset()
     outcome = unit.deliver_search(key, "e/forged", allocation=6.0,
                                  lineage=(j.unit_id,), sender=j.unit_id,
-                                 context=forged)
+                                 context=forged,
+                                  transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) == "SearchContextRejected", (
         f"a context whose digests do not match the SearchKey was accepted "
         f"({_kind(outcome)})")
@@ -379,7 +383,8 @@ def test_a_locally_eligible_producer_opens_zero_children():
     reset()
     outcome = producer.deliver_search(key, "e/elig", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
-                                      context=ctx)
+                                      context=ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) == "SearchProposal", (
         f"an eligible producer returned {_kind(outcome)}; a candidate is a "
         f"proposal, not a terminal answer")
@@ -567,7 +572,8 @@ def test_tampering_with_any_enforcement_field_is_rejected(field, tampered):
     reset()
     outcome = unit.deliver_search(key, f"e/tamper/{field}", allocation=6.0,
                                   lineage=(j.unit_id,), sender=j.unit_id,
-                                  context=forged)
+                                  context=forged,
+                                  transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) == "SearchContextRejected", (
         f"a context with a tampered {field} was accepted ({_kind(outcome)})")
 
@@ -590,7 +596,8 @@ def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
     reset()
     control = producer.deliver_search(control_key, "e/cost/control",
                                       allocation=6.0, lineage=(j.unit_id,),
-                                      sender=j.unit_id, context=control_ctx)
+                                      sender=j.unit_id, context=control_ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(control) == "SearchProposal", (
         f"the control candidate {producer.unit_id} did not propose under a "
         f"neutral context ({_kind(control)}), so the exclusion test below "
@@ -601,7 +608,8 @@ def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
     reset()
     outcome = producer.deliver_search(key, "e/cost", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
-                                      context=ctx)
+                                      context=ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} costs {producer.capability.cost} against a ceiling "
         f"of {ctx.maximum_supplier_cost} yet proposed itself")
@@ -624,7 +632,8 @@ def test_a_cooldown_excluded_candidate_proposes_nothing():
     reset()
     control = producer.deliver_search(control_key, "e/cooldown/control",
                                       allocation=6.0, lineage=(j.unit_id,),
-                                      sender=j.unit_id, context=control_ctx)
+                                      sender=j.unit_id, context=control_ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(control) == "SearchProposal", (
         f"the control candidate {producer.unit_id} did not propose under a "
         f"neutral context ({_kind(control)}), so the exclusion test below "
@@ -635,7 +644,8 @@ def test_a_cooldown_excluded_candidate_proposes_nothing():
     reset()
     outcome = producer.deliver_search(key, "e/cooldown", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
-                                      context=ctx)
+                                      context=ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} is cooldown-excluded yet proposed itself")
     assert getattr(outcome, "reason", None) == "candidate_in_cooldown", (
@@ -667,7 +677,8 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
     reset()
     control = producer.deliver_search(control_key, "e/ancestor/control",
                                       allocation=6.0, lineage=(j.unit_id,),
-                                      sender=j.unit_id, context=control_ctx)
+                                      sender=j.unit_id, context=control_ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(control) == "SearchProposal", (
         f"the control candidate {producer.unit_id} did not propose under a "
         f"neutral context ({_kind(control)}), so refusing it below proves "
@@ -678,7 +689,8 @@ def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
     reset()
     outcome = producer.deliver_search(key, "e/ancestor", allocation=6.0,
                                       lineage=(j.unit_id,), sender=j.unit_id,
-                                      context=ctx)
+                                      context=ctx,
+                                      transport=v5.HARNESS_DELIVERY)
     assert _kind(outcome) != "SearchProposal", (
         f"{producer.unit_id} proposed itself although its ancestor {ancestor} is "
         f"in the origin's refusal set; the derivation chain was not checked")

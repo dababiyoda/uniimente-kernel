@@ -377,8 +377,23 @@ def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
     coalesced_before = C["COALESCED_DUPLICATE_ARRIVALS"]
     echoes_before = C["TERMINAL_ECHOS_SENT"]
 
+    # 2D: A DUPLICATE ARRIVAL IS AN INGRESS EVENT, so it travels the
+    # authenticated path rather than declaring a harness bypass. Coalescing is
+    # exactly the decision an unauthenticated caller would most like to reach --
+    # it returns a refund -- so this test must prove the accounting holds for an
+    # arrival that proved its route, not for one that skipped the gate. A real
+    # neighbour opens the edge and commits the allocation before delivering it.
+    opener_id = next((n for n in sorted(unit.neighbours) if n not in (ENV, SINK)),
+                     None)
+    assert opener_id is not None, (
+        "the receiver has no ordinary neighbour able to open the duplicate "
+        "edge, so the authenticated ingress path cannot be exercised here")
+    opener = o.units[opener_id]
+    opener._record_probe("e/rich", opener.unit_id, unit.unit_id, key,
+                         allocation=999.0)
+
     outcome = unit.deliver_search(key, edge_id="e/rich", allocation=999.0,
-                                  lineage=(j.unit_id,))
+                                  lineage=(j.unit_id,), sender=opener.unit_id)
 
     assert getattr(outcome, "kind", outcome) == "SearchCoalesced", (
         f"a duplicate arrival produced {outcome!r}, expected SearchCoalesced")
@@ -401,7 +416,7 @@ def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
     assert C["DUPLICATE_SUBTREES_OPENED"] == 0
 
     again = unit.deliver_search(key, edge_id="e/rich", allocation=999.0,
-                               lineage=(j.unit_id,))
+                               lineage=(j.unit_id,), sender=opener.unit_id)
     assert C["COALESCED_DUPLICATE_ARRIVALS"] == coalesced_before + 1, (
         "replaying the duplicate edge produced a second coalesced response")
     assert C["TERMINAL_ECHOS_SENT"] == echoes_before + 1, (

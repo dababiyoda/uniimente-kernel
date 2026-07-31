@@ -383,8 +383,26 @@ def test_distinct_settlement_counter_becomes_nonzero_with_spare_capacity():
         if C["DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED"] > 0:
             fired += 1
             b = j.bonds.get(slot)
-            assert b is not None and b.supplier != victim, (
-                "the counter fired without a distinct replacement being bonded")
+            # ATTRIBUTION AT THE SETTLEMENT SITE, NOT AT THE END STATE.
+            #
+            # This previously required the join to still hold a replacement
+            # bond when the run finished. That was sound while at most one
+            # repair could occur per work item. It no longer is: a candidate
+            # that could serve but is itself unmet now recruits its OWN
+            # prerequisite, so a run can contain several repairs, and a
+            # replacement that settled can afterwards be lost to a further
+            # failure. On seed 7 the counter is 1, a proposal was decided, and
+            # the join's slot is open again -- all three facts are true
+            # together, and the old assertion could not express that.
+            #
+            # What must remain true, and is still checked: the counter cannot
+            # fire without a decision, and the slot must never be bonded back
+            # to the supplier that failed.
+            assert C["UNIQUE_PROPOSAL_DECISIONS"] > 0, (
+                "the counter fired without any proposal being decided, so it "
+                "is not driven by the settlement site")
+            assert b is None or b.supplier != victim, (
+                "the counter fired and the slot is bonded back to the victim")
     assert fired > 0, (
         "DISTINCT_ELIGIBLE_REPLACEMENTS_SETTLED never incremented even with "
         "ample spare independent capacity")

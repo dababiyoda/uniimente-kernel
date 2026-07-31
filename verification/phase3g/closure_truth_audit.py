@@ -47,16 +47,91 @@ SEEDS = tuple(range(60))
 # the runtime by this file.
 # ---------------------------------------------------------------------------
 
-def _role(unit, edge_id):
+# AUDIT INSTRUMENTATION. Populated by the corrected classifier; read by the
+# evidence report. Not counters on `C`, because these describe the AUDIT, not
+# the runtime.
+AUDIT = {}
+
+
+def _audit_reset():
+    AUDIT.clear()
+    AUDIT.update({
+        "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+        "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+        "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+        "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+        "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0,
+        "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+        "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+        "records": [],
+    })
+
+
+def _classify(unit, t):
+    """CHANNEL FOLLOWS THE AUTHENTICATED AUTHOR AND DIRECTION.
+
+    THE DEFECT THIS REPLACES, which was mine. The first harness asked
+    `_role(self, edge_id)` -- whether the Unit OBJECT executing the recording is
+    the edge's opener or receiver. That is not the evidence author. In
+    `deliver_terminal` the PARENT observes a child's closure and calls
+
+        self._record_terminal(Terminal(kind, key, edge_id, credited, 0.0,
+                                       node["child_targets"][edge_id],  # child
+                                       self.unit_id, ...))              # parent
+
+    so the recorder is the opener while the author is the receiver. Classifying
+    from `self.unit_id` therefore routed a child-authored outcome into the
+    control channel -- which is exactly how one edge came to hold
+    `accepted_control = SearchCycleClosed` AND
+    `accepted_outcome = SearchCycleClosed`, a pair that cannot both be true.
+
+    The rule compares the terminal's endpoints against the SENDER-CREATED probe:
+
+        from == probe.from and to == probe.to   -> CONTROL   (opener -> receiver)
+        from == probe.to   and to == probe.from -> OUTCOME   (receiver -> opener)
+
+    Anything else is UNCLASSIFIABLE and mutates nothing: defaulting by kind is
+    what this audit exists to stop. An empty destination is resolved from the
+    author alone, because the runtime legitimately records an outcome it does
+    not deliver.
+    """
     o = unit._organ
-    rec = o.search_edge_probes.get(edge_id) if o is not None else None
-    if rec is None:
-        return ""
-    if rec.get("from_unit") == unit.unit_id:
-        return "opener"
-    if rec.get("to_unit") == unit.unit_id:
-        return "receiver"
-    return ""
+    probe = o.search_edge_probes.get(t.edge_id) if o is not None else None
+    rec = {"recorder_unit": unit.unit_id, "kind": t.kind, "edge_id": t.edge_id,
+           "terminal_from": t.from_unit, "terminal_to": t.to_unit,
+           "probe_from": (probe or {}).get("from_unit"),
+           "probe_to": (probe or {}).get("to_unit"),
+           "observation": t.from_unit != unit.unit_id}
+    if probe is None or (probe.get("search_key") != t.search_key):
+        AUDIT["AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES"] += 1
+        rec["selected_channel"] = None
+        AUDIT["records"].append(rec)
+        return None
+    pf, pt = probe.get("from_unit"), probe.get("to_unit")
+    if t.from_unit == pf and (t.to_unit == pt or not t.to_unit):
+        channel = "CONTROL"
+    elif t.from_unit == pt and (t.to_unit == pf or not t.to_unit):
+        channel = "OUTCOME"
+    else:
+        AUDIT["AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES"] += 1
+        rec["selected_channel"] = None
+        AUDIT["records"].append(rec)
+        return None
+    AUDIT["AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION"] += 1
+    if channel == "CONTROL":
+        AUDIT["AUDIT_CONTROL_CLASSIFICATIONS"] += 1
+    else:
+        AUDIT["AUDIT_OUTCOME_CLASSIFICATIONS"] += 1
+    # A child outcome the PARENT is recording: the case the old classifier got
+    # wrong. Counted so "we no longer classify from recorder identity" is
+    # measured rather than asserted.
+    if rec["observation"] and channel == "OUTCOME":
+        AUDIT["AUDIT_OBSERVED_CHILD_OUTCOMES"] += 1
+    if rec["observation"] and channel == "CONTROL" and t.kind in v5.CHILD_OUTCOME_KINDS:
+        AUDIT["AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL"] += 1
+    rec["selected_channel"] = channel
+    AUDIT["records"].append(rec)
+    return channel
 
 
 @contextlib.contextmanager
@@ -67,11 +142,12 @@ def mode(role_classification: bool, outcome_only_projection: bool):
 
     def patched_record_terminal(self, t):
         if role_classification:
-            r = _role(self, t.edge_id)
-            if r == "opener":
+            channel = _classify(self, t)
+            if channel == "CONTROL":
                 return self._record_control(t)
-            if r == "receiver":
+            if channel == "OUTCOME":
                 return self._record_outcome(t)
+            return False        # unclassifiable: mutate NEITHER channel
         if t.kind in v5.PARENT_CONTROL_KINDS:
             return self._record_control(t)
         return self._record_outcome(t)
@@ -217,14 +293,99 @@ def _observe(o, j):
     }
 
 
+def _exact_assertions(o, msgs_before=0):
+    """THE EXACT ASSERTIONS of the five formerly regressed cases, executed
+    rather than approximated. Each is evaluated and recorded pass/fail with its
+    observed value; none of them raises, because the audit reports and does not
+    judge."""
+    lc = getattr(o, "search_edge_lifecycle", {}) or {}
+    proj = getattr(o, "search_edge_terminals", {}) or {}
+    probes = o.search_edge_probes
+    nodes = {(u.unit_id, k): n for u in o.units.values()
+             for k, n in getattr(u, "canonical_searches", {}).items()}
+    res = {}
+
+    def rec(name, ok, observed):
+        res[name] = {"pass": bool(ok), "observed": observed}
+
+    # --- test_A convergence core -------------------------------------------
+    rec("A.nodes_exist", C["UNIQUE_CANONICAL_SEARCH_NODES"] > 0,
+        C["UNIQUE_CANONICAL_SEARCH_NODES"])
+    rec("A.expansions_eq_nodes",
+        C["CANONICAL_SEARCH_EXPANSIONS"] == C["UNIQUE_CANONICAL_SEARCH_NODES"],
+        [C["CANONICAL_SEARCH_EXPANSIONS"], C["UNIQUE_CANONICAL_SEARCH_NODES"]])
+    rec("A.no_duplicate_subtree", C["DUPLICATE_SUBTREES_OPENED"] == 0,
+        C["DUPLICATE_SUBTREES_OPENED"])
+    rec("A.coalesced_positive", C["COALESCED_DUPLICATE_ARRIVALS"] > 0,
+        C["COALESCED_DUPLICATE_ARRIVALS"])
+    rec("A.probe_count_one",
+        all(r["count"] == 1 for r in probes.values()),
+        sorted({r["count"] for r in probes.values()}))
+
+    # --- THE SHARED STALE HELPER, executed exactly ---------------------------
+    bad = {e: len(proj.get(e, {}).get("outcomes", [])) for e in probes
+           if len(proj.get(e, {}).get("outcomes", [])) != 1}
+    rec("SHARED.legacy_outcomes_len_eq_1", not bad, bad)
+
+    # --- test_lineage -------------------------------------------------------
+    depth = max([len(n["lineage"]) for n in nodes.values()] or [0])
+    rec("LIN.nodes_exist", bool(nodes), len(nodes))
+    rec("LIN.max_lineage_depth_ge_2", depth >= 2, depth)
+    rec("LIN.cycle_closed_positive", C["CYCLE_EDGES_CLOSED"] > 0,
+        C["CYCLE_EDGES_CLOSED"])
+    cyc_canonical = [e for e, r in lc.items()
+                     if getattr(r.get("accepted_outcome"), "kind", None)
+                     == "SearchCycleClosed"]
+    cyc_legacy = [e for e, r in proj.items()
+                  if any(getattr(x, "kind", x) == "SearchCycleClosed"
+                         for x in r.get("outcomes", []))]
+    rec("LIN.cycle_edge_found_canonically", bool(cyc_canonical), cyc_canonical)
+    rec("LIN.cycle_edge_found_in_legacy", bool(cyc_legacy), cyc_legacy)
+    rec("LIN.cycle_edge_legacy_len_eq_1",
+        all(len(proj.get(e, {}).get("outcomes", [])) == 1 for e in cyc_legacy),
+        {e: len(proj.get(e, {}).get("outcomes", [])) for e in cyc_legacy})
+    res["LIN.cycle_edge_detail"] = {
+        e: {"accepted_control": getattr((lc.get(e) or {}).get("accepted_control"),
+                                        "kind", None),
+            "accepted_outcome": getattr((lc.get(e) or {}).get("accepted_outcome"),
+                                        "kind", None),
+            "legacy_len": len(proj.get(e, {}).get("outcomes", [])),
+            "control_conflicts": len((lc.get(e) or {}).get("control_conflicts", [])),
+            "outcome_conflicts": len((lc.get(e) or {}).get("outcome_conflicts", [])),
+            }
+        for e in set(cyc_canonical) | set(cyc_legacy)}
+
+    # --- test_J -------------------------------------------------------------
+    # THE TEST'S OWN FORMULA: the message DELTA caused by the repair, over ALL
+    # units. An earlier revision of this harness divided TOTAL messages and
+    # reported ~65-77 against a ceiling of 12 in every mode INCLUDING head --
+    # which would have been reported as a universal failure of a test that
+    # passes. Reproducing an assertion means reproducing its arithmetic.
+    amp = round((o.messages - msgs_before) / max(1, len(o.units)), 2)
+    rec("J.amp_le_12", amp <= 12, amp)
+    return res
+
+
 def _run_case(density, role_cls, proj_only):
     """One fixture, one mode. Fresh organ, fresh counters, identical seeds."""
+    _audit_reset()
     with mode(role_cls, proj_only):
         o, j, slot, victim, seed = _damaged(4, density=density)
         reset()
+        before = o.messages
         o.run_item(PAYLOAD_B)
         out = _observe(o, j)
         out["seed"] = seed
+        out["messages_before_repair"] = before
+        out["repair_message_delta"] = o.messages - before
+        out["assertions"] = _exact_assertions(o, before)
+        out["audit"] = {k: v for k, v in AUDIT.items() if k != "records"}
+        out["audit_sample"] = AUDIT["records"][:6]
+        lc = getattr(o, "search_edge_lifecycle", {}) or {}
+        out["lifecycle_conflicts_detail"] = {
+            e: {"control": r["control_conflicts"], "outcome": r["outcome_conflicts"]}
+            for e, r in lc.items()
+            if r["control_conflicts"] or r["outcome_conflicts"]}
         return out
 
 

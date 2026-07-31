@@ -230,6 +230,11 @@ COUNTER_NAMES = (
     "GLOBAL_PROVIDER_INDEX_READS",
     "SOLUTION_LEAKAGE_EVENTS",
     "INHERITED_AUTHORITY_EVENTS",
+    # Commit 5: proof-closed terminality. A child edge closed against the
+    # outcome the organ already records, rather than against a message that
+    # can never arrive.
+    "CHILD_EDGES_RECONCILED_FROM_EVIDENCE",
+    "TERMINALS_WITH_UNRECONCILED_CHILDREN",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -2242,6 +2247,61 @@ class Unit:
         node["cancelled_credit"] += node["local_reserve"]
         node["local_reserve"] = 0.0
         self._seal(node, pid, "cancelled")
+        self._reconcile_closed_children(node)
+
+    def _reconcile_closed_children(self, node: dict) -> None:
+        """Close child edges whose outcome the ORGAN ALREADY RECORDS.
+
+        THE DEFECT THIS ANSWERS. A node that closes its wave commands each
+        outstanding child and then waits for that child's acknowledgement. A
+        child whose own wave is ALREADY closed never sends one: the command
+        arrives on an edge that is neither its adopted parent edge nor one of
+        its children -- because it COALESCED that edge as a duplicate -- so it
+        is refused as an unauthenticated control, correctly, and the commanding
+        parent waits forever. Measured on a complete graph, three nodes
+        including the ROOT finished with `children_outstanding` non-empty and
+        no further message could ever arrive.
+
+        Waiting for a message that cannot come is the failure mode the closure
+        invariant exists to forbid: a terminal claim may not be inferred from
+        the ABSENCE of a message. So this does not infer anything. It reads the
+        edge's recorded terminal -- immutable evidence the emitting unit already
+        wrote through `_record_terminal`, carrying the refund it returned -- and
+        closes the allocation against THAT. An edge with no recorded outcome is
+        left outstanding, because for that edge there is genuinely no proof.
+
+        This introduces no second lifecycle registry. `search_edge_terminals` is
+        the existing record and remains the only source of truth.
+        """
+        o = self._organ
+        if o is None:
+            return
+        for edge in sorted(node["children_outstanding"]):
+            rec = o.search_edge_terminals.get(edge)
+            if rec is None or not rec["outcomes"]:
+                continue                    # no evidence: it stays open
+            if edge in node["child_confirmed"]:
+                continue
+            first = rec["outcomes"][0]
+            if first.from_unit == self.unit_id:
+                # MY OWN COMMAND IS NOT THE CHILD'S EVIDENCE. Closing against a
+                # terminal I emitted downward is precisely "a parent classifying
+                # credit a child never confirmed" -- the defect an active
+                # specification forbids, and which caught this function's first
+                # version. The liability stays open and is counted as unproven.
+                C.incr("TERMINALS_WITH_UNRECONCILED_CHILDREN")
+                continue
+            per = node["child_allocations"].get(edge, 0.0)
+            refund = float(getattr(first, "refund", 0.0) or 0.0)
+            refund = max(0.0, min(refund, per))
+            node["child_confirmed"][edge] = (refund, per - refund)
+            node["children_outstanding"].discard(edge)
+            node["children_completed"].add(edge)
+            node["child_allocations_in_flight"] = max(
+                0.0, node["child_allocations_in_flight"] - per)
+            node["cancelled_credit"] += refund
+            node["child_refunds_received"] += refund
+            C.incr("CHILD_EDGES_RECONCILED_FROM_EVIDENCE")
 
     def _close_wave_from_parent(self, node: dict, kind: str, pid: str) -> None:
         """A commit or cancellation arrived from my adopted parent.
@@ -2274,6 +2334,7 @@ class Unit:
         node["local_reserve"] = 0.0
         self._seal(node, pid if kind == "SearchCommitted" else "",
                    "need_closed" if kind == "SearchNeedClosed" else "cancelled")
+        self._reconcile_closed_children(node)
         self._acknowledge_to_parent(node)
 
     def _acknowledge_to_parent(self, node: dict) -> None:

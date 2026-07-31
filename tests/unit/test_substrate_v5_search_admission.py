@@ -745,19 +745,36 @@ def test_the_harness_bypass_is_counted_and_never_taken_by_live_delivery():
     F.prepare(live)
     reset()
     seen = []
-    original = v5.Organ._deliver
+    original_step = v5.Unit.step
 
-    def recording(self, u, _o=original, _s=seen):
-        for dest, msg in u.outbox:
-            _s.append((u.unit_id, dest, msg))
-        return _o(self, u)
+    # MEASURE ARRIVALS, NOT ONE SENDING ROUTINE.
+    #
+    # The previous instrument patched `Organ._deliver` alone. `Organ._pump` is a
+    # SECOND, independent delivery path: it drains outboxes and increments
+    # `messages` without ever calling `_deliver`. On this fixture all 1012
+    # messages travel `_pump` and ZERO travel `_deliver`, so the instrument
+    # watched a path carrying no traffic and `seen` stayed empty. Its own guard
+    # caught that -- "no messages were delivered, so this proves nothing" was a
+    # true statement about the instrument, not about the runtime.
+    #
+    # Recording each unit's inbox as it is consumed measures what ACTUALLY
+    # ARRIVED, which is the delivery history this specification says it wants,
+    # and it is indifferent to which routine did the sending.
+    def recording_step(self, caps, _o=original_step, _s=seen):
+        for src, msg in self.inbox:
+            _s.append((src, self.unit_id, msg))
+        return _o(self, caps)
 
-    v5.Organ._deliver = recording
+    v5.Unit.step = recording_step
     try:
         live.commission()
         assert live.result_ok(live.run_item(PAYLOAD_A)), "formation stopped working"
     finally:
-        v5.Organ._deliver = original
+        v5.Unit.step = original_step
+    # Anything delivered but never consumed still counts as delivered.
+    for u in live.units.values():
+        for src, msg in u.inbox:
+            seen.append((src, u.unit_id, msg))
 
     assert seen, "no messages were delivered, so this proves nothing"
     for src, dest, msg in seen:

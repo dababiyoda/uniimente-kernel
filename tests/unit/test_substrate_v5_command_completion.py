@@ -210,7 +210,6 @@ def test_every_commanded_edge_ends_with_an_accepted_child_outcome():
 # 2. Completion is EARNED, not immediate
 # ---------------------------------------------------------------------------
 
-@completion
 def test_no_completion_is_emitted_while_a_descendant_remains_outstanding():
     """THE CASE A NAIVE IMPLEMENTATION FAILS.
 
@@ -242,7 +241,6 @@ def test_no_completion_is_emitted_while_a_descendant_remains_outstanding():
     assert _counter("PREMATURE_CONTROL_COMPLETION_OUTCOMES") == 0
 
 
-@completion
 def test_a_completion_reconciles_the_incoming_allocation_exactly():
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()
@@ -269,7 +267,6 @@ def test_a_completion_reconciles_the_incoming_allocation_exactly():
 # 3. Application is exactly-once, and only by the right endpoint
 # ---------------------------------------------------------------------------
 
-@completion
 def test_an_exact_control_replay_does_not_apply_it_twice():
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()

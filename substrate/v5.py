@@ -242,6 +242,14 @@ COUNTER_NAMES = (
     "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES",
     "OUTCOME_SLOT_OCCUPIED_BY_CONTROL",
     "DUPLICATE_TERMINAL_RESOLUTIONS",
+    # Commit 5I: child-owned command completion.
+    "PARENT_CONTROLS_APPLIED",
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION",
+    "CLOSED_NODES_WITH_CHILDREN_OUTSTANDING",
+    "DUPLICATE_CONTROL_APPLICATIONS",
+    "PREMATURE_CONTROL_COMPLETION_OUTCOMES",
+    "COALESCED_INBOUND_EDGES",
+    "COALESCED_INBOUND_EDGES_CLOSED_SEPARATELY",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -249,6 +257,7 @@ COUNTER_NAMES = (
 # closing the wave, or a child reporting that its own need generation is closed.
 PARENT_CONTROL_KINDS = ("SearchCommitted", "SearchCancelled", "SearchNeedClosed")
 CHILD_OUTCOME_KINDS = ("SearchExhausted", "SearchBudgetExhausted",
+                       "SearchCompleted",
                        "SearchCoalesced", "SearchCycleClosed",
                        "SearchContextRejected", "SearchNeedClosed")
 
@@ -1810,6 +1819,10 @@ class Unit:
             # reserve: only an explicit handling cost is charged.
             cost = min(COALESCE_HANDLING_COST, max(0.0, allocation))
             node["incoming_edges"].append(edge_id)
+            # A DUPLICATE ARRIVAL ADOPTS NOTHING AND STILL OWES ITS OPENER AN
+            # ANSWER ON THIS EXACT EDGE. Counted at creation so the ratio below
+            # has a real denominator rather than one derived from the answers.
+            C.incr("COALESCED_INBOUND_EDGES")
             node["children_from"].setdefault(edge_id, [])
             node["handling_cost"] += cost
             C.incr("COALESCED_DUPLICATE_ARRIVALS")
@@ -2393,6 +2406,10 @@ class Unit:
         key = node["search_key"]
         if node["wave_cancelled"]:
             return                              # replay: idempotent
+        # THE CONTROL IS APPLIED HERE, EXACTLY ONCE. The `wave_cancelled` guard
+        # above is the exactly-once rule: a replayed command returns before
+        # reaching this point, so application and its counter cannot double.
+        C.incr("PARENT_CONTROLS_APPLIED")
         node["terminal_signal_sent"] = True
         node["wave_cancelled"] = True
         win = node["proposal_routes"].get(pid) if pid else None
@@ -2436,8 +2453,25 @@ class Unit:
         node["cancelled_credit"] = 0.0
         node["returned_to_parent"] += refund
         node["consumed_credit"] = consumed
+        edge = node["adopted_parent_edge"]
         self.outbox.append((to, ("__search_ack__", node["search_key"],
-                                 node["adopted_parent_edge"], refund, consumed)))
+                                 edge, refund, consumed)))
+        # THE ACK IS THIS NODE'S CHILD-OWNED COMPLETION OUTCOME, and it is
+        # recorded as one. It is emitted only here, and the guard above is what
+        # earns it: `children_outstanding` must be empty, so every descendant
+        # liability has already reconciled before this node claims its own
+        # incoming edge is answerable. That is the difference between answering
+        # a command and completing it.
+        #
+        # `_record_outcome` -- not `_emit_terminal` -- because the message
+        # itself already travels as `__search_ack__` on the wire and is
+        # authenticated at the far end by `deliver_search_ack` against
+        # `child_targets`. Emitting a second Terminal would put two messages on
+        # one edge for one fact.
+        self._record_outcome(Terminal(
+            "SearchCompleted", node["search_key"], edge, refund, consumed,
+            self.unit_id, to, "control_applied", node["accepted_proposal_id"] or ""))
+        C.incr("PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION")
 
     def deliver_search_ack(self, key: SearchKey, edge_id: str, refund: float,
                            consumed: float, sender: Any = _UNSPECIFIED_SENDER):

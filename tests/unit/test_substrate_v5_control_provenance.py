@@ -91,9 +91,13 @@ PAYLOAD_A = "  Claim-77  "
 SEEDS = tuple(range(60))
 
 # Distinct from `spec`, `live`, `inherited` and `core`.
+# ACTIVATED. Every 2B control-plane provenance specification in this file was satisfied by the
+# runtime and its `xfail(strict=True)` marker removed in the activation
+# commit. The marker is retained, unused, so a new specification written
+# against an unimplemented behaviour can be pre-registered the same way.
 control = pytest.mark.xfail(
     strict=True,
-    reason="Single-Flight 2B control-plane provenance is not implemented yet")
+    reason="pre-registration marker for a NEW 2B control-plane provenance specification")
 
 
 def _build_raw(n_auth=4, seed=7, density=0.8):
@@ -250,7 +254,6 @@ def _snapshot(o, relay, node):
 # 1. Rejection controls must be sender-authenticated
 # ---------------------------------------------------------------------------
 
-@control
 def test_a_rejection_from_the_wrong_sender_cannot_suppress_a_proposal():
     """`adopted_parent_edge` is a value any neighbour can name.
 
@@ -291,7 +294,6 @@ def test_a_rejection_from_the_wrong_sender_cannot_suppress_a_proposal():
 # 2. Acknowledgements must be sender-authenticated
 # ---------------------------------------------------------------------------
 
-@control
 def test_an_ack_from_another_child_cannot_close_this_childs_allocation():
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
     a, b = kids[0], kids[1]
@@ -336,7 +338,6 @@ def _malformed_cases(per):
     ]
 
 
-@control
 @pytest.mark.parametrize("label", [c[0] for c in _malformed_cases(4.0)])
 def test_a_malformed_acknowledgement_changes_nothing(label):
     """Clamping is not validation.
@@ -381,7 +382,6 @@ def test_a_malformed_acknowledgement_changes_nothing(label):
 # 4. Terminal controls must be sender- and direction-bound
 # ---------------------------------------------------------------------------
 
-@control
 def test_a_forged_parent_command_cannot_close_the_wave():
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
     pay = _register_proposal(o, relay, node, kids[0])
@@ -411,7 +411,6 @@ def test_a_forged_parent_command_cannot_close_the_wave():
     assert _counter("UNAUTHENTICATED_TERMINAL_CONTROLS") == 0
 
 
-@control
 def test_a_child_terminal_from_the_wrong_sender_moves_no_credit():
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
     a, b = kids[0], kids[1]
@@ -436,7 +435,6 @@ def test_a_child_terminal_from_the_wrong_sender_moves_no_credit():
     assert _counter("UNAUTHENTICATED_TERMINAL_CONTROLS") == 0
 
 
-@control
 def test_a_parent_command_arriving_on_a_child_edge_is_refused():
     """Direction is not decorative. A wave-closing command travels DOWN."""
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
@@ -453,7 +451,6 @@ def test_a_parent_command_arriving_on_a_child_edge_is_refused():
     assert _counter("UNAUTHENTICATED_TERMINAL_CONTROLS") == 1
 
 
-@control
 def test_terminal_identity_fields_must_agree_with_the_actual_route():
     """A field inside the message is a claim, not evidence.
 
@@ -497,7 +494,6 @@ def test_terminal_identity_fields_must_agree_with_the_actual_route():
 # 5. Authenticated control replay is inert; unauthenticated replay stays refused
 # ---------------------------------------------------------------------------
 
-@control
 def test_authenticated_control_replay_changes_nothing_further():
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
     a = kids[0]

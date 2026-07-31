@@ -85,9 +85,13 @@ import fixtures as F
 PAYLOAD_A = "  Claim-77  "
 SEEDS = tuple(range(60))
 
+# ACTIVATED. Every 2C sealed lifecycle specification in this file was satisfied by the
+# runtime and its `xfail(strict=True)` marker removed in the activation
+# commit. The marker is retained, unused, so a new specification written
+# against an unimplemented behaviour can be pre-registered the same way.
 sealing = pytest.mark.xfail(
     strict=True,
-    reason="Single-Flight 2C control sealing is not implemented yet")
+    reason="pre-registration marker for a NEW 2C sealed lifecycle specification")
 
 
 def _build_raw(n_auth=4, seed=7, density=0.8):
@@ -226,7 +230,6 @@ def _snapshot(o, relay, node):
 # 1. Missing identity must FAIL CLOSED at every control entrypoint
 # ---------------------------------------------------------------------------
 
-@sealing
 def test_a_control_with_no_sender_is_refused_at_every_entrypoint():
     """An omitted argument is not authority.
 
@@ -271,7 +274,6 @@ def test_a_control_with_no_sender_is_refused_at_every_entrypoint():
 # 2. Terminal refund evidence must meet the acknowledgement standard
 # ---------------------------------------------------------------------------
 
-@sealing
 @pytest.mark.parametrize("label", ["negative", "oversized", "nan", "inf",
                                    "neg_inf"])
 def test_malformed_terminal_refund_evidence_fails_closed(label):
@@ -317,7 +319,6 @@ def test_malformed_terminal_refund_evidence_fails_closed(label):
 # 3. SearchCommitted must name a proposal this node actually knows
 # ---------------------------------------------------------------------------
 
-@sealing
 def test_a_commit_naming_an_unknown_proposal_is_refused():
     """Authentication answers WHO. It does not make a command meaningful.
 
@@ -353,7 +354,6 @@ def test_a_commit_naming_an_unknown_proposal_is_refused():
     assert _counter("UNKNOWN_COMMIT_PROPOSALS") == 0
 
 
-@sealing
 def test_a_source_may_be_committed_on_its_own_candidate():
     """POSITIVE CONTROL B, at the other identity the runtime must accept.
 
@@ -396,7 +396,6 @@ def test_a_source_may_be_committed_on_its_own_candidate():
 # 4. A closed wave must be causally sealed
 # ---------------------------------------------------------------------------
 
-@sealing
 def test_a_closed_wave_admits_no_late_proposal_or_rejection():
     o, j, relay, ctx, key, node, kids, seed = _relay_node()
     parent = node["adopted_parent_sender"]
@@ -447,7 +446,6 @@ def test_a_closed_wave_admits_no_late_proposal_or_rejection():
 # 5. A sender-side claim is not authenticated edge closure
 # ---------------------------------------------------------------------------
 
-@sealing
 def test_a_sender_cannot_record_a_terminal_it_has_no_right_to_emit():
     """Driven through the SENDER's own emission path, not the receiver seam.
 

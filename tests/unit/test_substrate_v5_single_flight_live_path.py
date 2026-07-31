@@ -203,7 +203,6 @@ def _key_for(j, slot, ctx, need_id):
 # 1-2. Constraints must TRAVEL, not just be hashed
 # ---------------------------------------------------------------------------
 
-@live
 def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     """The decisive defect: a digest cannot enforce a constraint remotely.
 
@@ -243,7 +242,6 @@ def test_remote_sibling_supplier_enforces_must_differ_and_offers_nothing():
     assert getattr(outcome, "payload", None) is None
 
 
-@live
 def test_remote_candidate_enforces_the_origins_causal_refusals():
     o, j, slot, victim, seed = _damaged(4)
     candidate = next(u for u in o.units.values()
@@ -261,7 +259,6 @@ def test_remote_candidate_enforces_the_origins_causal_refusals():
         "a candidate whose own derivation is refused by the origin proposed itself")
 
 
-@live
 def test_a_receiver_rejects_a_context_that_does_not_match_the_key():
     """A forged or stale context must not be honoured."""
     o, j, slot, victim, seed = _damaged(4)
@@ -371,7 +368,6 @@ def test_a_rejected_proposal_leaves_the_real_root_open_with_candidates_intact():
 # 5-7. Live protocol mechanics
 # ---------------------------------------------------------------------------
 
-@live
 def test_a_locally_eligible_producer_opens_zero_children():
     o, j, slot, victim, seed = _damaged(4)
     want = j.capability.accepts[slot]
@@ -415,7 +411,6 @@ def test_every_live_edge_is_probed_exactly_once():
         assert r["delivered"] <= 1, f"edge {e} was delivered {r['delivered']} times"
 
 
-@live
 def test_widening_rounds_produce_globally_unique_child_edge_ids():
     o, j, slot, victim, seed = _damaged(4)
     ctx = _ctx()
@@ -542,7 +537,6 @@ def test_formation_still_uses_the_legacy_need_path_unchanged():
 # ---------------------------------------------------------------------------
 
 
-@live
 @pytest.mark.parametrize("field,tampered", [
     ("maximum_supplier_cost", 0.01),
     ("cooldown_excluded_suppliers", frozenset({"someone.else"})),
@@ -582,7 +576,6 @@ def test_tampering_with_any_enforcement_field_is_rejected(field, tampered):
 # Remote eligibility: cost ceiling, cooldown, and DERIVATION-CHAIN refusal
 # ---------------------------------------------------------------------------
 
-@live
 def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
     o, j, slot, victim, seed = _damaged(4)
     want = j.capability.accepts[slot]
@@ -618,7 +611,6 @@ def test_a_candidate_above_the_cost_ceiling_proposes_nothing():
         f"'candidate_above_cost_ceiling'; a blanket refusal must not satisfy this")
 
 
-@live
 def test_a_cooldown_excluded_candidate_proposes_nothing():
     o, j, slot, victim, seed = _damaged(4)
     want = j.capability.accepts[slot]
@@ -653,7 +645,6 @@ def test_a_cooldown_excluded_candidate_proposes_nothing():
         f"'candidate_in_cooldown'; a blanket refusal must not satisfy this test")
 
 
-@live
 def test_an_upstream_ancestor_in_the_refusal_set_blocks_the_proposal():
     """Proves DERIVATION intersection, not just direct candidate exclusion.
 
@@ -1157,7 +1148,6 @@ def test_two_competing_proposals_race_through_real_child_edges():
         "the committed bond was later replaced by the race loser")
 
 
-@live
 def test_settlement_refuses_an_occupied_slot_with_an_attributable_reason():
     """`_settle` writes the bond without an independent slot-open check.
 
@@ -1234,7 +1224,6 @@ def test_a_rejected_proposal_is_recorded_once_and_replay_adds_nothing():
     assert pay.search_key.need_id not in j.closed_needs
 
 
-@live
 def test_delivered_proposal_is_registered_on_the_arrival_edge():
     """LOCAL ROUTE REGISTRATION ONLY -- renamed, because it never committed.
 

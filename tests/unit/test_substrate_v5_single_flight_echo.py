@@ -428,7 +428,6 @@ def test_D_richer_duplicate_is_fully_accounted_and_opens_nothing():
 # ---------------------------------------------------------------------------
 # E. Forced mixed-child order: A exhausts, then B answers
 # ---------------------------------------------------------------------------
-@spec
 def test_E_a_child_proposal_does_not_terminate_the_parent_or_cancel_siblings():
     """PROTOCOL_SEMANTICS_CORRECTION.
 

@@ -91,9 +91,13 @@ SEEDS = tuple(range(60))
 
 # Distinct from `spec`, `live` and `inherited`, so an activation commit can
 # target exactly this group.
+# ACTIVATED. Every 2A data-plane provenance specification in this file was satisfied by the
+# runtime and its `xfail(strict=True)` marker removed in the activation
+# commit. The marker is retained, unused, so a new specification written
+# against an unimplemented behaviour can be pre-registered the same way.
 core = pytest.mark.xfail(
     strict=True,
-    reason="Single-Flight 2A provenance and conservation are not implemented yet")
+    reason="pre-registration marker for a NEW 2A data-plane provenance specification")
 
 
 # ---------------------------------------------------------------------------
@@ -368,7 +372,6 @@ def _development_reopened():
 # 1. A missing context must FAIL CLOSED
 # ---------------------------------------------------------------------------
 
-@core
 def test_a_search_delivered_without_its_context_creates_nothing():
     """Absence of evidence is not absence of constraint.
 
@@ -450,7 +453,6 @@ def _proposal_for(o, node, supplier, edge, source_edge=None):
         source_edge_id=source_edge if source_edge is not None else edge)
 
 
-@core
 def test_a_proposal_on_an_edge_the_node_does_not_own_is_refused():
     """A relay cannot mutate a proposal and keep its id. It can mint a new one.
 
@@ -502,7 +504,6 @@ def test_a_proposal_on_an_edge_the_node_does_not_own_is_refused():
         "an unowned proposal replaced the slot's existing bond")
 
 
-@core
 def test_a_proposal_from_the_wrong_immediate_sender_is_refused():
     """The edge is real. The neighbour that handed it over is not its target.
 
@@ -569,7 +570,6 @@ def _assert_wave_not_stranded(o, root, node, pid, hops):
         f"to their source")
 
 
-@core
 def test_a_firm_proposal_refused_at_settlement_releases_every_hop():
     """Valid remotely, refused by settlement-time policy.
 
@@ -649,7 +649,6 @@ def test_a_firm_proposal_refused_at_settlement_releases_every_hop():
             f"stranded")
 
 
-@core
 def test_a_rejected_nonfirm_proposal_lets_the_source_continue_or_exhaust():
     """The second form of the same defect.
 
@@ -692,7 +691,6 @@ def test_a_rejected_nonfirm_proposal_lets_the_source_continue_or_exhaust():
 # 4. Credit must be conserved across the distributed wave
 # ---------------------------------------------------------------------------
 
-@core
 def test_a_parent_may_not_cancel_credit_a_child_never_confirmed():
     """Local algebra that balances can still record a false history.
 

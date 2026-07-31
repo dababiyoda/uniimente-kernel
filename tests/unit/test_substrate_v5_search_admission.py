@@ -1,9 +1,14 @@
 """2D: the search-adoption boundary, and the last unbound control surfaces.
 
-PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE. Strict xfail throughout.
+PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE, as strict xfail
+throughout. ALL 21 SPECIFICATIONS ARE NOW ACTIVE: each was satisfied by the
+2D-runtime commit, and the markers were removed afterwards, in a separate
+commit. The numbered defects below are the state of the runtime WHEN THIS FILE
+WAS WRITTEN, retained deliberately -- they record what was wrong and therefore
+what these tests are still holding closed. Each is annotated with its fix.
 
 WHY THIS FILE EXISTS. 2A bound the data plane, 2B and 2C bound the control plane
-and made identity fail closed. The INGRESS is still trust-by-receiver:
+and made identity fail closed. The INGRESS was still trust-by-receiver:
 
   1. SEARCH ARRIVALS ARE NOT AUTHENTICATED. `deliver_search` records the arrival
      as `sender or key.origin_unit` -- a missing sender is silently read as the
@@ -82,9 +87,13 @@ import fixtures as F
 PAYLOAD_A = "  Claim-77  "
 SEEDS = tuple(range(60))
 
+# ACTIVATED. Every 2D search admission specification in this file was satisfied by the
+# runtime and its `xfail(strict=True)` marker removed in the activation
+# commit. The marker is retained, unused, so a new specification written
+# against an unimplemented behaviour can be pre-registered the same way.
 admission = pytest.mark.xfail(
     strict=True,
-    reason="Single-Flight 2D search admission is not implemented yet")
+    reason="pre-registration marker for a NEW 2D search admission specification")
 
 
 def _build_raw(n_auth=4, seed=7, density=0.8):
@@ -213,7 +222,6 @@ def _quiet(o, unit):
 # 1. Search arrivals must be authenticated against a SENDER-CREATED probe
 # ---------------------------------------------------------------------------
 
-@admission
 @pytest.mark.parametrize("attack", [
     "no_sender", "not_a_neighbour", "no_probe", "wrong_from", "wrong_to",
     "wrong_key", "wrong_allocation"])
@@ -282,7 +290,6 @@ def test_an_unauthenticated_search_arrival_adopts_nothing(attack):
         f"{attack}: no attributable admission violation was recorded")
 
 
-@admission
 def test_a_properly_announced_search_arrival_is_admitted_once():
     """PAIRED POSITIVE CONTROL for every negative case above."""
     o, j, nbr, other, stranger, ctx, key, seed = _pair()
@@ -313,7 +320,6 @@ def test_a_properly_announced_search_arrival_is_admitted_once():
 # 2. Terminal emission must be bound to a real edge, key and destination
 # ---------------------------------------------------------------------------
 
-@admission
 @pytest.mark.parametrize("attack", ["unknown_edge", "wrong_key",
                                     "wrong_destination", "wrong_direction"])
 def test_an_endpoint_cannot_record_a_terminal_it_cannot_justify(attack):
@@ -350,7 +356,6 @@ def test_an_endpoint_cannot_record_a_terminal_it_cannot_justify(attack):
     assert _quiet(o, nbr)["terminals"] == before["terminals"]
 
 
-@admission
 def test_both_endpoints_may_emit_in_their_own_direction():
     """PAIRED POSITIVE CONTROL: the target answers, the opener commands."""
     o, j, nbr, other, stranger, ctx, key, seed = _pair()
@@ -423,7 +428,6 @@ def _relay_with_proposal():
         "specification, not a reason to skip it")
 
 
-@admission
 def test_a_rejected_proposal_can_never_later_be_committed():
     """Acquaintance is not eligibility.
 
@@ -452,7 +456,6 @@ def test_a_rejected_proposal_can_never_later_be_committed():
     assert _counter("COMMIT_OF_RESOLVED_PROPOSAL") == 1
 
 
-@admission
 def test_an_unresolved_proposal_commits_and_its_replay_is_inert():
     """PAIRED POSITIVE CONTROL, both halves of the eligibility rule."""
     o, j, relay, ctx, key, node, pay, seed = _relay_with_proposal()
@@ -527,7 +530,6 @@ def _source_node():
         "specification, not a reason to skip it")
 
 
-@admission
 @pytest.mark.parametrize("closure,expected", [
     ("SearchCancelled", "cancelled"), ("SearchNeedClosed", "need_closed")])
 def test_a_losing_source_candidate_is_dispositioned_and_deactivated(closure,
@@ -627,7 +629,6 @@ def _source_with_rival():
         "this specification, not a reason to skip it")
 
 
-@admission
 def test_a_source_candidate_that_loses_to_another_proposal_is_cancelled():
     """The case a generic cancellation does not cover.
 
@@ -658,7 +659,6 @@ def test_a_source_candidate_that_loses_to_another_proposal_is_cancelled():
     assert _counter("UNDISPOSITIONED_LOCAL_PROPOSALS") == 0
 
 
-@admission
 def test_an_accepted_source_candidate_is_dispositioned_accepted():
     o, j, producer, ctx, key, node, seed = _source_node()
     pid = node["local_candidate"].proposal_id
@@ -711,7 +711,6 @@ def test_no_live_execution_ever_uses_the_harness_capability():
         "a healthy live run used the harness bypass")
 
 
-@admission
 def test_the_harness_bypass_is_counted_and_never_taken_by_live_delivery():
     """The plain test above cannot prove quarantine, and should not pretend to.
 
@@ -785,7 +784,6 @@ def test_the_harness_bypass_is_counted_and_never_taken_by_live_delivery():
         "a healthy live run took the harness bypass")
 
 
-@admission
 def test_the_scheduler_ingress_path_adopts_only_authenticated_searches():
     """THE METRIC, MEASURED ON THE TRANSPORT PATH.
 

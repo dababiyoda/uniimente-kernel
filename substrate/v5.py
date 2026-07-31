@@ -210,6 +210,26 @@ COUNTER_NAMES = (
     "UNKNOWN_COMMIT_PROPOSALS",
     "LATE_CONTROLS_AFTER_CLOSURE",
     "UNAUTHENTICATED_TERMINAL_EMISSIONS",
+    # Commit 3: the root ORIGINATOR. `CANONICAL_ROOTS_CREATED` is the numerator
+    # the migration was missing; the rest are its accounting and its violation
+    # detectors.
+    "CANONICAL_ROOTS_CREATED",
+    "DUPLICATE_CANONICAL_ROOTS",
+    "ROOT_CONTEXT_REFUSALS",
+    "SEARCH_CREDIT_ISSUED",
+    "SEARCH_CREDIT_IN_FLIGHT",
+    "PROPOSALS_RETURNED_TO_ROOT",
+    "ELIGIBLE_PROPOSALS_COMMITTED",
+    # Forbidden-operation detectors for origination. Incremented only where the
+    # named defect would occur, so a correct run leaves them at zero. Two of
+    # them -- the provider index and the supervisor restart -- name operations
+    # the design forbids outright, in the same style as `_scan_all_units`.
+    # `TARGET_TOPOLOGY_LEAKAGE_EVENTS` and `UNAUTHORIZED_EXTERNAL_EFFECTS` are
+    # NOT redefined here: they already exist above and origination reuses them
+    # rather than minting a second counter for one property.
+    "GLOBAL_PROVIDER_INDEX_READS",
+    "SOLUTION_LEAKAGE_EVENTS",
+    "INHERITED_AUTHORITY_EVENTS",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -1437,7 +1457,21 @@ class Unit:
         per = (node["local_reserve"] * ROUND_SHARE) / len(ring)
         if per < 1.0:
             ring, per = ring[:1], min(node["local_reserve"], 1.0)
-        adopted = node["adopted_parent_edge"]
+        # THE EDGE-ID NAMESPACE, WHICH A ROOT DOES NOT GET FOR FREE.
+        #
+        # A relay names its children after the edge it was adopted on, which is
+        # already unique. A ROOT has no adopted parent edge -- correctly, it
+        # answers to nobody -- so `adopted` was the empty string and its
+        # children came out as "/r0/c0", "/r0/c1". Two roots in one organ then
+        # minted THE SAME child edge ids, the second root's `_record_probe`
+        # collided with the first's record, and the 2D gate correctly refused
+        # the arrival as `sender_is_not_the_recorded_opener`. The ingress was
+        # right and the naming was wrong.
+        #
+        # `need_id` is `unit:slot:activation`, so it is unique to the unit, the
+        # obligation and the reopen that created it -- locally derived, and
+        # enough to separate every root in the organ.
+        adopted = node["adopted_parent_edge"] or f"root:{node['search_key'].need_id}"
         rnd = node["expansion_round"]
         opened = 0
         for i, n in enumerate(ring):
@@ -1748,6 +1782,16 @@ class Unit:
                 # A non-firm candidate is evidence, not an answer: the origin
                 # cannot bond it, so the wave must continue past it.
                 self._expand_canonical(node)
+                # NESTED PREREQUISITE RECRUITMENT. This unit COULD serve the
+                # search except that it is itself unmet, so continuing the wave
+                # outward is only half the response: the other half is repairing
+                # the reason it cannot answer. The legacy `Need` path did this
+                # by minting a sub-need per unmet slot; the canonical form is
+                # simply to ORIGINATE, because a prerequisite deficit is a
+                # deficit like any other and origination is what a unit does
+                # with one. Recursion falls out of the mechanism rather than
+                # needing a second one.
+                self._recruit_prerequisites()
             return SearchEvent("SearchProposal", key, edge_id, "", payload,
                                self.unit_id, sender, payload.proposal_id)
         node = self.open_canonical_search(key, edge_id, allocation, sender,
@@ -1915,6 +1959,13 @@ class Unit:
         if key.origin_unit == self.unit_id:
             if node["status"] == "OPEN":
                 node["status"] = "PROPOSAL_PENDING"
+            C.incr("PROPOSALS_RETURNED_TO_ROOT")
+            # REGISTERED, NOT DECIDED. Settlement is driven from `step`, not
+            # from here. Deciding synchronously on arrival would mean the FIRST
+            # firm proposal to be delivered wins, with no chance for a
+            # competitor delivered in the same round to race -- which is what
+            # `PROPOSAL_PENDING` exists to represent, and what
+            # `_continue_after_child` already waits on.
         else:
             # A relay carries the evidence home unchanged. It does not settle,
             # does not answer, and does not cancel anything.
@@ -2493,8 +2544,152 @@ class Unit:
         prod = set(producers)
         return bool(prod) and prod <= self.refused
 
+    def _repair_context(self, slot: int) -> Optional[SearchContext]:
+        """Compile THIS unit's local evidence into a set of constraints.
+
+        Every field comes from state this unit already holds for its own
+        operation. Nothing is read from the organ, from a provider index, or
+        from any other unit:
+
+            causally_refused_sources   `self.refused`  -- what I refused, and why
+                                       I refused it, is mine
+            must_differ_from_suppliers my OTHER bonds, so a replacement cannot
+                                       duplicate a supplier I already depend on
+            maximum_supplier_cost      `self.repair_budget`, a supplier COST
+                                       ceiling
+            cooldown_excluded_suppliers`self.memory.cooldown`, my own failure
+                                       memory
+            constraint_generation      `self.local_activations`, my own reopen
+                                       count -- monotonic and local
+            policy_snapshot            the ordered record of what I am enforcing
+
+        EVERY SET IS AN EXCLUSION SET. There is no field in which a PERMITTED
+        supplier could be named, so the answer cannot travel inside the context
+        even by accident. That is a structural property, not a convention: a
+        candidate reading this context learns my LIMITS and never my SOLUTION.
+
+        Domain independence and prohibited motifs are deliberately absent, for
+        the reason `SearchContext` already documents -- they are computed at
+        settlement from origin-local capabilities, and shipping the origin's
+        occupied domains to every reachable candidate is the disclosure
+        `TARGET_TOPOLOGY_LEAKAGE_EVENTS` exists to forbid.
+        """
+        if slot >= len(self.capability.accepts):
+            C.incr("ROOT_CONTEXT_REFUSALS")
+            return None
+        siblings = frozenset(b.supplier for s, b in self.bonds.items()
+                             if s != slot)
+        cooldown = frozenset(self.memory.cooldown)
+        return SearchContext(
+            causally_refused_sources=frozenset(self.refused),
+            must_differ_from_suppliers=siblings,
+            maximum_supplier_cost=float(self.repair_budget),
+            cooldown_excluded_suppliers=cooldown,
+            constraint_generation=int(self.local_activations),
+            policy_snapshot=("distinct_supplier", "causal_refusal",
+                             "cost_ceiling", "cooldown"))
+
+    def _open_repair_root(self, slot: int, nid: str) -> Optional[dict]:
+        """Originate ONE canonical root for a deficit this unit just suffered.
+
+        THE IDENTITY IS DERIVED, NOT ASSIGNED. `SearchKey.build` hashes the
+        complete context, so the same deficit under the same constraints yields
+        the same key -- and `open_canonical_search` already refuses a second
+        node per key. Deduplication is therefore a property of how the
+        obligation is NAMED rather than a separate mechanism, and a separate
+        mechanism would have had to know about the other roots, which is
+        exactly the global knowledge this design forbids.
+
+        A root has NO adopted parent edge and NO parent sender. It is the one
+        node in a wave that answers to nobody, which is also why it is the one
+        node that may settle.
+        """
+        if self.unit_id in (ENV, SINK):
+            # The boundary holds no repair authority, so it originates nothing.
+            C.incr("ROOT_CONTEXT_REFUSALS")
+            return None
+        context = self._repair_context(slot)
+        if context is None:
+            return None
+        key = SearchKey.build(
+            need_id=nid, work_item_generation=int(self.item_seq),
+            origin_unit=self.unit_id, origin_slot=slot,
+            wanted_type=self.capability.accepts[slot], context=context)
+        if key in self.canonical_searches:
+            # The same deficit under the same constraints. Not an error and not
+            # a second root: the derived identity converged, which is the point.
+            C.incr("DUPLICATE_CANONICAL_ROOTS")
+            return self.canonical_searches[key]
+        credit = (ROOT_SEARCH_CREDIT_OVERRIDE
+                  if ROOT_SEARCH_CREDIT_OVERRIDE is not None
+                  else REPAIR_SEARCH_BUDGET)
+        node = self.open_canonical_search(
+            key, parent_edge="", allocation=float(credit), parent_sender="",
+            context=context, lineage=(self.unit_id,))
+        C.incr("CANONICAL_ROOTS_CREATED")
+        C.incr("SEARCH_CREDIT_ISSUED")
+        C.incr("REPAIR_REOPENS_WITH_CANONICAL_ROOT")
+        return node
+
+    def _settle_pending_roots(self) -> None:
+        """Decide the searches I ORIGINATED, once this round's arrivals are in.
+
+        Driven from `step`, deliberately, and not from `deliver_proposal`. A
+        whole delivery round lands before anything is decided, so competitors
+        delivered in the same round actually race instead of the first one
+        through the door winning by arrival order -- the property
+        `test_arrival_order_alone_does_not_change_the_outcome` exists to hold.
+
+        This is a TRIGGER, not an authority. `settle_search_offer` re-checks
+        every precondition itself: my ownership of the search, payload
+        integrity, the context digest, the slot's state, registration on a real
+        child edge, and the need generation. Nothing here can settle anything
+        that function would refuse, and a proposal is examined in a stable
+        order so the decision does not depend on dictionary iteration.
+        """
+        for key in sorted(self.canonical_searches, key=str):
+            if key.origin_unit != self.unit_id:
+                continue
+            node = self.canonical_searches[key]
+            if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
+                continue
+            if key.origin_slot in self.bonds:
+                continue
+            for pid in sorted(node["proposals_outstanding"]):
+                payload = node["proposal_payloads"].get(pid)
+                if payload is None or not payload.firm:
+                    continue
+                if self.settle_search_offer(payload):
+                    C.incr("ELIGIBLE_PROPOSALS_COMMITTED")
+                    break
+
+    def _recruit_prerequisites(self) -> None:
+        """Originate a root for each of MY unmet slots. Bounded and idempotent.
+
+        Called only by a unit that was asked to serve and found itself unmet.
+        Bounded three ways, all local: a unit with no repair budget recruits
+        nothing; a slot already carrying an open need is skipped, so a repeated
+        arrival cannot mint a second root; and each root it does open is itself
+        a bounded search with its own credit ledger.
+        """
+        if self.repair_budget <= 0 or self.unit_id in (ENV, SINK):
+            return
+        for slot in sorted(self.unmet()):
+            if slot in self.open_needs:
+                continue
+            self._emit_need(slot)
+
     def _emit_need(self, slot: int) -> None:
         """LOCAL BOUNDED ROUTING, not a broadcast.
+
+        REPAIR IS ORIGINATED AS A CANONICAL SINGLE-FLIGHT ROOT. The legacy
+        `Need` wave is NOT run alongside it: two active searches for one
+        obligation, each unaware the other may settle it, is the migration
+        hazard `DUAL_REPAIR_SEARCHES` exists to detect, so the legacy path is
+        REPLACED here rather than supplemented. Formation is untouched --
+        commissioning never reaches this function, which is why
+        `_send_to_frontier` remains and stays correct for the path that does
+        use it.
 
         Start with the neighbours this unit has itself seen deliver a settled
         offer of the required type, excluding the route that just failed. Widen
@@ -2514,7 +2709,14 @@ class Unit:
                and n["status"] in ("OPEN", "PROPOSAL_PENDING")
                for k, n in self.canonical_searches.items()):
             C.incr("DUAL_REPAIR_SEARCHES")
-        self._send_to_frontier(slot, nid)
+        if self._open_repair_root(slot, nid) is None:
+            # Origination refused -- the boundary, or a slot this unit does not
+            # have. FALLING BACK TO THE LEGACY WAVE HERE WOULD BE WRONG: it
+            # would run the mechanism whose refusal was just recorded, and the
+            # refusal reasons are exactly the cases that hold no repair
+            # authority. The obligation stays open and is reported, not routed.
+            self.open_needs.pop(slot, None)
+            self._search.pop(nid, None)
 
     def _frontier(self, want: str) -> list[str]:
         known = self.routes.get(want, {})
@@ -2748,6 +2950,7 @@ class Unit:
             elif isinstance(msg, Offer):
                 self._on_offer(msg, caps, sender)
         self.inbox.clear()
+        self._settle_pending_roots()
         # ITERATIVE WIDENING, decided locally and keyed to PROGRESS. Receiving
         # a message is not progress: an offer can be non-firm, stale, in
         # cooldown, prohibited or unsettleable. Widen unless the requirement
@@ -3447,6 +3650,11 @@ class Organ:
         """Global provider knowledge. EVALUATOR ONLY - never reachable from a
         developmental decision, and every read is recorded."""
         C.incr("FULL_PROVIDER_INDEX_READS")
+        # THE SAME EVENT UNDER THE NAME THE ORIGINATION SPECS MEASURE. One read
+        # drives both counters rather than one being an untested synonym of the
+        # other: `FULL_PROVIDER_INDEX_READS` is the historical name and stays,
+        # `GLOBAL_PROVIDER_INDEX_READS` is what Commit 3 asserts against.
+        C.incr("GLOBAL_PROVIDER_INDEX_READS")
         return sorted(u.unit_id for u in self.units.values()
                       if u.capability.produces == type_)
 

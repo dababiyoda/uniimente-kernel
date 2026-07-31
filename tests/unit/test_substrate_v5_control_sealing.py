@@ -467,7 +467,12 @@ def test_a_sender_cannot_record_a_terminal_it_has_no_right_to_emit():
     stranger._emit_terminal("SearchExhausted", key, a, relay.unit_id,
                             refund=node["child_allocations"][a])
 
-    assert a not in o.search_edge_terminals or not o.search_edge_terminals[a]["outcomes"], (
+    # THE SEMANTIC QUESTION IS "WAS ANY FACT RECORDED AT ALL", so BOTH channels
+    # are checked. A stranger owning neither end must not be able to file a
+    # command or an outcome, and checking only one channel would leave the
+    # other as an unguarded door.
+    _lc = o.search_edge_lifecycle.get(a) or {}
+    assert not _lc.get("accepted_control") and not _lc.get("accepted_outcome"), (
         f"{stranger.unit_id} recorded an authoritative terminal on edge {a}, "
         f"which it neither opened nor is the target of")
     assert o.search_edges.get(a, {}).get("terminal_status") == "open", (

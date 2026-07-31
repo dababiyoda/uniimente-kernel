@@ -368,8 +368,14 @@ def test_both_endpoints_may_emit_in_their_own_direction():
         "the edge's recorded target could not answer its own incoming edge")
 
     j._emit_terminal("SearchCancelled", key, "e/cmd", nbr.unit_id)
-    assert o.search_edge_terminals.get("e/cmd", {}).get("outcomes"), (
+    # THE SEMANTIC QUESTION HERE IS "WAS THE COMMAND ACCEPTED", not "was the
+    # edge closed". `SearchCancelled` is a parent control, so it lands in the
+    # control channel; reading it out of an outcome field was only ever
+    # possible because the two were conflated.
+    assert o.search_edge_lifecycle.get("e/cmd", {}).get("accepted_control"), (
         "the edge's opener could not command the edge it created")
+    assert o.search_edge_lifecycle.get("e/cmd", {}).get("accepted_outcome") is None, (
+        "the opener's command was also recorded as the edge's outcome")
     assert _counter("UNKNOWN_EDGE_TERMINAL_EMISSIONS") == 0
     assert C["UNAUTHENTICATED_TERMINAL_EMISSIONS"] == 0
 

@@ -533,3 +533,91 @@ def _damaged(n_auth=4, density=0.8):
         "no formed independently-supplied join across the pre-registered "
         "seeds; failing to construct the structure is a failure of this "
         "specification, not a reason to skip it")
+
+
+# ---------------------------------------------------------------------------
+# 6. The canonical record and its projection may not disagree
+# ---------------------------------------------------------------------------
+
+@separation
+def test_the_canonical_lifecycle_and_its_projection_cannot_diverge():
+    """`search_edge_lifecycle` is canonical. Everything else is derived.
+
+    THE FRAGILITY THIS NAMES. Two structures are currently mutated
+    INDEPENDENTLY: `_record_control` and `_record_outcome` each write
+    `search_edge_lifecycle`, and each also writes `search_edge_terminals`. The
+    projection was retained deliberately, because eight active specifications
+    still read the old structure to ask "did the opener command this edge" --
+    which was defensible inside a runtime-only commit and is not acceptable as
+    the frozen R8 evidence architecture.
+
+    The concrete disagreement is already reachable. A command-only edge has
+
+        lifecycle accepted_outcome  None          (correct: nothing closed it)
+        search_edges terminal_status 'open'       (correct)
+        projection ["outcomes"]     [the COMMAND] (a control, filed under a key
+                                                   every reader of that field
+                                                   interprets as an outcome)
+
+    so the same edge answers "was an outcome recorded" differently depending on
+    which structure is asked. That is the divergence, and it is a property of
+    having two independently written stores rather than of any single write.
+
+    NON-VACUOUS BY CONSTRUCTION. A live repair is required to exercise at least
+    one control AND at least one outcome before anything is compared, so an
+    empty organ -- or one that never emitted either -- fails instead of
+    trivially agreeing.
+    """
+    o, j, slot, victim, seed = _damaged(4, density=1.0)
+    reset()
+
+    o.run_item(PAYLOAD_B)
+
+    lifecycle = getattr(o, "search_edge_lifecycle", None)
+    assert lifecycle, (
+        "no canonical lifecycle records exist, so there is nothing to compare "
+        "a projection against and this test would pass vacuously")
+    controls = [e for e, r in lifecycle.items() if r["accepted_control"] is not None]
+    outcomes = [e for e, r in lifecycle.items() if r["accepted_outcome"] is not None]
+    assert controls, "the run exercised no parent control"
+    assert outcomes, "the run exercised no child outcome"
+
+    divergences = []
+    for edge, rec in sorted(lifecycle.items()):
+        accepted = rec["accepted_outcome"]
+        edge_row = o.search_edges.get(edge, {})
+        status = edge_row.get("terminal_status", "open")
+        # 1. Closure must follow the accepted OUTCOME, in both directions.
+        if accepted is None and status == "terminal":
+            divergences.append((edge, "closed with no accepted outcome"))
+        if accepted is not None and status != "terminal":
+            divergences.append((edge, "accepted outcome did not close the edge"))
+        if accepted is not None:
+            if edge_row.get("terminal_outcome") != accepted.kind:
+                divergences.append((edge, "terminal_outcome disagrees"))
+            if abs(edge_row.get("refunded_credit", 0.0) - accepted.refund) > 1e-9:
+                divergences.append((edge, "refunded_credit disagrees"))
+            if abs(edge_row.get("consumed_credit", 0.0)
+                   - accepted.handling_cost) > 1e-9:
+                divergences.append((edge, "consumed_credit disagrees"))
+        # 2. ANY retained projection must be derived from the outcome channel
+        #    alone. A control appearing in a field readers treat as an outcome
+        #    is exactly the ambiguity the split exists to remove.
+        proj = (getattr(o, "search_edge_terminals", {}) or {}).get(edge)
+        if proj is not None:
+            proj_outs = [x for x in proj.get("outcomes", [])]
+            for x in proj_outs:
+                if _kind(x) in v5.PARENT_CONTROL_KINDS:
+                    divergences.append(
+                        (edge, f"projection carries the control {_kind(x)} in a "
+                               f"field named 'outcomes'"))
+            if accepted is None and proj_outs:
+                divergences.append((edge, "projection has an outcome the "
+                                          "canonical record does not"))
+            if accepted is not None and not proj_outs:
+                divergences.append((edge, "projection lost the accepted outcome"))
+
+    assert not divergences, (
+        f"the canonical lifecycle and its projection disagree on "
+        f"{len(divergences)} point(s): {divergences[:6]}")
+    assert _counter("CANONICAL_LIFECYCLE_PROJECTION_DIVERGENCES") == 0

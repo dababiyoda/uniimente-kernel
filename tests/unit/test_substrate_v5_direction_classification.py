@@ -1,10 +1,14 @@
 """Commit 5K: a message's CHANNEL follows its direction, not its name.
 
-PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE. Strict xfail throughout.
+PRE-REGISTERED BEFORE THE CORRESPONDING RUNTIME CHANGE, as strict xfail. The
+markers were removed in 5L-M, after 5L-R made all five XPASS. Git ancestry is
+the proof of ordering: these specifications were committed before the runtime
+that satisfies them existed, and the strict marker meant an early pass would
+have been reported as a failure rather than quietly counted as a success.
 
-THE DEFECT, IN MY OWN 5B DISPATCHER.
+THE DEFECT, IN MY OWN 5B DISPATCHER (superseded by 5L-R).
 
-`_record_terminal` classifies by kind alone:
+`_record_terminal` classified by kind alone:
 
     if t.kind in PARENT_CONTROL_KINDS:
         return self._record_control(t)
@@ -58,12 +62,6 @@ import fixtures as F
 
 PAYLOAD_A = "  Claim-77  "
 SEEDS = tuple(range(60))
-
-direction = pytest.mark.xfail(
-    strict=True,
-    reason="edge-role classification is not implemented; the dispatcher still "
-           "routes by kind alone")
-
 
 def _build_raw(n_auth=4, seed=7, density=0.8):
     caps = F._spine("alpha2") + F._spine("beta2") + F._spine("gamma2")
@@ -180,7 +178,6 @@ def test_an_opener_emitted_need_closed_is_a_control():
         "a parent command closed the edge")
 
 
-@direction
 def test_a_receiver_emitted_need_closed_is_an_outcome():
     """THE CASE THE KIND-ONLY DISPATCHER GETS WRONG.
 
@@ -210,7 +207,6 @@ def test_a_receiver_emitted_need_closed_is_an_outcome():
         "the refund the child reported was not written to the edge")
 
 
-@direction
 def test_the_two_forms_do_not_share_a_channel_on_one_edge():
     """Both may occur on one edge, and each lands in its own channel."""
     o, j, nbr, ctx, key, seed = _pair()
@@ -236,7 +232,7 @@ def test_the_two_forms_do_not_share_a_channel_on_one_edge():
 
 @pytest.mark.parametrize("emitter,expected_channel", [
     pytest.param("opener", "accepted_control"),
-    pytest.param("receiver", "accepted_outcome", marks=direction)])
+    pytest.param("receiver", "accepted_outcome")])
 def test_exact_replay_is_inert_in_whichever_channel_the_role_selects(
         emitter, expected_channel):
     o, j, nbr, ctx, key, seed = _pair()
@@ -265,7 +261,6 @@ def test_exact_replay_is_inert_in_whichever_channel_the_role_selects(
 # 2. The role gate is not weakened by making it role-aware
 # ---------------------------------------------------------------------------
 
-@direction
 def test_a_stranger_owning_neither_end_reaches_neither_channel():
     """PAIRED with a positive control, so a runtime refusing everything fails."""
     o, j, nbr, ctx, key, seed = _pair()
@@ -292,7 +287,6 @@ def test_a_stranger_owning_neither_end_reaches_neither_channel():
         "proves nothing")
 
 
-@direction
 def test_classification_is_by_role_and_never_by_kind_membership():
     """THE RULE ITSELF, asserted directly.
 

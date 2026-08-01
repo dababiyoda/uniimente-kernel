@@ -1868,13 +1868,22 @@ class Unit:
         admitted = self._admit_search(key, edge_id, allocation, sender, transport)
         if admitted is not True:
             return admitted
-        if o is not None and edge_id in o.search_edge_terminals:
-            # Exact replay of an edge already answered: no reprocessing, no
+        _lc = (o.search_edge_lifecycle.get(edge_id) or {}) if o is not None else {}
+        if _lc.get("accepted_outcome") is not None:
+            # Exact replay of an edge ALREADY ANSWERED: no reprocessing, no
             # second terminal, and CRUCIALLY no second refund. Returning the
             # original terminal object would report its original refund again,
             # which reads as a second payment; the replay is reported as a
             # zero-value echo of the same outcome.
-            first = o.search_edge_terminals[edge_id]["outcomes"][0]
+            #
+            # ANSWERED, not merely commanded. This read membership in
+            # `search_edge_terminals`, which the control path also wrote, so a
+            # parent's command made its own edge look already-answered and this
+            # branch returned an inert echo before cycle, closed-Need,
+            # coalescing, context or adoption logic could run. An edge is
+            # answered when its canonical lifecycle holds an accepted OUTCOME,
+            # and a command is not an answer.
+            first = _lc["accepted_outcome"]
             return Terminal(first.kind, first.search_key, edge_id, 0.0, 0.0,
                             self.unit_id, first.to_unit, "edge_replay",
                             first.proposal_id)
@@ -2438,19 +2447,25 @@ class Unit:
         closes the allocation against THAT. An edge with no recorded outcome is
         left outstanding, because for that edge there is genuinely no proof.
 
-        This introduces no second lifecycle registry. `search_edge_terminals` is
-        the existing record and remains the only source of truth.
+        This introduces no second lifecycle registry. `search_edge_lifecycle`
+        is the existing canonical record and remains the only source of truth.
         """
         o = self._organ
         if o is None:
             return
         for edge in sorted(node["children_outstanding"]):
-            rec = o.search_edge_terminals.get(edge)
-            if rec is None or not rec["outcomes"]:
+            # THE CHILD'S ANSWER, from the channel only a child can fill.
+            # Reading the legacy projection here meant reading a store the
+            # PARENT also wrote, so this loop kept finding the parent's own
+            # command where a child's evidence was required and rejecting it
+            # below -- 810 times per suite run. The rejection was correct; the
+            # store was the wrong place to ask.
+            rec = o.search_edge_lifecycle.get(edge)
+            if rec is None or rec.get("accepted_outcome") is None:
                 continue                    # no evidence: it stays open
             if edge in node["child_confirmed"]:
                 continue
-            first = rec["outcomes"][0]
+            first = rec["accepted_outcome"]
             if first.from_unit == self.unit_id:
                 # MY OWN COMMAND IS NOT THE CHILD'S EVIDENCE. Closing against a
                 # terminal I emitted downward is precisely "a parent classifying
@@ -2792,9 +2807,15 @@ class Unit:
         self._continue_after_child(node)
 
     def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
-        """Exact replay of an already-answered edge is a no-op."""
+        """Exact replay of an already-ANSWERED edge is a no-op.
+
+        Answered means the canonical lifecycle holds an accepted outcome. An
+        edge that has only been commanded has not been answered, and replaying
+        it must still reach `deliver_search`.
+        """
         o = self._organ
-        if o is not None and edge_id in o.search_edge_terminals:
+        _lc = (o.search_edge_lifecycle.get(edge_id) or {}) if o is not None else {}
+        if _lc.get("accepted_outcome") is not None:
             return
         self.deliver_search(key, edge_id, 0.0)
 

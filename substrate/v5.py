@@ -1354,17 +1354,16 @@ class Unit:
             return False                    # exact replay: inert
         rec["controls"].append(t)
         rec["accepted_control"] = t
-        # COMPATIBILITY PROJECTION, and its limits are the whole point.
-        # `search_edge_terminals` remains the record of WHAT WAS SENT on an
-        # edge, so existing readers asking "did the opener command this edge"
-        # still get their answer. It is NOT closure: `terminal_status`,
-        # `terminal_outcome`, `refunded_credit` and `consumed_credit` are
-        # untouched here and are written only from an accepted child outcome.
-        # That is the separation -- a command is visible, and it settles
-        # nothing.
-        o.search_edge_terminals.setdefault(t.edge_id, {
-            "from_unit": t.from_unit, "to_unit": t.to_unit,
-            "search_key": t.search_key, "outcomes": []})["outcomes"].append(t)
+        # NO PROJECTION WRITE. A command is visible through `accepted_control`
+        # and nowhere else.
+        #
+        # The projection write existed to keep readers working that asked
+        # `search_edge_terminals` "did the opener command this edge". Those
+        # readers were the problem: the store's own name and its other
+        # consumers say OUTCOMES, so writing commands into it made a command
+        # indistinguishable from an answer to anything reading it -- including
+        # three runtime decision sites, until 5G-R. Every remaining reader,
+        # runtime and test alike, now asks the channel that owns what it wants.
         C.incr("SEARCH_CONTROLS_RECORDED")
         return True
 

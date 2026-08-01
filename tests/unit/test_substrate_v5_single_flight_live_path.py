@@ -1041,11 +1041,15 @@ def test_an_exact_proposal_replay_settles_only_once():
     decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
     accepted = node["accepted_proposal_id"]
     routes = dict(node["proposal_routes"])
-    # BOTH CHANNELS, so replay inertness is asserted over the whole canonical
-    # record rather than over one projection of it. A replay that added a
-    # second command would now be caught as well as one that added a second
-    # outcome; against the projection alone, the first was invisible.
-    terminals = {k: [v["accepted_control"], v["accepted_outcome"]]
+    # THE WHOLE CANONICAL RECORD, not one projection of it, and not only the
+    # accepted slots. A replay is inert only if it added no second command, no
+    # second outcome AND filed no conflict: a replay that arrived as a
+    # contradicting command would leave both accepted slots untouched and
+    # append to `control_conflicts`, so a snapshot of the accepted slots alone
+    # would call that inert. Against the legacy projection none of the three
+    # was visible.
+    terminals = {k: [v["accepted_control"], v["accepted_outcome"],
+                     list(v["control_conflicts"]), list(v["outcome_conflicts"])]
                  for k, v in o.search_edge_lifecycle.items()}
 
     for _ in range(4):
@@ -1062,9 +1066,11 @@ def test_an_exact_proposal_replay_settles_only_once():
         f"one proposal id was counted {C['UNIQUE_PROPOSAL_IDS_RECEIVED']} times")
     assert node["accepted_proposal_id"] == accepted, "acceptance changed on replay"
     assert dict(node["proposal_routes"]) == routes, "replay altered a route"
-    assert {k: [v["accepted_control"], v["accepted_outcome"]]
+    assert {k: [v["accepted_control"], v["accepted_outcome"],
+                list(v["control_conflicts"]), list(v["outcome_conflicts"])]
             for k, v in o.search_edge_lifecycle.items()} == terminals, (
-        "replay produced an additional accepted control or accepted outcome")
+        "replay mutated a lifecycle channel: an accepted control, an accepted "
+        "outcome, or a filed conflict changed")
     assert j.bonds.get(slot) is settled_bond, "a replayed proposal re-bonded the slot"
 
 

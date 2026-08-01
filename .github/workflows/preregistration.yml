@@ -29,3 +29,14 @@ jobs:
         run: python3 scripts/ci/check_phase3f_preregistration.py
       - name: Phase 3G pre-registration
         run: python3 scripts/ci/check_phase3g_preregistration.py
+      - name: Phase 3G evidence checksums
+        # The manifest existed and verified nothing, because nothing ran it. It
+        # sat stale from 1d7349c while DEVELOPMENT_RESULTS.json was rewritten
+        # seven times. An integrity manifest nobody executes is a claim.
+        working-directory: verification/phase3g
+        run: sha256sum -c CHECKSUMS.txt
+      - name: Phase 3G checksum coverage
+        # Executing the manifest is necessary and not sufficient: deleting a
+        # line is the cheapest way to make the step above pass. Coverage must
+        # be monotonic against the merge base.
+        run: python3 scripts/ci/check_phase3g_checksum_coverage.py

@@ -1018,8 +1018,19 @@ def test_an_exact_proposal_replay_settles_only_once():
     assert settled_bond.supplier == pay.supplier, (
         f"the slot bonded {settled_bond.supplier}, not the accepted "
         f"{pay.supplier}")
-    commits = [x for x in o.search_edge_terminals.get(kids[0], {}).get(
-        "outcomes", []) if _kind(x) == "SearchCommitted"]
+    # READ THE COMMAND WHERE COMMANDS LIVE. `SearchCommitted` is in
+    # PARENT_CONTROL_KINDS and in no other set, so this assertion has always
+    # been asking "did the parent command this edge" -- a control fact. It
+    # asked `search_edge_terminals`, which is the legacy projection and holds
+    # whatever was last written to it by either channel. The canonical answer
+    # is the control channel, and reading it here means this assertion keeps
+    # meaning the same thing once the projection carries accepted outcomes
+    # only. Measured runtime-neutral at b6c9e0c: the identical predicate passes
+    # against both the current runtime and the candidate that stops the control
+    # path writing the projection (CLOSURE_TRUTH_EXACT_EXECUTION.md, section 3).
+    _ac = (o.search_edge_lifecycle.get(kids[0]) or {}).get("accepted_control")
+    commits = [x for x in ([_ac] if _ac is not None else [])
+               if _kind(x) == "SearchCommitted"]
     assert len(commits) == 1 and getattr(commits[0], "proposal_id", None) == \
         pay.proposal_id, (
         f"the registered child edge holds {len(commits)} commits for "
@@ -1030,7 +1041,12 @@ def test_an_exact_proposal_replay_settles_only_once():
     decisions = C["UNIQUE_PROPOSAL_DECISIONS"]
     accepted = node["accepted_proposal_id"]
     routes = dict(node["proposal_routes"])
-    terminals = {k: list(v["outcomes"]) for k, v in o.search_edge_terminals.items()}
+    # BOTH CHANNELS, so replay inertness is asserted over the whole canonical
+    # record rather than over one projection of it. A replay that added a
+    # second command would now be caught as well as one that added a second
+    # outcome; against the projection alone, the first was invisible.
+    terminals = {k: [v["accepted_control"], v["accepted_outcome"]]
+                 for k, v in o.search_edge_lifecycle.items()}
 
     for _ in range(4):
         j.deliver_proposal(root, kids[0], pay, v5.HARNESS_DELIVERY)  # replayed ARRIVAL
@@ -1046,9 +1062,9 @@ def test_an_exact_proposal_replay_settles_only_once():
         f"one proposal id was counted {C['UNIQUE_PROPOSAL_IDS_RECEIVED']} times")
     assert node["accepted_proposal_id"] == accepted, "acceptance changed on replay"
     assert dict(node["proposal_routes"]) == routes, "replay altered a route"
-    assert {k: list(v["outcomes"])
-            for k, v in o.search_edge_terminals.items()} == terminals, (
-        "replay produced additional terminal outcomes")
+    assert {k: [v["accepted_control"], v["accepted_outcome"]]
+            for k, v in o.search_edge_lifecycle.items()} == terminals, (
+        "replay produced an additional accepted control or accepted outcome")
     assert j.bonds.get(slot) is settled_bond, "a replayed proposal re-bonded the slot"
 
 
@@ -1118,8 +1134,14 @@ def test_two_competing_proposals_race_through_real_child_edges():
 
     win_edge = node["proposal_routes"][winner.proposal_id]
     lose_edge = node["proposal_routes"][loser.proposal_id]
-    win_outs = o.search_edge_terminals.get(win_edge, {}).get("outcomes", [])
-    lose_outs = o.search_edge_terminals.get(lose_edge, {}).get("outcomes", [])
+    # SearchCommitted, SearchCancelled and SearchNeedClosed are all in
+    # PARENT_CONTROL_KINDS, so every kind this race asserts about is a command
+    # the root issued down a child edge -- read from the control channel that
+    # owns them, not from the legacy projection.
+    _wc = (o.search_edge_lifecycle.get(win_edge) or {}).get("accepted_control")
+    _lc = (o.search_edge_lifecycle.get(lose_edge) or {}).get("accepted_control")
+    win_outs = [_wc] if _wc is not None else []
+    lose_outs = [_lc] if _lc is not None else []
     assert [_kind(x) for x in win_outs] == ["SearchCommitted"], (
         f"the winner child edge {win_edge} received "
         f"{[_kind(x) for x in win_outs]}, expected exactly SearchCommitted")
@@ -1128,8 +1150,21 @@ def test_two_competing_proposals_race_through_real_child_edges():
         f"the loser child edge {lose_edge} received "
         f"{[_kind(x) for x in lose_outs]}")
     # The root must NOT shortcut to an edge that is not one of its own children.
-    for eid, rec in o.search_edge_terminals.items():
-        if rec["from_unit"] != j.unit_id:
+    # NON-VACUITY MATTERS MOST HERE, because this is the negative control: it
+    # is satisfied trivially if it iterates nothing. It looks for edges the
+    # ROOT COMMANDED, so it must read the control channel -- against the
+    # projection it would go silently empty the moment commands stop being
+    # written there, and a negative control that stops looking is worse than
+    # none.
+    _root_commanded = [eid for eid, rec in o.search_edge_lifecycle.items()
+                       if (rec.get("accepted_control") is not None
+                           and rec["accepted_control"].from_unit == j.unit_id)]
+    assert _root_commanded, (
+        "no edge carries a command authored by the root, so the loop below "
+        "would inspect nothing and pass without testing anything")
+    for eid, rec in o.search_edge_lifecycle.items():
+        _emitted = rec.get("accepted_control")
+        if _emitted is None or _emitted.from_unit != j.unit_id:
             continue
         assert eid in node["children_opened"] or eid == node["adopted_parent_edge"], (
             f"the root emitted a terminal on {eid}, which is neither one of its "

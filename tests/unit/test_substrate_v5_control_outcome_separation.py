@@ -486,7 +486,6 @@ def test_every_closed_child_edge_on_a_live_repair_carries_child_evidence():
     assert _counter("INHERITED_AUTHORITY_EVENTS") == 0
 
 
-@separation
 def test_no_closed_node_finishes_with_children_outstanding():
     """The observable consequence, stated as its own requirement.
 

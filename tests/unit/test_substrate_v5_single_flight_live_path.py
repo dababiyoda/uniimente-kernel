@@ -460,7 +460,6 @@ def test_lineage_accumulates_and_a_real_cycle_closes_positively():
         assert len(terminals[e]["outcomes"]) == 1, f"cycle edge {e} answered twice"
 
 
-@live
 def test_accepted_settlement_reconciles_every_outstanding_child_allocation():
     """Clearing the outstanding set is not the same as cancelling it."""
     o, j, slot, victim, seed = _damaged(4)

@@ -174,7 +174,6 @@ def test_every_applied_control_receives_a_child_owned_completion():
     assert C["UNAUTHORIZED_EXTERNAL_EFFECTS"] == 0
 
 
-@completion
 def test_every_commanded_edge_ends_with_an_accepted_child_outcome():
     """Stated on the EDGES, because that is where the evidence lives.
 
@@ -290,7 +289,6 @@ def test_an_exact_control_replay_does_not_apply_it_twice():
         "a replayed round changed an accepted control or outcome")
 
 
-@completion
 def test_a_closed_non_root_node_owes_nothing():
     o, j, slot, victim, seed = _damaged(4, density=1.0)
     reset()

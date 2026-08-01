@@ -241,6 +241,10 @@ COUNTER_NAMES = (
     "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE",
     "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES",
     "OUTCOME_SLOT_OCCUPIED_BY_CONTROL",
+    # 5L: a Terminal the sender-created probe cannot place in either channel.
+    # Failing closed is the point -- an unplaceable message must not choose its
+    # own channel by choosing a kind.
+    "UNCLASSIFIABLE_TERMINAL_RECORDINGS",
     "DUPLICATE_TERMINAL_RESOLUTIONS",
     # Commit 5I: child-owned command completion.
     "PARENT_CONTROLS_APPLIED",
@@ -1401,18 +1405,77 @@ class Unit:
         C.incr("TERMINAL_ECHOS_SENT")
         return True
 
-    def _record_terminal(self, t: Terminal) -> bool:
-        """COMPATIBILITY DISPATCHER. It holds no authority of its own.
+    def _probe_channel(self, t: Terminal) -> str:
+        """'control', 'outcome', or '' -- decided by the SENDER-CREATED PROBE.
 
-        Retained so existing call sites keep working, reduced to classifying the
-        message by its semantic class and routing it to the channel that owns
-        it. `_may_emit` has already proved that this unit is the endpoint
-        entitled to emit this kind in this direction, so the kind determines the
-        channel unambiguously.
+        Kind cannot decide this. `SearchNeedClosed` is in PARENT_CONTROL_KINDS
+        and in CHILD_OUTCOME_KINDS, so the same kind is a command when the
+        opener sends it down and an answer when the receiver sends it back. A
+        classifier reading kind alone files the receiver's answer as a command,
+        which is the defect this replaces.
+
+        The probe can decide it, because the probe records who opened the edge
+        and who it was opened to. The unit that OPENED it commands it; the unit
+        it was opened TO answers it.
+
+        THE AUTHOR IS `t.from_unit`, NEVER THE UNIT DOING THE RECORDING. A
+        parent records a child-authored Terminal when it observes the child's
+        closure, so classifying by the recorder would file the child's answer
+        as the parent's command -- the same defect by a different route.
+
+        Six facts are bound together and all of them must agree: the edge id,
+        the SearchKey, both probe endpoints and both message endpoints. An
+        emission that satisfies some of them and not the rest is refused rather
+        than placed in whichever channel it partially matches.
+
+        An EMPTY destination is accepted, and only because the commit and
+        cancellation paths legitimately close an edge whose target is no longer
+        tracked -- the same allowance `_may_emit` already makes for exactly
+        those paths. A NAMED destination must be the exact reversal of the
+        author's end.
         """
-        if t.kind in PARENT_CONTROL_KINDS:
+        o = self._organ
+        if o is None:
+            return ""
+        rec = o.search_edge_probes.get(t.edge_id)
+        if rec is None:
+            return ""                       # unknown edge: refused by 2D
+        if rec.get("search_key") != t.search_key:
+            return ""                       # right edge id, wrong search
+        if rec["from_unit"] == rec["to_unit"]:
+            # A degenerate self-edge cannot distinguish command from answer,
+            # so it gets neither channel rather than the first one that matches.
+            return ""
+        if t.from_unit == rec["from_unit"]:
+            return "control" if (not t.to_unit
+                                 or t.to_unit == rec["to_unit"]) else ""
+        if t.from_unit == rec["to_unit"]:
+            return "outcome" if (not t.to_unit
+                                 or t.to_unit == rec["from_unit"]) else ""
+        return ""                           # authored by neither endpoint
+
+    def _record_terminal(self, t: Terminal) -> bool:
+        """COMPATIBILITY SHIM. Strict, and it fails closed.
+
+        Every live call site now selects its channel explicitly -- `_emit_terminal`
+        from this unit's own role in the probe, `deliver_terminal` and
+        `_acknowledge_to_parent` by naming `_record_outcome` directly. So this
+        exists for callers outside the runtime, and it classifies from the
+        probe and from nothing else.
+
+        No fallback by kind. A fallback is what makes a strict rule optional:
+        anything the strict rule refuses would simply take the loose path, and
+        the shared `SearchNeedClosed` kind is exactly the message that would.
+        A Terminal this cannot place mutates neither channel and is counted
+        once, so a refusal is visible instead of silently becoming a command.
+        """
+        channel = self._probe_channel(t)
+        if channel == "control":
             return self._record_control(t)
-        return self._record_outcome(t)
+        if channel == "outcome":
+            return self._record_outcome(t)
+        C.incr("UNCLASSIFIABLE_TERMINAL_RECORDINGS")
+        return False
 
     def _may_emit(self, key: SearchKey, edge_id: str, kind: str,
                   to: str = "") -> str:
@@ -1472,7 +1535,19 @@ class Unit:
             # be satisfiable by two different bugs.
             C.incr(violation)
             return t
-        self._record_terminal(t)
+        # EXPLICIT CHANNEL AT THE CALL SITE. `_may_emit` has just proved this
+        # unit is one of the probe's two endpoints and that any named
+        # destination is the right one; which endpoint it is decides the
+        # channel, and a message that satisfies `_may_emit` but cannot be
+        # placed is refused rather than defaulted.
+        channel = self._probe_channel(t)
+        if channel == "control":
+            self._record_control(t)
+        elif channel == "outcome":
+            self._record_outcome(t)
+        else:
+            C.incr("UNCLASSIFIABLE_TERMINAL_RECORDINGS")
+            return t                        # nothing recorded, nothing sent
         if to:
             self.outbox.append((to, t))
         return t
@@ -2700,9 +2775,17 @@ class Unit:
         node["local_reserve"] += credited
         # The parent OBSERVES the child's closure, so the child's edge carries
         # its one terminal outcome even when the emitting side is a harness.
-        self._record_terminal(Terminal(kind, key, edge_id, credited, 0.0,
-                                       node["child_targets"].get(edge_id, ""),
-                                       self.unit_id, "", proposal_id))
+        #
+        # `_record_outcome` BY NAME, not through the classifier. This Terminal
+        # is authored by the child -- `from_unit` is the child target and
+        # `to_unit` is this parent -- and it is child evidence whichever kind it
+        # carries. Routing it through a generic dispatcher would make the
+        # correctness of an observation depend on a lookup succeeding, when the
+        # authentication above has already established every fact that matters:
+        # the sender, the edge, the key, the destination and the evidence.
+        self._record_outcome(Terminal(kind, key, edge_id, credited, 0.0,
+                                      node["child_targets"].get(edge_id, ""),
+                                      self.unit_id, "", proposal_id))
         if node["wave_cancelled"] or node["terminal_signal_sent"]:
             self._acknowledge_to_parent(node)
             return

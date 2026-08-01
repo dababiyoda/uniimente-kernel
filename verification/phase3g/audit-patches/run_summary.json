@@ -1,0 +1,170 @@
+{
+  "5g": {
+    "assertion_failures": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "n_assertion_failures": 2,
+    "n_regressions": 2,
+    "n_xpass_strict": 4,
+    "regressions_vs_baseline": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 6,
+      "passed": 873,
+      "skipped": 17,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": [
+      "tests/unit/test_substrate_v5_command_completion.py::test_a_closed_non_root_node_owes_nothing",
+      "tests/unit/test_substrate_v5_command_completion.py::test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "tests/unit/test_substrate_v5_control_outcome_separation.py::test_no_closed_node_finishes_with_children_outstanding",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ]
+  },
+  "5g-reader": {
+    "assertion_failures": [],
+    "n_assertion_failures": 0,
+    "n_regressions": 0,
+    "n_xpass_strict": 4,
+    "regressions_vs_baseline": [],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 4,
+      "passed": 875,
+      "skipped": 17,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": [
+      "tests/unit/test_substrate_v5_command_completion.py::test_a_closed_non_root_node_owes_nothing",
+      "tests/unit/test_substrate_v5_command_completion.py::test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "tests/unit/test_substrate_v5_control_outcome_separation.py::test_no_closed_node_finishes_with_children_outstanding",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ]
+  },
+  "5g-writer": {
+    "assertion_failures": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "n_assertion_failures": 2,
+    "n_regressions": 2,
+    "n_xpass_strict": 4,
+    "regressions_vs_baseline": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 6,
+      "passed": 873,
+      "skipped": 17,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": [
+      "tests/unit/test_substrate_v5_command_completion.py::test_a_closed_non_root_node_owes_nothing",
+      "tests/unit/test_substrate_v5_command_completion.py::test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "tests/unit/test_substrate_v5_control_outcome_separation.py::test_no_closed_node_finishes_with_children_outstanding",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ]
+  },
+  "5gl": {
+    "assertion_failures": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "n_assertion_failures": 2,
+    "n_regressions": 2,
+    "n_xpass_strict": 9,
+    "regressions_vs_baseline": [
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_an_exact_proposal_replay_settles_only_once",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 11,
+      "passed": 873,
+      "skipped": 12,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": [
+      "tests/unit/test_substrate_v5_command_completion.py::test_a_closed_non_root_node_owes_nothing",
+      "tests/unit/test_substrate_v5_command_completion.py::test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "tests/unit/test_substrate_v5_control_outcome_separation.py::test_no_closed_node_finishes_with_children_outstanding",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_a_receiver_emitted_need_closed_is_an_outcome",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_a_stranger_owning_neither_end_reaches_neither_channel",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_classification_is_by_role_and_never_by_kind_membership",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_the_two_forms_do_not_share_a_channel_on_one_edge",
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ]
+  },
+  "5l": {
+    "assertion_failures": [],
+    "n_assertion_failures": 0,
+    "n_regressions": 0,
+    "n_xpass_strict": 5,
+    "regressions_vs_baseline": [],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 5,
+      "passed": 875,
+      "skipped": 16,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": [
+      "tests/unit/test_substrate_v5_direction_classification.py::test_a_receiver_emitted_need_closed_is_an_outcome",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_a_stranger_owning_neither_end_reaches_neither_channel",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_classification_is_by_role_and_never_by_kind_membership",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+      "tests/unit/test_substrate_v5_direction_classification.py::test_the_two_forms_do_not_share_a_channel_on_one_edge"
+    ]
+  },
+  "baseline": {
+    "assertion_failures": [],
+    "n_assertion_failures": 0,
+    "n_regressions": 0,
+    "n_xpass_strict": 0,
+    "regressions_vs_baseline": [],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 0,
+      "passed": 875,
+      "skipped": 21,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": []
+  },
+  "instr": {
+    "assertion_failures": [],
+    "n_assertion_failures": 0,
+    "n_regressions": 0,
+    "n_xpass_strict": 0,
+    "regressions_vs_baseline": [],
+    "suite_totals": {
+      "errors": 0,
+      "failures": 0,
+      "passed": 875,
+      "skipped": 21,
+      "tests": 896
+    },
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5,
+    "xpass_strict": []
+  }
+}

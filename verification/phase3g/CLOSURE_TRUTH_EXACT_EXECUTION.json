@@ -1,0 +1,664 @@
+{
+  "audit": "5K-T1c/T1d/T2c exact-execution audit",
+  "baseline_parity_gate": {
+    "MET": true,
+    "observed_summary_line": "875 passed, 1 skipped, 20 xfailed in 14.64s",
+    "observed_totals": {
+      "errors": 0,
+      "failures": 0,
+      "passed": 875,
+      "skipped": 21,
+      "tests": 896
+    },
+    "required": "5 target passes; suite exactly 875 passed / 1 skipped / 20 xfailed / 0 failed",
+    "target_passes_in_suite": 5,
+    "target_passes_solo": 5
+  },
+  "candidates": {
+    "5g": [
+      "instr",
+      "reader",
+      "writer"
+    ],
+    "5g-reader": [
+      "instr",
+      "reader"
+    ],
+    "5g-writer": [
+      "instr",
+      "writer"
+    ],
+    "5gl": [
+      "instr",
+      "reader",
+      "writer",
+      "direction"
+    ],
+    "5l": [
+      "instr",
+      "direction"
+    ],
+    "instr": [
+      "instr"
+    ]
+  },
+  "classification": {
+    "test_an_exact_proposal_replay_settles_only_once": {
+      "channel_of_that_fact": "SearchCommitted is in PARENT_CONTROL_KINDS and in no other set",
+      "fact_sought": "the parent's COMMIT COMMAND landed on the registered child edge, once, carrying this proposal id",
+      "failing_read": "o.search_edge_terminals[kids[0]]['outcomes'] filtered for SearchCommitted",
+      "line": "tests/unit/test_substrate_v5_single_flight_live_path.py:1021-1026",
+      "verdict": "STALE_PROJECTION_ASSERTION"
+    },
+    "test_two_competing_proposals_race_through_real_child_edges": {
+      "channel_of_that_fact": "all three kinds are PARENT_CONTROL_KINDS",
+      "fact_sought": "the winner child edge was commanded SearchCommitted and the loser SearchCancelled/SearchNeedClosed; and the root commanded no edge outside its own children",
+      "failing_read": "o.search_edge_terminals[win_edge|lose_edge]['outcomes']",
+      "line": "tests/unit/test_substrate_v5_single_flight_live_path.py:1121-1131",
+      "verdict": "STALE_PROJECTION_ASSERTION"
+    }
+  },
+  "counters": {
+    "5g": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 48,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 863,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 0,
+      "SEARCH_CONTROLS_RECORDED": 914,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0,
+      "TERMINAL_ECHOS_SENT": 3783,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    },
+    "5g-reader": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 47,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 863,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 0,
+      "SEARCH_CONTROLS_RECORDED": 914,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0,
+      "TERMINAL_ECHOS_SENT": 3783,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    },
+    "5g-writer": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 46,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 863,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 5025,
+      "SEARCH_CONTROLS_RECORDED": 914,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0,
+      "TERMINAL_ECHOS_SENT": 3783,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    },
+    "5gl": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 46,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 863,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 0,
+      "SEARCH_CONTROLS_RECORDED": 910,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0,
+      "TERMINAL_ECHOS_SENT": 3788,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    },
+    "5l": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 46,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 809,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 4782,
+      "SEARCH_CONTROLS_RECORDED": 868,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 810,
+      "TERMINAL_ECHOS_SENT": 3279,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    },
+    "instr": {
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 46,
+      "DUPLICATE_SUBTREES_OPENED": 0,
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 1,
+      "LEGACY_REPAIR_NEED_MESSAGES": 809,
+      "LEGACY_TERMINAL_PROJECTION_DECISION_READS": 4782,
+      "SEARCH_CONTROLS_RECORDED": 872,
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN": 810,
+      "TERMINAL_ECHOS_SENT": 3274,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 9,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 76
+    }
+  },
+  "decision_authority_measurement": {
+    "5g": 0,
+    "5gl": 0,
+    "5l": 4782,
+    "baseline_positive_control": 4782,
+    "counter": "LEGACY_TERMINAL_PROJECTION_DECISION_READS",
+    "reader_migrated": 0,
+    "sites": [
+      "deliver_search inert-replay test",
+      "_reconcile_closed_children evidence read",
+      "replay_search_edge no-op test"
+    ],
+    "why_a_new_name": "LEGACY_PROJECTION_DECISION_READS already exists and already tracks the _search projection, which two active specs require to be 0. search_edge_terminals is a SECOND legacy projection that does hold decision authority and had no counter at all. The asymmetry is the finding.",
+    "writer_only": 5025
+  },
+  "factors": {
+    "direction": "MECHANISM 3 author-direction classification: _record_terminal classifies by the edge's probe roles against the message AUTHOR (from_unit), not by kind membership",
+    "instr": "audit counter only; behaviourally inert",
+    "reader": "MECHANISM 2 decision-authority migration: deliver_search, _reconcile_closed_children and replay_search_edge stop treating membership in search_edge_terminals as proof an edge was answered and read search_edge_lifecycle[edge]['accepted_outcome']",
+    "writer": "MECHANISM 1 writer cleanup: _record_control stops writing the legacy projection"
+  },
+  "head": "b6c9e0c",
+  "instrumentation_parity_gate": {
+    "MET": true,
+    "observed_totals": {
+      "errors": 0,
+      "failures": 0,
+      "passed": 875,
+      "skipped": 21,
+      "tests": 896
+    },
+    "required": "the audit counter must change no test outcome"
+  },
+  "invariants_unmoved": {
+    "DUPLICATE_SUBTREES_OPENED": "0 in every candidate -- structural convergence untouched",
+    "DUPLICATE_TERMINAL_RESOLUTIONS": "1 in every candidate",
+    "UNAUTHENTICATED_TERMINAL_EMISSIONS": "9 in every candidate -- 2D unweakened",
+    "UNKNOWN_EDGE_TERMINAL_EMISSIONS": "76 in every candidate -- 2D unweakened"
+  },
+  "matrix": {
+    "5g": {
+      "assertion_failures": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "n_regressions": 2,
+      "n_xpass_strict": 4,
+      "regressions_vs_baseline": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 6,
+        "passed": 873,
+        "skipped": 17,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": [
+        "test_a_closed_non_root_node_owes_nothing",
+        "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+        "test_no_closed_node_finishes_with_children_outstanding",
+        "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+      ]
+    },
+    "5g-reader": {
+      "assertion_failures": [],
+      "n_regressions": 0,
+      "n_xpass_strict": 4,
+      "regressions_vs_baseline": [],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 4,
+        "passed": 875,
+        "skipped": 17,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": [
+        "test_a_closed_non_root_node_owes_nothing",
+        "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+        "test_no_closed_node_finishes_with_children_outstanding",
+        "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+      ]
+    },
+    "5g-writer": {
+      "assertion_failures": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "n_regressions": 2,
+      "n_xpass_strict": 4,
+      "regressions_vs_baseline": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 6,
+        "passed": 873,
+        "skipped": 17,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": [
+        "test_a_closed_non_root_node_owes_nothing",
+        "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+        "test_no_closed_node_finishes_with_children_outstanding",
+        "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+      ]
+    },
+    "5gl": {
+      "assertion_failures": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "n_regressions": 2,
+      "n_xpass_strict": 9,
+      "regressions_vs_baseline": [
+        "test_an_exact_proposal_replay_settles_only_once",
+        "test_two_competing_proposals_race_through_real_child_edges"
+      ],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 11,
+        "passed": 873,
+        "skipped": 12,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": [
+        "test_a_closed_non_root_node_owes_nothing",
+        "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+        "test_no_closed_node_finishes_with_children_outstanding",
+        "test_a_receiver_emitted_need_closed_is_an_outcome",
+        "test_a_stranger_owning_neither_end_reaches_neither_channel",
+        "test_classification_is_by_role_and_never_by_kind_membership",
+        "test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+        "test_the_two_forms_do_not_share_a_channel_on_one_edge",
+        "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+      ]
+    },
+    "5l": {
+      "assertion_failures": [],
+      "n_regressions": 0,
+      "n_xpass_strict": 5,
+      "regressions_vs_baseline": [],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 5,
+        "passed": 875,
+        "skipped": 16,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": [
+        "test_a_receiver_emitted_need_closed_is_an_outcome",
+        "test_a_stranger_owning_neither_end_reaches_neither_channel",
+        "test_classification_is_by_role_and_never_by_kind_membership",
+        "test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+        "test_the_two_forms_do_not_share_a_channel_on_one_edge"
+      ]
+    },
+    "baseline": {
+      "assertion_failures": [],
+      "n_regressions": 0,
+      "n_xpass_strict": 0,
+      "regressions_vs_baseline": [],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 875,
+        "skipped": 21,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": []
+    },
+    "instr": {
+      "assertion_failures": [],
+      "n_regressions": 0,
+      "n_xpass_strict": 0,
+      "regressions_vs_baseline": [],
+      "suite_totals": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 875,
+        "skipped": 21,
+        "tests": 896
+      },
+      "target_passes_in_suite": 5,
+      "target_passes_solo": 5,
+      "xpass_strict_preregistered_specs_now_passing": []
+    }
+  },
+  "method": {
+    "anchor_discipline": "every candidate edit asserts its anchor text matches exactly once, so a no-op patch cannot pass as a result",
+    "principle": "No assertion is reproduced, reconstructed or mirrored. Every verdict below is pytest's own verdict on the repository's own test file, read out of the JUnit XML pytest wrote.",
+    "run_shapes": [
+      "solo (one node id, own interpreter process)",
+      "batched (all five together)",
+      "module (whole test module)",
+      "suite (whole test suite)"
+    ],
+    "worktrees": "disposable git worktrees at b6c9e0c; candidate runtime diffs applied to the working tree only, never committed to the branch"
+  },
+  "metric": {
+    "REGRESSIONS_CLASSIFIED": 2,
+    "UNEXPLAINED_REGRESSIONS": 0,
+    "basis": "the regression set is two cases, not five; both are classified STALE_PROJECTION_ASSERTION with paired positive and negative controls"
+  },
+  "not_established": [
+    "That the 5G/5L runtime edits shaped here are the ones that should land. This audit measured them; it did not authorize them.",
+    "Anything about Gates F and G, which remain UNMEASURED.",
+    "R8, which remains prohibited."
+  ],
+  "paired_controls_for_the_classification": {
+    "instrument": "verification/phase3g/audit-patches/probe-read-relocation.patch",
+    "negative_control": {
+      "meaning": "the relocation is runtime-neutral -- it asserts the same fact in both worlds, which is what distinguishes a stale reader from a weakened test",
+      "result": "2 passed",
+      "runtime": "baseline"
+    },
+    "non_vacuity": "both relocated assertions require a POSITIVE (len(commits)==1; win_outs==['SearchCommitted']), so neither can pass by finding nothing",
+    "positive_control": {
+      "meaning": "the fact the assertions demand still exists under 5G",
+      "result": "2 passed",
+      "runtime": "5G"
+    },
+    "what_it_does": "keeps each predicate byte-identical and redirects ONLY the place it reads, from search_edge_terminals to search_edge_lifecycle[edge]['accepted_control']"
+  },
+  "premise_correction": {
+    "REGRESSED_CASES_FROM_THE_PRIOR_SET": 0,
+    "conclusion": "the named regression set is wrong. Those five are not regressed by 5G, 5L or 5G+5L as exactly specified here. Prior sessions attributed to these changes failures that a mirrored harness produced, or that an earlier and differently-shaped candidate produced.",
+    "measured": "all five PASS under every candidate, in every run shape",
+    "prior_claim": "five regressed cases (test_A, test_J[0.7|0.8|0.9], test_lineage) block 5G and 5L"
+  },
+  "preregistered_specs_that_go_green": {
+    "5g_only": [
+      "test_a_closed_non_root_node_owes_nothing",
+      "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "test_no_closed_node_finishes_with_children_outstanding",
+      "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ],
+    "5gl": [
+      "test_a_closed_non_root_node_owes_nothing",
+      "test_every_commanded_edge_ends_with_an_accepted_child_outcome",
+      "test_no_closed_node_finishes_with_children_outstanding",
+      "test_a_receiver_emitted_need_closed_is_an_outcome",
+      "test_a_stranger_owning_neither_end_reaches_neither_channel",
+      "test_classification_is_by_role_and_never_by_kind_membership",
+      "test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+      "test_the_two_forms_do_not_share_a_channel_on_one_edge",
+      "test_accepted_settlement_reconciles_every_outstanding_child_allocation"
+    ],
+    "5l_only": [
+      "test_a_receiver_emitted_need_closed_is_an_outcome",
+      "test_a_stranger_owning_neither_end_reaches_neither_channel",
+      "test_classification_is_by_role_and_never_by_kind_membership",
+      "test_exact_replay_is_inert_in_whichever_channel_the_role_selects[receiver-accepted_outcome]",
+      "test_the_two_forms_do_not_share_a_channel_on_one_edge"
+    ],
+    "counts": {
+      "5g": 4,
+      "5gl": 9,
+      "5l": 5
+    },
+    "note": "pytest reports a strict-xfail that starts passing as a FAILURE. These are pre-registered predictions coming true and are the intended outcome, not breakage. Git ancestry proves each was registered before the runtime change existed."
+  },
+  "real_regression_set": {
+    "absent_in": [
+      "5g-reader",
+      "5l"
+    ],
+    "cases": [
+      "test_an_exact_proposal_replay_settles_only_once",
+      "test_two_competing_proposals_race_through_real_child_edges"
+    ],
+    "isolated_cause": "MECHANISM 1 (writer cleanup) alone. The reader migration alone (5g-reader) and the direction change alone (5l) each produce zero assertion failures.",
+    "module": "tests/unit/test_substrate_v5_single_flight_live_path.py",
+    "present_in": [
+      "5g-writer",
+      "5g",
+      "5gl"
+    ]
+  },
+  "second_defect_surfaced": {
+    "5g": 0,
+    "5g-reader": 0,
+    "5g-writer": 0,
+    "5gl": 0,
+    "5l": 810,
+    "baseline": 810,
+    "counter": "TERMINALS_WITH_UNRECONCILED_CHILDREN",
+    "reading": "At head, _reconcile_closed_children reads the legacy projection, finds the parent's OWN command sitting there, correctly refuses to close a child allocation against it, and leaves the liability open -- 810 times per suite. The guard is working. What it is guarding against is the projection storing commands and answers in one array. Under any candidate that separates them, it never trips."
+  },
+  "target_case_verdicts": {
+    "5g": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "5g-reader": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "5g-writer": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "5gl": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "5l": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "baseline": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    },
+    "instr": {
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_A_diamond_convergence_opens_one_canonical_node": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_0": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.7]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_1": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.8]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_2": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_echo.py::test_J_amplification_scales_with_units_not_paths[0.9]": {
+        "batched": "passed",
+        "module_0": "passed",
+        "solo_3": "passed",
+        "suite": "passed"
+      },
+      "tests/unit/test_substrate_v5_single_flight_live_path.py::test_lineage_accumulates_and_a_real_cycle_closes_positively": {
+        "batched": "passed",
+        "module_1": "passed",
+        "solo_4": "passed",
+        "suite": "passed"
+      }
+    }
+  }
+}

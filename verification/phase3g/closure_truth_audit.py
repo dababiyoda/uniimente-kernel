@@ -294,7 +294,29 @@ def _observe(o, j):
 
 
 def _exact_assertions(o, msgs_before=0):
-    """THE EXACT ASSERTIONS of the five formerly regressed cases, executed
+    """RETIRED AS A CLASSIFICATION AUTHORITY. Preserved as evidence, not deleted.
+
+    The docstring below was wrong in the way that matters, and the error is
+    worth keeping legible. These assertions are not "the exact assertions" of
+    the five cases: they are RE-IMPLEMENTATIONS of them against a fixture this
+    file builds. A re-implementation can diverge from the test it imitates
+    without anything reporting that it has, and this one did -- it reported
+    `A.coalesced_positive` failing at head, where `test_A` passes, and evaluated
+    `LIN.cycle_closed_positive` at densities `test_lineage` never uses.
+
+    Superseded by `CLOSURE_TRUTH_EXACT_EXECUTION.json/.md`, which runs the real
+    pytest node IDs in disposable worktrees and reads pytest's own verdicts out
+    of the JUnit XML pytest wrote. That audit found all five of these cases
+    passing under every candidate -- so the regression set this function was
+    built to explain did not exist.
+
+    Nothing here may be cited to classify a test. It remains callable, and its
+    output remains recorded, as the record of how a mirrored harness produces
+    confident wrong answers.
+
+    --- original docstring, retained verbatim ---
+
+    THE EXACT ASSERTIONS of the five formerly regressed cases, executed
     rather than approximated. Each is evaluated and recorded pass/fail with its
     observed value; none of them raises, because the audit reports and does not
     judge."""

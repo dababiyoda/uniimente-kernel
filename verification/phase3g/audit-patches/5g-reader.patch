@@ -1,0 +1,55 @@
+diff --git a/substrate/v5.py b/substrate/v5.py
+index 24e3b6d..7f4a6d5 100644
+--- a/substrate/v5.py
++++ b/substrate/v5.py
+@@ -235,6 +235,7 @@ COUNTER_NAMES = (
+     # can never arrive.
+     "CHILD_EDGES_RECONCILED_FROM_EVIDENCE",
+     "TERMINALS_WITH_UNRECONCILED_CHILDREN",
++    "LEGACY_TERMINAL_PROJECTION_DECISION_READS",
+     "SEARCH_CONTROLS_RECORDED",
+     "CLOSED_CHILD_EDGES",
+     "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME",
+@@ -1793,13 +1794,14 @@ class Unit:
+         admitted = self._admit_search(key, edge_id, allocation, sender, transport)
+         if admitted is not True:
+             return admitted
+-        if o is not None and edge_id in o.search_edge_terminals:
++        _lc = (o.search_edge_lifecycle.get(edge_id) or {}) if o is not None else {}
++        if _lc.get("accepted_outcome") is not None:
+             # Exact replay of an edge already answered: no reprocessing, no
+             # second terminal, and CRUCIALLY no second refund. Returning the
+             # original terminal object would report its original refund again,
+             # which reads as a second payment; the replay is reported as a
+             # zero-value echo of the same outcome.
+-            first = o.search_edge_terminals[edge_id]["outcomes"][0]
++            first = _lc["accepted_outcome"]
+             return Terminal(first.kind, first.search_key, edge_id, 0.0, 0.0,
+                             self.unit_id, first.to_unit, "edge_replay",
+                             first.proposal_id)
+@@ -2370,12 +2372,12 @@ class Unit:
+         if o is None:
+             return
+         for edge in sorted(node["children_outstanding"]):
+-            rec = o.search_edge_terminals.get(edge)
+-            if rec is None or not rec["outcomes"]:
++            rec = o.search_edge_lifecycle.get(edge)
++            if rec is None or rec.get("accepted_outcome") is None:
+                 continue                    # no evidence: it stays open
+             if edge in node["child_confirmed"]:
+                 continue
+-            first = rec["outcomes"][0]
++            first = rec["accepted_outcome"]
+             if first.from_unit == self.unit_id:
+                 # MY OWN COMMAND IS NOT THE CHILD'S EVIDENCE. Closing against a
+                 # terminal I emitted downward is precisely "a parent classifying
+@@ -2711,7 +2713,8 @@ class Unit:
+     def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
+         """Exact replay of an already-answered edge is a no-op."""
+         o = self._organ
+-        if o is not None and edge_id in o.search_edge_terminals:
++        _lc = (o.search_edge_lifecycle.get(edge_id) or {}) if o is not None else {}
++        if _lc.get("accepted_outcome") is not None:
+             return
+         self.deliver_search(key, edge_id, 0.0)
+ 

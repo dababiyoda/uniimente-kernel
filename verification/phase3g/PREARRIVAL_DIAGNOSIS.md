@@ -6,7 +6,48 @@ fixtures and its own delivery entry points. No mirrored model: this imports
 from `test_substrate_v5_direction_classification`, and calls the real
 `deliver_terminal` and `deliver_search`.
 
-Reproduction: `verification/phase3g/prearrival_diagnose.py`
+## Reproduction (PA-0B — corrected)
+
+```
+python verification/phase3g/prearrival_diagnose.py                  # exits 0 only if every assertion holds
+python verification/phase3g/prearrival_diagnose.py --negative-control
+```
+
+Machine-readable results: `PREARRIVAL_DIAGNOSIS.json`,
+`PREARRIVAL_DIAGNOSIS_NEGATIVE_CONTROL.json`.
+
+**The first committed version of this instrument was defective and its result is
+withdrawn.** It recorded snapshots and asserted nothing, hardcoded three absolute
+developer paths, and — decisively — omitted the `context=` argument the reported
+measurement depended on. The corrected measurement existed only in an uncommitted
+shell heredoc, so the written diagnosis and the executable artifact disagreed and
+the repository could not reproduce its own conclusion. Seventh instance of the
+instrument-liveness defect in this workstream, this time inside the evidence
+artifact itself.
+
+The instrument now **exits nonzero unless every assertion holds**, derives its
+paths from `__file__`, and was executed in four working directories:
+
+```
+/home/user/uniimente-kernel                      PASS   0 failed assertions
+/home/user/uniimente-kernel/verification/phase3g PASS   0 failed assertions
+/                                                PASS   0 failed assertions
+/tmp/uni-pa0b-port  (clean disposable worktree)  PASS   0 failed assertions
+```
+
+**Negative control.** `--negative-control` drops `context=` from the late
+SearchNeed. T2 then fails as required:
+
+```
+T2 canonical node exists                        FAILED
+T2 adopted_parent_edge == the pre-arrival edge  FAILED
+observed: node_exists False, accepted_outcome SearchContextRejected
+verdict: CORRECT — T2 adoption assertions failed as required
+```
+
+That is what proves the instrument distinguishes a **valid late adoption** from a
+**context-rejected non-adoption** — the precise confusion its first version could
+not have detected, because it was silently running the rejected path.
 
 ---
 

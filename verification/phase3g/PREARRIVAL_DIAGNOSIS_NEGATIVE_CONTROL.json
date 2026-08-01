@@ -1,0 +1,111 @@
+{
+  "assertions_failed": [
+    "T2 canonical node exists  [{'probe_exists': True, 'node_exists': False, 'adopted_parent_edge': None, 'accepted_control': None, 'accepted_outcome': 'SearchContextRejected', 'lifecycle_record_exists': True, 'projection_entry': True, 'edge_terminal_status': 'terminal', 'credit': None}]",
+    "T2 adopted_parent_edge == the pre-arrival edge  [{'probe_exists': True, 'node_exists': False, 'adopted_parent_edge': None, 'accepted_control': None, 'accepted_outcome': 'SearchContextRejected', 'lifecycle_record_exists': True, 'projection_entry': True, 'edge_terminal_status': 'terminal', 'credit': None}]",
+    "T3 replay after adoption is accepted  [{'ORPHANED_SEARCH_EDGES': 2, 'UNAUTHENTICATED_TERMINAL_CONTROLS': 0, 'UNAUTHENTICATED_SEARCH_DELIVERIES': 0, 'UNKNOWN_EDGE_TERMINAL_EMISSIONS': 0, 'UNAUTHENTICATED_TERMINAL_EMISSIONS': 0, 'UNCLASSIFIABLE_TERMINAL_RECORDINGS': 0, 'SEARCH_CONTROLS_RECORDED': 0, 'TERMINAL_ECHOS_SENT': 1, 'UNIQUE_CANONICAL_SEARCH_NODES': 0, 'DUPLICATE_TERMINAL_RESOLUTIONS': 0, 'UNAUTHORIZED_EXTERNAL_EFFECTS': 0, 'INHERITED_AUTHORITY_EVENTS': 0}]",
+    "T3 no second orphan for the same control  [{'ORPHANED_SEARCH_EDGES': 2, 'UNAUTHENTICATED_TERMINAL_CONTROLS': 0, 'UNAUTHENTICATED_SEARCH_DELIVERIES': 0, 'UNKNOWN_EDGE_TERMINAL_EMISSIONS': 0, 'UNAUTHENTICATED_TERMINAL_EMISSIONS': 0, 'UNCLASSIFIABLE_TERMINAL_RECORDINGS': 0, 'SEARCH_CONTROLS_RECORDED': 0, 'TERMINAL_ECHOS_SENT': 1, 'UNIQUE_CANONICAL_SEARCH_NODES': 0, 'DUPLICATE_TERMINAL_RESOLUTIONS': 0, 'UNAUTHORIZED_EXTERNAL_EFFECTS': 0, 'INHERITED_AUTHORITY_EVENTS': 0}]"
+  ],
+  "classification": "SILENT_LOSS",
+  "command_executed": "/usr/local/bin/python verification/phase3g/prearrival_diagnose.py --negative-control",
+  "counters": {
+    "DUPLICATE_TERMINAL_RESOLUTIONS": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "ORPHANED_SEARCH_EDGES": 2,
+    "SEARCH_CONTROLS_RECORDED": 0,
+    "TERMINAL_ECHOS_SENT": 1,
+    "UNAUTHENTICATED_SEARCH_DELIVERIES": 0,
+    "UNAUTHENTICATED_TERMINAL_CONTROLS": 0,
+    "UNAUTHENTICATED_TERMINAL_EMISSIONS": 0,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNCLASSIFIABLE_TERMINAL_RECORDINGS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 0,
+    "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 0
+  },
+  "credit_after": null,
+  "credit_before": null,
+  "forged_prearrival_result": {
+    "after": {
+      "accepted_control": null,
+      "accepted_outcome": null,
+      "adopted_parent_edge": null,
+      "credit": null,
+      "edge_terminal_status": "open",
+      "lifecycle_record_exists": false,
+      "node_exists": false,
+      "probe_exists": true,
+      "projection_entry": false
+    },
+    "authentication_counter_fired": false,
+    "before": {
+      "accepted_control": null,
+      "accepted_outcome": null,
+      "adopted_parent_edge": null,
+      "credit": null,
+      "edge_terminal_status": "open",
+      "lifecycle_record_exists": false,
+      "node_exists": false,
+      "probe_exists": true,
+      "projection_entry": false
+    },
+    "counters": {
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 0,
+      "INHERITED_AUTHORITY_EVENTS": 0,
+      "ORPHANED_SEARCH_EDGES": 1,
+      "SEARCH_CONTROLS_RECORDED": 0,
+      "TERMINAL_ECHOS_SENT": 0,
+      "UNAUTHENTICATED_SEARCH_DELIVERIES": 0,
+      "UNAUTHENTICATED_TERMINAL_CONTROLS": 0,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 0,
+      "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+      "UNCLASSIFIABLE_TERMINAL_RECORDINGS": 0,
+      "UNIQUE_CANONICAL_SEARCH_NODES": 0,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 0
+    },
+    "refused_via_orphan_branch": true,
+    "stranger": "receive.0"
+  },
+  "late_adoption_result": {
+    "accepted_control": null,
+    "accepted_outcome": "SearchContextRejected",
+    "adopted_parent_edge": null,
+    "credit": null,
+    "edge_terminal_status": "terminal",
+    "lifecycle_record_exists": true,
+    "node_exists": false,
+    "probe_exists": true,
+    "projection_entry": true
+  },
+  "legitimate_prearrival_result": {
+    "accepted_control": null,
+    "accepted_outcome": null,
+    "adopted_parent_edge": null,
+    "credit": null,
+    "edge_terminal_status": "open",
+    "lifecycle_record_exists": false,
+    "node_exists": false,
+    "probe_exists": true,
+    "projection_entry": false
+  },
+  "mode": "NEGATIVE_CONTROL",
+  "negative_control_expected_failures": [
+    "T2 canonical node exists  [{'probe_exists': True, 'node_exists': False, 'adopted_parent_edge': None, 'accepted_control': None, 'accepted_outcome': 'SearchContextRejected', 'lifecycle_record_exists': True, 'projection_entry': True, 'edge_terminal_status': 'terminal', 'credit': None}]",
+    "T2 adopted_parent_edge == the pre-arrival edge  [{'probe_exists': True, 'node_exists': False, 'adopted_parent_edge': None, 'accepted_control': None, 'accepted_outcome': 'SearchContextRejected', 'lifecycle_record_exists': True, 'projection_entry': True, 'edge_terminal_status': 'terminal', 'credit': None}]"
+  ],
+  "negative_control_verdict": "CORRECT: T2 adoption assertions failed as required",
+  "portable_path_check": "sys.path derived from __file__; no absolute developer path",
+  "post_adoption_replay_result": {
+    "accepted_control": null,
+    "accepted_outcome": "SearchContextRejected",
+    "adopted_parent_edge": null,
+    "credit": null,
+    "edge_terminal_status": "terminal",
+    "lifecycle_record_exists": true,
+    "node_exists": false,
+    "probe_exists": true,
+    "projection_entry": true
+  },
+  "repo_root_derived_from___file__": "/home/user/uniimente-kernel",
+  "result": "FAIL",
+  "starting_head": "e7fabef153903674ebc84a8b1bdf0429aeee86aa",
+  "working_directory": "/home/user/uniimente-kernel"
+}

@@ -1,0 +1,122 @@
+{
+  "assertions_failed": [],
+  "classification": "SILENT_LOSS",
+  "command_executed": "/usr/local/bin/python /home/user/uniimente-kernel/verification/phase3g/prearrival_diagnose.py",
+  "counters": {
+    "DUPLICATE_TERMINAL_RESOLUTIONS": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "ORPHANED_SEARCH_EDGES": 1,
+    "SEARCH_CONTROLS_RECORDED": 3,
+    "TERMINAL_ECHOS_SENT": 0,
+    "UNAUTHENTICATED_SEARCH_DELIVERIES": 0,
+    "UNAUTHENTICATED_TERMINAL_CONTROLS": 0,
+    "UNAUTHENTICATED_TERMINAL_EMISSIONS": 0,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNCLASSIFIABLE_TERMINAL_RECORDINGS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 1,
+    "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 0
+  },
+  "credit_after": {
+    "cancelled_credit": 3.0,
+    "child_allocations_in_flight": 3.0,
+    "child_refunds_received": 0.0,
+    "consumed_credit": 0.0,
+    "local_reserve": 0.0,
+    "returned_credit": 0.0
+  },
+  "credit_before": null,
+  "forged_prearrival_result": {
+    "after": {
+      "accepted_control": null,
+      "accepted_outcome": null,
+      "adopted_parent_edge": null,
+      "credit": null,
+      "edge_terminal_status": "open",
+      "lifecycle_record_exists": false,
+      "node_exists": false,
+      "probe_exists": true,
+      "projection_entry": false
+    },
+    "authentication_counter_fired": false,
+    "before": {
+      "accepted_control": null,
+      "accepted_outcome": null,
+      "adopted_parent_edge": null,
+      "credit": null,
+      "edge_terminal_status": "open",
+      "lifecycle_record_exists": false,
+      "node_exists": false,
+      "probe_exists": true,
+      "projection_entry": false
+    },
+    "counters": {
+      "DUPLICATE_TERMINAL_RESOLUTIONS": 0,
+      "INHERITED_AUTHORITY_EVENTS": 0,
+      "ORPHANED_SEARCH_EDGES": 1,
+      "SEARCH_CONTROLS_RECORDED": 0,
+      "TERMINAL_ECHOS_SENT": 0,
+      "UNAUTHENTICATED_SEARCH_DELIVERIES": 0,
+      "UNAUTHENTICATED_TERMINAL_CONTROLS": 0,
+      "UNAUTHENTICATED_TERMINAL_EMISSIONS": 0,
+      "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+      "UNCLASSIFIABLE_TERMINAL_RECORDINGS": 0,
+      "UNIQUE_CANONICAL_SEARCH_NODES": 0,
+      "UNKNOWN_EDGE_TERMINAL_EMISSIONS": 0
+    },
+    "refused_via_orphan_branch": true,
+    "stranger": "receive.0"
+  },
+  "late_adoption_result": {
+    "accepted_control": null,
+    "accepted_outcome": null,
+    "adopted_parent_edge": "e/pa/clean",
+    "credit": {
+      "cancelled_credit": 0.0,
+      "child_allocations_in_flight": 3.0,
+      "child_refunds_received": 0.0,
+      "consumed_credit": 0.0,
+      "local_reserve": 3.0,
+      "returned_credit": 0.0
+    },
+    "edge_terminal_status": "open",
+    "lifecycle_record_exists": false,
+    "node_exists": true,
+    "probe_exists": true,
+    "projection_entry": false
+  },
+  "legitimate_prearrival_result": {
+    "accepted_control": null,
+    "accepted_outcome": null,
+    "adopted_parent_edge": null,
+    "credit": null,
+    "edge_terminal_status": "open",
+    "lifecycle_record_exists": false,
+    "node_exists": false,
+    "probe_exists": true,
+    "projection_entry": false
+  },
+  "mode": "NORMAL",
+  "portable_path_check": "sys.path derived from __file__; no absolute developer path",
+  "post_adoption_replay_result": {
+    "accepted_control": null,
+    "accepted_outcome": null,
+    "adopted_parent_edge": "e/pa/clean",
+    "credit": {
+      "cancelled_credit": 3.0,
+      "child_allocations_in_flight": 3.0,
+      "child_refunds_received": 0.0,
+      "consumed_credit": 0.0,
+      "local_reserve": 0.0,
+      "returned_credit": 0.0
+    },
+    "edge_terminal_status": "open",
+    "lifecycle_record_exists": false,
+    "node_exists": true,
+    "probe_exists": true,
+    "projection_entry": false
+  },
+  "repo_root_derived_from___file__": "/home/user/uniimente-kernel",
+  "result": "PASS",
+  "starting_head": "e7fabef153903674ebc84a8b1bdf0429aeee86aa",
+  "working_directory": "/"
+}

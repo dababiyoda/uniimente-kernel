@@ -103,7 +103,7 @@ import itertools
 import json
 import math
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Literal, Optional
 
 _h = lambda s: hashlib.sha256(s.encode()).hexdigest()[:12]
 
@@ -254,6 +254,12 @@ COUNTER_NAMES = (
     "PREMATURE_CONTROL_COMPLETION_OUTCOMES",
     "COALESCED_INBOUND_EDGES",
     "COALESCED_INBOUND_EDGES_CLOSED_SEPARATELY",
+    # PA-3: authenticated receiver-side arrival is a distinct fact from the
+    # sender having emitted a parent control into the shared lifecycle record.
+    "PREARRIVAL_CONTROLS_HELD",
+    "PREARRIVAL_CONTROLS_APPLIED",
+    "PREARRIVAL_CONTROL_REPLAYS",
+    "PREARRIVAL_CONTROL_CONFLICTS",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -264,6 +270,8 @@ CHILD_OUTCOME_KINDS = ("SearchExhausted", "SearchBudgetExhausted",
                        "SearchCompleted",
                        "SearchCoalesced", "SearchCycleClosed",
                        "SearchContextRejected", "SearchNeedClosed")
+
+ControlRecordResult = Literal["accepted", "replay", "conflict"]
 
 
 class Counters:
@@ -1325,12 +1333,17 @@ class Unit:
             rec = {"from_unit": t.from_unit, "to_unit": t.to_unit,
                    "search_key": t.search_key,
                    "controls": [], "accepted_control": None,
+                   "prearrival_control_state": None,
                    "outcomes": [], "accepted_outcome": None,
                    "control_conflicts": [], "outcome_conflicts": []}
             o.search_edge_lifecycle[t.edge_id] = rec
+        else:
+            # Records created before PA-3 remain readable without a migration:
+            # the absent field means no receiver-side pre-arrival delivery.
+            rec.setdefault("prearrival_control_state", None)
         return rec
 
-    def _record_control(self, t: Terminal) -> bool:
+    def _record_control(self, t: Terminal) -> ControlRecordResult:
         """A COMMAND: what the opener REQUESTED. Never proof it happened.
 
         Authentication proves who asked for the transition. It says nothing
@@ -1343,15 +1356,23 @@ class Unit:
         """
         o = self._organ
         if o is None:
-            return False
+            return "replay"                   # no shared store: inert
         rec = self._lifecycle_record(t)
         first = rec["accepted_control"]
         if first is not None:
-            if first.kind != t.kind:
-                rec["control_conflicts"].append((t.edge_id, first.kind, t.kind))
+            if first == t:
+                return "replay"               # exact FULL replay: inert
+            # One fingerprint is enough to prove the accepted command met a
+            # contradiction. Further hostile variants are counted at the
+            # receiver but retain no more attacker-controlled objects.
+            fingerprint = _sha256(_canon(t))
+            if not rec["control_conflicts"]:
+                rec["control_conflicts"].append(fingerprint)
+            if not any(x[0] == t.edge_id for x in
+                       o.search_edge_terminal_conflicts):
                 o.search_edge_terminal_conflicts.append(
-                    (t.edge_id, first.kind, t.kind))
-            return False                    # exact replay: inert
+                    (t.edge_id, _sha256(_canon(first)), fingerprint))
+            return "conflict"
         rec["controls"].append(t)
         rec["accepted_control"] = t
         # NO PROJECTION WRITE. A command is visible through `accepted_control`
@@ -1365,7 +1386,7 @@ class Unit:
         # three runtime decision sites, until 5G-R. Every remaining reader,
         # runtime and test alike, now asks the channel that owns what it wants.
         C.incr("SEARCH_CONTROLS_RECORDED")
-        return True
+        return "accepted"
 
     def _record_outcome(self, t: Terminal) -> bool:
         """AN OUTCOME: what the receiving endpoint OBSERVED. This closes the edge.
@@ -1470,7 +1491,7 @@ class Unit:
         """
         channel = self._probe_channel(t)
         if channel == "control":
-            return self._record_control(t)
+            return self._record_control(t) == "accepted"
         if channel == "outcome":
             return self._record_outcome(t)
         C.incr("UNCLASSIFIABLE_TERMINAL_RECORDINGS")
@@ -1746,6 +1767,100 @@ class Unit:
 
     # -- arrivals --------------------------------------------------------
 
+    def _admit_prearrival_parent_control(
+            self, terminal: Terminal, *, sender: Any
+    ) -> ControlRecordResult | Literal["rejected"]:
+        """Authenticate first; only then mark one canonical control as held.
+
+        The sender may already have recorded ``accepted_control`` when it
+        emitted the message. That is evidence of emission, not receiver
+        arrival. ``prearrival_control_state`` is moved only here, after the
+        immediate sender, sender-created probe, key, direction and both claimed
+        endpoints all agree.
+        """
+        o = self._organ
+        if (o is None or sender is HARNESS_DELIVERY
+                or sender is _UNSPECIFIED_SENDER
+                or not isinstance(sender, str) or not sender
+                or sender not in self.neighbours):
+            C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
+            return "rejected"
+        probe = o.search_edge_probes.get(terminal.edge_id)
+        if (probe is None
+                or probe.get("from_unit") != sender
+                or probe.get("to_unit") != self.unit_id
+                or probe.get("search_key") != terminal.search_key
+                or terminal.from_unit != sender
+                or terminal.to_unit != self.unit_id
+                or terminal.kind not in PARENT_CONTROL_KINDS
+                or self._probe_channel(terminal) != "control"):
+            C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
+            return "rejected"
+
+        result = self._record_control(terminal)
+        rec = o.search_edge_lifecycle[terminal.edge_id]
+        state = rec.get("prearrival_control_state")
+        if result == "conflict":
+            C.incr("PREARRIVAL_CONTROL_CONFLICTS")
+            return result
+        if state is None:
+            rec["prearrival_control_state"] = "held"
+            C.incr("PREARRIVAL_CONTROLS_HELD")
+            # The shared record normally made the full message an exact replay
+            # at this point. Receiver arrival is nevertheless new.
+            return "accepted"
+        C.incr("PREARRIVAL_CONTROL_REPLAYS")
+        return "replay"
+
+    def _apply_recorded_parent_control(
+            self, node: dict[str, Any], *, edge_id: str
+    ) -> bool:
+        """Apply one authenticated held control after valid node adoption."""
+        o = self._organ
+        if o is None:
+            return False
+        rec = o.search_edge_lifecycle.get(edge_id)
+        if rec is None or rec.get("prearrival_control_state") != "held":
+            return False
+        terminal = rec.get("accepted_control")
+        probe = o.search_edge_probes.get(edge_id)
+        valid = (
+            isinstance(terminal, Terminal)
+            and probe is not None
+            and terminal.edge_id == edge_id
+            and terminal.search_key == node.get("search_key")
+            and terminal.from_unit == node.get("adopted_parent_sender")
+            and terminal.to_unit == self.unit_id
+            and probe.get("from_unit") == terminal.from_unit
+            and probe.get("to_unit") == self.unit_id
+            and probe.get("search_key") == terminal.search_key
+            and terminal.kind in PARENT_CONTROL_KINDS
+            and self._probe_channel(terminal) == "control"
+        )
+        if not valid:
+            rec["prearrival_control_state"] = "rejected"
+            C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
+            return False
+        if terminal.kind == "SearchCommitted":
+            if not self._knows_proposal(node, terminal.proposal_id):
+                rec["prearrival_control_state"] = "rejected"
+                C.incr("UNKNOWN_COMMIT_PROPOSALS")
+                return False
+            if not self._commit_eligible(node, terminal.proposal_id):
+                rec["prearrival_control_state"] = "rejected"
+                C.incr("COMMIT_OF_RESOLVED_PROPOSAL")
+                return False
+        if node.get("wave_cancelled"):
+            rec["prearrival_control_state"] = "rejected"
+            C.incr("DUPLICATE_CONTROL_APPLICATIONS")
+            return False
+        self._close_wave_from_parent(
+            node, terminal.kind, terminal.proposal_id,
+        )
+        rec["prearrival_control_state"] = "applied"
+        C.incr("PREARRIVAL_CONTROLS_APPLIED")
+        return True
+
     def _refuse_search(self, key: SearchKey, edge_id: str, counter: str,
                        reason: str) -> Terminal:
         """A refusal that writes NOTHING but its own counter.
@@ -1929,10 +2044,20 @@ class Unit:
         # did -- manufactures a wave claiming constraints nobody holds. Absence
         # of evidence is not absence of constraint.
         if context is None:
+            if _lc.get("prearrival_control_state") == "held":
+                C.incr("MALFORMED_SEARCH_DELIVERIES")
+                return Terminal("SearchContextRejected", key, edge_id,
+                                0.0, 0.0, self.unit_id, sender,
+                                "context_absent", "")
             return self._emit_terminal("SearchContextRejected", key, edge_id,
                                        sender, refund=max(0.0, allocation),
                                        reason="context_absent")
         if not context.matches(key):
+            if _lc.get("prearrival_control_state") == "held":
+                C.incr("MALFORMED_SEARCH_DELIVERIES")
+                return Terminal("SearchContextRejected", key, edge_id,
+                                0.0, 0.0, self.unit_id, sender,
+                                "context_digest_mismatch", "")
             return self._emit_terminal("SearchContextRejected", key, edge_id,
                                        sender, refund=max(0.0, allocation),
                                        reason="context_digest_mismatch")
@@ -1950,10 +2075,16 @@ class Unit:
         # supplier used to open descendants first and answer second, spending
         # credit on a search it did not need.
         reason = self._candidate_refusal(key, context)
+        node = self.open_canonical_search(key, edge_id, allocation, sender,
+                                          context=context, lineage=lineage,
+                                          expand=False)
+        if self._apply_recorded_parent_control(node, edge_id=edge_id):
+            control = _lc["accepted_control"]
+            return self._record_event(
+                edge_id, control.kind, key,
+                reason="prearrival_control_applied", to=sender,
+            )
         if not reason:
-            node = self.open_canonical_search(key, edge_id, allocation, sender,
-                                              context=context, lineage=lineage,
-                                              expand=False)
             payload = self._build_offer_payload(key, context, edge_id)
             node["local_candidate"] = payload
             node["eligible_offer"] = True
@@ -1975,8 +2106,7 @@ class Unit:
                 self._recruit_prerequisites()
             return SearchEvent("SearchProposal", key, edge_id, "", payload,
                                self.unit_id, sender, payload.proposal_id)
-        node = self.open_canonical_search(key, edge_id, allocation, sender,
-                                          context=context, lineage=lineage)
+        self._expand_canonical(node)
         return self._record_event(edge_id, "SearchPending", key, reason=reason,
                                   to=sender)
 
@@ -2691,12 +2821,9 @@ class Unit:
         node["child_allocations_in_flight"] -= per
         node["cancelled_credit"] += per
 
-    def deliver_terminal(self, key: SearchKey, edge_id: str, kind: str,
-                         refund: float = 0.0, proposal_id: str = "",
-                         sender: Any = _UNSPECIFIED_SENDER,
-                         from_unit: Optional[str] = None,
-                         to_unit: Optional[str] = None) -> None:
-        """Aggregate one child outcome, or obey a command from my adopted parent.
+    def _deliver_terminal_message(self, terminal: Terminal, *,
+                                  sender: Any) -> None:
+        """Deliver the full wire object without discarding identity fields.
 
         AUTHENTICATED AND DIRECTION-BOUND. A terminal naming the adopted parent
         edge used to close the wave with no proof of who sent it, so any
@@ -2710,6 +2837,13 @@ class Unit:
         trusted in place of it -- otherwise they are a second, forgeable
         identity channel.
         """
+        key = terminal.search_key
+        edge_id = terminal.edge_id
+        kind = terminal.kind
+        refund = terminal.refund
+        proposal_id = terminal.proposal_id
+        from_unit = terminal.from_unit
+        to_unit = terminal.to_unit
         if kind in NONTERMINAL_KINDS:
             # A proposal reaching the terminal aggregator is the V1 defect
             # exactly: it would mark the node ANSWERED and cancel its siblings
@@ -2718,7 +2852,7 @@ class Unit:
             return
         node = self.canonical_searches.get(key)
         if node is None:
-            C.incr("ORPHANED_SEARCH_EDGES")
+            self._admit_prearrival_parent_control(terminal, sender=sender)
             return
         if sender is not HARNESS_DELIVERY:
             if from_unit and from_unit != sender:
@@ -2734,6 +2868,22 @@ class Unit:
             if not _authenticated(sender, node["adopted_parent_sender"]):
                 C.incr("UNAUTHENTICATED_TERMINAL_CONTROLS")
                 return
+            o = self._organ
+            rec = (o.search_edge_lifecycle.get(edge_id)
+                   if o is not None else None)
+            if rec is not None and rec.get("accepted_control") is not None:
+                result = self._record_control(terminal)
+                state = rec.get("prearrival_control_state")
+                if result == "conflict":
+                    if state in ("held", "applied", "rejected"):
+                        C.incr("PREARRIVAL_CONTROL_CONFLICTS")
+                    return
+                if state == "held":
+                    self._apply_recorded_parent_control(node, edge_id=edge_id)
+                    return
+                if state in ("applied", "rejected"):
+                    C.incr("PREARRIVAL_CONTROL_REPLAYS")
+                    return
             if kind == "SearchCommitted":
                 if not self._knows_proposal(node, proposal_id):
                     # AUTHENTICATION ANSWERS WHO, NOT WHETHER THE COMMAND MEANS
@@ -2804,6 +2954,24 @@ class Unit:
             self._acknowledge_to_parent(node)
             return
         self._continue_after_child(node)
+
+    def deliver_terminal(self, key: SearchKey, edge_id: str, kind: str,
+                         refund: float = 0.0, proposal_id: str = "",
+                         sender: Any = _UNSPECIFIED_SENDER,
+                         from_unit: Optional[str] = None,
+                         to_unit: Optional[str] = None) -> None:
+        """Compatibility seam for direct callers; live dispatch keeps Terminal.
+
+        The public signature is intentionally unchanged. Direct callers never
+        supplied ``handling_cost`` or ``reason``, so their equivalent wire
+        object uses the historical defaults. ``Unit.step`` calls the internal
+        full-object handler and therefore preserves every identity field.
+        """
+        terminal = Terminal(
+            kind, key, edge_id, refund, 0.0,
+            from_unit or "", to_unit or "", "", proposal_id,
+        )
+        self._deliver_terminal_message(terminal, sender=sender)
 
     def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
         """Exact replay of an already-ANSWERED edge is a no-op.
@@ -3202,9 +3370,7 @@ class Unit:
                 # The immediate sender travels with a terminal exactly as it
                 # does with a proposal. Dropping it here left wave closure
                 # authenticated by nothing but an edge id any neighbour can name.
-                self.deliver_terminal(msg.search_key, msg.edge_id, msg.kind,
-                                      msg.refund, msg.proposal_id, sender,
-                                      msg.from_unit, msg.to_unit)
+                self._deliver_terminal_message(msg, sender=sender)
                 continue
             if isinstance(msg, tuple) and msg and msg[0] == "__exhausted__":
                 nid = msg[1]

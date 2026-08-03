@@ -29,6 +29,8 @@ jobs:
         run: python3 scripts/ci/check_phase3f_preregistration.py
       - name: Phase 3G pre-registration
         run: python3 scripts/ci/check_phase3g_preregistration.py
+      - name: Phase 3G pre-arrival control pre-registration
+        run: python3 scripts/ci/check_phase3g_prearrival_preregistration.py
       - name: Phase 3G evidence checksums
         # The manifest existed and verified nothing, because nothing ran it. It
         # sat stale from 1d7349c while DEVELOPMENT_RESULTS.json was rewritten

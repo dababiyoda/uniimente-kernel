@@ -160,7 +160,6 @@ def _assert_applied(organ: Organ, receiver: Unit, key: v5.SearchKey,
     return node
 
 
-@prearrival
 def test_real_outbox_reordering_applies_without_sender_replay():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, search, control = _wire(organ, parent, receiver)
@@ -178,7 +177,6 @@ def test_real_outbox_reordering_applies_without_sender_replay():
     assert C["ORPHANED_SEARCH_EDGES"] == 0
 
 
-@prearrival
 def test_legitimate_prearrival_control_is_held_without_premature_mutation():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -192,7 +190,6 @@ def test_legitimate_prearrival_control_is_held_without_premature_mutation():
     assert C["PARENT_CONTROLS_APPLIED"] == 0
 
 
-@prearrival
 def test_held_control_applies_exactly_once_after_adoption():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, search, control = _wire(organ, parent, receiver)
@@ -217,7 +214,6 @@ def test_held_control_applies_exactly_once_after_adoption():
     assert before[0:2] == (1, 1)
 
 
-@prearrival
 def test_exact_replay_before_adoption_is_inert_and_counted():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -234,7 +230,6 @@ def test_exact_replay_before_adoption_is_inert_and_counted():
     assert _counter("PREARRIVAL_CONTROL_REPLAYS") == 1
 
 
-@prearrival
 def test_exact_replay_after_adoption_is_inert_and_counted():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, search, control = _wire(organ, parent, receiver)
@@ -251,7 +246,6 @@ def test_exact_replay_after_adoption_is_inert_and_counted():
     assert _counter("PREARRIVAL_CONTROL_REPLAYS") == 1
 
 
-@prearrival
 def test_forged_sender_is_rejected_and_paired_legitimate_control_is_held():
     organ, parent, receiver, attacker, _other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -269,7 +263,6 @@ def test_forged_sender_is_rejected_and_paired_legitimate_control_is_held():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 1
 
 
-@prearrival
 def test_wrong_search_key_cannot_allocate_pending_state():
     organ, parent, receiver, _attacker, _other = _rig()
     ctx, _key0, edge, _search, _control = _wire(organ, parent, receiver)
@@ -288,7 +281,6 @@ def test_wrong_search_key_cannot_allocate_pending_state():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 0
 
 
-@prearrival
 def test_probe_for_another_destination_cannot_allocate_pending_state():
     organ, parent, receiver, _attacker, other = _rig()
     ctx = _ctx()
@@ -308,7 +300,6 @@ def test_probe_for_another_destination_cannot_allocate_pending_state():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 0
 
 
-@prearrival
 def test_wrong_claimed_source_cannot_mark_a_control_held():
     organ, parent, receiver, attacker, _other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -323,7 +314,6 @@ def test_wrong_claimed_source_cannot_mark_a_control_held():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 0
 
 
-@prearrival
 def test_wrong_claimed_receiver_cannot_mark_a_control_held():
     organ, parent, receiver, _attacker, other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -338,7 +328,6 @@ def test_wrong_claimed_receiver_cannot_mark_a_control_held():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 0
 
 
-@prearrival
 def test_child_outcome_kind_in_parent_direction_is_rejected():
     organ, parent, receiver, _attacker, _other = _rig()
     ctx = _ctx()
@@ -358,7 +347,6 @@ def test_child_outcome_kind_in_parent_direction_is_rejected():
     assert _counter("PREARRIVAL_CONTROLS_HELD") == 0
 
 
-@prearrival
 def test_first_full_command_identity_wins_a_same_kind_conflict():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, search, control = _wire(organ, parent, receiver)
@@ -382,7 +370,6 @@ def test_first_full_command_identity_wins_a_same_kind_conflict():
     assert _lifecycle(organ, edge)["accepted_control"] == control
 
 
-@prearrival
 def test_repeated_conflicts_are_counted_but_retained_state_is_bounded():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx0, key, edge, _search, control = _wire(organ, parent, receiver)
@@ -403,7 +390,6 @@ def test_repeated_conflicts_are_counted_but_retained_state_is_bounded():
     _assert_held(organ, receiver, key, edge, control)
 
 
-@prearrival
 def test_pending_state_is_isolated_by_edge_and_requires_actual_delivery():
     organ, parent, receiver, _attacker, _other = _rig()
     _ctx_a, key_a, edge_a, search_a, control_a = _wire(
@@ -430,7 +416,6 @@ def test_pending_state_is_isolated_by_edge_and_requires_actual_delivery():
     assert receiver.canonical_searches[key_b]["wave_cancelled"] is False
 
 
-@prearrival
 def test_failed_context_gate_preserves_hold_until_a_valid_adoption():
     organ, parent, receiver, _attacker, _other = _rig()
     ctx, key, edge, search, control = _wire(organ, parent, receiver)

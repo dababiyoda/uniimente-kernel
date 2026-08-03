@@ -1,0 +1,555 @@
+{
+  "active_test_sha256": "ee9a3b5c654027ecb82a5c0f0cceb24b9d9ae3b90441f95ac3a5df6433bc82e8",
+  "evidence_id": "phase3g-pa5-prearrival-adversarial-twin",
+  "evidence_scope": "in-memory authenticated transport reordering, replay/conflict bounds, edge isolation, lifecycle, credit, and wire parity",
+  "frozen_test_sha256_with_markers": "0648a9c3d1a0862608bbca0e5f3d97989b7e602a6ad949ca147e8f92b045e531",
+  "instrument_sha256": "db5c58974181c32fb8f621809774cb92cf7bfd3da2cfa1f16291addc1619a112",
+  "marker_commit": "767dbfa9cab1ae5382e6f67e1f663908ca0eaec0",
+  "measurement": {
+    "adversarial_flood": {
+      "after_adoption": {
+        "accepted_control": {
+          "edge_id": "edge/prearrival/pa5/adversarial",
+          "from_unit": "parent",
+          "handling_cost": 0.0,
+          "kind": "SearchCancelled",
+          "proposal_id": "",
+          "reason": "parent_wave_closed",
+          "refund": 0.0,
+          "to_unit": "receiver"
+        },
+        "accepted_outcome": {
+          "edge_id": "edge/prearrival/pa5/adversarial",
+          "from_unit": "receiver",
+          "handling_cost": 0.0,
+          "kind": "SearchCompleted",
+          "proposal_id": "",
+          "reason": "control_applied",
+          "refund": 6.0,
+          "to_unit": "parent"
+        },
+        "control_conflicts_retained": 1,
+        "controls_retained": 1,
+        "edge_consumed_credit": 0.0,
+        "edge_refunded_credit": 6.0,
+        "edge_terminal_outcome": "SearchCompleted",
+        "edge_terminal_status": "terminal",
+        "outcomes_retained": 1,
+        "prearrival_control_state": "applied"
+      },
+      "before_adoption": {
+        "accepted_control": {
+          "edge_id": "edge/prearrival/pa5/adversarial",
+          "from_unit": "parent",
+          "handling_cost": 0.0,
+          "kind": "SearchCancelled",
+          "proposal_id": "",
+          "reason": "parent_wave_closed",
+          "refund": 0.0,
+          "to_unit": "receiver"
+        },
+        "accepted_outcome": null,
+        "control_conflicts_retained": 1,
+        "controls_retained": 1,
+        "edge_consumed_credit": 0.0,
+        "edge_refunded_credit": 0.0,
+        "edge_terminal_outcome": null,
+        "edge_terminal_status": "open",
+        "outcomes_retained": 0,
+        "prearrival_control_state": "held"
+      },
+      "counters": {
+        "AUTHENTICATED_SEARCH_ADOPTIONS": 1,
+        "CANONICAL_SEARCH_EXPANSIONS": 1,
+        "PARENT_CONTROLS_APPLIED": 1,
+        "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 1,
+        "PREARRIVAL_CONTROLS_APPLIED": 1,
+        "PREARRIVAL_CONTROLS_HELD": 1,
+        "PREARRIVAL_CONTROL_CONFLICTS": 32,
+        "PREARRIVAL_CONTROL_REPLAYS": 32,
+        "TERMINAL_ECHOS_SENT": 1,
+        "TOTAL_CANONICAL_SEARCH_ADOPTIONS": 1,
+        "UNAUTHENTICATED_TERMINAL_CONTROLS": 1,
+        "UNIQUE_CANONICAL_SEARCH_NODES": 1
+      },
+      "forged_receiver_state": null,
+      "node": {
+        "ack_sent": true,
+        "adopted_parent_edge": "edge/prearrival/pa5/adversarial",
+        "adopted_parent_sender": "parent",
+        "children_opened": [],
+        "children_outstanding": [],
+        "credit": {
+          "cancelled_credit": 0.0,
+          "child_allocations_in_flight": 0.0,
+          "child_refunds_received": 0.0,
+          "consumed_credit": 0.0,
+          "incoming_allocation": 6.0,
+          "local_reserve": 0.0,
+          "returned_credit": 0.0,
+          "returned_to_parent": 6.0
+        },
+        "local_candidate": null,
+        "status": "CLOSED",
+        "terminal_signal_sent": true,
+        "wave_cancelled": true
+      },
+      "retained_global_conflicts": 1
+    },
+    "assertions_failed": [],
+    "assertions_run": 24,
+    "cross_edge_isolation": {
+      "counters": {
+        "AUTHENTICATED_SEARCH_ADOPTIONS": 2,
+        "CANONICAL_SEARCH_EXPANSIONS": 2,
+        "PARENT_CONTROLS_APPLIED": 1,
+        "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 1,
+        "PREARRIVAL_CONTROLS_APPLIED": 1,
+        "PREARRIVAL_CONTROLS_HELD": 1,
+        "TERMINAL_ECHOS_SENT": 1,
+        "TOTAL_CANONICAL_SEARCH_ADOPTIONS": 2,
+        "UNIQUE_CANONICAL_SEARCH_NODES": 2
+      },
+      "edge_a_after": {
+        "lifecycle": {
+          "accepted_control": {
+            "edge_id": "edge/prearrival/pa5/isolation-a",
+            "from_unit": "parent",
+            "handling_cost": 0.0,
+            "kind": "SearchCancelled",
+            "proposal_id": "",
+            "reason": "parent_wave_closed",
+            "refund": 0.0,
+            "to_unit": "receiver"
+          },
+          "accepted_outcome": {
+            "edge_id": "edge/prearrival/pa5/isolation-a",
+            "from_unit": "receiver",
+            "handling_cost": 0.0,
+            "kind": "SearchCompleted",
+            "proposal_id": "",
+            "reason": "control_applied",
+            "refund": 6.0,
+            "to_unit": "parent"
+          },
+          "control_conflicts_retained": 0,
+          "controls_retained": 1,
+          "edge_consumed_credit": 0.0,
+          "edge_refunded_credit": 6.0,
+          "edge_terminal_outcome": "SearchCompleted",
+          "edge_terminal_status": "terminal",
+          "outcomes_retained": 1,
+          "prearrival_control_state": "applied"
+        },
+        "node": {
+          "ack_sent": true,
+          "adopted_parent_edge": "edge/prearrival/pa5/isolation-a",
+          "adopted_parent_sender": "parent",
+          "children_opened": [],
+          "children_outstanding": [],
+          "credit": {
+            "cancelled_credit": 0.0,
+            "child_allocations_in_flight": 0.0,
+            "child_refunds_received": 0.0,
+            "consumed_credit": 0.0,
+            "incoming_allocation": 6.0,
+            "local_reserve": 0.0,
+            "returned_credit": 0.0,
+            "returned_to_parent": 6.0
+          },
+          "local_candidate": null,
+          "status": "CLOSED",
+          "terminal_signal_sent": true,
+          "wave_cancelled": true
+        }
+      },
+      "edge_b_after": {
+        "lifecycle": {
+          "accepted_control": {
+            "edge_id": "edge/prearrival/pa5/isolation-b",
+            "from_unit": "parent",
+            "handling_cost": 0.0,
+            "kind": "SearchCancelled",
+            "proposal_id": "",
+            "reason": "parent_wave_closed",
+            "refund": 0.0,
+            "to_unit": "receiver"
+          },
+          "accepted_outcome": null,
+          "control_conflicts_retained": 0,
+          "controls_retained": 1,
+          "edge_consumed_credit": 0.0,
+          "edge_refunded_credit": 0.0,
+          "edge_terminal_outcome": null,
+          "edge_terminal_status": "open",
+          "outcomes_retained": 0,
+          "prearrival_control_state": null
+        },
+        "node": {
+          "ack_sent": false,
+          "adopted_parent_edge": "edge/prearrival/pa5/isolation-b",
+          "adopted_parent_sender": "parent",
+          "children_opened": [],
+          "children_outstanding": [],
+          "credit": {
+            "cancelled_credit": 0.0,
+            "child_allocations_in_flight": 0.0,
+            "child_refunds_received": 0.0,
+            "consumed_credit": 0.0,
+            "incoming_allocation": 6.0,
+            "local_reserve": 6.0,
+            "returned_credit": 0.0,
+            "returned_to_parent": 0.0
+          },
+          "local_candidate": null,
+          "status": "OPEN",
+          "terminal_signal_sent": false,
+          "wave_cancelled": false
+        }
+      },
+      "edge_b_before": {
+        "lifecycle": {
+          "accepted_control": {
+            "edge_id": "edge/prearrival/pa5/isolation-b",
+            "from_unit": "parent",
+            "handling_cost": 0.0,
+            "kind": "SearchCancelled",
+            "proposal_id": "",
+            "reason": "parent_wave_closed",
+            "refund": 0.0,
+            "to_unit": "receiver"
+          },
+          "accepted_outcome": null,
+          "control_conflicts_retained": 0,
+          "controls_retained": 1,
+          "edge_consumed_credit": 0.0,
+          "edge_refunded_credit": 0.0,
+          "edge_terminal_outcome": null,
+          "edge_terminal_status": "open",
+          "outcomes_retained": 0,
+          "prearrival_control_state": null
+        },
+        "node": {
+          "ack_sent": false,
+          "adopted_parent_edge": "edge/prearrival/pa5/isolation-b",
+          "adopted_parent_sender": "parent",
+          "children_opened": [],
+          "children_outstanding": [],
+          "credit": {
+            "cancelled_credit": 0.0,
+            "child_allocations_in_flight": 0.0,
+            "child_refunds_received": 0.0,
+            "consumed_credit": 0.0,
+            "incoming_allocation": 6.0,
+            "local_reserve": 6.0,
+            "returned_credit": 0.0,
+            "returned_to_parent": 0.0
+          },
+          "local_candidate": null,
+          "status": "OPEN",
+          "terminal_signal_sent": false,
+          "wave_cancelled": false
+        }
+      }
+    },
+    "twin": {
+      "arrival_state_multisets": {
+        "left": [
+          "applied",
+          "none"
+        ],
+        "right": [
+          "applied",
+          "none"
+        ]
+      },
+      "left": {
+        "counters": {
+          "AUTHENTICATED_SEARCH_ADOPTIONS": 2,
+          "CANONICAL_SEARCH_EXPANSIONS": 2,
+          "PARENT_CONTROLS_APPLIED": 2,
+          "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+          "PREARRIVAL_CONTROLS_APPLIED": 1,
+          "PREARRIVAL_CONTROLS_HELD": 1,
+          "TERMINAL_ECHOS_SENT": 2,
+          "TOTAL_CANONICAL_SEARCH_ADOPTIONS": 2,
+          "UNIQUE_CANONICAL_SEARCH_NODES": 2
+        },
+        "lifecycles": {
+          "a": {
+            "accepted_control": {
+              "edge_id": "edge/prearrival/pa5/a",
+              "from_unit": "parent",
+              "handling_cost": 0.0,
+              "kind": "SearchCancelled",
+              "proposal_id": "",
+              "reason": "parent_wave_closed",
+              "refund": 0.0,
+              "to_unit": "receiver"
+            },
+            "accepted_outcome": {
+              "edge_id": "edge/prearrival/pa5/a",
+              "from_unit": "receiver",
+              "handling_cost": 0.0,
+              "kind": "SearchCompleted",
+              "proposal_id": "",
+              "reason": "control_applied",
+              "refund": 6.0,
+              "to_unit": "parent"
+            },
+            "control_conflicts_retained": 0,
+            "controls_retained": 1,
+            "edge_consumed_credit": 0.0,
+            "edge_refunded_credit": 6.0,
+            "edge_terminal_outcome": "SearchCompleted",
+            "edge_terminal_status": "terminal",
+            "outcomes_retained": 1,
+            "prearrival_control_state": null
+          },
+          "b": {
+            "accepted_control": {
+              "edge_id": "edge/prearrival/pa5/b",
+              "from_unit": "parent",
+              "handling_cost": 0.0,
+              "kind": "SearchCancelled",
+              "proposal_id": "",
+              "reason": "parent_wave_closed",
+              "refund": 0.0,
+              "to_unit": "receiver"
+            },
+            "accepted_outcome": {
+              "edge_id": "edge/prearrival/pa5/b",
+              "from_unit": "receiver",
+              "handling_cost": 0.0,
+              "kind": "SearchCompleted",
+              "proposal_id": "",
+              "reason": "control_applied",
+              "refund": 6.0,
+              "to_unit": "parent"
+            },
+            "control_conflicts_retained": 0,
+            "controls_retained": 1,
+            "edge_consumed_credit": 0.0,
+            "edge_refunded_credit": 6.0,
+            "edge_terminal_outcome": "SearchCompleted",
+            "edge_terminal_status": "terminal",
+            "outcomes_retained": 1,
+            "prearrival_control_state": "applied"
+          }
+        },
+        "nodes": {
+          "a": {
+            "ack_sent": true,
+            "adopted_parent_edge": "edge/prearrival/pa5/a",
+            "adopted_parent_sender": "parent",
+            "children_opened": [],
+            "children_outstanding": [],
+            "credit": {
+              "cancelled_credit": 0.0,
+              "child_allocations_in_flight": 0.0,
+              "child_refunds_received": 0.0,
+              "consumed_credit": 0.0,
+              "incoming_allocation": 6.0,
+              "local_reserve": 0.0,
+              "returned_credit": 0.0,
+              "returned_to_parent": 6.0
+            },
+            "local_candidate": null,
+            "status": "CLOSED",
+            "terminal_signal_sent": true,
+            "wave_cancelled": true
+          },
+          "b": {
+            "ack_sent": true,
+            "adopted_parent_edge": "edge/prearrival/pa5/b",
+            "adopted_parent_sender": "parent",
+            "children_opened": [],
+            "children_outstanding": [],
+            "credit": {
+              "cancelled_credit": 0.0,
+              "child_allocations_in_flight": 0.0,
+              "child_refunds_received": 0.0,
+              "consumed_credit": 0.0,
+              "incoming_allocation": 6.0,
+              "local_reserve": 0.0,
+              "returned_credit": 0.0,
+              "returned_to_parent": 6.0
+            },
+            "local_candidate": null,
+            "status": "CLOSED",
+            "terminal_signal_sent": true,
+            "wave_cancelled": true
+          }
+        },
+        "wire_messages": [
+          {
+            "consumed": 0.0,
+            "edge_id": "edge/prearrival/pa5/a",
+            "kind": "__search_ack__",
+            "refund": 6.0,
+            "to": "parent"
+          },
+          {
+            "consumed": 0.0,
+            "edge_id": "edge/prearrival/pa5/b",
+            "kind": "__search_ack__",
+            "refund": 6.0,
+            "to": "parent"
+          }
+        ]
+      },
+      "parity": {
+        "counters": true,
+        "lifecycles": true,
+        "nodes": true,
+        "wire_messages": true
+      },
+      "right": {
+        "counters": {
+          "AUTHENTICATED_SEARCH_ADOPTIONS": 2,
+          "CANONICAL_SEARCH_EXPANSIONS": 2,
+          "PARENT_CONTROLS_APPLIED": 2,
+          "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+          "PREARRIVAL_CONTROLS_APPLIED": 1,
+          "PREARRIVAL_CONTROLS_HELD": 1,
+          "TERMINAL_ECHOS_SENT": 2,
+          "TOTAL_CANONICAL_SEARCH_ADOPTIONS": 2,
+          "UNIQUE_CANONICAL_SEARCH_NODES": 2
+        },
+        "lifecycles": {
+          "a": {
+            "accepted_control": {
+              "edge_id": "edge/prearrival/pa5/a",
+              "from_unit": "parent",
+              "handling_cost": 0.0,
+              "kind": "SearchCancelled",
+              "proposal_id": "",
+              "reason": "parent_wave_closed",
+              "refund": 0.0,
+              "to_unit": "receiver"
+            },
+            "accepted_outcome": {
+              "edge_id": "edge/prearrival/pa5/a",
+              "from_unit": "receiver",
+              "handling_cost": 0.0,
+              "kind": "SearchCompleted",
+              "proposal_id": "",
+              "reason": "control_applied",
+              "refund": 6.0,
+              "to_unit": "parent"
+            },
+            "control_conflicts_retained": 0,
+            "controls_retained": 1,
+            "edge_consumed_credit": 0.0,
+            "edge_refunded_credit": 6.0,
+            "edge_terminal_outcome": "SearchCompleted",
+            "edge_terminal_status": "terminal",
+            "outcomes_retained": 1,
+            "prearrival_control_state": "applied"
+          },
+          "b": {
+            "accepted_control": {
+              "edge_id": "edge/prearrival/pa5/b",
+              "from_unit": "parent",
+              "handling_cost": 0.0,
+              "kind": "SearchCancelled",
+              "proposal_id": "",
+              "reason": "parent_wave_closed",
+              "refund": 0.0,
+              "to_unit": "receiver"
+            },
+            "accepted_outcome": {
+              "edge_id": "edge/prearrival/pa5/b",
+              "from_unit": "receiver",
+              "handling_cost": 0.0,
+              "kind": "SearchCompleted",
+              "proposal_id": "",
+              "reason": "control_applied",
+              "refund": 6.0,
+              "to_unit": "parent"
+            },
+            "control_conflicts_retained": 0,
+            "controls_retained": 1,
+            "edge_consumed_credit": 0.0,
+            "edge_refunded_credit": 6.0,
+            "edge_terminal_outcome": "SearchCompleted",
+            "edge_terminal_status": "terminal",
+            "outcomes_retained": 1,
+            "prearrival_control_state": null
+          }
+        },
+        "nodes": {
+          "a": {
+            "ack_sent": true,
+            "adopted_parent_edge": "edge/prearrival/pa5/a",
+            "adopted_parent_sender": "parent",
+            "children_opened": [],
+            "children_outstanding": [],
+            "credit": {
+              "cancelled_credit": 0.0,
+              "child_allocations_in_flight": 0.0,
+              "child_refunds_received": 0.0,
+              "consumed_credit": 0.0,
+              "incoming_allocation": 6.0,
+              "local_reserve": 0.0,
+              "returned_credit": 0.0,
+              "returned_to_parent": 6.0
+            },
+            "local_candidate": null,
+            "status": "CLOSED",
+            "terminal_signal_sent": true,
+            "wave_cancelled": true
+          },
+          "b": {
+            "ack_sent": true,
+            "adopted_parent_edge": "edge/prearrival/pa5/b",
+            "adopted_parent_sender": "parent",
+            "children_opened": [],
+            "children_outstanding": [],
+            "credit": {
+              "cancelled_credit": 0.0,
+              "child_allocations_in_flight": 0.0,
+              "child_refunds_received": 0.0,
+              "consumed_credit": 0.0,
+              "incoming_allocation": 6.0,
+              "local_reserve": 0.0,
+              "returned_credit": 0.0,
+              "returned_to_parent": 6.0
+            },
+            "local_candidate": null,
+            "status": "CLOSED",
+            "terminal_signal_sent": true,
+            "wave_cancelled": true
+          }
+        },
+        "wire_messages": [
+          {
+            "consumed": 0.0,
+            "edge_id": "edge/prearrival/pa5/a",
+            "kind": "__search_ack__",
+            "refund": 6.0,
+            "to": "parent"
+          },
+          {
+            "consumed": 0.0,
+            "edge_id": "edge/prearrival/pa5/b",
+            "kind": "__search_ack__",
+            "refund": 6.0,
+            "to": "parent"
+          }
+        ]
+      }
+    },
+    "verdict": "PASS"
+  },
+  "not_claimed": [
+    "durable crash recovery",
+    "Gate F",
+    "Gate G",
+    "R8",
+    "deployment",
+    "external settlement effect"
+  ],
+  "runtime_commit": "f8a887bb60aa9790968050411e373755f7e4b119",
+  "runtime_sha256": "970e133ce2099773fef44108ddd4de028f6142f16efcd736987431338fc1dc82"
+}

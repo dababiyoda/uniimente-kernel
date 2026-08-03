@@ -31,6 +31,10 @@ jobs:
         run: python3 scripts/ci/check_phase3g_preregistration.py
       - name: Phase 3G pre-arrival control pre-registration
         run: python3 scripts/ci/check_phase3g_prearrival_preregistration.py
+      - name: Phase 3G pre-arrival adversarial twin
+        run: |
+          python3 verification/phase3g/prearrival_adversarial_twin.py --verify-results > /dev/null
+          python3 verification/phase3g/prearrival_adversarial_twin.py --negative-control > /dev/null
       - name: Phase 3G evidence checksums
         # The manifest existed and verified nothing, because nothing ran it. It
         # sat stale from 1d7349c while DEVELOPMENT_RESULTS.json was rewritten

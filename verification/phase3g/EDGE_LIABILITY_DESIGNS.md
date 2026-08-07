@@ -3,7 +3,14 @@
 Design comparison only. Nothing here is implemented, and nothing here is
 authorized by LC-2a. Read after `EDGE_LIABILITY_DIAGNOSIS.md`.
 
-## The stranding, classified
+> **SUPERSEDED BY LC-2b′, BELOW.** The classification this comparison was built
+> on was wrong, the error was caught by trying to implement the recommendation,
+> and the corrected measurement changes which mechanism is owed. The original
+> comparison is preserved rather than rewritten, because the nine designs and
+> six axes remain the right frame and the mistake is the more useful record.
+> Read §"LC-2b′" at the end first.
+
+## The stranding, classified — WRONG, see LC-2b′
 
 Every one of the 13 stranded edges at `_damaged(3, density=0.6)` seed 5 is an
 **adopted** edge whose receiving node is still `status=OPEN`, with the
@@ -162,8 +169,86 @@ somewhere it does not exist.
 - the metric is derived from edge state, per LC-2a finding 3, and a negative
   control strands an edge deliberately and is caught.
 
+---
+
+# LC-2b′ — the correction
+
+Design 7 was implemented and **changed nothing**: 13 stranded before, 13 after.
+The runtime change was reverted. That result is what exposed the error above.
+
+## What the stranded nodes actually hold
+
+```
+status=OPEN  untried=0  reserve=1.0  opened=[]
+eligible_offer=True  local_candidate=set  terminal_signal_sent=False
+```
+
+`eligible_offer` is set. These nodes are not frontier-empty — **they proposed
+themselves and are waiting for an answer that never comes.** Reclassified with
+the proposal test applied before the frontier test:
+
+| class | n | meaning |
+|---|---|---|
+| **A** | 6 | proposed itself, never answered |
+| **A2** | 7 | relayed a proposal, never answered |
+| B, C, D | 0 | *none* |
+
+All 13. There is no frontier-exhaustion stranding in this run at all. The
+original table read `untried == 0` as "nothing left to try" when it actually
+meant "this node stopped expanding because it had already found a candidate".
+
+## Why design 7 could not have worked
+
+`_continue_after_child` refuses to report exhaustion while `eligible_offer`
+stands — and it is **right** to refuse, because a candidate is still travelling.
+Any mechanism that discharged the adopted edge here would be claiming the search
+space is closed while an unresolved proposal is in flight, which is the specific
+error that guard exists to prevent. Design 7 was correctly inert.
+
+## Where the defect actually is
+
+`_seal` gives every outstanding proposal a disposition — accepted, or the seal
+reason — and writes it into `node["proposal_disposition"]` **at the sealing
+node**. The source of a losing proposal is a different unit, on a different
+edge, possibly several hops away. Nothing carries the disposition back to it, so
+it holds `eligible_offer=True` forever, and with it the parent's committed
+credit.
+
+**LC-2's stranded liability is downstream of LC-4's multi-hop disposition
+routing.** They are one defect seen from two ends: LC-4 says commit and cancel
+must reach the proposal's source edge; LC-2 measures what it costs when they do
+not. LC-0's finding on xfail 10 — "the accepted proposal was correlated only at
+the root, so multi-hop closure was never exercised" — is the same observation
+from the test side.
+
+## Consequence for the execution order
+
+The authorized order runs edge-scoped liability continuation **before**
+deterministic multi-hop routing. The measurement inverts that dependency: LC-2
+cannot be built first, because the liability it would discharge is held by nodes
+that are legitimately waiting, and the thing they wait for is what LC-4 routes.
+Per the canonical execution order — *implement the active bottleneck in
+dependency order* — LC-4 is the active bottleneck and LC-2 closes behind it.
+
+This is a reordering, not a reduction: nothing in the ladder is dropped.
+
+## What LC-4 must therefore prove
+
+- a losing proposal's disposition reaches its **source node**, not merely the
+  sealing node's own dictionary;
+- it travels the adopted chain hop by hop, using each relay's own adopted edge —
+  the invariant LC-1 already tests and can now be reused rather than restated;
+- on arrival the source clears `eligible_offer` and `local_candidate`, which the
+  existing path at `deliver_proposal_rejected` already does correctly once the
+  message arrives;
+- stranded edges at `_damaged(3, density=0.6)` seed 5 fall from 13 toward 0, and
+  the residue after routing is re-classified rather than assumed to be zero;
+- `_damaged(4, density=1.0)` is unchanged at 6 opened / 6 answered / 0 stranded;
+- formation holds at 16 events / 1012 messages.
+
 ## Not established
 
-No design is implemented. `substrate/v5.py` is byte-identical to `bc13bc3`.
-All four LC-2 specifications remain strict xfail. Gate F **UNMEASURED**, Gate G
+No design is implemented. `substrate/v5.py` is byte-identical to `bc13bc3` —
+design 7 was written, measured, found inert, and reverted. All four LC-2
+specifications remain strict xfail. Gate F **UNMEASURED**, Gate G
 **UNMEASURED**, R8 **PROHIBITED**, no external effect.

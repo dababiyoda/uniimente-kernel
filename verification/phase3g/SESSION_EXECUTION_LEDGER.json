@@ -109,7 +109,7 @@
       "id": "LC-2",
       "level": "1B",
       "title": "Edge-scoped liability continuation (compare >=7 designs)",
-      "status": "DIAGNOSED (LC-2a). Mechanism not built.",
+      "status": "DIAGNOSED and REORDERED. Blocked behind LC-4.",
       "covers_xfails": [
         1,
         2,
@@ -135,7 +135,10 @@
       "next": [
         "LC-2b compare >=7 designs",
         "LC-2c implement, test, attack"
-      ]
+      ],
+      "blocked_by": "LC-4",
+      "correction": "LC-2b's classification was wrong. Design 7 (canonical local frontier remainder) was implemented and changed nothing -- 13 stranded before, 13 after -- and was reverted. Reclassified with the proposal test applied before the frontier test: all 13 stranded edges are unresolved proposals (6 self-proposed, 7 relayed), and there is no frontier-exhaustion stranding at all. `_continue_after_child` correctly refuses to report exhaustion while eligible_offer stands.",
+      "root_cause": "_seal writes proposal dispositions into node['proposal_disposition'] AT THE SEALING NODE. The source of a losing proposal is a different unit, possibly several hops away, and nothing carries the disposition back to it, so it holds eligible_offer=True forever along with the parent's committed credit. LC-2's stranded liability is downstream of LC-4's multi-hop disposition routing; they are one defect seen from two ends."
     },
     {
       "id": "LC-3",
@@ -151,11 +154,20 @@
       "id": "LC-4",
       "level": "1D",
       "title": "Deterministic multi-hop proposal/commit/cancel routing",
-      "status": "UNSTARTED",
+      "status": "ACTIVE BOTTLENECK (promoted ahead of LC-2 by measurement)",
       "covers_xfails": [
         10
       ],
-      "lc0_note": "fails on its own positive control: the accepted proposal was correlated only at the root"
+      "lc0_note": "fails on its own positive control: the accepted proposal was correlated only at the root",
+      "why_promoted": "The authorized order runs LC-2 before LC-4. The measurement inverts the dependency: LC-2 cannot be built first because the liability it would discharge is held by nodes legitimately waiting for what LC-4 routes. Per the canonical execution order, implement the active bottleneck in dependency order. Nothing in the ladder is dropped.",
+      "must_prove": [
+        "a losing proposal's disposition reaches its SOURCE node, not merely the sealing node's dictionary",
+        "it travels the adopted chain hop by hop using each relay's own adopted edge (the LC-1 invariant, reused)",
+        "the source clears eligible_offer and local_candidate on arrival",
+        "stranded edges at _damaged(3, density=0.6) seed 5 fall from 13 toward 0, residue re-classified not assumed",
+        "_damaged(4, density=1.0) unchanged at 6 opened / 6 answered / 0 stranded",
+        "formation holds at 16 events / 1012 messages"
+      ]
     },
     {
       "id": "LC-5",
@@ -242,5 +254,6 @@
     "verification/phase3g/prearrival_adversarial_twin.py (preregistration.yml)",
     "verification/phase3g/adopted_edge_return_negative_control.py (canonical-ci.yml job 1)",
     "verification/phase3g/edge_liability_diagnose.py (canonical-ci.yml job 1)"
-  ]
+  ],
+  "execution_order_correction": "LC-4 now precedes LC-2. Established by measurement, recorded in EDGE_LIABILITY_DESIGNS.md section LC-2b'. A reordering, not a reduction."
 }

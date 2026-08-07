@@ -15,9 +15,8 @@
     "no_edge_is_terminal_without_child_evidence": true,
     "no_unclassified_stranding": true,
     "sparse_stranding_classes": {
-      "A_frontier_empty_space_exhausted": 5,
-      "B_waiting_on_a_stranded_child": 7,
-      "C_routes_remain_credit_spent": 1
+      "A2_relayed_a_proposal_and_was_never_answered": 7,
+      "A_proposed_itself_and_was_never_answered": 6
     },
     "stranding_is_real_at_sparse_density": true,
     "the_lc2_fixture_contains_no_stranding": true
@@ -49,15 +48,16 @@
       "seed": 5,
       "stranded_holding_only_a_control": 0,
       "stranding_classes": {
-        "A_frontier_empty_space_exhausted": 5,
-        "B_waiting_on_a_stranded_child": 7,
-        "C_routes_remain_credit_spent": 1
+        "A2_relayed_a_proposal_and_was_never_answered": 7,
+        "A_proposed_itself_and_was_never_answered": 6
       },
       "stranding_detail": [
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c0",
+          "eligible_offer": false,
           "from": "authorise.9",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 1.0,
           "status": "OPEN",
@@ -65,9 +65,11 @@
           "untried": 4
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c0/r1/c0",
+          "eligible_offer": false,
           "from": "authorise.11",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 0.0,
           "status": "OPEN",
@@ -75,9 +77,11 @@
           "untried": 6
         },
         {
-          "class": "A_frontier_empty_space_exhausted",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c0/r1/c0/r0/c0",
+          "eligible_offer": true,
           "from": "authorise.10",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 1.0,
           "status": "OPEN",
@@ -85,9 +89,11 @@
           "untried": 0
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c1",
+          "eligible_offer": false,
           "from": "authorise.9",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 2.0,
           "status": "OPEN",
@@ -95,9 +101,11 @@
           "untried": 5
         },
         {
-          "class": "A_frontier_empty_space_exhausted",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c1/r1/c0",
+          "eligible_offer": true,
           "from": "disburse.13",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 1.0,
           "status": "OPEN",
@@ -105,9 +113,11 @@
           "untried": 0
         },
         {
-          "class": "A_frontier_empty_space_exhausted",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:authorise.9:0:0/r0/c2",
+          "eligible_offer": true,
           "from": "authorise.9",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 3.0,
           "status": "OPEN",
@@ -115,9 +125,11 @@
           "untried": 0
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:1:0/r0/c0",
+          "eligible_offer": false,
           "from": "authorise.9",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 1.0,
           "status": "OPEN",
@@ -125,9 +137,11 @@
           "untried": 4
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:1:0/r0/c0/r1/c0",
+          "eligible_offer": false,
           "from": "authorise.11",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 0.0,
           "status": "OPEN",
@@ -135,9 +149,11 @@
           "untried": 6
         },
         {
-          "class": "A_frontier_empty_space_exhausted",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:authorise.9:1:0/r0/c0/r1/c0/r0/c0",
+          "eligible_offer": true,
           "from": "authorise.10",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 1.0,
           "status": "OPEN",
@@ -145,9 +161,11 @@
           "untried": 0
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:authorise.9:1:0/r0/c1",
+          "eligible_offer": false,
           "from": "authorise.9",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 2.0,
           "status": "OPEN",
@@ -155,9 +173,11 @@
           "untried": 5
         },
         {
-          "class": "A_frontier_empty_space_exhausted",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:authorise.9:1:0/r0/c1/r1/c0",
+          "eligible_offer": true,
           "from": "disburse.13",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 1.0,
           "status": "OPEN",
@@ -165,9 +185,11 @@
           "untried": 0
         },
         {
-          "class": "B_waiting_on_a_stranded_child",
+          "class": "A2_relayed_a_proposal_and_was_never_answered",
           "edge": "root:reconcile.12:0:1/r0/c0",
+          "eligible_offer": false,
           "from": "reconcile.12",
+          "holds_local_candidate": false,
           "outstanding": 1,
           "reserve": 2.0,
           "status": "OPEN",
@@ -175,9 +197,11 @@
           "untried": 6
         },
         {
-          "class": "C_routes_remain_credit_spent",
+          "class": "A_proposed_itself_and_was_never_answered",
           "edge": "root:reconcile.12:0:1/r0/c0/r0/c0",
+          "eligible_offer": true,
           "from": "disburse.13",
+          "holds_local_candidate": true,
           "outstanding": 0,
           "reserve": 0.0,
           "status": "OPEN",

@@ -90,9 +90,13 @@ def audit(o):
 def classify_stranding(o):
     """Why each stranded edge stranded, read from the RECEIVER's own state.
 
-    The classes are not a taxonomy invented for the write-up: A and C need
-    different outcomes (space exhausted vs budget exhausted) and B needs none of
-    its own, so a design that cannot tell them apart cannot be correct.
+    The classes are not a taxonomy invented for the write-up. They decide what
+    is owed: an unresolved proposal (A, A2) needs its DISPOSITION routed back to
+    its source, a closed frontier (C) needs `SearchExhausted`, spent credit (D)
+    needs `SearchBudgetExhausted`. A design that cannot tell them apart cannot
+    be correct, and the first version of this function could not: it tested
+    `untried == 0` before it tested for an outstanding proposal, and so filed
+    every node still waiting on its candidate as "space exhausted".
     """
     probes, lc = o.search_edge_probes, o.search_edge_lifecycle
     out = collections.Counter()
@@ -112,18 +116,30 @@ def classify_stranding(o):
         outstanding = len(node["children_outstanding"])
         untried = node.get("eligible_untried_routes") or 0
         reserve = node["local_reserve"]
-        if outstanding:
+        # ORDER MATTERS, AND THE FIRST VERSION HAD IT WRONG. A node holding an
+        # unresolved proposal is NOT frontier-empty: `_continue_after_child`
+        # refuses to report exhaustion while `eligible_offer` stands, and it is
+        # right to, because a candidate is still travelling. Classifying on
+        # `untried == 0` first labelled those nodes "space exhausted" and made
+        # the stranding look like a missing discharge, which it is not.
+        if node.get("eligible_offer") or node.get("local_candidate") is not None:
+            cls = "A_proposed_itself_and_was_never_answered"
+        elif node.get("proposals_outstanding"):
+            cls = "A2_relayed_a_proposal_and_was_never_answered"
+        elif outstanding:
             cls = "B_waiting_on_a_stranded_child"
         elif untried == 0:
-            cls = "A_frontier_empty_space_exhausted"
+            cls = "C_frontier_empty_space_exhausted"
         elif reserve <= 0:
-            cls = "C_routes_remain_credit_spent"
+            cls = "D_routes_remain_credit_spent"
         else:
-            cls = "D_unclassified_frontier_and_credit_both_remain"
+            cls = "E_unclassified_frontier_and_credit_both_remain"
         out[cls] += 1
         detail.append({"edge": e, "class": cls, "from": p["from_unit"],
                        "to": p["to_unit"], "outstanding": outstanding,
                        "untried": untried, "reserve": reserve,
+                       "eligible_offer": bool(node.get("eligible_offer")),
+                       "holds_local_candidate": node.get("local_candidate") is not None,
                        "status": node["status"]})
     return dict(sorted(out.items())), detail
 
@@ -206,7 +222,7 @@ def main() -> int:
             for f in report["fixtures"].values()),
         "no_unclassified_stranding": all(
             not f["stranding_classes"].get(
-                "D_unclassified_frontier_and_credit_both_remain")
+                "E_unclassified_frontier_and_credit_both_remain")
             for f in report["fixtures"].values()),
         "sparse_stranding_classes": sparse["stranding_classes"],
     }

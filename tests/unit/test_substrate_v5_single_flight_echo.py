@@ -877,7 +877,6 @@ def test_G_search_credit_starvation_never_claims_no_replacement(monkeypatch):
 # H. Return-route stability
 # ---------------------------------------------------------------------------
 
-@spec
 def test_H_each_answered_node_returns_its_proposal_through_its_adopted_edge():
     """PER NODE, not globally per SearchKey.
 

@@ -67,6 +67,14 @@ jobs:
       - name: Phase 3G adopted-edge return negative control
         if: always()
         run: python verification/phase3g/adopted_edge_return_negative_control.py --verify-results
+      # LC-2a. Fails if the recorded edge-liability diagnosis stops describing
+      # this runtime -- if the dense fixture starts stranding edges, if the
+      # sparse one stops, if CLOSED_CHILD_EDGES comes alive, or if the audit
+      # stops noticing a deliberately stranded edge. A diagnosis nothing
+      # re-executes decays into a claim the moment the runtime moves.
+      - name: Phase 3G edge-liability diagnosis
+        if: always()
+        run: python verification/phase3g/edge_liability_diagnose.py --verify-results
 
   contracts:
     name: "2 · Contract schema references resolve"

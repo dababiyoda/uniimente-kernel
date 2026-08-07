@@ -1,0 +1,199 @@
+{
+  "candidates": [
+    {
+      "candidate": "most_recent_incoming_edge",
+      "caught_on": [
+        "n_auth=3 density=0.6"
+      ],
+      "defect": "a later arrival captures the return route",
+      "route_clauses": [
+        "wrong_edge"
+      ],
+      "runs": [
+        {
+          "facts": {
+            "contested_returns": 1,
+            "label": "n_auth=4 density=1.0 seed=0",
+            "origin_nodes": 1,
+            "pre_emission_contested": 0,
+            "proposals": 2,
+            "proposing_nodes": 2,
+            "relay_proposals": 0,
+            "upward_edges_inspected": 2
+          },
+          "fixture": "n_auth=4 density=1.0",
+          "outcome": "PASSED"
+        },
+        {
+          "facts": {
+            "contested_returns": 1,
+            "label": "n_auth=5 density=0.8 seed=0",
+            "origin_nodes": 1,
+            "pre_emission_contested": 0,
+            "proposals": 4,
+            "proposing_nodes": 4,
+            "relay_proposals": 1,
+            "upward_edges_inspected": 4
+          },
+          "fixture": "n_auth=5 density=0.8",
+          "outcome": "PASSED"
+        },
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=3 density=0.6",
+          "message": "[n_auth=3 density=0.6 seed=5] disburse.13 returned its proposal through edge root:reconcile.12:0:1/r0/c2/r0/c0, not through its immutable adopted parent edge root:reconcile.12:0:1/r0/c0",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_edge"
+          ]
+        }
+      ],
+      "verdict": "CAUGHT"
+    },
+    {
+      "candidate": "non_adopted_alias",
+      "caught_on": [
+        "n_auth=4 density=1.0",
+        "n_auth=5 density=0.8",
+        "n_auth=3 density=0.6"
+      ],
+      "defect": "the return route is an alias of the adopted edge, not the adopted edge",
+      "route_clauses": [
+        "wrong_edge"
+      ],
+      "runs": [
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=4 density=1.0",
+          "message": "[n_auth=4 density=1.0 seed=0] authorise.12 returned its proposal through edge root:reconcile.13:0:1/r0/c1#alias, not through its immutable adopted parent edge root:reconcile.13:0:1/r0/c1",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_edge"
+          ]
+        },
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=5 density=0.8",
+          "message": "[n_auth=5 density=0.8 seed=0] authorise.12 returned its proposal through edge root:reconcile.14:0:1/r0/c1#alias, not through its immutable adopted parent edge root:reconcile.14:0:1/r0/c1",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_edge"
+          ]
+        },
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=3 density=0.6",
+          "message": "[n_auth=3 density=0.6 seed=5] authorise.9 returned its proposal through edge root:reconcile.12:0:1/r0/c0/r0/c0#alias, not through its immutable adopted parent edge root:reconcile.12:0:1/r0/c0/r0/c0",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_edge"
+          ]
+        }
+      ],
+      "verdict": "CAUGHT"
+    },
+    {
+      "candidate": "jump_to_origin",
+      "caught_on": [
+        "n_auth=5 density=0.8",
+        "n_auth=3 density=0.6"
+      ],
+      "defect": "evidence is handed straight to the search origin, skipping the chain",
+      "route_clauses": [
+        "wrong_destination"
+      ],
+      "runs": [
+        {
+          "facts": {
+            "contested_returns": 1,
+            "label": "n_auth=4 density=1.0 seed=0",
+            "origin_nodes": 1,
+            "pre_emission_contested": 0,
+            "proposals": 2,
+            "proposing_nodes": 2,
+            "relay_proposals": 0,
+            "upward_edges_inspected": 2
+          },
+          "fixture": "n_auth=4 density=1.0",
+          "outcome": "PASSED"
+        },
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=5 density=0.8",
+          "message": "[n_auth=5 density=0.8 seed=0] authorise.10 sent its proposal to reconcile.14, not to its adopted parent authorise.13",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_destination"
+          ]
+        },
+        {
+          "failure_kind": "assertion",
+          "fixture": "n_auth=3 density=0.6",
+          "message": "[n_auth=3 density=0.6 seed=5] authorise.9 sent its proposal to reconcile.12, not to its adopted parent disburse.13",
+          "outcome": "FAILED",
+          "route_clauses": [
+            "wrong_destination"
+          ]
+        }
+      ],
+      "verdict": "CAUGHT"
+    }
+  ],
+  "failures": [],
+  "fixtures": [
+    "n_auth=4 density=1.0",
+    "n_auth=5 density=0.8",
+    "n_auth=3 density=0.6"
+  ],
+  "instrument": "adopted_edge_return_negative_control",
+  "oracle": "tests/unit/test_substrate_v5_single_flight_echo.py::_assert_offers_return_through_adopted_edges",
+  "positive_control": [
+    {
+      "facts": {
+        "contested_returns": 1,
+        "label": "n_auth=4 density=1.0 seed=0",
+        "origin_nodes": 1,
+        "pre_emission_contested": 0,
+        "proposals": 2,
+        "proposing_nodes": 2,
+        "relay_proposals": 0,
+        "upward_edges_inspected": 2
+      },
+      "fixture": "n_auth=4 density=1.0",
+      "outcome": "PASSED"
+    },
+    {
+      "facts": {
+        "contested_returns": 1,
+        "label": "n_auth=5 density=0.8 seed=0",
+        "origin_nodes": 1,
+        "pre_emission_contested": 0,
+        "proposals": 4,
+        "proposing_nodes": 4,
+        "relay_proposals": 1,
+        "upward_edges_inspected": 4
+      },
+      "fixture": "n_auth=5 density=0.8",
+      "outcome": "PASSED"
+    },
+    {
+      "facts": {
+        "contested_returns": 7,
+        "label": "n_auth=3 density=0.6 seed=5",
+        "origin_nodes": 3,
+        "pre_emission_contested": 2,
+        "proposals": 14,
+        "proposing_nodes": 14,
+        "relay_proposals": 7,
+        "upward_edges_inspected": 1
+      },
+      "fixture": "n_auth=3 density=0.6",
+      "outcome": "PASSED"
+    }
+  ],
+  "route_clauses_exercised": [
+    "wrong_destination",
+    "wrong_edge"
+  ],
+  "verdict": "CORRECT"
+}

@@ -57,6 +57,8 @@ and each canonical node records the edges that arrived at it:
 """
 from __future__ import annotations
 
+import collections
+import contextlib
 import pathlib
 import random
 import sys
@@ -271,6 +273,324 @@ def _per_key_edge_uniqueness(o):
         assert len(outs) == 1, (
             f"edge {eid} received {len(outs)} terminal outcomes, expected exactly 1")
     return probes, terminals
+
+
+# ---------------------------------------------------------------------------
+# Proposal traffic, captured AT EMISSION
+#
+# `search_edge_terminals` cannot answer "where did this node send its
+# proposal". Since the lifecycle/projection separation it holds ACCEPTED
+# OUTCOMES only, and an outcome is a different channel from a proposal: a
+# proposal is `SearchProposal`, a NONTERMINAL, and it never appears there at
+# all. Reading a return route out of that projection was the defect this test
+# used to contain -- it filtered for `SearchCommitted`, which is a PARENT
+# CONTROL that the 2D rule forbids a child from emitting upward, so the filter
+# demanded exactly the message the protocol prohibits.
+#
+# The canonical wire form is `("__proposal__", SearchKey, edge_id, payload)`
+# appended to the emitting unit's outbox. There is no `SearchOffer` type; no
+# alias is introduced here to preserve the stale wording.
+# ---------------------------------------------------------------------------
+
+class _ProposalTrace:
+    """Two capture points, because either alone is unfalsifiable.
+
+    `emitted`   the outbox entry appended by the sending unit. This is the ONLY
+                record of the route the SENDER chose, and the only admissible
+                source for a routing claim.
+    `received`  what `deliver_proposal` was actually handed. A sender-side trace
+                on its own would pass against a runtime whose messages never
+                leave the outbox, and it cannot show that the unit the sender
+                NAMED is the unit that got it.
+
+    Neither point re-implements a runtime predicate, so the trace cannot agree
+    with a broken runtime by mirroring it.
+    """
+
+    def __init__(self) -> None:
+        self.emitted: list[dict] = []
+        self.received: list[dict] = []
+
+    def sent_index(self):
+        return collections.Counter(
+            (r["unit"], r["dest"], r["key"], r["edge"], r["payload"].proposal_id)
+            for r in self.emitted)
+
+    def received_index(self):
+        return collections.Counter(
+            (r["sender"], r["unit"], r["key"], r["edge"], r["payload"].proposal_id)
+            for r in self.received)
+
+
+def _adopted_chain(nodes, key, start):
+    """The units on the adopted return path from `start` up toward the origin.
+
+    Each canonical node names exactly one parent, so the path is walked rather
+    than guessed. `seen` is not defensive decoration: an adopted chain that
+    closed on itself would loop here forever, and returning the partial walk
+    lets the caller report it as an unreachable relay instead of hanging.
+    """
+    chain, seen, cur = [], set(), start
+    while cur and cur not in seen:
+        seen.add(cur)
+        chain.append(cur)
+        node = nodes.get((cur, key))
+        if node is None:
+            break
+        cur = node["adopted_parent_sender"]
+    if cur and cur not in seen:
+        chain.append(cur)
+    return chain
+
+
+@contextlib.contextmanager
+def _proposal_trace():
+    """Wrap emission and arrival for the duration of one run.
+
+    Wrapping is deliberate rather than replacing: whatever `_propose_upward` is
+    bound to when this opens keeps running, so an adversarial candidate
+    installed BEFORE the trace is observed exactly as it behaves.
+    """
+    tr = _ProposalTrace()
+    orig_propose = v5.Unit._propose_upward
+    orig_deliver_proposal = v5.Unit.deliver_proposal
+
+    def propose(self, node, payload):
+        before = len(self.outbox)
+        # snapshot the adoption facts AS THEY STOOD AT EMISSION, so a node that
+        # rebinds afterwards cannot be laundered by reading only final state
+        snap = dict(node_adopted=node["adopted_parent_edge"],
+                    node_adopted_initial=node["adopted_parent_edge_initial"],
+                    node_sender=node["adopted_parent_sender"],
+                    node_incoming=list(node["incoming_edges"]),
+                    node_key=node["search_key"],
+                    node_status=node["status"])
+        orig_propose(self, node, payload)
+        for dest, msg in self.outbox[before:]:
+            if isinstance(msg, tuple) and msg and msg[0] == "__proposal__":
+                tr.emitted.append(dict(unit=self.unit_id, dest=dest, key=msg[1],
+                                       edge=msg[2], payload=msg[3], **snap))
+
+    def deliver_proposal(self, key, edge_id, payload,
+                         sender=v5._UNSPECIFIED_SENDER):
+        tr.received.append(dict(unit=self.unit_id, sender=sender, key=key,
+                                edge=edge_id, payload=payload))
+        return orig_deliver_proposal(self, key, edge_id, payload, sender)
+
+    v5.Unit._propose_upward = propose
+    v5.Unit.deliver_proposal = deliver_proposal
+    try:
+        yield tr
+    finally:
+        v5.Unit._propose_upward = orig_propose
+        v5.Unit.deliver_proposal = orig_deliver_proposal
+
+
+def _run_traced(o, payload=PAYLOAD_B):
+    """One traced work item. `reset()` inside, so counters match the trace."""
+    with _proposal_trace() as tr:
+        reset()
+        o.run_item(payload)
+    return tr
+
+
+def _assert_offers_return_through_adopted_edges(o, tr, *, label):
+    """THE invariant: proposal evidence travels upward through each node's
+    immutable adopted parent edge, and parent controls never travel upward.
+
+    Returns the facts it measured, so a caller can assert on the SHAPE of the
+    run it obtained (relay present, contest present) instead of assuming it.
+    """
+    nodes = _nodes(o)
+    probes, terminals = _edge_telemetry(o)
+    units = o.units
+
+    # -- the run must contain the thing being judged ------------------------
+    assert tr.emitted, (
+        f"[{label}] no proposal was emitted at all, so this run cannot "
+        f"demonstrate that proposals return through the adopted edge")
+
+    sent, got = tr.sent_index(), tr.received_index()
+    assert sent == got, (
+        f"[{label}] emitted and arrived proposals disagree. Only sent: "
+        f"{sorted(sent - got)}. Only received: {sorted(got - sent)}")
+
+    origins = {(uid, k) for (uid, k), n in nodes.items()
+               if not n["adopted_parent_sender"]}
+    assert origins, (
+        f"[{label}] no search origin node exists, so 'an origin never proposes "
+        f"upward' would be vacuous")
+
+    by_node: dict = {}
+    for r in tr.emitted:
+        by_node.setdefault((r["unit"], r["key"]), []).append(r)
+
+    relays = 0
+    pre_emission_contested = 0
+    for (uid, key), recs in by_node.items():
+        node = nodes.get((uid, key))
+        assert node is not None, (
+            f"[{label}] {uid} emitted a proposal for {key} while holding no "
+            f"canonical node for it")
+        assert (uid, key) not in origins, (
+            f"[{label}] {uid} is the origin of {key} and still proposed "
+            f"upward; an origin has no parent to propose to")
+
+        adopted = node["adopted_parent_edge"]
+        assert adopted == node["adopted_parent_edge_initial"], (
+            f"[{label}] {uid} rebound its adopted parent edge after adoption")
+        assert adopted, f"[{label}] {uid} proposed from a node with no adopted edge"
+
+        # PER RECORD FIRST. A group-level "all proposals used one edge" check
+        # run ahead of these would short-circuit them and report every attack as
+        # the same unstable-route failure, so the test would stop naming WHICH
+        # route was wrong -- which is the one thing it is here to do.
+        for r in recs:
+            assert r["node_key"] == key == r["payload"].search_key, (
+                f"[{label}] {uid} sent a proposal whose SearchKey does not "
+                f"match the node it came from")
+            assert r["node_adopted"] == r["node_adopted_initial"] == adopted, (
+                f"[{label}] {uid} held adopted edge {r['node_adopted']} at "
+                f"emission but {adopted} at the end of the run")
+            assert r["edge"] == adopted, (
+                f"[{label}] {uid} returned its proposal through edge "
+                f"{r['edge']}, not through its immutable adopted parent edge "
+                f"{adopted}")
+            assert r["edge"] in r["node_incoming"], (
+                f"[{label}] {uid} returned its proposal through {r['edge']}, "
+                f"which never arrived at this node: {r['node_incoming']}")
+            assert r["dest"] == node["adopted_parent_sender"] == r["node_sender"], (
+                f"[{label}] {uid} sent its proposal to {r['dest']}, not to its "
+                f"adopted parent {node['adopted_parent_sender']}")
+            assert r["dest"] in units[uid].neighbours, (
+                f"[{label}] {uid} sent its proposal to {r['dest']}, which is "
+                f"not a neighbour; a proposal travels one hop to the adopted "
+                f"parent and never jumps toward the origin")
+
+            probe = probes.get(r["edge"])
+            assert probe is not None, (
+                f"[{label}] {uid} returned its proposal on {r['edge']}, an "
+                f"edge the organ never probed")
+            assert probe["from_unit"] == r["dest"] and probe["to_unit"] == uid, (
+                f"[{label}] the return on {r['edge']} does not retrace the "
+                f"arrival: probed {probe['from_unit']} -> {probe['to_unit']}, "
+                f"returned {uid} -> {r['dest']}")
+            assert probe["search_key"] == key, (
+                f"[{label}] {uid} returned a proposal for {key} on an edge "
+                f"probed for a different SearchKey")
+
+            # PROVENANCE. `source_edge_id` names the edge the ORIGINATING node
+            # was probed on, and it is NOT rewritten at each hop: a proposal
+            # relayed three times still carries the edge its supplier answered
+            # on. So the emitter is generally neither the source node nor the
+            # unit that opened the source edge, and the only honest check is
+            # the path property itself -- the emitter must actually stand on
+            # the adopted return path from that source.
+            p = r["payload"]
+            assert p.identity_intact(), (
+                f"[{label}] {uid} emitted a proposal whose derived identity "
+                f"does not match its own content")
+            assert p.proposal_id, f"[{label}] {uid} emitted an unidentified proposal"
+            src = probes.get(p.source_edge_id)
+            assert src is not None, (
+                f"[{label}] {uid} emitted a proposal whose source edge "
+                f"{p.source_edge_id} was never probed")
+            assert src["search_key"] == key, (
+                f"[{label}] the proposal's source edge belongs to another search")
+            assert src["to_unit"] == p.source_node, (
+                f"[{label}] the proposal claims source node {p.source_node} on "
+                f"an edge probed toward {src['to_unit']}")
+            chain = _adopted_chain(nodes, key, p.source_node)
+            assert uid in chain, (
+                f"[{label}] {uid} relayed a proposal from {p.source_node} "
+                f"without standing on its adopted return path {chain}; the "
+                f"source edge {p.source_edge_id} was opened by "
+                f"{src['from_unit']}")
+            assert src["from_unit"] in chain, (
+                f"[{label}] the source edge {p.source_edge_id} was opened by "
+                f"{src['from_unit']}, which is not on the adopted return path "
+                f"from {p.source_node}: {chain}")
+
+            if r["dest"] != key.origin_unit:
+                relays += 1
+            if len(r["node_incoming"]) > 1:
+                # a competing arrival had ALREADY landed when this node
+                # proposed -- the capture window `reverse[need_id]` left open
+                pre_emission_contested += 1
+
+        edges = {r["edge"] for r in recs}
+        assert edges == {adopted}, (
+            f"[{label}] {uid} returned proposals for one SearchKey through "
+            f"{sorted(edges)}, not solely through its immutable adopted parent "
+            f"edge {adopted}")
+
+    # -- parent controls never travel upward --------------------------------
+    strictly_parent = tuple(k for k in v5.PARENT_CONTROL_KINDS
+                            if k not in v5.CHILD_OUTCOME_KINDS)
+    assert strictly_parent, (
+        "every parent control is also a child outcome, so 'controls never "
+        "travel upward' has nothing left to forbid")
+    inspected = 0
+    for (uid, key), recs in by_node.items():
+        edge, parent = recs[0]["edge"], recs[0]["dest"]
+        rec = terminals.get(edge)
+        if rec is None:
+            continue        # this edge carries no accepted outcome in this run
+        assert rec["from_unit"] == uid and rec["to_unit"] == parent, (
+            f"[{label}] the outcome recorded on {edge} runs "
+            f"{rec['from_unit']} -> {rec['to_unit']}, not {uid} -> {parent}")
+        offending = [k for k in (_kind(x) for x in rec["outcomes"])
+                     if k in strictly_parent]
+        assert not offending, (
+            f"[{label}] {uid} sent {offending} upward on its adopted parent "
+            f"edge; {list(strictly_parent)} are parent controls and travel "
+            f"only downward")
+        for c in o.search_edge_lifecycle.get(edge, {}).get("controls", []):
+            assert _kind(c) in v5.PARENT_CONTROL_KINDS, (
+                f"[{label}] a non-control was recorded on the control channel "
+                f"of {edge}")
+            assert getattr(c, "from_unit", None) == parent, (
+                f"[{label}] a control on {edge} came from "
+                f"{getattr(c, 'from_unit', None)}, not from the parent {parent}")
+        inspected += 1
+    assert inspected, (
+        f"[{label}] no adopted parent edge carried a recorded outcome, so the "
+        f"upward channel was never actually inspected")
+
+    # -- a competing arrival must not capture the return route --------------
+    contested = []
+    for (uid, key), recs in by_node.items():
+        node = nodes[(uid, key)]
+        incoming = list(node.get("incoming_edges", []))
+        assert incoming, f"[{label}] {uid} records no incoming edges"
+        for e in incoming:
+            if e == node["adopted_parent_edge_initial"]:
+                continue
+            outs = terminals.get(e, {}).get("outcomes", [])
+            if any(_kind(x) in ("SearchCoalesced", "SearchCycleClosed")
+                   for x in outs):
+                contested.append((uid, key, e))
+    for uid, key, e in contested:
+        node = nodes[(uid, key)]
+        assert node["adopted_parent_edge"] == node["adopted_parent_edge_initial"], (
+            f"[{label}] {uid} replaced its adopted parent after a competing "
+            f"arrival on {e}")
+        assert not node.get("children_from", {}).get(e), (
+            f"[{label}] the competing arrival on {e} created descendants at {uid}")
+        assert len(terminals[e]["outcomes"]) == 1, (
+            f"[{label}] the competing arrival on {e} received "
+            f"{len(terminals[e]['outcomes'])} terminal outcomes, expected 1")
+
+    assert C["OFFER_RETURN_ROUTE_MISMATCHES"] == 0, (
+        f"[{label}] a proposal travelled home through an edge that was not the "
+        f"adopted parent; `reverse` keyed by need_id alone allows exactly this")
+
+    return {"label": label, "proposals": len(tr.emitted),
+            "proposing_nodes": len(by_node), "relay_proposals": relays,
+            "contested_returns": len(contested),
+            "pre_emission_contested": pre_emission_contested,
+            "upward_edges_inspected": inspected,
+            "origin_nodes": len(origins)}
 
 
 # ---------------------------------------------------------------------------
@@ -558,88 +878,94 @@ def test_G_search_credit_starvation_never_claims_no_replacement(monkeypatch):
 # ---------------------------------------------------------------------------
 
 @spec
-def test_H_each_answered_node_returns_its_offer_through_its_adopted_edge():
+def test_H_each_answered_node_returns_its_proposal_through_its_adopted_edge():
     """PER NODE, not globally per SearchKey.
 
-    An earlier draft required exactly ONE SearchOffer edge per SearchKey across
-    the whole organ. That is wrong for an echo protocol: an offer travelling home
+    An earlier draft required exactly ONE offer edge per SearchKey across the
+    whole organ. That is wrong for an echo protocol: evidence travelling home
     from supplier -> relay C -> relay B -> relay A -> origin legitimately leaves
     one edge PER canonical node along the adopted chain, so the same SearchKey
-    appears on several offer-return edges. The real invariant is per node.
+    appears on several return edges. The real invariant is per node.
 
-    It also required only a GLOBAL positive coalesced/cycle count, which a
-    competing arrival at an unrelated node satisfies. The competing arrival must
-    be shown at the SAME node that later returned the offer.
+    IT ALSO LOOKED IN THE WRONG PLACE FOR THE WRONG MESSAGE. It searched
+    `search_edge_terminals` for records whose outcomes contained
+    `SearchCommitted`, and called those "SearchOffer terminals". Two independent
+    reasons that could never hold:
+
+      1. `SearchCommitted` is a PARENT CONTROL. The active 2D rule forbids a
+         child from emitting one upward on its adopted parent edge, so the
+         filter demanded exactly the message the protocol prohibits;
+      2. since the lifecycle/projection separation, `search_edge_terminals`
+         holds ACCEPTED OUTCOMES only, and a proposal is a NONTERMINAL. No
+         proposal can ever appear there, whatever its direction.
+
+    The route a node chose is recorded in one place only -- the message it put
+    in its own outbox -- so that is where this reads it. There is no
+    `SearchOffer` type in the protocol; the canonical name is `SearchProposal`
+    and no alias is added here to keep the old wording alive.
+
+    THREE FIXTURES, because no single run contains all three required shapes
+    and a missing shape makes the matching clause a claim about nothing:
+
+      `(4, 1.0)` the pre-registered fixture. A competing arrival reaches a node
+                 that answered -- but AFTER it proposed.
+      `(5, 0.8)` a genuine RELAY hop: a proposing node whose adopted parent is
+                 not the search origin. Without one, a candidate that handed its
+                 evidence straight to the origin would be indistinguishable from
+                 correct routing.
+      `(3, 0.6)` a node that proposes while it ALREADY holds a second incoming
+                 edge. This is the `reverse[need_id]` capture window itself, and
+                 the negative control showed the first two fixtures never enter
+                 it: in both, every proposing node still had exactly one arrival
+                 at the moment it emitted, so "the latest arrival captured the
+                 return route" was not an attack there but a no-op.
     """
     o, j, slot, victim, seed = _damaged(4, density=1.0)
-    reset()
-    o.run_item(PAYLOAD_B)
+    tr = _run_traced(o)
+    facts = _assert_offers_return_through_adopted_edges(
+        o, tr, label=f"n_auth=4 density=1.0 seed={seed}")
+    assert facts["contested_returns"] >= 1, (
+        "no proposing node received a later non-adopted duplicate or cross-edge "
+        "arrival, so no attempt to overwrite a return route occurred at a node "
+        "that actually returned a proposal")
 
-    nodes = _nodes(o)
-    assert nodes, "no canonical nodes were created"
-    probes, terminals = _edge_telemetry(o)
+    o2, j2, slot2, victim2, seed2 = _damaged(5, density=0.8)
+    tr2 = _run_traced(o2)
+    relayed = _assert_offers_return_through_adopted_edges(
+        o2, tr2, label=f"n_auth=5 density=0.8 seed={seed2}")
+    assert relayed["relay_proposals"] >= 1, (
+        "every proposing node was a direct child of the search origin, so a "
+        "candidate that jumped straight to the origin would have been "
+        "indistinguishable from correct routing in this run")
 
-    answered = {(uid, key): n for (uid, key), n in nodes.items()
-                if n.get("status") == "COMMITTED"}
-    assert answered, (
-        "no canonical node recorded an eligible offer, so this run cannot "
-        "demonstrate that offers return through the adopted edge")
+    o3, j3, slot3, victim3, seed3 = _damaged(3, density=0.6)
+    tr3 = _run_traced(o3)
+    captured = _assert_offers_return_through_adopted_edges(
+        o3, tr3, label=f"n_auth=3 density=0.6 seed={seed3}")
+    assert captured["pre_emission_contested"] >= 1, (
+        "no node proposed while it already held a second incoming edge, so the "
+        "route-capture window this invariant exists to close was never entered "
+        "and 'the latest arrival did not capture the return route' was a no-op")
 
-    for (uid, key), node in answered.items():
-        adopted = node["adopted_parent_edge"]
-        assert adopted == node["adopted_parent_edge_initial"], (
-            f"{uid} rebound its adopted parent edge after adoption")
-
-        # Offers emitted BY THIS NODE, identified by edge records.
-        mine = [(eid, rec) for eid, rec in terminals.items()
-                if rec["from_unit"] == uid and rec["search_key"] == key
-                and any(_kind(x) == "SearchCommitted" for x in rec["outcomes"])]
-        assert len(mine) == 1, (
-            f"{uid} emitted {len(mine)} SearchOffer terminals for {key}; a node "
-            f"must emit exactly one")
-        eid, rec = mine[0]
-        assert eid == adopted, (
-            f"{uid} returned its offer through edge {eid}, not through its "
-            f"immutable adopted parent edge {adopted}")
-        assert rec["search_key"] == key, "the offer terminal carries a different key"
-        assert rec["to_unit"] == node["adopted_parent_sender"], (
-            f"the offer went to {rec['to_unit']}, not to the adopted parent "
-            f"{node['adopted_parent_sender']}")
-        others = [e for e, r in terminals.items()
-                  if r["from_unit"] == uid and r["search_key"] == key
-                  and e != adopted
-                  and any(_kind(x) == "SearchCommitted" for x in r["outcomes"])]
-        assert not others, (
-            f"{uid} also emitted offers on alternative parent edges: {others}")
-
-    # LOCALIZED competing arrival: the same answered node must have received a
-    # non-adopted arrival and kept its original return edge.
-    contested = []
-    for (uid, key), node in answered.items():
-        incoming = list(node.get("incoming_edges", []))
-        assert incoming, f"{uid} records no incoming edges, so arrivals cannot be checked"
-        extras = [e for e in incoming if e != node["adopted_parent_edge_initial"]]
-        for e in extras:
-            outs = terminals.get(e, {}).get("outcomes", [])
-            if any(_kind(x) in ("SearchCoalesced", "SearchCycleClosed") for x in outs):
-                contested.append((uid, key, e))
-    assert contested, (
-        "no answered canonical node received a later non-adopted duplicate or "
-        "cross-edge arrival, so no attempt to overwrite a return route occurred "
-        "at a node that actually answered")
-    for uid, key, e in contested:
-        node = answered[(uid, key)]
-        assert node["adopted_parent_edge"] == node["adopted_parent_edge_initial"], (
-            f"{uid} replaced its adopted parent after a competing arrival on {e}")
-        assert not node.get("children_from", {}).get(e), (
-            f"the competing arrival on {e} created descendants at {uid}")
-        assert len(terminals[e]["outcomes"]) == 1, (
-            f"the competing arrival on {e} received "
-            f"{len(terminals[e]['outcomes'])} terminal outcomes, expected 1")
-
-    assert C["OFFER_RETURN_ROUTE_MISMATCHES"] == 0, (
-        "an offer travelled home through an edge that was not the adopted "
-        "parent; `reverse` keyed by need_id alone allows exactly this")
+    # EXACT REPLAY IS NOT A SECOND PROPOSAL. Replaying an already-answered
+    # adopted edge must not re-emit evidence the parent already holds, and must
+    # not move the route.
+    for organ, trace in ((o, tr), (o2, tr2), (o3, tr3)):
+        targets = {(r["unit"], r["key"], r["edge"]) for r in trace.emitted}
+        assert targets, "nothing to replay"
+        answered = [(u, k, e) for u, k, e in targets
+                    if (organ.search_edge_lifecycle.get(e) or {})
+                    .get("accepted_outcome") is not None]
+        assert answered, (
+            "no adopted parent edge that carried a proposal reached an accepted "
+            "outcome, so replay idempotence was never actually exercised")
+        with _proposal_trace() as replay:
+            for uid, key, edge in sorted(answered):
+                organ.units[uid].replay_search_edge(key, edge)
+        assert not replay.emitted, (
+            f"exact replay of an answered adopted edge re-emitted "
+            f"{len(replay.emitted)} proposal(s): "
+            f"{[(r['unit'], r['dest'], r['edge']) for r in replay.emitted]}")
 
 
 # ---------------------------------------------------------------------------

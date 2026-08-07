@@ -1,0 +1,93 @@
+{
+  "ledger": "phase3g_session_execution",
+  "purpose": "Per-item execution record for the long-batch authorization. This is external memory: a session that loses context reloads from here plus CURRENT_WORK_PACKET.yaml, not from a prose summary. Every 'status' below is backed by a commit or an executable artifact, or it reads UNSTARTED.",
+  "branch": "claude/uniimente-repo-audit-jpytcy",
+  "pull_request": 66,
+  "continuation_issue": 67,
+  "base": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "as_of": "2026-08-07",
+  "execution_order": [
+    "LC-1",
+    "edge-scoped liability continuation",
+    "projection consistency disposition",
+    "deterministic multi-hop routing",
+    "evidence-bound cycle closure",
+    "genuine exhaustion / credit-starvation separation",
+    "widening activation",
+    "lexical-ordering disposition",
+    "development freeze",
+    "five-repository audit",
+    "stacked PR A",
+    "stacked PR B",
+    "stacked PR C"
+  ],
+  "items": [
+    {
+      "id": "LC-0",
+      "level": "1",
+      "title": "Exact remaining lifecycle inventory",
+      "status": "COMPLETE",
+      "commits": ["bc13bc3"],
+      "evidence": [
+        "verification/phase3g/REMAINING_LIFECYCLE_INVENTORY.json",
+        "verification/phase3g/REMAINING_LIFECYCLE_INVENTORY.md"
+      ],
+      "result": "11 strict xfails enumerated by real pytest node id under --runxfail, each with first causal divergence, non-vacuity witness and stated test/runtime defect probabilities. Four structural findings recorded. No runtime or test file changed."
+    },
+    {
+      "id": "LC-1",
+      "level": "1A",
+      "title": "Adopted-parent-edge return: correct Test H",
+      "status": "COMPLETE",
+      "commits": ["0b434ef", "16019de"],
+      "evidence": [
+        "verification/phase3g/ADOPTED_EDGE_RETURN_DISPOSITION.md",
+        "verification/phase3g/ADOPTED_EDGE_RETURN_NEGATIVE_CONTROL.json",
+        "verification/phase3g/adopted_edge_return_negative_control.py"
+      ],
+      "disposition": "TEST DEFECT. LC-0 predicted test_defect_probability 0.95, confidence high. Prediction correct.",
+      "runtime_changed": false,
+      "node_id_before": "tests/unit/test_substrate_v5_single_flight_echo.py::test_H_each_answered_node_returns_its_offer_through_its_adopted_edge",
+      "node_id_after": "tests/unit/test_substrate_v5_single_flight_echo.py::test_H_each_answered_node_returns_its_proposal_through_its_adopted_edge",
+      "why_the_old_test_could_never_pass": [
+        "SearchCommitted is a PARENT CONTROL; the 2D rule forbids a child emitting one upward on its adopted parent edge, so the filter demanded the message the protocol prohibits",
+        "since the lifecycle/projection separation, search_edge_terminals holds accepted OUTCOMES only, and a proposal is a NONTERMINAL, so no proposal can appear there in any direction"
+      ],
+      "route_source": "emission (the unit's own outbox), cross-checked at deliver_proposal for arrival. Not the outcome projection.",
+      "fixtures": [
+        {"fixture": "n_auth=4 density=1.0", "seed": 0, "supplies": "pre-registered; competing arrival at an answering node", "proposals": 2, "relays": 0, "pre_emission_contested": 0, "upward_edges_inspected": 2},
+        {"fixture": "n_auth=5 density=0.8", "seed": 0, "supplies": "a genuine relay hop", "proposals": 4, "relays": 1, "pre_emission_contested": 0, "upward_edges_inspected": 4},
+        {"fixture": "n_auth=3 density=0.6", "seed": 5, "supplies": "a node proposing while already holding a second arrival", "proposals": 14, "relays": 7, "pre_emission_contested": 2, "upward_edges_inspected": 1}
+      ],
+      "negative_control": {
+        "verdict": "CORRECT",
+        "positive_control": "PASSED on all three fixtures",
+        "candidates_caught": 3,
+        "candidates_escaped": 0,
+        "route_clauses_exercised": ["wrong_destination", "wrong_edge"],
+        "runs_in_ci": ".github/workflows/preregistration.yml, --verify-results"
+      },
+      "defects_the_negative_control_found_in_this_work": [
+        "most_recent_incoming_edge escaped: in both original fixtures every proposing node still held exactly one arrival at emission, so the broken candidate emitted what the correct one would have. A third fixture now enters that window and pre_emission_contested measures it.",
+        "a group-level route-stability check ran ahead of the per-record clauses and short-circuited them, so every attack reported the same generic message and the test had stopped naming WHICH route was wrong. Per-record clauses now run first."
+      ],
+      "model_correction": "A relayed proposal's source_edge_id is NOT rewritten at each hop, so the emitter is generally neither the source node nor the unit that opened that edge. Attribution is now checked as the path property: the emitter must stand on the adopted return path walked from the source."
+    },
+    {"id": "LC-2", "level": "1B", "title": "Edge-scoped liability continuation (compare >=7 designs)", "status": "UNSTARTED", "covers_xfails": [1, 2, 3, 5]},
+    {"id": "LC-3", "level": "1C", "title": "Projection-divergence specification disposition", "status": "UNSTARTED", "covers_xfails": [4], "lc0_note": "names a counter that does not exist, so it is currently unfalsifiable; may be redundant against 5G-V rather than a gap"},
+    {"id": "LC-4", "level": "1D", "title": "Deterministic multi-hop proposal/commit/cancel routing", "status": "UNSTARTED", "covers_xfails": [10], "lc0_note": "fails on its own positive control: the accepted proposal was correlated only at the root"},
+    {"id": "LC-5", "level": "1E/1F", "title": "Evidence-bound terminal commit + exactly-once cycle closure (factorial audit 00/10/01/11)", "status": "UNSTARTED", "covers_xfails": [6, 7]},
+    {"id": "LC-6", "level": "1G", "title": "Exhaustion vs credit starvation, paired fixtures", "status": "UNSTARTED", "covers_xfails": [8], "lc0_note": "fails on its own positive control (assert 0 >= 1); fixture-debt suspect"},
+    {"id": "LC-7", "level": "2", "title": "Remove the unexplained widening skip", "status": "UNSTARTED", "location": "tests/unit/test_substrate_v5_distinct_replacement.py:516", "skip_point": "line 528, 'no branches were opened'"},
+    {"id": "LC-8", "level": "3", "title": "Inherited lexical-ordering disposition", "status": "UNSTARTED", "covers_xfails": [11]},
+    {"id": "L4", "level": "4", "title": "Development-freeze and R8-readiness packages", "status": "UNSTARTED"},
+    {"id": "L5", "level": "5", "title": "Five-repository UNIIMENTE contract audit", "status": "UNSTARTED"},
+    {"id": "L6", "level": "6", "title": "Stacked draft PR A -- Developmental Candidate Envelope", "status": "UNSTARTED"},
+    {"id": "L7", "level": "7", "title": "Stacked draft PR B -- Sandbox Reality Covenant vertical slice", "status": "UNSTARTED"},
+    {"id": "L8", "level": "8", "title": "Stacked draft PR C -- Founder Cockpit read model", "status": "UNSTARTED"}
+  ],
+  "remaining_strict_xfails": 10,
+  "suite": {"passed": 902, "skipped": 1, "xfailed": 10, "failed": 0},
+  "gates": {"F": "UNMEASURED", "G": "UNMEASURED", "R8": "PROHIBITED"},
+  "external_effects": 0
+}

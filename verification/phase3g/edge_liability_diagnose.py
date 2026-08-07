@@ -87,6 +87,47 @@ def audit(o):
     }
 
 
+def classify_stranding(o):
+    """Why each stranded edge stranded, read from the RECEIVER's own state.
+
+    The classes are not a taxonomy invented for the write-up: A and C need
+    different outcomes (space exhausted vs budget exhausted) and B needs none of
+    its own, so a design that cannot tell them apart cannot be correct.
+    """
+    probes, lc = o.search_edge_probes, o.search_edge_lifecycle
+    out = collections.Counter()
+    detail = []
+    for e in sorted(probes):
+        if (lc.get(e) or {}).get("accepted_outcome") is not None:
+            continue
+        p = probes[e]
+        recv = o.units.get(p["to_unit"])
+        node = getattr(recv, "canonical_searches", {}).get(p["search_key"]) if recv else None
+        if node is None:
+            out["no_canonical_node_at_receiver"] += 1
+            continue
+        if node["adopted_parent_edge"] != e:
+            out["stranded_edge_is_not_the_adopted_edge"] += 1
+            continue
+        outstanding = len(node["children_outstanding"])
+        untried = node.get("eligible_untried_routes") or 0
+        reserve = node["local_reserve"]
+        if outstanding:
+            cls = "B_waiting_on_a_stranded_child"
+        elif untried == 0:
+            cls = "A_frontier_empty_space_exhausted"
+        elif reserve <= 0:
+            cls = "C_routes_remain_credit_spent"
+        else:
+            cls = "D_unclassified_frontier_and_credit_both_remain"
+        out[cls] += 1
+        detail.append({"edge": e, "class": cls, "from": p["from_unit"],
+                       "to": p["to_unit"], "outstanding": outstanding,
+                       "untried": untried, "reserve": reserve,
+                       "status": node["status"]})
+    return dict(sorted(out.items())), detail
+
+
 def run(n_auth, density):
     o, _j, _slot, _victim, seed = S._damaged(n_auth, density=density)
     v5.reset()
@@ -94,6 +135,7 @@ def run(n_auth, density):
     a = audit(o)
     a["seed"] = seed
     a["counters"] = {c: (v5.C[c] if c in v5.C.d else None) for c in METRIC_COUNTERS}
+    a["stranding_classes"], a["stranding_detail"] = classify_stranding(o)
     return o, a
 
 
@@ -153,6 +195,20 @@ def main() -> int:
         "closed_child_edges_counter_is_dead": dense["counters"]["CLOSED_CHILD_EDGES"] == 0
             and dense["edges_marked_terminal"] > 0,
         "counters_reading_zero_on_every_fixture": dead,
+        # LC-2b depends on these three classes existing and on every stranded
+        # edge being an ADOPTED edge. If a stranded edge appears that is not an
+        # adopted edge, or a class D appears where frontier and credit both
+        # remain, the recommended design does not cover the case and the
+        # comparison has to be redone rather than quietly extended.
+        "every_stranded_edge_is_an_adopted_edge": all(
+            not f["stranding_classes"].get("stranded_edge_is_not_the_adopted_edge")
+            and not f["stranding_classes"].get("no_canonical_node_at_receiver")
+            for f in report["fixtures"].values()),
+        "no_unclassified_stranding": all(
+            not f["stranding_classes"].get(
+                "D_unclassified_frontier_and_credit_both_remain")
+            for f in report["fixtures"].values()),
+        "sparse_stranding_classes": sparse["stranding_classes"],
     }
     report["findings"] = findings
 
@@ -169,6 +225,13 @@ def main() -> int:
     if not findings["closed_child_edges_counter_is_dead"]:
         failures.append("CLOSED_CHILD_EDGES is no longer dead; the metric "
                         "denominator finding is stale")
+    if not findings["every_stranded_edge_is_an_adopted_edge"]:
+        failures.append("a stranded edge is not an adopted edge; LC-2b assumes "
+                        "the liability is always the adopted one and the design "
+                        "comparison must be redone")
+    if not findings["no_unclassified_stranding"]:
+        failures.append("a stranded node has both untried routes and reserve "
+                        "left, which none of the three classes covers")
     report["failures"] = failures
     report["verdict"] = "CORRECT" if not failures else "STALE"
 

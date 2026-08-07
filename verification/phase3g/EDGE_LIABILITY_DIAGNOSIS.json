@@ -11,7 +11,14 @@
       "OUTCOME_SLOT_OCCUPIED_BY_CONTROL",
       "TERMINALS_WITH_UNRECONCILED_CHILDREN"
     ],
+    "every_stranded_edge_is_an_adopted_edge": true,
     "no_edge_is_terminal_without_child_evidence": true,
+    "no_unclassified_stranding": true,
+    "sparse_stranding_classes": {
+      "A_frontier_empty_space_exhausted": 5,
+      "B_waiting_on_a_stranded_child": 7,
+      "C_routes_remain_credit_spent": 1
+    },
     "stranding_is_real_at_sparse_density": true,
     "the_lc2_fixture_contains_no_stranding": true
   },
@@ -41,6 +48,143 @@
       },
       "seed": 5,
       "stranded_holding_only_a_control": 0,
+      "stranding_classes": {
+        "A_frontier_empty_space_exhausted": 5,
+        "B_waiting_on_a_stranded_child": 7,
+        "C_routes_remain_credit_spent": 1
+      },
+      "stranding_detail": [
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:0:0/r0/c0",
+          "from": "authorise.9",
+          "outstanding": 1,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "authorise.11",
+          "untried": 4
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:0:0/r0/c0/r1/c0",
+          "from": "authorise.11",
+          "outstanding": 1,
+          "reserve": 0.0,
+          "status": "OPEN",
+          "to": "authorise.10",
+          "untried": 6
+        },
+        {
+          "class": "A_frontier_empty_space_exhausted",
+          "edge": "root:authorise.9:0:0/r0/c0/r1/c0/r0/c0",
+          "from": "authorise.10",
+          "outstanding": 0,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "price.2",
+          "untried": 0
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:0:0/r0/c1",
+          "from": "authorise.9",
+          "outstanding": 1,
+          "reserve": 2.0,
+          "status": "OPEN",
+          "to": "disburse.13",
+          "untried": 5
+        },
+        {
+          "class": "A_frontier_empty_space_exhausted",
+          "edge": "root:authorise.9:0:0/r0/c1/r1/c0",
+          "from": "disburse.13",
+          "outstanding": 0,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "price.5",
+          "untried": 0
+        },
+        {
+          "class": "A_frontier_empty_space_exhausted",
+          "edge": "root:authorise.9:0:0/r0/c2",
+          "from": "authorise.9",
+          "outstanding": 0,
+          "reserve": 3.0,
+          "status": "OPEN",
+          "to": "price.8",
+          "untried": 0
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:1:0/r0/c0",
+          "from": "authorise.9",
+          "outstanding": 1,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "authorise.11",
+          "untried": 4
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:1:0/r0/c0/r1/c0",
+          "from": "authorise.11",
+          "outstanding": 1,
+          "reserve": 0.0,
+          "status": "OPEN",
+          "to": "authorise.10",
+          "untried": 6
+        },
+        {
+          "class": "A_frontier_empty_space_exhausted",
+          "edge": "root:authorise.9:1:0/r0/c0/r1/c0/r0/c0",
+          "from": "authorise.10",
+          "outstanding": 0,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "price.2",
+          "untried": 0
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:authorise.9:1:0/r0/c1",
+          "from": "authorise.9",
+          "outstanding": 1,
+          "reserve": 2.0,
+          "status": "OPEN",
+          "to": "disburse.13",
+          "untried": 5
+        },
+        {
+          "class": "A_frontier_empty_space_exhausted",
+          "edge": "root:authorise.9:1:0/r0/c1/r1/c0",
+          "from": "disburse.13",
+          "outstanding": 0,
+          "reserve": 1.0,
+          "status": "OPEN",
+          "to": "price.5",
+          "untried": 0
+        },
+        {
+          "class": "B_waiting_on_a_stranded_child",
+          "edge": "root:reconcile.12:0:1/r0/c0",
+          "from": "reconcile.12",
+          "outstanding": 1,
+          "reserve": 2.0,
+          "status": "OPEN",
+          "to": "disburse.13",
+          "untried": 6
+        },
+        {
+          "class": "C_routes_remain_credit_spent",
+          "edge": "root:reconcile.12:0:1/r0/c0/r0/c0",
+          "from": "disburse.13",
+          "outstanding": 0,
+          "reserve": 0.0,
+          "status": "OPEN",
+          "to": "authorise.9",
+          "untried": 5
+        }
+      ],
       "terminal_without_child_outcome": 0
     },
     "n_auth=4 density=1.0": {
@@ -62,6 +206,8 @@
       "parents_left_waiting": {},
       "seed": 0,
       "stranded_holding_only_a_control": 0,
+      "stranding_classes": {},
+      "stranding_detail": [],
       "terminal_without_child_outcome": 0
     },
     "n_auth=5 density=0.8": {
@@ -83,6 +229,8 @@
       "parents_left_waiting": {},
       "seed": 0,
       "stranded_holding_only_a_control": 0,
+      "stranding_classes": {},
+      "stranding_detail": [],
       "terminal_without_child_outcome": 0
     }
   },

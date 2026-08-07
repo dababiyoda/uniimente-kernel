@@ -141,6 +141,45 @@
       "root_cause": "_seal writes proposal dispositions into node['proposal_disposition'] AT THE SEALING NODE. The source of a losing proposal is a different unit, possibly several hops away, and nothing carries the disposition back to it, so it holds eligible_offer=True forever along with the parent's committed credit. LC-2's stranded liability is downstream of LC-4's multi-hop disposition routing; they are one defect seen from two ends."
     },
     {
+      "id": "NC-0",
+      "level": "1B-upstream",
+      "title": "Causal need closure: exact generation-bound diagnosis",
+      "status": "COMPLETE",
+      "evidence": [
+        "verification/phase3g/NEED_CLOSURE_CAUSAL_DIAGNOSIS.md",
+        "verification/phase3g/NEED_CLOSURE_CAUSAL_DIAGNOSIS.json",
+        "verification/phase3g/need_closure_diagnose.py"
+      ],
+      "runtime_changed": false,
+      "predicate": "root_obligation_retired(root) := node not terminal AND node not closing AND unit.open_needs.get(key.origin_slot) != key.need_id",
+      "why_truthful": "settle_search_offer already refuses with wrong_need_generation unless open_needs[slot] == key.need_id, so once retired the root can never settle anything again, bonded or not. Every field is local to the owning unit.",
+      "measured": {
+        "ALTERNATE_SATISFIED_OPEN_ROOTS": 3,
+        "abandoned_holding_liability": 3,
+        "abandoned_credit_in_flight": 18.0,
+        "dense_fixtures": "no abandoned root at all; their single root is already terminal",
+        "roots": [
+          "authorise.9:0:0 PROPOSAL_PENDING, 3 children, 3 proposals, 9.0 credit, slot bonded by legacy path",
+          "authorise.9:1:0 PROPOSAL_PENDING, 2 children, 2 proposals, 6.0 credit, slot bonded by legacy path",
+          "reconcile.12:0:1 PROPOSAL_PENDING, 1 child, 1 proposal, 3.0 credit, NO BOND AT ALL"
+        ]
+      },
+      "correction_to_daa1032": "daa1032 named the discriminator as `key.origin_slot in self.bonds`. Wrong: one abandoned root has no bond, and the bonded ones are already caught by the generation test. The bond is provenance for WHY the generation retired, not the condition.",
+      "corroborating": {
+        "settled_from_search_offer": "FALSE on both bonds - created by the legacy Need/Offer path, not canonical settlement",
+        "LEGACY_REPAIR_NEED_MESSAGES": 14,
+        "ELIGIBLE_PROPOSALS_COMMITTED": 0,
+        "DUAL_REPAIR_SEARCHES": "0 - names this exact hazard and reads zero while two roots are demonstrably abandoned by a second path. Tenth instrument-liveness instance, recorded not fixed."
+      },
+      "next": [
+        "NC-1 preregister the closure contract",
+        "NC-2 compare >=7 mechanisms",
+        "NC-3 implement",
+        "NC-4 adversarial twin",
+        "then remeasure LC-2 from zero"
+      ]
+    },
+    {
       "id": "LC-3",
       "level": "1C",
       "title": "Projection-divergence specification disposition",

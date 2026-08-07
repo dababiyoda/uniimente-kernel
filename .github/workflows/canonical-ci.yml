@@ -75,6 +75,13 @@ jobs:
       - name: Phase 3G edge-liability diagnosis
         if: always()
         run: python verification/phase3g/edge_liability_diagnose.py --verify-results
+      # NC-0. Fails if the generation-bound diagnosis stops describing this
+      # runtime -- if no open root is provably abandoned (empty denominator), or
+      # if restoring the live open need stops changing the verdict, which would
+      # mean the predicate is not reading the obligation generation at all.
+      - name: Phase 3G need-closure causal diagnosis
+        if: always()
+        run: python verification/phase3g/need_closure_diagnose.py --verify-results
 
   contracts:
     name: "2 · Contract schema references resolve"

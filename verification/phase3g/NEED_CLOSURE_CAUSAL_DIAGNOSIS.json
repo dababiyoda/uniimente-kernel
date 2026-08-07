@@ -1,0 +1,218 @@
+{
+  "failures": [],
+  "findings": {
+    "alternate_satisfied_open_roots_dense": 0,
+    "alternate_satisfied_open_roots_sparse": 3,
+    "denominator_is_nonzero": true,
+    "every_abandoned_root_holds_liability": true,
+    "generation_is_load_bearing": true,
+    "states_observed": [
+      "2b_OBLIGATION_GENERATION_RETIRED",
+      "7_ROOT_ALREADY_TERMINAL"
+    ]
+  },
+  "fixtures": {
+    "n_auth=3 density=0.6": {
+      "abandoned_credit_in_flight": 18.0,
+      "abandoned_with_eligible_offer": 0,
+      "abandoned_with_liability": 3,
+      "abandoned_with_local_candidate": 0,
+      "abandoned_with_proposals_outstanding": 3,
+      "alternate_satisfied_open_roots": 3,
+      "open_roots": 3,
+      "roots": [
+        {
+          "accepted_proposal_id": null,
+          "bond_from_search_offer": false,
+          "bond_settled_by": "authorise.9:0:0",
+          "bond_settled_item": 2,
+          "bond_supplier": "price.8",
+          "children_outstanding": 3,
+          "constraint_generation": 0,
+          "credit_in_flight": 9.0,
+          "descendant_liability": 6,
+          "eligible_offer": false,
+          "holds_local_candidate": false,
+          "local_reserve": 9.0,
+          "need_id": "authorise.9:0:0",
+          "need_id_in_closed_needs": true,
+          "node_status": "PROPOSAL_PENDING",
+          "open_need_for_slot": null,
+          "origin_slot": 0,
+          "proposals_outstanding": 3,
+          "slot_bonded": true,
+          "state": "2b_OBLIGATION_GENERATION_RETIRED",
+          "terminal_signal_sent": false,
+          "unit": "authorise.9",
+          "unit_local_activations": 0,
+          "work_item_generation": 2
+        },
+        {
+          "accepted_proposal_id": null,
+          "bond_from_search_offer": false,
+          "bond_settled_by": "authorise.9:1:0",
+          "bond_settled_item": 2,
+          "bond_supplier": "price.5",
+          "children_outstanding": 2,
+          "constraint_generation": 0,
+          "credit_in_flight": 6.0,
+          "descendant_liability": 4,
+          "eligible_offer": false,
+          "holds_local_candidate": false,
+          "local_reserve": 9.0,
+          "need_id": "authorise.9:1:0",
+          "need_id_in_closed_needs": true,
+          "node_status": "PROPOSAL_PENDING",
+          "open_need_for_slot": null,
+          "origin_slot": 1,
+          "proposals_outstanding": 2,
+          "slot_bonded": true,
+          "state": "2b_OBLIGATION_GENERATION_RETIRED",
+          "terminal_signal_sent": false,
+          "unit": "authorise.9",
+          "unit_local_activations": 0,
+          "work_item_generation": 2
+        },
+        {
+          "accepted_proposal_id": null,
+          "bond_from_search_offer": null,
+          "bond_settled_by": null,
+          "bond_settled_item": null,
+          "bond_supplier": null,
+          "children_outstanding": 1,
+          "constraint_generation": 1,
+          "credit_in_flight": 3.0,
+          "descendant_liability": 2,
+          "eligible_offer": false,
+          "holds_local_candidate": false,
+          "local_reserve": 9.0,
+          "need_id": "reconcile.12:0:1",
+          "need_id_in_closed_needs": true,
+          "node_status": "PROPOSAL_PENDING",
+          "open_need_for_slot": null,
+          "origin_slot": 0,
+          "proposals_outstanding": 1,
+          "slot_bonded": false,
+          "state": "2b_OBLIGATION_GENERATION_RETIRED",
+          "terminal_signal_sent": false,
+          "unit": "reconcile.12",
+          "unit_local_activations": 1,
+          "work_item_generation": 2
+        }
+      ],
+      "seed": 5,
+      "states": {
+        "2b_OBLIGATION_GENERATION_RETIRED": 3
+      }
+    },
+    "n_auth=4 density=1.0": {
+      "abandoned_credit_in_flight": 0,
+      "abandoned_with_eligible_offer": 0,
+      "abandoned_with_liability": 0,
+      "abandoned_with_local_candidate": 0,
+      "abandoned_with_proposals_outstanding": 0,
+      "alternate_satisfied_open_roots": 0,
+      "open_roots": 1,
+      "roots": [
+        {
+          "accepted_proposal_id": "sfp1:0b18d3c13c227650b75d68dbce94bc3be277f34def3725aab06c0816ff9936da",
+          "bond_from_search_offer": true,
+          "bond_settled_by": "reconcile.13:0:1",
+          "bond_settled_item": 2,
+          "bond_supplier": "authorise.12",
+          "children_outstanding": 0,
+          "constraint_generation": 1,
+          "credit_in_flight": 0.0,
+          "descendant_liability": 0,
+          "eligible_offer": false,
+          "holds_local_candidate": false,
+          "local_reserve": 0.0,
+          "need_id": "reconcile.13:0:1",
+          "need_id_in_closed_needs": true,
+          "node_status": "COMMITTED",
+          "open_need_for_slot": null,
+          "origin_slot": 0,
+          "proposals_outstanding": 0,
+          "slot_bonded": true,
+          "state": "7_ROOT_ALREADY_TERMINAL",
+          "terminal_signal_sent": true,
+          "unit": "reconcile.13",
+          "unit_local_activations": 1,
+          "work_item_generation": 2
+        }
+      ],
+      "seed": 0,
+      "states": {
+        "7_ROOT_ALREADY_TERMINAL": 1
+      }
+    },
+    "n_auth=5 density=0.8": {
+      "abandoned_credit_in_flight": 0,
+      "abandoned_with_eligible_offer": 0,
+      "abandoned_with_liability": 0,
+      "abandoned_with_local_candidate": 0,
+      "abandoned_with_proposals_outstanding": 0,
+      "alternate_satisfied_open_roots": 0,
+      "open_roots": 1,
+      "roots": [
+        {
+          "accepted_proposal_id": "sfp1:00127025043bb190e2f2dfb231ebed643e0394848fb9ef7bbf5f8776d34e497e",
+          "bond_from_search_offer": true,
+          "bond_settled_by": "reconcile.14:0:1",
+          "bond_settled_item": 2,
+          "bond_supplier": "authorise.9",
+          "children_outstanding": 0,
+          "constraint_generation": 1,
+          "credit_in_flight": 0.0,
+          "descendant_liability": 0,
+          "eligible_offer": false,
+          "holds_local_candidate": false,
+          "local_reserve": 0.0,
+          "need_id": "reconcile.14:0:1",
+          "need_id_in_closed_needs": true,
+          "node_status": "COMMITTED",
+          "open_need_for_slot": null,
+          "origin_slot": 0,
+          "proposals_outstanding": 0,
+          "slot_bonded": true,
+          "state": "7_ROOT_ALREADY_TERMINAL",
+          "terminal_signal_sent": true,
+          "unit": "reconcile.14",
+          "unit_local_activations": 1,
+          "work_item_generation": 2
+        }
+      ],
+      "seed": 0,
+      "states": {
+        "7_ROOT_ALREADY_TERMINAL": 1
+      }
+    }
+  },
+  "instrument": "need_closure_diagnose",
+  "negative_control": {
+    "candidate": "restore each root's need_id as the live open need",
+    "generation_is_load_bearing": true,
+    "restored": [
+      {
+        "fixture": "n_auth=4 density=1.0",
+        "states": {
+          "7_ROOT_ALREADY_TERMINAL": 1
+        }
+      },
+      {
+        "fixture": "n_auth=5 density=0.8",
+        "states": {
+          "7_ROOT_ALREADY_TERMINAL": 1
+        }
+      },
+      {
+        "fixture": "n_auth=3 density=0.6",
+        "states": {
+          "0_NOT_SKIPPED_slot_still_unmet": 1,
+          "2_SATISFIED_ELSEWHERE": 2
+        }
+      }
+    ]
+  },
+  "verdict": "CORRECT"
+}

@@ -53,6 +53,20 @@ jobs:
       - name: Institutional verifier V1-V5
         if: always()
         run: python verifier/v2/verify.py
+      # LC-1. A corrected test that passes proves nothing on its own. This
+      # re-attacks it with three broken routing candidates and fails if any
+      # escapes, or if the unmodified runtime stops satisfying the oracle -- a
+      # negative control that fails against a runtime where everything fails is
+      # not evidence. It imports the test module so the attack and the test
+      # share one oracle and cannot drift apart, which is why it lives in this
+      # job rather than in the dependency-free ancestry job.
+      #
+      # `if: always()` for the same reason as the verifier above: the suite is
+      # expected to go red whenever a strict xfail starts passing, and a control
+      # that only runs on success stops running exactly when it is needed.
+      - name: Phase 3G adopted-edge return negative control
+        if: always()
+        run: python verification/phase3g/adopted_edge_return_negative_control.py --verify-results
 
   contracts:
     name: "2 · Contract schema references resolve"

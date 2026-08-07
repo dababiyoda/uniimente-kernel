@@ -111,9 +111,24 @@ positive control            PASSED   all three fixtures
 candidate that changed both would be rejected on the edge first and the report
 would never show that a wrong destination is discriminated at all.
 
-The control runs in CI (`preregistration.yml`) under `--verify-results`. An
-instrument nobody executes is a claim; this is the eighth place in this
-workstream where that rule applied.
+The control runs in CI under `--verify-results`. An instrument nobody executes
+is a claim; this is the eighth place in this workstream where that rule applied.
+
+It runs in `canonical-ci.yml` job 1, not in `preregistration.yml`. The first
+attempt put it in the ancestry job and CI caught it immediately:
+`ModuleNotFoundError: No module named 'pytest'`. That job is deliberately
+dependency-free — it asserts from the commit graph and runs stdlib scripts only
+— and this control imports the pytest-based test module *on purpose*, so the
+attack and the test share one oracle and cannot drift apart. Installing pytest
+into an ancestry check to reach it would couple that check to the test
+toolchain for no gain. It carries `if: always()` for the same reason the
+institutional verifier does: the suite is expected to go red whenever a strict
+xfail starts passing, and a control that only runs on success stops running
+exactly when it is needed.
+
+Verified to exit 0 from four working directories — repo root,
+`verification/phase3g`, `/`, `/tmp` — since a path assumption is how the first
+PA-0 artifact failed.
 
 ## Not established
 

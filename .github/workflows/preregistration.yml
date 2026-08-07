@@ -35,13 +35,13 @@ jobs:
         run: |
           python3 verification/phase3g/prearrival_adversarial_twin.py --verify-results > /dev/null
           python3 verification/phase3g/prearrival_adversarial_twin.py --negative-control > /dev/null
-      - name: Phase 3G adopted-edge return negative control
-        # LC-1. A corrected test that passes proves nothing on its own. This
-        # re-attacks it with three broken routing candidates and fails if any
-        # of them escapes, or if the unmodified runtime stops satisfying the
-        # oracle -- a failing negative control against a runtime where
-        # everything fails is not evidence.
-        run: python3 verification/phase3g/adopted_edge_return_negative_control.py --verify-results
+      # The LC-1 adopted-edge return negative control is NOT run here. This job
+      # is deliberately dependency-free -- it asserts from the commit graph and
+      # runs only stdlib scripts -- and that control imports the pytest-based
+      # test module so it shares one oracle with the test instead of mirroring
+      # it. It runs in `canonical-ci.yml` job 1, which installs
+      # requirements-dev.txt. Installing pytest here to reach it would couple an
+      # ancestry check to the test toolchain for no gain.
       - name: Phase 3G evidence checksums
         # The manifest existed and verified nothing, because nothing ran it. It
         # sat stale from 1d7349c while DEVELOPMENT_RESULTS.json was rewritten

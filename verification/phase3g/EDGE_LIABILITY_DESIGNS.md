@@ -232,7 +232,58 @@ dependency order* — LC-4 is the active bottleneck and LC-2 closes behind it.
 
 This is a reordering, not a reduction: nothing in the ladder is dropped.
 
-## What LC-4 must therefore prove
+## LC-2b″ — a second wrong guess, and the actual mechanism
+
+The obvious LC-4 fix was tried too: `_seal` records each losing proposal's
+disposition and never sends it, so route it downward with the
+`_reject_downward` / `deliver_proposal_rejected` chain that already exists.
+
+That changed nothing either — 13 before, 13 after — and was reverted.
+`substrate/v5.py` is byte-identical to `bc13bc3`.
+
+**`_seal` is never called in this run at all.** Traced: `seals: 0`. It is
+reached only from `_commit_wave` and the wave-close path, and neither fires for
+these searches, because no wave ever commits or closes. Routing dispositions
+better cannot help when no disposition is ever made.
+
+The waiting nodes and their parents:
+
+```
+price.2  -> authorise.10      price.5 -> disburse.13
+price.8  -> authorise.9       authorise.9 -> disburse.13
+```
+
+`authorise.9` is itself waiting. These are its own prerequisite roots
+(`authorise.9:0:0`, `authorise.9:1:0`), originated by nested recruitment, and
+the origin never settles them. `_settle_pending_roots`:
+
+```python
+if key.origin_slot in self.bonds:
+    continue
+```
+
+**A root whose obligation was satisfied by another path is abandoned, not
+closed.** The slot got bonded some other way, the origin correctly stops
+settling — and then nothing tells the subtree the need is gone. Every relay and
+every source below it keeps `eligible_offer` set, holding credit for a decision
+that will never be made, because the decision is no longer needed.
+
+`SearchNeedClosed` exists for exactly this, and is the one kind that appears in
+both `PARENT_CONTROL_KINDS` and `CHILD_OUTCOME_KINDS` — a need closing is a
+command travelling down and an answer travelling back. The skip path emits
+neither.
+
+So the owed mechanism is **need-closure propagation**: when an origin abandons a
+root because its obligation was met elsewhere, it must close the need downward
+rather than fall out of the loop. That is upstream of both LC-2 and the
+disposition routing, and it is what the next commit should build.
+
+Two designs were implemented and reverted to establish this. Both were
+reasonable readings of the evidence available when they were written, and both
+were falsified by running them. That is cheaper than either would have been to
+argue about.
+
+## What the need-closure mechanism must prove
 
 - a losing proposal's disposition reaches its **source node**, not merely the
   sealing node's own dictionary;

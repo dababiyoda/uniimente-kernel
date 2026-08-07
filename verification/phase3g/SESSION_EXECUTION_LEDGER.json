@@ -154,7 +154,7 @@
       "id": "LC-4",
       "level": "1D",
       "title": "Deterministic multi-hop proposal/commit/cancel routing",
-      "status": "ACTIVE BOTTLENECK (promoted ahead of LC-2 by measurement)",
+      "status": "DIAGNOSED. Not the active bottleneck after all.",
       "covers_xfails": [
         10
       ],
@@ -167,7 +167,8 @@
         "stranded edges at _damaged(3, density=0.6) seed 5 fall from 13 toward 0, residue re-classified not assumed",
         "_damaged(4, density=1.0) unchanged at 6 opened / 6 answered / 0 stranded",
         "formation holds at 16 events / 1012 messages"
-      ]
+      ],
+      "second_correction": "Routing _seal's dispositions downward was implemented and also changed nothing (13 stranded before and after); reverted. Traced: _seal is NEVER CALLED in this run (seals: 0). It is reached only from _commit_wave and the wave-close path, and no wave commits or closes for these searches. Better routing cannot help when no disposition is ever made."
     },
     {
       "id": "LC-5",
@@ -177,7 +178,8 @@
       "covers_xfails": [
         6,
         7
-      ]
+      ],
+      "promoted": "NEED-CLOSURE PROPAGATION is the actual upstream mechanism. _settle_pending_roots skips any root whose origin_slot is already in self.bonds. A root whose obligation was satisfied by another path is therefore ABANDONED, not closed: the origin correctly stops settling, and nothing tells the subtree the need is gone. Every relay and source below keeps eligible_offer set, holding credit for a decision that will never be made because it is no longer needed. SearchNeedClosed exists for exactly this and is the one kind in both PARENT_CONTROL_KINDS and CHILD_OUTCOME_KINDS; the skip path emits neither."
     },
     {
       "id": "LC-6",
@@ -255,5 +257,10 @@
     "verification/phase3g/adopted_edge_return_negative_control.py (canonical-ci.yml job 1)",
     "verification/phase3g/edge_liability_diagnose.py (canonical-ci.yml job 1)"
   ],
-  "execution_order_correction": "LC-4 now precedes LC-2. Established by measurement, recorded in EDGE_LIABILITY_DESIGNS.md section LC-2b'. A reordering, not a reduction."
+  "execution_order_correction": "LC-4 now precedes LC-2. Established by measurement, recorded in EDGE_LIABILITY_DESIGNS.md section LC-2b'. A reordering, not a reduction.",
+  "runtime_experiments_reverted": [
+    "canonical local frontier remainder (_advance_or_discharge): inert, 13 -> 13",
+    "route _seal dispositions downward: inert, 13 -> 13, because _seal is never called"
+  ],
+  "next_mechanism": "need-closure propagation from an abandoned root"
 }

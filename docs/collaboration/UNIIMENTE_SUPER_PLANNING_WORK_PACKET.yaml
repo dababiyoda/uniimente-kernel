@@ -62,7 +62,8 @@ work_packet:
       projections cannot.
     anti_fabrication: >-
       Every graph node carries evidence_refs and an evidence_status. A node with
-      no evidence_refs MUST be 'unresolved'. Enforced by tests, not promised.
+      no evidence_refs MUST be 'unresolved', or 'derived' with refs whose chain
+      terminates in real evidence. Enforced by tests, not promised.
     instrument_liveness: >-
       Every validator asserts its subject exists, carries a non-vacuity witness,
       ships a negative control that forces failure, exits nonzero on failure,
@@ -70,10 +71,11 @@ work_packet:
 
   verified_state:
     kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
-    suite_with_planning_tests: "517 passed"
-    planning_tests: 22
-    graph_nodes: 54
-    graph_digest: see artifacts/planning/uniimente_v1/PLANNING_GRAPH.json
+    suite_with_planning_tests: "518 passed"
+    planning_tests: 23
+    graph_nodes: 85
+    graph_digest: c355a9a137b04ff3... (full value in SESSION_EXECUTION_LEDGER.json)
+    checksum_entries: 22
     change_footprint: planning/, docs/planning/, artifacts/planning/, docs/collaboration/
 
   measured_corrections:
@@ -111,10 +113,29 @@ work_packet:
     - TGH-CONTROL-RAIL — not in session scope; never inspected
     - "three founder briefs (Egregore/Proof-to-Settlement/Continue Egregore) absent from workspace"
 
-  unresolved_founder_decisions: []
+  unresolved_founder_decisions:
+    - FD-1 authorize DALEOBANKS real publication, or keep shadow mode (highest-value blocked route)
+    - FD-2 is IVIO-NEMT still a candidate wedge, given PR #53 already excluded it
+    - FD-3 triage the 69-PR backlog, or freeze it
+    - FD-4 ratify the Constitution cryptographically, or continue operator-recorded ratification
+
+  decision:
+    primary_disposition: BUILD (staged portfolio)
+    active_bottleneck: no governed process has ever carried an input to a verified consequence
+    active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
+    baseline: 0
+    target: 1
+    tier: COMPUTATIONAL — may not be reported as institutional or economic closure
+    pr66: FREEZE_AS_TRACK_B_RESEARCH (preserve entire; do not merge, do not continue runtime)
 
   next_exact_command: >-
-    python planning/compiler/render.py && python -m pytest planning/tests -q -p no:randomly
+    python planning/compiler/validate.py && python planning/compiler/render.py --check
+    && python -m pytest -q -p no:randomly
+
+  remaining_work:
+    - SP-6 expand the 2026-2036 backcast nodes with the 13 required fields each
+    - SP-7 enumerate the dependency-aware PR stack with acceptance criteria
+    - write the PR66 state capsule, disposition dossier and inert proposed sync
 
   invalid_stopping_reasons:
     - natural handoff point

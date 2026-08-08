@@ -105,12 +105,39 @@ def check_schema(graph: PlanningGraph) -> Check:
 
 
 def check_evidence_discipline(graph: PlanningGraph) -> Check:
-    """No node may assert anything without a checkable reference."""
+    """No node may assert anything without a checkable reference.
+
+    ``unresolved`` needs nothing — it is an admission. ``derived`` needs a
+    reasoning chain that terminates in real evidence, which
+    :meth:`PlanningGraph.validate` verifies. Every other status needs a direct
+    reference of its own.
+    """
     check = Check("anti_fabrication_evidence_discipline")
     for node in graph:
         check.examined += 1
-        if node.evidence_status != "unresolved" and not node.evidence_refs:
-            check.problems.append(f"{node.id}: {node.evidence_status} with no evidence")
+        if node.evidence_status in ("unresolved", "derived") or node.evidence_refs:
+            continue
+        check.problems.append(f"{node.id}: {node.evidence_status} with no evidence")
+    return check
+
+
+def check_derived_chains_are_grounded(graph: PlanningGraph) -> Check:
+    """Every derived conclusion must trace back to something checkable.
+
+    Without this, a chain of reasoning could float free of the repository while
+    each individual node still looked well-formed — the exact recursive
+    self-deception the Override §26 names as the greatest strategic risk.
+    """
+    check = Check("derived_conclusions_are_grounded")
+    for node in graph:
+        if node.evidence_status != "derived":
+            continue
+        check.examined += 1
+        refs = node.body.get("refs") or []
+        if not refs:
+            check.problems.append(f"{node.id}: derived with no refs")
+        elif not any(graph.has(t) and graph._grounded(t, set()) for t in refs):
+            check.problems.append(f"{node.id}: derived chain never reaches evidence")
     return check
 
 
@@ -210,6 +237,7 @@ def run_all(graph: PlanningGraph, root: str) -> list[Check]:
     return [
         check_schema(graph),
         check_evidence_discipline(graph),
+        check_derived_chains_are_grounded(graph),
         check_protected_intent(graph),
         check_unavailable_never_cited(graph),
         check_no_production_claims(root),

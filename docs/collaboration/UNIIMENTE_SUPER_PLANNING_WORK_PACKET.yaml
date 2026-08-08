@@ -91,14 +91,14 @@ work_packet:
 
   stage_progress:
     SP-0_inspection_truth_freeze: COMPLETE
-    SP-1_founder_intent_and_aspirations: IN_PROGRESS
-    SP-2_anatomy_and_ownership: NOT_STARTED
-    SP-3_mechanism_atlas_and_capability_inventory: NOT_STARTED
-    SP-4_disconnection_and_closure_map: NOT_STARTED
-    SP-5_strategic_tree_and_two_passes: NOT_STARTED
-    SP-6_backcast_gps: NOT_STARTED
-    SP-7_implementation_program: NOT_STARTED
-    SP-8_final_dossier_and_handoff: NOT_STARTED
+    SP-1_founder_intent_and_aspirations: COMPLETE
+    SP-2_anatomy_and_ownership: COMPLETE
+    SP-3_mechanism_atlas_and_capability_inventory: COMPLETE
+    SP-4_disconnection_and_closure_map: COMPLETE
+    SP-5_strategic_tree_and_two_passes: COMPLETE
+    SP-6_backcast_gps: PARTIAL — active node, SBM, baseline and target set; long-horizon nodes not yet expanded
+    SP-7_implementation_program: PARTIAL — dispositions and entry conditions set; PR stack not yet enumerated
+    SP-8_final_dossier_and_handoff: COMPLETE — decision, founder decisions, ledger, checksums
 
   gates:
     F: UNMEASURED

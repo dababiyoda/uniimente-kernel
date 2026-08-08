@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: 9f726b4e6178c0d8eca2db171721aab8a866142c67c54cb1b8aedccb6e37a8b4 -->
+<!-- graph-digest: c355a9a137b04ff3b0b5aaa4df60fa574dfe0d8d49242bdf0402bcfa124f14a8 -->
 <!-- projection: INSPECTION_TRUTH -->
 
 
@@ -15,7 +15,7 @@ reached are listed as unavailable and may never be cited as evidence — a
 mechanical check (`unavailable_sources_not_cited_as_evidence`) enforces this
 rather than trusting the author.
 
-**24 nodes** projected from graph digest `9f726b4e6178c0d8`. Regenerate with `python planning/compiler/render.py`.
+**27 nodes** projected from graph digest `c355a9a137b04ff3`. Regenerate with `python planning/compiler/render.py`.
 
 ## repository (6)
 
@@ -260,7 +260,64 @@ _Relates to: `intent.pumpstation_role`_
 
 _Relates to: `intent.wmi_role`_
 
-## finding (2)
+## finding (5)
+
+### `anatomy.kernel_is_a_library_not_a_running_system` — The Kernel is a governed component library plus benchmark harnesses — there is no running institution
+
+**Evidence:** `verified_by_execution`
+- `dababiyoda/uniimente-kernel` @ `8cb3074a4a83` · via `find . -name __main__.py; ls .github/workflows; ast import analysis over 22 packages`
+
+- **measurement**:
+  - **python_packages**: 22
+  - **total_entrypoints**: 3
+  - **entrypoints**:
+    - developmental/__main__.py — TARGET_FORM_001 benchmark runner
+    - evolution/migration/__main__.py — migration experiment runner
+    - evolution/repair/__main__.py — repair experiment runner
+  - **servers_or_daemons**: 0
+  - **operating_loops**: 0
+  - **external_effect_paths_exercised**: 0
+  - **ci_jobs**: 4
+- **statement**: There is no server, no daemon, no scheduler and no operating loop anywhere in the Kernel. What exists is a well-tested library of institutional components, three experiment runners, and four CI guards (full suite + institutional verifier, contract $ref resolution, authority singleton, sealed developmental work). This is not a criticism — it is the precise reason nothing has ever reached reality, and it makes the strategic question tractable.
+- **consequence**: "Connect the organism" cannot mean wiring more modules to each other. Nothing is running to be connected. The missing element is an execution surface that carries a real input to a real consequence, not more components.
+
+_Relates to: `repo.uniimente-kernel`, `intent.anti_self_deception`_
+
+### `capability.genuinely_absent` — What is genuinely absent, after classification
+
+**Evidence:** `verified_by_execution`
+- `dababiyoda/uniimente-kernel` @ `8cb3074a4a83` · via `ast import analysis across 22 packages; linker edge report; find -name __main__.py`
+
+- **statement**: After classifying all 22 packages by import connectivity, very little of the prompt's "expected missing machinery" is actually absent. The genuine gaps are narrower and more specific than the brief anticipated.
+- **genuinely_absent**:
+  - an execution surface: any loop, service or scheduled process that carries an input to a consequence
+  - organ manifests for PumpStation and RESEARCH-IN (2 of 6 organs are invisible to the linker)
+  - builder/evaluator process isolation and held-out case confinement
+  - a capability router selecting among competing implementations at runtime
+  - any external-effect path that has ever been exercised (0 verified outcomes)
+- **already_exists_contrary_to_brief**:
+  - Whole-Body Closure Controller — closure/whole_body.py, most-connected module
+  - Capability registry — five registries under closure/
+  - Universal Compatibility Membrane — adapters/ (built, unwired)
+  - Institutional Linker — linker/, executable, produces real edge reports
+  - Institutional compiler — compiler/, imported by closure/evolution/policy
+  - Mechanism/strategy tooling — evolution/strategy_tree.py, evolution/spider_web.py
+  - Developmental compiler + candidate builders — evolution/repair/, evolution/migration/
+  - Protected evaluator — evolution/repair/spec.py frozen-spec mechanism
+  - OMNIMORPH composition — omnimorph/engine.py, imported by closure and foundry
+  - Asymmetric Advantage Foundry — foundry/ (12 modules, 20 test refs)
+
+_Relates to: `discrepancy.missing_machinery_premise`, `anatomy.kernel_is_a_library_not_a_running_system`_
+
+### `decision.controlling_fact` — The controlling fact — nothing has ever crossed into reality
+
+**Evidence:** `verified_by_execution`
+- `dababiyoda/uniimente-kernel` @ `8cb3074a4a83` · path `docs/release/canonical-v1/00-README.md` · via `linker report; find -name __main__.py; pytest`
+
+- **statement**: Across six repositories, 184 branches, 69 open pull requests and 517 passing tests, the number of externally verified consequences is zero. Not low — zero. The canonical-v1 release record states it, the linker confirms no organ consumes a kernel grant, and there is no server, daemon or loop that could produce one.
+- **why_this_orders_everything**: Every autonomy threshold, evidence gate, routing weight and calibration constant in the system is uncalibrated theory until one loop closes against something outside the repository. That makes "which loop can close first, with the fewest external dependencies" the only question whose answer changes what to build tomorrow.
+
+_Relates to: `anatomy.kernel_is_a_library_not_a_running_system`, `bridge.status_a_through_h`_
 
 ### `pr.kernel.66.dissent` — Preserved dissent: the conventional durable workflow engine still wins
 

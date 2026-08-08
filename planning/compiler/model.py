@@ -26,9 +26,18 @@ import yaml
 EVIDENCE_STATUSES = (
     "verified_by_execution",
     "verified_by_inspection",
+    "derived",
     "asserted",
     "unresolved",
 )
+
+#: ``derived`` is for conclusions — routes, deliberations, decisions — that carry
+#: no direct repository reference because their support IS other nodes. It is a
+#: real tier, not a loophole: a derived node must name at least one ``refs``
+#: target that itself carries evidence, so a chain of reasoning always terminates
+#: in something a third party can check. A conclusion resting only on other
+#: conclusions is exactly the recursive self-deception the round exists to avoid.
+DERIVED_REQUIRES_GROUNDED_REFS = True
 
 #: Lifecycle roles from the Founder-Horizon Override §5. Preservation is the
 #: default; activation is a separate, narrower decision.
@@ -141,11 +150,21 @@ def validate_node(node: Node) -> list[str]:
             f"{node.id}: evidence_status {node.evidence_status!r} "
             f"not one of {EVIDENCE_STATUSES}"
         )
-    # The core anti-fabrication rule.
-    if not node.has_evidence and node.evidence_status != "unresolved":
+    # The core anti-fabrication rule. 'derived' is exempt from needing a direct
+    # reference, but pays for the exemption in PlanningGraph.validate(), which
+    # requires its refs to terminate in grounded evidence.
+    if (
+        not node.has_evidence
+        and node.evidence_status not in ("unresolved", "derived")
+    ):
         problems.append(
             f"{node.id}: claims {node.evidence_status!r} with zero evidence_refs; "
-            "a node with no evidence must be 'unresolved'"
+            "a node with no evidence must be 'unresolved' or 'derived'"
+        )
+    if node.evidence_status == "derived" and not node.body.get("refs"):
+        problems.append(
+            f"{node.id}: 'derived' with no refs; a conclusion must name the nodes "
+            "it reasons from, or it is unsupported"
         )
     for ref in node.evidence_refs:
         if not ref.repo or not ref.sha:
@@ -226,7 +245,31 @@ class PlanningGraph:
             for target in node.body.get("refs", []) or []:
                 if not self.has(target):
                     problems.append(f"{node.id}: refs unknown node {target!r}")
+        # A 'derived' conclusion must reach real evidence, not merely other
+        # conclusions. Without this, a chain of reasoning could float free of the
+        # repository entirely while every individual node looked well-formed.
+        for node in sorted(self.nodes, key=lambda n: n.id):
+            if node.evidence_status != "derived":
+                continue
+            if not any(
+                self.has(t) and self._grounded(t, set())
+                for t in (node.body.get("refs") or [])
+            ):
+                problems.append(
+                    f"{node.id}: 'derived' but no referenced node terminates in "
+                    "direct evidence; the reasoning chain is ungrounded"
+                )
         return problems
+
+    def _grounded(self, node_id: str, seen: set[str]) -> bool:
+        """True when this node, or something it references, carries real evidence."""
+        if node_id in seen or not self.has(node_id):
+            return False
+        seen.add(node_id)
+        node = self.get(node_id)
+        if node.evidence_refs:
+            return True
+        return any(self._grounded(t, seen) for t in (node.body.get("refs") or []))
 
     def evidence_summary(self) -> dict[str, int]:
         counts = {status: 0 for status in EVIDENCE_STATUSES}

@@ -1,0 +1,77 @@
+{
+  "base": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "branch": "claude/super-planning-prompt-h8l0oj",
+  "canonical_prompt_sha256": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+  "checksum_entries": 22,
+  "evidence_summary": {
+    "asserted": 1,
+    "derived": 8,
+    "unresolved": 5,
+    "verified_by_execution": 33,
+    "verified_by_inspection": 38
+  },
+  "gates": {
+    "F": "UNMEASURED",
+    "G": "UNMEASURED",
+    "R8": "PROHIBITED"
+  },
+  "graph_digest": "c355a9a137b04ff3b0b5aaa4df60fa574dfe0d8d49242bdf0402bcfa124f14a8",
+  "graph_kinds": [
+    "assumption",
+    "authority_conflict",
+    "bridge_status",
+    "capability",
+    "decision",
+    "discrepancy",
+    "finding",
+    "founder_decision",
+    "protected_intent",
+    "pull_request",
+    "repository",
+    "repository_unavailable",
+    "source_unavailable",
+    "strategy_branch",
+    "strategy_gate",
+    "strengthening_pass"
+  ],
+  "graph_nodes": 85,
+  "hard_invariants": {
+    "CONTACTS_MADE": 0,
+    "DEFAULT_BRANCH_MODIFIED": 0,
+    "MONEY_MOVED": 0,
+    "PR66_WRITES_OF_ANY_KIND": 0,
+    "PRODUCTION_CREDENTIALS_USED": 0,
+    "PRS_MERGED": 0,
+    "RUNTIME_FILES_MODIFIED": 0,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0
+  },
+  "head_at_write": "b6abc406bfe4574f2e3e39fd9da313f387e74425",
+  "instruments": {
+    "render.py": {
+      "check_mode": "PASS",
+      "idempotent": true
+    },
+    "validate.py": {
+      "negative_control": "PASSED",
+      "reports_vacuous_as": "UNKNOWN_VACUOUS",
+      "runs_from_alt_cwd": true
+    }
+  },
+  "round": "UNIIMENTE super-planning \u2014 whole-system reconciliation",
+  "stages": {
+    "SP-0": "COMPLETE",
+    "SP-1": "COMPLETE",
+    "SP-2": "COMPLETE",
+    "SP-3": "COMPLETE",
+    "SP-4": "COMPLETE",
+    "SP-5": "COMPLETE",
+    "SP-6": "COMPLETE",
+    "SP-7": "COMPLETE",
+    "SP-8": "COMPLETE"
+  },
+  "suites": {
+    "kernel_main_baseline": "495 passed in 6.22s",
+    "planning_tests": 23,
+    "with_planning_tests": "518 passed"
+  }
+}

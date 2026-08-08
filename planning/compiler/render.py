@@ -179,6 +179,57 @@ at sha256 `1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e`,
 verified by execution against the founder's stated hash.
 """,
     ),
+    Projection(
+        name="INSTITUTIONAL_ANATOMY_GRAPH",
+        title="Institutional Anatomy — Capabilities, Bridges and Authority",
+        kinds=["capability", "bridge_status", "authority_conflict"],
+        preamble="""
+Produced by executing a static import analysis over all 22 kernel packages at
+`8cb3074` and by running `InstitutionalLinker` across the committed organ
+manifests — not by reading module docstrings.
+
+Each capability carries a `presence` classification, which the Founder-Horizon
+Override §29.4 requires before anything may be proposed for construction:
+
+| class | meaning |
+|---|---|
+| `existing_and_connected` | built, and imported by non-test code |
+| `existing_but_disconnected` | built and tested, but nothing imports it |
+| `genuinely_absent` | earned by inspection, not assumed |
+
+The headline result is that very little is absent. Several subsystems the brief
+expected to be missing are present, well-tested, and simply unwired.
+""",
+    ),
+    Projection(
+        name="WHOLE_SYSTEM_STRATEGIC_TREE",
+        title="Strategic Tree — Route Tournament and Two Strengthening Passes",
+        kinds=["strategy_gate", "strategy_branch", "strengthening_pass"],
+        preamble="""
+Twelve routes: the eleven the brief names, plus one discovered from the measured
+absence of any execution entrypoint. Hard gates were applied **before** scoring —
+a branch that fails a gate is recorded with its reason and left unscored, so it
+cannot be resurrected later on the strength of a number it never earned.
+
+Exactly two strengthening passes, with all five deliberation roles present and
+dissent preserved. There is no third pass.
+""",
+    ),
+    Projection(
+        name="FINAL_DECISION",
+        title="Final Decision and Founder Decisions Required",
+        kinds=["decision", "founder_decision"],
+        preamble="""
+One primary disposition, dispositions for every named programme, the active
+bottleneck, the Active SBM with baseline and target, the first decisive proof and
+its entry conditions, the strongest counterargument, and the falsification
+condition that would overturn it.
+
+The unresolved items at the end are not oversights. They are decisions that
+require the founder's authority, identity or access, and no build session can
+manufacture them.
+""",
+    ),
 ]
 
 

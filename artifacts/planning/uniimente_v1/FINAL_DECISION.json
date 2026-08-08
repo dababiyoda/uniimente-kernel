@@ -1,0 +1,94 @@
+{
+  "graph_digest": "c355a9a137b04ff3b0b5aaa4df60fa574dfe0d8d49242bdf0402bcfa124f14a8",
+  "node_count": 2,
+  "nodes": [
+    {
+      "active_bottleneck": "No governed process has ever carried an input to a verified consequence. The nearest reachable instance of that shape, with zero external dependencies, is a developmental closure over a real institutional capability.",
+      "active_sbm": "VERIFIED_DEVELOPMENTAL_CLOSURES",
+      "active_sbm_baseline": 0,
+      "active_sbm_target": 1,
+      "active_sbm_tier": "COMPUTATIONAL — per Override §11. May not be reported as institutional or economic closure.",
+      "active_whole_project_node": "First verified developmental closure (computational tier)",
+      "decisive_unknown": "Whether the founder will authorize the DALEOBANKS publishing route, which determines whether capability can ever be financed.",
+      "dispositions": {
+        "build_your_own_x": "RETAIN as read-only mechanism atlas",
+        "daleobanks_commercialization": "NEEDS_FOUNDER_DECISION — first route to unblock",
+        "first_developmental_closure": "BUILD",
+        "first_economic_closure": "NEEDS_FOUNDER_DECISION",
+        "future_scientific_program": "DEFER — preserved as aspiration, gated on economic closure",
+        "golden_kernel_v2": "DEFER — authority is not the measured bottleneck",
+        "phase_zero": "RETAIN_AS_SUPPORTING_TRACK — write the two missing organ manifests, wire the adapters",
+        "physical_embodiment_research": "DEFER — preserved as aspiration, no current route",
+        "planning_compiler": "REDUCE — retain the graph and generated artifacts as the planning record; do not extend the compiler further unless a second planning round needs it. Per Override §27, planning sophistication is not implementation progress.",
+        "pr_66": "FREEZE_AS_TRACK_B_RESEARCH",
+        "pr_66_note": "Preserve entirely. Its instruments, adversarial controls, five falsified designs and measurement-integrity findings are institutional evidence of high value. Do not merge, do not continue runtime work, do not delete. Its own recorded dissent — that the conventional workflow engine still wins — is the reason it must not gate Track A.",
+        "pumpstation_integration": "DEFER — write its organ manifest first",
+        "track_a": "BUILD",
+        "track_b": "RESEARCH — registered challenger with a defined re-entry condition",
+        "wmi_integration": "DEFER — triage the stacked backlog before adding capacity"
+      },
+      "entry_conditions_that_gate_the_experiment": [
+        "builder and evaluator run in separate processes",
+        "candidate writable paths are confined and enforced",
+        "held-out cases exist and are unreadable by builders",
+        "a negative control proves the evaluator can fail",
+        "evaluator mutation is detectable"
+      ],
+      "evidence_refs": [
+        {
+          "command": "import graph; linker report; pytest 495; PR/issue inspection across 6 repos",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "falsification_condition": "If the closure completes and no second, unrelated capability can be closed by the same engine within one further cycle, the developmental engine is overfit to one target and Track A's premise is wrong. Kill the generalization claim and re-run this tournament with R5 unblocked.",
+      "first_decisive_proof": "Disable institutional.cross_organ_edge_resolution; generate at least five materially different replacements via isolated AI builders; judge them under the frozen SPEC_SHA256 evaluator running in a separate process with held-out cases the builders cannot read; attach a qualifying champion in a consequence-inert registry; verify 4/4 restoration; preserve lineage, specialists, failures and rollback; leave linker/ byte-identical to its pinned hashes.",
+      "id": "decision.final",
+      "kind": "decision",
+      "primary_disposition": "BUILD",
+      "refs": [
+        "route.12_portfolio",
+        "deliberation.pass1",
+        "deliberation.pass2",
+        "decision.controlling_fact"
+      ],
+      "strongest_counterargument": "A computational closure over a capability whose output nothing consumes changes nothing in reality, and pursuing it while the only cash engine stays unbuilt is how an institution optimizes itself into irrelevance.",
+      "title": "FINAL DECISION — staged portfolio, primary disposition BUILD"
+    },
+    {
+      "decisions": [
+        {
+          "blocked_on": "founder identity, brand voice, live platform credentials",
+          "cheapest_decisive_form": "Authorize a single truthful post under the DALEOBANKS brand and measure what happens.",
+          "id": "FD-1",
+          "question": "Authorize DALEOBANKS real publication, or keep it in shadow mode?",
+          "why_it_matters": "It is the only identified route to financing UNIIMENTE. Override §18 states a system that cannot finance itself remains fragile. Everything commercial waits behind this."
+        },
+        {
+          "blocked_on": "repository access to IVIO-NEMT, which was denied this session",
+          "id": "FD-2",
+          "question": "Is IVIO-NEMT still a candidate wedge, given PR #53 already excluded it?",
+          "why_it_matters": "The prompt names it as the presumed first economic wedge; the repository records a prior decision against it. Both cannot stand."
+        },
+        {
+          "id": "FD-3",
+          "question": "Triage the 69-PR backlog, or freeze it?",
+          "why_it_matters": "Four kernel PRs are based on an archived main and cannot merge without rebasing. Throughput is gated by this, not by capability."
+        },
+        {
+          "id": "FD-4",
+          "question": "Ratify the Constitution cryptographically, or continue with operator-recorded ratification?",
+          "why_it_matters": "canonical-v1 records founder ratification as an operator-recorded instruction, not a signature. Every authority claim inherits that weakness."
+        }
+      ],
+      "evidence_refs": [],
+      "evidence_status": "unresolved",
+      "id": "decision.founder_decisions_required",
+      "kind": "founder_decision",
+      "title": "Unresolved decisions only Alfonso can make"
+    }
+  ],
+  "projection": "FINAL_DECISION",
+  "title": "Final Decision and Founder Decisions Required"
+}

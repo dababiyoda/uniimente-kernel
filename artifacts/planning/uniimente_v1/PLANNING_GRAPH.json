@@ -35,6 +35,442 @@
     "title": "PR #66 receives zero writes; the corrective comment is generated inert"
   },
   {
+    "assessment": "Authority duplication is currently CONTAINED, and the containment is mechanical rather than aspirational. The live risk is PR #30, not main.",
+    "ci_guard": "scripts/ci/check_authority_singleton.py enforces no second Constitution/Gate/identity/authority registry",
+    "evidence_refs": [
+      {
+        "command": "linker overlapping_authority; cat scripts/ci/check_authority_singleton.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "authority.overlaps_measured",
+    "kind": "authority_conflict",
+    "overlaps": [
+      {
+        "capability": "daleobanks.constitution_service",
+        "disposition": "SPECIALIZED beneath kernel authority — preserve, do not promote",
+        "organ": "daleobanks"
+      },
+      {
+        "capability": "wealthmachine.risk_management",
+        "disposition": "SPECIALIZED beneath kernel authority — preserve, do not promote",
+        "organ": "wealthmachine"
+      }
+    ],
+    "refs": [
+      "pr.wmi.30",
+      "intent.wmi_role"
+    ],
+    "third_candidate": {
+      "head": "14e7bba896e60f31c6dc5885a477ff7e100d64c6",
+      "risk": "Unmerged, so it does not yet appear in the linker's overlap report. If merged as written it would create a second constitutional control layer inside a non-Kernel organ, which Override §19 forbids. It must land as adapter, specialist, test oracle or organ-local control BENEATH kernel authority.",
+      "source": "WMI PR #30 — 'Constitutional Control Layer (Phase 0 doctrine foundation)'"
+    },
+    "title": "Two organ-local authority implementations, both already flagged"
+  },
+  {
+    "consequence": "The Kernel is not currently in the authority path of anything. It is a constitutional government whose statutes no organ reads at runtime. Bridge A is the only bridge with typed edges; B through H have no edges at all.",
+    "decisive_reading": "Every contract the Kernel PRODUCES is unconsumed. The organs talk to each other over the wire protocol (4 edges, all Bridge A), and nobody consumes a kernel-issued grant, decision, evidence record, outcome or event. The linker's own unresolved list states it plainly: \"peer organs do not yet consume kernel-issued grants (Bridges B/C incomplete)\".",
+    "edges": [
+      "daleobanks -> constitutional-controller : wire-opportunity-packet",
+      "daleobanks -> wealthmachine : wire-opportunity-packet",
+      "wealthmachine -> daleobanks : wire-venture-assessment",
+      "wealthmachine -> constitutional-controller : wire-venture-assessment"
+    ],
+    "evidence_refs": [
+      {
+        "command": "InstitutionalLinker(load_manifest(organs/*.manifest.yaml)).link()",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "bridge.linker_measured_state",
+    "kind": "bridge_status",
+    "overlapping_authority": [
+      "daleobanks.constitution_service",
+      "wealthmachine.risk_management"
+    ],
+    "refs": [
+      "anatomy.kernel_is_a_library_not_a_running_system"
+    ],
+    "title": "Measured cross-organ edge state from the institutional linker",
+    "typed_edges_resolved": 4,
+    "unconsumed_contracts": 11,
+    "unconsumed_of_note": [
+      "constitutional-controller produces capability-grant — consumed by no one",
+      "constitutional-controller produces decision — consumed by no one",
+      "constitutional-controller produces evidence — consumed by no one",
+      "constitutional-controller produces outcome — consumed by no one",
+      "constitutional-controller produces event — consumed by no one"
+    ],
+    "unproduced_contracts": 1,
+    "unresolved_fields": 7,
+    "untyped_contracts": 0
+  },
+  {
+    "A_signal_to_venture": {
+      "edges": 4,
+      "note": "wire protocol v1.1 typed and registered; adapters exist but are unwired; no episode ever recorded",
+      "status": "PARTIALLY_TYPED"
+    },
+    "B_venture_to_experiment": {
+      "blocker": "no organ consumes capability-grant; Venture Cell charters never requested from kernel authority envelopes",
+      "status": "NO_EDGES"
+    },
+    "C_experiment_to_reality": {
+      "blocker": "no external-effect path has ever been exercised; 0 receipts, 0 reconciliations",
+      "status": "NO_EDGES"
+    },
+    "D_reality_to_learning": {
+      "blocker": "depends on C; no external observation exists to learn from",
+      "status": "NO_EDGES"
+    },
+    "E_learning_to_evolution": {
+      "note": "evolution/ is the best-covered subsystem (44 test refs) but has no reality input to consume",
+      "status": "MACHINERY_PRESENT_NO_INPUT"
+    },
+    "F_audience_to_business": {
+      "blocker": "DALEOBANKS has zero published output; no owned audience exists yet",
+      "status": "NO_EDGES"
+    },
+    "G_business_to_capability": {
+      "blocker": "depends on F and a completed business workflow",
+      "status": "NO_EDGES"
+    },
+    "H_revenue_to_regeneration": {
+      "blocker": "zero revenue",
+      "status": "NO_EDGES"
+    },
+    "evidence_refs": [
+      {
+        "command": "linker edge report + organ manifest inspection",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "bridge.status_a_through_h",
+    "kind": "bridge_status",
+    "refs": [
+      "bridge.linker_measured_state"
+    ],
+    "summary": "One bridge partially typed, seven with no edges. The chain is blocked at C — the first place the institution must touch reality — and everything downstream of C is blocked by C rather than by its own difficulty.",
+    "title": "Bridges A–H — measured status"
+  },
+  {
+    "consequence": "Two of six organs cannot appear in any edge, authority overlap report, or capability discovery result. Any claim about whole-system connectivity that does not say this is overstating coverage by a third.",
+    "evidence_refs": [
+      {
+        "command": "ls organs/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "bridge.two_organs_invisible",
+    "kind": "bridge_status",
+    "manifests_absent": [
+      "pumpstation",
+      "research-in"
+    ],
+    "manifests_present": [
+      "kernel",
+      "daleobanks",
+      "wealthmachine"
+    ],
+    "note": "Writing these manifests is runtime work and is NOT authorized this round. The round records the gap and specifies the manifests; it does not create them.",
+    "refs": [
+      "repo.pumpstation",
+      "repo.research-in",
+      "intent.research_in_role"
+    ],
+    "title": "PumpStation and RESEARCH-IN have no organ manifests and are invisible to the linker"
+  },
+  {
+    "contents": [
+      "whole_body.py — the Whole-Body Closure Controller",
+      "framework.py",
+      "kernel_registry.py",
+      "integration_registry.py",
+      "developmental_registry.py",
+      "commercial_registry.py",
+      "advantage_registry.py"
+    ],
+    "evidence_refs": [
+      {
+        "command": "ast import analysis",
+        "path": "closure/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 8,
+    "id": "anatomy.closure_is_the_integration_hub",
+    "imported_by": [
+      "business",
+      "egregore",
+      "evolution",
+      "foundry"
+    ],
+    "imports_packages": 18,
+    "kind": "capability",
+    "lifecycle_role": "CANONICAL",
+    "note": "Final Build Order §5.7 lists the Whole-Body Closure Controller as required nervous-system machinery. It exists, it is the most connected module in the repository, and it carries five registries. This is the single strongest counterexample to the \"missing machinery\" premise.",
+    "path": "closure/",
+    "presence": "existing_and_connected",
+    "refs": [
+      "discrepancy.missing_machinery_premise"
+    ],
+    "region": "BRIDGE",
+    "test_refs": 6,
+    "title": "closure/ is the one real integration hub (imports 18 of 22 packages)"
+  },
+  {
+    "contents": [
+      "bridge_transport.py — third mirror of the organs' transport security, adds the kernel identity",
+      "daleobanks_opportunity.py — wire→canonical opportunity packet adapter",
+      "wealthmachine_assessment.py — wire→canonical venture assessment adapter"
+    ],
+    "evidence_refs": [
+      {
+        "command": "ast reverse-import analysis: imported_by == 0",
+        "path": "adapters/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 4,
+    "id": "capability.adapters_membrane_orphaned",
+    "imported_by": [],
+    "imports_packages": 0,
+    "kind": "capability",
+    "lifecycle_role": "EXPERIMENTAL",
+    "path": "adapters/",
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "anatomy.kernel_is_a_library_not_a_running_system"
+    ],
+    "region": "BRIDGE",
+    "statement": "Final Build Order §8 requires the membrane; Phase Zero built its first ring. The adapters are real, declare their field mappings and information lost, and are exercised by four test references — but zero non-test modules import them. The membrane is a shelf of correct parts that no runtime path crosses.",
+    "test_refs": 4,
+    "title": "The Universal Compatibility Membrane exists and nothing imports it",
+    "why_it_matters": "This is the difference between \"we have an adapter layer\" and \"our organs translate through an adapter layer\". Only the second is a bridge."
+  },
+  {
+    "evidence_refs": [
+      {
+        "command": "ast analysis; .github/workflows/canonical-ci.yml job 4",
+        "path": "developmental/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 5,
+    "has_entrypoint": "python -m developmental (TARGET_FORM_001 benchmark, run in CI job 4)",
+    "id": "capability.developmental_mica_cdpe",
+    "imported_by": [
+      "closure"
+    ],
+    "kind": "capability",
+    "lifecycle_role": "CHALLENGER",
+    "note": "Track B's flagship. It does run in CI and does emit a benchmark report, which is more than morphogenesis/ can claim, but a single test reference for a five-module package is thin coverage for something proposed as substrate.",
+    "path": "developmental/",
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "intent.track_a_track_b"
+    ],
+    "region": "LEFT",
+    "test_refs": 1,
+    "title": "developmental/ — MICA and CDPE, reachable only from closure/ and one test"
+  },
+  {
+    "contents": [
+      "closure.py",
+      "contracts.py",
+      "drift.py",
+      "gate_adapter.py",
+      "resources.py",
+      "runtime.py"
+    ],
+    "evidence_refs": [
+      {
+        "command": "ast reverse-import analysis: imported_by == 0",
+        "path": "egregore/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 7,
+    "id": "capability.egregore_runtime_orphaned",
+    "imported_by": [],
+    "kind": "capability",
+    "lifecycle_role": "EXPERIMENTAL",
+    "path": "egregore/",
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "anatomy.kernel_is_a_library_not_a_running_system"
+    ],
+    "region": "RIGHT",
+    "statement": "The package named for the project's own identity contains a runtime, a gate adapter and a drift detector, imports closure/ and policy/, and is imported by nothing. It is reachable only from its own tests.",
+    "test_refs": 6,
+    "title": "egregore/ — a runtime, closure, drift and gate adapter that nothing imports"
+  },
+  {
+    "evidence_refs": [
+      {
+        "path": "evolution/repair/spec.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "capability.evaluator_firewall_partially_exists",
+    "kind": "capability",
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "intent.evaluator_sovereignty"
+    ],
+    "region": "BRIDGE",
+    "statement": "Override §12 says candidate generation is not the scarce primitive; reliable judgment is. The frozen-spec mechanism is a genuine, working instance of that principle. What it lacks is isolation, not concept.",
+    "title": "The protected evaluator firewall is half-built and its existing half is sound",
+    "what_exists": [
+      "evolution/repair/spec.py freezes the experiment and self-seals with SPEC_SHA256",
+      "tests/unit/test_repair_spec_frozen.py fails the build if the hash drifts",
+      "ORIGINAL_LINKER_FILE_SHA256 makes 'preserved unchanged' a checkable claim rather than a promise",
+      "the detector is given the capability NAME and contract, never told which module provides it",
+      "REQUIRED_FUNCTION_THRESHOLD = 1.0 — 3 of 4 is a failure, not a 75% pass"
+    ],
+    "what_is_missing": [
+      "builder/evaluator process isolation (candidates currently run in the same interpreter)",
+      "candidate writable-path confinement",
+      "held-out cases the builder cannot read",
+      "a negative control proving the evaluator itself can fail",
+      "detection of evaluator mutation at runtime"
+    ]
+  },
+  {
+    "contents_of_note": [
+      "strategy_tree.py — StrategyTree/StrategyBranch with decisive_unknown and coverage()",
+      "spider_web.py — SpiderWebAudit with sides, mechanism mapping, decorative removal, verdict",
+      "repair/ — the frozen-spec repair laboratory (spec.py self-seals via SPEC_SHA256)",
+      "migration/ — governed stateful replacement harness",
+      "experiment.py, capsule.py, comparison.py, failure_analysis.py, branch_generator.py"
+    ],
+    "evidence_refs": [
+      {
+        "path": "evolution/repair/spec.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+        "symbol": "SPEC_SHA256, REQUIRED_FUNCTION_THRESHOLD, TARGET_CAPABILITY"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 30,
+    "id": "capability.evolution_laboratory",
+    "imported_by": [
+      "closure"
+    ],
+    "kind": "capability",
+    "lifecycle_role": "CHAMPION",
+    "path": "evolution/",
+    "presence": "existing_and_connected",
+    "refs": [
+      "intent.evaluator_sovereignty",
+      "intent.first_developmental_proof"
+    ],
+    "region": "BRIDGE",
+    "statement": "The repair laboratory already implements the hard half of a developmental closure: a frozen experiment specification whose canonical JSON is hashed into SPEC_SHA256 and guarded by a test, so candidate code cannot silently retune the experiment that judges it. That is evaluator sovereignty (Override §12) in working code.",
+    "test_refs": 44,
+    "title": "evolution/ — 30 modules, 44 test references, the best-covered subsystem"
+  },
+  {
+    "evidence_refs": [
+      {
+        "command": "ast import analysis: imports 0, imported_by 0, test_refs 2",
+        "path": "morphogenesis/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "files": 3,
+    "id": "capability.morphogenesis_orphaned",
+    "imported_by": [],
+    "imports_packages": 0,
+    "kind": "capability",
+    "lifecycle_role": "EXPERIMENTAL",
+    "note": "The weakest-attached package in the repository, and a Track B artifact. Its isolation is itself evidence for the Track A / Track B decision: the morphogenetic line has not earned a connection to the canonical path.",
+    "path": "morphogenesis/",
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "intent.track_a_track_b"
+    ],
+    "region": "LEFT",
+    "test_refs": 2,
+    "title": "morphogenesis/ — fully isolated: imports nothing, imported by nothing"
+  },
+  {
+    "active_bottleneck": "No governed process has ever carried an input to a verified consequence. The nearest reachable instance of that shape, with zero external dependencies, is a developmental closure over a real institutional capability.",
+    "active_sbm": "VERIFIED_DEVELOPMENTAL_CLOSURES",
+    "active_sbm_baseline": 0,
+    "active_sbm_target": 1,
+    "active_sbm_tier": "COMPUTATIONAL — per Override §11. May not be reported as institutional or economic closure.",
+    "active_whole_project_node": "First verified developmental closure (computational tier)",
+    "decisive_unknown": "Whether the founder will authorize the DALEOBANKS publishing route, which determines whether capability can ever be financed.",
+    "dispositions": {
+      "build_your_own_x": "RETAIN as read-only mechanism atlas",
+      "daleobanks_commercialization": "NEEDS_FOUNDER_DECISION — first route to unblock",
+      "first_developmental_closure": "BUILD",
+      "first_economic_closure": "NEEDS_FOUNDER_DECISION",
+      "future_scientific_program": "DEFER — preserved as aspiration, gated on economic closure",
+      "golden_kernel_v2": "DEFER — authority is not the measured bottleneck",
+      "phase_zero": "RETAIN_AS_SUPPORTING_TRACK — write the two missing organ manifests, wire the adapters",
+      "physical_embodiment_research": "DEFER — preserved as aspiration, no current route",
+      "planning_compiler": "REDUCE — retain the graph and generated artifacts as the planning record; do not extend the compiler further unless a second planning round needs it. Per Override §27, planning sophistication is not implementation progress.",
+      "pr_66": "FREEZE_AS_TRACK_B_RESEARCH",
+      "pr_66_note": "Preserve entirely. Its instruments, adversarial controls, five falsified designs and measurement-integrity findings are institutional evidence of high value. Do not merge, do not continue runtime work, do not delete. Its own recorded dissent — that the conventional workflow engine still wins — is the reason it must not gate Track A.",
+      "pumpstation_integration": "DEFER — write its organ manifest first",
+      "track_a": "BUILD",
+      "track_b": "RESEARCH — registered challenger with a defined re-entry condition",
+      "wmi_integration": "DEFER — triage the stacked backlog before adding capacity"
+    },
+    "entry_conditions_that_gate_the_experiment": [
+      "builder and evaluator run in separate processes",
+      "candidate writable paths are confined and enforced",
+      "held-out cases exist and are unreadable by builders",
+      "a negative control proves the evaluator can fail",
+      "evaluator mutation is detectable"
+    ],
+    "evidence_refs": [
+      {
+        "command": "import graph; linker report; pytest 495; PR/issue inspection across 6 repos",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "falsification_condition": "If the closure completes and no second, unrelated capability can be closed by the same engine within one further cycle, the developmental engine is overfit to one target and Track A's premise is wrong. Kill the generalization claim and re-run this tournament with R5 unblocked.",
+    "first_decisive_proof": "Disable institutional.cross_organ_edge_resolution; generate at least five materially different replacements via isolated AI builders; judge them under the frozen SPEC_SHA256 evaluator running in a separate process with held-out cases the builders cannot read; attach a qualifying champion in a consequence-inert registry; verify 4/4 restoration; preserve lineage, specialists, failures and rollback; leave linker/ byte-identical to its pinned hashes.",
+    "id": "decision.final",
+    "kind": "decision",
+    "primary_disposition": "BUILD",
+    "refs": [
+      "route.12_portfolio",
+      "deliberation.pass1",
+      "deliberation.pass2",
+      "decision.controlling_fact"
+    ],
+    "strongest_counterargument": "A computational closure over a capability whose output nothing consumes changes nothing in reality, and pursuing it while the only cash engine stays unbuilt is how an institution optimizes itself into irrelevance.",
+    "title": "FINAL DECISION — staged portfolio, primary disposition BUILD"
+  },
+  {
     "actual_head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
     "actual_status": "pre-arrival control is IMPLEMENTED AND ADVERSARIALLY VERIFIED (PA-1..PA-5); the bottleneck moved twice since",
     "actual_suite": "924 passed · 1 skipped · 24 xfailed · 0 failed",
@@ -143,6 +579,95 @@
     "title": "495 (main) and 924 (PR #66) are different branches, not a contradiction"
   },
   {
+    "consequence": "\"Connect the organism\" cannot mean wiring more modules to each other. Nothing is running to be connected. The missing element is an execution surface that carries a real input to a real consequence, not more components.",
+    "evidence_refs": [
+      {
+        "command": "find . -name __main__.py; ls .github/workflows; ast import analysis over 22 packages",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "anatomy.kernel_is_a_library_not_a_running_system",
+    "kind": "finding",
+    "measurement": {
+      "ci_jobs": 4,
+      "entrypoints": [
+        "developmental/__main__.py — TARGET_FORM_001 benchmark runner",
+        "evolution/migration/__main__.py — migration experiment runner",
+        "evolution/repair/__main__.py — repair experiment runner"
+      ],
+      "external_effect_paths_exercised": 0,
+      "operating_loops": 0,
+      "python_packages": 22,
+      "servers_or_daemons": 0,
+      "total_entrypoints": 3
+    },
+    "refs": [
+      "repo.uniimente-kernel",
+      "intent.anti_self_deception"
+    ],
+    "statement": "There is no server, no daemon, no scheduler and no operating loop anywhere in the Kernel. What exists is a well-tested library of institutional components, three experiment runners, and four CI guards (full suite + institutional verifier, contract $ref resolution, authority singleton, sealed developmental work). This is not a criticism — it is the precise reason nothing has ever reached reality, and it makes the strategic question tractable.",
+    "title": "The Kernel is a governed component library plus benchmark harnesses — there is no running institution"
+  },
+  {
+    "already_exists_contrary_to_brief": [
+      "Whole-Body Closure Controller — closure/whole_body.py, most-connected module",
+      "Capability registry — five registries under closure/",
+      "Universal Compatibility Membrane — adapters/ (built, unwired)",
+      "Institutional Linker — linker/, executable, produces real edge reports",
+      "Institutional compiler — compiler/, imported by closure/evolution/policy",
+      "Mechanism/strategy tooling — evolution/strategy_tree.py, evolution/spider_web.py",
+      "Developmental compiler + candidate builders — evolution/repair/, evolution/migration/",
+      "Protected evaluator — evolution/repair/spec.py frozen-spec mechanism",
+      "OMNIMORPH composition — omnimorph/engine.py, imported by closure and foundry",
+      "Asymmetric Advantage Foundry — foundry/ (12 modules, 20 test refs)"
+    ],
+    "evidence_refs": [
+      {
+        "command": "ast import analysis across 22 packages; linker edge report; find -name __main__.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "genuinely_absent": [
+      "an execution surface: any loop, service or scheduled process that carries an input to a consequence",
+      "organ manifests for PumpStation and RESEARCH-IN (2 of 6 organs are invisible to the linker)",
+      "builder/evaluator process isolation and held-out case confinement",
+      "a capability router selecting among competing implementations at runtime",
+      "any external-effect path that has ever been exercised (0 verified outcomes)"
+    ],
+    "id": "capability.genuinely_absent",
+    "kind": "finding",
+    "refs": [
+      "discrepancy.missing_machinery_premise",
+      "anatomy.kernel_is_a_library_not_a_running_system"
+    ],
+    "statement": "After classifying all 22 packages by import connectivity, very little of the prompt's \"expected missing machinery\" is actually absent. The genuine gaps are narrower and more specific than the brief anticipated.",
+    "title": "What is genuinely absent, after classification"
+  },
+  {
+    "evidence_refs": [
+      {
+        "command": "linker report; find -name __main__.py; pytest",
+        "path": "docs/release/canonical-v1/00-README.md",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "decision.controlling_fact",
+    "kind": "finding",
+    "refs": [
+      "anatomy.kernel_is_a_library_not_a_running_system",
+      "bridge.status_a_through_h"
+    ],
+    "statement": "Across six repositories, 184 branches, 69 open pull requests and 517 passing tests, the number of externally verified consequences is zero. Not low — zero. The canonical-v1 release record states it, the linker confirms no organ consumes a kernel grant, and there is no server, daemon or loop that could produce one.",
+    "title": "The controlling fact — nothing has ever crossed into reality",
+    "why_this_orders_everything": "Every autonomy threshold, evidence gate, routing weight and calibration constant in the system is uncalibrated theory until one loop closes against something outside the repository. That makes \"which loop can close first, with the fewest external dependencies\" the only question whose answer changes what to build tomorrow."
+  },
+  {
     "evidence_refs": [
       {
         "repo": "dababiyoda/uniimente-kernel",
@@ -196,6 +721,38 @@
     ],
     "title": "RA-2 — the legacy `_search` ledger is load-bearing for canonical repair",
     "uncommitted_work": "The DUAL_REPAIR_SEARCHES detector reordering is correct and independent of Design A's failure, but was not committed because it arrived inside a falsified candidate. It still requires its own negative control."
+  },
+  {
+    "decisions": [
+      {
+        "blocked_on": "founder identity, brand voice, live platform credentials",
+        "cheapest_decisive_form": "Authorize a single truthful post under the DALEOBANKS brand and measure what happens.",
+        "id": "FD-1",
+        "question": "Authorize DALEOBANKS real publication, or keep it in shadow mode?",
+        "why_it_matters": "It is the only identified route to financing UNIIMENTE. Override §18 states a system that cannot finance itself remains fragile. Everything commercial waits behind this."
+      },
+      {
+        "blocked_on": "repository access to IVIO-NEMT, which was denied this session",
+        "id": "FD-2",
+        "question": "Is IVIO-NEMT still a candidate wedge, given PR #53 already excluded it?",
+        "why_it_matters": "The prompt names it as the presumed first economic wedge; the repository records a prior decision against it. Both cannot stand."
+      },
+      {
+        "id": "FD-3",
+        "question": "Triage the 69-PR backlog, or freeze it?",
+        "why_it_matters": "Four kernel PRs are based on an archived main and cannot merge without rebasing. Throughput is gated by this, not by capability."
+      },
+      {
+        "id": "FD-4",
+        "question": "Ratify the Constitution cryptographically, or continue with operator-recorded ratification?",
+        "why_it_matters": "canonical-v1 records founder ratification as an operator-recorded instruction, not a signature. Every authority claim inherits that weakness."
+      }
+    ],
+    "evidence_refs": [],
+    "evidence_status": "unresolved",
+    "id": "decision.founder_decisions_required",
+    "kind": "founder_decision",
+    "title": "Unresolved decisions only Alfonso can make"
   },
   {
     "evidence_refs": [
@@ -1284,5 +1841,408 @@
     "reason": "Cited in founder messages but never present on disk in this session. A filesystem search across the workspace returned nothing.",
     "reconstruction_route": "Kernel branch agent/proof-to-settlement-trust-rail (e09c2088, PR #35 \"Add the OpenClaw proof-to-settlement trust rail\"), docs/EGREGORE_V1_INTEGRATION_PROGRAM.md on main, and the integration/* branches. Anything not reconstructable from those stays an explicit unresolved field.",
     "title": "Three referenced briefs absent from the workspace"
+  },
+  {
+    "capital_need": "none",
+    "causal_mechanism": "Finish the legacy/canonical repair decoupling, then resume the whole-system program from a clean lifecycle.",
+    "commercial_value": "none",
+    "disposition": "FREEZE_AS_TRACK_B_RESEARCH",
+    "evidence_refs": [
+      {
+        "path": "verification/phase3g/REPAIR_AUTHORITY_DESIGN_A_FALSIFIED.md",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "fatal_risk": "Five falsified designs in one workstream is a strong prior that the sixth is also wrong; meanwhile 0 bridges close.",
+    "first_wedge": "Adopt design family B+D; separate ledger bookkeeping from retirement authority.",
+    "founder_attention": "low",
+    "hard_gate_result": "PASSES_BUT_SCORES_LOW",
+    "id": "route.01_pr66_first",
+    "kind": "strategy_branch",
+    "knowledge_value": "high",
+    "refs": [
+      "pr.kernel.66",
+      "pr.kernel.66.dissent",
+      "pr.kernel.66.latest_finding"
+    ],
+    "reversibility": "high",
+    "score": 3,
+    "strongest_counterexample": "The branch's own body records that the conventional durable workflow engine still wins on available evidence, and that none of this work is evidence about that comparison. Completing it therefore cannot establish the thing it exists to establish; only R8 can, and R8 is prohibited until a freeze that keeps receding.",
+    "time_to_proof": "unknown — three designs already falsified by measurement (A, E, H); two more (LC-2b, LC-2b') falsified before them",
+    "title": "R1 — Complete PR #66 first"
+  },
+  {
+    "attack_survived": "The 2026-07-20 report is honest about what it built and what it did not; the gap is that its adapters were never wired into an executing path. That is a different, smaller task than \"redo Phase Zero\".",
+    "capital_need": "none",
+    "causal_mechanism": "Write the two missing organ manifests, wire the adapters, close Bridge A end to end, record one causal episode.",
+    "commercial_value": "indirect",
+    "disposition": "RETAIN_AS_SUPPORTING_TRACK",
+    "evidence_refs": [
+      {
+        "path": "docs/PHASE_ZERO_REPORT.md",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "first_wedge": "organs/pumpstation.manifest.yaml + organs/research-in.manifest.yaml, then wire adapters/ into a real path.",
+    "founder_attention": "low",
+    "hard_gate_result": "PASSES",
+    "id": "route.02_phase_zero_first",
+    "kind": "strategy_branch",
+    "knowledge_value": "medium",
+    "refs": [
+      "bridge.linker_measured_state",
+      "bridge.two_organs_invisible",
+      "capability.adapters_membrane_orphaned"
+    ],
+    "reversibility": "high",
+    "score": 7,
+    "strongest_counterexample": "Phase Zero was already declared complete once (docs/PHASE_ZERO_REPORT.md, 2026-07-20) and the organism still has zero closed bridges. Repeating it risks producing a second report rather than a second outcome.",
+    "time_to_proof": "days — the parts exist and the linker already reports exactly what is missing",
+    "title": "R2 — Whole-system Phase Zero reconciliation first"
+  },
+  {
+    "attack_survived": "The objection is real and is answered by labelling, not by argument: this is COMPUTATIONAL closure and must be recorded as such on the §11 ladder. It may never be reported as institutional or economic closure. With that label it is still the only 0→1 proof reachable with zero external dependencies.",
+    "capital_need": "none",
+    "causal_mechanism": "Disable a real institutional capability, have AI builders generate materially different replacements in isolation, judge them with a frozen evaluator the candidates cannot alter, attach the winner in a consequence-inert registry, verify restoration, preserve lineage and rollback.",
+    "commercial_value": "none_directly",
+    "disposition": "RETAIN_AS_PRIMARY",
+    "durable_assets": "a working developmental engine; the first Capability Genome; a reusable evaluator firewall",
+    "evidence_refs": [
+      {
+        "path": "evolution/repair/spec.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "external_dependencies": "NONE",
+    "first_wedge": "institutional.cross_organ_edge_resolution — the target is already declared in evolution/repair/spec.py, the subject (linker/) is already hashed file-by-file, the threshold is already 4/4, and the spec already self-seals via SPEC_SHA256.",
+    "founder_attention": "low",
+    "hard_gate_result": "PASSES",
+    "id": "route.03_track_a_organogenesis",
+    "kind": "strategy_branch",
+    "knowledge_value": "very_high",
+    "refs": [
+      "capability.evolution_laboratory",
+      "capability.evaluator_firewall_partially_exists",
+      "intent.first_developmental_proof",
+      "intent.closure_ladder"
+    ],
+    "reversibility": "high",
+    "score": 9,
+    "strongest_counterexample": "It restores a capability whose output nothing consumes. A successful closure proves the BRIDGE region works while the RIGHT region stays inert — precisely the recursive self-deception Override §26 names as the greatest strategic risk.",
+    "time_to_proof": "short — the laboratory exists; the missing pieces are process isolation and held-out confinement",
+    "title": "R3 — Conventional Track A developmental organogenesis first"
+  },
+  {
+    "blocking_evidence": "IVIO-NEMT is not reachable from this session and was never inspected, so no claim about it may be made. Separately, Kernel PR #53 records an earlier evidence-based venture-selection round that EXCLUDED IVIO and recommended an alternative labelled C9. Economic closure additionally requires a named buyer, legal operator, payment account and customer consent — every one of which is a founder-supplied blocker no build session can create.",
+    "causal_mechanism": "Drive one real transaction to acceptance, payment and reconciliation.",
+    "disposition": "DEFER_PENDING_FOUNDER_DECISION",
+    "evidence_refs": [
+      {
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "7a7846559f23682983898975ba89174a99c50c10",
+        "symbol": "PR #53 title: IVIO excluded, C9 recommended (PLAN ONLY)"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "first_wedge": "IVIO-NEMT was the presumed wedge.",
+    "hard_gate_result": "BLOCKED_ON_EXTERNAL_AUTHORITY",
+    "id": "route.04_proof_to_settlement_first",
+    "kind": "strategy_branch",
+    "preserved_because": "Economic closure remains the highest-value tier on the ladder; only its route is deferred, not the aspiration.",
+    "refs": [
+      "repo.unavailable.ivio_nemt",
+      "pr.kernel.53.ivio_excluded",
+      "intent.closure_ladder"
+    ],
+    "score": "not_scored_hard_gate",
+    "title": "R4 — Proof-to-settlement / first paid external outcome first"
+  },
+  {
+    "capital_need": "low",
+    "causal_mechanism": "Publish truthfully, build an owned audience, convert attention into revenue, and use that cash to fund UNIIMENTE development.",
+    "commercial_value": "highest_of_any_route",
+    "disposition": "DEFER_PENDING_FOUNDER_DECISION",
+    "evidence_refs": [
+      {
+        "repo": "dababiyoda/DALEOBANKS",
+        "sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+        "symbol": "PR #66 'Shadow-mode publication governed by the Reality Aperture (zero real publications)'"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "first_wedge": "shadow-mode publication (DALEOBANKS PR #66) promoted to real publication.",
+    "founder_attention": "HIGH — brand voice and public risk are founder-reserved",
+    "hard_gate_result": "BLOCKED_ON_EXTERNAL_AUTHORITY",
+    "id": "route.05_daleobanks_cash_engine",
+    "kind": "strategy_branch",
+    "knowledge_value": "medium",
+    "refs": [
+      "intent.daleobanks_role",
+      "repo.daleobanks"
+    ],
+    "score": "not_scored_hard_gate",
+    "strategic_note": "Override §18 states the sequencing consequence directly: a strong system that cannot finance itself remains fragile. This route is deferred on authority, not on merit, and it should be the FIRST thing unblocked when the founder is ready to make a publishing decision. It is the highest-value blocked route.",
+    "strongest_counterexample": "Requires live platform credentials and the founder's public identity, both of which are explicitly outside this round's authority. The linker already lists \"live platform credentials (X/LinkedIn/Mastodon) are external dependencies\" as an unresolved field.",
+    "time_to_proof": "weeks to months — audience building is slow and cannot be compressed by engineering",
+    "title": "R5 — DALEOBANKS cash-and-distribution engine first"
+  },
+  {
+    "causal_mechanism": "Rebuild the authority core before anything else consumes it.",
+    "disposition": "DEFER",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "hard_gate_result": "FAILS — no causal connection to the measured bottleneck",
+    "id": "route.06_golden_kernel_v2",
+    "kind": "strategy_branch",
+    "refs": [
+      "bridge.linker_measured_state",
+      "authority.overlaps_measured"
+    ],
+    "score": "not_scored_hard_gate",
+    "strongest_counterexample": "The authority core is not the bottleneck. The CI authority-singleton guard passes, the linker reports containment, and the measured problem is that NOTHING CONSUMES the authority that already exists — eleven kernel-produced contracts have zero consumers. Rebuilding an unconsumed authority core produces a better-designed unconsumed authority core.",
+    "title": "R6 — Golden Kernel v2 / Reality Covenant first"
+  },
+  {
+    "causal_mechanism": "Sharpen commercial cognition so the first venture choice is better.",
+    "disposition": "DEFER",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "hard_gate_result": "PASSES_BUT_SCORES_LOW",
+    "id": "route.07_wmi_first",
+    "kind": "strategy_branch",
+    "refs": [
+      "discrepancy.stacked_pr_backlog",
+      "pr.wmi.30"
+    ],
+    "score": 4,
+    "strongest_counterexample": "WMI already has 13 open PRs, six of them stacked on other feature branches rather than main. Adding analysis capacity to an organ that cannot land its existing analysis capacity increases the backlog without increasing throughput.",
+    "title": "R7 — WMI opportunity and portfolio intelligence first"
+  },
+  {
+    "causal_mechanism": "Ship the testnet end-to-end funded job transaction.",
+    "disposition": "DEFER",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "hard_gate_result": "PASSES_BUT_SCORES_LOW",
+    "id": "route.08_pumpstation_first",
+    "kind": "strategy_branch",
+    "refs": [
+      "repo.pumpstation",
+      "bridge.two_organs_invisible",
+      "intent.pumpstation_role"
+    ],
+    "regulatory_risk": "high — escrow, settlement and any token surface attract real regulation",
+    "score": 3,
+    "strongest_counterexample": "PumpStation main is still the older memecoin/wallet application; the regenerative-OS doctrine exists only in unmerged branches, and the repo has no organ manifest, so it is invisible to the linker. It is the least-connected organ being proposed for the most externally-exposed work.",
+    "title": "R8route — PumpStation participation economy first"
+  },
+  {
+    "causal_mechanism": "Make the local-competency substrate the foundation of developmental capability.",
+    "disposition": "RETAIN_AS_RESEARCH_CHALLENGER",
+    "evidence_refs": [
+      {
+        "path": "docs/developmental/TARGET_FORM_002_SPEC.md",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "hard_gate_result": "FAILS — cannot currently beat the conventional baseline, and its own benchmark says so",
+    "id": "route.09_morphogenetic_substrate",
+    "kind": "strategy_branch",
+    "preserved_because": "Override §9 also forbids abandoning Track B because conventional mechanisms win today. It stays a registered challenger with a defined re-entry condition, not a deletion.",
+    "refs": [
+      "capability.morphogenesis_orphaned",
+      "capability.developmental_mica_cdpe",
+      "intent.track_a_track_b"
+    ],
+    "score": "not_scored_hard_gate",
+    "strongest_counterexample": "Measured: morphogenesis/ imports nothing and is imported by nothing (2 test references); developmental/ has 1 test reference and one importer. TARGET_FORM_002 already recorded that recovery degrades monotonically with degree heterogeneity and reaches ZERO on hub-heavy topology. Override §9 forbids Track B gating Track A, and this route is that gating by construction.",
+    "title": "R9 — Morphogenetic substrate / MICA / CDPE first"
+  },
+  {
+    "causal_mechanism": "Hold position; let frontier capability improve; spend nothing.",
+    "disposition": "REJECTED_BUT_RECORDED",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "genuine_merits": "Costs nothing, risks nothing, destroys nothing, and the 69-PR backlog would stop growing. If the institution's real constraint is founder attention rather than engineering capability, this dominates every build route.",
+    "hard_gate_result": "PASSES",
+    "id": "route.10_do_nothing",
+    "kind": "strategy_branch",
+    "refs": [
+      "decision.controlling_fact",
+      "discrepancy.stacked_pr_backlog"
+    ],
+    "role": "Retained as the mandatory do-nothing baseline every other route must beat.",
+    "score": 2,
+    "strongest_counterexample": "Zero external outcomes is already the status quo after months of work. Waiting produces a larger unlanded backlog and an older stale-base problem, and every calibration constant stays uncalibrated. Model improvement does not close a bridge that no process is running.",
+    "title": "R10 — Minimal maintenance / wait for better models"
+  },
+  {
+    "causal_mechanism": "The measured gap is not components but a process that runs. Build the smallest possible governed execution surface — one loop that takes a real input, crosses the Consequence Gate, produces a receipt and reconciles — and let existing components attach to it.",
+    "disposition": "MERGED_INTO_PRIMARY",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "hard_gate_result": "PASSES",
+    "id": "route.11_execution_surface_first",
+    "kind": "strategy_branch",
+    "merge_note": "Its true content — \"prefer the thing that executes over the thing that is merely well-formed\" — is adopted as a constraint on R3 rather than as a separate route: the developmental closure must run as an actual process with a recorded run, not as a passing test.",
+    "origin": "Not in the prompt's list. Generated from the measured absence of any entrypoint.",
+    "refs": [
+      "anatomy.kernel_is_a_library_not_a_running_system"
+    ],
+    "score": 6,
+    "strongest_counterexample": "Without a real external target, the \"execution surface\" is a loop over fixtures, which is a test harness with a grander name. It collapses into R3 unless it has a genuine consequence to carry, and R4/R5 (which supply real consequences) are both blocked on founder authority.",
+    "title": "R11 — DISCOVERED: build the execution surface, not more components"
+  },
+  {
+    "causal_mechanism": "Run one unblocked engineering bottleneck to a real 0→1 proof while the founder-blocked commercial route waits on a decision only the founder can make. Neither waits for the other.",
+    "construction": "R3 primary, constrained by R11, supported by R2, with R5 held as the first route to unblock.",
+    "disposition": "SELECTED",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "id": "route.12_portfolio",
+    "kind": "strategy_branch",
+    "refs": [
+      "route.03_track_a_organogenesis",
+      "route.02_phase_zero_first",
+      "route.05_daleobanks_cash_engine",
+      "route.11_execution_surface_first"
+    ],
+    "score": 10,
+    "title": "R12 — Staged portfolio with unequal tracks (RECOMBINED)",
+    "why_a_portfolio_rather_than_one_winner": "The two highest-value routes fail for opposite reasons: R5 is blocked on authority, not merit; R3 is unblocked but proves only the lowest tier of the closure ladder. Choosing either alone discards real value. The prompt permits a staged portfolio and forbids manufacturing a single winner."
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§12 hard gates"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "gates": [
+      "violates Constitution or law",
+      "destroys evidence or branches",
+      "requires unavailable authority",
+      "cannot be tested before major cost",
+      "has no causal connection to the actual egregore",
+      "relies on impressive naming instead of mechanism",
+      "cannot beat or complement a conventional baseline",
+      "creates unbounded blast radius",
+      "makes the evaluator candidate-controlled",
+      "depends on a nonexistent external acceptance path with no bridge"
+    ],
+    "id": "tree.hard_gates",
+    "kind": "strategy_gate",
+    "title": "Hard gates applied before scoring"
+  },
+  {
+    "baseline_comparison": "Do-nothing (R10) scores 2 and is beaten on knowledge value and on stopping backlog growth.",
+    "disadvantages_identified": [
+      {
+        "D1": "computational closure risks being read as real progress"
+      },
+      {
+        "D2": "the target capability's output has no consumer"
+      },
+      {
+        "D3": "adds to a 69-PR backlog that already cannot drain"
+      },
+      {
+        "D4": "the evaluator is not yet process-isolated, so \"candidates cannot alter it\" is not fully true"
+      },
+      {
+        "D5": "primary track produces no revenue while §18 says financing fragility is real"
+      }
+    ],
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "id": "deliberation.pass1",
+    "kind": "strengthening_pass",
+    "pass_number": 1,
+    "redesigns_applied": [
+      "D1 → every closure claim must carry its §11 ladder tier in the artifact itself; 'computational' may never be reported unqualified.",
+      "D2 → accepted and stated openly rather than engineered away; the closure proves the BRIDGE region, and the artifact says so.",
+      "D3 → the implementation program is a dependency-ordered stack against current main, never onto an archived base, and PR count is capped.",
+      "D4 → process isolation and held-out confinement become entry conditions for the closure, not follow-ups.",
+      "D5 → R5 is designated first-to-unblock and its founder gate is written now, so the decision is ready the moment the founder is."
+    ],
+    "refs": [
+      "route.12_portfolio",
+      "route.03_track_a_organogenesis",
+      "route.05_daleobanks_cash_engine",
+      "decision.controlling_fact"
+    ],
+    "rejected_alternatives_preserved": [
+      "route.01_pr66_first",
+      "route.06_golden_kernel_v2",
+      "route.07_wmi_first",
+      "route.08_pumpstation_first",
+      "route.09_morphogenetic_substrate",
+      "route.10_do_nothing"
+    ],
+    "reversible_experiment": "The closure runs in a sandbox against a disabled copy; the original linker is hash-pinned and untouched; rollback is deleting a branch.",
+    "roles_present": {
+      "adversarial_reviewer": "A computational closure over a capability nobody consumes is exactly the elegant-progress-without-reality failure §26 warns about. If this round recommends it without labelling the tier, it manufactures the deception it was convened to prevent.",
+      "evidence_welfare_guardian": "Zero external effects, zero participants, zero data subjects in the primary track. Welfare risk is nil precisely because nothing touches anyone — which is also the reason it cannot claim institutional or economic value.",
+      "founder_intent_steward": "The portfolio preserves the full horizon. Nothing is deleted; R4, R5, R7, R8 and R9 are deferred with named re-entry conditions, satisfying Override §2 and §28. The primary track advances the §10 milestone directly.",
+      "operator_maintainer": "69 open PRs, four based on an archived main. Any new work must land, not queue. A route that adds a 70th unlandable PR is worse than doing nothing.",
+      "systems_architect": "R3 is the only route whose dependencies are entirely inside the repository. Its laboratory exists: frozen spec, hashed subject files, a 4/4 threshold, a detector told only the capability name. The engineering delta is process isolation and held-out confinement, not new architecture."
+    },
+    "simplest_viable_alternative": "Write the two missing organ manifests and stop (a slice of R2). Cheaper, but produces no closure of any tier and leaves the developmental engine unproven.",
+    "strongest_competing_architecture": "R5 (DALEOBANKS cash engine) genuinely dominates on commercial value and is the only route that addresses the fragility Override §18 names. It loses here only because it needs a founder authority this round cannot grant.",
+    "subject": "route.12_portfolio",
+    "title": "Pass 1 — steelman, amplify, redesign disadvantages"
+  },
+  {
+    "attacks": {
+      "bureaucracy": "The planning compiler could become the institution's fourth registry system. Override §27 anticipates this and requires a disposition; one is returned.",
+      "centralization": "None added — the round creates no authority and no gate.",
+      "cost": "Near zero — no credentials, no spend, no external surface.",
+      "dependency": "No new provider, platform or vendor dependency.",
+      "fragility": "The portfolio depends on the founder eventually unblocking R5. If that never happens, UNIIMENTE accumulates developmental capability it cannot finance. This is a real, unresolved dependency and is recorded as such rather than assumed away.",
+      "gaming": "The sharpest attack: a builder that can read the evaluator can satisfy it without solving anything. This is why D4's fix is an entry condition and not a follow-up — without isolation the whole closure is worthless.",
+      "incomprehensibility": "Genuine risk. The kernel already has 22 packages and five registries. The program adds no new package to the runtime.",
+      "irreversibility": "None. Every artifact is a branch; every attachment is consequence-inert and detachable.",
+      "overfit": "Tuning the developmental engine to one capability (cross_organ_edge_resolution) risks an engine that only repairs that. Mitigation: the second closure must target an unrelated function, and that requirement is written into the exit criteria rather than left to judgement.",
+      "theater": "The strongest attack of all. The honest answer is that a computational closure IS a small result, and the round says so in those words rather than dressing it as institutional progress."
+    },
+    "disposition": "RETAIN",
+    "evidence_refs": [],
+    "evidence_status": "derived",
+    "id": "deliberation.pass2",
+    "kind": "strengthening_pass",
+    "note": "Exactly two passes. No third pass was run.",
+    "pass1_disadvantages_revisited": {
+      "D1": "Addressed — ladder tier is now mandatory in every closure artifact.",
+      "D2": "Not fixable; stated openly. The capability's output has no consumer and the closure proves the BRIDGE only.",
+      "D3": "Addressed — stack ordering rule and PR cap; stale-base PRs are triaged before new ones are opened.",
+      "D4": "Promoted from follow-up to entry condition. Without isolation, do not run the experiment.",
+      "D5": "Unresolved by engineering. Escalated as the round's primary founder decision."
+    },
+    "pass_number": 2,
+    "refs": [
+      "deliberation.pass1",
+      "route.12_portfolio",
+      "capability.evaluator_firewall_partially_exists",
+      "discrepancy.stacked_pr_backlog"
+    ],
+    "residual_risks": [
+      "The founder may never unblock R5, leaving capability without financing.",
+      "The developmental engine may succeed on one capability and generalize to none.",
+      "The 69-PR backlog may absorb this work as it absorbed the rest.",
+      "PR #66's five falsified designs may indicate the underlying lifecycle model is wrong, which freezing does not resolve."
+    ],
+    "rollback": "Delete the planning branch. main is untouched at 8cb3074 throughout.",
+    "subject": "route.12_portfolio",
+    "title": "Pass 2 — attack the strengthened design, then settle"
   }
 ]

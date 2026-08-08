@@ -57,9 +57,18 @@ def test_every_node_has_a_known_evidence_status(graph):
 def test_no_node_asserts_anything_without_evidence(graph):
     """The anti-fabrication rule: no evidence refs means status must be unresolved."""
     offenders = [
-        n.id for n in graph if not n.evidence_refs and n.evidence_status != "unresolved"
+        n.id
+        for n in graph
+        if not n.evidence_refs and n.evidence_status not in ("unresolved", "derived")
     ]
     assert offenders == [], f"nodes asserting without evidence: {offenders}"
+
+
+def test_every_derived_conclusion_traces_back_to_real_evidence(graph):
+    """A conclusion resting only on other conclusions is ungrounded."""
+    check = validate.check_derived_chains_are_grounded(graph)
+    assert check.examined > 0, "vacuous: no derived nodes to check"
+    assert check.problems == []
 
 
 def test_node_ids_are_unique(graph):

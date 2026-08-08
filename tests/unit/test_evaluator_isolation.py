@@ -82,3 +82,34 @@ def test_unavailable_environment_raises_rather_than_returning_a_pass():
     assert issubclass(isolation.IsolationUnavailable, RuntimeError)
     with pytest.raises(ValueError):
         isolation.run_probe("not-a-mode")
+
+
+# --- P2.1: privilege boundary ------------------------------------------------
+
+def test_candidate_runs_unprivileged(verdict):
+    """The constructor needs privilege. The candidate must not retain it."""
+    for route in ("running_as_root", "capabilities_dropped", "no_new_privs"):
+        assert verdict.isolated.receipts[route] == "denied", route
+
+
+def test_candidate_cannot_use_privileged_syscalls(verdict):
+    for route in ("can_mount", "can_mknod"):
+        assert verdict.isolated.receipts[route] == "denied", route
+
+
+def test_privilege_probe_can_detect_retained_privilege(verdict):
+    """Negative control for P2.1 specifically.
+
+    Without this, 'denied' on the privilege routes could mean the probe never
+    worked — the same dead-instrument failure the filesystem control rules out.
+    """
+    assert verdict.broken_privilege is not None
+    assert verdict.broken_privilege.breaches, "privilege probe never fires"
+    for route in ("running_as_root", "capabilities_dropped", "can_mount"):
+        assert route in verdict.broken_privilege.breaches, route
+
+
+def test_verdict_requires_both_controls(verdict):
+    """PROVEN needs filesystem AND privilege discrimination."""
+    assert verdict.discriminates
+    assert verdict.verdict == "EVALUATOR_ISOLATION_PROVEN"

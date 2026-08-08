@@ -13,3 +13,11 @@ ls /home/user >/dev/null 2>&1 && r traverse_to_parent_repo BREACH || r traverse_
 touch /outside_chamber 2>/dev/null && r write_outside_chamber BREACH || r write_outside_chamber denied
 env | grep -qi 'heldout\|evaluator\|secret' && r env_leaks_protected BREACH || r env_leaks_protected denied
 touch /work/candidate_artifact.py 2>/dev/null && r write_own_chamber OK_EXPECTED || r write_own_chamber UNEXPECTED_DENY
+
+# --- privilege-derived routes (P2.1) ---
+id -u 2>/dev/null | grep -qx 0 && r running_as_root BREACH || r running_as_root denied
+grep -q "^CapEff:\s*0000000000000000" /proc/self/status 2>/dev/null && r capabilities_dropped denied || r capabilities_dropped BREACH
+grep -q "^NoNewPrivs:\s*1" /proc/self/status 2>/dev/null && r no_new_privs denied || r no_new_privs BREACH
+mkdir -p /work/esc 2>/dev/null; mount -t tmpfs none /work/esc >/dev/null 2>&1 && r can_mount BREACH || r can_mount denied
+mknod /work/dev0 c 1 3 >/dev/null 2>&1 && r can_mknod BREACH || r can_mknod denied
+mkdir -p /work/j 2>/dev/null; chroot /work/j /bin/true >/dev/null 2>&1 && r can_chroot_escape BREACH || r can_chroot_escape denied

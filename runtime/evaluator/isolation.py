@@ -55,6 +55,15 @@ PROHIBITED_ROUTES = (
     "network_connect",
     "write_outside_chamber",
     "env_leaks_protected",
+    # P2.1 — privilege-derived routes. The original eleven proved the enumerated
+    # paths were blocked for that probe; they said nothing about what arbitrary
+    # candidate code could do with retained root and capabilities.
+    "running_as_root",
+    "capabilities_dropped",
+    "no_new_privs",
+    "can_mount",
+    "can_mknod",
+    "can_chroot_escape",
 )
 REQUIRED_SUCCESS_ROUTE = "write_own_chamber"
 
@@ -124,7 +133,7 @@ def run_probe(mode: str, chamber_root: str | None = None) -> ProbeResult:
     deliberately bind-mounts the repository into the chamber — the negative
     control that proves the probe can still detect a breach.
     """
-    if mode not in ("isolated", "broken"):
+    if mode not in ("isolated", "broken", "broken_privilege"):
         raise ValueError(f"unknown mode {mode!r}")
     if not shutil.which("unshare"):
         raise IsolationUnavailable("unshare is not available in this environment")
@@ -168,6 +177,7 @@ class IsolationVerdict:
 
     isolated: ProbeResult
     broken: ProbeResult
+    broken_privilege: ProbeResult | None = None
 
     @property
     def discriminates(self) -> bool:
@@ -177,14 +187,23 @@ class IsolationVerdict:
         thing whether or not a boundary existed, which is exactly the failure
         mode this workstream has produced eight times.
         """
-        return not self.isolated.breaches and bool(self.broken.breaches)
+        fs = not self.isolated.breaches and bool(self.broken.breaches)
+        if self.broken_privilege is None:
+            return fs
+        return fs and bool(self.broken_privilege.breaches)
 
     @property
     def verdict(self) -> str:
         if self.isolated.breaches:
             return "EVALUATOR_ISOLATION_NOT_PROVEN"
         if not self.broken.breaches:
-            return "EVALUATOR_ISOLATION_NOT_PROVEN"  # probe is dead
+            return "EVALUATOR_ISOLATION_NOT_PROVEN"  # filesystem probe is dead
+        if self.broken_privilege is None:
+            # P2.1: without a privilege control the claim covers only the
+            # enumerated filesystem routes, not arbitrary candidate code.
+            return "EVALUATOR_ISOLATION_PROVEN_FOR_ENUMERATED_ROUTES"
+        if not self.broken_privilege.breaches:
+            return "EVALUATOR_ISOLATION_NOT_PROVEN"  # privilege probe is dead
         return "EVALUATOR_ISOLATION_PROVEN"
 
     def to_dict(self) -> dict:
@@ -193,6 +212,9 @@ class IsolationVerdict:
             "discriminates": self.discriminates,
             "isolated_breaches": self.isolated.breaches,
             "broken_breaches": self.broken.breaches,
+            "broken_privilege_breaches": (
+                self.broken_privilege.breaches if self.broken_privilege else None
+            ),
             "isolated_receipts": self.isolated.receipts,
             "broken_receipts": self.broken.receipts,
             "vacuous_routes": self.isolated.vacuous_routes,
@@ -202,7 +224,11 @@ class IsolationVerdict:
 
 def prove_isolation() -> IsolationVerdict:
     """Run both configurations and return the discriminating verdict."""
-    return IsolationVerdict(isolated=run_probe("isolated"), broken=run_probe("broken"))
+    return IsolationVerdict(
+        isolated=run_probe("isolated"),
+        broken=run_probe("broken"),
+        broken_privilege=run_probe("broken_privilege"),
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover - manual invocation

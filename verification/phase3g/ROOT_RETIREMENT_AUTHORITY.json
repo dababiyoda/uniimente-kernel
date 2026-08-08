@@ -1,0 +1,165 @@
+{
+  "failures": [],
+  "findings": {
+    "CANONICAL_ROOTS_RETIRED_BY_LEGACY_AUTHORITY": 1,
+    "LEGACY_SEARCH_EXHAUSTED_retirements": 1,
+    "ROOT_GENERATIONS_RETIRED": 5,
+    "ROOT_RETIREMENTS_WITH_UNATTRIBUTED_CAUSE": 0,
+    "canonical_repair_is_independent_of_legacy_ledger": false,
+    "causes_observed": [
+      "CANONICAL_ROOT_COMMITTED",
+      "LEGACY_SEARCH_EXHAUSTED",
+      "SATISFIED_BY_ALTERNATE_BOND"
+    ],
+    "sparse_causes": {
+      "LEGACY_SEARCH_EXHAUSTED": 1,
+      "SATISFIED_BY_ALTERNATE_BOND": 2
+    }
+  },
+  "fixtures": {
+    "n_auth=3 density=0.6": {
+      "authorities": {
+        "CANONICAL_OR_LEGACY_SETTLEMENT": 2,
+        "LEGACY_REPAIR": 1
+      },
+      "causes": {
+        "LEGACY_SEARCH_EXHAUSTED": 1,
+        "SATISFIED_BY_ALTERNATE_BOND": 2
+      },
+      "events": [
+        {
+          "authority": "CANONICAL_OR_LEGACY_SETTLEMENT",
+          "bond_after": "authorise.9:0:0",
+          "bond_from_search_offer": false,
+          "cause": "SATISFIED_BY_ALTERNATE_BOND",
+          "need_id": "authorise.9:0:0",
+          "op": "pop",
+          "performed_by": "_settle",
+          "retired_a_canonical_root": true,
+          "slot": 0,
+          "unit": "authorise.9"
+        },
+        {
+          "authority": "CANONICAL_OR_LEGACY_SETTLEMENT",
+          "bond_after": "authorise.9:1:0",
+          "bond_from_search_offer": false,
+          "cause": "SATISFIED_BY_ALTERNATE_BOND",
+          "need_id": "authorise.9:1:0",
+          "op": "pop",
+          "performed_by": "_settle",
+          "retired_a_canonical_root": true,
+          "slot": 1,
+          "unit": "authorise.9"
+        },
+        {
+          "authority": "LEGACY_REPAIR",
+          "bond_after": null,
+          "bond_from_search_offer": null,
+          "cause": "LEGACY_SEARCH_EXHAUSTED",
+          "need_id": "reconcile.12:0:1",
+          "op": "pop",
+          "performed_by": "_prove_exhaustion",
+          "retired_a_canonical_root": true,
+          "slot": 0,
+          "unit": "reconcile.12"
+        }
+      ],
+      "retirements": 3,
+      "retirements_that_closed_a_canonical_root": 3,
+      "seed": 5
+    },
+    "n_auth=4 density=1.0": {
+      "authorities": {
+        "CANONICAL_OR_LEGACY_SETTLEMENT": 1
+      },
+      "causes": {
+        "CANONICAL_ROOT_COMMITTED": 1
+      },
+      "events": [
+        {
+          "authority": "CANONICAL_OR_LEGACY_SETTLEMENT",
+          "bond_after": "reconcile.13:0:1",
+          "bond_from_search_offer": true,
+          "cause": "CANONICAL_ROOT_COMMITTED",
+          "need_id": "reconcile.13:0:1",
+          "op": "pop",
+          "performed_by": "_settle",
+          "slot": 0,
+          "unit": "reconcile.13"
+        }
+      ],
+      "retirements": 1,
+      "retirements_that_closed_a_canonical_root": 0,
+      "seed": 0
+    },
+    "n_auth=5 density=0.8": {
+      "authorities": {
+        "CANONICAL_OR_LEGACY_SETTLEMENT": 1
+      },
+      "causes": {
+        "CANONICAL_ROOT_COMMITTED": 1
+      },
+      "events": [
+        {
+          "authority": "CANONICAL_OR_LEGACY_SETTLEMENT",
+          "bond_after": "reconcile.14:0:1",
+          "bond_from_search_offer": true,
+          "cause": "CANONICAL_ROOT_COMMITTED",
+          "need_id": "reconcile.14:0:1",
+          "op": "pop",
+          "performed_by": "_settle",
+          "slot": 0,
+          "unit": "reconcile.14"
+        }
+      ],
+      "retirements": 1,
+      "retirements_that_closed_a_canonical_root": 0,
+      "seed": 0
+    }
+  },
+  "instrument": "root_retirement_authority",
+  "legacy_authority_probe": {
+    "baseline": {
+      "canonical_roots": {
+        "authorise.9|authorise.9:0:0": "CLOSED",
+        "authorise.9|authorise.9:1:0": "CLOSED",
+        "reconcile.12|reconcile.12:0:1": "CLOSED"
+      },
+      "closed_child_edges": 37,
+      "legacy_repair_need_messages": 14,
+      "messages": 829
+    },
+    "canonical_repair_is_independent_of_legacy_ledger": false,
+    "legacy_ledger_emptied": {
+      "canonical_roots": {
+        "authorise.9|authorise.9:0:0": "CLOSED",
+        "authorise.9|authorise.9:1:0": "COMMITTED",
+        "reconcile.12|reconcile.12:0:1": "PROPOSAL_PENDING"
+      },
+      "closed_child_edges": 35,
+      "legacy_repair_need_messages": 3,
+      "messages": 718
+    },
+    "legacy_marked_closed": {
+      "canonical_roots": {
+        "authorise.9|authorise.9:0:0": "CLOSED",
+        "authorise.9|authorise.9:1:0": "COMMITTED",
+        "reconcile.12|reconcile.12:0:1": "PROPOSAL_PENDING"
+      },
+      "closed_child_edges": 35,
+      "legacy_repair_need_messages": 3,
+      "messages": 718
+    },
+    "legacy_marked_settled": {
+      "canonical_roots": {
+        "authorise.9|authorise.9:0:0": "CLOSED",
+        "authorise.9|authorise.9:1:0": "COMMITTED",
+        "reconcile.12|reconcile.12:0:1": "PROPOSAL_PENDING"
+      },
+      "closed_child_edges": 35,
+      "legacy_repair_need_messages": 3,
+      "messages": 718
+    }
+  },
+  "verdict": "CORRECT"
+}

@@ -82,6 +82,14 @@ jobs:
       - name: Phase 3G need-closure causal diagnosis
         if: always()
         run: python verification/phase3g/need_closure_diagnose.py --verify-results
+      # NC-4A/4B. Fails if a need-generation retirement stops being attributable
+      # to a cause, or if the denominator empties. It also records how many
+      # canonical roots are retired by LEGACY authority and whether corrupting
+      # the legacy ledger changes canonical repair -- both currently nonzero and
+      # FALSE respectively, which is the open defect this measures.
+      - name: Phase 3G root-retirement authority
+        if: always()
+        run: python verification/phase3g/root_retirement_authority.py --verify-results
 
   contracts:
     name: "2 · Contract schema references resolve"

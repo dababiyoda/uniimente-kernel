@@ -222,6 +222,34 @@
       "specs_remaining_xfail": 11
     },
     {
+      "id": "NC-4A/4B",
+      "title": "Who retires a need generation, and by what authority",
+      "status": "DIAGNOSED. Remedy not chosen. ACTIVE BOTTLENECK.",
+      "evidence": [
+        "verification/phase3g/ROOT_RETIREMENT_AUTHORITY.md",
+        "verification/phase3g/ROOT_RETIREMENT_AUTHORITY.json",
+        "verification/phase3g/root_retirement_authority.py"
+      ],
+      "runtime_changed": false,
+      "findings": {
+        "closure_reason_is_wrong_for_one_of_three": "sparse fixture retires 3 generations: 2 SATISFIED_BY_ALTERNATE_BOND, 1 LEGACY_SEARCH_EXHAUSTED. NC-3 labels all three need_satisfied_elsewhere. For the third that is FALSE - nothing satisfied it; a legacy ledger proved itself exhausted and the canonical root (PROPOSAL_PENDING, 1 proposal, 3.0 credit) was closed as collateral.",
+        "CANONICAL_ROOTS_RETIRED_BY_LEGACY_AUTHORITY": 1,
+        "structural_cause": "_emit_need creates open_needs[slot]=nid AND self._search[nid] (LEGACY). step() iterates open_needs, calls widen(slot) against that legacy ledger, then _prove_exhaustion(slot,nid), which pops open_needs and adds to closed_needs. Every canonical repair root carries a legacy ledger shadowing it and step() drives it every pass.",
+        "canonical_repair_is_independent_of_legacy_ledger": false,
+        "decisive_probe": "Re-running the same repair with the canonical lifecycle untouched and the legacy ledger falsified three ways (emptied / marked settled / marked closed) CHANGES the canonical root states. A disabled subsystem whose corruption changes canonical outcomes is not disabled.",
+        "DUAL_REPAIR_SEARCHES": "reads 0 throughout - the counter that exists to detect exactly this reports nothing. Eleventh instrument-liveness instance."
+      },
+      "what_nc3_did": "NC-3 is not withdrawn: the discharge (13 stranded -> 0, 18.0 credit -> 0.0) stands. But it MASKED this defect - it closed the collaterally-retired root cleanly, removing the visible symptom of an authority violation while leaving the violation in place, and labelled the result with a reason false for that root.",
+      "remedy_must_produce": [
+        "CANONICAL_ROOTS_RETIRED_BY_UNAUTHORIZED_LEGACY_AUTHORITY = 0",
+        "ROOT_RETIREMENTS_WITH_UNATTRIBUTED_CAUSE = 0",
+        "FALSE_ALTERNATE_SATISFACTION_CLAIMS = 0",
+        "canonical_repair_is_independent_of_legacy_ledger = TRUE",
+        "neutral state CLOSING_RETIRED_GENERATION with reason obligation_generation_retired and a SEPARATE retirement_cause; only SATISFIED_BY_ALTERNATE_BOND may increment an alternate-satisfaction counter",
+        "no second need registry: unit:slot:activation already distinguishes owners if an owner field is attached"
+      ]
+    },
+    {
       "id": "LC-3",
       "level": "1C",
       "title": "Projection-divergence specification disposition",
@@ -343,5 +371,11 @@
     "canonical local frontier remainder (_advance_or_discharge): inert, 13 -> 13",
     "route _seal dispositions downward: inert, 13 -> 13, because _seal is never called"
   ],
-  "next_mechanism": "need-closure propagation from an abandoned root"
+  "next_mechanism": "need-closure propagation from an abandoned root",
+  "corrections_to_previous_report": {
+    "marker_count": "14 need-closure markers remain, not 11. 10 pre-existing + 14 = 24 observed.",
+    "pa5_overwrite_claim_WITHDRAWN": "prearrival_adversarial_twin.py main() prints JSON and returns an exit status; it does NOT write its results file. The claim in 15623a9 that --negative-control overwrites canonical evidence is withdrawn - inferred from a sequence never run. The pipeline-status mistake ($? after | tail) was real and hid a failing verifier three times; the overwrite attribution was not.",
+    "retirement_semantics": "obligation-generation-retired is NOT satisfied-elsewhere; measured 1 of 3 mislabelled."
+  },
+  "active_bottleneck": "Truthful and exclusive authority over root-generation retirement"
 }

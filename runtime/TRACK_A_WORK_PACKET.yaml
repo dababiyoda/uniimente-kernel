@@ -1,0 +1,115 @@
+# Track-A resume packet. Exists so a fresh context resumes without re-deriving
+# the project. Not a planning system — read it, verify it, then work.
+
+updated_at: '2026-08-08'
+branch: claude/track-a-runtime-spine
+head: 45b0d7f44d6c5ca20eb2291135d956e5de1a749f   # plus this commit
+main_baseline: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+planning_pr: 68
+planning_issue: 69
+track_b_pr: 66            # immutable at a6f14d344f2ca073fd334a885e5c2bdb921d082e
+
+active_target: institutional.cross_organ_edge_resolution
+active_target_status: UNDER_ADJUDICATION      # Route A/B/C not yet decided
+active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
+closure_count: 0
+
+contract_hash: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
+evaluator_hashes: NOT_FROZEN
+
+completed_phases:
+  P1_runtime_contract: COMPLETE — frozen, self-sealed, 18 guard tests
+  P2_evaluator_isolation: PROVEN (frozen; do not polish further)
+  P2_1_privilege_drop: PROVEN — setpriv uid/gid 65534, caps emptied, no_new_privs
+  P3_inspection: COMPLETE — two absences named
+  P3_route_adjudication: STARTED — Route A tested, see finding below
+
+current_phase: P3 route adjudication (Route A / B / C)
+
+# ---------------------------------------------------------------------------
+# THE FINDING THAT DECIDES THE NEXT MOVE
+# ---------------------------------------------------------------------------
+route_a_finding:
+  question: Does a legitimate Kernel-resident consumer of LinkReport exist?
+  answer: NO — the only in-kernel consumer is a self-check, not a dependent function.
+  evidence:
+    file: closure/kernel_registry.py
+    lines: [924, 950, 962, 972]
+    what_they_are: >-
+      linker_technical, linker_evidence, linker_economic and linker_regenerative
+      are ModuleClosures health probes. They call InstitutionalLinker(...).link()
+      in order to ASSERT that the linker works — determinism across two runs,
+      Bridge A present, unresolved questions carried verbatim, empty organism
+      refused.
+    why_it_does_not_qualify: >-
+      Disabling edge resolution would make these CHECKS fail. A failing check is
+      not a function disappearing. Under the four-state counterfactual, STATE B
+      would show "the health probe reports unhealthy", not "a runtime function is
+      unavailable". That is the difference between the institution noticing a
+      problem and the institution losing a capability.
+    qualification_criteria_failed:
+      - "must change meaningful internal behavior when topology disappears — it does not; only the probe's verdict changes"
+      - "must have institutional purpose independent of observing the linker — it does not; observing the linker IS its purpose"
+
+remaining_routes:
+  route_b: >-
+    UNTESTED. Real multi-repository consequence-inert consumer. Manifests point
+    at services/wealthmachine_client.py, services/constitution.py etc. — DALEOBANKS
+    and WMI paths. Both repos are present in this workspace at /home/user/. Next
+    session must verify: repo exists, path exists, code implements the contract,
+    producer/consumer semantics match, participation can be consequence-inert.
+    This is the most promising untested route and matches the architecture:
+    the institution is deliberately distributed, so the first developmental
+    episode being multi-repository may be correct rather than a compromise.
+  route_c: >-
+    One-time founder-authorized target pivot. Only after A and B are both
+    investigated and falsified. Must be an isolated atomic commit, before
+    evaluator freeze and before candidate generation, preserving the original
+    target and contract hash in provenance. ONE pivot only — no target shopping.
+
+next_action: >-
+  Test Route B. Read /home/user/DALEOBANKS/services/wealthmachine_client.py and
+  /home/user/WealthMachineIntelligence/src/services/opportunity_intake.py and
+  determine whether either can act as a real consumer of a proven edge under
+  consequence-inert local execution. docs/PHASE_ZERO_REPORT.md records that
+  these exist and are field-for-field compatible — verify that directly rather
+  than trusting it.
+
+protected_invariants:
+  - PR #66 immutable at a6f14d3
+  - no merge, deploy, publish, money, external effect
+  - LinkReport proves structure, never authority
+  - no second linker, no second event bus, no second closure judge
+  - no test_consumer / dummy_consumer / fixture_consumer
+  - closure requires all twelve frozen conditions, no rounding
+
+evidence_paths:
+  isolation_proof: runtime/evaluator/isolation.py  (run it; 3-way discrimination)
+  isolation_tests: tests/unit/test_evaluator_isolation.py
+  p3_inspection: runtime/P3_INSPECTION.md
+  frozen_contract: runtime/contract.py
+
+known_falsifications:
+  - "'separate subprocess' is not isolation — mount ns inherits the parent mount table"
+  - "EVALUATOR_ISOLATION_PROVEN was once claimed on enumerated-route evidence only; corrected in P2.1"
+  - "no contract->event binding exists anywhere in the repository"
+  - "no organ manifest declares a handler; implementation_path points into other repos"
+  - "EventSpine has zero non-test subscribers"
+  - "the only in-kernel LinkReport consumer is a health check, not a dependent function"
+
+unresolved:
+  - Route B feasibility (untested)
+  - whether any in-kernel consumer can exist at all
+  - contract-to-event seam geometry (four candidates enumerated in the order, none selected)
+
+stop_reason: >-
+  Context exhausted mid-adjudication. Route A tested and answered; Route B not
+  started. Beginning Route B or P3 construction with remaining context would risk
+  a subtle phase executed imprecisely — the order forbids that explicitly. No
+  code was written that would need unwinding.
+
+local_test_status: "526 passed"
+ci_regression_status: "GREEN at 433c7c5; 45b0d7f not yet observed"
+privileged_isolation_status: PROVEN_LOCALLY_ONLY
+held_out_evaluation_status: NOT_FROZEN
+runtime_counterfactual_status: UNRUN

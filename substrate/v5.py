@@ -260,6 +260,21 @@ COUNTER_NAMES = (
     "PREARRIVAL_CONTROLS_APPLIED",
     "PREARRIVAL_CONTROL_REPLAYS",
     "PREARRIVAL_CONTROL_CONFLICTS",
+    # NC-3: causal need closure. A root whose obligation generation was retired
+    # -- satisfied through some other path -- can never settle anything again,
+    # because `settle_search_offer` refuses it with `wrong_need_generation`.
+    # Until this existed the root was ABANDONED rather than closed: it kept its
+    # descendants waiting on a decision that would never be made, and kept its
+    # parent's committed credit permanently in flight.
+    #
+    # THE DENOMINATOR IS FIRST. A closure ratio whose denominator can be zero
+    # proves nothing, and every counter below is read against this one.
+    "ALTERNATE_SATISFIED_OPEN_ROOTS",
+    "NEED_CLOSURE_CASCADES_INITIATED",
+    "NEED_CLOSURE_CONTROLS_EMITTED",
+    "ROOTS_CLOSED_BY_ALTERNATE_SATISFACTION",
+    "DUPLICATE_NEED_CLOSURE_APPLICATIONS",
+    "FALSE_NEED_CLOSURE_CLAIMS",
 )
 
 # A wave-closing command travels DOWN, from the adopted parent. A search outcome
@@ -924,6 +939,13 @@ def new_canonical_node(key: SearchKey, parent_edge: str, parent_sender: str,
         "proposals_rejected": set(),
         "accepted_proposal_id": None,
         "terminal_signal_sent": False,
+        # NC-3. Why closure began, bound to the exact obligation generation.
+        # Declared here rather than set on demand so a reader can always ask,
+        # and so an abandoned root stays attributable to its cause AFTER it
+        # closes -- abandonment is a fact about history, not about live state.
+        "closure_reason": None,
+        "closure_need_id": None,
+        "closure_generation": None,
         # What each child CONFIRMED about the allocation it was given:
         # child edge -> (refund, consumed). A parent may close an allocation only
         # from this. Writing a transferred allocation off as cancelled without an
@@ -2614,6 +2636,10 @@ class Unit:
             node["cancelled_credit"] += refund
             node["child_refunds_received"] += refund
             C.incr("CHILD_EDGES_RECONCILED_FROM_EVIDENCE")
+        # NC-3 JOIN. A closing root discharged synchronously here would
+        # otherwise sit in CLOSING with nothing outstanding, waiting for a
+        # `_continue_after_child` that already happened.
+        self._settle_closure_if_complete(node)
 
     def _close_wave_from_parent(self, node: dict, kind: str, pid: str) -> None:
         """A commit or cancellation arrived from my adopted parent.
@@ -2743,6 +2769,10 @@ class Unit:
         node["consumed_credit"] += consumed
         if node["wave_cancelled"] or node["terminal_signal_sent"]:
             node["cancelled_credit"] += refund
+            # NC-3 JOIN. A closing root sets `wave_cancelled` at initiation, so
+            # this branch is the one its child completions take. Returning here
+            # without the join left it in CLOSING with nothing outstanding.
+            self._settle_closure_if_complete(node)
             self._acknowledge_to_parent(node)
             return None
         node["local_reserve"] += refund
@@ -2786,8 +2816,113 @@ class Unit:
         self._emit_terminal("SearchExhausted", key, node["adopted_parent_edge"],
                             node["adopted_parent_sender"], refund=back)
 
+    def _close_need_satisfied_elsewhere(self, node: dict) -> None:
+        """This root's obligation generation was retired. Close it causally.
+
+        WHY A ROOT REACHES HERE. `settle_search_offer` refuses any proposal
+        whose `open_needs[slot]` no longer names this root's `need_id`
+        (`wrong_need_generation`). Once that happens the root can never settle
+        anything again, whatever arrives on it. Before this existed
+        `_settle_pending_roots` reached such a root and executed a bare
+        `continue`: the root stayed OPEN, its descendants kept `eligible_offer`,
+        `local_candidate` and `proposals_outstanding` forever, and its parent's
+        committed credit stayed permanently in flight. Measured at
+        `_damaged(3, density=0.6)` seed 5: three abandoned roots holding 18.0
+        credit on a run that reached quiescence with an empty scheduler.
+
+        THIS IS INITIATION ONLY. The descendant machinery already exists:
+        `_close_wave_from_parent` applies the control exactly once, cascades to
+        its own children through its own `child_targets`, seals with reason
+        `need_closed`, reconciles and acknowledges upward. What was missing was
+        an emitter.
+
+        `_close_wave_from_parent` is deliberately NOT reused here. It sets
+        `CLOSED` immediately, and a root that closed before its descendants
+        answered would satisfy "closes only after descendant outcomes" by
+        accident. The root enters CLOSING and leaves it only when the join
+        completes -- which is `_settle_closure_if_complete`, driven by real
+        child evidence and never by a timer or by silence.
+
+        COMMITTED IS NOT OVERLOADED. This root accepted no proposal and must not
+        claim it did.
+        """
+        if node.get("closure_reason") or node["wave_cancelled"] \
+                or node["terminal_signal_sent"]:
+            C.incr("DUPLICATE_NEED_CLOSURE_APPLICATIONS")
+            return                          # idempotent: initiation happens once
+        key = node["search_key"]
+        # Bound to the exact obligation, not merely to the slot. A later
+        # generation mints a different `need_id` and therefore a different
+        # SearchKey, so this closure can never be mistaken for that one's.
+        node["closure_reason"] = "need_satisfied_elsewhere"
+        node["closure_need_id"] = key.need_id
+        node["closure_generation"] = key.work_item_generation
+        node["status"] = "CLOSING_NEED_SATISFIED_ELSEWHERE"
+        node["wave_cancelled"] = True
+        node["terminal_signal_sent"] = True
+        C.incr("ALTERNATE_SATISFIED_OPEN_ROOTS")
+        C.incr("NEED_CLOSURE_CASCADES_INITIATED")
+        # A DESCENDANT LEARNS THAT THE OBLIGATION IS GONE, not that its
+        # candidate lost. `_seal` records `need_closed` only when the inbound
+        # kind is `SearchNeedClosed`, so initiating with `SearchCancelled` would
+        # erase the one fact that separates the two.
+        for child in sorted(node["children_outstanding"]):
+            self._emit_terminal("SearchNeedClosed", key, child,
+                                node["child_targets"].get(child, ""),
+                                reason="need_satisfied_elsewhere")
+            C.incr("NEED_CLOSURE_CONTROLS_EMITTED")
+        # Only reserve this node never transferred may be written off here. A
+        # child's allocation stays outstanding until the child's own evidence
+        # returns it.
+        node["cancelled_credit"] += node["local_reserve"]
+        node["local_reserve"] = 0.0
+        self._seal(node, "", "need_closed")
+        self._reconcile_closed_children(node)
+        self._settle_closure_if_complete(node)
+
+    def _close_roots_for_retired_need(self, nid: str) -> None:
+        """Close every canonical root serving a need generation just retired.
+
+        LOCAL AND EXACT. Matches on `need_id`, which is `unit:slot:activation`
+        and therefore names one obligation generation at one unit. A later
+        generation has a different `need_id` and a different SearchKey, so this
+        can never reach forward into a successor root.
+
+        Called at the moment of retirement rather than on a later step, because
+        a later step may never come: the unit whose need this was may have no
+        further messages, and closure inferred from -- or delayed until -- an
+        empty scheduler is exactly what specification 23 forbids.
+        """
+        for key, node in list(self.canonical_searches.items()):
+            if key.origin_unit != self.unit_id or key.need_id != nid:
+                continue
+            if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
+                continue
+            self._close_need_satisfied_elsewhere(node)
+
+    def _settle_closure_if_complete(self, node: dict) -> None:
+        """The JOIN. CLOSING becomes CLOSED only on descendant evidence.
+
+        No timer, no retry, no completion inferred from silence. A child that
+        never answers leaves this root in CLOSING with its edge explicitly
+        unresolved, which is a visible unfinished obligation rather than a false
+        closure and a false refund.
+        """
+        if node["status"] != "CLOSING_NEED_SATISFIED_ELSEWHERE":
+            return
+        if node["children_outstanding"] or node["child_allocations_in_flight"] > 0:
+            return
+        node["status"] = "CLOSED"
+        C.incr("ROOTS_CLOSED_BY_ALTERNATE_SATISFACTION")
+        self._acknowledge_to_parent(node)
+
     def _continue_after_child(self, node: dict) -> None:
         """One child finished. Widen, wait, or report -- decided locally."""
+        if node["status"] == "CLOSING_NEED_SATISFIED_ELSEWHERE":
+            # A closing root does not widen and does not report exhaustion. The
+            # only question left is whether the join is complete.
+            self._settle_closure_if_complete(node)
+            return
         if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
             return
         if node["terminal_signal_sent"] or node["children_outstanding"]:
@@ -2951,6 +3086,7 @@ class Unit:
                                       node["child_targets"].get(edge_id, ""),
                                       self.unit_id, "", proposal_id))
         if node["wave_cancelled"] or node["terminal_signal_sent"]:
+            self._settle_closure_if_complete(node)      # NC-3 join, same reason
             self._acknowledge_to_parent(node)
             return
         self._continue_after_child(node)
@@ -3099,7 +3235,28 @@ class Unit:
             node = self.canonical_searches[key]
             if node["status"] not in ("OPEN", "PROPOSAL_PENDING"):
                 continue
+            # THE OBLIGATION GENERATION, NOT THE SLOT.
+            #
+            # This was `if key.origin_slot in self.bonds: continue` -- a silent
+            # skip that abandoned the root. Two things were wrong with it. It
+            # answered nothing: the root stayed open holding its descendants'
+            # liability forever. And it asked the wrong question: measured at
+            # `_damaged(3, density=0.6)`, one of the three abandoned roots had
+            # NO BOND AT ALL, and the two that were bonded were already caught
+            # by the generation test. The bond is provenance for WHY the
+            # generation retired; it is not the condition.
+            #
+            # `settle_search_offer` already refuses on exactly this predicate,
+            # so a root that fails it can never settle anything again and is
+            # owed a closure rather than a skip.
+            if self.open_needs.get(key.origin_slot) != key.need_id:
+                self._close_need_satisfied_elsewhere(node)
+                continue
             if key.origin_slot in self.bonds:
+                # Generation still live but the slot is occupied. Preserved as a
+                # distinct guard: `settle_search_offer` would refuse with
+                # `slot_already_bonded`, and closing here on a bond this root's
+                # own settlement may have created would close a root that won.
                 continue
             for pid in sorted(node["proposals_outstanding"]):
                 payload = node["proposal_payloads"].get(pid)
@@ -3163,6 +3320,7 @@ class Unit:
             # authority. The obligation stays open and is reported, not routed.
             self.open_needs.pop(slot, None)
             self._search.pop(nid, None)
+            self._close_roots_for_retired_need(nid)
 
     def _frontier(self, want: str) -> list[str]:
         known = self.routes.get(want, {})
@@ -3313,6 +3471,15 @@ class Unit:
         self._close_search(st)
         self.closed_needs.add(nid)            # late messages suppressed from here
         self.open_needs.pop(slot, None)
+        # NC-3. The LEGACY wave just retired this obligation generation. Any
+        # canonical root serving the same generation can no longer settle
+        # anything -- `settle_search_offer` would refuse it with
+        # `wrong_need_generation` -- so it is owed a closure here, at the moment
+        # of retirement, rather than on some later step that may never come.
+        # Measured: `reconcile.12:0:1` was retired on this path and its unit was
+        # never stepped again, so a closure driven only from
+        # `_settle_pending_roots` left it abandoned.
+        self._close_roots_for_retired_need(nid)
         C.incr("BOUNDED_DISTINCT_REPLACEMENT_EXHAUSTIONS")
         self.escalations.append(
             f"no eligible distinct supplier for slot {slot}: "

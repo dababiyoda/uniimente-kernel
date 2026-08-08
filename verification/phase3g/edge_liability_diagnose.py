@@ -229,18 +229,25 @@ def main() -> int:
     report["findings"] = findings
 
     failures = []
+    # POST-NC-3. This instrument was written to CHARACTERISE a defect and now
+    # GUARDS its absence. The original finding -- 13 of 39 edges stranded at
+    # sparse density -- is preserved in EDGE_LIABILITY_DIAGNOSIS_PRE_NC3.json and
+    # in the markdown, because a diagnosis regenerated over its own subject stops
+    # being evidence of anything. What is asserted here is the live invariant.
     if not report["negative_control"]["detected"]:
         failures.append("the audit did not notice a deliberately stranded edge, "
                         "so a zero stranding count proves nothing")
-    if not findings["the_lc2_fixture_contains_no_stranding"]:
-        failures.append("the dense fixture now strands edges; the recorded "
-                        "diagnosis no longer describes this runtime")
-    if not findings["stranding_is_real_at_sparse_density"]:
-        failures.append("the sparse fixture no longer strands any edge; the "
-                        "defect LC-2 is meant to close is not reproducible here")
+    stranded = {k: f["edges_stranded"] for k, f in report["fixtures"].items()
+                if f["edges_stranded"]}
+    if stranded:
+        failures.append(f"edges are stranded again after need closure: {stranded}")
+    if not findings["no_edge_is_terminal_without_child_evidence"]:
+        failures.append("an edge reached terminal_status without an accepted "
+                        "child outcome")
     if not findings["closed_child_edges_counter_is_dead"]:
         failures.append("CLOSED_CHILD_EDGES is no longer dead; the metric "
-                        "denominator finding is stale")
+                        "denominator finding is stale and LC-2's remaining "
+                        "specifications must be re-read against it")
     if not findings["every_stranded_edge_is_an_adopted_edge"]:
         failures.append("a stranded edge is not an adopted edge; LC-2b assumes "
                         "the liability is always the adopted one and the design "

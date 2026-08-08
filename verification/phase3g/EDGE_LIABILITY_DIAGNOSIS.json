@@ -1,7 +1,5 @@
 {
-  "failures": [
-    "the sparse fixture no longer strands any edge; the defect LC-2 is meant to close is not reproducible here"
-  ],
+  "failures": [],
   "findings": {
     "closed_child_edges_counter_is_dead": true,
     "counters_reading_zero_on_every_fixture": [
@@ -98,5 +96,5 @@
     "detected": true,
     "injected_stranded": 1
   },
-  "verdict": "STALE"
+  "verdict": "CORRECT"
 }

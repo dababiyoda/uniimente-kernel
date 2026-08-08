@@ -14,7 +14,7 @@
 
 work_packet:
   as_of: '2026-08-08'
-  round: "UNIIMENTE super-planning COMPLETE; P0/P1 implementation AUTHORIZED and landed"
+  round: "UNIIMENTE super-planning COMPLETE. Runtime implementation lives on claude/track-a-runtime-spine, NOT here."
   branch: claude/super-planning-prompt-h8l0oj
   base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
   canonical_prompt:
@@ -71,11 +71,11 @@ work_packet:
 
   verified_state:
     kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
-    suite_total: "536 passed (495 main + 23 planning + 18 runtime contract)"
+    suite_total: "518 passed (495 main + 23 planning) — runtime tests moved to Track A"
     planning_tests: 23
-    graph_nodes: 104
+    graph_nodes: 115
     graph_digest: see SESSION_EXECUTION_LEDGER.json
-    runtime_contract_sha256: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
+    runtime_contract_sha256: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c  # on Track A
     checksum_entries: 34
     planning_pr: 68
     planning_issue: 69
@@ -150,9 +150,17 @@ work_packet:
     - "FD-3 RESOLVED: freeze by default, classify completely, triage top 5-10 only"
     - "FD-4 RESOLVED: operator-recorded now; cryptographic before higher consequence"
 
+  lineage_split:
+    planning_branch: claude/super-planning-prompt-h8l0oj (PR #68) — decision genome, planning-only
+    runtime_branch: claude/track-a-runtime-spine — runtime spine, evaluator, closure experiment
+    drift_detected: >-
+      d8c9215 landed runtime code on the planning branch. Authorized work, wrong
+      lineage. Corrected by forward commit; no history rewritten. See
+      drift.pr68_planning_runtime_scope.
+
   p0_p1_status:
     P0_truth_reconstruction: COMPLETE — founder authorization and corrections recorded in graph
-    P1_runtime_contract: COMPLETE — runtime/contract.py frozen, self-sealed, 18 guard tests
+    P1_runtime_contract: COMPLETE — on Track A: runtime/contract.py frozen, self-sealed, 18 guard tests
     P2_evaluator_freeze: NOT_STARTED
     P3_runtime_spine: NOT_STARTED
     P4_candidate_builder_isolation: NOT_STARTED

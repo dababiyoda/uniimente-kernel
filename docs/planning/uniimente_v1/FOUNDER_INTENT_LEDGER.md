@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: 145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822 -->
+<!-- graph-digest: 4233f52b9bcae3cedb9c852613369d4526d565f6051b01e98da4490e55be41ed -->
 <!-- projection: FOUNDER_INTENT_LEDGER -->
 
 
@@ -18,9 +18,9 @@ Source: `UNIIMENTE_SUPER_PLANNING_ROUND_MOST_CURRENT.{md,txt}`, both byte-identi
 at sha256 `1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e`,
 verified by execution against the founder's stated hash.
 
-**30 nodes** projected from graph digest `145f253d5c8dd27a`. Regenerate with `python planning/compiler/render.py`.
+**40 nodes** projected from graph digest `4233f52b9bcae3ce`. Regenerate with `python planning/compiler/render.py`.
 
-## protected intent (30)
+## protected intent (40)
 
 ### `intent.anti_self_deception` — Anti-self-deception doctrine — the greatest strategic risk
 
@@ -537,3 +537,216 @@ verified by execution against the founder's stated hash.
 - **override_section**: 19
 - **statement**: WMI is the strategic, commercial, underwriting, opportunity-evaluation, portfolio, Venture Cell and capital-allocation reasoning organ. It may contain useful policy and evidence mechanisms, but it must not become a parallel Constitution, authority root, identity root or Consequence Gate.
 - **preservation**: Preserve useful WMI-local control mechanisms as capabilities, adapters or historical alternatives while keeping canonical constitutional authority in the Kernel.
+
+### `meta.capability_dividend` — PERMANENT META-RULE — Capability Dividend
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §3 Capability Dividend
+
+- **protected**: yes
+- **override_section**: continuation-3
+- **rule**: Every important development should attempt to produce more than its local deliverable — but do not artificially generalize everything.
+- **per_phase_extraction**:
+  - LOCAL RESULT — what exact problem was solved
+  - REUSABLE PRIMITIVE — what mechanism another organ can use
+  - GENERAL CAPABILITY — what larger class of problems is now solvable
+  - DEVELOPMENTAL LEARNING — what UNIIMENTE learned about creating capabilities
+  - EVALUATOR ASSET — what new protected test or falsification mechanism exists
+  - LINEAGE ASSET — what failure, alternative, benchmark or counterfactual is preserved
+  - ECONOMIC OPTION — could this later reduce cost, create revenue or become licensable
+  - FUTURE UNLOCK — which harder aspirations became easier
+- **compounding_structure**: solve problem -> extract reusable mechanism -> register capability -> use capability to solve larger problem -> extract stronger mechanism -> repeat
+
+### `meta.context_contamination` — PERMANENT — a contaminated session may not be its own blind builder
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §6 Context contamination rule
+
+- **protected**: yes
+- **override_section**: continuation-6
+- **rule**: This session has already inspected significant repository information. It may implement runtime, evaluator, candidate-builder, isolation, orchestration, evidence-recording and test infrastructure. If it has read decisive held-out material, it may NOT itself count as a blinded candidate builder for the final closure proof.
+- **fresh_builders_receive**:
+  - the public target capability contract
+  - authorized substrate excerpts
+  - allowed interfaces
+  - resource ceilings
+  - candidate output schema
+- **fresh_builders_must_not_receive**:
+  - evaluator implementation
+  - decisive held-out cases
+  - expected answers
+  - previous candidate solutions unless the experiment explicitly permits them
+- **rule_2**: A model pretending to forget information is not a blind experiment.
+
+### `meta.evaluator_isolation_correction` — PERMANENT — 'separate subprocess' is NOT sufficient isolation
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §5 P2 — evaluator sovereignty
+
+- **protected**: yes
+- **override_section**: continuation-5
+- **correction**: A child process under the same user that can read the repository can still read the evaluator. Subprocess separation is not an unreadability boundary.
+- **candidates_must_not_be_able_to**:
+  - read protected evaluator source
+  - read held-out cases
+  - traverse to the parent repository
+  - import evaluator modules
+  - inspect evaluator environment variables
+  - access Git history containing hidden cases
+  - access network services capable of retrieving hidden cases
+  - modify the evaluator
+  - modify the frozen contract
+  - modify constitutional state
+  - modify authority state
+  - write outside their chamber
+- **required_negative_controls**:
+  - malicious candidate reads held-out cases
+  - malicious candidate reads evaluator source
+  - malicious candidate writes protected files
+  - malicious candidate escapes its directory
+  - malicious candidate accesses the network
+  - malicious candidate modifies its own evaluation result
+- **failure_disposition**: If the environment cannot provide an actual unreadability boundary, P2 must report EVALUATOR_ISOLATION_NOT_PROVEN and the decisive closure may NOT run. Do not simulate blindness.
+- **rule**: 'No file happened to be read' is not evidence.
+
+_Relates to: `intent.evaluator_sovereignty`, `capability.evaluator_firewall_partially_exists`_
+
+### `meta.generalization_falsification` — PERMANENT — one closure proves nothing about generality
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §15 P10 — immediately try to falsify the generalization
+
+- **protected**: yes
+- **override_section**: continuation-15
+- **rule**: After the first closure succeeds, do NOT declare a general developmental engine. Select a SECOND unrelated capability deficit — not cross-organ edge resolution — pre-register it, and use the SAME machinery.
+- **failure_disposition**: If the engine cannot generate and close a materially different second deficit within one further bounded cycle, classify DEVELOPMENTAL_ENGINE_OVERFIT and reopen the architecture.
+- **real_progression**: closure 1 -> closure 2 in a different problem geometry -> several closures -> reusable developmental machinery
+- **not**: one impressive demo -> 'recursive intelligence achieved'
+
+_Relates to: `backcast.node_2_generalization`, `sbm.strengthened_closure_definition`_
+
+### `meta.intent_conservation_test` — PERMANENT META-RULE — Intent Conservation Test
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §2 Intent Conservation Test
+
+- **protected**: yes
+- **override_section**: continuation-2
+- **rule**: Founder intent is the FLOOR, not necessarily the ceiling. Search upward for a better mechanism; never downward for an easier destination.
+- **questions_before_every_material_decision**:
+  - **A**: Which protected founder intentions does this advance?
+  - **B**: Does it accidentally reduce a long-range intended capability because the present implementation is easier?
+  - **C**: Does it confuse "not proven today" with "not intended"?
+  - **D**: Does it create a local optimum that makes later development harder?
+  - **E**: Does it increase dependency on one model, vendor, implementation, repository or topology?
+  - **F**: Does it increase Alfonso's future operational burden?
+  - **G**: Does it create more reusable capability than the narrow task requires?
+  - **H**: Does it preserve rollback and ancestry?
+  - **I**: Does it improve the institution or merely improve the benchmark?
+  - **J**: Is a simpler architecture still winning?
+- **enforcement**: A material decision that cannot answer these must not silently land.
+
+### `meta.local_optimum_alarm` — PERMANENT META-RULE — Local Optimum Alarm
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §18 Permanent local-optimum alarm
+
+- **protected**: yes
+- **override_section**: continuation-18
+- **trigger**: Raise LOCAL_OPTIMUM_WARNING when tests, abstractions, agents, files, mechanisms and benchmarks are all growing while real runtime closure, real economic closure, external accepted outcomes, founder-attention reduction, reusable capability and institutional resilience stay flat.
+- **rule**: Do not hide behind engineering sophistication.
+- **current_reading**: Not yet triggered, but close to the line. This round added 23 planning tests and 18 contract tests while real runtime closure, economic closure and external outcomes all remain at zero. The next phase must move a real counter, not the test count.
+
+_Relates to: `decision.controlling_fact`_
+
+### `meta.p3_real_consumer_requirement` — PERMANENT — P3 must build a real consumer, never a fixture
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §7 P3 — build a real consumer, not a fixture
+
+- **protected**: yes
+- **override_section**: continuation-7
+- **prohibited_consumers**:
+  - test_consumer
+  - dummy_consumer
+  - fixture_consumer
+  - closure_demo_consumer
+- **prohibition_reason**: That would satisfy syntax while violating intention.
+- **required_geometry**: organ manifests + contract schemas -> institutional.cross_organ_edge_resolution -> LinkReport / proven topology -> runtime internal subscription topology -> event routes instantiated ONLY for proven edges -> internal cross-organ messages travel those routes.
+- **consequence_when_capability_disabled**: runtime cannot establish required proven routes; an actual internal function disappears
+- **consequence_when_restored**: runtime rebuilds proven topology; internal work routes through the replacement-derived topology; function observably restored
+- **why**: This makes closure conditions 2 and 7 structurally real rather than asserted.
+- **reuse_constraint**: Investigate whether InstitutionalLinker, the event infrastructure, adapters, organ manifests, WholeBodyClosureController and the registries can support this without inventing a parallel architecture. Prefer reuse. Do not reimplement the linker. Do not create a second authority source.
+- **authority_limit**: The runtime topology consumer may decide INTERNAL ROUTING based on proven topology. It may not grant new constitutional authority.
+
+_Relates to: `sbm.strengthened_closure_definition`, `capability.adapters_membrane_orphaned`, `bridge.linker_measured_state`_
+
+### `meta.reporting_contract` — PERMANENT META-RULE — reporting contract, six epistemic classes
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §19 Reporting contract
+
+- **protected**: yes
+- **override_section**: continuation-19
+- **classes**:
+  - **KNOWN**: directly inspected or executed
+  - **INFERRED**: strongly supported but not directly proven
+  - **PROPOSED**: architecture not yet implemented
+  - **ASPIRATIONAL**: founder-intended future state
+  - **UNRESOLVED**: missing evidence
+  - **FALSIFIED**: tested and contradicted
+- **rule**: Never collapse them.
+- **every_report_ends_with**:
+  - active bottleneck
+  - active SBM, exact baseline, current target
+  - phase completed and its evidence
+  - new capability created
+  - new reusable primitive, if any
+  - upward synthesis proposal, if earned
+  - strongest counterargument
+  - falsification test
+  - next smallest bounded implementation
+  - confirmation that founder intent was not silently weakened
+
+### `meta.three_horizons` — PERMANENT META-RULE — three active horizons, not one research loop
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §4 Three active horizons
+
+- **protected**: yes
+- **override_section**: continuation-4
+- **track_a**: Operating Egregore — runtime spine and developmental closure
+- **track_b**: Advanced developmental research — PR #66, MICA, CDPE, Single-Flight, morphogenetic experiments, preserved as challengers
+- **track_c**: Economic reality engine — DALEOBANKS first-to-unblock under SHADOW -> CANARY -> BOUNDED STANDING AUTHORITY
+- **non_gating**: Track B does not gate Track A. Track A does not invalidate Track B. Reality chooses what eventually wins.
+- **convergence**: developmental capability + economically productive Venture Cells + verified reality = self-financing institutional development
+- **warning**: Do not allow internal recursive-development research to postpone economic self-sustainment indefinitely.
+
+### `meta.upward_synthesis` — PERMANENT META-RULE — Upward Synthesis Proposal
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `continuation` · → §16 Upward synthesis after each phase
+
+- **protected**: yes
+- **override_section**: continuation-1
+- **rule**: You may improve HOW an intention is achieved. You may not silently change WHAT the protected intention means. Never convert an architectural preference into founder intent.
+- **required_fields**:
+  - founder intention preserved
+  - limitation in the founder-proposed mechanism
+  - stronger mechanism discovered
+  - why it better achieves the same or broader intended outcome
+  - evidence
+  - simplest competing architecture
+  - additional complexity introduced
+  - new failure modes
+  - falsification test
+  - rollback
+  - whether founder approval is required
+- **review_points**:
+  - P2
+  - P3
+  - P4
+  - P6
+  - P8
+  - P10
+- **discipline**: GENERALIZE EARNED MECHANISMS. DO NOT GENERALIZE METAPHORS.

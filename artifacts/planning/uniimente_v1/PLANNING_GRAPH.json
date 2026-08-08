@@ -2253,6 +2253,308 @@
     "title": "WMI is commercial cognition, never a second constitution"
   },
   {
+    "compounding_structure": "solve problem -> extract reusable mechanism -> register capability -> use capability to solve larger problem -> extract stronger mechanism -> repeat",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§3 Capability Dividend"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.capability_dividend",
+    "kind": "protected_intent",
+    "override_section": "continuation-3",
+    "per_phase_extraction": [
+      "LOCAL RESULT — what exact problem was solved",
+      "REUSABLE PRIMITIVE — what mechanism another organ can use",
+      "GENERAL CAPABILITY — what larger class of problems is now solvable",
+      "DEVELOPMENTAL LEARNING — what UNIIMENTE learned about creating capabilities",
+      "EVALUATOR ASSET — what new protected test or falsification mechanism exists",
+      "LINEAGE ASSET — what failure, alternative, benchmark or counterfactual is preserved",
+      "ECONOMIC OPTION — could this later reduce cost, create revenue or become licensable",
+      "FUTURE UNLOCK — which harder aspirations became easier"
+    ],
+    "protected": true,
+    "rule": "Every important development should attempt to produce more than its local deliverable — but do not artificially generalize everything.",
+    "title": "PERMANENT META-RULE — Capability Dividend"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§6 Context contamination rule"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "fresh_builders_must_not_receive": [
+      "evaluator implementation",
+      "decisive held-out cases",
+      "expected answers",
+      "previous candidate solutions unless the experiment explicitly permits them"
+    ],
+    "fresh_builders_receive": [
+      "the public target capability contract",
+      "authorized substrate excerpts",
+      "allowed interfaces",
+      "resource ceilings",
+      "candidate output schema"
+    ],
+    "id": "meta.context_contamination",
+    "kind": "protected_intent",
+    "override_section": "continuation-6",
+    "protected": true,
+    "rule": "This session has already inspected significant repository information. It may implement runtime, evaluator, candidate-builder, isolation, orchestration, evidence-recording and test infrastructure. If it has read decisive held-out material, it may NOT itself count as a blinded candidate builder for the final closure proof.",
+    "rule_2": "A model pretending to forget information is not a blind experiment.",
+    "title": "PERMANENT — a contaminated session may not be its own blind builder"
+  },
+  {
+    "candidates_must_not_be_able_to": [
+      "read protected evaluator source",
+      "read held-out cases",
+      "traverse to the parent repository",
+      "import evaluator modules",
+      "inspect evaluator environment variables",
+      "access Git history containing hidden cases",
+      "access network services capable of retrieving hidden cases",
+      "modify the evaluator",
+      "modify the frozen contract",
+      "modify constitutional state",
+      "modify authority state",
+      "write outside their chamber"
+    ],
+    "correction": "A child process under the same user that can read the repository can still read the evaluator. Subprocess separation is not an unreadability boundary.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§5 P2 — evaluator sovereignty"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "failure_disposition": "If the environment cannot provide an actual unreadability boundary, P2 must report EVALUATOR_ISOLATION_NOT_PROVEN and the decisive closure may NOT run. Do not simulate blindness.",
+    "id": "meta.evaluator_isolation_correction",
+    "kind": "protected_intent",
+    "override_section": "continuation-5",
+    "protected": true,
+    "refs": [
+      "intent.evaluator_sovereignty",
+      "capability.evaluator_firewall_partially_exists"
+    ],
+    "required_negative_controls": [
+      "malicious candidate reads held-out cases",
+      "malicious candidate reads evaluator source",
+      "malicious candidate writes protected files",
+      "malicious candidate escapes its directory",
+      "malicious candidate accesses the network",
+      "malicious candidate modifies its own evaluation result"
+    ],
+    "rule": "'No file happened to be read' is not evidence.",
+    "title": "PERMANENT — 'separate subprocess' is NOT sufficient isolation"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§15 P10 — immediately try to falsify the generalization"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "failure_disposition": "If the engine cannot generate and close a materially different second deficit within one further bounded cycle, classify DEVELOPMENTAL_ENGINE_OVERFIT and reopen the architecture.",
+    "id": "meta.generalization_falsification",
+    "kind": "protected_intent",
+    "not": "one impressive demo -> 'recursive intelligence achieved'",
+    "override_section": "continuation-15",
+    "protected": true,
+    "real_progression": "closure 1 -> closure 2 in a different problem geometry -> several closures -> reusable developmental machinery",
+    "refs": [
+      "backcast.node_2_generalization",
+      "sbm.strengthened_closure_definition"
+    ],
+    "rule": "After the first closure succeeds, do NOT declare a general developmental engine. Select a SECOND unrelated capability deficit — not cross-organ edge resolution — pre-register it, and use the SAME machinery.",
+    "title": "PERMANENT — one closure proves nothing about generality"
+  },
+  {
+    "enforcement": "A material decision that cannot answer these must not silently land.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§2 Intent Conservation Test"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.intent_conservation_test",
+    "kind": "protected_intent",
+    "override_section": "continuation-2",
+    "protected": true,
+    "questions_before_every_material_decision": {
+      "A": "Which protected founder intentions does this advance?",
+      "B": "Does it accidentally reduce a long-range intended capability because the present implementation is easier?",
+      "C": "Does it confuse \"not proven today\" with \"not intended\"?",
+      "D": "Does it create a local optimum that makes later development harder?",
+      "E": "Does it increase dependency on one model, vendor, implementation, repository or topology?",
+      "F": "Does it increase Alfonso's future operational burden?",
+      "G": "Does it create more reusable capability than the narrow task requires?",
+      "H": "Does it preserve rollback and ancestry?",
+      "I": "Does it improve the institution or merely improve the benchmark?",
+      "J": "Is a simpler architecture still winning?"
+    },
+    "rule": "Founder intent is the FLOOR, not necessarily the ceiling. Search upward for a better mechanism; never downward for an easier destination.",
+    "title": "PERMANENT META-RULE — Intent Conservation Test"
+  },
+  {
+    "current_reading": "Not yet triggered, but close to the line. This round added 23 planning tests and 18 contract tests while real runtime closure, economic closure and external outcomes all remain at zero. The next phase must move a real counter, not the test count.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§18 Permanent local-optimum alarm"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.local_optimum_alarm",
+    "kind": "protected_intent",
+    "override_section": "continuation-18",
+    "protected": true,
+    "refs": [
+      "decision.controlling_fact"
+    ],
+    "rule": "Do not hide behind engineering sophistication.",
+    "title": "PERMANENT META-RULE — Local Optimum Alarm",
+    "trigger": "Raise LOCAL_OPTIMUM_WARNING when tests, abstractions, agents, files, mechanisms and benchmarks are all growing while real runtime closure, real economic closure, external accepted outcomes, founder-attention reduction, reusable capability and institutional resilience stay flat."
+  },
+  {
+    "authority_limit": "The runtime topology consumer may decide INTERNAL ROUTING based on proven topology. It may not grant new constitutional authority.",
+    "consequence_when_capability_disabled": "runtime cannot establish required proven routes; an actual internal function disappears",
+    "consequence_when_restored": "runtime rebuilds proven topology; internal work routes through the replacement-derived topology; function observably restored",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§7 P3 — build a real consumer, not a fixture"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.p3_real_consumer_requirement",
+    "kind": "protected_intent",
+    "override_section": "continuation-7",
+    "prohibited_consumers": [
+      "test_consumer",
+      "dummy_consumer",
+      "fixture_consumer",
+      "closure_demo_consumer"
+    ],
+    "prohibition_reason": "That would satisfy syntax while violating intention.",
+    "protected": true,
+    "refs": [
+      "sbm.strengthened_closure_definition",
+      "capability.adapters_membrane_orphaned",
+      "bridge.linker_measured_state"
+    ],
+    "required_geometry": "organ manifests + contract schemas -> institutional.cross_organ_edge_resolution -> LinkReport / proven topology -> runtime internal subscription topology -> event routes instantiated ONLY for proven edges -> internal cross-organ messages travel those routes.",
+    "reuse_constraint": "Investigate whether InstitutionalLinker, the event infrastructure, adapters, organ manifests, WholeBodyClosureController and the registries can support this without inventing a parallel architecture. Prefer reuse. Do not reimplement the linker. Do not create a second authority source.",
+    "title": "PERMANENT — P3 must build a real consumer, never a fixture",
+    "why": "This makes closure conditions 2 and 7 structurally real rather than asserted."
+  },
+  {
+    "classes": {
+      "ASPIRATIONAL": "founder-intended future state",
+      "FALSIFIED": "tested and contradicted",
+      "INFERRED": "strongly supported but not directly proven",
+      "KNOWN": "directly inspected or executed",
+      "PROPOSED": "architecture not yet implemented",
+      "UNRESOLVED": "missing evidence"
+    },
+    "every_report_ends_with": [
+      "active bottleneck",
+      "active SBM, exact baseline, current target",
+      "phase completed and its evidence",
+      "new capability created",
+      "new reusable primitive, if any",
+      "upward synthesis proposal, if earned",
+      "strongest counterargument",
+      "falsification test",
+      "next smallest bounded implementation",
+      "confirmation that founder intent was not silently weakened"
+    ],
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§19 Reporting contract"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.reporting_contract",
+    "kind": "protected_intent",
+    "override_section": "continuation-19",
+    "protected": true,
+    "rule": "Never collapse them.",
+    "title": "PERMANENT META-RULE — reporting contract, six epistemic classes"
+  },
+  {
+    "convergence": "developmental capability + economically productive Venture Cells + verified reality = self-financing institutional development",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§4 Three active horizons"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.three_horizons",
+    "kind": "protected_intent",
+    "non_gating": "Track B does not gate Track A. Track A does not invalidate Track B. Reality chooses what eventually wins.",
+    "override_section": "continuation-4",
+    "protected": true,
+    "title": "PERMANENT META-RULE — three active horizons, not one research loop",
+    "track_a": "Operating Egregore — runtime spine and developmental closure",
+    "track_b": "Advanced developmental research — PR #66, MICA, CDPE, Single-Flight, morphogenetic experiments, preserved as challengers",
+    "track_c": "Economic reality engine — DALEOBANKS first-to-unblock under SHADOW -> CANARY -> BOUNDED STANDING AUTHORITY",
+    "warning": "Do not allow internal recursive-development research to postpone economic self-sustainment indefinitely."
+  },
+  {
+    "discipline": "GENERALIZE EARNED MECHANISMS. DO NOT GENERALIZE METAPHORS.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "continuation-order-2026-08-08",
+        "symbol": "§16 Upward synthesis after each phase"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "meta.upward_synthesis",
+    "kind": "protected_intent",
+    "override_section": "continuation-1",
+    "protected": true,
+    "required_fields": [
+      "founder intention preserved",
+      "limitation in the founder-proposed mechanism",
+      "stronger mechanism discovered",
+      "why it better achieves the same or broader intended outcome",
+      "evidence",
+      "simplest competing architecture",
+      "additional complexity introduced",
+      "new failure modes",
+      "falsification test",
+      "rollback",
+      "whether founder approval is required"
+    ],
+    "review_points": [
+      "P2",
+      "P3",
+      "P4",
+      "P6",
+      "P8",
+      "P10"
+    ],
+    "rule": "You may improve HOW an intention is achieved. You may not silently change WHAT the protected intention means. Never convert an architectural preference into founder intent.",
+    "title": "PERMANENT META-RULE — Upward Synthesis Proposal"
+  },
+  {
     "base_sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
     "branch": "agent/canonical-media-brand-architecture",
     "draft": true,
@@ -2571,6 +2873,42 @@
     "kind": "repository_unavailable",
     "reason": "Repository discovery denied; not in session scope; never inspected.",
     "title": "TGH-CONTROL-RAIL — named in the prompt, not reachable this session"
+  },
+  {
+    "correction_applied": [
+      "created claude/track-a-runtime-spine from main @ 8cb3074, a clean base",
+      "transferred runtime/contract.py byte-identically (sha256 e052a3c8...), CONTRACT_SHA256 unchanged",
+      "PR #68 corrected by an ordinary forward commit removing the runtime files",
+      "no Git history rewritten; d8c9215 remains in PR #68's record as evidence",
+      "runtime/PROVENANCE.md on Track A carries the full lineage and the reason"
+    ],
+    "detected_by": "founder",
+    "evidence_refs": [
+      {
+        "command": "git diff --name-only main...HEAD | grep -E '^(runtime/|tests/)'",
+        "note": "runtime/__init__.py runtime/contract.py tests/unit/test_runtime_contract_frozen.py",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "d8c921552660675485f347637f8be08d6880f7cc"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "drift.pr68_planning_runtime_scope",
+    "kind": "self_detected_drift",
+    "lesson_for_the_institution": "An authorization to build is not an authorization to build anywhere. Scope is a property of the branch, not only of the work. Future authorizations should name the lineage as well as the phase.",
+    "refs": [
+      "authorization.p0_p1",
+      "intent.anti_self_deception",
+      "intent.supersession_matrix"
+    ],
+    "resulting_topology": "PR #68 is the canonical super-planning decision genome. The Track-A PR is the bounded runtime implementation it authorizes. One canonical decision record -> separate bounded implementation -> evidence -> promotion only after proof.",
+    "title": "PR #68 crossed its planning-only boundary — detected, separated, preserved",
+    "what_happened": "PR #68 declared planning-only scope: no runtime change, and deleting the planning trees would leave the kernel byte-identical to main. Commit d8c921552660675485f347637f8be08d6880f7cc landed runtime/contract.py, an __init__ and a guard-test module on that branch under the founder's P0/P1 authorization. The work was authorized. Its location was not. The PR body continued to claim planning-only while the head carried runtime code.",
+    "what_was_deliberately_not_done": [
+      "rebase or force-push",
+      "deleting the drifting commit",
+      "amending the PR body to pretend the boundary was always respected"
+    ],
+    "why_it_matters": "This is precisely the class of drift UNIIMENTE exists to catch in itself: a stated boundary and an actual diff diverging, with the human-readable description remaining plausible. Nothing about the work was wrong; the record stopped being true."
   },
   {
     "evidence_refs": [],

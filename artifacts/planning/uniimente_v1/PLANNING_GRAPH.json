@@ -1,0 +1,1288 @@
+[
+  {
+    "evidence_refs": [
+      {
+        "command": "git rev-parse --abbrev-ref HEAD; git ls-remote --heads origin",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "round.branch_deviation",
+    "kind": "assumption",
+    "rationale": "The session harness mandates this branch and forbids pushing elsewhere without explicit permission. §28 of the canonical prompt permits \"a more appropriate existing planning branch\"; this branch already exists locally and on origin at 8cb3074 and was created for this round. Conservative assumption, labelled per §0.",
+    "reversible": true,
+    "suggested": "planning/uniimente-whole-system-reconciliation-v1",
+    "title": "Planning branch: harness-designated name used instead of the suggested one",
+    "used": "claude/super-planning-prompt-h8l0oj"
+  },
+  {
+    "evidence_refs": [
+      {
+        "note": "founder direction recorded in session, 2026-08-08",
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e"
+      }
+    ],
+    "evidence_status": "asserted",
+    "id": "round.pr66_zero_writes",
+    "kind": "assumption",
+    "rationale": "§34 of the canonical prompt permits one optional evidence-grounded correction comment. The founder directed zero writes and an inert founder-ready patch instead. The narrower instruction governs. PR66_PROPOSED_SYNC holds the exact replacement body and comment; applying either is a later explicit founder action.",
+    "refs": [
+      "pr.kernel.66",
+      "discrepancy.pr66_body_stale"
+    ],
+    "title": "PR #66 receives zero writes; the corrective comment is generated inert"
+  },
+  {
+    "actual_head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+    "actual_status": "pre-arrival control is IMPLEMENTED AND ADVERSARIALLY VERIFIED (PA-1..PA-5); the bottleneck moved twice since",
+    "actual_suite": "924 passed · 1 skipped · 24 xfailed · 0 failed",
+    "claimed_bottleneck": "pre-arrival controls reaching a receiver before the search edge is adopted",
+    "claimed_head": "0ccda5c8030b0e1ea010a838694cdf514cd0babb",
+    "claimed_suite": "886 passed · 1 skipped · 11 xfailed · 0 failed",
+    "comments": 7,
+    "evidence_refs": [
+      {
+        "command": "issue_read(get, 67)",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "discrepancy.issue67_stale",
+    "kind": "discrepancy",
+    "note": "The issue body is the durable resumption marker, so its staleness is more consequential than the PR body's: a session reloading from it would resume at a bottleneck that was closed weeks ago.",
+    "resolution": "RECORDED_ONLY",
+    "title": "Issue #67 records a hold point three findings out of date"
+  },
+  {
+    "consequence": "The same prompt says \"Test this diagnosis rather than assuming it.\" On this evidence the diagnosis does not hold as written. The real question is almost never \"does it exist\" but which of existing-and-connected / existing-but-disconnected / genuinely-absent applies. SP-3 resolves this per component; nothing may be proposed for construction before that classification.",
+    "evidence_refs": [
+      {
+        "command": "ls closure/ foundry/ omnimorph/ egregore/ evolution/ developmental/ linker/ compiler/ adapters/",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "discrepancy.missing_machinery_premise",
+    "kind": "discrepancy",
+    "measured": "main at 8cb3074 already contains closure/ (whole_body.py plus five registries), foundry/ (12 modules incl. advantage.py, composition.py, tribunal.py), omnimorph/engine.py, egregore/ (closure, contracts, drift, gate_adapter, resources, runtime), evolution/ (30 modules incl. strategy_tree.py, spider_web.py and the repair/ laboratory), developmental/ (MICA/CDPE), linker/, compiler/, adapters/, contracts/ (12 schemas), organs/ (3 manifests).",
+    "prompt_claim": "§10 of the earlier canonical prompt lists INSTITUTIONAL ANATOMY GRAPH, UNIVERSAL COMPATIBILITY MEMBRANE, CAPABILITY EXTRACTION AND REGISTRY, MECHANISM ATLAS, DEVELOPMENTAL COMPILER, CANDIDATE BUILDERS, PROTECTED EVALUATOR FIREWALL, SANDBOX/INCUBATOR, LINEAGE AND CAPABILITY ROUTER, WHOLE-BODY CLOSURE CONTROLLER and PROOF-TO-SETTLEMENT REALITY PATH as expected missing machinery.",
+    "refs": [
+      "repo.uniimente-kernel",
+      "intent.malleability"
+    ],
+    "title": "Most \"expected missing machinery\" already exists on main"
+  },
+  {
+    "actual": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+    "also_stale": "The body's \"next active bottleneck\" section names \"truthful and exclusive authority over root-generation retirement\". Commit a6f14d3 (RA-2) supersedes that framing — the coupling is broader than retirement authority. The body's stated bottleneck is therefore superseded by its own branch tip.",
+    "claimed": "Head 15623a9",
+    "commits_behind_body": 1,
+    "evidence_refs": [
+      {
+        "command": "pull_request_read(get) vs git rev-parse origin/claude/uniimente-repo-audit-jpytcy",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "discrepancy.pr66_body_stale",
+    "kind": "discrepancy",
+    "refs": [
+      "pr.kernel.66",
+      "pr.kernel.66.latest_finding"
+    ],
+    "resolution": "RECORDED_ONLY — zero writes to PR #66 this round",
+    "title": "PR #66 body describes head 15623a9; actual head is a6f14d3"
+  },
+  {
+    "evidence_refs": [
+      {
+        "command": "list_pull_requests(state=open) across all five repositories",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "discrepancy.stacked_pr_backlog",
+    "kind": "discrepancy",
+    "note": "This is not a tidiness observation. It is the mechanical reason capability lands slowly: the institution's throughput is gated by chain order and stale bases, not by whether the work is good. It belongs in the strategic tree as a real constraint.",
+    "stale_base_problem": "Kernel PRs 44, 45, 46 and 35 are based on 3d9b5779 — the ARCHIVED main (archive/main-2026-07-19), not the current 8cb3074. PR 21 is based on 8a0b65cd, older still. PR 51 targets release/canonical-v1. These cannot merge cleanly without rebasing, and their diffs no longer describe the current tree.",
+    "structural_problem": "A large fraction target another feature branch rather than the default branch, forming chains that can only land in order. Kernel PRs 15->16->17->18->19->20->22 ->23->24->25->26 form one such chain; WMI 15->16->18->22 and 17->19->20->21->23 ->24 form two more; PumpStation 7->13->14->15 forms a fourth.",
+    "title": "69 open PRs across five repos, many stacked on non-default bases",
+    "totals": {
+      "DALEOBANKS": 9,
+      "PumpStation": 10,
+      "RESEARCH-IN": 11,
+      "WealthMachineIntelligence": 13,
+      "total": 69,
+      "uniimente-kernel": 26
+    }
+  },
+  {
+    "evidence_refs": [
+      {
+        "command": "python -m pytest -q -p no:randomly  ->  495 passed in 6.22s",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "id": "discrepancy.suite_495_vs_924",
+    "kind": "discrepancy",
+    "main_suite": "495 passed in 6.22s",
+    "note": "The canonical prompt §8.1 presents 924/1/24 immediately under the kernel-main heading, which reads as if it were main's figure. Measured directly: main at 8cb3074 runs 495 passed. The 429-test difference is the PR #66 branch's own verification corpus, which lives only on that branch (verification/ does not exist on main at all). Both numbers are real. Collapsing them would overstate main's tested surface by ~87%.",
+    "pr66_suite": "924 passed · 1 skipped · 24 xfailed",
+    "refs": [
+      "repo.uniimente-kernel",
+      "pr.kernel.66"
+    ],
+    "title": "495 (main) and 924 (PR #66) are different branches, not a contradiction"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+        "symbol": "PR #66 body, section 'Dissent — unchanged'"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "pr.kernel.66.dissent",
+    "kind": "finding",
+    "refs": [
+      "pr.kernel.66",
+      "intent.track_a_track_b",
+      "intent.anti_self_deception"
+    ],
+    "significance": "This is the single most consequential sentence in the workstream for the Track A / Track B decision. The morphogenetic substrate has NOT beaten the conventional baseline, and the branch's own author says so. Override §9 requires exactly this: Track B may replace Track A components only after proving better results and paying complexity rent. On present evidence it has not.",
+    "statement": "PR #66's own body records, unchanged across the workstream: \"The conventional durable workflow engine still wins on the evidence available. Supervisor, static dependency graph, explicit state, targeted retries, amplification near one. None of this work is evidence about that comparison — it establishes correctness prerequisites and measurement integrity. R8 decides it.\"",
+    "title": "Preserved dissent: the conventional durable workflow engine still wins"
+  },
+  {
+    "corrected_framing": "The defect is NOT \"a disabled subsystem retains an authority it should not have\". It is that the canonical repair path is not independent of the legacy repair path: they share state, and the legacy ledger is a live participant in canonical repair rather than a residue of a completed migration.",
+    "eliminated_designs": [
+      "A",
+      "E",
+      "H"
+    ],
+    "evidence_refs": [
+      {
+        "path": "verification/phase3g/REPAIR_AUTHORITY_DESIGN_A_FALSIFIED.md",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "pr.kernel.66.latest_finding",
+    "interpretation": "Zero strict XPASS means all twenty-one are real regressions, not earned activations. Removing the legacy ledger is not an authority removal; it is a behavioural change to repair, credit accounting, bounded-exhaustion escalation and the second-repair projection.",
+    "kind": "finding",
+    "leading_hypothesis": "B + D — separate the ledger's bookkeeping from its authority and centralise retirement. NOT ADOPTED.",
+    "measurement": "924 passed / 0 failed  ->  904 passed / 21 failed, XPASS(strict) = 0",
+    "refs": [
+      "pr.kernel.66",
+      "intent.anti_self_deception"
+    ],
+    "runtime_changed": false,
+    "source_commit": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+    "surviving_designs": [
+      "B",
+      "C",
+      "D",
+      "F"
+    ],
+    "title": "RA-2 — the legacy `_search` ledger is load-bearing for canonical repair",
+    "uncommitted_work": "The DUAL_REPAIR_SEARCHES detector reordering is correct and independent of Design A's failure, but was not committed because it arrived inside a falsified candidate. It still requires its own negative control."
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§26 Anti-self-deception doctrine"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.anti_self_deception",
+    "kind": "protected_intent",
+    "override_section": "26",
+    "protected": true,
+    "risk": "Recursive self-deception: generating elegant explanations, internal scores, simulations and plans that look like progress while reality does not change.",
+    "rules": [
+      "external evidence outranks model agreement",
+      "real customer acceptance outranks synthetic fixtures",
+      "reconciled economics outrank projected revenue",
+      "evaluator negative controls are mandatory",
+      "a skipped or silent instrument never counts as pass",
+      "every success claim names its evidence tier",
+      "missing proof remains UNKNOWN, not PASS",
+      "simpler conventional mechanisms remain benchmark opponents",
+      "complexity must pay rent"
+    ],
+    "title": "Anti-self-deception doctrine — the greatest strategic risk"
+  },
+  {
+    "classification_vocabulary": [
+      "BUILDABLE_NOW",
+      "EXPERIMENTALLY_PLAUSIBLE",
+      "RESEARCH_FRONTIER",
+      "DEPENDENT_ON_FUTURE_TECHNOLOGY",
+      "CURRENTLY_UNSUPPORTED",
+      "PROHIBITED_ROUTE_BUT_ASPIRATION_PRESERVED"
+    ],
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§2 Founder aspirations are real destinations"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "hard_rule": "Never convert \"not implemented today\" into \"not actually intended\".",
+    "id": "intent.aspirations.are_destinations",
+    "kind": "protected_intent",
+    "override_section": "2",
+    "protected": true,
+    "statement": "Every serious founder aspiration remains part of the intended horizon unless Alfonso explicitly supersedes it, evidence proves the exact formulation incoherent, or the only available route is unlawful or unacceptably harmful.",
+    "title": "Founder aspirations are real destinations, not decoration"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§7 Build-Your-Own-X doctrine"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.byox.mechanism_atlas",
+    "kind": "protected_intent",
+    "override_section": "7",
+    "pipeline": "inspect -> extract primitive causal machinery -> remove original product assumptions -> mutate role, authority, incentives or consequence -> recombine with other mutated mechanisms -> require emergent UNIIMENTE-native capability",
+    "protected": true,
+    "statement": "The objective is to create the mechanisms that let UNIIMENTE build, test, organize, replace and govern whatever machinery its goals require — not to build another Git, database, compiler, OS, container engine, blockchain, search engine, game engine or AI model.",
+    "title": "Build-Your-Own-X is a mechanism anatomy atlas, never a cloning roadmap"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§11 Maintain a closure ladder"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.closure_ladder",
+    "kind": "protected_intent",
+    "override_section": "11",
+    "protected": true,
+    "tiers": {
+      "computational": "generated or recombined software restores a disabled function under protected evaluation",
+      "economic": "the workflow reaches an externally accepted, paid, reconciled outcome",
+      "institutional": "the capability participates successfully in a complete cross-organ workflow",
+      "physical": "a governed capability produces a verified outcome through a physical embodiment",
+      "scientific": "a research program produces independently checked, reproducible new knowledge"
+    },
+    "title": "Five-tier closure ladder — never let one tier masquerade as a higher one"
+  },
+  {
+    "behavioral_rule": "Ruthless toward the problem. Humane toward the person.",
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§18 DALEOBANKS canonical role"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.daleobanks_role",
+    "kind": "protected_intent",
+    "override_section": "18",
+    "permitted": [
+      "truthful framing",
+      "debate",
+      "education",
+      "culture",
+      "real social proof",
+      "community identity",
+      "multilingual localization",
+      "collaboration",
+      "challenges",
+      "products",
+      "voluntary incentives"
+    ],
+    "prohibited": [
+      "disinformation",
+      "impersonation",
+      "astroturfing",
+      "coercion",
+      "hidden sponsorship",
+      "vulnerability exploitation",
+      "fake testimonials",
+      "spam",
+      "coordinated inauthentic behavior"
+    ],
+    "protected": true,
+    "roles": [
+      "global multilingual lifestyle brand",
+      "media company and publishing network",
+      "major and potentially primary early cash engine for UNIIMENTE",
+      "sensing and intelligence organ",
+      "owned-distribution system",
+      "community and belonging network",
+      "education and cultural organ",
+      "commerce and product platform",
+      "opportunity router",
+      "collaboration network",
+      "civilization-seeding engine",
+      "public Infinite Goal Chase accelerator"
+    ],
+    "sequencing_consequence": "Its early economic importance must be reflected in the construction sequence. A strong system that cannot finance itself remains fragile.",
+    "title": "DALEOBANKS is a lifestyle brand, media network and early cash engine"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§25 Developmental revision period"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.developmental_revision_period",
+    "kind": "protected_intent",
+    "override_section": "25",
+    "protected": true,
+    "statement": "No agent may infer public deployment readiness merely from passing tests, green CI, merged code, simulations, benchmarks or architectural completeness. Preserve an approximately six-month founder-guided developmental revision period before public deployment or broad autonomous operation, unless Alfonso explicitly supersedes this requirement.",
+    "title": "Approximately six months of founder-guided revision before public deployment"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§23 Economic and research flywheel"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.economic_research_flywheel",
+    "kind": "protected_intent",
+    "override_section": "23",
+    "protected": true,
+    "sequence": "DALEOBANKS and Venture Cells create lawful value and cash flow -> reserves and obligations are satisfied -> founder-authorized surplus funds compute, tools, people and experiments -> better capability creates stronger ventures -> stronger ventures create more surplus -> surplus funds serious research and laboratories -> research creates knowledge and technology -> technology creates stronger infrastructure and ventures -> repeat",
+    "title": "The economic and research flywheel"
+  },
+  {
+    "aspirations": [
+      "self-financed research programs",
+      "human scientists and AI researchers collaborating",
+      "automated or semi-automated laboratories",
+      "private compute clusters and future supercomputers",
+      "cloud and edge compute bodies",
+      "IoT sensing and actuation",
+      "robotics",
+      "manufacturing facilities",
+      "campuses",
+      "mobile laboratories",
+      "vehicles and vessels",
+      "DALEOBANKS lifestyle and research cruises or other mobile campuses",
+      "geographically distributed nodes across countries and continents",
+      "future space infrastructure"
+    ],
+    "discipline": "Do not optimize for prestige artifacts before the capability-acquisition and economic flywheels work. Prefer usefulness and voluntary partnership.",
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§16 Long-range scientific and physical embodiments"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.embodiments_long_range",
+    "kind": "protected_intent",
+    "override_section": "16",
+    "protected": true,
+    "title": "Scientific and physical embodiments are downstream descendants"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§12 Evaluator sovereignty"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.evaluator_sovereignty",
+    "kind": "protected_intent",
+    "must_define": [
+      "evaluator ownership",
+      "protected files and hashes",
+      "candidate writable paths",
+      "builder and evaluator information separation",
+      "negative controls proving the evaluator can fail",
+      "reproducibility",
+      "complexity rent",
+      "rollback",
+      "detection of evaluator mutation",
+      "truth labels when blind held-out isolation is not established"
+    ],
+    "override_section": "12",
+    "protected": true,
+    "statement": "Candidate generation is not the scarce primitive. Reliable judgment is. A system that generates impressive candidates but controls its own test is not improving.",
+    "title": "Evaluator sovereignty is the deeper control layer"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§29 Required final decision geometry"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.final_decision_geometry",
+    "kind": "protected_intent",
+    "override_section": "29",
+    "plain_english_question": "What do we already have, what is connected, what is disconnected, what is genuinely missing, what should be canonical, what remains research, what gets built first, what proves it worked, and how does that move UNIIMENTE toward the full intended egregore?",
+    "protected": true,
+    "required_outputs": [
+      "one canonical whole-system model",
+      "one founder-intent and aspiration ledger",
+      "one current institutional anatomy and ownership map",
+      "one existing-connected / existing-disconnected / absent capability classification",
+      "one Track A / Track B relationship",
+      "one PR #66 disposition",
+      "one active bottleneck",
+      "one Active Single Bottleneck Metric with baseline and target",
+      "one first decisive 0 to 1 proof",
+      "one dependency-aware PR stack",
+      "one exact next implementation command",
+      "one 30, 90, 365 day and 2026 to 2036 path",
+      "one explicit mapping from today's next action to the extreme long-range aspiration",
+      "one strongest counterexample and falsification condition",
+      "one list of material aspirations preserved but intentionally not activated now"
+    ],
+    "title": "Required final decision geometry — fifteen outputs"
+  },
+  {
+    "candidate_target": "institutional.cross_organ_edge_resolution",
+    "caveat": "A strong candidate because much of its repair laboratory already exists, but the round must verify whether whole-system connection work is a prerequisite before locking it as the active target.",
+    "closure_definition": [
+      "detects a genuine missing or damaged function",
+      "identifies the phenotype contract and constraints",
+      "searches preserved and external mechanisms",
+      "generates materially different candidates",
+      "builds them in isolated chambers",
+      "evaluates them using something candidates cannot alter",
+      "retains a qualifying champion and any useful specialists or fallbacks",
+      "attaches the capability only within the permitted consequence class",
+      "verifies restoration independently",
+      "preserves full lineage and rollback"
+    ],
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§10 The first developmental proof"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.first_developmental_proof",
+    "kind": "protected_intent",
+    "override_section": "10",
+    "protected": true,
+    "title": "VERIFIED_DEVELOPMENTAL_CLOSURES: 0 -> 1"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§13 Golden Kernel and Founder Cockpit"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.golden_kernel_cockpit",
+    "kind": "protected_intent",
+    "mature_model": "Alfonso approves mission, policy, budget and operating territory -> Kernel converts them into standing authority -> routine compliant operations execute -> exceptions and reserved decisions escalate. Maximum operational independence inside bounded purpose, not per-action babysitting.",
+    "override_section": "13",
+    "protected": true,
+    "statement": "The real Alfonso remains outside the software as owner, CEO and constitutional human authority. The internal founder representation, intent ledger, doctrine model and any future Founder Twin are not Alfonso and cannot impersonate him or exercise reserved powers.",
+    "title": "Golden Kernel stays boring; the Founder Cockpit commands missions"
+  },
+  {
+    "binding_scope": "whole_program",
+    "constitutional_constraints": [
+      "non-conscious",
+      "non-sovereign",
+      "not a legal person",
+      "not an independent representative",
+      "binds nothing unless a valid human or legal principal authorizes the act",
+      "cannot create its own ultimate purpose or expand its own authority"
+    ],
+    "evidence_refs": [
+      {
+        "path": "UNIIMENTE_SUPER_PLANNING_ROUND_MOST_CURRENT.md",
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§1 Fixed project identity"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.identity.fixed",
+    "kind": "protected_intent",
+    "override_section": "1",
+    "prohibits_renaming_to": [
+      "generic agent platform",
+      "workflow engine",
+      "AI operating system",
+      "governance middleware",
+      "digital twin"
+    ],
+    "protected": true,
+    "statement": "The official project identity is fixed. \"Artificial Egregore\" is an identity and aspiration class, not a claim of consciousness, biological life, legal personhood, metaphysical reality, independent sovereignty, or authority separate from Alfonso Lopez.",
+    "title": "UNIIMENTE: Artificial Egregore — Unified Internal Innovation Mind / Engine"
+  },
+  {
+    "discipline": "Maintain one primary portfolio bottleneck; preserve the rest in the aspiration registry with status, dependencies, blockers, evidence and reactivation conditions.",
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§14 Infinite Goal Chase"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.infinite_goal_chase",
+    "is_not": [
+      "blind persistence",
+      "self-preservation",
+      "unlimited spending",
+      "pursuing all goals simultaneously"
+    ],
+    "kind": "protected_intent",
+    "method": "G: observable success state / P: minimum stage-gated path / S: repeatable Tiny Yes system",
+    "mission": "Continuously reduce the distance between Alfonso's active lawful aspirations and verified reality, use each achieved capability as substrate for harder aspirations, spread useful capability outward, and repeat.",
+    "override_section": "14",
+    "protected": true,
+    "title": "Infinite Goal Chase"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§6 Malleability rule"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.malleability",
+    "kind": "protected_intent",
+    "override_section": "6",
+    "protected": true,
+    "protected_substrate": [
+      "founder intention",
+      "project identity",
+      "human constitutional authority",
+      "evidence integrity",
+      "zero unauthorized external effects",
+      "persistent institutional continuity",
+      "participant rights and welfare",
+      "regenerative business doctrine"
+    ],
+    "statement": "Everything beneath the protected substrate may be challenged, mutated, recombined, replaced, specialized or retired from active use when a stronger architecture earns the role. Do not protect MICA, CDPE, Single-Flight, Foundry, OMNIMORPH, a workflow engine, blockchain, an agent framework, or any model provider merely because it already exists.",
+    "title": "Everything below the protected substrate is malleable"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§3 Translate metaphors into behavior"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.metaphor.functional_translation",
+    "kind": "protected_intent",
+    "override_section": "3",
+    "protected": true,
+    "statement": "Founder language must be interpreted functionally. Every metaphor admitted to architecture must map to observable state, interfaces, mechanisms, tests, failure conditions, and evidence.",
+    "title": "Metaphors translate to behavior — never discarded, never literalized",
+    "translations": {
+      "egregore": "persistent, coordinated, founder-governed institutional behavior",
+      "grow_an_organ": "construct or compose a bounded capability that did not previously exist",
+      "mechanistically_alive": "continuous sensing, memory, regulation, adaptation, capability construction, replacement, repair, learning and identity continuity in a nonbiological system",
+      "morphogenesis": "generate or reconfigure useful structure through whatever mechanism wins protected evaluation",
+      "multiple_bodies": "one governed institutional identity operating through several software, compute, organizational, IoT, robotic, laboratory, facility, vehicle, vessel or future physical interfaces",
+      "self_healing": "detect functional loss, generate or select repairs, verify restoration, preserve identity and evidence"
+    }
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§8 AI models are replaceable cognitive organs"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.models_are_organs",
+    "kind": "protected_intent",
+    "override_section": "8",
+    "prohibition": "Multiple AI accounts or providers may never be used to evade terms, impersonate people, manufacture consensus, or bypass authority.",
+    "protected": true,
+    "statement": "The frontier model supplies moment-to-moment reasoning. UNIIMENTE supplies continuity, memory, doctrine, tools, repositories, evidence, authority, evaluation, relationships and real-world feedback. Plan a provider-independent cognitive council and router.",
+    "title": "AI models are replaceable cognitive organs, not institutional identity"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§17 Multi-species and engineered-life horizon"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "gate": "Any future consequential biological work requires separate domain-specific scientific evidence, legal review, biosafety, welfare analysis, independent oversight and explicit founder authorization.",
+    "id": "intent.multispecies_horizon",
+    "kind": "protected_intent",
+    "override_section": "17",
+    "protected": true,
+    "statement": "The aspiration may eventually include supporting diverse existing species, artificial intelligences, restored ecosystems and, if lawful and scientifically responsible, engineered biological systems. This mission document creates no biological authority.",
+    "title": "Multi-species and engineered-life horizon creates no biological authority"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§27 The planning compiler is an instrument"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.planning_compiler_is_instrument",
+    "kind": "protected_intent",
+    "override_section": "27",
+    "protected": true,
+    "required_disposition": [
+      "retain it as a reusable planning capability",
+      "reduce it to generated artifacts and archive the compiler",
+      "integrate selected graph structures into the future institutional anatomy system",
+      "kill or simplify it if its maintenance cost exceeds its value"
+    ],
+    "statement": "Build the planning compiler because it prevents 25 drifting documents and gives the round a single source of planning truth. Do not let it become a permanent bureaucracy by default. Planning sophistication is not itself implementation progress.",
+    "title": "The planning compiler is an instrument, not the new egregore"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§5 Preserve everything, but do not activate everything"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.preserve_without_activating",
+    "kind": "protected_intent",
+    "override_section": "5",
+    "protected": true,
+    "statement": "Default to preservation, registration, comparison, wrapping, adaptation, sandboxing, shadow operation, fallback status, historical replay and benchmark use. Never delete useful implementations merely to create a clean architecture. Never confuse preservation with active execution. One source of authority does not require one source of capability.",
+    "title": "Preserve everything; activate deliberately"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§20 PumpStation current canonical role"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "first_milestone": "A secure, testnet, end-to-end funded job or service transaction with identity, eligibility, opportunity, commitment, proof, approval or dispute, settlement, reputation and greater future capability.",
+    "id": "intent.pumpstation_role",
+    "kind": "protected_intent",
+    "mana_is_not": [
+      "equity",
+      "guaranteed appreciation",
+      "reputation",
+      "unlimited governance power",
+      "a recruitment scheme"
+    ],
+    "override_section": "20",
+    "protected": true,
+    "rails": [
+      "identity",
+      "eligibility",
+      "opportunity routing",
+      "funded commitment",
+      "escrow and programmable settlement",
+      "proof",
+      "reputation",
+      "treasuries",
+      "digital rights",
+      "bounded agent authority",
+      "group, business and community formation",
+      "productive ownership and upward mobility"
+    ],
+    "statement": "Do not freeze PumpStation at an old branch description. The latest founder direction treats it as a first-class UNIIMENTE Venture Cell. Its provisional consumer-facing operating layer is MANO.",
+    "title": "PumpStation is a regenerative social-economic operating system, not a memecoin launcher"
+  },
+  {
+    "analogy_scope": "The military-industrial analogy is mechanical and organizational, not martial — long-horizon strategy, laboratories, research funding, procurement, engineering, manufacturing, logistics, standards, talent pipelines, distributed facilities, mission command, after-action learning.",
+    "canonical_rule": "Do not merely spread UNIIMENTE. Spread capability.",
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§15 Regenerative civilization mission"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.regenerative_civilization",
+    "kind": "protected_intent",
+    "override_section": "15",
+    "prohibited": [
+      "coercive state power",
+      "military sovereignty",
+      "extralegal status"
+    ],
+    "protected": true,
+    "statement": "The extreme long-range aspiration is not a single dependent super-intelligence. It is a complex that becomes more capable by increasing the intelligence, knowledge, health, agency, prosperity, creativity, ownership, scientific capability, technology, infrastructure and coordination capacity of the surrounding ecosystem.",
+    "title": "Regenerative civilization-industrial intelligence — spread capability, not dependence"
+  },
+  {
+    "candidate_roles": [
+      "research intake",
+      "literature synthesis",
+      "hypothesis routing",
+      "source provenance",
+      "experiment planning",
+      "knowledge ingestion"
+    ],
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§21 RESEARCH-IN role"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.research_in_role",
+    "kind": "protected_intent",
+    "override_section": "21",
+    "protected": true,
+    "statement": "RESEARCH-IN is in scope as a sixth organ, but its exact canonical role must be derived from repository evidence. Do not invent its ownership, authority or interfaces merely to complete the diagram.",
+    "title": "RESEARCH-IN is a sixth organ whose role must be derived, not invented"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§30 Authority for this round"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.round_authority",
+    "kind": "protected_intent",
+    "override_section": "30",
+    "prohibited_this_round": [
+      "merge",
+      "deploy",
+      "publish",
+      "move money",
+      "contact people",
+      "operate production credentials",
+      "run physical devices",
+      "conduct biological work",
+      "modify PR #66",
+      "activate generated capabilities"
+    ],
+    "protected": true,
+    "title": "This round expands planning scope, never external authority"
+  },
+  {
+    "allocation": {
+      "cryptography": "identity, signatures, authorization",
+      "event_ledgers": "institutional history",
+      "iot": "sensing and bounded physical actuation",
+      "kernel_consequence_controls": "authorization",
+      "ordinary_databases": "high-speed operational state",
+      "robotics": "physical work",
+      "shared_ledgers": "multi-party common state, ownership, public proof, escrow, settlement, portable reputation without trusting one operator"
+    },
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§24 Selective Web3, blockchain and IoT doctrine"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.selective_web3",
+    "kind": "protected_intent",
+    "override_section": "24",
+    "protected": true,
+    "title": "Blockchain is an adapter and shared trust layer, not the universal brain"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§28 Mandatory supersession and conflict matrix"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.supersession_matrix",
+    "kind": "protected_intent",
+    "must_preserve": [
+      "older intentions",
+      "later refinements",
+      "explicit supersessions",
+      "unresolved conflicts",
+      "source chronology",
+      "current recommended canonical interpretation",
+      "cheapest decisive founder clarification where necessary"
+    ],
+    "named_conflicts": [
+      "PumpStation memecoin identity vs regenerative social-economic operating system",
+      "approval-first operation vs mature standing-authority autonomy",
+      "morphogenetic research as prerequisite vs research challenger",
+      "political sovereignty language vs institutional resilience and lawful global distribution",
+      "literal biological interpretations vs functional engineering interpretations"
+    ],
+    "override_section": "28",
+    "protected": true,
+    "title": "Never resolve a conflict by silently dropping one side"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§4 The canonical three-region architecture"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.topology.three_region",
+    "kind": "protected_intent",
+    "override_section": "4",
+    "protected": true,
+    "regions": {
+      "BRIDGE": "self/anatomy model, deficit detection, mechanism search, mutation and recombination, candidate building, sandboxing, protected evaluation, selection, speciation, Capability Genome packaging, attachment, detachment, rollback",
+      "CENTER": "mission, aspirations, constitutional authority, identity, legal principals, budgets, evidence standards, standing mandates, reserved decisions, consequence control, audit, shutdown, recovery",
+      "LEFT": "all code, branches, experiments, MICA, CDPE, Single-Flight, Foundry, OMNIMORPH, Capability Genomes, failed mechanisms, negative evidence, tests, evaluators, BYOX extractions, historical lineage",
+      "REALITY": "external evidence, customer acceptance, money, physical outcomes, scientific results, incidents, consequences",
+      "RIGHT": "perception, memory, cognition, self-model, goals, resource metabolism, DALEOBANKS, WMI, Venture Cells, research programs, embodiments"
+    },
+    "statement": "LEFT is the preserved developmental substrate — a searchable, reproducible possibility space, not a junkyard. CENTER is Alfonso plus the Golden Kernel and is deliberately slower and more stable than the right side. BRIDGE is the developmental engine. RIGHT is the active egregore and may change architecture repeatedly. REALITY sits below all of it and determines what actually worked.",
+    "title": "Canonical LEFT / CENTER / BRIDGE / RIGHT topology over REALITY"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§9 Track A and Track B"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "hard_rules": [
+      "Track B must not remain a prerequisite for building Track A.",
+      "Track B may replace Track A components only after proving better results under protected evaluation and paying its complexity rent.",
+      "Do not abandon Track B merely because conventional mechanisms win today."
+    ],
+    "id": "intent.track_a_track_b",
+    "kind": "protected_intent",
+    "override_section": "9",
+    "protected": true,
+    "title": "Two tracks — conventional organogenesis now, morphogenetic research alongside",
+    "track_a": "Conventional governed developmental organogenesis using mechanisms that work today: git branches and worktrees, coding agents, containers/processes/microVMs, CI, frozen contracts, protected evaluators, Capability Genomes, Foundry, OMNIMORPH, lineage, rollback, champion/specialist/fallback selection.",
+    "track_b": "Advanced morphogenetic substrate research: PR #66, MICA, CDPE, Single-Flight, decentralized repair, local competency, distributed formation."
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§22 Venture Cell admission rule"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.venture_cell_admission",
+    "kind": "protected_intent",
+    "override_section": "22",
+    "protected": true,
+    "requirements": [
+      "a recurring transaction",
+      "payer, buyer, beneficiary, pain owner and budget owner",
+      "accepted artifact",
+      "external consequence",
+      "legal operator",
+      "revenue and contribution-margin path",
+      "evidence and settlement",
+      "governance and security",
+      "proprietary learning loop",
+      "regenerative mechanism that makes participants more capable, trusted, eligible and easier to transact with",
+      "shutdown, recovery and kill conditions"
+    ],
+    "statement": "Shared UNIIMENTE infrastructure may accelerate a Venture Cell but cannot substitute for a real business.",
+    "title": "A Venture Cell must be capable of becoming a real standalone business"
+  },
+  {
+    "evidence_refs": [
+      {
+        "repo": "founder-upload",
+        "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
+        "symbol": "§19 WealthMachineIntelligence canonical role"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "intent.wmi_role",
+    "kind": "protected_intent",
+    "override_section": "19",
+    "preservation": "Preserve useful WMI-local control mechanisms as capabilities, adapters or historical alternatives while keeping canonical constitutional authority in the Kernel.",
+    "protected": true,
+    "statement": "WMI is the strategic, commercial, underwriting, opportunity-evaluation, portfolio, Venture Cell and capital-allocation reasoning organ. It may contain useful policy and evidence mechanisms, but it must not become a parallel Constitution, authority root, identity root or Consequence Gate.",
+    "title": "WMI is commercial cognition, never a second constitution"
+  },
+  {
+    "base_sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+    "branch": "agent/canonical-media-brand-architecture",
+    "draft": true,
+    "evidence_refs": [
+      {
+        "command": "list_pull_requests(state=open)",
+        "repo": "dababiyoda/DALEOBANKS",
+        "sha": "2394127f603636da789a30c765ad756d58a7a82f"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "2394127f603636da789a30c765ad756d58a7a82f",
+    "id": "pr.daleobanks.65",
+    "kind": "pull_request",
+    "number": 65,
+    "refs": [
+      "intent.daleobanks_role"
+    ],
+    "repo": "dababiyoda/DALEOBANKS",
+    "scope": "documentation-only founder-intent consolidation",
+    "state": "open",
+    "status_note": "High-priority founder-intent source. NOT merged runtime truth.",
+    "title": "DALEOBANKS PR #65 — canonical lifestyle brand and founder-intent lineage"
+  },
+  {
+    "branch": "strategy/cvo-001-venture-selection",
+    "draft": true,
+    "evidence_refs": [
+      {
+        "command": "list_pull_requests(state=open)",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "7a7846559f23682983898975ba89174a99c50c10"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "7a7846559f23682983898975ba89174a99c50c10",
+    "id": "pr.kernel.53.ivio_excluded",
+    "kind": "pull_request",
+    "number": 53,
+    "refs": [
+      "repo.unavailable.ivio_nemt"
+    ],
+    "repo": "dababiyoda/uniimente-kernel",
+    "significance": "A prior venture-selection round already EXCLUDED IVIO and recommended an alternative labelled C9. The canonical prompt §24 asks whether IVIO-NEMT remains the strongest first economic wedge and says not to assume it. This PR is direct repository evidence that an earlier evidence-based pass answered \"no\". Its reasoning must be read before the economic-closure decision, and the IVIO repository itself is unavailable to check the other side.",
+    "state": "open",
+    "title": "Kernel PR #53 — CVO-001 venture selection: IVIO excluded, C9 recommended (PLAN ONLY)"
+  },
+  {
+    "additions": 145317,
+    "base_ref": "main",
+    "base_sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+    "branch": "claude/uniimente-repo-audit-jpytcy",
+    "changed_files": 240,
+    "check_names": [
+      "1 · Kernel and organ tests",
+      "2 · Contract schema references resolve",
+      "3 · One source of authority",
+      "4 · Developmental work stays sealed",
+      "ancestry"
+    ],
+    "checks": "5/5 success",
+    "comments": 9,
+    "commits": 133,
+    "created_at": "2026-07-31T11:52:25Z",
+    "deletions": 2,
+    "draft": true,
+    "evidence_refs": [
+      {
+        "command": "pull_request_read(get); pull_request_read(get_check_runs); git rev-list --count main..origin/claude/uniimente-repo-audit-jpytcy",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "gate_f": "UNMEASURED",
+    "gate_g": "UNMEASURED",
+    "head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+    "id": "pr.kernel.66",
+    "kind": "pull_request",
+    "mergeable_state": "clean",
+    "merged": false,
+    "number": 66,
+    "r8": "NOT_RUN",
+    "r8_eligibility": "NOT_ELIGIBLE",
+    "refs": [
+      "intent.track_a_track_b",
+      "intent.round_authority"
+    ],
+    "repo": "dababiyoda/uniimente-kernel",
+    "state": "open",
+    "suite_ci_merge_ref": "922 passed · 3 skipped · 24 xfailed · 0 failed",
+    "suite_local": "924 passed · 1 skipped · 24 xfailed · 0 failed",
+    "suite_note": "The two compositions differ because CI runs on the merge ref and the Git-ancestry pre-registration checks skip under a shallow checkout. They are recorded separately and must never be collapsed into one number.",
+    "title": "PR #66 — Phase 3G: author-direction classification + canonical decision authority",
+    "updated_at": "2026-08-08T06:47:36Z",
+    "write_policy": "ZERO_WRITES — founder-directed for this round"
+  },
+  {
+    "base_sha": "df6a732f44412c626098ee9591b9d19f420d02dd",
+    "branch": "claude/uniimente-system-design-hczheq",
+    "draft": true,
+    "evidence_refs": [
+      {
+        "command": "list_pull_requests(state=open)",
+        "repo": "dababiyoda/PumpStation",
+        "sha": "618d49e20435c03f6adde6e6401983ca94712f5a"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "618d49e20435c03f6adde6e6401983ca94712f5a",
+    "id": "pr.pumpstation.16",
+    "kind": "pull_request",
+    "note": "Substrate, not the whole final product. No treasury, token, DeFi or real-value operation authorized.",
+    "number": 16,
+    "refs": [
+      "intent.pumpstation_role"
+    ],
+    "repo": "dababiyoda/PumpStation",
+    "state": "open",
+    "title": "PumpStation PR #16 — SIWE wallet auth fix + executable admission gate"
+  },
+  {
+    "authority_risk": "Titled a \"Constitutional Control Layer\" inside a non-Kernel organ. Override §19 forbids WMI becoming a parallel Constitution, authority root, identity root or Consequence Gate. Classification required in SP-2 — preserve the mechanisms, refuse the authority.",
+    "base_sha": "6549984a22a171f68b268b775f19192aee599609",
+    "branch": "claude/wmi-doctrine-roadmap-vfcrh0",
+    "disposition_candidates": [
+      "adapter_to_kernel",
+      "specialist_implementation",
+      "test_oracle",
+      "historical_donor",
+      "local_organ_control_beneath_kernel",
+      "prohibited_duplicate_authority"
+    ],
+    "draft": true,
+    "evidence_refs": [
+      {
+        "command": "list_pull_requests(state=open)  ->  head confirmed, prompt value matched",
+        "repo": "dababiyoda/WealthMachineIntelligence",
+        "sha": "14e7bba896e60f31c6dc5885a477ff7e100d64c6"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "14e7bba896e60f31c6dc5885a477ff7e100d64c6",
+    "id": "pr.wmi.30",
+    "kind": "pull_request",
+    "number": 30,
+    "refs": [
+      "intent.wmi_role"
+    ],
+    "repo": "dababiyoda/WealthMachineIntelligence",
+    "state": "open",
+    "title": "WMI PR #30 — Constitutional Control Layer (Phase 0 doctrine foundation)"
+  },
+  {
+    "default_branch": "master",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD",
+        "repo": "dababiyoda/build-your-own-x",
+        "sha": "aa17439b62f384511a5561ce308e9598b94d8989"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "aa17439b62f384511a5561ce308e9598b94d8989",
+    "id": "repo.build-your-own-x",
+    "kind": "repository",
+    "lifecycle_role": "HISTORICAL",
+    "refs": [
+      "intent.byox.mechanism_atlas"
+    ],
+    "region": "LEFT",
+    "title": "dababiyoda/build-your-own-x — read-only mechanism anatomy atlas",
+    "write_policy": "FORBIDDEN — read-only for this assignment"
+  },
+  {
+    "default_branch": "main",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD; git ls-remote --heads origin | wc -l",
+        "repo": "dababiyoda/DALEOBANKS",
+        "sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "github_description_is_stale": true,
+    "head": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+    "id": "repo.daleobanks",
+    "kind": "repository",
+    "open_prs": 9,
+    "refs": [
+      "intent.daleobanks_role"
+    ],
+    "region": "RIGHT",
+    "remote_branches": 51,
+    "stale_description_note": "The GitHub repo description still reads \"a production-grade, self-evolving AI agent that operates on Twitter/X\" — materially narrower than Override §18, which defines DALEOBANKS as a global multilingual lifestyle brand, media network and primary early cash engine. Recorded as a discrepancy, not resolved by this round (changing it is an outward-facing write).",
+    "title": "dababiyoda/DALEOBANKS — perception, media, distribution, early cash engine"
+  },
+  {
+    "default_branch": "main",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD; git log --oneline -2",
+        "repo": "dababiyoda/PumpStation",
+        "sha": "df6a732f44412c626098ee9591b9d19f420d02dd"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "github_description_is_stale": true,
+    "head": "df6a732f44412c626098ee9591b9d19f420d02dd",
+    "id": "repo.pumpstation",
+    "kind": "repository",
+    "open_prs": 10,
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "intent.pumpstation_role",
+      "intent.supersession_matrix"
+    ],
+    "region": "RIGHT",
+    "remote_branches": 11,
+    "stale_description_note": "Repo description still describes \"a real-time, decentralized memecoin coordination platform\". Override §20 explicitly supersedes this. main itself is still the older memecoin/wallet application — the newer doctrine lives only in unmerged branches. This is the §28 named conflict, recorded on both sides.",
+    "title": "dababiyoda/PumpStation — regenerative social-economic OS (Venture Cell)"
+  },
+  {
+    "default_branch": "main",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD; list_pull_requests(state=open)",
+        "repo": "dababiyoda/RESEARCH-IN",
+        "sha": "576913809432fc1dd47a245a14184988607e27eb"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "576913809432fc1dd47a245a14184988607e27eb",
+    "id": "repo.research-in",
+    "kind": "repository",
+    "open_prs": 11,
+    "presence": "existing_but_disconnected",
+    "refs": [
+      "intent.research_in_role"
+    ],
+    "region": "RIGHT",
+    "remote_branches": 23,
+    "role_note": "Override §21 forbids inventing this organ's role. Evidence so far establishes the product (research ingestion/search) but NOT its institutional role, owner, authority, or interfaces. All eleven open PRs are codex/* from 2025-06 based on main @ 30c099f9 — an ancestor of the current head — so the open-PR surface is roughly fourteen months stale and does not describe current intent.",
+    "role_status": "UNRESOLVED",
+    "stated_purpose": "Per its GitHub description: a free global hub that ingests serious PDFs, datasets, hypotheses and experiments and makes them searchable, discussable and remixable, so no human re-does solved work.",
+    "title": "dababiyoda/RESEARCH-IN — open research hub (sixth organ, role underived)"
+  },
+  {
+    "baseline_suite": "495 passed in 6.22s (Python 3.11.15)",
+    "default_branch": "main",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD; python -m pytest -q -p no:randomly",
+        "note": "release commit 'UNIIMENTE canonical-v1 Kernel release'",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+    "id": "repo.uniimente-kernel",
+    "kind": "repository",
+    "open_prs": 26,
+    "refs": [
+      "intent.topology.three_region",
+      "intent.golden_kernel_cockpit"
+    ],
+    "region": "CENTER",
+    "remote_branches": 65,
+    "role": "constitutional law, authority, proof, identity, governance, institutional memory, capability composition, evolution, continuity",
+    "title": "dababiyoda/uniimente-kernel — constitutional Kernel"
+  },
+  {
+    "default_branch": "main",
+    "evidence_refs": [
+      {
+        "command": "git rev-parse HEAD; git ls-remote --heads origin | wc -l",
+        "repo": "dababiyoda/WealthMachineIntelligence",
+        "sha": "6549984a22a171f68b268b775f19192aee599609"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "head": "6549984a22a171f68b268b775f19192aee599609",
+    "id": "repo.wealthmachineintelligence",
+    "kind": "repository",
+    "open_prs": 13,
+    "refs": [
+      "intent.wmi_role"
+    ],
+    "region": "RIGHT",
+    "remote_branches": 34,
+    "title": "dababiyoda/WealthMachineIntelligence — commercial and strategic cognition"
+  },
+  {
+    "evidence_refs": [],
+    "evidence_status": "unresolved",
+    "id": "repo.unavailable.chario_obvio",
+    "kind": "repository_unavailable",
+    "reason": "Repository discovery denied; not in session scope; never inspected.",
+    "title": "CHARIO / OBVIO — named in the prompt, not reachable this session"
+  },
+  {
+    "do_not_claim": "No file, commit, test or capability of IVIO-NEMT may be cited by this round.",
+    "evidence_refs": [],
+    "evidence_status": "unresolved",
+    "id": "repo.unavailable.ivio_nemt",
+    "kind": "repository_unavailable",
+    "partial_substitute": "Kernel-side IVIO artifacts DO exist and were inspected: PR #45 (build/ivio-v1-contracts, 1b52a7a7) adds IVIO v1 proof-to-settlement contracts and a compiler; PR #53 (strategy/cvo-001-venture-selection, 7a784655) records a venture-selection decision titled \"IVIO excluded, C9 recommended (PLAN ONLY)\". These are Kernel claims about IVIO, not evidence from the IVIO repository.",
+    "reason": "Repository discovery was attempted via the claude-code-remote list_repos tool and the call was denied in this session. The repository is not attached to the session scope and was never inspected. Per prompt §8.6, absence of inspection is recorded rather than substituted with inference.",
+    "title": "IVIO-NEMT — named in the prompt, not reachable this session"
+  },
+  {
+    "evidence_refs": [],
+    "evidence_status": "unresolved",
+    "id": "repo.unavailable.tgh_control_rail",
+    "kind": "repository_unavailable",
+    "reason": "Repository discovery denied; not in session scope; never inspected.",
+    "title": "TGH-CONTROL-RAIL — named in the prompt, not reachable this session"
+  },
+  {
+    "evidence_refs": [],
+    "evidence_status": "unresolved",
+    "id": "source.unavailable.founder_briefs",
+    "kind": "source_unavailable",
+    "missing": [
+      "Branch · Egregore and UNIIMENTE System.txt",
+      "Proof to Settlement Egregore.pdf",
+      "Branch · Continue Egregore Work.txt"
+    ],
+    "reason": "Cited in founder messages but never present on disk in this session. A filesystem search across the workspace returned nothing.",
+    "reconstruction_route": "Kernel branch agent/proof-to-settlement-trust-rail (e09c2088, PR #35 \"Add the OpenClaw proof-to-settlement trust rail\"), docs/EGREGORE_V1_INTEGRATION_PROGRAM.md on main, and the integration/* branches. Anything not reconstructable from those stays an explicit unresolved field.",
+    "title": "Three referenced briefs absent from the workspace"
+  }
+]

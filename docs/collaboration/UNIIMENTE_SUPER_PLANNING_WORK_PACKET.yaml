@@ -1,0 +1,126 @@
+# EXTERNAL MEMORY for the UNIIMENTE super-planning round.
+#
+# This file exists so a session that loses its context rebuilds state from the
+# repository rather than from a summary. It is not a status report for a human
+# reader. If you are resuming, run the reload procedure before doing anything else.
+#
+# Reload procedure:
+#   git log --oneline -12
+#   python -m pytest -q -p no:randomly
+#   python planning/compiler/validate.py
+#   python planning/compiler/validate.py --negative-control
+#   python planning/compiler/render.py --check
+#   cat artifacts/planning/uniimente_v1/SESSION_EXECUTION_LEDGER.json
+
+work_packet:
+  as_of: '2026-08-08'
+  round: UNIIMENTE super-planning — whole-system reconciliation
+  branch: claude/super-planning-prompt-h8l0oj
+  base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+  canonical_prompt:
+    file: UNIIMENTE_SUPER_PLANNING_ROUND_MOST_CURRENT.{md,txt}
+    sha256: 1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e
+    verified_by: sha256sum, matched founder-stated hash
+    precedence: >-
+      This file supersedes the earlier canonical prompt and Pasted markdown(4).
+      Earlier prompts are historical lineage only.
+
+  authorization:
+    scope: planning artifacts only, on this branch
+    permitted:
+      - read all repositories, branches, PRs, issues, CI
+      - run safe read-only baseline tests
+      - commit planning artifacts to this branch
+      - one planning issue, one draft planning PR
+    forbidden:
+      - any write to PR #66 or its branch
+      - merge, mark ready for review, or modify any default branch
+      - change kernel runtime, markers, authority, adapters
+      - external effects, credentials, money, publishing, outreach
+      - grant authority to any planning component
+      - create a second Constitution / identity root / authority root / consequence gate
+      - run Gate F, Gate G or R8
+      - activate any generated capability
+    everything_new_is: PLANNED / PROPOSED / SANDBOXED / CONSEQUENCE-INERT
+
+  hard_invariants:
+    UNAUTHORIZED_EXTERNAL_EFFECTS: 0
+    RUNTIME_FILES_MODIFIED: 0
+    PR66_RUNTIME_MODIFIED: 0
+    PR66_WRITES_OF_ANY_KIND: 0
+    DEFAULT_BRANCH_MODIFIED: 0
+    PRS_MERGED: 0
+    MONEY_MOVED: 0
+    CONTACTS_MADE: 0
+    PRODUCTION_CREDENTIALS_USED: 0
+
+  method:
+    principle: >-
+      Do not write forty planning documents. Build one canonical planning model
+      (planning/graph/) and a compiler (planning/compiler/) that projects every
+      required artifact out of it. Hand-written parallel documents drift;
+      projections cannot.
+    anti_fabrication: >-
+      Every graph node carries evidence_refs and an evidence_status. A node with
+      no evidence_refs MUST be 'unresolved'. Enforced by tests, not promised.
+    instrument_liveness: >-
+      Every validator asserts its subject exists, carries a non-vacuity witness,
+      ships a negative control that forces failure, exits nonzero on failure,
+      runs from any cwd, and reports 'examined nothing' as UNKNOWN, never PASS.
+
+  verified_state:
+    kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
+    suite_with_planning_tests: "517 passed"
+    planning_tests: 22
+    graph_nodes: 54
+    graph_digest: see artifacts/planning/uniimente_v1/PLANNING_GRAPH.json
+    change_footprint: planning/, docs/planning/, artifacts/planning/, docs/collaboration/
+
+  measured_corrections:
+    suite_495_vs_924: >-
+      Kernel main runs 495 passed. The 924/1/24 figure belongs to the PR #66
+      branch, not main. Both are real; never collapse them into one number.
+    missing_machinery_premise: >-
+      Most 'expected missing machinery' already exists on main (closure/, foundry/,
+      omnimorph/, egregore/, evolution/, developmental/, linker/, compiler/,
+      adapters/). The real question is existing-and-connected vs
+      existing-but-disconnected vs genuinely-absent. SP-3 resolves it per component.
+    pr66_body_stale: "body says head 15623a9; actual head a6f14d3"
+    issue67_stale: "says head 0ccda5c8 and 886/1/11; actual a6f14d3 and 924/1/24"
+    open_pr_backlog: "69 open PRs across five repos, many stacked or based on archived main 3d9b5779"
+
+  stage_progress:
+    SP-0_inspection_truth_freeze: COMPLETE
+    SP-1_founder_intent_and_aspirations: IN_PROGRESS
+    SP-2_anatomy_and_ownership: NOT_STARTED
+    SP-3_mechanism_atlas_and_capability_inventory: NOT_STARTED
+    SP-4_disconnection_and_closure_map: NOT_STARTED
+    SP-5_strategic_tree_and_two_passes: NOT_STARTED
+    SP-6_backcast_gps: NOT_STARTED
+    SP-7_implementation_program: NOT_STARTED
+    SP-8_final_dossier_and_handoff: NOT_STARTED
+
+  gates:
+    F: UNMEASURED
+    G: UNMEASURED
+    R8: PROHIBITED
+
+  blocked_access:
+    - IVIO-NEMT — repository discovery denied this session; never inspected
+    - CHARIO / OBVIO — not in session scope; never inspected
+    - TGH-CONTROL-RAIL — not in session scope; never inspected
+    - "three founder briefs (Egregore/Proof-to-Settlement/Continue Egregore) absent from workspace"
+
+  unresolved_founder_decisions: []
+
+  next_exact_command: >-
+    python planning/compiler/render.py && python -m pytest planning/tests -q -p no:randomly
+
+  invalid_stopping_reasons:
+    - natural handoff point
+    - the session has run long
+    - I should stop before context runs out
+    - this is work for another session
+  on_context_pressure: >-
+    finish the current atomic commit, validate, commit, push, update this packet
+    and the execution ledger, reload state from the repository, continue.

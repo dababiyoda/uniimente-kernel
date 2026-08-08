@@ -109,7 +109,7 @@
       "id": "LC-2",
       "level": "1B",
       "title": "Edge-scoped liability continuation (compare >=7 designs)",
-      "status": "DIAGNOSED and REORDERED. Blocked behind LC-4.",
+      "status": "REMEASURED after need closure. Residual is instrument/test defect, not stranding.",
       "covers_xfails": [
         1,
         2,
@@ -138,7 +138,20 @@
       ],
       "blocked_by": "LC-4",
       "correction": "LC-2b's classification was wrong. Design 7 (canonical local frontier remainder) was implemented and changed nothing -- 13 stranded before, 13 after -- and was reverted. Reclassified with the proposal test applied before the frontier test: all 13 stranded edges are unresolved proposals (6 self-proposed, 7 relayed), and there is no frontier-exhaustion stranding at all. `_continue_after_child` correctly refuses to report exhaustion while eligible_offer stands.",
-      "root_cause": "_seal writes proposal dispositions into node['proposal_disposition'] AT THE SEALING NODE. The source of a losing proposal is a different unit, possibly several hops away, and nothing carries the disposition back to it, so it holds eligible_offer=True forever along with the parent's committed credit. LC-2's stranded liability is downstream of LC-4's multi-hop disposition routing; they are one defect seen from two ends."
+      "root_cause": "_seal writes proposal dispositions into node['proposal_disposition'] AT THE SEALING NODE. The source of a losing proposal is a different unit, possibly several hops away, and nothing carries the disposition back to it, so it holds eligible_offer=True forever along with the parent's committed credit. LC-2's stranded liability is downstream of LC-4's multi-hop disposition routing; they are one defect seen from two ends.",
+      "remeasured_after_NC3": {
+        "stranded_edges": "13 -> 0 on every fixture (37 opened, 37 answered at sparse density)",
+        "abandoned_roots_with_liability": "3 -> 0",
+        "credit_in_flight": "18.0 -> 0.0",
+        "the_four_xfails": "ALL FOUR STILL FAIL, with identical messages. Need closure removed the stranding and did not move these specifications.",
+        "why": [
+          "test_every_closed_child_edge_..._carries_child_evidence: 'no child edge was closed at all' -- CLOSED_CHILD_EDGES is still declared and never incremented. LC-2a finding 2 stands unchanged; the denominator guard fires because the counter is dead, not because nothing closed.",
+          "test_two_inbound_edges_coalescing_...: 'no lifecycle record for e/sep/coal/1' -- still reads the ADOPTED edge immediately after two deliver_search calls, when only the coalesced edge can yet have an answer. LC-2a finding 4 stands.",
+          "test_every_applied_control_receives_a_child_owned_completion: assert 1 == 0, unchanged.",
+          "test_every_coalesced_inbound_edge_closes_on_its_own_edge: 1 alias uncllosed, unchanged."
+        ],
+        "conclusion": "The LC-2 residual is NOT edge-scoped liability. It is the dead metric family plus a specification that reads at the wrong time. Both are instrument/test defects that need closure could not have fixed."
+      }
     },
     {
       "id": "NC-0",
@@ -178,6 +191,35 @@
         "NC-4 adversarial twin",
         "then remeasure LC-2 from zero"
       ]
+    },
+    {
+      "id": "NC-1..NC-4",
+      "level": "1B-upstream",
+      "title": "Causal need closure: preregister, compare, implement, activate",
+      "status": "COMPLETE",
+      "commits": [
+        "4ee2347 NC-1 preregister 34 specs",
+        "5d9f21e NC-2 compare 8 designs + instrumentation",
+        "03a62b4 LC-1e unorderable sort fix",
+        "d9349eb NC-3 runtime",
+        "ba9cec4 NC-3b witness correction",
+        "caa8088 NC-4 activate 13 earned markers",
+        "c5a4fa4 NC-3c evidence reconciliation"
+      ],
+      "mechanism": "Generation-bound closure initiation + existing structured cascade + distributed completion join. OPEN/PROPOSAL_PENDING -> CLOSING_NEED_SATISFIED_ELSEWHERE -> CLOSED.",
+      "predicate": "unit.open_needs.get(key.origin_slot) != key.need_id",
+      "results": {
+        "stranded_edges": "13 -> 0",
+        "abandoned_roots_closed": "0 -> 3",
+        "credit_in_flight": "18.0 -> 0.0",
+        "formation": "16 events / 1012 messages, held",
+        "suite": "924 passed, 1 skipped, 24 xfailed, 0 failed"
+      },
+      "two_defects_found_by_measuring": [
+        "the join never fired: both child-completion paths short-circuit on wave_cancelled, which a closing root always has, so 2 of 3 roots sat in CLOSING with nothing outstanding",
+        "one root never reached initiation: reconcile.12:0:1 was retired by the LEGACY exhaustion path and its unit was never stepped again, so closure driven only from _settle_pending_roots could not see it"
+      ],
+      "specs_remaining_xfail": 11
     },
     {
       "id": "LC-3",
@@ -278,11 +320,11 @@
       "status": "UNSTARTED"
     }
   ],
-  "remaining_strict_xfails": 10,
+  "remaining_strict_xfails": 24,
   "suite": {
-    "passed": 902,
+    "passed": 924,
     "skipped": 1,
-    "xfailed": 10,
+    "xfailed": 24,
     "failed": 0
   },
   "gates": {

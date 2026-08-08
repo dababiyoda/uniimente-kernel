@@ -54,13 +54,13 @@ work_packet:
     instances_found_in_this_workstream: 8
 
   verified_state:
-    local_suite: 902 passed, 1 skipped, 10 xfailed, 0 failed
+    local_suite: 924 passed, 1 skipped, 24 xfailed, 0 failed
     ci_note: CI runs on the merge ref and may report MORE skips than local,
       because the Git-ancestry pre-registration checks skip under a shallow
       checkout. Do not reconcile the two into one number.
     formation_invariant: 16 events / 1012 messages
     checksum_manifest: verification/phase3g/CHECKSUMS.txt, 36 entries, all OK
-    runtime_untouched_since: bc13bc3 (substrate/v5.py byte-identical)
+    runtime_last_changed: NC-3 (causal need closure; was byte-identical to bc13bc3 until then)
 
   gates:
     F: UNMEASURED

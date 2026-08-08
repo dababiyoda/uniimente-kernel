@@ -41,7 +41,8 @@ for _p in (_ROOT, _ROOT / "tests" / "unit", _ROOT / "verification" / "phase3g"):
 import substrate.v5 as v5                                       # noqa: E402
 from substrate.v5 import C, reset                               # noqa: E402
 import test_substrate_v5_control_outcome_separation as S        # noqa: E402
-from need_closure_diagnose import classify_root, open_roots     # noqa: E402
+from need_closure_diagnose import (ABANDONED_STATES,           # noqa: E402
+                                   classify_root, open_roots)
 
 PAYLOAD_B = S.PAYLOAD_B
 
@@ -56,7 +57,10 @@ need_closure = pytest.mark.xfail(
 # turning every specification below into a vacuous pass.
 ABANDONED_FIXTURE = (3, 0.6)
 
-CLOSABLE = ("2_SATISFIED_ELSEWHERE", "2b_OBLIGATION_GENERATION_RETIRED")
+# Imported, not restated. Includes the post-closure states, because a root that
+# WAS abandoned stays countable after it is closed -- otherwise every
+# specification here goes vacuous the moment the mechanism starts working.
+CLOSABLE = ABANDONED_STATES
 
 
 def _counter(name):

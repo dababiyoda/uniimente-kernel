@@ -75,6 +75,12 @@ FIXTURES = (("n_auth=4 density=1.0", 4, 1.0),
 
 TERMINAL_STATUSES = ("COMMITTED", "EXHAUSTED", "CLOSED", "CANCELLED")
 
+# Every state that means "this root's obligation generation was retired", whether
+# the closure has happened yet or not. 2 and 2b are the untreated condition; 2c
+# and 2d are the same roots after a closure mechanism has acted on them.
+ABANDONED_STATES = ("2_SATISFIED_ELSEWHERE", "2b_OBLIGATION_GENERATION_RETIRED",
+                    "2c_CLOSED_BY_NEED_CLOSURE", "2d_CLOSING_BY_NEED_CLOSURE")
+
 
 def classify_root(unit, key, node):
     """The seven states, decided from LOCAL state only.
@@ -110,6 +116,19 @@ def classify_root(unit, key, node):
         "local_reserve": node["local_reserve"],
     }
 
+    # A ROOT THAT WAS ABANDONED STAYS COUNTABLE AFTER IT IS CLOSED.
+    #
+    # Abandonment is a fact about history, not about current state. Reading only
+    # the live state would make every need-closure specification vacuous the
+    # moment the mechanism works: no root would be in a closable state any more,
+    # the denominator would fall to zero, and the specifications would pass by
+    # measuring nothing. `closure_reason` is the durable record of why closure
+    # began, so a closed root is still attributable to the condition.
+    if node.get("closure_reason") == "need_satisfied_elsewhere":
+        facts["closure_reason"] = node["closure_reason"]
+        facts["state"] = ("2c_CLOSED_BY_NEED_CLOSURE" if node["status"] == "CLOSED"
+                          else "2d_CLOSING_BY_NEED_CLOSURE")
+        return facts
     if node["status"] in TERMINAL_STATUSES or node["terminal_signal_sent"]:
         facts["state"] = "7_ROOT_ALREADY_TERMINAL"
         return facts
@@ -208,9 +227,7 @@ def run(n_auth, density):
     # unless `open_needs[slot] == key.need_id`. Whether the obligation was
     # filled by the legacy path, by this root's own settlement, or retired some
     # other way is provenance for the record -- it does not change what is owed.
-    abandoned = [r for r in roots
-                 if r["state"] in ("2_SATISFIED_ELSEWHERE",
-                                   "2b_OBLIGATION_GENERATION_RETIRED")]
+    abandoned = [r for r in roots if r["state"] in ABANDONED_STATES]
     return {
         "seed": seed,
         "open_roots": len(roots),

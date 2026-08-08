@@ -230,6 +230,52 @@ require the founder's authority, identity or access, and no build session can
 manufacture them.
 """,
     ),
+    Projection(
+        name="PR66_DISPOSITION_DOSSIER",
+        title="PR #66 — Immutable Research Specimen, Shadow State and Disposition",
+        kinds=["pr_capsule", "pr_disposition", "pr_proposed_sync"],
+        preamble="""
+**PR #66 received zero writes during this round.** Its state is reconstructed
+here from commits, source, tests, CI and evidence artifacts, so that the pull
+request description stops being the place where the truth about PR #66 has to
+live. The description becomes a projection that can be regenerated from this
+capsule, exactly as evidence-first architecture requires everywhere else.
+
+Every claim in the existing body is classified `SUPPORTED`, `STALE`,
+`SUPERSEDED_BY_OWN_TIP`, `FALSIFIED` or `UNRESOLVED`.
+
+The proposed replacement body and disposition comment are stored **inert**.
+Applying either is a later, explicit founder action.
+""",
+    ),
+    Projection(
+        name="WHOLE_SYSTEM_BACKCAST_GPS",
+        title="Backcast GPS — Destination to Active Node",
+        kinds=["backcast_node"],
+        preamble="""
+Backcast from a falsifiable destination to the node that is active today. Each
+node names its gate, its Single Bottleneck Metric with baseline and target, its
+exit evidence, and its pivot and kill conditions.
+
+Nodes 6 and beyond are deliberately not expanded. Every one is gated on Node 5,
+and expanding them now would produce roadmap fiction rather than a plan. Override
+§2 preserves those aspirations; honesty defers the node.
+""",
+    ),
+    Projection(
+        name="DEPENDENCY_AWARE_PR_STACK",
+        title="Implementation Program — PR Stack and Anti-Ruin Boundaries",
+        kinds=["implementation_program"],
+        preamble="""
+Five PRs, each based on **current main** — never stacked onto another feature
+branch. The 69-PR backlog exists precisely because that rule was not held, and
+four kernel PRs are now unmergeable against an archived base.
+
+The anti-ruin boundaries are conservative defaults marked provisional. Alfonso
+has not set a risk appetite, and inventing one on his behalf would be the kind of
+quiet authority expansion this whole architecture exists to prevent.
+""",
+    ),
 ]
 
 

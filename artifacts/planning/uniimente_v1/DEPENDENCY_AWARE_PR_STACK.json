@@ -1,0 +1,125 @@
+{
+  "graph_digest": "c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d",
+  "node_count": 2,
+  "nodes": [
+    {
+      "boundaries": {
+        "escalation_threshold": "any candidate that reads or writes the evaluator halts the experiment immediately",
+        "isolation_requirement": "candidates never share a process with the evaluator",
+        "maximum_external_consequence": "zero — every artifact is consequence-inert",
+        "maximum_founder_hours": "under 2 hours per node, for review only",
+        "maximum_money_at_risk": "zero — the primary track spends nothing",
+        "maximum_time_without_new_proof": "one cycle; if Node 1 does not close, re-run the route tournament rather than iterating quietly",
+        "maximum_vendor_concentration": "no new provider, platform or model dependency introduced",
+        "minimum_viable_survival_state": "main at 8cb3074 with 495 passing tests; every branch preserved; every proof record intact",
+        "stop_loss": "two consecutive failed closure attempts ends Track A's primary status"
+      },
+      "evidence_refs": [],
+      "evidence_status": "derived",
+      "id": "program.anti_ruin_boundaries",
+      "kind": "implementation_program",
+      "provisional": "These are conservative defaults, not the founder's stated risk appetite. Alfonso has not set limits; these are marked provisional for his decision rather than presented as policy.",
+      "refs": [
+        "decision.final",
+        "intent.round_authority"
+      ],
+      "title": "Anti-ruin boundaries for the primary track"
+    },
+    {
+      "cap": "no more than 3 open planning-derived PRs at once; land before opening the next",
+      "evidence_refs": [],
+      "evidence_status": "derived",
+      "explicitly_not_in_the_stack": [
+        "any PR #66 runtime work — frozen",
+        "any external effect, credential, publication or payment — founder-gated",
+        "Golden Kernel v2 — authority is not the measured bottleneck",
+        "new WMI or PumpStation capacity — triage the existing backlog first"
+      ],
+      "id": "program.pr_stack",
+      "kind": "implementation_program",
+      "ordering_rule": "Every PR bases on current main. No stacking onto another feature branch. The 69-PR backlog exists precisely because that rule was not held, and four kernel PRs are now unmergeable against an archived base.",
+      "refs": [
+        "decision.final",
+        "backcast.node_1_computational_closure",
+        "discrepancy.stacked_pr_backlog",
+        "bridge.two_organs_invisible"
+      ],
+      "stack": [
+        {
+          "acceptance": [
+            "builder and evaluator run in separate OS processes",
+            "candidate write paths confined and enforced by test",
+            "held-out cases exist and are unreadable from the builder process",
+            "a negative control forces evaluator failure and is asserted",
+            "evaluator mutation is detected and fails the run"
+          ],
+          "depends_on": [],
+          "id": "P1",
+          "repo": "uniimente-kernel",
+          "title": "Evaluator firewall: process isolation and held-out confinement",
+          "why_first": "Without it the closure experiment is worthless, so it is a gate rather than a follow-up."
+        },
+        {
+          "acceptance": [
+            "at least five materially different candidate implementations",
+            "4/4 edge triples restored — 3/4 is a failure, not a 75% pass",
+            "linker/ byte-identical to ORIGINAL_LINKER_PACKAGE_SHA256",
+            "champion attached in a consequence-inert registry",
+            "specialists, fallbacks and failures all preserved with lineage",
+            "rollback demonstrated, not merely described",
+            "closure record states its ladder tier: COMPUTATIONAL"
+          ],
+          "depends_on": [
+            "P1"
+          ],
+          "id": "P2",
+          "repo": "uniimente-kernel",
+          "title": "First developmental closure run: institutional.cross_organ_edge_resolution"
+        },
+        {
+          "acceptance": [
+            "both manifests validate against contracts/organ-manifest.schema.json",
+            "linker reports 6 organs, not 4",
+            "RESEARCH-IN's role is derived from inspected evidence, with unresolved fields left unresolved rather than invented"
+          ],
+          "depends_on": [],
+          "id": "P3",
+          "parallel_with": [
+            "P1",
+            "P2"
+          ],
+          "repo": "uniimente-kernel",
+          "title": "Organ manifests for PumpStation and RESEARCH-IN"
+        },
+        {
+          "acceptance": [
+            "adapters/ imported by at least one non-test module",
+            "one recorded cross-organ episode using the adapters",
+            "information lost and added declared per adapter, as the membrane rule requires"
+          ],
+          "depends_on": [
+            "P3"
+          ],
+          "id": "P4",
+          "repo": "uniimente-kernel",
+          "title": "Wire the compatibility membrane into one executing path"
+        },
+        {
+          "acceptance": [
+            "engine closes a function it was not tuned for, with no re-tuning",
+            "if re-tuning is required, report overfit plainly rather than adjusting and retrying"
+          ],
+          "depends_on": [
+            "P2"
+          ],
+          "id": "P5",
+          "repo": "uniimente-kernel",
+          "title": "Second developmental closure on an unrelated capability"
+        }
+      ],
+      "title": "Dependency-aware PR stack — against current main, never an archived base"
+    }
+  ],
+  "projection": "DEPENDENCY_AWARE_PR_STACK",
+  "title": "Implementation Program — PR Stack and Anti-Ruin Boundaries"
+}

@@ -73,9 +73,11 @@ work_packet:
     kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
     suite_with_planning_tests: "518 passed"
     planning_tests: 23
-    graph_nodes: 85
-    graph_digest: c355a9a137b04ff3... (full value in SESSION_EXECUTION_LEDGER.json)
-    checksum_entries: 22
+    graph_nodes: 96
+    graph_digest: c65a4d773a988a1c... (full value in SESSION_EXECUTION_LEDGER.json)
+    checksum_entries: 30
+    planning_pr: 68
+    planning_issue: 69
     change_footprint: planning/, docs/planning/, artifacts/planning/, docs/collaboration/
 
   measured_corrections:
@@ -98,8 +100,8 @@ work_packet:
     SP-3_mechanism_atlas_and_capability_inventory: COMPLETE
     SP-4_disconnection_and_closure_map: COMPLETE
     SP-5_strategic_tree_and_two_passes: COMPLETE
-    SP-6_backcast_gps: PARTIAL — active node, SBM, baseline and target set; long-horizon nodes not yet expanded
-    SP-7_implementation_program: PARTIAL — dispositions and entry conditions set; PR stack not yet enumerated
+    SP-6_backcast_gps: COMPLETE — destination + nodes 1-5; nodes 6+ deliberately deferred as gated on node 5
+    SP-7_implementation_program: COMPLETE — 5-PR stack with acceptance criteria, anti-ruin boundaries
     SP-8_final_dossier_and_handoff: COMPLETE — decision, founder decisions, ledger, checksums
 
   gates:
@@ -133,9 +135,9 @@ work_packet:
     && python -m pytest -q -p no:randomly
 
   remaining_work:
-    - SP-6 expand the 2026-2036 backcast nodes with the 13 required fields each
-    - SP-7 enumerate the dependency-aware PR stack with acceptance criteria
-    - write the PR66 state capsule, disposition dossier and inert proposed sync
+    - none within this round's authority; all nine SP stages complete
+    - next action is P1 (evaluator firewall isolation), which is RUNTIME work and
+      requires a separate authorization beyond this planning round
 
   invalid_stopping_reasons:
     - natural handoff point

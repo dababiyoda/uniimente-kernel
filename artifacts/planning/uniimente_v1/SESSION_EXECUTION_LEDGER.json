@@ -2,12 +2,12 @@
   "base": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
   "branch": "claude/super-planning-prompt-h8l0oj",
   "canonical_prompt_sha256": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e",
-  "checksum_entries": 22,
+  "checksum_entries": 30,
   "evidence_summary": {
     "asserted": 1,
-    "derived": 8,
+    "derived": 18,
     "unresolved": 5,
-    "verified_by_execution": 33,
+    "verified_by_execution": 34,
     "verified_by_inspection": 38
   },
   "gates": {
@@ -15,16 +15,21 @@
     "G": "UNMEASURED",
     "R8": "PROHIBITED"
   },
-  "graph_digest": "c355a9a137b04ff3b0b5aaa4df60fa574dfe0d8d49242bdf0402bcfa124f14a8",
+  "graph_digest": "c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d",
   "graph_kinds": [
     "assumption",
     "authority_conflict",
+    "backcast_node",
     "bridge_status",
     "capability",
     "decision",
     "discrepancy",
     "finding",
     "founder_decision",
+    "implementation_program",
+    "pr_capsule",
+    "pr_disposition",
+    "pr_proposed_sync",
     "protected_intent",
     "pull_request",
     "repository",
@@ -34,7 +39,7 @@
     "strategy_gate",
     "strengthening_pass"
   ],
-  "graph_nodes": 85,
+  "graph_nodes": 96,
   "hard_invariants": {
     "CONTACTS_MADE": 0,
     "DEFAULT_BRANCH_MODIFIED": 0,
@@ -45,7 +50,7 @@
     "RUNTIME_FILES_MODIFIED": 0,
     "UNAUTHORIZED_EXTERNAL_EFFECTS": 0
   },
-  "head_at_write": "b6abc406bfe4574f2e3e39fd9da313f387e74425",
+  "head_at_write": "83dffce3827ec46d974937ae28f170590e5aaa5d",
   "instruments": {
     "render.py": {
       "check_mode": "PASS",
@@ -57,6 +62,8 @@
       "runs_from_alt_cwd": true
     }
   },
+  "planning_issue": 69,
+  "planning_pr": 68,
   "round": "UNIIMENTE super-planning \u2014 whole-system reconciliation",
   "stages": {
     "SP-0": "COMPLETE",

@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: c355a9a137b04ff3b0b5aaa4df60fa574dfe0d8d49242bdf0402bcfa124f14a8 -->
+<!-- graph-digest: c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d -->
 <!-- projection: FINAL_DECISION -->
 
 
@@ -15,7 +15,7 @@ The unresolved items at the end are not oversights. They are decisions that
 require the founder's authority, identity or access, and no build session can
 manufacture them.
 
-**2 nodes** projected from graph digest `c355a9a137b04ff3`. Regenerate with `python planning/compiler/render.py`.
+**2 nodes** projected from graph digest `c65a4d773a988a1c`. Regenerate with `python planning/compiler/render.py`.
 
 ## decision (1)
 

@@ -185,7 +185,6 @@ def test_witness_the_dense_fixture_contains_no_abandoned_root():
 # POSITIVE PATH (1-16)
 # ---------------------------------------------------------------------------
 
-@need_closure
 def test_01_an_abandoned_root_is_recognised_as_satisfied_elsewhere():
     """The denominator of every metric below. Must be nonzero and named."""
     o, _seed = _run()
@@ -195,7 +194,6 @@ def test_01_an_abandoned_root_is_recognised_as_satisfied_elsewhere():
         "retired, so no closure ratio can be read against a real denominator")
 
 
-@need_closure
 def test_02_closure_only_applies_to_a_non_terminal_root():
     o, _seed = _run()
     for _u, _k, node, facts in _abandoned(o):
@@ -218,7 +216,6 @@ def test_03_every_abandoned_root_had_a_real_liability_to_discharge():
         "its closure demonstrates nothing")
 
 
-@need_closure
 def test_04_closure_is_initiated_exactly_once_per_abandoned_root():
     o, _seed = _run()
     roots = _abandoned(o)
@@ -245,7 +242,6 @@ def test_05_every_outstanding_child_edge_receives_an_authenticated_control():
     assert C["UNAUTHENTICATED_TERMINAL_CONTROLS"] == 0
 
 
-@need_closure
 def test_06_every_relay_closes_its_own_local_wave():
     o, _seed = _run()
     for _u, key, _node, _f in _abandoned(o):
@@ -315,7 +311,6 @@ def test_11_every_child_allocation_reconciles():
     assert _counter("ABANDONED_ROOTS_WITH_OPEN_CHILD_LIABILITIES") == 0
 
 
-@need_closure
 def test_12_the_root_reaches_terminal_closure_only_after_descendant_outcomes():
     o, _seed = _run()
     roots = _abandoned(o)
@@ -340,7 +335,6 @@ def test_13_credit_in_flight_reaches_zero():
     assert _counter("ABANDONED_ROOTS_WITH_CREDIT_IN_FLIGHT") == 0
 
 
-@need_closure
 def test_14_replaying_a_closure_control_is_inert():
     o, _seed = _run()
     for _u, key, node, _f in _abandoned(o):
@@ -357,7 +351,6 @@ def test_14_replaying_a_closure_control_is_inert():
     assert _counter("DUPLICATE_NEED_CLOSURE_APPLICATIONS") == 0
 
 
-@need_closure
 def test_15_a_closed_root_does_not_resurrect_when_the_slot_reopens():
     """Closure is bound to the generation, so a later reopen is a NEW root."""
     o, _seed = _run()
@@ -375,7 +368,6 @@ def test_15_a_closed_root_does_not_resurrect_when_the_slot_reopens():
             f"became unmet again; closure must be generation-bound")
 
 
-@need_closure
 def test_16_a_new_need_generation_may_open_a_new_root_normally():
     o, _seed = _run()
     closed = [(u, k, n, f) for u, k, n, f in _abandoned(o)
@@ -468,7 +460,6 @@ def test_22_a_wrong_edge_cannot_close_the_root():
     assert _counter("CROSS_GENERATION_CLOSURES") == 0
 
 
-@need_closure
 def test_23_closure_is_not_inferred_from_an_empty_scheduler():
     """Quiescence is not evidence. The runtime must ACT, not observe silence."""
     o, _seed = _run()
@@ -486,7 +477,6 @@ def test_24_closure_is_not_inferred_from_missing_messages():
         "controls were counted as applied without being accepted by a receiver")
 
 
-@need_closure
 def test_25_the_root_is_not_closed_while_child_credit_is_in_flight():
     o, _seed = _run()
     roots = _abandoned(o)
@@ -513,7 +503,6 @@ def test_26_a_partitioned_child_leaves_the_root_explicitly_unresolved():
         "must stay explicit rather than be written off")
 
 
-@need_closure
 def test_27_a_late_proposal_after_closure_cannot_reopen_the_wave():
     o, _seed = _run()
     for unit, key, node, _f in _abandoned(o):
@@ -543,7 +532,6 @@ def test_28_a_late_child_outcome_is_replay_inert():
     assert C["DUPLICATE_TERMINAL_RESOLUTIONS"] == 0
 
 
-@need_closure
 def test_29_a_conflicting_closure_control_is_recorded_and_does_not_overwrite():
     o, _seed = _run()
     inspected = 0
@@ -594,7 +582,6 @@ def test_32_the_existing_prearrival_store_holds_it():
             "pending store would be needed for closure")
 
 
-@need_closure
 def test_33_a_valid_later_adoption_applies_the_held_closure_exactly_once():
     o, _seed = _run()
     assert _counter("DUPLICATE_NEED_CLOSURE_APPLICATIONS") == 0

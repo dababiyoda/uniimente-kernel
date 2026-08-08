@@ -120,15 +120,30 @@ def _kind(x):
 # below is measuring an empty set and the whole file is theatre.
 # ---------------------------------------------------------------------------
 
-def test_witness_the_fixture_contains_an_abandoned_root_holding_liability():
+def test_witness_the_fixture_contains_an_abandoned_root_that_owed_something():
+    """Non-vacuity measured on DURABLE evidence, not on residual liability.
+
+    The first version asserted the abandoned roots still HOLD a liability. They
+    did, until NC-3 discharged it -- which is the entire point of the mechanism,
+    so the witness was measuring the defect rather than the condition and went
+    red the moment the runtime became correct.
+
+    What is durable is that the root opened child edges and committed credit to
+    them. `children_opened` and `child_allocations` survive closure; a root that
+    never owed anything would show neither, and every specification below would
+    then be inspecting an empty set.
+    """
     o, seed = _run()
     roots = _abandoned(o)
-    assert any(_liability(n) > 0 for _u, _k, n, _f in roots), (
-        f"seed {seed}: an abandoned root exists but none holds a child, "
-        f"proposal or offer liability, so closing it would discharge nothing")
-    assert sum(n["child_allocations_in_flight"] for _u, _k, n, _f in roots) > 0, (
-        "no abandoned root holds credit in flight, so credit reconciliation "
-        "cannot be demonstrated")
+    owed = sum(len(n["children_opened"]) for _u, _k, n, _f in roots)
+    committed = sum(sum(n["child_allocations"].values())
+                    for _u, _k, n, _f in roots)
+    assert owed > 0, (
+        f"seed {seed}: an abandoned root exists but none ever opened a child "
+        f"edge, so closing it would discharge nothing")
+    assert committed > 0, (
+        f"seed {seed}: no abandoned root ever committed credit to a child, so "
+        f"credit reconciliation cannot be demonstrated")
 
 
 def test_witness_the_dense_fixture_contains_no_abandoned_root():
@@ -192,9 +207,15 @@ def test_02_closure_only_applies_to_a_non_terminal_root():
 
 
 def test_03_every_abandoned_root_had_a_real_liability_to_discharge():
+    """HAD, past tense, and read from durable state for the same reason as the
+    witness above: a discharged liability is the success condition, so asserting
+    it still stands would fail against a correct runtime."""
     o, _seed = _run()
     roots = _abandoned(o)
-    assert sum(_liability(n) for _u, _k, n, _f in roots) > 0
+    assert all(n["children_opened"] or n["children_completed"]
+               for _u, _k, n, _f in roots), (
+        "an abandoned root never opened a child edge, so it owed nothing and "
+        "its closure demonstrates nothing")
 
 
 @need_closure

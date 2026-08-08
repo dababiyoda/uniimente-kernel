@@ -12,7 +12,7 @@ track_b_pr: 66
 track_b_immutable_head: a6f14d344f2ca073fd334a885e5c2bdb921d082e
 
 active_target: institutional.cross_organ_edge_resolution
-active_target_status: P3_IMPLEMENTED_AWAITING_CANONICAL_CI
+active_target_status: P3_COMPLETE_CANONICAL_CI_GREEN
 active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
 closure_count: 0
 
@@ -26,10 +26,15 @@ completed_phases:
   P3_inspection: COMPLETE; contract-to-event seam and real consumer were absent
   P3_route_adjudication: COMPLETE; Route A rejected; Route B selected
   P3_route_b_local_counterfactual: PASS; exact pins, four states, no external effect
+  P3_route_b_canonical_ci: COMPLETE; commit af82717, run 31282596092, all four jobs green
 
-current_phase: P3-C; obtain Canonical CI evidence for the bounded Route B commit
+current_phase: P4; inspect and freeze the held-out evaluator and candidate-builder boundary
 
 p3_route_b:
+  commit: af827176763bd86ec2851fef272c369678c34da1
+  canonical_ci_run_id: 31282596092
+  canonical_ci_run_number: 134
+  canonical_ci_conclusion: success
   decision: generic typed contract-delivery event on the existing EventSpine
   decision_record: runtime/P3_ROUTE_B_DELIBERATION.json
   adr: runtime/ADR-P3-ROUTE-B.md
@@ -62,10 +67,11 @@ p3_route_b:
   source_revisions_verified: true
 
 next_action: >-
-  Publish the bounded P3 files to draft PR #70 only after verifying its head has
-  not moved. Observe the single Canonical CI workflow. If green, record the exact
-  commit and workflow run, set P3 complete, and enter P4 under the frozen
-  contract. If red, diagnose without widening P3 scope.
+  Before writing P4 candidate or evaluator code, inspect the complete evaluator,
+  experimental registry, closure controller, and planning authority already on
+  this branch. Define the held-out evaluator hashes, liveness controls, and exact
+  candidate-builder boundary without changing runtime/contract.py. Preserve P3
+  as sandbox routing evidence and keep the closure count at zero.
 
 protected_invariants:
   - PR #66 remains immutable at a6f14d3
@@ -105,7 +111,6 @@ known_falsifications:
   - a successful internal route is not a developmental closure
 
 unresolved:
-  - Canonical CI result for the P3 commit
   - trusted production artifact attestation for bound handler revisions
   - field-level payload retention policy before production use
   - P4 evaluator freeze and candidate-generation evidence
@@ -118,9 +123,12 @@ local_test_status:
   source_revision_attestation: PASS
   intent_ledger_validation: VALID; 5 records
   deliberation_validation: VALID; exactly two passes
-  full_kernel_suite: delegated to Canonical CI on the complete repository
+  canonical_full_kernel_suite: 512 passed, 15 skipped
+  canonical_verifier_v2_unit_evidence: 491 passed, 14 skipped
+  canonical_route_b_step: 1 passed
+  canonical_ci_jobs: 4 of 4 succeeded
 
-ci_regression_status: PENDING_P3_COMMIT
-runtime_counterfactual_status: PASS_LOCAL_EXACT_PINS
+ci_regression_status: GREEN; commit af827176763bd86ec2851fef272c369678c34da1; run 31282596092
+runtime_counterfactual_status: PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS
 held_out_evaluation_status: NOT_FROZEN
 stop_reason: none

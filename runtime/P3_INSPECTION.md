@@ -2,12 +2,12 @@
 
 ## Current disposition
 
-`P3-B_IMPLEMENTED_AWAITING_CANONICAL_CI`
+`P3_COMPLETE_CANONICAL_CI_GREEN`
 
-The consequence-inert local counterfactual now proves the narrow routing claim at
-the two manifest-pinned organ revisions. It does not prove deployment, external
-verifier acceptance, settlement, a commercial result, or a developmental
-closure. `VERIFIED_DEVELOPMENTAL_CLOSURES` remains `0`.
+The consequence-inert local and Canonical CI counterfactuals prove the narrow
+routing claim at the two manifest-pinned organ revisions. They do not prove
+deployment, external verifier acceptance, settlement, a commercial result, or a
+developmental closure. `VERIFIED_DEVELOPMENTAL_CLOSURES` remains `0`.
 
 ## Initial measured inspection
 
@@ -91,8 +91,23 @@ same code is deployed as separate services or accepted by an external verifier.
 The Evidence and Welfare Guardian's dissent is binding: P3 must not be described
 as a closure, deployment, commercial result, or proof-to-settlement outcome.
 
-## Remaining gate
+## Canonical CI evidence
 
-Canonical CI must run the ordinary kernel suite and institutional verifier
-before it checks out the pinned organs and invokes only the named Route B
-integration test. P4 may begin only after that remote evidence is green.
+Commit `af827176763bd86ec2851fef272c369678c34da1` passed Canonical CI run
+`31282596092` (`run_number: 134`) on 2026-08-08. The remote evidence was:
+
+- complete kernel suite: 512 passed, 15 skipped;
+- institutional verifier V2 unit evidence: 491 passed, 14 skipped;
+- contract schema references: pass;
+- authority singleton: pass;
+- sealed developmental boundary and TARGET_FORM_001: pass;
+- pinned DALEOBANKS and WMI checkouts: pass;
+- named Route B counterfactual: 1 passed.
+
+The skips are preserved as skips, not counted as passes. The dedicated Route B
+step did run after both exact checkouts and passed.
+
+## Next gate
+
+P4 may inspect and freeze the held-out evaluator and candidate-builder boundary.
+No candidate generation or closure claim is authorized by this P3 result.

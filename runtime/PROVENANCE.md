@@ -127,5 +127,31 @@ Evidence tier: `sandbox_execution`.
 
 The result proves only the P3 internal routing geometry at the pinned revisions.
 It is not a deployment, independently verified outcome, settlement, commercial
-result, or developmental closure. Canonical CI on the complete repository is
-the remaining P3 gate.
+result, or developmental closure.
+
+### Canonical CI attestation
+
+The bounded P3 implementation is commit
+`af827176763bd86ec2851fef272c369678c34da1`. Canonical CI run
+`31282596092` (`run_number: 134`) completed successfully on 2026-08-08.
+
+All four canonical jobs passed. The kernel-and-organ job ran the full suite
+before the sibling checkouts, then ran the named cross-repository test after
+both exact pins were present:
+
+| Check | Remote result |
+|---|---|
+| Full kernel suite | 512 passed, 15 skipped |
+| Institutional verifier V2 unit evidence | 491 passed, 14 skipped |
+| Contract schema references | pass |
+| Authority singleton | pass |
+| Sealed developmental boundary | pass |
+| TARGET_FORM_001 report | pass and artifact uploaded |
+| DALEOBANKS checkout at `829c5f2` | pass |
+| WMI checkout at `6549984` | pass |
+| Route B real producer-to-consumer counterfactual | 1 passed |
+
+Skipped tests remain skipped evidence. They are not represented as passes.
+This remote result closes P3 only. `VERIFIED_DEVELOPMENTAL_CLOSURES` remains
+`0`, the PR remains draft, and no merge, deployment, external verifier,
+settlement, money, credential, publication, or external effect occurred.

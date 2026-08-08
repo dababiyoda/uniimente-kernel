@@ -100,6 +100,11 @@ The Evidence and Welfare Guardian dissents from any description of P3 as a devel
 
 `EXPERIMENT`
 
+Review outcome: the experiment passed Canonical CI at commit
+`af827176763bd86ec2851fef272c369678c34da1`, run `31282596092`. This completes
+P3's internal routing claim and does not widen the decision or satisfy a frozen
+developmental-closure condition set.
+
 ## Migration, rollback, and kill criteria
 
 - Migration: land only on draft PR #70, run exact-pin local evidence, require the single Canonical CI workflow, and enter P4 only after green evidence.

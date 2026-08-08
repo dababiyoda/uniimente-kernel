@@ -67,13 +67,45 @@ remaining_routes:
       Instantiated in-process with no network, no credentials, no database.
       Degrades cleanly without sqlalchemy (warns, continues). Synchronous path
       evaluate_packet() available alongside the async one.
-    producer_side: DALEOBANKS/services/wealthmachine_client.py (WealthMachineClient)
+    producer_side_CORRECTED:
+      overstatement_withdrawn: >-
+        A previous commit called WealthMachineClient "the producer side". That was
+        wrong. It is a transport/bridge CLIENT that accepts an already-constructed
+        OpportunityPacket. Withdrawn rather than quietly edited.
+      real_producer: DALEOBANKS/services/idea_refinery.py
+      real_producer_symbol: "IdeaRefinery._opportunity_from(idea, thesis) -> OpportunityPacket (line 257)"
+      canonical_serialization: "DALEOBANKS/services/venture_protocol.py packet_to_wire() (line 82)"
+    THE_BYPASS_TO_AVOID:
+      file: DALEOBANKS/services/wealthmachine_client.py
+      evidence: |
+        line 69-72:  configured = os.getenv("WEALTHMACHINE_MODE", "").lower()
+                     return "http" if self.url else "mock"
+        line 77-81:  def evaluate(self, packet): ... assessment = self._evaluate_mock(packet)
+        line 168:    def _evaluate_mock(self, packet) -> VentureAssessment
+      why_it_is_fatal_to_the_experiment: >-
+        Credential-free operation resolves to mock mode by default, in which
+        DALEOBANKS computes the VentureAssessment ITSELF via _evaluate_mock. An
+        episode routed through WealthMachineClient would therefore produce a
+        perfectly valid-looking assessment while WMI's OpportunityIntakeService is
+        never invoked at all. Edge resolution could be disabled and the assessment
+        would still appear — the counterfactual would silently prove nothing.
+      rule: >-
+        The P3 route must reach WMI OpportunityIntakeService.evaluate_packet()
+        directly. WealthMachineClient must not be in the decisive path. STATE B
+        must be checked for exactly this bypass: if an assessment still appears
+        when the edge is unproven, find the path that produced it.
+    required_causal_chain: >-
+      IdeaRefinery._opportunity_from() -> OpportunityPacket ->
+      venture_protocol.packet_to_wire() -> [Kernel: LinkReport proves edge ->
+      route materialised -> EventSpine contract-delivery event] ->
+      WMI OpportunityIntakeService.evaluate_packet() -> NetworkWealthEngine ->
+      VentureAssessment with requires_human_approval True
     why_it_qualifies: >-
       healthy and damaged are behaviourally different in a way that matters: with a
       proven edge the packet reaches intake and an assessment exists; without one
       the packet is never routed and no assessment is produced. That is a lost
       function, not a failing probe.
-  route_b_original_note: >-
+  route_b_prior_note: >-
     Real multi-repository consequence-inert consumer. Manifests point
     at services/wealthmachine_client.py, services/constitution.py etc. — DALEOBANKS
     and WMI paths. Both repos are present in this workspace at /home/user/. Next
@@ -119,6 +151,7 @@ known_falsifications:
   - "no organ manifest declares a handler; implementation_path points into other repos"
   - "EventSpine has zero non-test subscribers"
   - "the only in-kernel LinkReport consumer is a health check, not a dependent function"
+  - "WealthMachineClient is a transport client with a local mock evaluator, NOT the producer; routing through it would bypass WMI entirely"
 
 unresolved:
   - Route B feasibility (untested)

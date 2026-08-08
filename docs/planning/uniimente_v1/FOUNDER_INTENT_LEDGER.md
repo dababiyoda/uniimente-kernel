@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d -->
+<!-- graph-digest: 145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822 -->
 <!-- projection: FOUNDER_INTENT_LEDGER -->
 
 
@@ -18,7 +18,7 @@ Source: `UNIIMENTE_SUPER_PLANNING_ROUND_MOST_CURRENT.{md,txt}`, both byte-identi
 at sha256 `1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e`,
 verified by execution against the founder's stated hash.
 
-**30 nodes** projected from graph digest `c65a4d773a988a1c`. Regenerate with `python planning/compiler/render.py`.
+**30 nodes** projected from graph digest `145f253d5c8dd27a`. Regenerate with `python planning/compiler/render.py`.
 
 ## protected intent (30)
 

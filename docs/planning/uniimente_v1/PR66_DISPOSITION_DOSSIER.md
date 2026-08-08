@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d -->
+<!-- graph-digest: 145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822 -->
 <!-- projection: PR66_DISPOSITION_DOSSIER -->
 
 
@@ -18,7 +18,7 @@ Every claim in the existing body is classified `SUPPORTED`, `STALE`,
 The proposed replacement body and disposition comment are stored **inert**.
 Applying either is a later, explicit founder action.
 
-**3 nodes** projected from graph digest `c65a4d773a988a1c`. Regenerate with `python planning/compiler/render.py`.
+**3 nodes** projected from graph digest `145f253d5c8dd27a`. Regenerate with `python planning/compiler/render.py`.
 
 ## pr capsule (1)
 

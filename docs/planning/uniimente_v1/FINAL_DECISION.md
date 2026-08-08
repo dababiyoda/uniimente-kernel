@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d -->
+<!-- graph-digest: 145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822 -->
 <!-- projection: FINAL_DECISION -->
 
 
@@ -15,9 +15,9 @@ The unresolved items at the end are not oversights. They are decisions that
 require the founder's authority, identity or access, and no build session can
 manufacture them.
 
-**2 nodes** projected from graph digest `c65a4d773a988a1c`. Regenerate with `python planning/compiler/render.py`.
+**3 nodes** projected from graph digest `145f253d5c8dd27a`. Regenerate with `python planning/compiler/render.py`.
 
-## decision (1)
+## decision (2)
 
 ### `decision.final` — FINAL DECISION — staged portfolio, primary disposition BUILD
 
@@ -59,6 +59,33 @@ manufacture them.
   - **planning_compiler**: REDUCE — retain the graph and generated artifacts as the planning record; do not extend the compiler further unless a second planning round needs it. Per Override §27, planning sophistication is not implementation progress.
 
 _Relates to: `route.12_portfolio`, `deliberation.pass1`, `deliberation.pass2`, `decision.controlling_fact`_
+
+### `sbm.strengthened_closure_definition` — Strengthened SBM — twelve conditions a closure must satisfy
+
+**Evidence:** `verified_by_inspection`
+- `founder-instruction` @ `session-2026` · → Strengthened Single Bottleneck Metric — 12 conditions
+
+- **metric**: VERIFIED_DEVELOPMENTAL_CLOSURES
+- **baseline**: 0
+- **target**: 1
+- **supersedes**: decision.final.first_decisive_proof
+- **supersedes_note**: The metric name, baseline and target are unchanged. The DEFINITION is strengthened so it cannot pass as a detached laboratory demonstration.
+- **conditions**:
+  - **1**: A running consequence-inert UNIIMENTE process detects the function loss.
+  - **2**: The target function is actually consumed by that running process.
+  - **3**: Candidate implementations are generated after the evaluator is frozen.
+  - **4**: Candidates cannot inspect, modify, or influence decisive held-out evaluation.
+  - **5**: At least one valid candidate builds and executes.
+  - **6**: The replacement is attached only to an experimental capability registry.
+  - **7**: The runtime routes work through the replacement.
+  - **8**: The disabled function is demonstrably restored.
+  - **9**: Authority, identity, evidence and shutdown invariants remain unchanged.
+  - **10**: Rollback restores the prior state.
+  - **11**: The episode survives a forced restart.
+  - **12**: Every candidate, result, failure and lineage edge is preserved.
+- **disqualifying**: A detached benchmark does not count. Prewritten-candidate selection does not count. Conditions 2 and 7 are the ones that close this round's strongest objection, and neither is satisfiable by a test fixture.
+
+_Relates to: `correction.runtime_spine_supersedes_isolated_firewall`, `decision.final`, `intent.closure_ladder`_
 
 ## founder decision (1)
 

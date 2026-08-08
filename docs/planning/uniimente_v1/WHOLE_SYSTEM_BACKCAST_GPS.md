@@ -1,6 +1,6 @@
 <!-- GENERATED FILE — DO NOT EDIT BY HAND -->
 <!-- source: planning/graph/nodes/ via planning/compiler/render.py -->
-<!-- graph-digest: c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d -->
+<!-- graph-digest: 145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822 -->
 <!-- projection: WHOLE_SYSTEM_BACKCAST_GPS -->
 
 
@@ -14,7 +14,7 @@ Nodes 6 and beyond are deliberately not expanded. Every one is gated on Node 5,
 and expanding them now would produce roadmap fiction rather than a plan. Override
 §2 preserves those aspirations; honesty defers the node.
 
-**6 nodes** projected from graph digest `c65a4d773a988a1c`. Regenerate with `python planning/compiler/render.py`.
+**6 nodes** projected from graph digest `145f253d5c8dd27a`. Regenerate with `python planning/compiler/render.py`.
 
 ## backcast node (6)
 

@@ -616,6 +616,44 @@
     "title": "FINAL DECISION — staged portfolio, primary disposition BUILD"
   },
   {
+    "baseline": 0,
+    "conditions": {
+      "1": "A running consequence-inert UNIIMENTE process detects the function loss.",
+      "2": "The target function is actually consumed by that running process.",
+      "3": "Candidate implementations are generated after the evaluator is frozen.",
+      "4": "Candidates cannot inspect, modify, or influence decisive held-out evaluation.",
+      "5": "At least one valid candidate builds and executes.",
+      "6": "The replacement is attached only to an experimental capability registry.",
+      "7": "The runtime routes work through the replacement.",
+      "8": "The disabled function is demonstrably restored.",
+      "9": "Authority, identity, evidence and shutdown invariants remain unchanged.",
+      "10": "Rollback restores the prior state.",
+      "11": "The episode survives a forced restart.",
+      "12": "Every candidate, result, failure and lineage edge is preserved."
+    },
+    "disqualifying": "A detached benchmark does not count. Prewritten-candidate selection does not count. Conditions 2 and 7 are the ones that close this round's strongest objection, and neither is satisfiable by a test fixture.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "Strengthened Single Bottleneck Metric — 12 conditions"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "sbm.strengthened_closure_definition",
+    "kind": "decision",
+    "metric": "VERIFIED_DEVELOPMENTAL_CLOSURES",
+    "refs": [
+      "correction.runtime_spine_supersedes_isolated_firewall",
+      "decision.final",
+      "intent.closure_ladder"
+    ],
+    "supersedes": "decision.final.first_decisive_proof",
+    "supersedes_note": "The metric name, baseline and target are unchanged. The DEFINITION is strengthened so it cannot pass as a detached laboratory demonstration.",
+    "target": 1,
+    "title": "Strengthened SBM — twelve conditions a closure must satisfy"
+  },
+  {
     "actual_head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
     "actual_status": "pre-arrival control is IMPLEMENTED AND ADVERSARIALLY VERIFIED (PA-1..PA-5); the bottleneck moved twice since",
     "actual_suite": "924 passed · 1 skipped · 24 xfailed · 0 failed",
@@ -868,6 +906,93 @@
     "uncommitted_work": "The DUAL_REPAIR_SEARCHES detector reordering is correct and independent of Design A's failure, but was not committed because it arrived inside a falsified candidate. It still requires its own negative control."
   },
   {
+    "commit_sequence": {
+      "P0": "truth reconstruction",
+      "P1": "runtime contract",
+      "P10": "final dossier and handoff",
+      "P2": "evaluator freeze",
+      "P3": "runtime spine",
+      "P4": "candidate-builder isolation",
+      "P5": "candidate generation",
+      "P6": "independent evaluation",
+      "P7": "experimental attachment and restoration",
+      "P8": "restart/rollback/adversarial verification",
+      "P9": "marker/result activation"
+    },
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "Exact next command — AUTHORIZE P0/P1 IMPLEMENTATION"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "authorization.p0_p1",
+    "kind": "founder_authorization",
+    "planning_authority": "PR #68 and Issue #69 are the planning authority and evidence source",
+    "pre_registration_rule": "Pre-register the experiment, evaluator hashes, protected paths, negative controls, resource ceilings, rollback target and success definition BEFORE any candidate code exists.",
+    "preservation": "Preserve all failures and alternatives. Keep the branch draft and unmerged.",
+    "refs": [
+      "correction.runtime_spine_supersedes_isolated_firewall",
+      "sbm.strengthened_closure_definition",
+      "decision.final"
+    ],
+    "required_runtime_behaviour": [
+      "cold start",
+      "load the constitutional configuration",
+      "load organ and capability manifests",
+      "establish the internal event spine",
+      "register real contract consumers",
+      "instantiate the capability router",
+      "invoke the Whole-Body Closure Controller",
+      "detect one deliberately disabled function",
+      "request candidate construction",
+      "build candidates in isolated chambers",
+      "evaluate them through a protected evaluator",
+      "attach a qualifying candidate to an experimental registry",
+      "route a real internal request through the replacement",
+      "verify restoration",
+      "record lineage, evidence and rollback",
+      "restart and prove the episode survives recovery"
+    ],
+    "reuse_not_reimplement": "Invoke the existing linker, capability registry/router and Whole-Body Closure Controller rather than reimplementing them. The round measured that these already exist; building parallel versions would repeat the exact mistake the diagnosis identified.",
+    "scope": "runtime implementation on the planning branch, consequence-inert",
+    "status": "GRANTED",
+    "still_prohibited": [
+      "modify PR #66",
+      "merge",
+      "deploy",
+      "publish",
+      "access production credentials",
+      "move money or create external effects"
+    ],
+    "title": "AUTHORIZED — P0/P1 Consequence-Inert Runtime Spine + Evaluator Firewall"
+  },
+  {
+    "diagnosis_accepted": "Static existence is not operational existence. Many modules exist, many tests pass, many contracts are defined, sophisticated experiments exist — and there is no persistent whole-body process, no runtime contract consumer, no active adapter topology, no continuous mission loop, and no end-to-end developmental cycle. An institutional library, not yet the operating egregore.",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "Correct next construction phase — P0/P1 Consequence-Inert Runtime Spine + Evaluator Firewall"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "founder_reasoning": "Otherwise the round's own strongest counterargument lands — UNIIMENTE could repair a capability that nothing uses and still appear to have improved.",
+    "id": "correction.runtime_spine_supersedes_isolated_firewall",
+    "kind": "founder_correction",
+    "refs": [
+      "program.pr_stack",
+      "anatomy.kernel_is_a_library_not_a_running_system",
+      "route.11_execution_surface_first",
+      "decision.final"
+    ],
+    "supersedes": "program.pr_stack.P1",
+    "supersedes_note": "This round's P1 proposed the evaluator firewall as a standalone subsystem. The founder corrected it: build the firewall as part of the first consequence-inert Runtime Spine, and make the first developmental closure occur THROUGH that runtime. The superseded formulation is preserved above rather than rewritten, per Override §28.",
+    "title": "CORRECTION — the Evaluator Firewall belongs inside the Runtime Spine, not beside it",
+    "why_this_is_right": "It converts the round's stated weakness into a structural fix instead of a caveat. The earlier design answered \"a closure over an unconsumed capability\" by labelling the tier honestly; this answers it by making the capability consumed. A label prevents the wrong claim; the runtime prevents the wrong outcome. That is strictly stronger."
+  },
+  {
     "decisions": [
       {
         "blocked_on": "founder identity, brand voice, live platform credentials",
@@ -898,6 +1023,171 @@
     "id": "decision.founder_decisions_required",
     "kind": "founder_decision",
     "title": "Unresolved decisions only Alfonso can make"
+  },
+  {
+    "consequence_for_this_round": "Node 4 (first economic closure) moves from BLOCKED_ON_FOUNDER to GATED — the blocker is now a buildable covenant rather than an unmade decision. Economic closure proceeds in parallel rather than being deferred indefinitely.",
+    "decision": "AUTHORIZE_STAGED_PROGRESSION",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "FD-1 — DALEOBANKS publication"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "fd1.daleobanks_staged_authority",
+    "kind": "founder_decision_resolved",
+    "not_acceptable": "permanent shadow mode",
+    "not_authorized": "unrestricted live publishing",
+    "principle": "Not \"approve every post\" — \"approve the operating territory once.\"",
+    "refs": [
+      "decision.founder_decisions_required",
+      "backcast.node_4_economic_closure",
+      "intent.daleobanks_role"
+    ],
+    "stages": {
+      "stage_1_shadow": {
+        "permitted": [
+          "research",
+          "draft",
+          "fact-check",
+          "localize",
+          "simulate schedule",
+          "predict reception",
+          "record decisions"
+        ],
+        "publication": "NONE"
+      },
+      "stage_2_canary": {
+        "gate": "A tested Standing Authority Covenant, rollback, tamper-evident decision record, and platform-specific policy checks.",
+        "permitted": [
+          "one approved account",
+          "approved low-risk content classes",
+          "small daily volume"
+        ],
+        "prohibited": [
+          "private messages",
+          "spending",
+          "account-setting changes",
+          "regulated personalized advice"
+        ],
+        "safety": "automatic disarm on integrity failure"
+      },
+      "stage_3_bounded_standing_authority": {
+        "escalation": "exceptions escalate",
+        "permitted": [
+          "multiple approved accounts and languages",
+          "ordinary posts execute automatically"
+        ]
+      }
+    },
+    "still_not_authorized_now": "No publication occurs in P0/P1. Stage 2 requires its covenant built and tested first.",
+    "title": "FD-1 RESOLVED — staged shadow → canary → bounded standing authority"
+  },
+  {
+    "decision": "NEEDS_EVIDENCE",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "FD-2 — IVIO-NEMT as the wedge"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "fd2.ivio_needs_evidence",
+    "kind": "founder_decision_resolved",
+    "next_evidence_step": "repository access plus reconstruction of why PR #53 excluded it",
+    "not": [
+      "presumed_canonical_wedge",
+      "permanently_excluded"
+    ],
+    "reasoning": "The round could not inspect the repository, and PR #53 conflicts with the assumption that IVIO is the first wedge. That conflict cannot be solved by narrative.",
+    "refs": [
+      "repo.unavailable.ivio_nemt",
+      "pr.kernel.53.ivio_excluded",
+      "route.04_proof_to_settlement_first"
+    ],
+    "title": "FD-2 RESOLVED — IVIO-NEMT status is NEEDS_EVIDENCE",
+    "until_then": [
+      "do not build the whole plan around IVIO",
+      "do not delete or abandon IVIO",
+      "use the computational closure as the internal proof target",
+      "use DALEOBANKS as the immediate commercial-development track",
+      "compare IVIO against alternative proof-to-settlement wedges once its evidence is available"
+    ]
+  },
+  {
+    "active_triage_scope": "top 5-10 PRs that can change the next construction phase; everything else preserved but not consuming attention",
+    "archived_base_rule": "The four kernel PRs based on 3d9b5779 are NOT ordinary merge candidates. Extract or port their useful mechanisms through new current-base work rather than merging blindly.",
+    "decision": "FREEZE_CLASSIFY_TRIAGE_FRONTIER",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "FD-3 — Sixty-nine-PR backlog"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "id": "fd3.backlog_freeze_and_classify",
+    "kind": "founder_decision_resolved",
+    "lineage_statuses": [
+      "CANONICAL_CANDIDATE",
+      "DEPENDENCY",
+      "EXPERIMENTAL_TRACK_B",
+      "SPECIALIST",
+      "FALLBACK",
+      "SUPERSEDED_PRESERVED",
+      "FAILED_BUT_INFORMATIVE",
+      "ARCHIVED_BASE_INCOMPATIBLE",
+      "BLOCKED",
+      "QUARANTINED"
+    ],
+    "prohibited": [
+      "mass close",
+      "delete"
+    ],
+    "refs": [
+      "discrepancy.stacked_pr_backlog",
+      "decision.founder_decisions_required"
+    ],
+    "title": "FD-3 RESOLVED — freeze by default, classify completely, triage only the frontier"
+  },
+  {
+    "current_development": "operator-recorded ratification remains valid and honestly labelled",
+    "decision": "TWO_TIER_RATIFICATION",
+    "evidence_refs": [
+      {
+        "repo": "founder-instruction",
+        "sha": "session-2026-08-08",
+        "symbol": "FD-4 — Cryptographic founder ratification"
+      }
+    ],
+    "evidence_status": "verified_by_inspection",
+    "gate_triggers": [
+      "broad standing publication authority",
+      "money movement",
+      "physical or regulated actions"
+    ],
+    "higher_consequence_gate": "cryptographic ratification becomes a gate",
+    "id": "fd4.ratification_two_tier",
+    "kind": "founder_decision_resolved",
+    "reasoning": "Do not block present engineering on a signature system that has not yet been installed.",
+    "refs": [
+      "decision.founder_decisions_required",
+      "fd1.daleobanks_staged_authority"
+    ],
+    "required_mechanism": [
+      "founder-bound signing key or hardware-backed credential",
+      "document hash",
+      "version",
+      "timestamp",
+      "scope",
+      "expiry or supersession rule",
+      "revocation path",
+      "recovery procedure",
+      "distinction between signature and legal effect"
+    ],
+    "title": "FD-4 RESOLVED — operator-recorded now, cryptographic before higher consequence"
   },
   {
     "boundaries": {
@@ -1015,6 +1305,35 @@
       }
     ],
     "title": "Dependency-aware PR stack — against current main, never an archived base"
+  },
+  {
+    "correction_accepted": "A tool response is not a working monitor. The earlier claim that a check-in \"is scheduled\" overstated what was verified. PR #68 must be treated as UNMONITORED until a check actually fires and reports its observation.",
+    "delivery_acknowledgment": "NONE",
+    "enabled_state": "UNREADABLE",
+    "evidence_refs": [
+      {
+        "command": "CronList -> 'No scheduled jobs'; ToolSearch for list_triggers -> no matching deferred tools",
+        "repo": "dababiyoda/uniimente-kernel",
+        "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+      }
+    ],
+    "evidence_status": "verified_by_execution",
+    "fire_at_claimed": "2026-08-08T15:00:00Z",
+    "id": "instrument.pr68_monitor_failed_to_check",
+    "job_identifier": "trig_01NCTarPJBG48yoDEuxeTpu1",
+    "kind": "instrument_status",
+    "last_successful_check_at": "NEVER_RAN",
+    "next_scheduled_check_at": "UNVERIFIED",
+    "observed_pr_head": "NOT_YET_OBSERVED_BY_MONITOR",
+    "read_result": "UNREADABLE",
+    "refs": [
+      "intent.anti_self_deception"
+    ],
+    "rule": "Silence is not a passing result.",
+    "scheduler_type": "Routine via send_later (NOT CronCreate)",
+    "status": "FAILED_TO_CHECK",
+    "title": "PR #68 monitor — FAILED_TO_CHECK, not 'unchanged'",
+    "what_was_actually_verified": "Only that the send_later call returned a trigger_id and a fire_at. CronList was run and returned \"No scheduled jobs\" — the wrong instrument, since send_later creates a Routine rather than a cron job. The list_triggers tool is not loadable in this session because its MCP server is mid-reconnect."
   },
   {
     "body_claims_classified": [

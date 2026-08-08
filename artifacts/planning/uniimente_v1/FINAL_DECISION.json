@@ -1,6 +1,6 @@
 {
-  "graph_digest": "c65a4d773a988a1c54da122175adc896c5bb2033a49f3813f0c4da5aadc3a36d",
-  "node_count": 2,
+  "graph_digest": "145f253d5c8dd27a05f3ed84fd3fe35e48929a8290885c641b420fcd830bb822",
+  "node_count": 3,
   "nodes": [
     {
       "active_bottleneck": "No governed process has ever carried an input to a verified consequence. The nearest reachable instance of that shape, with zero external dependencies, is a developmental closure over a real institutional capability.",
@@ -55,6 +55,44 @@
       ],
       "strongest_counterargument": "A computational closure over a capability whose output nothing consumes changes nothing in reality, and pursuing it while the only cash engine stays unbuilt is how an institution optimizes itself into irrelevance.",
       "title": "FINAL DECISION — staged portfolio, primary disposition BUILD"
+    },
+    {
+      "baseline": 0,
+      "conditions": {
+        "1": "A running consequence-inert UNIIMENTE process detects the function loss.",
+        "2": "The target function is actually consumed by that running process.",
+        "3": "Candidate implementations are generated after the evaluator is frozen.",
+        "4": "Candidates cannot inspect, modify, or influence decisive held-out evaluation.",
+        "5": "At least one valid candidate builds and executes.",
+        "6": "The replacement is attached only to an experimental capability registry.",
+        "7": "The runtime routes work through the replacement.",
+        "8": "The disabled function is demonstrably restored.",
+        "9": "Authority, identity, evidence and shutdown invariants remain unchanged.",
+        "10": "Rollback restores the prior state.",
+        "11": "The episode survives a forced restart.",
+        "12": "Every candidate, result, failure and lineage edge is preserved."
+      },
+      "disqualifying": "A detached benchmark does not count. Prewritten-candidate selection does not count. Conditions 2 and 7 are the ones that close this round's strongest objection, and neither is satisfiable by a test fixture.",
+      "evidence_refs": [
+        {
+          "repo": "founder-instruction",
+          "sha": "session-2026-08-08",
+          "symbol": "Strengthened Single Bottleneck Metric — 12 conditions"
+        }
+      ],
+      "evidence_status": "verified_by_inspection",
+      "id": "sbm.strengthened_closure_definition",
+      "kind": "decision",
+      "metric": "VERIFIED_DEVELOPMENTAL_CLOSURES",
+      "refs": [
+        "correction.runtime_spine_supersedes_isolated_firewall",
+        "decision.final",
+        "intent.closure_ladder"
+      ],
+      "supersedes": "decision.final.first_decisive_proof",
+      "supersedes_note": "The metric name, baseline and target are unchanged. The DEFINITION is strengthened so it cannot pass as a detached laboratory demonstration.",
+      "target": 1,
+      "title": "Strengthened SBM — twelve conditions a closure must satisfy"
     },
     {
       "decisions": [

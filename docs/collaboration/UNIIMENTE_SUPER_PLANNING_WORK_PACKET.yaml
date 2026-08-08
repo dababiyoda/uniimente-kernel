@@ -14,7 +14,7 @@
 
 work_packet:
   as_of: '2026-08-08'
-  round: UNIIMENTE super-planning — whole-system reconciliation
+  round: "UNIIMENTE super-planning COMPLETE; P0/P1 implementation AUTHORIZED and landed"
   branch: claude/super-planning-prompt-h8l0oj
   base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
   canonical_prompt:
@@ -71,11 +71,12 @@ work_packet:
 
   verified_state:
     kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
-    suite_with_planning_tests: "518 passed"
+    suite_total: "536 passed (495 main + 23 planning + 18 runtime contract)"
     planning_tests: 23
-    graph_nodes: 96
-    graph_digest: c65a4d773a988a1c... (full value in SESSION_EXECUTION_LEDGER.json)
-    checksum_entries: 30
+    graph_nodes: 104
+    graph_digest: see SESSION_EXECUTION_LEDGER.json
+    runtime_contract_sha256: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
+    checksum_entries: 34
     planning_pr: 68
     planning_issue: 69
     change_footprint: planning/, docs/planning/, artifacts/planning/, docs/collaboration/
@@ -134,10 +135,44 @@ work_packet:
     python planning/compiler/validate.py && python planning/compiler/render.py --check
     && python -m pytest -q -p no:randomly
 
-  remaining_work:
-    - none within this round's authority; all nine SP stages complete
-    - next action is P1 (evaluator firewall isolation), which is RUNTIME work and
-      requires a separate authorization beyond this planning round
+  founder_corrections_applied:
+    - >-
+      The Evaluator Firewall must be built INSIDE the consequence-inert Runtime
+      Spine, not beside it. The first developmental closure must occur THROUGH
+      that runtime. Supersedes this round's own P1. Recorded as
+      correction.runtime_spine_supersedes_isolated_firewall.
+    - >-
+      SBM definition strengthened to twelve conditions. Conditions 2 (the running
+      process consumes the target function) and 7 (the runtime routes work through
+      the replacement) are what a detached benchmark can never satisfy.
+    - "FD-1 RESOLVED: staged shadow -> canary -> bounded standing authority"
+    - "FD-2 RESOLVED: IVIO-NEMT = NEEDS_EVIDENCE, neither canonical nor excluded"
+    - "FD-3 RESOLVED: freeze by default, classify completely, triage top 5-10 only"
+    - "FD-4 RESOLVED: operator-recorded now; cryptographic before higher consequence"
+
+  p0_p1_status:
+    P0_truth_reconstruction: COMPLETE — founder authorization and corrections recorded in graph
+    P1_runtime_contract: COMPLETE — runtime/contract.py frozen, self-sealed, 18 guard tests
+    P2_evaluator_freeze: NOT_STARTED
+    P3_runtime_spine: NOT_STARTED
+    P4_candidate_builder_isolation: NOT_STARTED
+    P5_candidate_generation: NOT_STARTED
+    P6_independent_evaluation: NOT_STARTED
+    P7_experimental_attachment_and_restoration: NOT_STARTED
+    P8_restart_rollback_adversarial_verification: NOT_STARTED
+    P9_marker_result_activation: NOT_STARTED
+    P10_final_dossier_and_handoff: NOT_STARTED
+
+  instrument_status:
+    pr68_monitor: FAILED_TO_CHECK
+    pr68_monitor_detail: >-
+      send_later returned trigger_id trig_01NCTarPJBG48yoDEuxeTpu1 and fire_at
+      2026-08-08T15:00:00Z. That is a call response, not a verified monitor.
+      CronList returns none (wrong instrument — send_later creates a Routine, not
+      a cron job) and list_triggers is not loadable in this session. Enabled
+      state, last_successful_check_at and delivery acknowledgment are all
+      UNREADABLE. Treat PR #68 as UNMONITORED until a check fires and reports.
+      Silence is not a passing result.
 
   invalid_stopping_reasons:
     - natural handoff point

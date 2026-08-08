@@ -1,91 +1,98 @@
-# P3 inspection — measured before any construction
+# P3 inspection and Route B resolution
 
-Per the continuation order: inspect before building. No P3 runtime code was
-written. Three findings, all obtained by grep/inspection at `433c7c5`, decide
-the geometry.
+## Current disposition
 
-## Finding 1 — `MISSING_SEAM: contract_to_runtime_event_binding` (CONFIRMED)
+`P3-B_IMPLEMENTED_AWAITING_CANONICAL_CI`
 
-Organ manifests declare `consumes` / `produces` by **contract name**:
+The consequence-inert local counterfactual now proves the narrow routing claim at
+the two manifest-pinned organ revisions. It does not prove deployment, external
+verifier acceptance, settlement, a commercial result, or a developmental
+closure. `VERIFIED_DEVELOPMENTAL_CLOSURES` remains `0`.
 
-```yaml
-consumes: [wire-venture-assessment]
-produces: [wire-opportunity-packet, context-packet]
-```
+## Initial measured inspection
 
-`EventSpine.subscribe(type_prefix, handler)` routes by **event-type prefix**.
+Before construction, repository inspection found two real absences:
 
-These are different namespaces and **no mapping between them exists anywhere in
-the repository.** The only `event_type` usages are `omnimorph/engine.py`
-(its own `omnimorph.*` namespace) and `evolution/migration/spec.py`
-(a single refusal event). Neither binds an institutional contract to a runtime
-event type.
+1. Organ manifests named contracts while `EventSpine` routed event-type
+   prefixes. No canonical contract-to-event binding existed.
+2. The kernel contained no legitimate consumer for the selected contract.
+   The real implementation lived in WealthMachineIntelligence.
 
-The order's instruction applies exactly: do not invent a mapping from string
-similarity. `wire-opportunity-packet` is not evidence for an event type named
-`wire.opportunity_packet` or anything else.
+The EventSpine also had no non-test subscriber. These observations made the
+initial disposition `P3_PARTIAL`; they did not falsify the geometry.
 
-## Finding 2 — `REAL_CONSUMER_IMPLEMENTATION_ABSENT`
+## Route adjudication
 
-No organ manifest declares a handler. `grep -c handler organs/*.yaml` returns
-**0** for all three. What manifests do declare is `implementation_path`:
+Route A, a kernel-resident consumer, was rejected. The only in-kernel use of
+`LinkReport` was a health check. Disabling the edge changed the check's
+verdict, not a distinct institutional function.
 
-```yaml
-implementation_path: services/wealthmachine_client.py
-implementation_path: services/constitution.py
-```
+Route B was selected because both sides are legitimate organ functions:
 
-Those paths are **in other repositories.** `services/` does not exist in the
-kernel; these are DALEOBANKS paths. The kernel can prove the edge exists and
-cannot execute either end of it.
+| Role | Revision | Symbol | Function |
+| --- | --- | --- | --- |
+| Producer | DALEOBANKS `829c5f2810776bef65d6ea108800a3516c9f4c2b` | `IdeaRefinery._opportunity_from` plus `packet_to_wire` | Produces a canonical OpportunityPacket wire object |
+| Consumer | WealthMachineIntelligence `6549984a22a171f68b268b775f19192aee599609` | `OpportunityIntakeService.evaluate_packet` | Produces a schema-valid assessment with human approval required |
 
-So the four proven edges are proofs *about* code that lives elsewhere. There is
-no consumer implementation for the kernel runtime to route a message to.
+A decisive adversarial finding changed the design: DALEOBANKS
+`WealthMachineClient` defaults to a local mock when no URL is configured. It
+can create a valid-looking assessment without invoking WMI. The client is
+therefore excluded from the decisive path and used only as a hostile bypass
+control.
 
-## Finding 3 — `EventSpine` has zero non-test subscribers
+## Selected seam
 
-`grep -rn "\.subscribe(" --include=*.py . | grep -v tests/` returns **nothing.**
-The event spine is as orphaned as `adapters/` — built, tested, and wired to no
-runtime path. Nothing in the kernel subscribes to anything.
+`runtime/contract_events.py` adds one generic routing seam:
 
-## What this means for the geometry
+- it consumes the existing `LinkReport`; it does not implement a second linker;
+- it emits `contract.delivery` and `contract.delivery_completed` on the
+  existing `EventSpine`; it does not create a second bus;
+- it requires one exact producer-contract-consumer edge;
+- it requires the real stable consumer method reference;
+- it refuses any consequence classification other than `INERT`;
+- it records both source revisions, a checkout-independent schema locator, and
+  the schema SHA-256;
+- it records the result as a causal child of the request;
+- it grants no capability and cannot flush an external outbox.
 
-The proposed causal path was:
+Contract names remain data. No event name is derived from contract spelling.
 
-```
-manifests + schemas → InstitutionalLinker → LinkReport → proven edges
-  → routing plan → EventSpine subscriptions → real consumer receives message
-```
+## Four-state counterfactual
 
-The first four arrows work today. The last two have no material to work with:
-there is no contract→event binding to materialize a subscription *from*, and no
-in-kernel consumer to deliver *to*.
+The probe ran the two exact git checkouts with network denied:
 
-This is not a reason to manufacture one. A `test_consumer` bound by a
-string-normalization rule would satisfy the shape of conditions 2 and 7 while
-violating their intent, and the order forbids exactly that.
+| State | Controlled change | Required observation | Local result |
+| --- | --- | --- | --- |
+| A healthy | Exact edge present | Real WMI assessment exists | PASS |
+| B disabled | Remove only the target edge | Binding refused; no assessment | PASS |
+| C bypass | Offer real DALEOBANKS local mock as WMI | Lookalike exists; binding refused | PASS |
+| D restored | Restore exact edge | Assessment and causal result receipt return | PASS |
 
-## Honest disposition
+Additional assertions passed:
 
-`P3_PARTIAL` — not falsified, not proven.
+- both checkout HEADs equal the manifest pins;
+- packet ids match across the route;
+- `requires_human_approval` is true;
+- the evidence chain verifies;
+- external effects equal zero;
+- closure-count delta equals zero;
+- a non-inert binding classification is refused;
+- schema provenance is
+  `contracts/wire-opportunity-packet.schema.json` plus
+  SHA-256 `487a28729bb856f239cd2d90c12b43f8088db4b625123750f8887e56c8ba7352`.
 
-The geometry is not disproven, because nothing about it is structurally
-impossible; it is **unbuilt at two specific, named, bounded places.** The
-distinction matters: `P3_GEOMETRY_FALSIFIED` would assert that proven topology
-*cannot* control runtime routing here, and the evidence does not support that
-claim. It supports the weaker, more useful one — two primitives are genuinely
-absent, and they are the first real absences this programme has found after
-repeatedly discovering that things merely looked absent.
+## Evidence boundary and dissent
 
-## The open question the next session must answer first
+This is `SANDBOX_EXECUTION_CONSEQUENCE_INERT`. It establishes that, at the
+pinned revisions, the existing linker can control delivery of a real packet to a
+real consumer through the existing EventSpine. It does not establish that the
+same code is deployed as separate services or accepted by an external verifier.
 
-Whether an in-kernel consumer can exist at all, or whether every real consumer
-necessarily lives in another repository.
+The Evidence and Welfare Guardian's dissent is binding: P3 must not be described
+as a closure, deployment, commercial result, or proof-to-settlement outcome.
 
-If the latter, the four-state counterfactual cannot run inside the kernel alone,
-and the correct target capability for the first developmental closure may not be
-`institutional.cross_organ_edge_resolution` — because its consumers are, by
-construction, cross-repository. That would be a genuine finding about the
-*choice of first deficit*, not a failure of the developmental thesis.
+## Remaining gate
 
-Do not resolve this by inventing an in-kernel consumer.
+Canonical CI must run the ordinary kernel suite and institutional verifier
+before it checks out the pinned organs and invokes only the named Route B
+integration test. P4 may begin only after that remote evidence is green.

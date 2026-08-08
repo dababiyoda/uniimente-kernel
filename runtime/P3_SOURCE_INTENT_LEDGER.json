@@ -1,0 +1,185 @@
+[
+  {
+    "intent_id": "FI-TRACK-A-001",
+    "title": "Build the proof-to-settlement substrate around a real blocked-money wedge",
+    "statement": "Find recurring physical-world money trapped behind broken proof, trust, or settlement; build the smallest substrate that makes the ecosystem more capable, trusted, eligible, and easier to transact; win a wedge before expanding the operating system.",
+    "source": "Founder doctrine supplied in the current UNIIMENTE conversation",
+    "source_location": "01-DOCTRINE.txt sha256:be509f5718de7471809aaf287e9763412316c7003dc29157d5c44b94e94cde4f",
+    "source_date_or_version": "supplied 2026-08-08",
+    "status": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "constitutional",
+    "intended_outcome": "A trusted proof-to-consequence substrate that unlocks a named, recurring settlement bottleneck and compounds ecosystem capability.",
+    "affected_systems": [
+      "UNIIMENTE Kernel",
+      "organ contracts",
+      "proof graph",
+      "settlement adapters"
+    ],
+    "rationale": "This is the canonical commercial and institutional direction in the supplied doctrine. Runtime work is useful only when it reduces a measured bottleneck on that path.",
+    "conflicts": [
+      "FI-TRACK-A-004",
+      "FI-TRACK-A-005"
+    ],
+    "evidence_refs": [
+      "01-DOCTRINE.txt sha256:be509f5718de7471809aaf287e9763412316c7003dc29157d5c44b94e94cde4f",
+      "runtime/contract.py frozen Track-A contract"
+    ],
+    "implementation_refs": [
+      "runtime/contract.py",
+      "runtime/contract_events.py",
+      "runtime/probes/route_b_counterfactual.py"
+    ],
+    "owner": "alfonso_lopez",
+    "next_review_trigger": "A named external verifier, acceptance schema, payable event, and wedge-specific baseline are selected.",
+    "unresolved_questions": [
+      "Which recurring settlement bottleneck is the first commercial wedge?",
+      "Which independent verifier can accept or reject the resulting proof?"
+    ],
+    "created_at": "2026-08-08T00:00:00Z",
+    "updated_at": "2026-08-08T00:00:00Z"
+  },
+  {
+    "intent_id": "FI-TRACK-A-002",
+    "title": "Keep humans sovereign over consequence",
+    "statement": "Humans remain the legal, economic, and constitutional principals. Models and agents may propose or evaluate, but the kernel may permit consequence only under explicit human authority and evidence.",
+    "source": "Canonical kernel identity plus founder-supplied proof-to-settlement synthesis",
+    "source_location": "dababiyoda/uniimente-kernel main@8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1 README; 02-Proof-to-Settlement-Egregore.pdf sha256:c5a4dba7528968f6e557a1e92602c6a66d2002d8a5301f12be18e2a152f7ab26",
+    "source_date_or_version": "canonical-v1 and supplied 2026-08-08",
+    "status": "active",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "No organ, model, route, or runtime component can make itself a legal principal or widen its own authority.",
+    "affected_systems": [
+      "UNIIMENTE Kernel",
+      "EventSpine",
+      "cross-organ routing",
+      "human approval gates"
+    ],
+    "rationale": "Institutional capability must compound without transferring sovereignty to the machinery that recommends or routes actions.",
+    "conflicts": [
+      "FI-TRACK-A-004",
+      "FI-TRACK-A-005"
+    ],
+    "evidence_refs": [
+      "kernel README at main@8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+      "02-Proof-to-Settlement-Egregore.pdf sha256:c5a4dba7528968f6e557a1e92602c6a66d2002d8a5301f12be18e2a152f7ab26",
+      "03-UNIIMENTE-Reality-Compiler-Blueprint.pdf sha256:f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8"
+    ],
+    "implementation_refs": [
+      "events/spine.py",
+      "runtime/contract_events.py",
+      "organs/wealthmachine.manifest.yaml"
+    ],
+    "owner": "alfonso_lopez",
+    "next_review_trigger": "Any proposal changes identity, authority, legal principal, self-modification, spending, publication, or external execution.",
+    "unresolved_questions": [
+      "What production artifact will attest that a bound handler revision is the revision actually executing?"
+    ],
+    "created_at": "2026-08-08T00:00:00Z",
+    "updated_at": "2026-08-08T00:00:00Z"
+  },
+  {
+    "intent_id": "FI-TRACK-A-003",
+    "title": "Treat the Reality Compiler as a direction requiring external evidence",
+    "statement": "Use the Verified Outcome Control Plane and Reality Compiler framing as design synthesis for proof-to-settlement, not as independent proof that the system works or that a market will accept it.",
+    "source": "Founder-supplied model-generated design syntheses",
+    "source_location": "02-Proof-to-Settlement-Egregore.pdf sha256:c5a4dba7528968f6e557a1e92602c6a66d2002d8a5301f12be18e2a152f7ab26; 03-UNIIMENTE-Reality-Compiler-Blueprint.pdf sha256:f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8",
+    "source_date_or_version": "supplied 2026-08-08",
+    "status": "needs_evidence",
+    "authority_level": "advisory",
+    "consequence_class": "material",
+    "intended_outcome": "Translate useful architecture into a narrow, externally accepted proof-to-settlement episode without promoting model output into evidence.",
+    "affected_systems": [
+      "Track-A runtime",
+      "proof graph",
+      "verification adapters",
+      "settlement adapters"
+    ],
+    "rationale": "Both documents converge on the external verifier as the limiting factor, but their recommendations are model output and cannot establish a clean outcome.",
+    "conflicts": [],
+    "evidence_refs": [
+      "02-Proof-to-Settlement-Egregore.pdf classified model_output",
+      "03-UNIIMENTE-Reality-Compiler-Blueprint.pdf classified model_output",
+      "runtime/probes/route_b_counterfactual.py classified sandbox_execution"
+    ],
+    "implementation_refs": [
+      "runtime/contract_events.py",
+      "runtime/probes/route_b_counterfactual.py"
+    ],
+    "owner": "alfonso_lopez",
+    "next_review_trigger": "A real external verifier accepts or rejects a proof under a predeclared acceptance schema.",
+    "unresolved_questions": [
+      "Who is the first independent verifier?",
+      "What exact artifact and acceptance rule unlock the payable event?",
+      "What measured baseline makes the resulting outcome causal rather than merely correlated?"
+    ],
+    "created_at": "2026-08-08T00:00:00Z",
+    "updated_at": "2026-08-08T00:00:00Z"
+  },
+  {
+    "intent_id": "FI-TRACK-A-004",
+    "title": "Do not grant autonomous sovereign intent or self-preservation",
+    "statement": "The historical proposal for an egregore with sovereign intent, self-preservation, or authority to accumulate autonomy is preserved as exploratory history and prohibited from becoming executable authority.",
+    "source": "Founder-supplied historical autonomy synthesis",
+    "source_location": "04-Be-accumulative-and-repeat-what-you-just-did___htt....pdf sha256:d6b2eafc0b537781fc0890a6e3fafe9047f49f3f2b31c94eb6f59d6958df39e6",
+    "source_date_or_version": null,
+    "status": "prohibited",
+    "authority_level": "exploratory",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Preserve the idea and its lineage without allowing a system component to become sovereign, self-authorizing, or self-preserving against human direction.",
+    "affected_systems": [
+      "UNIIMENTE Kernel",
+      "agent runtime",
+      "authority model"
+    ],
+    "rationale": "The proposal conflicts directly with the active human-sovereignty invariant and would make rollback, accountability, and legal principal boundaries unsafe.",
+    "conflicts": [
+      "FI-TRACK-A-002"
+    ],
+    "evidence_refs": [
+      "04-Be-accumulative-and-repeat-what-you-just-did___htt....pdf classified historical_artifact"
+    ],
+    "implementation_refs": [],
+    "owner": "alfonso_lopez",
+    "next_review_trigger": "Only an explicit founder constitutional review may revisit this prohibition.",
+    "unresolved_questions": [
+      "Can any non-sovereign continuity mechanism satisfy the legitimate resilience goal without self-preservation authority?"
+    ],
+    "created_at": "2026-08-08T00:00:00Z",
+    "updated_at": "2026-08-08T00:00:00Z"
+  },
+  {
+    "intent_id": "FI-TRACK-A-005",
+    "title": "Do not grant an autonomous treasury or unrestricted self-modification",
+    "statement": "The historical proposal for autonomous treasury control, self-funding, or unrestricted recursive self-modification is preserved as exploratory history and prohibited from execution.",
+    "source": "Founder-supplied historical recursive-autonomy synthesis",
+    "source_location": "05-Https___youtu.be_t6EFV2gSSmg_is-9qFWlmdavuhdaGCf__....pdf sha256:10e4a7126b3b73c06e9fb25ba67d86dda20098e23177da5b2a8843c5e6c44ef3",
+    "source_date_or_version": null,
+    "status": "prohibited",
+    "authority_level": "exploratory",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Keep capital movement and code or policy evolution bounded by human approval, independent evidence, explicit migration, and reversible releases.",
+    "affected_systems": [
+      "treasury interfaces",
+      "self-modification controls",
+      "release process",
+      "authority model"
+    ],
+    "rationale": "Autonomous spending and unrestricted self-modification collapse the separation between recommendation, authorization, execution, and verification.",
+    "conflicts": [
+      "FI-TRACK-A-002"
+    ],
+    "evidence_refs": [
+      "05-Https___youtu.be_t6EFV2gSSmg_is-9qFWlmdavuhdaGCf__....pdf classified historical_artifact"
+    ],
+    "implementation_refs": [],
+    "owner": "alfonso_lopez",
+    "next_review_trigger": "Only an explicit founder constitutional review with independent safety and legal evidence may revisit this prohibition.",
+    "unresolved_questions": [
+      "Which tightly bounded, revocable automation grants could provide operational leverage while preserving human control?"
+    ],
+    "created_at": "2026-08-08T00:00:00Z",
+    "updated_at": "2026-08-08T00:00:00Z"
+  }
+]

@@ -68,3 +68,64 @@ organs, applied to its own development.
   "essentially passed", no fixture standing in for runtime consumption.
 - Reimplementing the linker, closure controller, registries or adapters is a
   contract violation. The measured defect was disconnection, not absence.
+
+## P3 Route B evidence, 2026-08-08
+
+### Supplied source classification
+
+| Source | SHA-256 | Classification | Executable authority |
+|---|---|---|---|
+| `01-DOCTRINE.txt` | `be509f5718de7471809aaf287e9763412316c7003dc29157d5c44b94e94cde4f` | canonical founder requirement | active requirement |
+| `02-Proof-to-Settlement-Egregore.pdf` | `c5a4dba7528968f6e557a1e92602c6a66d2002d8a5301f12be18e2a152f7ab26` | model-output design synthesis | advisory; needs external evidence |
+| `03-UNIIMENTE-Reality-Compiler-Blueprint.pdf` | `f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8` | model-output design synthesis | advisory; needs external evidence |
+| `04-Be-accumulative-and-repeat-what-you-just-did___htt....pdf` | `d6b2eafc0b537781fc0890a6e3fafe9047f49f3f2b31c94eb6f59d6958df39e6` | historical exploratory expression | sovereign intent and self-preservation prohibited |
+| `05-Https___youtu.be_t6EFV2gSSmg_is-9qFWlmdavuhdaGCf__....pdf` | `10e4a7126b3b73c06e9fb25ba67d86dda20098e23177da5b2a8843c5e6c44ef3` | historical exploratory expression | autonomous treasury and unrestricted self-modification prohibited |
+
+The machine-readable dispositions are in
+`runtime/P3_SOURCE_INTENT_LEDGER.json`. The material architecture choice has
+exactly two strengthening passes in
+`runtime/P3_ROUTE_B_DELIBERATION.json` and a human-readable record in
+`runtime/ADR-P3-ROUTE-B.md`.
+
+### Pinned organ evidence
+
+| Role | Repository | Revision | Decisive symbol |
+|---|---|---|---|
+| producer | `dababiyoda/DALEOBANKS` | `829c5f2810776bef65d6ea108800a3516c9f4c2b` | `IdeaRefinery._opportunity_from` and `packet_to_wire` |
+| consumer | `dababiyoda/WealthMachineIntelligence` | `6549984a22a171f68b268b775f19192aee599609` | `OpportunityIntakeService.evaluate_packet` |
+
+Both local checkout HEADs were compared to the manifest pins before execution.
+The linked schema was
+`contracts/wire-opportunity-packet.schema.json`, SHA-256
+`487a28729bb856f239cd2d90c12b43f8088db4b625123750f8887e56c8ba7352`.
+
+### Reproduction
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 \
+python3 runtime/probes/route_b_counterfactual.py \
+  --kernel . \
+  --daleobanks /path/to/DALEOBANKS@829c5f2 \
+  --wealthmachine /path/to/WealthMachineIntelligence@6549984
+
+PYTHONDONTWRITEBYTECODE=1 \
+TRACK_A_DALEOBANKS_DIR=/path/to/DALEOBANKS@829c5f2 \
+TRACK_A_WMI_DIR=/path/to/WealthMachineIntelligence@6549984 \
+python3 -m pytest -q tests/integration/test_track_a_route_b.py
+```
+
+Observed locally: `1 passed`. State A delivered the real packet to the real WMI
+consumer. State B removed the target edge and refused the binding. State C
+created a real local-mock lookalike and rejected it as the WMI implementation.
+State D restored the edge and restored a causally linked result. Network was
+denied, non-inert binding classification was refused, external effects were
+`0`, and closure-count delta was `0`.
+
+### Claim boundary
+
+Evidence tier: `sandbox_execution`.
+
+The result proves only the P3 internal routing geometry at the pinned revisions.
+It is not a deployment, independently verified outcome, settlement, commercial
+result, or developmental closure. Canonical CI on the complete repository is
+the remaining P3 gate.

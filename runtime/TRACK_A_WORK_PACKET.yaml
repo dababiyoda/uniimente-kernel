@@ -1,16 +1,18 @@
-# Track-A resume packet. Exists so a fresh context resumes without re-deriving
-# the project. Not a planning system — read it, verify it, then work.
+# Track-A resume packet. A fresh context should verify this file against the
+# branch and CI before acting. It is not an authority source.
 
 updated_at: '2026-08-08'
 branch: claude/track-a-runtime-spine
-head: 45b0d7f44d6c5ca20eb2291135d956e5de1a749f   # plus this commit
+previous_head: 519a390cb18994b81d2a000363f142b7b7b9db2c
+head_resolution: git rev-parse HEAD
 main_baseline: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
 planning_pr: 68
 planning_issue: 69
-track_b_pr: 66            # immutable at a6f14d344f2ca073fd334a885e5c2bdb921d082e
+track_b_pr: 66
+track_b_immutable_head: a6f14d344f2ca073fd334a885e5c2bdb921d082e
 
 active_target: institutional.cross_organ_edge_resolution
-active_target_status: UNDER_ADJUDICATION      # Route A/B/C not yet decided
+active_target_status: P3_IMPLEMENTED_AWAITING_CANONICAL_CI
 active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
 closure_count: 0
 
@@ -18,154 +20,107 @@ contract_hash: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
 evaluator_hashes: NOT_FROZEN
 
 completed_phases:
-  P1_runtime_contract: COMPLETE — frozen, self-sealed, 18 guard tests
-  P2_evaluator_isolation: PROVEN (frozen; do not polish further)
-  P2_1_privilege_drop: PROVEN — setpriv uid/gid 65534, caps emptied, no_new_privs
-  P3_inspection: COMPLETE — two absences named
-  P3_route_adjudication: COMPLETE — Route A rejected, Route B verified viable
+  P1_runtime_contract: COMPLETE; frozen, self-sealed, 18 guard tests
+  P2_evaluator_isolation: PROVEN; frozen; do not polish further
+  P2_1_privilege_drop: PROVEN_LOCALLY_ONLY; setpriv uid/gid 65534, empty caps, no_new_privs
+  P3_inspection: COMPLETE; contract-to-event seam and real consumer were absent
+  P3_route_adjudication: COMPLETE; Route A rejected; Route B selected
+  P3_route_b_local_counterfactual: PASS; exact pins, four states, no external effect
 
-current_phase: P3-B — build the contract-to-event seam and run the counterfactual
+current_phase: P3-C; obtain Canonical CI evidence for the bounded Route B commit
 
-# ---------------------------------------------------------------------------
-# THE FINDING THAT DECIDES THE NEXT MOVE
-# ---------------------------------------------------------------------------
-route_a_finding:
-  question: Does a legitimate Kernel-resident consumer of LinkReport exist?
-  answer: NO — the only in-kernel consumer is a self-check, not a dependent function.
-  evidence:
-    file: closure/kernel_registry.py
-    lines: [924, 950, 962, 972]
-    what_they_are: >-
-      linker_technical, linker_evidence, linker_economic and linker_regenerative
-      are ModuleClosures health probes. They call InstitutionalLinker(...).link()
-      in order to ASSERT that the linker works — determinism across two runs,
-      Bridge A present, unresolved questions carried verbatim, empty organism
-      refused.
-    why_it_does_not_qualify: >-
-      Disabling edge resolution would make these CHECKS fail. A failing check is
-      not a function disappearing. Under the four-state counterfactual, STATE B
-      would show "the health probe reports unhealthy", not "a runtime function is
-      unavailable". That is the difference between the institution noticing a
-      problem and the institution losing a capability.
-    qualification_criteria_failed:
-      - "must change meaningful internal behavior when topology disappears — it does not; only the probe's verdict changes"
-      - "must have institutional purpose independent of observing the linker — it does not; observing the linker IS its purpose"
-
-remaining_routes:
-  route_b_status: VIABLE — verified by execution 2026-08-08
-  route_b_evidence:
-    consumer: WealthMachineIntelligence/src/services/opportunity_intake.py
-    class: OpportunityIntakeService
-    method: evaluate_packet(payload) -> assessment
-    behaviour: >-
-      Validates a wire packet, runs the venture engine, produces a schema-validated
-      assessment. Real institutional work that would belong in the organism even if
-      this experiment were deleted — it is not a fixture.
-    consumes: wire-opportunity-packet
-    produces: wire-venture-assessment
-    inert_proof: >-
-      Instantiated in-process with no network, no credentials, no database.
-      Degrades cleanly without sqlalchemy (warns, continues). Synchronous path
-      evaluate_packet() available alongside the async one.
-    producer_side_CORRECTED:
-      overstatement_withdrawn: >-
-        A previous commit called WealthMachineClient "the producer side". That was
-        wrong. It is a transport/bridge CLIENT that accepts an already-constructed
-        OpportunityPacket. Withdrawn rather than quietly edited.
-      real_producer: DALEOBANKS/services/idea_refinery.py
-      real_producer_symbol: "IdeaRefinery._opportunity_from(idea, thesis) -> OpportunityPacket (line 257)"
-      canonical_serialization: "DALEOBANKS/services/venture_protocol.py packet_to_wire() (line 82)"
-    THE_BYPASS_TO_AVOID:
-      file: DALEOBANKS/services/wealthmachine_client.py
-      evidence: |
-        line 69-72:  configured = os.getenv("WEALTHMACHINE_MODE", "").lower()
-                     return "http" if self.url else "mock"
-        line 77-81:  def evaluate(self, packet): ... assessment = self._evaluate_mock(packet)
-        line 168:    def _evaluate_mock(self, packet) -> VentureAssessment
-      why_it_is_fatal_to_the_experiment: >-
-        Credential-free operation resolves to mock mode by default, in which
-        DALEOBANKS computes the VentureAssessment ITSELF via _evaluate_mock. An
-        episode routed through WealthMachineClient would therefore produce a
-        perfectly valid-looking assessment while WMI's OpportunityIntakeService is
-        never invoked at all. Edge resolution could be disabled and the assessment
-        would still appear — the counterfactual would silently prove nothing.
-      rule: >-
-        The P3 route must reach WMI OpportunityIntakeService.evaluate_packet()
-        directly. WealthMachineClient must not be in the decisive path. STATE B
-        must be checked for exactly this bypass: if an assessment still appears
-        when the edge is unproven, find the path that produced it.
-    required_causal_chain: >-
-      IdeaRefinery._opportunity_from() -> OpportunityPacket ->
-      venture_protocol.packet_to_wire() -> [Kernel: LinkReport proves edge ->
-      route materialised -> EventSpine contract-delivery event] ->
-      WMI OpportunityIntakeService.evaluate_packet() -> NetworkWealthEngine ->
-      VentureAssessment with requires_human_approval True
-    why_it_qualifies: >-
-      healthy and damaged are behaviourally different in a way that matters: with a
-      proven edge the packet reaches intake and an assessment exists; without one
-      the packet is never routed and no assessment is produced. That is a lost
-      function, not a failing probe.
-  route_b_prior_note: >-
-    Real multi-repository consequence-inert consumer. Manifests point
-    at services/wealthmachine_client.py, services/constitution.py etc. — DALEOBANKS
-    and WMI paths. Both repos are present in this workspace at /home/user/. Next
-    session must verify: repo exists, path exists, code implements the contract,
-    producer/consumer semantics match, participation can be consequence-inert.
-    This is the most promising untested route and matches the architecture:
-    the institution is deliberately distributed, so the first developmental
-    episode being multi-repository may be correct rather than a compromise.
-  route_c: >-
-    One-time founder-authorized target pivot. Only after A and B are both
-    investigated and falsified. Must be an isolated atomic commit, before
-    evaluator freeze and before candidate generation, preserving the original
-    target and contract hash in provenance. ONE pivot only — no target shopping.
+p3_route_b:
+  decision: generic typed contract-delivery event on the existing EventSpine
+  decision_record: runtime/P3_ROUTE_B_DELIBERATION.json
+  adr: runtime/ADR-P3-ROUTE-B.md
+  intent_ledger: runtime/P3_SOURCE_INTENT_LEDGER.json
+  producer:
+    repository: dababiyoda/DALEOBANKS
+    revision: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+    symbol: IdeaRefinery._opportunity_from plus packet_to_wire
+  consumer:
+    repository: dababiyoda/WealthMachineIntelligence
+    revision: 6549984a22a171f68b268b775f19192aee599609
+    symbol: src.services.opportunity_intake.OpportunityIntakeService.evaluate_packet
+  route: daleobanks --wire-opportunity-packet--> wealthmachine
+  schema:
+    locator: contracts/wire-opportunity-packet.schema.json
+    sha256: 487a28729bb856f239cd2d90c12b43f8088db4b625123750f8887e56c8ba7352
+  hostile_bypass:
+    implementation: DALEOBANKS WealthMachineClient local mock
+    finding: produces a valid-looking assessment without WMI
+    control: callable provenance rejects it as the WMI consumer
+  states:
+    A_HEALTHY: PASS; real assessment; packet id matches; human approval true
+    B_EDGE_DISABLED: PASS; binding refused; no assessment
+    C_LOCAL_MOCK_BYPASS: PASS; lookalike exists; router rejects it
+    D_EDGE_RESTORED: PASS; assessment and causal receipt return
+  classification: SANDBOX_EXECUTION_CONSEQUENCE_INERT
+  external_effects: 0
+  closure_count_delta: 0
+  non_inert_binding_refused: true
+  source_revisions_verified: true
 
 next_action: >-
-  Build the P3 seam for Route B. Smallest contract-to-event binding that
-  materialises an EventSpine subscription ONLY for the linker-proven edge
-  daleobanks --wire-opportunity-packet--> wealthmachine, with
-  OpportunityIntakeService as the registered consumer. Then run the four-state
-  counterfactual. Seam must be routing-only, fail closed on unresolved bindings,
-  carry producer/contract/consumer provenance, and grant no authority.
-  Geometry B (generic typed contract-delivery event) is the leading candidate
-  because it avoids inventing one event type per contract from string similarity.
+  Publish the bounded P3 files to draft PR #70 only after verifying its head has
+  not moved. Observe the single Canonical CI workflow. If green, record the exact
+  commit and workflow run, set P3 complete, and enter P4 under the frozen
+  contract. If red, diagnose without widening P3 scope.
 
 protected_invariants:
-  - PR #66 immutable at a6f14d3
-  - no merge, deploy, publish, money, external effect
+  - PR #66 remains immutable at a6f14d3
+  - no merge, deploy, public publication, money, credentials, or external effect
   - LinkReport proves structure, never authority
-  - no second linker, no second event bus, no second closure judge
-  - no test_consumer / dummy_consumer / fixture_consumer
-  - closure requires all twelve frozen conditions, no rounding
+  - no second linker, event bus, closure judge, or authority source
+  - no dummy, fixture, or test consumer may stand in for WMI
+  - WealthMachineClient is excluded from the decisive path
+  - closure requires all twelve frozen conditions; no rounding
+  - runtime/contract.py remains byte-identical
 
 evidence_paths:
-  isolation_proof: runtime/evaluator/isolation.py  (run it; 3-way discrimination)
-  isolation_tests: tests/unit/test_evaluator_isolation.py
-  p3_inspection: runtime/P3_INSPECTION.md
   frozen_contract: runtime/contract.py
+  isolation_proof: runtime/evaluator/isolation.py
+  p3_inspection: runtime/P3_INSPECTION.md
+  p3_router: runtime/contract_events.py
+  p3_probe: runtime/probes/route_b_counterfactual.py
+  p3_test: tests/integration/test_track_a_route_b.py
+  p3_deliberation: runtime/P3_ROUTE_B_DELIBERATION.json
+  p3_adr: runtime/ADR-P3-ROUTE-B.md
+  p3_intent_ledger: runtime/P3_SOURCE_INTENT_LEDGER.json
+  provenance: runtime/PROVENANCE.md
+
+source_classification:
+  doctrine: canonical founder requirement
+  proof_to_settlement_pdf: model-output design synthesis; not independent evidence
+  reality_compiler_pdf: model-output design synthesis; not independent evidence
+  autonomous_intent_pdf: historical exploratory expression; executable form prohibited
+  autonomous_treasury_pdf: historical exploratory expression; executable form prohibited
 
 known_falsifications:
-  - "'separate subprocess' is not isolation — mount ns inherits the parent mount table"
-  - "EVALUATOR_ISOLATION_PROVEN was once claimed on enumerated-route evidence only; corrected in P2.1"
-  - "no contract->event binding exists anywhere in the repository"
-  - "no organ manifest declares a handler; implementation_path points into other repos"
-  - "EventSpine has zero non-test subscribers"
-  - "the only in-kernel LinkReport consumer is a health check, not a dependent function"
-  - "WealthMachineClient is a transport client with a local mock evaluator, NOT the producer; routing through it would bypass WMI entirely"
+  - a separate subprocess is not evaluator isolation
+  - the pre-P3 kernel had no contract-to-event binding
+  - the only in-kernel LinkReport consumer was a health check, not a dependent function
+  - WealthMachineClient is a transport client with a local mock, not the producer
+  - a valid-looking mock assessment does not prove WMI consumption
+  - a successful internal route is not a developmental closure
 
 unresolved:
-  - Route B feasibility (untested)
-  - whether any in-kernel consumer can exist at all
-  - contract-to-event seam geometry (four candidates enumerated in the order, none selected)
+  - Canonical CI result for the P3 commit
+  - trusted production artifact attestation for bound handler revisions
+  - field-level payload retention policy before production use
+  - P4 evaluator freeze and candidate-generation evidence
+  - named external verifier, acceptance schema, payable event, and first commercial wedge
 
-stop_reason: >-
-  Context exhausted mid-adjudication. Route A tested and answered; Route B not
-  started. Beginning Route B or P3 construction with remaining context would risk
-  a subtle phase executed imprecisely — the order forbids that explicitly. No
-  code was written that would need unwinding.
+local_test_status:
+  exact_pin_route_b_integration: 1 passed
+  four_state_counterfactual: PASS
+  network: DENIED
+  source_revision_attestation: PASS
+  intent_ledger_validation: VALID; 5 records
+  deliberation_validation: VALID; exactly two passes
+  full_kernel_suite: delegated to Canonical CI on the complete repository
 
-local_test_status: "526 passed"
-ci_regression_status: "GREEN at 433c7c5; 45b0d7f not yet observed"
-privileged_isolation_status: PROVEN_LOCALLY_ONLY
+ci_regression_status: PENDING_P3_COMMIT
+runtime_counterfactual_status: PASS_LOCAL_EXACT_PINS
 held_out_evaluation_status: NOT_FROZEN
-runtime_counterfactual_status: UNRUN
+stop_reason: none

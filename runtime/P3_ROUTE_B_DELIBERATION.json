@@ -1,0 +1,401 @@
+{
+  "decision_id": "TRACK-A-P3-ROUTE-B-2026-08-08",
+  "title": "Materialize one linker-proven contract as an internal EventSpine delivery",
+  "problem": "P3 found that the kernel could prove cross-organ topology but could not make runtime behavior depend on it. The material choice is how to connect a real DALEOBANKS producer to a real WealthMachine consumer without inventing authority, a second bus, a fixture consumer, or a lookalike local-mock result.",
+  "founder_intent_refs": [
+    "FI-TRACK-A-001",
+    "FI-TRACK-A-002",
+    "FI-TRACK-A-003"
+  ],
+  "baseline": "Main has a linker, schemas, manifests, and an EventSpine, but no non-test subscriber and no contract-to-event binding. Track-A P2 is proven, the active SBM is VERIFIED_DEVELOPMENTAL_CLOSURES at 0, and no P3 routing result may change that count.",
+  "alternatives": [
+    {
+      "name": "Generic typed contract-delivery event",
+      "description": "Use one stable contract.delivery event whose payload carries the exact producer, contract, consumer, revisions, handler reference, INERT consequence class, and schema digest proven by the existing linker.",
+      "advantages": [
+        "Reuses the existing EventSpine",
+        "Avoids deriving event names from contract spelling",
+        "Makes the missing linker edge behaviorally decisive"
+      ],
+      "disadvantages": [
+        "Introduces an in-process binding registry",
+        "Runtime revision inputs are not yet production artifact attestations"
+      ],
+      "revival_evidence": "Selected for a reversible P3 experiment; retain only after canonical CI and later artifact-attestation design."
+    },
+    {
+      "name": "One event type per contract",
+      "description": "Convert each contract name into a distinct event type and bind subscribers by naming convention.",
+      "advantages": [
+        "Simple subscription names",
+        "Easy visual tracing"
+      ],
+      "disadvantages": [
+        "String similarity invents semantics the manifests do not declare",
+        "Creates a second registry as contracts grow"
+      ],
+      "revival_evidence": "A canonical contract schema explicitly declares its event type and migration rules."
+    },
+    {
+      "name": "Direct producer-to-consumer call",
+      "description": "Import the WealthMachine consumer and call it without the linker or EventSpine.",
+      "advantages": [
+        "Small implementation",
+        "Low latency"
+      ],
+      "disadvantages": [
+        "Topology no longer controls behavior",
+        "Request and result lose canonical event provenance"
+      ],
+      "revival_evidence": "Only for organ-local code where no cross-organ boundary exists."
+    },
+    {
+      "name": "Kernel-local fixture consumer",
+      "description": "Create a dummy in-kernel handler solely to satisfy the counterfactual.",
+      "advantages": [
+        "No sibling repository checkout",
+        "Fast test"
+      ],
+      "disadvantages": [
+        "Would prove a fixture rather than institutional work",
+        "Violates the frozen closure conditions"
+      ],
+      "revival_evidence": "Never for developmental closure evidence; fixtures remain acceptable only for isolated unit behavior."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "P3 remains partial. The linker continues to prove a graph that no real runtime function consumes.",
+    "advantages": [
+      "No new runtime surface",
+      "No cross-repository CI dependency"
+    ],
+    "disadvantages": [
+      "The active deficit remains untested",
+      "No evidence distinguishes healthy topology from a disabled edge"
+    ]
+  },
+  "roles": [
+    {
+      "role": "founder-intent steward",
+      "position": "Permit only a consequence-inert experiment that advances the proof-to-settlement substrate while preserving human sovereignty.",
+      "material_concerns": [
+        "Do not promote architecture synthesis into proof",
+        "Do not change the verified closure count"
+      ],
+      "evidence_refs": [
+        "FI-TRACK-A-001",
+        "FI-TRACK-A-002",
+        "01-DOCTRINE.txt"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "systems architect",
+      "position": "Use a generic typed delivery on the existing EventSpine and require one exact linker edge plus a stable handler reference.",
+      "material_concerns": [
+        "No second event bus",
+        "No contract-name normalization",
+        "No kernel-local fixture"
+      ],
+      "evidence_refs": [
+        "linker/linker.py",
+        "events/spine.py",
+        "runtime/P3_INSPECTION.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "adversarial reviewer",
+      "position": "Attack the valid-looking DALEOBANKS local mock and revision-label spoofing before accepting any routing claim.",
+      "material_concerns": [
+        "Mock output can masquerade as WMI work",
+        "A declared commit is not proof of the checked-out commit"
+      ],
+      "evidence_refs": [
+        "DALEOBANKS/services/wealthmachine_client.py@829c5f2",
+        "runtime/probes/route_b_counterfactual.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "operator and maintainer",
+      "position": "Keep sibling repositories out of the ordinary collection path and run the exact cross-repository test in one dedicated CI step.",
+      "material_concerns": [
+        "CI collection pollution",
+        "Source drift",
+        "Rollback simplicity"
+      ],
+      "evidence_refs": [
+        ".github/workflows/canonical-ci.yml",
+        "tests/integration/test_track_a_route_b.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "evidence and welfare guardian",
+      "position": "Accept only the narrow claim that internal routing geometry worked in a sandbox. Withhold closure, deployment, market, welfare, and settlement claims.",
+      "material_concerns": [
+        "No external verifier participated",
+        "No money or production consequence occurred",
+        "Payload evidence may later contain sensitive data"
+      ],
+      "evidence_refs": [
+        "runtime/contract.py",
+        "runtime/probes/route_b_counterfactual.py",
+        "02-Proof-to-Settlement-Egregore.pdf"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The real DALEOBANKS producer can produce the canonical OpportunityPacket wire object at its manifest pin.",
+      "tier": "sandbox_execution",
+      "reference": "DALEOBANKS@829c5f2810776bef65d6ea108800a3516c9f4c2b IdeaRefinery._opportunity_from plus packet_to_wire",
+      "finding": "Execution produced a wire object without network, credentials, publication, or money."
+    },
+    {
+      "claim": "The real WealthMachine consumer returns an assessment requiring human approval at its manifest pin.",
+      "tier": "sandbox_execution",
+      "reference": "WealthMachineIntelligence@6549984a22a171f68b268b775f19192aee599609 OpportunityIntakeService.evaluate_packet",
+      "finding": "Execution returned the matching packet id and requires_human_approval=true."
+    },
+    {
+      "claim": "Removing only the target linker edge prevents the assessment, and restoring it restores a causally linked result receipt.",
+      "tier": "sandbox_execution",
+      "reference": "runtime/probes/route_b_counterfactual.py states A, B, and D",
+      "finding": "State B refused binding before consumer execution; state D reproduced the binding and result with causal_parent set."
+    },
+    {
+      "claim": "The local mock is a real bypass threat.",
+      "tier": "sandbox_execution",
+      "reference": "runtime/probes/route_b_counterfactual.py state C",
+      "finding": "The mock created a valid-looking assessment, but callable provenance prevented it from binding as the WMI consumer."
+    },
+    {
+      "claim": "The supplied Reality Compiler documents support human-sovereign proof-to-consequence as a design direction.",
+      "tier": "model_output",
+      "reference": "02-Proof-to-Settlement-Egregore.pdf and 03-UNIIMENTE-Reality-Compiler-Blueprint.pdf",
+      "finding": "Both converge on an external verifier bottleneck, but neither is independent outcome evidence."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The P3 result is not a developmental closure.",
+      "tier": "primary_source",
+      "reference": "runtime/contract.py frozen twelve-condition evaluator contract",
+      "finding": "The episode has no real external effect, independent verifier acceptance, or economic result, so the count remains 0."
+    },
+    {
+      "claim": "The P3 result is not a deployment proof.",
+      "tier": "sandbox_execution",
+      "reference": "runtime/probes/route_b_counterfactual.py",
+      "finding": "Both organs ran in one isolated Python process with network denied."
+    },
+    {
+      "claim": "Runtime revision strings are not yet cryptographic artifact attestation.",
+      "tier": "other",
+      "reference": "runtime/contract_events.py ConsumerBinding",
+      "finding": "The CI probe verifies git HEAD against manifest pins, but a future production binder still needs trusted artifact identity."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Create the smallest reversible seam where the existing linker controls a real, consequence-inert cross-organ function and the existing EventSpine records causal request and result evidence.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "The target edge becomes behaviorally necessary.",
+        "amplified_value": "The four-state counterfactual can distinguish topology health from a mere health-check verdict."
+      },
+      {
+        "id": "A2",
+        "statement": "The design reuses canonical primitives.",
+        "amplified_value": "One linker and one EventSpine remain the sources of graph and event truth."
+      },
+      {
+        "id": "A3",
+        "statement": "Request and result carry exact route provenance.",
+        "amplified_value": "The ledger can distinguish the real consumer from a local lookalike and trace the result to its request."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A cross-repository probe introduces dependency and import complexity.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Keep organ imports inside the probe, keep the router generic, and checkout exact public commits only after the ordinary suite completes."
+      },
+      {
+        "id": "D2",
+        "statement": "DALEOBANKS mock mode can generate a valid-looking assessment without WMI.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Bind only a stable declared WMI method reference and include an adversarial state that attempts the mock bypass."
+      },
+      {
+        "id": "D3",
+        "statement": "Absolute schema paths would make receipts machine-specific.",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Record a repository-relative schema locator plus its SHA-256 digest."
+      },
+      {
+        "id": "D4",
+        "statement": "A successful internal route can be overstated as a clean outcome or closure.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Label the episode SANDBOX_EXECUTION_CONSEQUENCE_INERT, assert external_effects=0, and assert closure_count_delta=0."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Linker edges are inspectable but no real runtime consumer depends on them.",
+      "do_nothing": "Preserves simplicity but leaves the active deficit unresolved.",
+      "simplest_viable_alternative": "A direct call is smaller, but it does not test linker-controlled institutional routing.",
+      "strongest_competing_architecture": "Per-contract event types are readable, but no canonical mapping currently authorizes their names.",
+      "reversible_experiment": "Add one generic router module, one probe, one integration wrapper, and a post-suite pinned-checkout CI step on the draft branch."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "One event type per contract",
+        "rejection_reason": "No canonical contract-to-event mapping exists, so spelling conversion would invent semantics.",
+        "revival_evidence": "Contract schemas explicitly declare event identifiers and versioned migration."
+      },
+      {
+        "name": "Direct producer-to-consumer call",
+        "rejection_reason": "It bypasses both the linker and canonical event evidence.",
+        "revival_evidence": "A future use case is proven organ-local rather than cross-organ."
+      },
+      {
+        "name": "Kernel-local fixture consumer",
+        "rejection_reason": "It would satisfy test shape while failing the frozen real-consumer condition.",
+        "revival_evidence": "Not eligible for closure evidence."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The second pass attacked source-label spoofing, mock substitution, environment-specific provenance, sensitive-payload evidence, CI contamination, and the temptation to promote a successful sandbox route into a settlement claim.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "dependency",
+        "statement": "Manifest pins can drift from the actual sibling checkouts.",
+        "strengthening_response": "The probe reads expected revisions from manifests and fails unless git rev-parse HEAD matches both."
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A handler reference and caller-supplied revision are not sufficient production artifact identity.",
+        "strengthening_response": "Keep the design experimental and require trusted artifact attestation before any consequence-bearing promotion."
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "Checking out sibling repositories before the full suite could make pytest collect unrelated tests.",
+        "strengthening_response": "Run the ordinary kernel suite and verifier first, then checkout the pinned organs and invoke only the named integration file."
+      },
+      {
+        "id": "W4",
+        "category": "other",
+        "statement": "Ledgering a complete wire body may later record sensitive production data.",
+        "strengthening_response": "P3 uses synthetic internal data only; production promotion requires field-level sensitivity and retention review."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "experiment",
+        "rationale": "Imports remain probe-local and exact commits are supplied only to the dedicated CI step.",
+        "owner": "operator and maintainer",
+        "review_trigger": "Any organ dependency enters runtime/contract_events.py or ordinary test collection."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "The hostile mock produces a lookalike yet fails the stable WMI handler-reference check.",
+        "owner": "adversarial reviewer",
+        "review_trigger": "DALEOBANKS or WMI changes its producer, client, or consumer symbol."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Receipts now carry contracts/wire-opportunity-packet.schema.json and its content digest, not an absolute path.",
+        "owner": "systems architect",
+        "review_trigger": "Contract storage or schema versioning changes."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "prohibited",
+        "rationale": "The probe and test assert no external effect and zero closure delta; documentation explicitly withholds broader claims.",
+        "owner": "evidence and welfare guardian",
+        "review_trigger": "Any report, PR, or metric calls P3 a closure, deployment, commercial result, or settlement."
+      }
+    ],
+    "final_design": "On the draft Track-A branch, ContractEventRouter consumes an existing LinkReport, accepts only an INERT consequence classification, binds one exact cross-organ RouteKey to a stable real handler, emits generic contract.delivery and contract.delivery_completed facts on the existing EventSpine, and records stable route provenance. A four-state probe runs exact pinned public repository checkouts, denies network, rejects the DALEOBANKS mock, and leaves the verified closure count at zero.",
+    "residual_risks": [
+      {
+        "risk": "Production runtime still lacks trusted artifact attestation for the revision supplied to bind().",
+        "mitigation": "Do not promote beyond experiment until handler code identity is derived from a trusted build or deployment artifact.",
+        "owner": "systems architect",
+        "review_trigger": "Before any production or external-consequence use."
+      },
+      {
+        "risk": "The test proves only in-process computational routing, not service transport, verifier acceptance, or settlement.",
+        "mitigation": "Keep P3 classification narrow and require separate P4 evidence for the next claim.",
+        "owner": "evidence and welfare guardian",
+        "review_trigger": "When selecting or claiming the next developmental phase."
+      },
+      {
+        "risk": "Canonical full-suite compatibility is not established until the remote workflow succeeds on the published branch head.",
+        "mitigation": "Keep the PR draft and do not advance the work packet until Canonical CI is green.",
+        "owner": "operator and maintainer",
+        "review_trigger": "The first remote workflow result for the P3 commit."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "The dissent is preserved as the boundary on what P3 may claim and as a promotion gate, not averaged away.",
+    "entries": [
+      {
+        "role": "evidence and welfare guardian",
+        "position": "Do not call the route a developmental closure or a proof-to-settlement outcome.",
+        "rationale": "No external verifier, beneficiary, legal acceptance event, money movement, or production transport participated.",
+        "evidence_threshold": "A frozen later episode must show independent verifier acceptance and all twelve runtime contract conditions without relying on this sandbox result.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Any attempt to increment VERIFIED_DEVELOPMENTAL_CLOSURES or describe P3 as externally proven."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "alfonso_lopez"
+  },
+  "migration_plan": "Add the seam and counterfactual only to draft PR #70, run local exact-pin evidence, then publish one bounded commit and require Canonical CI. Do not merge, deploy, publish externally, move money, or advance the closure count. If CI is green, update the resume packet to enter P4 under the still-frozen contract.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the bounded P3 commit on the Track-A branch.",
+      "Remove the Route B checkout and targeted-test steps from Canonical CI.",
+      "Restore P3 status to partial and closure_count to 0."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A missing linker edge still permits the WMI assessment to be attributed to the route.",
+    "The DALEOBANKS local mock can bind as the WMI consumer.",
+    "Either source checkout does not match the manifest-pinned revision.",
+    "The probe opens a network connection, publishes, spends, or produces any external effect.",
+    "The WMI result does not require human approval.",
+    "The schema receipt uses an absolute path or lacks a content digest.",
+    "Any P3 change increments VERIFIED_DEVELOPMENTAL_CLOSURES.",
+    "Canonical CI fails and the failure cannot be resolved without widening P3 scope."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Canonical CI result, any change to either manifest pin or decisive producer/consumer symbol, or any proposal to promote the seam beyond consequence-inert Track-A experimentation."
+}

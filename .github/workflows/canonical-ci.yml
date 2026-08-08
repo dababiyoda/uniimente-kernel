@@ -41,6 +41,25 @@ jobs:
         run: python -m pytest -q
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
+      - name: Checkout pinned DALEOBANKS producer
+        uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/DALEOBANKS
+          ref: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+          path: .track-a-organs/daleobanks
+          persist-credentials: false
+      - name: Checkout pinned WealthMachine consumer
+        uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/WealthMachineIntelligence
+          ref: 6549984a22a171f68b268b775f19192aee599609
+          path: .track-a-organs/wealthmachine
+          persist-credentials: false
+      - name: Route B real producer-to-consumer counterfactual
+        env:
+          TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
+          TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
+        run: python -m pytest -q tests/integration/test_track_a_route_b.py
 
   contracts:
     name: "2 · Contract schema references resolve"

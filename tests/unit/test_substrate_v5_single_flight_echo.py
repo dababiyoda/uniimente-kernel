@@ -958,8 +958,13 @@ def test_H_each_answered_node_returns_its_proposal_through_its_adopted_edge():
         assert answered, (
             "no adopted parent edge that carried a proposal reached an accepted "
             "outcome, so replay idempotence was never actually exercised")
+        # SORTED BY A STABLE STRING, NOT BY THE TUPLE. `SearchKey` defines no
+        # ordering, so sorting `(uid, key, edge)` raises TypeError the moment
+        # two entries share a `uid` and Python falls through to comparing the
+        # keys. Latent until a runtime change made two edges from one unit reach
+        # an accepted outcome in the same run.
         with _proposal_trace() as replay:
-            for uid, key, edge in sorted(answered):
+            for uid, key, edge in sorted(answered, key=lambda r: (r[0], r[2])):
                 organ.units[uid].replay_search_edge(key, edge)
         assert not replay.emitted, (
             f"exact replay of an answered adopted edge re-emitted "

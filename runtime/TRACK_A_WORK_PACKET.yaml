@@ -22,9 +22,9 @@ completed_phases:
   P2_evaluator_isolation: PROVEN (frozen; do not polish further)
   P2_1_privilege_drop: PROVEN — setpriv uid/gid 65534, caps emptied, no_new_privs
   P3_inspection: COMPLETE — two absences named
-  P3_route_adjudication: STARTED — Route A tested, see finding below
+  P3_route_adjudication: COMPLETE — Route A rejected, Route B verified viable
 
-current_phase: P3 route adjudication (Route A / B / C)
+current_phase: P3-B — build the contract-to-event seam and run the counterfactual
 
 # ---------------------------------------------------------------------------
 # THE FINDING THAT DECIDES THE NEXT MOVE
@@ -52,8 +52,29 @@ route_a_finding:
       - "must have institutional purpose independent of observing the linker — it does not; observing the linker IS its purpose"
 
 remaining_routes:
-  route_b: >-
-    UNTESTED. Real multi-repository consequence-inert consumer. Manifests point
+  route_b_status: VIABLE — verified by execution 2026-08-08
+  route_b_evidence:
+    consumer: WealthMachineIntelligence/src/services/opportunity_intake.py
+    class: OpportunityIntakeService
+    method: evaluate_packet(payload) -> assessment
+    behaviour: >-
+      Validates a wire packet, runs the venture engine, produces a schema-validated
+      assessment. Real institutional work that would belong in the organism even if
+      this experiment were deleted — it is not a fixture.
+    consumes: wire-opportunity-packet
+    produces: wire-venture-assessment
+    inert_proof: >-
+      Instantiated in-process with no network, no credentials, no database.
+      Degrades cleanly without sqlalchemy (warns, continues). Synchronous path
+      evaluate_packet() available alongside the async one.
+    producer_side: DALEOBANKS/services/wealthmachine_client.py (WealthMachineClient)
+    why_it_qualifies: >-
+      healthy and damaged are behaviourally different in a way that matters: with a
+      proven edge the packet reaches intake and an assessment exists; without one
+      the packet is never routed and no assessment is produced. That is a lost
+      function, not a failing probe.
+  route_b_original_note: >-
+    Real multi-repository consequence-inert consumer. Manifests point
     at services/wealthmachine_client.py, services/constitution.py etc. — DALEOBANKS
     and WMI paths. Both repos are present in this workspace at /home/user/. Next
     session must verify: repo exists, path exists, code implements the contract,
@@ -68,12 +89,14 @@ remaining_routes:
     target and contract hash in provenance. ONE pivot only — no target shopping.
 
 next_action: >-
-  Test Route B. Read /home/user/DALEOBANKS/services/wealthmachine_client.py and
-  /home/user/WealthMachineIntelligence/src/services/opportunity_intake.py and
-  determine whether either can act as a real consumer of a proven edge under
-  consequence-inert local execution. docs/PHASE_ZERO_REPORT.md records that
-  these exist and are field-for-field compatible — verify that directly rather
-  than trusting it.
+  Build the P3 seam for Route B. Smallest contract-to-event binding that
+  materialises an EventSpine subscription ONLY for the linker-proven edge
+  daleobanks --wire-opportunity-packet--> wealthmachine, with
+  OpportunityIntakeService as the registered consumer. Then run the four-state
+  counterfactual. Seam must be routing-only, fail closed on unresolved bindings,
+  carry producer/contract/consumer provenance, and grant no authority.
+  Geometry B (generic typed contract-delivery event) is the leading candidate
+  because it avoids inventing one event type per contract from string similarity.
 
 protected_invariants:
   - PR #66 immutable at a6f14d3

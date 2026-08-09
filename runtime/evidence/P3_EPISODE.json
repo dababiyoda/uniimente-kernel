@@ -1,0 +1,185 @@
+{
+  "consumer_binding": {
+    "attribute": "OpportunityIntakeService",
+    "contract": "wire-opportunity-packet",
+    "declared_by": "authorization.p0_p1 (founder P3-B execution order)",
+    "forbidden_fragments": [
+      "wealthmachine_client.py"
+    ],
+    "method": "evaluate_packet",
+    "module": "src.services.opportunity_intake",
+    "organ_id": "spiffe://uniimente.internal/organ/wealthmachine",
+    "reason": "OpportunityIntakeService validates the wire packet, runs the real NetworkWealthEngine venture loop and returns a schema-validated assessment with requires_human_approval hardcoded true. It is institutional work that would belong in the organism even if this experiment were deleted \u2014 not a fixture written to be routed to."
+  },
+  "contract_sha256": "408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c",
+  "controls": [
+    {
+      "control": "binding_without_proven_edge",
+      "fired": true,
+      "refused": [
+        "no linker-proven edge delivers 'wire-opportunity-packet' to 'spiffe://uniimente.internal/organ/daleobanks'; binding refused"
+      ],
+      "routes": 0
+    },
+    {
+      "control": "bypass_binding_detected",
+      "fired": true,
+      "outcome": "BypassDetected: BYPASS_DETECTED: the delivery executed ['/home/user/DALEOBANKS/services/wealthmachine_client.py'], which this binding forbids"
+    }
+  ],
+  "controls_fired": true,
+  "discriminates": true,
+  "geometry": "B \u2014 one generic contract-delivery event; contract name is data",
+  "human_approval_invariant_held": true,
+  "non_vacuous": true,
+  "packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+  "producer_binding": {
+    "contract": "wire-opportunity-packet",
+    "declared_by": "authorization.p0_p1 (founder P3-B execution order)",
+    "organ_id": "spiffe://uniimente.internal/organ/daleobanks",
+    "producer": "services.idea_refinery:IdeaRefinery._opportunity_from",
+    "reason": "IdeaRefinery is DALEOBANKS' real packet producer and packet_to_wire is its canonical serialization. Both are pure over plain dataclasses: no database session, no credentials, no network.",
+    "serializer": "services.venture_protocol:packet_to_wire",
+    "subject": "db.models:Idea"
+  },
+  "producer_evidence": {
+    "produced_type": "OpportunityPacket",
+    "producer": {
+      "module": "services.idea_refinery",
+      "module_file": "/home/user/DALEOBANKS/services/idea_refinery.py",
+      "qualname": "IdeaRefinery",
+      "repository_root": "/home/user/DALEOBANKS"
+    },
+    "producer_method": "_opportunity_from",
+    "serializer": {
+      "module": "services.venture_protocol",
+      "module_file": "/home/user/DALEOBANKS/services/venture_protocol.py",
+      "qualname": "packet_to_wire",
+      "repository_root": "/home/user/DALEOBANKS"
+    },
+    "subject": {
+      "module": "db.models",
+      "module_file": "/home/user/DALEOBANKS/db/models.py",
+      "qualname": "Idea",
+      "repository_root": "/home/user/DALEOBANKS"
+    }
+  },
+  "states": [
+    {
+      "assessment": {
+        "go_no_go": "go",
+        "legal_readiness": "standard",
+        "opportunity_packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+        "opportunity_score": 0.696,
+        "requires_human_approval": true,
+        "risk_level": "low"
+      },
+      "assessment_present": true,
+      "delivered": true,
+      "executed_files_in_consumer_repo": 13,
+      "organ_files_written_in_scratch": [
+        "data/agent_store.jsonl"
+      ],
+      "receipt": {
+        "at": "2026-08-09T15:38:24.216298Z",
+        "authority_granted": false,
+        "bypass_candidates": [],
+        "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
+        "consumer_evidence": {
+          "instance_class": "OpportunityIntakeService",
+          "instance_module": "src.services.opportunity_intake",
+          "method": "evaluate_packet",
+          "module": "src.services.opportunity_intake",
+          "module_file": "/home/user/WealthMachineIntelligence/src/services/opportunity_intake.py",
+          "qualname": "OpportunityIntakeService",
+          "repository_root": "/home/user/WealthMachineIntelligence"
+        },
+        "contract": "wire-opportunity-packet",
+        "delivered": true,
+        "event_id": "c0bbdac1-274d-43b8-80da-25fc4259e74a",
+        "event_type": "institution.contract_delivery",
+        "files_written": [
+          "data/agent_store.jsonl"
+        ],
+        "producer": "spiffe://uniimente.internal/organ/daleobanks",
+        "witness_file_count": 39
+      },
+      "refused": [],
+      "routes": 1,
+      "state": "A_healthy",
+      "topology": "linker.linker.InstitutionalLinker"
+    },
+    {
+      "assessment_present": false,
+      "delivered": false,
+      "error": "ROUTE_NOT_ESTABLISHED: capability 'institutional.cross_organ_edge_resolution' is disabled for this episode",
+      "executed_files_in_consumer_repo": 0,
+      "organ_files_written_in_scratch": [],
+      "refused": [
+        "ROUTE_NOT_ESTABLISHED: capability 'institutional.cross_organ_edge_resolution' is disabled for this episode"
+      ],
+      "routes": 0,
+      "state": "B_damaged",
+      "topology": "DISABLED:institutional.cross_organ_edge_resolution"
+    },
+    {
+      "assessment": {
+        "go_no_go": "go",
+        "legal_readiness": "standard",
+        "opportunity_packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+        "opportunity_score": 0.696,
+        "requires_human_approval": true,
+        "risk_level": "low"
+      },
+      "assessment_present": true,
+      "delivered": true,
+      "executed_files_in_consumer_repo": 13,
+      "organ_files_written_in_scratch": [
+        "data/agent_store.jsonl"
+      ],
+      "receipt": {
+        "at": "2026-08-09T15:38:24.244123Z",
+        "authority_granted": false,
+        "bypass_candidates": [],
+        "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
+        "consumer_evidence": {
+          "instance_class": "OpportunityIntakeService",
+          "instance_module": "src.services.opportunity_intake",
+          "method": "evaluate_packet",
+          "module": "src.services.opportunity_intake",
+          "module_file": "/home/user/WealthMachineIntelligence/src/services/opportunity_intake.py",
+          "qualname": "OpportunityIntakeService",
+          "repository_root": "/home/user/WealthMachineIntelligence"
+        },
+        "contract": "wire-opportunity-packet",
+        "delivered": true,
+        "event_id": "9fcccf35-e993-4540-a19a-cd06838c274d",
+        "event_type": "institution.contract_delivery",
+        "files_written": [
+          "data/agent_store.jsonl"
+        ],
+        "producer": "spiffe://uniimente.internal/organ/daleobanks",
+        "witness_file_count": 38
+      },
+      "refused": [],
+      "routes": 1,
+      "state": "C_repaired",
+      "topology": "linker.linker.InstitutionalLinker"
+    },
+    {
+      "assessment_present": false,
+      "delivered": false,
+      "error": "ROUTE_NOT_ESTABLISHED: capability 'institutional.cross_organ_edge_resolution' is disabled for this episode",
+      "executed_files_in_consumer_repo": 0,
+      "organ_files_written_in_scratch": [],
+      "refused": [
+        "ROUTE_NOT_ESTABLISHED: capability 'institutional.cross_organ_edge_resolution' is disabled for this episode"
+      ],
+      "routes": 0,
+      "state": "D_rolled_back",
+      "topology": "DISABLED:institutional.cross_organ_edge_resolution"
+    }
+  ],
+  "target_capability": "institutional.cross_organ_edge_resolution",
+  "verdict": "RUNTIME_CONSUMPTION_PROVEN"
+}

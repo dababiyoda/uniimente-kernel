@@ -29,13 +29,32 @@ from runtime.seam.binding import ConsumerBinding, OrganEntryPoint, ProducerBindi
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WORKSPACE = os.path.dirname(KERNEL_ROOT)
 
-#: Organ checkouts. Environment-overridable because the kernel must not assume
-#: a particular workspace layout, and derived from this file's own location
-#: rather than the working directory.
-DALEOBANKS_ROOT = os.environ.get("UNIIMENTE_DALEOBANKS_ROOT",
-                                 os.path.join(WORKSPACE, "DALEOBANKS"))
-WEALTHMACHINE_ROOT = os.environ.get("UNIIMENTE_WEALTHMACHINE_ROOT",
-                                    os.path.join(WORKSPACE, "WealthMachineIntelligence"))
+def _organ_root(*env_names: str, default: str) -> str:
+    """First environment override that is set, else the sibling checkout.
+
+    ``TRACK_A_*`` come first because they are this branch's established
+    convention: the canonical CI step checks the pinned organ revisions out to
+    ``.track-a-organs/`` and exports exactly those names. Honouring them is not
+    politeness — without it this episode looks for siblings that CI does not
+    have, finds nothing, and **skips**. It did exactly that on the first CI run
+    after the two implementations met, reporting green while never executing.
+    A test that cannot run where it runs is worse than one that fails.
+    """
+    for name in env_names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return default
+
+
+DALEOBANKS_ROOT = _organ_root(
+    "TRACK_A_DALEOBANKS_DIR", "UNIIMENTE_DALEOBANKS_ROOT",
+    default=os.path.join(WORKSPACE, "DALEOBANKS"),
+)
+WEALTHMACHINE_ROOT = _organ_root(
+    "TRACK_A_WMI_DIR", "UNIIMENTE_WEALTHMACHINE_ROOT",
+    default=os.path.join(WORKSPACE, "WealthMachineIntelligence"),
+)
 
 DALEOBANKS_ORGAN = "spiffe://uniimente.internal/organ/daleobanks"
 WEALTHMACHINE_ORGAN = "spiffe://uniimente.internal/organ/wealthmachine"
@@ -48,6 +67,52 @@ CONTRACT = "wire-opportunity-packet"
 BYPASS = ("wealthmachine_client.py",)
 
 _AUTHORITY = "authorization.p0_p1 (founder P3-B execution order)"
+
+
+def organ_revisions() -> dict:
+    """Which organ revisions this episode actually ran against.
+
+    Recorded, not enforced. The canonical probe hard-fails when a checkout
+    drifts from its manifest pin, and duplicating that check here would add a
+    second authority over the same question. But an evidence record that omits
+    the revision invites the reader to assume it was pinned — and on the run
+    that produced ``runtime/evidence/P3_EPISODE.json`` DALEOBANKS was at main,
+    not at the pinned ``829c5f28``. State it rather than let it be inferred.
+    """
+    import subprocess
+
+    out = {}
+    for name, root, pin in (
+        ("daleobanks", DALEOBANKS_ROOT, _manifest_pin("daleobanks")),
+        ("wealthmachine", WEALTHMACHINE_ROOT, _manifest_pin("wealthmachine")),
+    ):
+        head = None
+        if os.path.isdir(root):
+            try:
+                head = subprocess.run(
+                    ["git", "-C", root, "rev-parse", "HEAD"],
+                    capture_output=True, text=True, timeout=30, check=False,
+                ).stdout.strip() or None
+            except (OSError, subprocess.SubprocessError):   # pragma: no cover
+                head = None
+        out[name] = {
+            "root": root,
+            "head": head,
+            "manifest_pin": pin,
+            "matches_manifest_pin": bool(head and pin and head == pin),
+        }
+    return out
+
+
+def _manifest_pin(organ: str) -> str | None:
+    path = os.path.join(KERNEL_ROOT, "organs", f"{organ}.manifest.yaml")
+    try:
+        import yaml
+
+        with open(path, encoding="utf-8") as fh:
+            return (yaml.safe_load(fh).get("source") or {}).get("commit")
+    except Exception:                                        # pragma: no cover
+        return None
 
 
 def organs_available() -> tuple[bool, str]:

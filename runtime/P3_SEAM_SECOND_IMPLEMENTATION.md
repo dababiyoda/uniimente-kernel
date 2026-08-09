@@ -26,10 +26,20 @@ They are not redundant. Each proves something the other does not:
 |---|---|---|
 | bypass rejection | declared `handler_ref` provenance | **profiler: which files actually executed** |
 | network denial | `socket` subclass tripwire | not enforced (relies on inertness of the path) |
-| organ pinning | schema sha256 + both git revisions | repository-root shadow check only |
+| organ pinning | schema sha256 + both git revisions, **enforced** | repository-root shadow check; revisions **recorded, not enforced** |
 | deliberation record | ADR + two-pass + intent ledger | none |
 | runs in default suite | no — needs `TRACK_A_DALEOBANKS_DIR` | **yes — discovers sibling checkouts** |
 | write containment | not measured | **cwd containment + organ writes counted** |
+
+Pinning is the clearest place the canonical seam is stronger, and running the
+two together proved it rather than argued it: the canonical probe hard-failed
+against this workspace because DALEOBANKS sits at `1ba3b85` (main) while the
+manifest pins `829c5f28`. That is its control firing correctly. This
+implementation had run against the same unpinned checkout without noticing, so
+`runtime/evidence/P3_EPISODE.json` now records each organ's HEAD and whether it
+matches the manifest pin — `daleobanks: matches_manifest_pin: false`. It is not
+enforced here, because a second enforcer would be a second authority over one
+question; it is stated, so nobody infers pinned provenance that does not exist.
 
 The two rows in bold are the ones worth transplanting into whichever seam wins:
 a declared `handler_ref` says where a call was *supposed* to go, while the

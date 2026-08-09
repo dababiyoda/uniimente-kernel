@@ -60,6 +60,30 @@ jobs:
           TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
           TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
         run: python -m pytest -q tests/integration/test_track_a_route_b.py
+      - name: Second-implementation four-state counterfactual
+        # Same pinned organs, independent seam. Runs here rather than in the
+        # full-suite step above because that step executes before the organs
+        # are checked out, where this test can only skip.
+        env:
+          TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
+          TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
+        run: python -m pytest -q tests/integration/test_p3_counterfactual.py
+      - name: Neither counterfactual may skip in CI
+        # Instrument liveness. Both steps above pass when their test skips, so
+        # without this a missing checkout would read as green forever.
+        env:
+          TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
+          TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
+        run: |
+          python -m pytest -q --no-header -p no:randomly \
+            tests/integration/test_track_a_route_b.py \
+            tests/integration/test_p3_counterfactual.py \
+            -W error::pytest.PytestUnraisableExceptionWarning -rs \
+            | tee /tmp/cf.txt
+          if grep -qi "skipped" /tmp/cf.txt; then
+            echo "::error::a cross-repository counterfactual skipped in CI"
+            exit 1
+          fi
 
   contracts:
     name: "2 · Contract schema references resolve"

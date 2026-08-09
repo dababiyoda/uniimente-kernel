@@ -180,5 +180,18 @@ def test_organ_side_effects_were_contained_and_counted(episode):
     )
 
 
+def test_the_record_states_which_organ_revisions_ran(episode):
+    """Evidence must not let pinned provenance be inferred where none exists.
+
+    This implementation does not enforce the manifest pin — the canonical probe
+    does, and a second enforcer would be a second authority over one question.
+    What it must do is say which revision it ran, so a reader never assumes.
+    """
+    revisions = episode["organ_revisions"]
+    for organ in ("daleobanks", "wealthmachine"):
+        assert revisions[organ]["head"], f"no revision recorded for {organ}"
+        assert "matches_manifest_pin" in revisions[organ]
+
+
 def test_unrunnable_is_not_reachable_as_a_pass():
     assert issubclass(EpisodeUnrunnable, RuntimeError)

@@ -256,6 +256,7 @@ def run_episode() -> dict:
         "producer_binding": producer.describe(),
         "consumer_binding": bindings_p3.consumer_binding().describe(),
         "producer_evidence": producer_evidence,
+        "organ_revisions": bindings_p3.organ_revisions(),
         "packet_id": wire.get("id"),
         "states": [s.describe() for s in states],
         "controls": [control_edge, control_bypass],

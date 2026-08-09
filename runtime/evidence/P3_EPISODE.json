@@ -32,7 +32,21 @@
   "geometry": "B \u2014 one generic contract-delivery event; contract name is data",
   "human_approval_invariant_held": true,
   "non_vacuous": true,
-  "packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+  "organ_revisions": {
+    "daleobanks": {
+      "head": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+      "manifest_pin": "829c5f2810776bef65d6ea108800a3516c9f4c2b",
+      "matches_manifest_pin": false,
+      "root": "/home/user/DALEOBANKS"
+    },
+    "wealthmachine": {
+      "head": "6549984a22a171f68b268b775f19192aee599609",
+      "manifest_pin": "6549984a22a171f68b268b775f19192aee599609",
+      "matches_manifest_pin": true,
+      "root": "/home/user/WealthMachineIntelligence"
+    }
+  },
+  "packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
   "producer_binding": {
     "contract": "wire-opportunity-packet",
     "declared_by": "authorization.p0_p1 (founder P3-B execution order)",
@@ -69,7 +83,7 @@
       "assessment": {
         "go_no_go": "go",
         "legal_readiness": "standard",
-        "opportunity_packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+        "opportunity_packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
         "opportunity_score": 0.696,
         "requires_human_approval": true,
         "risk_level": "low"
@@ -81,7 +95,7 @@
         "data/agent_store.jsonl"
       ],
       "receipt": {
-        "at": "2026-08-09T15:38:24.216298Z",
+        "at": "2026-08-09T15:45:52.491398Z",
         "authority_granted": false,
         "bypass_candidates": [],
         "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -96,7 +110,7 @@
         },
         "contract": "wire-opportunity-packet",
         "delivered": true,
-        "event_id": "c0bbdac1-274d-43b8-80da-25fc4259e74a",
+        "event_id": "2ddc768f-c059-47f8-8702-38bd87eea05a",
         "event_type": "institution.contract_delivery",
         "files_written": [
           "data/agent_store.jsonl"
@@ -126,7 +140,7 @@
       "assessment": {
         "go_no_go": "go",
         "legal_readiness": "standard",
-        "opportunity_packet_id": "7646b113-fa89-42ad-844c-80ae546693bf",
+        "opportunity_packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
         "opportunity_score": 0.696,
         "requires_human_approval": true,
         "risk_level": "low"
@@ -138,7 +152,7 @@
         "data/agent_store.jsonl"
       ],
       "receipt": {
-        "at": "2026-08-09T15:38:24.244123Z",
+        "at": "2026-08-09T15:45:52.519147Z",
         "authority_granted": false,
         "bypass_candidates": [],
         "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -153,7 +167,7 @@
         },
         "contract": "wire-opportunity-packet",
         "delivered": true,
-        "event_id": "9fcccf35-e993-4540-a19a-cd06838c274d",
+        "event_id": "62c7bd03-56ee-4934-8635-bfd7be3704c0",
         "event_type": "institution.contract_delivery",
         "files_written": [
           "data/agent_store.jsonl"

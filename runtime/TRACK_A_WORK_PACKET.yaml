@@ -172,3 +172,33 @@ competing_implementations:
       whichever seam is selected, because both catch failures a declaration-based
       check structurally cannot.
     both_suites_green: "562 passed, 1 skipped (their integration test skips without its env var)"
+
+# ---------------------------------------------------------------------------
+# P4 CONSTRAINT — founder correction 2026-08-09 (mechanism neutrality)
+# ---------------------------------------------------------------------------
+# See docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md. Does not change the
+# twelve closure conditions, the evaluator freeze, or the evidence standard.
+p4_mechanism_neutrality:
+  behavior_stated_without_metaphor: >-
+    Detect a lost function, find or create another way to perform it, test the
+    replacement, restore the function, preserve what was learned.
+  correction: >-
+    "find" precedes "create". The plan had promoted candidate GENERATION —
+    the evolutionary metaphor — to the default mechanism for restoring a lost
+    function. Under the founder correction it becomes one competitor among
+    several, selected on measured fit rather than on resemblance to biology.
+  competing_mechanisms_for_condition_7:
+    - route to a preserved alternative implementation already in the registry (§9, §4.3)
+    - recompose the function from existing Capability Genomes (§4.3, §10)
+    - fall back to a specialized or degraded implementation
+    - generate a novel candidate and evaluate it (the previous default; now one option)
+  why_the_seam_already_permits_this: >-
+    runtime/seam/topology.py TopologyProvider is a behavior interface, and
+    closure condition 7 asks whether the runtime ROUTES WORK THROUGH the
+    replacement — never where the replacement came from. A retrieved
+    implementation, a recomposition and a generated candidate all satisfy it
+    identically, so P4 can compare them without re-cutting the seam.
+  what_this_does_not_license: >-
+    Not a weaker proof. "Simplest mechanism that produces the behavior" governs
+    mechanism selection only. Evaluator sovereignty, the twelve conditions, the
+    preservation rule and the evidence standard are unchanged.

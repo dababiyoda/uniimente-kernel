@@ -132,3 +132,43 @@ ci_regression_status: GREEN; commit af827176763bd86ec2851fef272c369678c34da1; ru
 runtime_counterfactual_status: PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS
 held_out_evaluation_status: NOT_FROZEN
 stop_reason: none
+
+# ---------------------------------------------------------------------------
+# GOVERNED IMPLEMENTATION PLURALISM (Final Build Order §9)
+# ---------------------------------------------------------------------------
+# Two sessions built P3-B concurrently and both landed on this branch. Neither
+# is deleted (§12 forbids it) and neither is silently promoted (§3 forbids it).
+competing_implementations:
+  p3_seam:
+    canonical: runtime/contract_events.py + runtime/probes/route_b_counterfactual.py
+    canonical_commits: [af82717, 59ed076]
+    second_implementation: runtime/seam/
+    second_implementation_record: runtime/P3_SEAM_SECOND_IMPLEMENTATION.md
+    relationship: >-
+      Independent replication. Written without knowledge of each other against
+      the same frozen contract; both reached the same verdict — the route holds,
+      the four states discriminate, WealthMachineClient stays off the decisive
+      path. Agreement between two independent builds is stronger evidence than
+      either run alone.
+    each_proves_what_the_other_does_not:
+      canonical_only:
+        - schema sha256 and both organ git revisions pinned
+        - network denied by a socket tripwire rather than by assumption
+        - ADR, two-pass deliberation and source-intent ledger recorded
+      second_only:
+        - "bypass caught by execution witness (which files actually ran), not by
+           declared handler_ref — a declaration says where a call was supposed to
+           go, the profiler records where it went"
+        - "runs in the default local suite (discovers sibling checkouts) rather
+           than requiring TRACK_A_DALEOBANKS_DIR under a dedicated CI step"
+        - "write containment measured: found that importing the organs rewrote 19
+           tracked .pyc files inside read-only WMI, and that WMI's agent store
+           wrote data/agent_store.jsonl into the kernel at IMPORT time"
+    open_founder_decision: >-
+      Which seam is canonical, and what role the other keeps — comparator,
+      counterfactual twin, regression oracle, or SUPERSEDED (which per §4.3 still
+      means retained, not deleted). Recommended regardless of that choice:
+      transplant the execution witness and the write-containment guards into
+      whichever seam is selected, because both catch failures a declaration-based
+      check structurally cannot.
+    both_suites_green: "562 passed, 1 skipped (their integration test skips without its env var)"

@@ -53,14 +53,44 @@ def test_every_declared_evidence_path_exists(packet):
     assert not missing, f"evidence_paths point at nothing: {missing}"
 
 
+#: Any of these in the counterfactual status means a run is being claimed.
+#: The list is broad on purpose: two sessions worded the same claim differently
+#: ("RUNTIME_CONSUMPTION_PROVEN" and "PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS"),
+#: and a guard keyed to one wording would sit silently inert against the other.
+CLAIM_MARKERS = ("PROVEN", "PASS", "GREEN", "VERIFIED")
+
+#: A claimed run must point at one of these. Either implementation's record
+#: satisfies it — the guard is about evidence existing, not about which seam
+#: produced it.
+COUNTERFACTUAL_RECORDS = (
+    os.path.join("runtime", "evidence", "P3_EPISODE.json"),
+    os.path.join("runtime", "P3_ROUTE_B_DELIBERATION.json"),
+)
+
+
 def test_a_claimed_counterfactual_run_has_a_recorded_artifact(packet):
     """The packet may not claim a run that left no record behind."""
-    status = str(packet["runtime_counterfactual_status"])
-    if "PROVEN" in status:
-        record = os.path.join(REPO_ROOT, "runtime", "evidence", "P3_EPISODE.json")
-        assert os.path.exists(record), (
-            f"packet claims {status!r} but {record} does not exist"
-        )
+    status = str(packet["runtime_counterfactual_status"]).upper()
+    if not any(marker in status for marker in CLAIM_MARKERS):
+        pytest.skip(f"no run is being claimed: {status!r}")
+    present = [r for r in COUNTERFACTUAL_RECORDS
+               if os.path.exists(os.path.join(REPO_ROOT, r))]
+    assert present, (
+        f"packet claims {status!r} but none of {list(COUNTERFACTUAL_RECORDS)} exists"
+    )
+
+
+def test_the_artifact_guard_is_not_inert(packet):
+    """Negative control: the marker list must actually match this packet.
+
+    Without this, broadening the markers could quietly turn the guard above
+    into a permanent skip — which reads as green and checks nothing.
+    """
+    status = str(packet["runtime_counterfactual_status"]).upper()
+    assert any(marker in status for marker in CLAIM_MARKERS), (
+        f"no CLAIM_MARKER matches {status!r}; the artifact guard is now inert "
+        "and would pass on a packet claiming a run that never happened"
+    )
 
 
 def test_closure_count_stays_honest(packet):

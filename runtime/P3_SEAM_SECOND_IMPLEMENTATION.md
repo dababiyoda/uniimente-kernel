@@ -1,4 +1,43 @@
-# P3-B — the contract-to-event seam, and the first four-state counterfactual
+# P3-B, second implementation — `runtime/seam/`
+
+> **Not the canonical seam.** Two sessions built P3-B concurrently and both
+> landed on this branch. `runtime/contract_events.py` +
+> `runtime/probes/route_b_counterfactual.py` (commits `af82717`, `59ed076`)
+> arrived first and the resume packet points at them. This is an independent
+> second implementation, registered under Final Build Order §9 — governed
+> implementation pluralism, not uncontrolled duplication. Deleting it would
+> violate §12; promoting it silently would violate §3.
+>
+> **Open founder decision:** which seam is canonical, and what role the other
+> keeps (comparator, counterfactual twin, regression oracle, or superseded).
+> Nothing here claims that answer.
+
+## Why an independent replication is worth keeping
+
+The two implementations were written without knowledge of each other, against
+the same frozen contract, and reached the same verdict: the route holds, the
+four states discriminate, and `WealthMachineClient` must never be on the
+decisive path. That is a genuine independent replication of the P3 finding,
+which is stronger evidence than either run alone.
+
+They are not redundant. Each proves something the other does not:
+
+| | canonical (`contract_events.py`) | this one (`runtime/seam/`) |
+|---|---|---|
+| bypass rejection | declared `handler_ref` provenance | **profiler: which files actually executed** |
+| network denial | `socket` subclass tripwire | not enforced (relies on inertness of the path) |
+| organ pinning | schema sha256 + both git revisions | repository-root shadow check only |
+| deliberation record | ADR + two-pass + intent ledger | none |
+| runs in default suite | no — needs `TRACK_A_DALEOBANKS_DIR` | **yes — discovers sibling checkouts** |
+| write containment | not measured | **cwd containment + organ writes counted** |
+
+The two rows in bold are the ones worth transplanting into whichever seam wins:
+a declared `handler_ref` says where a call was *supposed* to go, while the
+execution witness records where it *went*; and the containment work found two
+real inertness escapes (below) that a declaration-based check cannot see.
+
+## What this implementation measured
+
 
 `P3_INSPECTION.md` named two absences. This closes the first one and answers
 the open question it left. Run it yourself:

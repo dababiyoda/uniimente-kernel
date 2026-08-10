@@ -190,6 +190,105 @@ But UNIIMENTE must not be limited to this list. These are seed cognitive primiti
 
 The higher-order goal is not "use every mental model." It is to develop a measured ecology of reasoning mechanisms and learn which computational geometry best fits the current problem.
 
+## Cognitive Metabolism: Absorb -> Transmute -> Multiply -> Reintegrate -> Repeat
+
+UNIIMENTE's core thinking and self-improvement cycle is cumulative rather than episodic.
+
+Every meaningful pressure point produced by an intelligence, organ, model, tool, experiment, external event, failure, contradiction, constraint, opportunity, or founder correction should be treated as potentially useful cognitive substrate.
+
+The operating cycle is:
+
+1. **Absorb** — take in the experience, pressure, information, contradiction, or signal without prematurely discarding it.
+2. **Transmute** — convert the input into something structurally useful by extracting causal mechanisms, constraints, state transitions, incentives, proofs, failure modes, or strategic implications.
+3. **Multiply** — use Mechanism Recombination Foundry logic to mutate and recombine those mechanisms so the resulting design, insight, strategy, or capability creates more value than the original input contained.
+4. **Reintegrate** — fold the improved result back into UNIIMENTE's world model, memory, capability graph, goal graph, Future Forest, organ interfaces, developmental state, and applicable operating machinery.
+5. **Repeat** — run the cycle again from the stronger state, so each useful pressure point can increase the capacity of the next cycle.
+
+The canonical compression is:
+
+> Absorb. Transmute. Multiply. Reintegrate. Repeat.
+
+Or, in one line:
+
+> Turn incoming pressure points from every intelligence into compounding institutional power.
+
+This is not a metaphorical flourish. It is intended to become an explicit computational workflow for cumulative intelligence.
+
+## Mechanism Recombination Foundry as the transmutation engine
+
+The Mechanism Recombination Foundry is the default machinery inside the Transmute and Multiply phases.
+
+UNIIMENTE should not merely integrate unchanged ideas or let competing intelligences vote on a compromise. It should:
+
+- extract transferable causal machinery from each pressure point;
+- preserve provenance and the original evidence;
+- identify productive tensions among mechanisms;
+- mutate selected mechanisms before recombination;
+- recombine through functional roles such as perception, memory, reasoning, authority, coordination, execution, proof, learning, repair, and governance;
+- require reciprocal adaptation between imported mechanisms and the receiving system;
+- reject combinations that produce no real emergent capability;
+- record new failure modes introduced by every elevation;
+- preserve negative results and rejected branches so future cycles can learn from them.
+
+The target is invention rather than aggregation.
+
+When several intelligences disagree, UNIIMENTE should ask not merely "which one is correct?" but:
+
+> What causal machinery does each pressure point reveal, and can their interaction be transformed into a stronger mechanism that none of the contributing intelligences produced independently?
+
+This makes disagreement, constraint, and adversity developmental fuel rather than noise.
+
+## Intelligences as one cumulative mind
+
+UNIIMENTE's intelligences are not isolated personas taking turns.
+
+They are differentiated cognitive functions contributing to one shared developmental state. Their outputs may alter confidence, scale estimates, strategic geometry, causal structure, failure expectations, opportunity surfaces, capability requirements, or future branches.
+
+Examples:
+
+- Bayesian cognition changes confidence and belief distributions;
+- Fermi cognition changes scale understanding and exposes impossible economics;
+- Red Team cognition generates stress, counterexamples, and failure pressure;
+- Counter-positioning cognition reveals structural asymmetry;
+- Backcasting cognition measures movement toward founder destinations;
+- power-law cognition detects disproportionate value concentration;
+- biological mechanism extraction contributes decentralized adaptation and repair primitives;
+- mathematical intelligence contributes formal constraints and optimization machinery;
+- social intelligence contributes motive, coalition, legitimacy, and institutional dynamics;
+- organ-level intelligences contribute domain-native representations and evidence.
+
+These contributions should remain attributable but accumulate into the same shared mind.
+
+The goal is not forced consensus. It is compounding cognition.
+
+## Cumulative memory and learned cognitive ecology
+
+Every cycle should leave UNIIMENTE structurally better informed than before when the evidence warrants it.
+
+Memory should preserve at least:
+
+- the original pressure point or observation;
+- source and provenance;
+- which intelligences contributed;
+- mechanisms extracted;
+- mutations attempted;
+- recombinations proposed;
+- predictions made;
+- experiments or actions taken;
+- outcomes and surprises;
+- failures and negative results;
+- capability changes;
+- confidence changes;
+- useful intelligence combinations;
+- harmful or low-value combinations;
+- domain-specific calibration.
+
+Over time UNIIMENTE should learn not only facts but which cognitive compositions are useful for which problem classes.
+
+A successful cognitive improvement therefore changes future cognition. It may alter routing, weighting, available operators, capability composition, experiment selection, or the way an organ interprets a class of pressure.
+
+No learning may silently erase the evidence and lineage that produced it.
+
 ## Whole-body cognition loop
 
 A mature UNIIMENTE cycle is approximately:
@@ -204,19 +303,32 @@ internal state and developmental history
 outcome evidence
         |
         v
+ABSORB
+preserve pressure, provenance, contradictions and opportunity signals
+        |
+        v
 institution-scale world model
         |
         v
 multiscale pattern + contradiction + dependency detection
         |
         v
-nested future forests and strategic tree search
+TRANSMUTE
+extract mechanisms, causal structure, constraints and implications
         |
         v
-metacognitive routing across organs, agents, algorithms, models and simulations
+Mechanism Recombination Foundry
+mutate mechanisms + search productive tensions
         |
         v
-independent synthesis + adversarial tribunal
+MULTIPLY
+produce higher-value recombinations and emergent capability candidates
+        |
+        v
+nested future forests + strategic tree search + metacognitive routing
+        |
+        v
+independent synthesis + adversarial testing
         |
         v
 robust decision / experiment / evidence request / abstention
@@ -231,15 +343,16 @@ reality
 outcomes + failures + surprises
         |
         v
-causal reconciliation + calibration + capability learning
+REINTEGRATE
+memory + world model + goals + capabilities + routing + organ state
         |
         v
-institutional developmental update
+REPEAT FROM A STRONGER STATE
         |
         +----------------------> next cycle
 ```
 
-No single organ owns this loop.
+No single organ owns this loop. The interacting loop is part of what constitutes UNIIMENTE as a higher-order cumulative mind.
 
 ## 24/7 governance and self-observation
 
@@ -307,7 +420,9 @@ Candidate measurements include:
 - improved recovery after component failure;
 - increased verified goal progress per unit of capital, compute, time, and founder intervention;
 - reduced unauthorized or poorly evidenced external effects;
-- better preservation of valuable future options.
+- better preservation of valuable future options;
+- measurable lift from Absorb -> Transmute -> Multiply -> Reintegrate cycles over isolated or non-recombined baselines;
+- increasing reuse of validated mechanisms across unrelated domains without increasing failure rates.
 
 If a centralized UNIIMENTE layer merely adds latency, bureaucracy, or narrative sophistication, simplify it.
 
@@ -328,6 +443,12 @@ Superior cognition therefore cannot silently become superior sovereignty.
 
 The intended destination is not "DALEOBANKS, but bigger."
 
-DALEOBANKS is an organ and proving ground. UNIIMENTE is the integrated artificial egregore: a differentiated, multiscale, cumulative institution whose organs may each possess extraordinary specialized intelligence while the whole develops qualitatively higher cognition from their interaction, contradiction, shared evidence, developmental history, and governed synthesis.
+DALEOBANKS is an organ and proving ground. UNIIMENTE is the integrated artificial egregore: a differentiated, multiscale, cumulative institution whose organs may each possess extraordinary specialized intelligence while the whole develops qualitatively higher cognition from their interaction, contradiction, shared evidence, developmental history, governed synthesis, and recursive cognitive metabolism.
 
 The architectural target is an institution capable of becoming substantially more capable than any one organ without erasing the individuality, specialization, evidence lineage, or bounded authority of its constituent parts.
+
+The founder-defined cognitive metabolism is:
+
+> Absorb -> Transmute -> Multiply -> Reintegrate -> Repeat.
+
+Every useful pressure point should have the opportunity to become stronger cognition, stronger capability, or stronger architecture, and every validated improvement should become substrate for the next cycle.

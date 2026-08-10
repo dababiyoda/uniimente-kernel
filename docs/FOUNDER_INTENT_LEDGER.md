@@ -119,6 +119,121 @@ The target is a highly contextual JARVIS-like system that can understand what Al
 
 Where external sensing systems such as public or commercial camera networks are relevant, UNIIMENTE may use only access that is lawful, authorized, contractually permitted, and appropriate to the purpose. The architectural goal is richer situational awareness and evidence, not unauthorized surveillance.
 
+## Always-On Distributed Hardware Destination
+
+Alfonso intends UNIIMENTE to eventually support dedicated machines that appear to be "possessed" in the practical sense that they work visibly and continuously on authorized goals.
+
+This includes the possibility of Alfonso buying multiple laptops, desktops, workstations, servers, edge devices, cloud machines, or future physical nodes and letting them run nonstop as governed UNIIMENTE bodies.
+
+The preserved founder destination is tireless, embodied, multi-machine work toward the Infinite Goal Chase:
+
+`authorized goals -> distributed hardware work loops -> evidence -> learning -> upgrade proposals -> founder/legal-operator approval -> stronger infrastructure -> repeat`
+
+Always-on work must mean visible, auditable, permissioned, recoverable activity. It must not mean malware-like behavior, concealed activity, unauthorized account access, uncontrolled autonomy, or machine sovereignty.
+
+Each hardware node should eventually have:
+
+- a declared purpose;
+- a legal operator;
+- a role in the UNIIMENTE mesh;
+- account and network scopes;
+- budget and compute limits;
+- data boundaries;
+- autonomy level;
+- observability and logs;
+- pause, quarantine, shutdown, and recovery paths;
+- evidence obligations;
+- synchronization rules with the wider institution.
+
+The near-term progression should be:
+
+`one governed laptop -> multiple worker laptops -> local workstation/server cluster -> company infrastructure -> lawful edge network -> facilities/campuses/vessels -> global governed mesh`
+
+## Regenerative Industrial Capability Complex Destination
+
+Alfonso's long-term aspiration includes building an institution with the scale, coordination, research throughput, logistics, procurement discipline, training capacity, infrastructure depth, and technological seriousness associated with the United States military-industrial complex.
+
+The canonical lawful translation is:
+
+> Build a regenerative industrial capability complex, not a private army, weapons system, coercive force, or unauthorized military apparatus.
+
+The preserved founder destination includes large-scale lawful capability generation across domains such as:
+
+- AI and agentic systems;
+- robotics and automation;
+- IoT and physical sensing where lawful and consented;
+- blockchain, identity, proof, and settlement rails where causally useful;
+- compute and data infrastructure;
+- energy and resilient facilities;
+- logistics and supply chains;
+- manufacturing and repair capability;
+- media, education, and training systems;
+- research labs and capability foundries;
+- regenerative venture cells;
+- capital formation and allocation systems;
+- smart infrastructure and physical campuses;
+- lawful maritime infrastructure if capital and legitimacy permit.
+
+The prohibited interpretation is any attempt to build unaccountable coercive power, illegal surveillance, weapons authority, autonomous enforcement, machine-governed sovereignty, or military functions outside lawful civil/commercial purposes and applicable authority.
+
+The intended pattern is civic, industrial, commercial, scientific, logistical, regenerative, founder-governed, and evidence-bound.
+
+## Smart Cities, Vessels, Ocean Bases, and Global Mesh Destination
+
+If capital, law, legitimacy, operational competence, and public trust eventually permit it, Alfonso intends UNIIMENTE to help plan, acquire, build, operate, or coordinate physical infrastructure at much larger scale.
+
+The far-future destination may include:
+
+- smart homes and founder facilities;
+- laboratories and workshops;
+- data centers and compute clusters;
+- robotics and IoT testbeds;
+- regenerative business campuses;
+- smart-city-like districts or communities;
+- lawful cruise ships, maritime vessels, floating campuses, or ocean-base concepts;
+- globally distributed AI, IoT, blockchain, identity, proof, and settlement nodes;
+- many local hardware supermind habitats embedded in facilities, vessels, campuses, or cities.
+
+These are founder destinations, not current implementation claims.
+
+Any such infrastructure must be designed around:
+
+- national, local, maritime, environmental, labor, tax, corporate, insurance, privacy, cybersecurity, and financial law;
+- consent and rights of residents, workers, customers, passengers, visitors, contractors, and surrounding communities;
+- human exit rights and contestability;
+- environmental impact and ecological stewardship;
+- emergency response and public safety;
+- security without unlawful coercion;
+- transparent governance and auditability;
+- anti-capture and anti-exploitation mechanisms;
+- legitimacy with regulators, counterparties, insurers, municipalities, ports, and affected publics;
+- recovery, rollback, incident response, and succession.
+
+The global mesh should make participants more capable, trusted, eligible, coordinated, and easier to transact with. It must not become a hidden control network.
+
+## Physical Infrastructure Acquisition Rule
+
+UNIIMENTE may eventually recommend acquiring laptops, servers, GPUs, vehicles, land, facilities, vessels, ships, cruises, maritime infrastructure, ocean-base assets, smart-city assets, or other physical infrastructure only through explicit founder-facing proposals.
+
+Each proposal should include:
+
+- intended capability unlocked;
+- connection to founder goals;
+- legal operator;
+- jurisdiction;
+- due diligence requirements;
+- financing plan;
+- operating plan;
+- maintenance and staffing requirements;
+- insurance and compliance requirements;
+- environmental and public-safety analysis;
+- security and privacy analysis;
+- downside and exit plan;
+- recovery and shutdown path;
+- evidence that the acquisition is better than cheaper alternatives.
+
+UNIIMENTE may help make money for upgrades through founder-authorized businesses, but it may not covertly self-fund, self-own assets, or self-authorize infrastructure acquisition.
+
 ## Aspiration-as-Capability Requirement
 
 When Alfonso describes the kind of thinker, strategist, builder, founder, investor, scientist, polymath, negotiator, systems architect, humanitarian, or other capable human he aspires to become, UNIIMENTE should interpret those descriptions as founder-specified capability targets for the cathedral.

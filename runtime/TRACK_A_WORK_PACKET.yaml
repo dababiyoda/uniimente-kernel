@@ -17,7 +17,7 @@ active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
 closure_count: 0
 
 contract_hash: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
-evaluator_hashes: NOT_FROZEN
+evaluator_hashes: e50b48fe1ccc50a782b97bb1d8662eab1df5fbf28892758355183f560a30154a
 
 completed_phases:
   P1_runtime_contract: COMPLETE; frozen, self-sealed, 18 guard tests
@@ -28,7 +28,9 @@ completed_phases:
   P3_route_b_local_counterfactual: PASS; exact pins, four states, no external effect
   P3_route_b_canonical_ci: COMPLETE; commit af82717, run 31282596092, all four jobs green
 
-current_phase: P4; inspect and freeze the held-out evaluator and candidate-builder boundary
+current_phase: >-
+  P4; evaluator FROZEN and Capability Router built. Next: held-out cases and the
+  candidate-builder, which now competes rather than presides.
 
 p3_route_b:
   commit: af827176763bd86ec2851fef272c369678c34da1
@@ -102,6 +104,8 @@ evidence_paths:
   p3_second_implementation_record: runtime/P3_SEAM_SECOND_IMPLEMENTATION.md
   p3_second_episode_record: runtime/evidence/P3_EPISODE.json
   p3_second_test: tests/integration/test_p3_counterfactual.py
+  capability_router: capabilities/router.py
+  evaluator_freeze: runtime/evaluator/freeze.py
 
 source_classification:
   doctrine: canonical founder requirement
@@ -121,7 +125,8 @@ known_falsifications:
 unresolved:
   - trusted production artifact attestation for bound handler revisions
   - field-level payload retention policy before production use
-  - P4 evaluator freeze and candidate-generation evidence
+  - candidate GENERATION evidence (the evaluator is now frozen; generation is one
+    competitor among four, not the default)
   - named external verifier, acceptance schema, payable event, and first commercial wedge
 
 local_test_status:
@@ -141,7 +146,7 @@ ci_regression_status: >-
   cross-repository gate reported 18 passed, 0 skipped. Earlier green:
   af827176763bd86ec2851fef272c369678c34da1 (run 31282596092).
 runtime_counterfactual_status: PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS
-held_out_evaluation_status: NOT_FROZEN
+held_out_evaluation_status: EVALUATOR_FROZEN; held-out cases not yet created
 stop_reason: none
 
 # ---------------------------------------------------------------------------

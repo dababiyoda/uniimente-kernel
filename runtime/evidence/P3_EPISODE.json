@@ -46,7 +46,7 @@
       "root": "/home/user/WealthMachineIntelligence"
     }
   },
-  "packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
+  "packet_id": "23b66421-7143-4f16-9d00-d0ec244b5fef",
   "producer_binding": {
     "contract": "wire-opportunity-packet",
     "declared_by": "authorization.p0_p1 (founder P3-B execution order)",
@@ -78,12 +78,112 @@
       "repository_root": "/home/user/DALEOBANKS"
     }
   },
+  "restoration": {
+    "decision": {
+      "at": "2026-08-11T09:28:29.270509Z",
+      "authority_granted": false,
+      "capability": "institutional.cross_organ_edge_resolution",
+      "chosen": "runtime.seam.topology.ManifestContractTopology",
+      "considered": [
+        "linker.linker.InstitutionalLinker",
+        "runtime.seam.topology.ManifestContractTopology"
+      ],
+      "origin_of_chosen": "RETRIEVED",
+      "reason": "cheapest healthy implementation at lifecycle FALLBACK (cost 1.0, evidence tested)",
+      "rejected": [
+        {
+          "implementation": "linker.linker.InstitutionalLinker",
+          "why": "lifecycle QUARANTINED"
+        }
+      ]
+    },
+    "function_restored": true,
+    "lost_implementation": "linker.linker.InstitutionalLinker",
+    "note": "condition 7's mechanism, satisfied by RETRIEVAL. Conditions 3, 4, 5 and 6 are untouched: no candidate was generated, the evaluator was not consulted, and nothing was attached to the experimental registry. This is not a closure.",
+    "replacement": "runtime.seam.topology.ManifestContractTopology",
+    "replacement_origin": "RETRIEVED"
+  },
+  "restoration_holds": true,
+  "router": {
+    "authority_granted": false,
+    "capabilities": {
+      "institutional.cross_organ_edge_resolution": [
+        {
+          "cost": 1.0,
+          "evidence": "verified_by_execution",
+          "healthy": true,
+          "implementation": "linker.linker.InstitutionalLinker",
+          "lifecycle": "QUARANTINED",
+          "origin": "CANONICAL"
+        },
+        {
+          "cost": 1.0,
+          "evidence": "tested",
+          "healthy": true,
+          "implementation": "runtime.seam.topology.ManifestContractTopology",
+          "lifecycle": "FALLBACK",
+          "origin": "RETRIEVED"
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "at": "2026-08-11T09:28:29.239798Z",
+        "authority_granted": false,
+        "capability": "institutional.cross_organ_edge_resolution",
+        "chosen": "linker.linker.InstitutionalLinker",
+        "considered": [
+          "linker.linker.InstitutionalLinker",
+          "runtime.seam.topology.ManifestContractTopology"
+        ],
+        "origin_of_chosen": "CANONICAL",
+        "reason": "cheapest healthy implementation at lifecycle ACTIVE (cost 1.0, evidence verified_by_execution)",
+        "rejected": []
+      },
+      {
+        "at": "2026-08-11T09:28:29.270509Z",
+        "authority_granted": false,
+        "capability": "institutional.cross_organ_edge_resolution",
+        "chosen": "runtime.seam.topology.ManifestContractTopology",
+        "considered": [
+          "linker.linker.InstitutionalLinker",
+          "runtime.seam.topology.ManifestContractTopology"
+        ],
+        "origin_of_chosen": "RETRIEVED",
+        "reason": "cheapest healthy implementation at lifecycle FALLBACK (cost 1.0, evidence tested)",
+        "rejected": [
+          {
+            "implementation": "linker.linker.InstitutionalLinker",
+            "why": "lifecycle QUARANTINED"
+          }
+        ]
+      },
+      {
+        "at": "2026-08-11T09:28:29.270756Z",
+        "authority_granted": false,
+        "capability": "institutional.cross_organ_edge_resolution",
+        "chosen": "runtime.seam.topology.ManifestContractTopology",
+        "considered": [
+          "linker.linker.InstitutionalLinker",
+          "runtime.seam.topology.ManifestContractTopology"
+        ],
+        "origin_of_chosen": "RETRIEVED",
+        "reason": "cheapest healthy implementation at lifecycle FALLBACK (cost 1.0, evidence tested)",
+        "rejected": [
+          {
+            "implementation": "linker.linker.InstitutionalLinker",
+            "why": "lifecycle QUARANTINED"
+          }
+        ]
+      }
+    ]
+  },
   "states": [
     {
       "assessment": {
         "go_no_go": "go",
         "legal_readiness": "standard",
-        "opportunity_packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
+        "opportunity_packet_id": "23b66421-7143-4f16-9d00-d0ec244b5fef",
         "opportunity_score": 0.696,
         "requires_human_approval": true,
         "risk_level": "low"
@@ -95,7 +195,7 @@
         "data/agent_store.jsonl"
       ],
       "receipt": {
-        "at": "2026-08-09T15:45:52.491398Z",
+        "at": "2026-08-11T09:28:29.206428Z",
         "authority_granted": false,
         "bypass_candidates": [],
         "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -110,7 +210,7 @@
         },
         "contract": "wire-opportunity-packet",
         "delivered": true,
-        "event_id": "2ddc768f-c059-47f8-8702-38bd87eea05a",
+        "event_id": "b408c448-c49b-41c4-bb06-87874f82f349",
         "event_type": "institution.contract_delivery",
         "files_written": [
           "data/agent_store.jsonl"
@@ -140,7 +240,7 @@
       "assessment": {
         "go_no_go": "go",
         "legal_readiness": "standard",
-        "opportunity_packet_id": "5ca63484-580f-459a-add7-264ec300b76a",
+        "opportunity_packet_id": "23b66421-7143-4f16-9d00-d0ec244b5fef",
         "opportunity_score": 0.696,
         "requires_human_approval": true,
         "risk_level": "low"
@@ -152,7 +252,7 @@
         "data/agent_store.jsonl"
       ],
       "receipt": {
-        "at": "2026-08-09T15:45:52.519147Z",
+        "at": "2026-08-11T09:28:29.237312Z",
         "authority_granted": false,
         "bypass_candidates": [],
         "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -167,7 +267,7 @@
         },
         "contract": "wire-opportunity-packet",
         "delivered": true,
-        "event_id": "62c7bd03-56ee-4934-8635-bfd7be3704c0",
+        "event_id": "6493e939-ca33-40fc-a1dd-c8c0a49b2b68",
         "event_type": "institution.contract_delivery",
         "files_written": [
           "data/agent_store.jsonl"
@@ -192,6 +292,94 @@
       "routes": 0,
       "state": "D_rolled_back",
       "topology": "DISABLED:institutional.cross_organ_edge_resolution"
+    },
+    {
+      "assessment": {
+        "go_no_go": "go",
+        "legal_readiness": "standard",
+        "opportunity_packet_id": "23b66421-7143-4f16-9d00-d0ec244b5fef",
+        "opportunity_score": 0.696,
+        "requires_human_approval": true,
+        "risk_level": "low"
+      },
+      "assessment_present": true,
+      "delivered": true,
+      "executed_files_in_consumer_repo": 13,
+      "organ_files_written_in_scratch": [
+        "data/agent_store.jsonl"
+      ],
+      "receipt": {
+        "at": "2026-08-11T09:28:29.268414Z",
+        "authority_granted": false,
+        "bypass_candidates": [],
+        "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
+        "consumer_evidence": {
+          "instance_class": "OpportunityIntakeService",
+          "instance_module": "src.services.opportunity_intake",
+          "method": "evaluate_packet",
+          "module": "src.services.opportunity_intake",
+          "module_file": "/home/user/WealthMachineIntelligence/src/services/opportunity_intake.py",
+          "qualname": "OpportunityIntakeService",
+          "repository_root": "/home/user/WealthMachineIntelligence"
+        },
+        "contract": "wire-opportunity-packet",
+        "delivered": true,
+        "event_id": "a44dcacd-85e2-4846-93c5-6cff1c2ecfbd",
+        "event_type": "institution.contract_delivery",
+        "files_written": [
+          "data/agent_store.jsonl"
+        ],
+        "producer": "spiffe://uniimente.internal/organ/daleobanks",
+        "witness_file_count": 38
+      },
+      "refused": [],
+      "routes": 1,
+      "state": "E0_routed_baseline",
+      "topology": "routed:institutional.cross_organ_edge_resolution"
+    },
+    {
+      "assessment": {
+        "go_no_go": "go",
+        "legal_readiness": "standard",
+        "opportunity_packet_id": "23b66421-7143-4f16-9d00-d0ec244b5fef",
+        "opportunity_score": 0.696,
+        "requires_human_approval": true,
+        "risk_level": "low"
+      },
+      "assessment_present": true,
+      "delivered": true,
+      "executed_files_in_consumer_repo": 13,
+      "organ_files_written_in_scratch": [
+        "data/agent_store.jsonl"
+      ],
+      "receipt": {
+        "at": "2026-08-11T09:28:29.297954Z",
+        "authority_granted": false,
+        "bypass_candidates": [],
+        "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
+        "consumer_evidence": {
+          "instance_class": "OpportunityIntakeService",
+          "instance_module": "src.services.opportunity_intake",
+          "method": "evaluate_packet",
+          "module": "src.services.opportunity_intake",
+          "module_file": "/home/user/WealthMachineIntelligence/src/services/opportunity_intake.py",
+          "qualname": "OpportunityIntakeService",
+          "repository_root": "/home/user/WealthMachineIntelligence"
+        },
+        "contract": "wire-opportunity-packet",
+        "delivered": true,
+        "event_id": "e71f920b-b7d0-4ff4-ac5a-de84a33b3a02",
+        "event_type": "institution.contract_delivery",
+        "files_written": [
+          "data/agent_store.jsonl"
+        ],
+        "producer": "spiffe://uniimente.internal/organ/daleobanks",
+        "witness_file_count": 38
+      },
+      "refused": [],
+      "routes": 1,
+      "state": "E_restored_by_retrieval",
+      "topology": "routed:institutional.cross_organ_edge_resolution"
     }
   ],
   "target_capability": "institutional.cross_organ_edge_resolution",

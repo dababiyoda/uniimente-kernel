@@ -39,7 +39,13 @@ from runtime.contract import TARGET_CAPABILITY, contract_digest
 from runtime.seam import bindings_p3
 from runtime.seam.binding import BindingError
 from runtime.seam.router import BypassDetected, ContractRouter, RouteNotEstablished
-from runtime.seam.topology import DisabledEdgeResolution, LinkerTopology
+from capabilities.router import CapabilityRouter, Implementation
+from runtime.seam.topology import (
+    DisabledEdgeResolution,
+    LinkerTopology,
+    ManifestContractTopology,
+    RoutedTopology,
+)
 
 ACTOR = "runtime.seam.episode"
 LEGAL_PRINCIPAL = "alfonso_lopez"
@@ -142,6 +148,34 @@ def _run_state(name: str, topology, wire: dict, workdir: str) -> StateResult:
     return result
 
 
+CANONICAL_IMPL = "linker.linker.InstitutionalLinker"
+PRESERVED_IMPL = "runtime.seam.topology.ManifestContractTopology"
+
+
+def _restoration_router() -> CapabilityRouter:
+    """Both mechanisms registered, competing on cost and evidence only.
+
+    The canonical linker is the default because it is the stronger mechanism —
+    it computes unresolved questions and overlapping authority that the
+    alternative discards — not because it is canonical. The alternative is
+    cheaper and therefore would win on cost alone; it loses on evidence
+    maturity, which is the comparison the founder's correction asks for.
+    """
+    router = CapabilityRouter(
+        ledger=EvidenceLedger(constitution_hash=contract_digest()))
+    router.register(Implementation(
+        implementation_id=CANONICAL_IMPL, capability=TARGET_CAPABILITY,
+        provider=LinkerTopology, lifecycle="ACTIVE", origin="CANONICAL",
+        cost=1.0, evidence_maturity="verified_by_execution",
+        notes="full LinkReport: edges, unresolved questions, overlapping authority"))
+    router.register(Implementation(
+        implementation_id=PRESERVED_IMPL, capability=TARGET_CAPABILITY,
+        provider=ManifestContractTopology, lifecycle="FALLBACK", origin="RETRIEVED",
+        cost=1.0, evidence_maturity="tested",
+        notes="manifest intersection only; discards unresolved and authority analysis"))
+    return router
+
+
 def _control_no_proven_edge(workdir: str) -> dict:
     """A binding whose organ has no proven edge must be refused."""
     router, _ = _fresh_router(LinkerTopology(), [bindings_p3.wrong_consumer_binding()], workdir)
@@ -226,10 +260,31 @@ def run_episode() -> dict:
         state_c = _run_state("C_repaired", LinkerTopology(), wire, workdir)
         state_d = _run_state("D_rolled_back", DisabledEdgeResolution(TARGET_CAPABILITY),
                              wire, workdir)
+        # STATE E — the function is lost and RESTORED, by finding rather than
+        # creating. The canonical implementation is quarantined (not deleted);
+        # the router selects the preserved alternative; the runtime routes work
+        # through it and the assessment returns. Condition 7 asks whether work
+        # routes through the replacement, never where the replacement came
+        # from, so this is that condition's mechanism — demonstrated with the
+        # cheapest of the four restoration routes rather than the most
+        # expensive one.
+        router = _restoration_router()
+        routed_healthy = _run_state("E0_routed_baseline", RoutedTopology(router),
+                                    wire, workdir)
+        replacement, restore_decision = router.restore(
+            TARGET_CAPABILITY, unavailable=CANONICAL_IMPL)
+        state_e = _run_state("E_restored_by_retrieval", RoutedTopology(router),
+                             wire, workdir)
+
         control_edge = _control_no_proven_edge(workdir)
         control_bypass = _control_bypass_detected(wire, workdir)
 
-    states = [state_a, state_b, state_c, state_d]
+    states = [state_a, state_b, state_c, state_d, routed_healthy, state_e]
+    restoration_holds = (
+        routed_healthy.assessment_present
+        and state_e.assessment_present
+        and replacement.implementation_id == PRESERVED_IMPL
+    )
     discriminates = (
         state_a.assessment_present
         and not state_b.assessment_present
@@ -260,6 +315,21 @@ def run_episode() -> dict:
         "packet_id": wire.get("id"),
         "states": [s.describe() for s in states],
         "controls": [control_edge, control_bypass],
+        "restoration": {
+            "lost_implementation": CANONICAL_IMPL,
+            "replacement": replacement.implementation_id,
+            "replacement_origin": replacement.origin,
+            "decision": restore_decision.describe(),
+            "function_restored": state_e.assessment_present,
+            "note": (
+                "condition 7's mechanism, satisfied by RETRIEVAL. Conditions 3, "
+                "4, 5 and 6 are untouched: no candidate was generated, the "
+                "evaluator was not consulted, and nothing was attached to the "
+                "experimental registry. This is not a closure."
+            ),
+        },
+        "restoration_holds": restoration_holds,
+        "router": router.describe(),
         "discriminates": discriminates,
         "controls_fired": controls_fired,
         "non_vacuous": non_vacuous,

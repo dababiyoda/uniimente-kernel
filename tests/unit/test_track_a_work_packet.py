@@ -103,6 +103,30 @@ def test_no_value_was_silently_truncated(packet):
     )
 
 
+#: Artifacts a fresh context must be able to find FROM THE PACKET ALONE.
+#: The packet is the resume mechanism; an artifact absent from its index does
+#: not exist for the next session. An audit found all five of these missing —
+#: including the founder's own standing interpretation rule — while
+#: ``test_every_declared_evidence_path_exists`` passed, because verifying that
+#: listed paths exist says nothing about what was never listed.
+REQUIRED_EVIDENCE = (
+    "docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md",
+    "runtime/contract.py",
+    "runtime/seam",
+    "runtime/evidence/P3_EPISODE.json",
+    "runtime/contract_events.py",
+)
+
+
+def test_the_index_lists_every_artifact_a_fresh_context_needs(packet):
+    """The complement of the check below: what is *missing* from the index."""
+    listed = " ".join(str(v) for v in packet["evidence_paths"].values())
+    absent = [p for p in REQUIRED_EVIDENCE if p not in listed]
+    assert not absent, (
+        f"a fresh context resuming from this packet would never find: {absent}"
+    )
+
+
 def test_every_declared_evidence_path_exists(packet):
     """Assert the subject exists. A path nobody can open is not evidence."""
     missing = []

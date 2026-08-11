@@ -1,7 +1,7 @@
 # Track-A resume packet. A fresh context should verify this file against the
 # branch and CI before acting. It is not an authority source.
 
-updated_at: '2026-08-08'
+updated_at: '2026-08-11'
 branch: claude/track-a-runtime-spine
 previous_head: 519a390cb18994b81d2a000363f142b7b7b9db2c
 head_resolution: git rev-parse HEAD
@@ -94,6 +94,14 @@ evidence_paths:
   p3_adr: runtime/ADR-P3-ROUTE-B.md
   p3_intent_ledger: runtime/P3_SOURCE_INTENT_LEDGER.json
   provenance: runtime/PROVENANCE.md
+  # Second implementation and standing doctrine. Added after an audit found the
+  # index omitted them: a fresh context resumes from this list, so an artifact
+  # absent here is an artifact that does not exist for the next session.
+  founder_vocabulary_doctrine: docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md
+  p3_second_implementation: runtime/seam
+  p3_second_implementation_record: runtime/P3_SEAM_SECOND_IMPLEMENTATION.md
+  p3_second_episode_record: runtime/evidence/P3_EPISODE.json
+  p3_second_test: tests/integration/test_p3_counterfactual.py
 
 source_classification:
   doctrine: canonical founder requirement
@@ -123,12 +131,15 @@ local_test_status:
   source_revision_attestation: PASS
   intent_ledger_validation: VALID; 5 records
   deliberation_validation: VALID; exactly two passes
-  canonical_full_kernel_suite: 512 passed, 15 skipped
+  canonical_full_kernel_suite: 566 passed, 1 skipped (was 512/15 at af82717)
   canonical_verifier_v2_unit_evidence: 491 passed, 14 skipped
   canonical_route_b_step: 1 passed
   canonical_ci_jobs: 4 of 4 succeeded
 
-ci_regression_status: GREEN; commit af827176763bd86ec2851fef272c369678c34da1; run 31282596092
+ci_regression_status: >-
+  GREEN; 4 of 4 jobs at e8ba1413620e0ed5143bd1342a0f09056df663da (run 31322276858);
+  cross-repository gate reported 18 passed, 0 skipped. Earlier green:
+  af827176763bd86ec2851fef272c369678c34da1 (run 31282596092).
 runtime_counterfactual_status: PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS
 held_out_evaluation_status: NOT_FROZEN
 stop_reason: none

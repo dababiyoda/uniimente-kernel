@@ -13,6 +13,7 @@ on disk, is worse than no packet — the next session would resume from it.
 from __future__ import annotations
 
 import os
+import re
 
 import pytest
 
@@ -31,14 +32,74 @@ def packet() -> dict:
     return loaded
 
 
+def _unquoted_hash_lines(text: str) -> list[str]:
+    """Lines where an unquoted ``#`` silently truncates the value.
+
+    This detects the CAUSE rather than a symptom. The length heuristic below
+    is kept, but it is the weaker check: the first version of this guard only
+    inspected top-level scalars, so when the bug recurred inside a nested list
+    — eating ``PR #66 remains immutable at a6f14d3`` down to ``"PR"``, the
+    single most important standing constraint in the file — the guard passed.
+
+    A guard written for a bug that does not catch that bug where it actually
+    recurs is worse than no guard: it certifies the file.
+    """
+    offenders = []
+    for number, raw in enumerate(text.splitlines(), 1):
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        match = re.match(r"^(?:-\s+|[\w.\-]+:\s+)(.*)$", stripped)
+        if not match:
+            continue
+        value = match.group(1)
+        if value[:1] in ("'", '"', "|", ">"):        # quoted or block scalar
+            continue
+        if " #" in value:
+            offenders.append(f"line {number}: {stripped}")
+    return offenders
+
+
+def test_no_unquoted_hash_truncates_a_value():
+    """The root cause, checked against the raw text rather than the parse."""
+    with open(PACKET, encoding="utf-8") as fh:
+        offenders = _unquoted_hash_lines(fh.read())
+    assert not offenders, (
+        "an unquoted '#' silently truncates these values on load: " + str(offenders)
+    )
+
+
+def test_the_truncation_detector_can_actually_fire():
+    """Negative control, using the exact line that defeated the old guard."""
+    assert _unquoted_hash_lines("protected_invariants:\n  - PR #66 immutable at a6f14d3\n")
+    assert _unquoted_hash_lines("head: 45b0d7f  # plus this commit\n")
+    # ...and stays silent on the legitimate forms.
+    assert not _unquoted_hash_lines('  - "PR #66 immutable at a6f14d3"\n')
+    assert not _unquoted_hash_lines("# a whole-line comment about #66\n")
+    assert not _unquoted_hash_lines("closure_count: 0\n")
+
+
 def test_no_value_was_silently_truncated(packet):
-    """The ``#`` failure mode: a value that parsed fine but lost its meaning."""
-    suspicious = [
-        f"{k}={v!r}" for k, v in packet.items()
-        if isinstance(v, str) and 0 < len(v.strip()) < 4
-    ]
+    """Symptom check, applied to the WHOLE tree rather than the top level.
+
+    Kept alongside the root-cause check because truncation has other causes
+    than ``#`` — a stray ``:`` or a bad quote can shorten a value too.
+    """
+    suspicious = []
+
+    def walk(node, path):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}[{i}]")
+        elif isinstance(node, str) and 0 < len(node.strip()) < 4:
+            suspicious.append(f"{path}={node!r}")
+
+    walk(packet, "")
     assert not suspicious, (
-        f"these values look truncated by unquoted YAML punctuation: {suspicious}"
+        f"these values look truncated by YAML punctuation: {suspicious}"
     )
 
 

@@ -74,7 +74,7 @@ next_action: >-
   as sandbox routing evidence and keep the closure count at zero.
 
 protected_invariants:
-  - PR #66 remains immutable at a6f14d3
+  - "PR #66 remains immutable at a6f14d3"
   - no merge, deploy, public publication, money, credentials, or external effect
   - LinkReport proves structure, never authority
   - no second linker, event bus, closure judge, or authority source

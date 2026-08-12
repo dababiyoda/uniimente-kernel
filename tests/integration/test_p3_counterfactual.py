@@ -180,6 +180,28 @@ def test_organ_side_effects_were_contained_and_counted(episode):
     )
 
 
+def test_the_function_is_restored_by_finding_not_creating(episode):
+    """STATE E. Exercised by the episode; asserted here so it cannot rot.
+
+    The canonical linker is quarantined, the router selects the preserved
+    alternative, and real work routes through it — condition 7's mechanism,
+    satisfied by the cheapest of the four restoration routes. Without this
+    assertion the episode would keep computing the state and CI would stay
+    green if it silently stopped restoring.
+    """
+    restoration = episode["restoration"]
+    assert episode["restoration_holds"], f"restoration regressed: {restoration}"
+    assert restoration["replacement"] != restoration["lost_implementation"]
+    assert restoration["replacement_origin"] == "RETRIEVED"
+    assert _state(episode, "E_restored_by_retrieval")["assessment_present"]
+    assert _state(episode, "E_restored_by_retrieval")["executed_files_in_consumer_repo"] > 0
+
+
+def test_restoration_is_not_a_closure(episode):
+    """Guard against a future session reading STATE E as more than it is."""
+    assert "not a closure" in episode["restoration"]["note"].lower()
+
+
 def test_the_record_states_which_organ_revisions_ran(episode):
     """Evidence must not let pinned provenance be inferred where none exists.
 

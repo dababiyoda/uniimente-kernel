@@ -1,0 +1,11 @@
+{
+  "amendment": "Any change to any sealed file produces a new contract_version, a new bundle digest, and a new two-commit freeze. Never an in-place edit under the same advertised digest.",
+  "authorizes": null,
+  "bundle_digest": "fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c",
+  "contract_version": "1.0.0",
+  "digest_covers": "handoff/BUNDLE_MANIFEST.json, which itself carries sorted path + SHA-256 for handoff/contract.json, handoff/CHATGPT_BRIEF.md, handoff/conform.py, all four handoff schemas, all 26 acceptance vectors, and the three pre-existing canonical schemas the bundle depends on.",
+  "frozen_at_commit": "99163767f634115b3d7c331d87888df5484b92d8",
+  "seal_version": "1.0.0",
+  "verify": "python -m handoff.conform",
+  "why_two_commits": "A file cannot contain the SHA of the commit that contains it. Commit A freezes the bundle and its manifest; this file, in commit B, records commit A's SHA and the recomputed manifest digest. Conformance verifies both halves and confirms commit A is an ancestor of HEAD."
+}

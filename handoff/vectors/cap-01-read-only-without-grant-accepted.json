@@ -1,0 +1,15 @@
+{
+  "document": {
+    "capability_id": "kernel.capability_discovery",
+    "consequence_class": "read_only",
+    "grant_reference": null,
+    "legal_principal": "alfonso_lopez",
+    "request_version": "1.0.0",
+    "requested_by": "spiffe://uniimente.internal/agent/planner",
+    "reversible": true
+  },
+  "expect": "ACCEPT",
+  "schema": "capability-request",
+  "vector_id": "cap-01-read-only-without-grant-accepted",
+  "why": "A read_only request may carry a null grant; the Gate still decides at commit time."
+}

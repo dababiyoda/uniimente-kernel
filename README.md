@@ -50,6 +50,12 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
 | `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
+| `/blueprint` | Opus Maximus hardening ladder over the 55-technology arsenal: six rungs, a separate reality axis, an evidence binder that resolves every claim against the real tree, and a critical-path compiler (`python -m blueprint`) |
+| `/discovery` | Capability Discovery Service (§4.10): read-only directory over organ manifests. Discovery does not grant access |
+| `/knowledge` | Institutional Knowledge Graph (§4.15): provenance-aware projection; a node with no provenance is refused |
+| `/routing` | Decision Router (§4.14): ranks competing implementations, records every decision, invokes nothing |
+| `/handoff` | Frozen Claude/ChatGPT handoff bundle: contract, schemas, acceptance vectors, bundle manifest and two-commit seal (`python -m handoff.conform`) |
+| `/organs` | Organ manifests. Five published; `identity/organ-registry.yaml` separately registers eight identities — a manifest is discovery, never identity |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
 | `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
@@ -67,6 +73,21 @@ This repository contains no production secrets. It contains law, contracts, and 
 172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
 
 Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+
+**Opus Maximus blueprint — executable, evidence-bound (2026-08-12).** The
+55-technology Foundry arsenal stopped being a description and became an instrument.
+Every technology now carries a rung the evidence actually supports
+(`BLUEPRINT → SKETCHED → BUILT → EXERCISED → PROVEN → HARDENED`) and, separately, a
+reality (`BLUEPRINT_ONLY | SIMULATED | IMPLEMENTED`). A rung claim whose evidence does
+not resolve against the real tree is refused, not warned about. `python -m blueprint`
+prints the ladder, the unblocked build frontier ranked by leverage, and, for everything
+blocked, the exact dependency holding it down. **Nothing stands at HARDENED**: that rung
+requires a reconciled external outcome and the institution has zero. Three frontier
+components landed with it — Capability Discovery (#27), the Institutional Knowledge
+Graph (#18) and the Decision Router (#25) — each authority-free by AST assertion, each
+registered for five-closure verification. Technology #25 is **not closed**: a second
+router exists in draft PR #70 whose `resolve()` invokes a provider, and naming the
+canonical selector is a founder decision.
 
 ## The doctrine
 

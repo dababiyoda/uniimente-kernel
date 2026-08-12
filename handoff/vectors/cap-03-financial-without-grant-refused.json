@@ -1,0 +1,15 @@
+{
+  "document": {
+    "capability_id": "wealthmachine.decision_engine",
+    "consequence_class": "financial",
+    "grant_reference": null,
+    "legal_principal": "alfonso_lopez",
+    "request_version": "1.0.0",
+    "requested_by": "spiffe://uniimente.internal/organ/wealthmachine",
+    "reversible": false
+  },
+  "expect": "REJECT",
+  "schema": "capability-request",
+  "vector_id": "cap-03-financial-without-grant-refused",
+  "why": "INV-5. Financial and irreversible requests may not carry a null grant even as requests."
+}

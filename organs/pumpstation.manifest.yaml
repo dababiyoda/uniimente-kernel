@@ -1,0 +1,106 @@
+# Organ Manifest: PumpStation.
+# Validated against contracts/organ-manifest.schema.json.
+# Discovery, never authority: nothing here grants permission to act.
+#
+# Written from a READ-ONLY inspection of dababiyoda/PumpStation at df6a732.
+# No code in that repository was changed to produce this manifest. Every field
+# below is either observed in that tree or recorded as unresolved. Nothing was
+# inferred to make the organ look more complete than it is.
+#
+# This manifest registers PumpStation so the Institutional Linker can see it.
+# Registration is not activation: status is `planned` (see unresolved) and the organ consumes and
+# produces no kernel contract. An open proposal (kernel PR #46) covers whether
+# PumpStation becomes a Venture Cell at all; this manifest does not decide that
+# and must not be read as deciding it.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/pumpstation
+name: pumpstation
+role: proposed_venture_cell_memecoin_coordination_surface
+repository: dababiyoda/PumpStation
+source:
+  branch: main
+  commit: df6a732
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: pumpstation.wallet_session
+    description: >-
+      Wallet connection by EIP-191 personal-signature recovery over the fixed
+      string "Connect PumpStation"; persists address and optional email in MongoDB.
+    implementation_path: server/index.js
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: pumpstation.coordination_api
+    description: >-
+      Express/Mongoose HTTP API for buy-in coordination, voting and exit
+      strategy. Observed as an Express app on port 3001 with an ethers v6
+      dependency; endpoint inventory not enumerated in this pass.
+    implementation_path: server/index.js
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: pumpstation.client_surface
+    description: Single static client page served from the server process.
+    implementation_path: client/index.html
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+contracts:
+  consumes: []
+  produces: []
+prohibited_actions:
+  - acting as a legal principal for UNIIMENTE
+  - moving funds, executing trades, or signing transactions on any principal's behalf
+  - self-promotion to any active lifecycle or organ status
+  - executing external side effects outside the kernel consequence gate
+  - representing coordination activity as a verified commercial outcome
+authority:
+  max_consequence_class: read_only
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: npm test
+  last_verified:
+    date: "2026-08-11"
+    commit: df6a732
+    tests_passed: 0
+    tests_failed: 0
+    notes: >-
+      UNVERIFIED. The declared test script is
+      `echo "No tests yet" && exit 0`, which exits zero without executing
+      anything. A green result from this command is not evidence. Recorded as
+      zero passed and zero failed rather than as a passing suite.
+shutdown_behavior: >-
+  Not implemented. The organ is unattached, so shutdown is
+  equivalent to not starting the process; no kernel loop depends on it.
+recovery: >-
+  Not implemented. State lives in an external MongoDB with no kernel-anchored
+  provenance, so no institutional replay path exists.
+status: planned
+unresolved:
+  - >-
+    STATUS VOCABULARY CONTRADICTION, preserved rather than papered over.
+    contracts/organ-manifest.schema.json admits only active | planned |
+    this_repository. The true state of this organ is "code exists in a real
+    repository, but the organ is registered and not attached" — which the
+    canonical contract cannot express. `planned` is recorded as the nearest
+    legal value and understates that working code exists. Widening the enum is
+    a contract change and was not made unilaterally; it requires a founder
+    decision.
+  - >-
+    Consequence class is declared read_only because the organ is attached to
+    nothing and consumes no kernel contract. Its subject matter is, however,
+    memecoin buy-ins and
+    automated exit strategies, which is financial. Any activation proposal must
+    re-derive this ceiling as financial and route it through the founder.
+  - >-
+    No tests exist, so no capability above can advance past DISCOVERED. The
+    declared health command must be replaced before any lifecycle promotion.
+  - >-
+    Endpoint inventory, authentication model beyond wallet-signature recovery,
+    and data-retention posture for stored wallet addresses and emails are not
+    established.
+  - >-
+    Whether PumpStation should exist as a UNIIMENTE organ at all is an open
+    founder decision (kernel PR #46). This manifest makes it visible; it does
+    not argue for it.

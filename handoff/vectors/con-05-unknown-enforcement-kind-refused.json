@@ -1,0 +1,15 @@
+{
+  "document": {
+    "consequence_class": "read_only",
+    "enforcement_kind": "trust_me",
+    "granted_tier": "in_process",
+    "module_id": "m",
+    "required_tier": "in_process",
+    "requirement_version": "1.0.0",
+    "trust": "internal_trusted"
+  },
+  "expect": "REJECT",
+  "schema": "containment-requirement",
+  "vector_id": "con-05-unknown-enforcement-kind-refused",
+  "why": "INV-3. An invented enforcement kind is refused."
+}

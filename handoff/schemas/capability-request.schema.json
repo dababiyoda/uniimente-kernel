@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/handoff/capability-request.schema.json",
+  "title": "Capability request",
+  "description": "A request to use a capability. It is a request, and the schema is built so it cannot be mistaken for a grant. The grant is a separate object issued by the Kernel (contracts/capability-grant.schema.json) after the Consequence Gate revalidates at commit time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_version", "capability_id", "requested_by", "consequence_class",
+               "legal_principal", "reversible", "grant_reference"],
+  "properties": {
+    "request_version": {"const": "1.0.0"},
+    "capability_id": {
+      "type": "string",
+      "description": "Must be advertised by the Capability Discovery Service. An unadvertised id is refused, never created on demand."
+    },
+    "requested_by": {"type": "string", "pattern": "^spiffe://uniimente\\.internal/"},
+    "consequence_class": {"enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]},
+    "legal_principal": {
+      "type": "string",
+      "not": {"pattern": "(?i)^uniimente$"},
+      "description": "A real accountable party. UNIIMENTE is infrastructure and may never be named here."
+    },
+    "budget_usd": {"type": "number", "minimum": 0},
+    "reversible": {"type": "boolean"},
+    "grant_reference": {
+      "type": ["string", "null"],
+      "description": "The Kernel-issued grant authorizing this request, or null. Null is valid on the request and is refused at the Gate for anything above internal_write."
+    },
+    "state_namespace": {"type": "string"},
+    "external_targets": {"type": "array", "items": {"type": "string"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"consequence_class": {"enum": ["financial", "irreversible"]}}, "required": ["consequence_class"]},
+      "then": {
+        "properties": {"grant_reference": {"type": "string", "minLength": 1}},
+        "required": ["grant_reference"],
+        "description": "Financial and irreversible requests may not carry a null grant even as a request."
+      }
+    }
+  ]
+}

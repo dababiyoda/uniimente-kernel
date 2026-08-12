@@ -1,0 +1,17 @@
+{
+  "document": {
+    "authority_minted": false,
+    "bundle_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "claimed_state": "SKETCHED",
+    "component": "containment",
+    "evidence": [],
+    "evidence_version": "1.0.0",
+    "external_effects": 0,
+    "owner": "CHATGPT",
+    "reality": "IMPLEMENTED"
+  },
+  "expect": "REJECT",
+  "schema": "evidence-record",
+  "vector_id": "evi-05-claim-with-no-evidence-refused",
+  "why": "An empty evidence array is a claim, and a claim is never truth."
+}

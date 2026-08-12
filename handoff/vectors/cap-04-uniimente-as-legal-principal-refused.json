@@ -1,0 +1,15 @@
+{
+  "document": {
+    "capability_id": "kernel.event_spine",
+    "consequence_class": "internal_write",
+    "grant_reference": null,
+    "legal_principal": "UNIIMENTE",
+    "request_version": "1.0.0",
+    "requested_by": "spiffe://uniimente.internal/organ/daleobanks",
+    "reversible": true
+  },
+  "expect": "REJECT",
+  "schema": "capability-request",
+  "vector_id": "cap-04-uniimente-as-legal-principal-refused",
+  "why": "UNIIMENTE is infrastructure, never a contracting party."
+}

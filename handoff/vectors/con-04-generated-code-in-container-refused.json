@@ -1,0 +1,15 @@
+{
+  "document": {
+    "consequence_class": "internal_write",
+    "enforcement_kind": "os_kernel_boundary",
+    "granted_tier": "hardened_container",
+    "module_id": "m",
+    "required_tier": "hardened_container",
+    "requirement_version": "1.0.0",
+    "trust": "generated"
+  },
+  "expect": "REJECT",
+  "schema": "containment-requirement",
+  "vector_id": "con-04-generated-code-in-container-refused",
+  "why": "Untrusted and generated code requires a real boundary; a hardened container is not one."
+}

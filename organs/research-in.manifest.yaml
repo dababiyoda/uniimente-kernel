@@ -1,0 +1,107 @@
+# Organ Manifest: RESEARCH-IN (Open-Research Nexus).
+# Validated against contracts/organ-manifest.schema.json.
+# Discovery, never authority: nothing here grants permission to act.
+#
+# Written from a READ-ONLY inspection of dababiyoda/RESEARCH-IN at 5769138.
+# No code in that repository was changed to produce this manifest. Every field
+# below is either observed in that tree or recorded as unresolved.
+#
+# RESEARCH-IN is the sixth organ and the second of the two the Institutional
+# Linker previously could not see. Registering it makes the organism's true
+# shape visible; it does not attach it to anything.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/research-in
+name: research-in
+role: proposed_evidence_refinery_research_discovery_and_retrieval
+repository: dababiyoda/RESEARCH-IN
+source:
+  branch: main
+  commit: "5769138"
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: research_in.ingestion
+    description: >-
+      Rust ingestion service for processing and indexing research papers and
+      datasets. Observed as a Cargo crate with its own test target.
+    implementation_path: services/ingest/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.web_surface
+    description: Next.js user-facing application for discovery and reading.
+    implementation_path: apps/web/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.community_surface
+    description: Discussion and community application.
+    implementation_path: apps/community/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.data_layer
+    description: >-
+      Shared schema, migrations and client code over Supabase (PostgreSQL,
+      auth, storage), with Qdrant for vectors and Typesense for search.
+    implementation_path: packages/db/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+contracts:
+  consumes: []
+  produces: []
+prohibited_actions:
+  - acting as a legal principal for UNIIMENTE
+  - self-promotion to any active lifecycle or organ status
+  - executing external side effects outside the kernel consequence gate
+  - presenting retrieved or generated research content as institutional evidence
+    without passing the kernel evidence contract
+authority:
+  max_consequence_class: read_only
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: pnpm test
+  last_verified:
+    date: "2026-08-11"
+    commit: "5769138"
+    tests_passed: 0
+    tests_failed: 0
+    notes: >-
+      UNVERIFIED in this pass. The repository declares a Turborepo workspace and
+      the ingest crate carries tests/ingest.rs, but no suite was executed here:
+      node and Rust toolchains for this organ were not installed, and running
+      them was out of scope for a read-only inspection. Recorded as unverified
+      rather than assumed green.
+shutdown_behavior: >-
+  Not implemented. The organ is unattached; no kernel loop depends
+  on it.
+recovery: >-
+  Not implemented. State lives in externally managed Supabase, Qdrant and
+  Typesense instances with no kernel-anchored provenance.
+status: planned
+unresolved:
+  - >-
+    STATUS VOCABULARY CONTRADICTION, preserved rather than papered over.
+    contracts/organ-manifest.schema.json admits only active | planned |
+    this_repository. The true state of this organ is "code exists in a real
+    repository, but the organ is registered and not attached" — which the
+    canonical contract cannot express. `planned` is recorded as the nearest
+    legal value and understates that working code exists. Widening the enum is
+    a contract change and was not made unilaterally; it requires a founder
+    decision.
+  - >-
+    RESEARCH-IN is the natural home of the evidence-refinery role that
+    docs/ARCHITECTURE.md assigns to "RailScout". Whether it becomes that organ,
+    or stays a separate research product, is an open founder decision.
+  - >-
+    No kernel contract is consumed or produced. For this organ to feed the
+    institution it would need to emit the canonical `evidence` contract, and
+    the instruction-shaped-content quarantine that ARCHITECTURE.md requires of
+    any evidence intake does not exist here.
+  - >-
+    Health is unverified. Test counts must be established by an actual run
+    before any capability advances past DISCOVERED.
+  - >-
+    Data classification for ingested third-party research content, and the
+    licensing posture for redistribution, are not established.

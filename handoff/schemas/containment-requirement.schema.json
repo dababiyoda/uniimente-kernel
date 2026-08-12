@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/handoff/containment-requirement.schema.json",
+  "title": "Containment requirement",
+  "description": "What isolation a module needs, and — separately — what the host can actually provide. The two must never be conflated: a policy check is not a kernel boundary, and saying so is mandatory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requirement_version", "module_id", "consequence_class", "required_tier",
+               "granted_tier", "enforcement_kind"],
+  "properties": {
+    "requirement_version": {"const": "1.0.0"},
+    "module_id": {"type": "string"},
+    "consequence_class": {"enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]},
+    "trust": {"enum": ["internal_trusted", "internal_untrusted", "foreign", "generated"]},
+    "required_tier": {"enum": ["in_process", "hardened_container", "microvm", "wasm_component"]},
+    "granted_tier": {
+      "enum": ["in_process", "hardened_container", "microvm", "wasm_component", "UNAVAILABLE"],
+      "description": "UNAVAILABLE is a valid and expected answer. A host that cannot provide the required tier must say so and refuse, never silently downgrade to in_process."
+    },
+    "enforcement_kind": {
+      "enum": ["os_kernel_boundary", "hypervisor_boundary", "wasm_sandbox", "policy_only"],
+      "description": "policy_only means the isolation is an in-process check. It must be reported as such and must never be described as containment."
+    },
+    "attested": {"type": "boolean", "description": "Whether the granted tier was independently verified rather than assumed from configuration."},
+    "attestation_evidence": {"type": ["string", "null"]},
+    "resource_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu_ms": {"type": "integer", "minimum": 0},
+        "memory_mb": {"type": "integer", "minimum": 0},
+        "wall_clock_ms": {"type": "integer", "minimum": 0},
+        "network": {"enum": ["denied", "allowlist", "open"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"granted_tier": {"const": "in_process"}}, "required": ["granted_tier"]},
+      "then": {
+        "properties": {"enforcement_kind": {"const": "policy_only"}},
+        "description": "In-process execution is policy enforcement. It may not claim any stronger enforcement_kind."
+      }
+    },
+    {
+      "if": {"properties": {"trust": {"enum": ["foreign", "generated"]}}, "required": ["trust"]},
+      "then": {
+        "properties": {"required_tier": {"enum": ["microvm", "wasm_component"]}},
+        "description": "Untrusted and generated code requires a real boundary, not a hardened container."
+      }
+    }
+  ]
+}

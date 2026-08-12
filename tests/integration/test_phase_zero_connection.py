@@ -23,6 +23,17 @@ DALEOBANKS = "spiffe://uniimente.internal/organ/daleobanks"
 WEALTHMACHINE = "spiffe://uniimente.internal/organ/wealthmachine"
 KERNEL = "spiffe://uniimente.internal/organ/constitutional-controller"
 
+# The three organs Phase Zero connected. Bridge A is defined over exactly these,
+# and the bridge tests below must keep naming them explicitly rather than
+# whichever organs happen to be present.
+PHASE_ZERO_ORGANS = {DALEOBANKS, KERNEL, WEALTHMACHINE}
+
+# Registered later, for discovery only. Both are `planned`, attached to nothing,
+# and consume no kernel contract — see organs/*.manifest.yaml and
+# docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md.
+PUMPSTATION = "spiffe://uniimente.internal/organ/pumpstation"
+RESEARCH_IN = "spiffe://uniimente.internal/organ/research-in"
+
 
 def wire_packet():
     return json.load(open(os.path.join(FIXTURES, "wire_opportunity_packet.json")))
@@ -34,8 +45,31 @@ def wire_assessment():
 
 # --------------------------------------------------------------- manifests
 def test_all_organ_manifests_validate():
+    """Every manifest present validates. The set grows; the requirement does not.
+
+    This asserted exactly three organs when Phase Zero landed. Pinning the count
+    made it a census rather than a validation test, and it would fail on any
+    lawful growth of the organism. It now names the Phase Zero three as a
+    required subset and validates whatever else is published alongside them.
+    """
     manifests = load_all()
-    assert {m.organ_id for m in manifests} == {DALEOBANKS, KERNEL, WEALTHMACHINE}
+    present = {m.organ_id for m in manifests}
+    assert PHASE_ZERO_ORGANS <= present, "a Phase Zero organ lost its manifest"
+    assert {PUMPSTATION, RESEARCH_IN} <= present, (
+        "the two later-registered organs are not published"
+    )
+    assert len(present) == len(manifests), "two manifests share one organ_id"
+
+
+def test_later_organs_are_discoverable_without_being_connected():
+    """Publishing a manifest is discovery. It is not identity, nor activation."""
+    by_id = {m.organ_id: m for m in load_all()}
+    for organ_id in (PUMPSTATION, RESEARCH_IN):
+        m = by_id[organ_id]
+        assert m.status == "planned"
+        assert m.consumes == [] and m.produces == []
+        assert m.authority["may_self_promote"] is False
+        assert m.authority["external_actions_require_kernel_gate"] is True
 
 
 def test_manifest_validation_fails_closed_with_named_fields(tmp_path):

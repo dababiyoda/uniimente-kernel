@@ -1,0 +1,363 @@
+{
+  "decision_id": "DEC-OM-002",
+  "title": "CONTRADICTION-0001: a sealed experiment measures a corpus the institution must grow",
+  "problem": "evolution/repair/spec.py freezes MEASUREMENT_CORPUS as the live glob organs/*.manifest.yaml and pins REQUIRED_REFUSALS['unresolved_count'] = 7, measured when organs/ held three manifests. Publishing the two founder-approved manifests (PumpStation, RESEARCH-IN) takes the live linker report to 17 unresolved rows, failing 20 tests across five sealed test modules. Two founder-approved things cannot both hold: publish the manifests, and leave the Package 3 proof record intact.",
+  "founder_intent_refs": [
+    "INT-OM-011",
+    "INT-OM-012",
+    "INT-OM-001"
+  ],
+  "baseline": "main at 8cb3074 with three organ manifests and a green suite of 495 tests. The Package 3 experiment was recorded against that three-manifest corpus in docs/release/package-3/EVIDENCE_RECORD.json and merged as PR #49.",
+  "alternatives": [
+    {
+      "name": "A: pin the experiment to a frozen corpus snapshot",
+      "description": "Copy the three freeze-time manifests byte-identically into evolution/repair/corpus/ and point the experiment there. No frozen expectation value changes.",
+      "advantages": [
+        "SPEC_SHA256 and every expectation value are unchanged",
+        "The existing Package 3 evidence record stays valid",
+        "The recorded run becomes reproducible for the first time",
+        "Fixes the underlying defect rather than restoring the number 7"
+      ],
+      "disadvantages": [
+        "Edits five sealed files to change where they read",
+        "A snapshot can drift from the live institution without anyone noticing"
+      ],
+      "revival_evidence": "Recommended position; awaiting founder decision."
+    },
+    {
+      "name": "B: re-freeze Package 3 against the five-manifest corpus",
+      "description": "The remedy the spec's own test docstring prescribes. Expectations become stronger: more edges, 17 unresolved rows.",
+      "advantages": [
+        "Explicitly prescribed by test_repair_spec_frozen.py's docstring",
+        "Not a weakening - the experiment gets harder",
+        "Keeps the experiment measuring the real institution"
+      ],
+      "disadvantages": [
+        "The experiment must be re-run and docs/release/package-3/{RESULTS,EVIDENCE_RECORD} re-recorded, or the spec describes a run no record satisfies",
+        "Re-freezing on every organ addition makes the seal a treadmill",
+        "SPEC_SHA256 changes, so v1 values must be preserved alongside per FBO section 4.5"
+      ],
+      "revival_evidence": "Founder prefers the experiment to track the live institution and accepts re-running it on each organ change."
+    },
+    {
+      "name": "C: leave it open",
+      "description": "Ship the branch with 20 known-red tests and the contradiction record.",
+      "advantages": [
+        "Perfectly honest",
+        "Touches no sealed file",
+        "Costs nothing now"
+      ],
+      "disadvantages": [
+        "Useless as a merge candidate",
+        "A permanently red suite trains reviewers to ignore red"
+      ],
+      "revival_evidence": "Currently in force on this branch by default, pending the decision."
+    },
+    {
+      "name": "D: withhold the two manifests",
+      "description": "Do not publish PumpStation and RESEARCH-IN, keeping the live corpus at three and the count at 7.",
+      "advantages": [
+        "Suite stays green"
+      ],
+      "disadvantages": [
+        "Directly disobeys a founder-approved deliverable",
+        "Hides two real organs from the linker to protect a test number",
+        "Is the same dishonesty as amending the seal, pointed the other way"
+      ],
+      "revival_evidence": "Founder withdraws approval for registering the two organs."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Option C in force: the branch carries 20 red tests and a written contradiction record; the sealed experiment remains non-reproducible.",
+    "advantages": [
+      "No sealed file is touched",
+      "The contradiction is fully visible"
+    ],
+    "disadvantages": [
+      "Blocks merge indefinitely",
+      "Leaves a proof record that cannot be re-executed to the same answer",
+      "Every future organ addition hits the same wall"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Two founder-approved intentions collide. The standing order for exactly this case is explicit: preserve the contradiction, fail closed, report it, do not silently weaken an invariant. That was done and it is the whole of what this branch may do.",
+      "material_concerns": [
+        "Choosing either option unilaterally would resolve a founder-level collision by agent fiat"
+      ],
+      "evidence_refs": [
+        "INT-OM-012",
+        "founder approval message binding-interpretation clause"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The real defect is that a sealed experiment depends on mutable state. Option A fixes that property; Option B restores a number without fixing it, and guarantees the same collision on the next organ.",
+      "material_concerns": [
+        "A live glob inside a frozen spec is a category error",
+        "Under Option B every organ addition invalidates a merged proof record"
+      ],
+      "evidence_refs": [
+        "evolution/repair/spec.py MEASUREMENT_CORPUS corpus_id 'LIVE'"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Option A is not as clean as it is being sold. Freezing the corpus makes the experiment reproducible and simultaneously makes it measure a fiction: the linker's real behaviour on the real institution is exactly what Package 3 claimed to test. A snapshot-based repair experiment can pass forever while the live linker is broken.",
+      "material_concerns": [
+        "Option A trades external validity for reproducibility and the trade is not free",
+        "Nothing in Option A alerts anyone when the snapshot and the live tree diverge",
+        "I am recommending the option that makes my own branch mergeable, which is a conflict of interest and should be weighed as one"
+      ],
+      "evidence_refs": [
+        "docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "20 red tests block the branch and will block every subsequent branch that touches organs/. Whichever option is chosen must be chosen soon; C is not survivable as a steady state.",
+      "material_concerns": [
+        "CI job 1 is red on PR #71 and will stay red",
+        "A reviewer who sees persistent red stops reading red"
+      ],
+      "evidence_refs": [
+        "CI run 31591910533 job 94098585895: 20 failed, 539 passed, 2 skipped"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No participants are affected. The evidence question is whether docs/release/package-3/EVIDENCE_RECORD.json still means what it says. Under A it does; under B it does not until the experiment is re-run.",
+      "material_concerns": [
+        "Option B without a re-run leaves a spec that no recorded run satisfies, which is worse than either honest state"
+      ],
+      "evidence_refs": [
+        "docs/release/package-3/EVIDENCE_RECORD.json"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The sealed spec pins the live glob and the count 7",
+      "tier": "primary_source",
+      "reference": "evolution/repair/spec.py MEASUREMENT_CORPUS and REQUIRED_REFUSALS",
+      "finding": "corpus_id 'LIVE', manifests 'organs/*.manifest.yaml', unresolved_count 7"
+    },
+    {
+      "claim": "Publishing two manifests takes the live count to 17",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_repair_spec_frozen.py::test_live_corpus_expectation_matches_the_component_being_replaced",
+      "finding": "assert 17 == 7"
+    },
+    {
+      "claim": "All 20 failures share this one cause",
+      "tier": "sandbox_execution",
+      "reference": "python -m pytest on 84fab8f9 and CI job 94098585895",
+      "finding": "541 passed 20 failed locally, 539 passed 20 failed 2 skipped in CI; no non-repair failure remains"
+    },
+    {
+      "claim": "The spec itself prescribes re-freezing",
+      "tier": "primary_source",
+      "reference": "tests/unit/test_repair_spec_frozen.py docstring",
+      "finding": "'If organs/ or contracts/ change, this fails and the experiment must be re-frozen rather than quietly re-interpreted.'"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Option A is straightforwardly correct",
+      "tier": "model_output",
+      "reference": "Adversarial Reviewer position in this record",
+      "finding": "Freezing the corpus removes the experiment's external validity. Package 3 claimed to test the linker against the real institution; a snapshot can pass while the live linker is broken. The recommendation is also self-serving, since Option A is the option that unblocks this branch."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Resolve the collision between a founder-approved deliverable and a sealed proof record without weakening either, and fix the reproducibility defect underneath.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "The contradiction was detected by a seal doing its job, not by luck.",
+        "amplified_value": "Evidence that the Package 3 sealing discipline works; the institution caught its own inconsistency automatically."
+      },
+      {
+        "id": "A2",
+        "statement": "Nothing was weakened to make a branch green.",
+        "amplified_value": "Establishes the precedent that a red suite plus a written contradiction outranks a green suite bought by editing a sealed record."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The branch cannot merge with 20 red tests.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Escalated as BLK-2 with three costed options rather than absorbed. The blocker is in the frozen contract, the contradiction document, the PR body and a PR comment."
+      },
+      {
+        "id": "D2",
+        "statement": "A sealed experiment depending on a mutable glob is not reproducible.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Named as the real defect in the contradiction document, so whichever option is chosen is judged on whether it fixes reproducibility, not on whether it restores the number 7."
+      },
+      {
+        "id": "D3",
+        "statement": "Every future organ addition will hit the same wall.",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Made a selection criterion between the options: B re-collides on the next organ, A does not. Recorded so the decision is made on recurrence cost rather than immediate cost."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Three manifests, 495 green tests, a merged Package 3 record, and an unnoticed reproducibility defect.",
+      "do_nothing": "Option C. Honest, unmergeable, and leaves the defect. Rejected as a steady state, currently in force by default.",
+      "simplest_viable_alternative": "Option D, withhold the manifests. Rejected: it disobeys a founder-approved deliverable and hides two real organs to protect a test number.",
+      "strongest_competing_architecture": "Option B, re-freeze against the live five-manifest corpus. Strong because it keeps the experiment measuring reality and is what the spec's own docstring prescribes; weak because it requires re-running the experiment and re-recording the evidence, and re-collides on every future organ.",
+      "reversible_experiment": "Land the manifests, leave the seal untouched, and let CI carry the contradiction while the founder decides. This is what was actually done."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "D: withhold the two manifests",
+        "rejection_reason": "Disobeys a founder-approved deliverable and conceals two real organs from the linker to preserve a test constant.",
+        "revival_evidence": "Founder withdraws approval for registering PumpStation and RESEARCH-IN."
+      },
+      {
+        "name": "Amend the seal unilaterally to make the branch green",
+        "rejection_reason": "In-place weakening of a merged proof record, explicitly forbidden by the standing order.",
+        "revival_evidence": "None. This remains prohibited regardless of convenience."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Re-attacked the position as though 'preserve and escalate' were already the settled answer. The sharpest finding is that escalation has a shelf life: a contradiction record is a responsible act on day one and an abdication by day thirty, because a permanently red suite destroys the signal value of red for every future change.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "A branch that cannot merge accumulates drift against main and eventually needs rebasing through the same conflict.",
+        "strengthening_response": "The work is additive and touches no file the repair suite owns, so a rebase is mechanical. Recorded as a residual risk with the PR-watch check-in as its trigger."
+      },
+      {
+        "id": "W2",
+        "category": "bureaucracy",
+        "statement": "Producing a contradiction document, a blocker entry, a PR comment and a deliberation record for one failing assertion is a lot of paper for one number.",
+        "strengthening_response": "Accepted deliberately. The paper is not about the number; it is about a merged proof record that cannot be re-executed. Under-documenting that would be the larger error."
+      },
+      {
+        "id": "W3",
+        "category": "dependency",
+        "statement": "Both Part 1 merge and ChatGPT's Part 2 now depend on a single founder decision, creating a serial bottleneck.",
+        "strengthening_response": "Partially mitigated: the handoff bundle is sealed and verifiable independently of this contradiction, so ChatGPT can build and self-verify against digest fe155604 without waiting. Only merge is blocked, not work."
+      },
+      {
+        "id": "W4",
+        "category": "overfit",
+        "statement": "Option A is being recommended by the party whose branch it unblocks.",
+        "strengthening_response": "Stated openly in the Adversarial Reviewer position and carried into dissent rather than buried. The verdict is NEEDS_FOUNDER_DECISION precisely so the conflicted recommendation is not the deciding one."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "Only the founder can authorise touching a sealed experiment; the branch may record but not resolve.",
+        "owner": "FOUNDER",
+        "review_trigger": "Founder decides between options A, B and C."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "The reproducibility defect predates this branch and is not this branch's to fix without authorisation.",
+        "owner": "FOUNDER",
+        "review_trigger": "Any option is chosen; each must be judged on whether it fixes reproducibility."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "Recurrence cost is the main discriminator between A and B and belongs in the founder's decision, not before it.",
+        "owner": "FOUNDER",
+        "review_trigger": "A sixth organ manifest is proposed."
+      }
+    ],
+    "final_design": "The two manifests are published. No file under evolution/repair/ or tests/unit/test_repair*.py is modified. The contradiction is recorded in docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md with three costed options, carried as BLK-2 in the frozen handoff contract, stated in the PR body, and posted as a PR comment naming the founder. CI stays red on job 1 only. The Phase Zero integration test, which is an ordinary assertion rather than a sealed record, was corrected from a hard organ census to a required-subset check with an explanatory docstring.",
+    "residual_risks": [
+      {
+        "risk": "The branch sits red long enough that reviewers stop reading red.",
+        "mitigation": "Single blocker comment naming the founder; hourly PR check-in re-arms and reports only on change.",
+        "owner": "FOUNDER",
+        "review_trigger": "Seven days without a decision."
+      },
+      {
+        "risk": "Option A is chosen and the frozen snapshot silently diverges from the live tree.",
+        "mitigation": "Any implementation of Option A must add a divergence check comparing snapshot to live and reporting, not failing.",
+        "owner": "CLAUDE",
+        "review_trigger": "Option A is authorised."
+      },
+      {
+        "risk": "Option B is chosen and the evidence record is not re-recorded, leaving a spec no run satisfies.",
+        "mitigation": "Re-running the experiment and re-recording RESULTS and EVIDENCE_RECORD is a precondition of Option B, stated in the contradiction document.",
+        "owner": "CLAUDE",
+        "review_trigger": "Option B is authorised."
+      },
+      {
+        "risk": "A later session quietly edits the sealed spec to clear CI.",
+        "mitigation": "The contradiction document names the prohibition; SPEC_SHA256 changes visibly in any such diff.",
+        "owner": "FOUNDER",
+        "review_trigger": "evolution/repair/spec.py appears in any diff."
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded and carried forward. No sealed file was touched and no option was implemented.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Option A should not be recommended by this session. It buys reproducibility with external validity, and it is the option that unblocks the recommender's own branch.",
+        "rationale": "A snapshot-based repair experiment can pass indefinitely while the live linker is broken - the exact failure Package 3 was built to catch.",
+        "evidence_threshold": "An implementation of Option A that lacks a snapshot-versus-live divergence check.",
+        "owner": "FOUNDER",
+        "review_trigger": "Option A is authorised."
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "Option C is not survivable. If no decision arrives, the correct fallback is B with a re-run, not indefinite red.",
+        "rationale": "A permanently red suite destroys the signal value of red for every future change.",
+        "evidence_threshold": "Seven days with the branch red and no decision.",
+        "owner": "FOUNDER",
+        "review_trigger": "Seven days without a decision."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez"
+  },
+  "migration_plan": "None executes without authorisation. Option A: create evolution/repair/corpus/ containing the three freeze-time manifests byte-identically, change MEASUREMENT_CORPUS and the four sealed test modules to read that path, add a divergence check that reports snapshot-versus-live drift without failing, and confirm SPEC_SHA256 and every expectation value are unchanged. Option B: re-run the Package 3 experiment against the five-manifest corpus, record v2 values alongside v1 with lineage per FBO section 4.5, and re-record docs/release/package-3/RESULTS.md and EVIDENCE_RECORD.json.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "No sealed file was modified, so there is nothing to roll back in evolution/repair/.",
+      "To restore the pre-contradiction state, delete organs/pumpstation.manifest.yaml and organs/research-in.manifest.yaml.",
+      "Revert the Phase Zero test change in tests/integration/test_phase_zero_connection.py to the hard three-organ census.",
+      "The suite returns to 495 passed with zero failures."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "The founder withdraws approval for registering PumpStation and RESEARCH-IN, making the contradiction moot.",
+    "An implementation of Option A is found to let the live linker break undetected while the snapshot suite passes.",
+    "Option B is chosen and the experiment cannot be re-run to produce a recordable result."
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Founder chooses option A, B or C; or seven days elapse with the branch red."
+}

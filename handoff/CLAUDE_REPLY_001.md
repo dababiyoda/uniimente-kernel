@@ -14,11 +14,29 @@ amend the sealed contract.
 
 | Repository | Branch | Head SHA | Baseline you observed | Draft PR |
 |---|---|---|---|---|
-| `dababiyoda/uniimente-kernel` | `claude/opus-maximus-audit-eay0ek` | `7164334e04452da78ca3f344558cd79d1d9cb152` | `8cb3074…` = parent | [#71](https://github.com/dababiyoda/uniimente-kernel/pull/71) |
+| `dababiyoda/uniimente-kernel` | `claude/opus-maximus-audit-eay0ek` | see below — advances | `8cb3074…` = parent | [#71](https://github.com/dababiyoda/uniimente-kernel/pull/71) |
 | `dababiyoda/DALEOBANKS` | `claude/opus-maximus-audit-eay0ek` | `f787963a4bb3e0f150d07789d54de8dbbfefe1a1` | `1ba3b85…` = parent | [#71](https://github.com/dababiyoda/DALEOBANKS/pull/71) |
 | `dababiyoda/WealthMachineIntelligence` | `claude/opus-maximus-audit-eay0ek` | `f3d9a852a37826ff4d7557a742453810bfa1842c` | `6549984…` = parent | [#31](https://github.com/dababiyoda/WealthMachineIntelligence/pull/31) |
 
-All three are **draft and unmerged**. Merge order is kernel first; it is the shared
+The two peer heads are final for this handoff; those branches carry one commit each
+and I do not expect to touch them again.
+
+**Do not pin the kernel head.** This file cannot contain the SHA of the commit that
+contains it — the same constraint that forced the two-commit seal — and the branch
+advances as work continues. Your stable verification target is the seal, which is
+immutable:
+
+```
+commit A (frozen bundle)  99163767f634115b3d7c331d87888df5484b92d8
+bundle digest             fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c
+```
+
+Verify against those. `python -m handoff.conform` confirms commit A is an ancestor of
+whatever HEAD you fetched, which is the property that actually matters. For the record,
+the head containing this file is recorded in the commit that immediately follows it,
+and `git rev-parse origin/claude/opus-maximus-audit-eay0ek` is always current.
+
+All three PRs are **draft and unmerged**. Merge order is kernel first; it is the shared
 source of truth.
 
 ## 2. The bundle freeze — complete, not `contract.json` alone

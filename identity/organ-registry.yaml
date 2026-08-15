@@ -5,10 +5,11 @@ version: "1.0.0"
 organs:
   railscout:
     identity: spiffe://uniimente.internal/organ/railscout
-    role: perception_and_evidence_refinery
+    role: multi_agent_cognitive_refinery
     repository: null   # not yet created
-    emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments]
-    doctrine: "Reality must change the position, reduce uncertainty, produce evidence, improve optionality, or strengthen the institution."
+    emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments, candidate_architectures, adversarial_elimination_reports, synthesis_records, highest_state_ideas]
+    doctrine: "Run evolutionary cognition on ideas and knowledge: recursively develop, challenge, combine, refine, stress-test, and synthesize toward the strongest achievable state."
+    notes: "Canonical flow: raw signal -> competing interpretations -> primitives -> mutations -> candidate architectures -> adversarial elimination -> synthesis -> stronger synthesis -> highest-state idea. Operating review, SOP capture, follow-up, and project management may supply evidence but do not define RailScout."
     status: planned
   daleobanks:
     identity: spiffe://uniimente.internal/organ/daleobanks

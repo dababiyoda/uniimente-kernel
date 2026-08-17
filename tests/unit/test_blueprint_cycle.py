@@ -95,7 +95,7 @@ def test_counts_are_derived_and_never_stored():
     snap = _snap(A, [(1, "BUILT", "HARDENED", True), (2, None, "BLUEPRINT", True)])
     assert "rung_counts" not in Snapshot.__dataclass_fields__
     assert set(snap.to_obj()) == {"schema_version", "commit", "taken_at",
-                                  "provenance", "readings"}
+                                  "provenance", "standard", "readings"}
     assert snap.rung_counts["BUILT"] == 1
     assert snap.rung_counts["UNSUPPORTED"] == 1
 
@@ -229,6 +229,75 @@ def test_the_ceremony_run_resets_on_a_substantive_cycle():
     assert comparisons[-1].ceilings_raised == ((3, "BLUEPRINT", "EXERCISED"),)
     assert consecutive_ceremony(comparisons) == 0
     assert not kill_condition_fired(comparisons)
+
+
+# ---------------------------------------------------------------- recalibration
+def test_a_changed_evidence_standard_is_recalibration_not_regression():
+    """Tightening a rule lowers rungs with nothing having decayed.
+
+    This is the exact case created when CLOSURE_MODULE stopped resolving on a
+    textual registration and began requiring a commit-pinned passing closure
+    report. Reading it as REGRESSION would blame the institution for a rule the
+    author changed.
+    """
+    before = Snapshot(commit=A, taken_at="2026-01-01T00:00:00+00:00",
+                      provenance="live", standard="1",
+                      readings=(TechnologyReading(1, "EXERCISED", "HARDENED", True),))
+    after = Snapshot(commit=B, taken_at="2026-01-02T00:00:00+00:00",
+                     provenance="live", standard="2",
+                     readings=(TechnologyReading(1, "BUILT", "HARDENED", True),))
+    result = compare(before, after)
+    assert result.recalibrated
+    assert result.verdict is Verdict.RECALIBRATED
+    assert result.rungs_lowered, "the drop is still recorded, just not blamed"
+    assert "not comparable across standards" in result.headline
+
+
+def test_recalibration_outranks_even_a_rung_rise():
+    """A loosened rule raises rungs with nothing built; that is not SUBSTANTIVE."""
+    before = Snapshot(commit=A, taken_at="t", provenance="live", standard="2",
+                      readings=(TechnologyReading(1, "BUILT", "HARDENED", True),
+                                TechnologyReading(2, "BLUEPRINT", "BLUEPRINT", False)))
+    after = Snapshot(commit=B, taken_at="t", provenance="live", standard="1",
+                     readings=(TechnologyReading(1, "PROVEN", "HARDENED", True),
+                               TechnologyReading(2, "BLUEPRINT", "EXERCISED", True)))
+    result = compare(before, after)
+    assert result.rungs_raised and result.ceilings_raised
+    assert result.verdict is Verdict.RECALIBRATED
+
+
+def test_recalibration_breaks_a_ceremony_run():
+    """A rule change is not a ceremony cycle and must not accumulate as one."""
+    recalibrated = Snapshot(
+        commit=D, taken_at="t", provenance="live", standard="1",
+        readings=(TechnologyReading(1, "EXERCISED", "EXERCISED", False),
+                  TechnologyReading(2, "EXERCISED", "EXERCISED", False),
+                  TechnologyReading(3, "BLUEPRINT", "BLUEPRINT", False)))
+    comparisons = history(_CEREMONY_RUN + (recalibrated,))
+    assert comparisons[-1].verdict is Verdict.RECALIBRATED
+    assert consecutive_ceremony(comparisons) == 0
+    assert not kill_condition_fired(comparisons)
+
+
+def test_a_version_one_snapshot_reads_as_the_older_standard(tmp_path):
+    """History is read through an adapter, never rewritten to fit new fields."""
+    obj = _snap(A, [(1, "EXERCISED", "HARDENED", True)]).to_obj()
+    obj["schema_version"] = 1
+    obj.pop("standard")
+    (tmp_path / "0001-aaaaaaa.json").write_text(json.dumps(obj), encoding="utf-8")
+    loaded = load_all(str(tmp_path))[0]
+    assert loaded.standard == "1"
+    assert loaded.schema_version == 1
+
+
+def test_the_committed_history_spans_the_standard_change_and_says_so():
+    """The real record must show the recalibration rather than absorb it."""
+    standards = {s.standard for s in load_all()}
+    if len(standards) == 1:
+        pytest.skip("no snapshot has yet been taken under a second standard")
+    assert any(c.verdict is Verdict.RECALIBRATED for c in history()), (
+        "the history contains two evidence standards but no RECALIBRATED cycle"
+    )
 
 
 # ------------------------------------------------------------------ real ladder

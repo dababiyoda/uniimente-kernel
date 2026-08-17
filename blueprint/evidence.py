@@ -29,6 +29,16 @@ CONTRACTS_DIR = os.path.join(KERNEL_ROOT, "contracts")
 ORGANS_DIR = os.path.join(KERNEL_ROOT, "organs")
 CLOSURE_DIR = os.path.join(KERNEL_ROOT, "closure")
 
+#: Which rules were in force when a rung was awarded. Rungs are only comparable
+#: across snapshots taken under the same standard — tightening a rule lowers rungs
+#: without anything having decayed, and the cycle audit must not read that as
+#: regression.
+#:
+#:   "1"  CLOSURE_MODULE resolved on a textual `ModuleClosures(...)` registration.
+#:   "2"  CLOSURE_MODULE requires a commit-pinned report in which the module's
+#:        five closures were observed to pass.
+EVIDENCE_STANDARD = "2"
+
 _TEST_NODE_RE = re.compile(r"^(?P<path>[\w./-]+\.py)::(?P<name>test_\w+)$")
 _MODULE_CLOSURE_RE = re.compile(r"ModuleClosures\(\s*[\"'](?P<name>[\w.-]+)[\"']")
 
@@ -204,10 +214,43 @@ def _resolve_manifest_capability(root: str, ref: EvidenceRef) -> Resolution:
 
 
 def _resolve_closure(root: str, ref: EvidenceRef) -> Resolution:
+    """Registration is not passing.
+
+    This check used to succeed on a textual `ModuleClosures("name", ...)` match,
+    which meant a registration with five trivially-true stubs would award the
+    EXERCISED rung. A rung now requires a commit-pinned report in which the
+    module's five closures were observed to pass. The three failure modes are
+    reported separately, because "nobody registered it", "nobody proved it" and
+    "it was proved to be incomplete" call for different work.
+    """
+    from closure.report import load as load_closure_proof
+
     registered = registered_closure_modules(root)
     if ref.locator not in registered:
         return Resolution(ref, False, f"no closure registry registers {ref.locator!r}")
-    return Resolution(ref, True, f"registered for five-closure verification: {ref.locator}")
+
+    proof = load_closure_proof(root)
+    if proof is None:
+        return Resolution(
+            ref, False,
+            f"{ref.locator} is registered, but no commit-pinned closure report "
+            "exists to prove its five closures pass "
+            "(regenerate with: python -m closure.report write)")
+    if ref.locator not in proof.modules:
+        return Resolution(
+            ref, False,
+            f"{ref.locator} is registered, but the closure report at commit "
+            f"{proof.commit[:7]} does not cover it; registration alone does not "
+            "earn a rung")
+    if ref.locator not in proof.passing:
+        return Resolution(
+            ref, False,
+            f"the closure report at commit {proof.commit[:7]} records "
+            f"{ref.locator} as incomplete; open closures: "
+            f"{list(proof.open_closures(ref.locator))}")
+    return Resolution(
+        ref, True,
+        f"five closures observed passing at commit {proof.commit[:7]}: {ref.locator}")
 
 
 def _resolve_external_outcome(root: str, ref: EvidenceRef) -> Resolution:

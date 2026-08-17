@@ -1,0 +1,107 @@
+{
+  "commit": "dab84ae01f4b698c6589609131e7ba4ced8f5b89",
+  "generated_at": "2026-08-17T12:13:41+00:00",
+  "modules": {
+    "advantage_foundry": {
+      "complete": true,
+      "open_closures": []
+    },
+    "autonomy": {
+      "complete": true,
+      "open_closures": []
+    },
+    "blueprint": {
+      "complete": true,
+      "open_closures": []
+    },
+    "business": {
+      "complete": true,
+      "open_closures": []
+    },
+    "capabilities": {
+      "complete": true,
+      "open_closures": []
+    },
+    "compiler": {
+      "complete": true,
+      "open_closures": []
+    },
+    "consequence_gate": {
+      "complete": true,
+      "open_closures": []
+    },
+    "decision_router": {
+      "complete": true,
+      "open_closures": []
+    },
+    "developmental_substrate": {
+      "complete": true,
+      "open_closures": []
+    },
+    "discovery": {
+      "complete": true,
+      "open_closures": []
+    },
+    "embassy": {
+      "complete": true,
+      "open_closures": []
+    },
+    "events": {
+      "complete": true,
+      "open_closures": []
+    },
+    "evidence_ledger": {
+      "complete": true,
+      "open_closures": []
+    },
+    "evolution": {
+      "complete": true,
+      "open_closures": []
+    },
+    "foundry": {
+      "complete": true,
+      "open_closures": []
+    },
+    "identity": {
+      "complete": true,
+      "open_closures": []
+    },
+    "knowledge_graph": {
+      "complete": true,
+      "open_closures": []
+    },
+    "linker": {
+      "complete": true,
+      "open_closures": []
+    },
+    "loom": {
+      "complete": true,
+      "open_closures": []
+    },
+    "memory": {
+      "complete": true,
+      "open_closures": []
+    },
+    "omnimorph": {
+      "complete": true,
+      "open_closures": []
+    },
+    "proof": {
+      "complete": true,
+      "open_closures": []
+    },
+    "shell": {
+      "complete": true,
+      "open_closures": []
+    },
+    "treasury": {
+      "complete": true,
+      "open_closures": []
+    },
+    "twins": {
+      "complete": true,
+      "open_closures": []
+    }
+  },
+  "report_version": 1
+}

@@ -17,6 +17,15 @@ a number.
     CEREMONY_SUSPECTED   rungs rose, and nothing did
     REGRESSION           a rung fell; this outranks every other reading
     NO_CHANGE            the tree moved but the ladder did not
+    RECALIBRATED         the rules changed, so the rungs are not comparable
+
+RECALIBRATED outranks everything, because it is the one case where the numbers
+moved for a reason that is not about the institution at all. When the evidence
+standard is tightened — as it was when CLOSURE_MODULE stopped resolving on a
+textual registration and began requiring a commit-pinned passing closure report —
+rungs can fall with nothing having decayed, and a loosened rule would raise them
+with nothing having been built. Reading either as a cycle result would make the
+audit lie in the direction of whoever last edited the rules.
 
 CEREMONY_SUSPECTED is a suspicion, not a verdict on the work's worth. A
 technology with no dependents can be genuinely valuable and still unlock
@@ -46,11 +55,11 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from blueprint.critical_path import compute
-from blueprint.evidence import KERNEL_ROOT
+from blueprint.evidence import EVIDENCE_STANDARD, KERNEL_ROOT
 from blueprint.ladder import RUNG_ORDER, Rung, rung_index
 
 SNAPSHOT_DIR = os.path.join(KERNEL_ROOT, "blueprint", "snapshots")
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 #: A reading not anchored to a tree is not evidence. Short SHAs are accepted
 #: because git prints them, but the anchor must at least look like one.
@@ -110,6 +119,10 @@ class Snapshot:
     taken_at: str
     provenance: str
     readings: tuple[TechnologyReading, ...]
+    #: The evidence standard in force when these rungs were awarded. Rungs from
+    #: different standards are not comparable; `compare` reports RECALIBRATED
+    #: rather than pretending a tightened rule is a capability regression.
+    standard: str = EVIDENCE_STANDARD
     schema_version: int = SCHEMA_VERSION
 
     def __post_init__(self) -> None:
@@ -158,6 +171,7 @@ class Snapshot:
             "commit": self.commit,
             "taken_at": self.taken_at,
             "provenance": self.provenance,
+            "standard": self.standard,
             "readings": [
                 {"technology_id": r.technology_id, "awarded": r.awarded,
                  "ceiling": r.ceiling, "can_advance": r.can_advance}
@@ -168,15 +182,22 @@ class Snapshot:
     @classmethod
     def from_obj(cls, obj: dict) -> Snapshot:
         version = obj.get("schema_version")
-        if version != SCHEMA_VERSION:
+        if version not in (1, SCHEMA_VERSION):
             raise SnapshotError(
-                f"snapshot schema version {version!r} is not {SCHEMA_VERSION}; "
+                f"snapshot schema version {version!r} is not 1 or {SCHEMA_VERSION}; "
                 "refusing to read a format this code does not define"
             )
+        # Version 1 predates the standard field. Those readings were taken when
+        # CLOSURE_MODULE resolved on textual registration, so their standard is
+        # "1" by fact rather than by default. The file is not rewritten: history
+        # is read through an adapter, never amended.
+        standard = obj.get("standard", "1" if version == 1 else EVIDENCE_STANDARD)
         return cls(
             commit=obj["commit"],
             taken_at=obj["taken_at"],
             provenance=obj["provenance"],
+            standard=standard,
+            schema_version=version,
             readings=tuple(
                 TechnologyReading(
                     technology_id=int(r["technology_id"]),
@@ -268,6 +289,7 @@ def load_all(directory: str = SNAPSHOT_DIR) -> tuple[Snapshot, ...]:
 
 class Verdict(str, Enum):
     NO_CHANGE = "NO_CHANGE"
+    RECALIBRATED = "RECALIBRATED"
     SUBSTANTIVE = "SUBSTANTIVE"
     CEREMONY_SUSPECTED = "CEREMONY_SUSPECTED"
     REGRESSION = "REGRESSION"
@@ -287,6 +309,8 @@ class CycleComparison:
     outcomes_gained: int = 0
     appeared: tuple[int, ...] = ()
     withdrawn: tuple[int, ...] = ()
+    standard_before: str = EVIDENCE_STANDARD
+    standard_after: str = EVIDENCE_STANDARD
 
     @property
     def unlocked(self) -> bool:
@@ -300,7 +324,17 @@ class CycleComparison:
                     or self.outcomes_gained)
 
     @property
+    def recalibrated(self) -> bool:
+        """Did the rules change between these two readings?"""
+        return self.standard_before != self.standard_after
+
+    @property
     def verdict(self) -> Verdict:
+        if self.recalibrated:
+            # A tightened rule lowers rungs without anything having decayed, and
+            # a loosened one raises them without anything having been built.
+            # Neither is a cycle result, so no other verdict may be inferred.
+            return Verdict.RECALIBRATED
         if self.rungs_lowered:
             return Verdict.REGRESSION
         if not self.rungs_raised:
@@ -309,6 +343,13 @@ class CycleComparison:
 
     @property
     def headline(self) -> str:
+        if self.recalibrated:
+            return (f"{self.before[:7]} -> {self.after[:7]}  "
+                    f"{self.verdict.value}: evidence standard "
+                    f"{self.standard_before} -> {self.standard_after}; rungs are "
+                    f"not comparable across standards "
+                    f"({len(self.rungs_raised)} up, {len(self.rungs_lowered)} down "
+                    "under the new rules)")
         return (f"{self.before[:7]} -> {self.after[:7]}  {self.verdict.value}: "
                 f"{len(self.rungs_raised)} rung(s) raised, "
                 f"{len(self.ceilings_raised)} ceiling(s) raised, "
@@ -342,6 +383,8 @@ def compare(before: Snapshot, after: Snapshot) -> CycleComparison:
         outcomes_gained=len(after.hardened) - len(before.hardened),
         appeared=tuple(sorted(set(new) - set(old))),
         withdrawn=tuple(sorted(set(old) - set(new))),
+        standard_before=before.standard,
+        standard_after=after.standard,
     )
 
 
@@ -437,8 +480,8 @@ def _print_history(comparisons: tuple[CycleComparison, ...],
     for snap in snapshots:
         counts = snap.rung_counts
         print(f"  {snap.commit[:7]}  {snap.taken_at}  {snap.provenance:<8} "
-              f"frontier={len(snap.frontier):<3} HARDENED={len(snap.hardened)}  "
-              f"UNSUPPORTED={counts[UNSUPPORTED]}")
+              f"std={snap.standard}  frontier={len(snap.frontier):<3} "
+              f"HARDENED={len(snap.hardened)}  UNSUPPORTED={counts[UNSUPPORTED]}")
 
     if not comparisons:
         print("\nOne snapshot is not a cycle. Nothing to compare yet.")

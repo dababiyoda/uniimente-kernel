@@ -249,14 +249,26 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         "operations, and therefore no way to attach a capability without a code change.",
     ], Owner.CHATGPT),
 
-    # Claims nothing on purpose. Not even a written specification exists for an
-    # institutional shell, and BLUEPRINT requires one. This is the honest floor.
-    _b(14, None, Reality.BLUEPRINT_ONLY, [], [
-        "No specification exists. FBO §4.1 names 'institutional shell and pipelines' "
-        "in passing and never specifies it, so this technology cannot even claim "
-        "BLUEPRINT — the ladder's floor requires a document to point at.",
-        "`python -m blueprint` and `python -m handoff.conform` are single-purpose "
-        "entry points, not an operator shell.",
+    # Was the ladder's only UNSUPPORTED row: the arsenal named this technology and
+    # nothing specified it, so it could not claim even BLUEPRINT. Specified and
+    # built together on purpose — a specification written alone would have lifted
+    # the row to BLUEPRINT on paper while changing nothing, which is exactly the
+    # gaming this ladder's own adversarial pass names.
+    _b(14, Rung.EXERCISED, Reality.IMPLEMENTED, [
+        _spec("docs/INSTITUTIONAL_SHELL_SPEC.md#Pipeline model"),
+        _impl("shell/pipeline.py"),
+        _test("tests/unit/test_shell.py::test_a_stage_reporter_may_not_take_a_target"),
+        _closure("shell"),
+    ], [
+        "READ-ONLY SUBSET. The arsenal declares this technology's consequence class "
+        "as `internal_write`; the shell writes nothing. Pipelines that perform "
+        "governed internal writes — recording a decision episode, advancing a "
+        "workflow state machine — need the Consequence Gate on the path and a "
+        "capability grant per pipeline, and are unbuilt. The technology is not "
+        "complete; only its reporting half exists.",
+        "Not PROVEN, and deliberately not reaching for it: a terminal-only surface "
+        "has no wire boundary, so typing one with a contract schema would be "
+        "ceremony rather than evidence. No organ manifest declares it either.",
     ], Owner.CLAUDE),
 
     _b(15, Rung.PROVEN, Reality.IMPLEMENTED, [

@@ -295,4 +295,58 @@ def register_nervous_system_closures(reg: ClosureRegistry) -> ClosureRegistry:
         "evidence": router_evidence, "economic": router_economic,
         "regenerative": router_regenerative}))
 
+    # ---------------------------------------------------------------- shell
+    def shell_technical():
+        from shell.pipeline import Outcome, report
+        from shell.pipelines import PIPELINES
+        broken = []
+        for pipeline in PIPELINES.values():
+            for result in report(pipeline).results:
+                if result.outcome is Outcome.FAILED:
+                    broken.append(f"{pipeline.name}/{result.name}: {result.headline}")
+        return not broken, (
+            f"{len(PIPELINES)} pipelines collect every stage without a reporter "
+            "failure" if not broken else f"failed stages: {broken}"
+        )
+
+    def shell_authority():
+        return _authority_free("shell")
+
+    def shell_evidence():
+        # The shell must report what the source reporter says, not a number of
+        # its own. Check one figure end to end against its origin.
+        from blueprint.critical_path import compute
+        from shell.pipelines import _ladder
+        expected = len(compute().statuses)
+        return str(expected) in _ladder().headline, (
+            f"the ladder stage reports the source reporter's own count ({expected}); "
+            "the shell composes readings and computes no institutional fact"
+        )
+
+    def shell_regenerative():
+        # A broken reporter must be reported, never hidden. Proven by breaking one.
+        from shell.pipeline import Outcome, Stage
+
+        def detonate():
+            raise RuntimeError("reporter is broken")
+
+        result = Stage("detonate", detonate).collect()
+        return result.outcome is Outcome.FAILED and "broken" in result.headline, (
+            "a raising reporter becomes a FAILED stage carrying the exception; "
+            "the surface cannot manufacture confidence by swallowing it"
+        )
+
+    def shell_economic():
+        from shell.pipelines import PIPELINES, STATUS
+        sources = {stage.reads for stage in STATUS.stages}
+        return len(sources) >= 4 and bool(PIPELINES), (
+            f"one command reads {len(sources)} independent reporters; the durable "
+            "asset is a single institutional view, not a fifth silo"
+        )
+
+    reg.register(ModuleClosures("shell", {
+        "technical": shell_technical, "authority": shell_authority,
+        "evidence": shell_evidence, "economic": shell_economic,
+        "regenerative": shell_regenerative}))
+
     return reg

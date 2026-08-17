@@ -136,12 +136,32 @@ def test_over_claiming_a_rung_is_refused_and_named():
 
 
 def test_claiming_nothing_is_permitted_and_is_not_a_violation():
-    """Technology #14 has no specification anywhere. Silence is honest."""
-    result = validate_binding(BINDINGS[14])
-    assert BINDINGS[14].claimed_rung is None
+    """A binding may claim nothing, and silence is honest rather than a fault.
+
+    This once asserted against technology #14, the only row in the registry that
+    claimed nothing. #14 has since been specified, built, tested and registered
+    for closure, so it claims EXERCISED and is no longer an example of silence.
+    The property under test was never about #14 — it is that the ladder tolerates
+    a binding with no claim — so it is now checked against a constructed binding
+    and holds no matter which real technologies happen to be silent.
+    """
+    silent = TechnologyBinding(
+        technology_id=1, claimed_rung=None, reality=Reality.BLUEPRINT_ONLY,
+        evidence=(), gaps=("nothing is claimed here",), owner=Owner.CLAUDE,
+    )
+    result = validate_binding(silent)
     assert result.awarded_rung is None
     assert not result.over_claimed
     assert result.problems == ()
+
+
+def test_any_binding_that_claims_nothing_stays_honest():
+    """Whichever real bindings are silent, silence must never be a violation."""
+    for binding in BINDINGS.values():
+        if binding.claimed_rung is None:
+            result = validate_binding(binding)
+            assert not result.over_claimed, binding.technology_id
+            assert result.problems == (), binding.technology_id
 
 
 def test_every_committed_binding_is_honest():

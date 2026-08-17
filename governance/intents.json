@@ -362,7 +362,7 @@
     },
     {
       "intent_id": "INT-OM-012",
-      "title": "Preserve contradictions, fail closed, report \u2014 never silently weaken",
+      "title": "Preserve contradictions, fail closed, report — never silently weaken",
       "statement": "If repository truth contradicts the plan, preserve the contradiction, fail closed, and report it. Do not silently weaken an invariant or expand scope.",
       "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
       "source_location": "founder approval message, binding interpretation clause",
@@ -481,6 +481,102 @@
       ],
       "created_at": "2026-08-12T11:27:14+00:00",
       "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-016",
+      "title": "Operating doctrine: unlock recurring physical-world money trapped behind broken proof and settlement",
+      "statement": "Find streams of large, recurring, physical-world money trapped behind broken proof, trust, and settlement infrastructure. Map the participants. Build the substrate that removes the friction dam. The business compounds because every participant becomes more capable, more trusted, more eligible, and easier to transact with inside the rail. The moat strengthens because the market gets healthier. Win the wedge. Expand to the operating system. Every answer should serve this architecture.",
+      "source": "founder-authored operating doctrine supplied in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "01-DOCTRINE.txt, supplied verbatim and in the first person",
+      "source_date_or_version": "2026-08-17",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "strategic",
+      "intended_outcome": "Kernel work is judged by whether it moves proof, trust and settlement for a real money stream, not by internal completeness.",
+      "affected_systems": [
+        "blueprint/",
+        "foundry/arsenal.py",
+        "docs/BACKCAST_SBM_0_TO_1.md"
+      ],
+      "rationale": "Recorded because it is the founder speaking in the first person about what all work is for. It is the standard against which the Single Bottleneck Metric of zero verified outcomes is a live indictment: the kernel is internally elaborate and has removed no friction dam yet.",
+      "conflicts": [],
+      "evidence_refs": [
+        "Single Bottleneck Metric: verified external outcome count is 0 (python -m shell evidence)",
+        "HARDENED is unreachable by construction until a reconciled external consequence exists (blueprint/ladder.py)"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "First verified external outcome, or any decision that selects the wedge market.",
+      "unresolved_questions": [
+        "Which money stream is the wedge is not decided in the kernel and is not an agent's call.",
+        "A1: does a free consented deliverable count toward the Single Bottleneck Metric?",
+        "A2: who is named legal principal for the first outcome?"
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-017",
+      "title": "Prove one external verified outcome before expanding the platform",
+      "statement": "Among the credible branches the path that most increases expected founder advantage is to prove one external Verified Outcome before expanding the platform, because it creates owned proof acceptance rather than software usage. General-platform-first, content-first and marketplace-replacement-first either burn capital before proof, leave bypass paths open, or create operational liabilities before the control plane is real.",
+      "source": "Proof-to-Settlement Egregore analysis, endorsed in direction by the founder",
+      "source_location": "02-Proof-to-Settlement-Egregore.pdf, executive summary and strategic-tree result",
+      "source_date_or_version": "2026-08-17",
+      "status": "needs_evidence",
+      "authority_level": "advisory",
+      "consequence_class": "strategic",
+      "intended_outcome": "Sequencing pressure stays on the first reconciled external outcome rather than on further internal breadth.",
+      "affected_systems": [
+        "blueprint/ladder.py",
+        "blueprint/cycle.py",
+        "docs/BACKCAST_SBM_0_TO_1.md"
+      ],
+      "rationale": "Recorded at advisory authority on purpose. The founder placed the document in the intent hierarchy as *supporting* fail-closed, capability-bound, evidence-reconciled execution, which endorses its direction and does not ratify each sentence as executable law. Promoting an analysis to an active requirement is the specific move the founder's hierarchy warns against. It is recorded because it independently converges with an already-implemented kernel invariant: HARDENED requires a reconciled external consequence and nothing internal can supply one.",
+      "conflicts": [],
+      "evidence_refs": [
+        "blueprint/ladder.py: EXTERNAL_OUTCOME is required only at HARDENED and resolves for nothing",
+        "python -m blueprint.cycle: the CEREMONY_SUSPECTED verdict exists to detect internal breadth that unlocks nothing"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder ratifies or rejects the sequencing claim, or the first verified outcome lands.",
+      "unresolved_questions": [
+        "The vertical named in the source document was explicitly not imported into the current decision; only its generally applicable proof and containment principles were used."
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-018",
+      "title": "No frontier model and no sensing organ sits directly on the settlement path",
+      "statement": "Do not let DALEOBANKS or any frontier model sit directly on the settlement path. Sensing and narrative organs feed signals; strategy and underwriting evaluate; the control plane authorizes; settlement happens behind the consequence boundary.",
+      "source": "Proof-to-Settlement Egregore analysis, endorsed in direction by the founder",
+      "source_location": "02-Proof-to-Settlement-Egregore.pdf, recommended configuration",
+      "source_date_or_version": "2026-08-17",
+      "status": "needs_evidence",
+      "authority_level": "advisory",
+      "consequence_class": "authority",
+      "intended_outcome": "Settlement authority never becomes reachable from a perception organ or from model output.",
+      "affected_systems": [
+        "organs/",
+        "linker/",
+        "discovery/",
+        "policy/consequence_gate"
+      ],
+      "rationale": "Recorded at advisory rather than constitutional authority because it comes from an analysis the founder endorsed in direction, not from a founder statement of law. Ratifying it as a constitutional invariant requires an explicit founder statement. It is proposed for ratification because it is checkable: it can be expressed as an executable guard over the organ manifests and the gate, which no current test asserts.",
+      "conflicts": [],
+      "evidence_refs": [
+        "No current test asserts that a settlement-class capability is unreachable from daleobanks",
+        "organs/daleobanks.manifest.yaml declares external targets and a read_only kernel relationship"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder ratifies this as a constitutional invariant, at which point CLAUDE builds the executable guard over organs/ and the consequence gate.",
+      "unresolved_questions": [
+        "Whether to ratify at constitutional_invariant authority, which would make the guard mandatory rather than proposed."
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
     }
   ]
 }

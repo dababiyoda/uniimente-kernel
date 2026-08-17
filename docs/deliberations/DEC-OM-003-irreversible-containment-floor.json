@@ -1,0 +1,247 @@
+{
+  "decision_id": "DEC-OM-003",
+  "title": "P2-F6: irreversible consequence requires a microVM containment floor",
+  "problem": "containment/policy.py (PR #73, ChatGPT-owned) enforces containment floors in ContainmentRequirement.validate(), but the consequence-class rule forbids only IN_PROCESS for external_contact, financial and irreversible. An internal_trusted workload carrying an irreversible external consequence could therefore be admitted under HARDENED_CONTAINER, an OS-kernel boundary that shares the host kernel. Claude's independent review recorded this as P2-F6 and explicitly declined to propose a code change, because the floor for noncompensable effects is a risk-appetite question and not a code defect.",
+  "founder_intent_refs": [
+    "INT-OM-004",
+    "INT-OM-005",
+    "INT-OM-016"
+  ],
+  "baseline": "PR #73 head 58ec6682e5c55e1d9e04ec4779e8d4faa81367f5, an unmerged draft on claude/opus-maximus-audit-eay0ek at 310b0c8. Floors verified enforced by Claude: validate() refuses in_process for foreign/generated (microvm or wasm required), for internal_untrusted, and for external_contact/financial/irreversible; select() calls validate() before consulting any verifier. 44 Part 2 tests pass. No workload is launched by any of it.",
+  "alternatives": [
+    {
+      "name": "A: require exactly MICROVM for irreversible, with no fallback",
+      "description": "One predicate in ContainmentRequirement.validate(): consequence_class == 'irreversible' and required_tier is not MICROVM raises INSUFFICIENT_TIER. A noncompensable financial action must be classified irreversible; reversible or synthetic financial work may remain financial. UNAVAILABLE stays the honest answer when no verified hypervisor attestation exists.",
+      "advantages": [
+        "Hypervisor boundaries do not share the host kernel, which OS-kernel container boundaries do",
+        "One predicate and its tests; no frozen schema, contract or data migration",
+        "Keeps UNAVAILABLE as the outcome rather than a silent downgrade to a weaker tier",
+        "Maximum-consequence classification removes the discretion that would otherwise decide the tier"
+      ],
+      "disadvantages": [
+        "Operational cost: KVM dependency, guest and host kernel maintenance, latency, resource footprint",
+        "May honestly block a useful pilot by returning UNAVAILABLE on hosts without verified attestation",
+        "Risks false confidence: a microVM is necessary and not sufficient, and does not mediate egress",
+        "Creates an incentive to misclassify irreversible work as merely financial to escape the floor"
+      ],
+      "revival_evidence": "Selected. Decided by the founder 2026-08-17 as a provisional constitutional default."
+    },
+    {
+      "name": "B: leave the existing floor (forbid only IN_PROCESS)",
+      "description": "Treat HARDENED_CONTAINER as a sufficient 'real boundary' for every external consequence class including irreversible.",
+      "advantages": [
+        "No code change; no new operational dependency",
+        "Containers are broadly available where KVM is not"
+      ],
+      "disadvantages": [
+        "Admits noncompensable effects behind a boundary that shares the host kernel",
+        "Puts the weakest acceptable tier on the least reversible action, inverting the risk gradient"
+      ],
+      "revival_evidence": "Would require evidence that container escape is not a credible threat for the specific irreversible adapter, which no party has offered."
+    },
+    {
+      "name": "C: put the binding control at egress rather than at the tier",
+      "description": "Leave the tier floor as it is and make the irreversible gate a mediated-egress requirement plus a hash-bound one-shot capability, per the Reality Compiler blueprint's Network Egress Governor ('outbound action is the real danger boundary').",
+      "advantages": [
+        "Targets the control surface the blueprint identifies as the actual danger boundary",
+        "A microVM without egress control does not prevent the exfiltration or unauthorized-write cases",
+        "Would apply uniformly regardless of which tier the workload happens to run in"
+      ],
+      "disadvantages": [
+        "No egress governor exists in any repository today, so this option is unbuildable now",
+        "Would leave the tier floor at container level in the interim, which is the status quo",
+        "Broader surface: an egress governor is a network component with its own authority questions"
+      ],
+      "revival_evidence": "Becomes the stronger option once a Network Egress Governor exists and is independently attested. Recorded as the successor design, not as a competitor available today."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The floor stays as PR #73 shipped it, an internal_trusted irreversible workload remains admissible under HARDENED_CONTAINER, and the question stays open indefinitely because no agent may settle it.",
+    "advantages": [
+      "No operational dependency is introduced",
+      "No code changes on a branch that is already unmerged"
+    ],
+    "disadvantages": [
+      "Leaves the weakest acceptable boundary on the least reversible class of action",
+      "The gap was found and recorded; leaving a found gap open without a decision is the failure INT-OM-012 exists to prevent",
+      "Blocks P2-F4 and P2-F5, which are gated behind a stable corrected Part 2 head"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "A microVM floor for noncompensable effects preserves human sovereignty at exactly the point where a mistake cannot be undone. INT-OM-004 forbids self-authorized authority and autonomous treasury control; the tier floor is the containment analogue of that prohibition.",
+      "material_concerns": [
+        "The floor must not be read as permission to execute irreversible actions once a microVM exists"
+      ],
+      "evidence_refs": ["INT-OM-004", "docs/deliberations/DEC-OM-003-irreversible-containment-floor.json"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Hypervisor isolation is the strongest defensible current floor, and the tier vocabulary is coarse: four names cannot express 'microVM plus mediated egress plus one-shot capability'. The floor is right for now and the vocabulary is the thing that should grow.",
+      "material_concerns": [
+        "Four tiers conflate isolation mechanism with effect authority",
+        "TIER_ENFORCEMENT maps one tier to exactly one enforcement kind, so a composite posture cannot be declared"
+      ],
+      "evidence_refs": ["containment/policy.py TIER_ENFORCEMENT", "containment/policy.py ContainmentRequirement.validate"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The floor does not stop misuse inside an otherwise valid capability, and it does not mediate egress. The Reality Compiler blueprint says so directly: Firecracker 'reduces attack surface but does not itself solve egress control or trust in the host'. A microVM that can reach the network is not a containment answer to an irreversible write.",
+      "material_concerns": [
+        "The rule may read as proof of isolation when it is only a policy match",
+        "Callers gain an incentive to classify irreversible work as financial",
+        "Host compromise and credential overbreadth are untouched by any tier"
+      ],
+      "evidence_refs": [
+        "docs/references/REALITY_COMPILER_BLUEPRINT_EXCERPTS.md#egress",
+        "PR #73 comment 5313567900 dissent entry on injected verifiers"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "KVM availability, attestation transport, guest image maintenance and latency are real costs, and on a host without a verified hypervisor attestation the honest result is UNAVAILABLE. That is acceptable only because nothing is scheduled to execute yet.",
+      "material_concerns": [
+        "A pilot could be blocked entirely by the absence of an attestation verifier",
+        "No attestation transport or production verifier exists in any repository today"
+      ],
+      "evidence_refs": ["containment/policy.py ContainmentBroker.select returns UNAVAILABLE with no candidates"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Asymmetric irreversible harm justifies refusing to act over acting behind a weaker boundary. UNAVAILABLE is the correct output and must never be silently downgraded to a tier that happens to be present on the host.",
+      "material_concerns": [
+        "Silent downgrade is the specific failure mode to forbid",
+        "local_runtime_inventory() must remain advisory: an executable on PATH is not an attested boundary"
+      ],
+      "evidence_refs": ["containment/policy.py local_runtime_inventory status UNVERIFIED_EXECUTABLE_PRESENCE"],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    "Claude independent review of OPUS-P2-RELAY-003, PR #73 comment 5313567900: floors verified enforced; select() calls validate() first; local_runtime_inventory() is never called by select().",
+    "Reality Compiler blueprint: 'The Capability Cell Runtime should default to WASI/Wasmtime because the model starts with no ambient authority... Firecracker should be reserved for the minority of cases that require a browser, native dependency, or materially stronger tenant isolation.'",
+    "Reality Compiler blueprint risk section: 'Firecracker reduces attack surface but does not itself solve egress control or trust in the host.'",
+    "Reality Compiler blueprint component table: a Network Egress Governor is listed because 'Outbound action is the real danger boundary'."
+  ],
+  "counterevidence": [
+    "The blueprint reserves Firecracker for browser, native-dependency or tenant-isolation needs, which is an isolation-need axis. This decision imposes it on a consequence-class axis instead. A pure no-dependency adapter emitting one irreversible instruction is exactly the 'policy-bound adapter' the blueprint would default to Wasmtime, yet this floor forces it to microVM.",
+    "The blueprint locates the binding control for outbound effect at the egress governor, not at the isolation tier, so the floor may be defending the wrong surface for the threat it names.",
+    "No attestation verifier, attestation transport, or egress governor exists in any repository, so the floor currently has no host that can satisfy it and its practical effect today is to return UNAVAILABLE."
+  ],
+  "pass_1": {
+    "comparisons": {
+      "baseline": "PR #73 as shipped: irreversible admissible under HARDENED_CONTAINER for internal_trusted workloads.",
+      "do_nothing": "Gap stays open, the weakest acceptable boundary stays on the least reversible action, and P2-F4/P2-F5 stay blocked.",
+      "simplest_viable_alternative": "Option B, change nothing and treat a container as a sufficient real boundary. Rejected: it inverts the risk gradient.",
+      "strongest_competing_architecture": "Option C, bind irreversible actions to mediated egress plus a hash-bound one-shot capability rather than to a tier. Strongest on the merits and unbuildable today: no egress governor exists. Recorded as the successor design.",
+      "reversible_experiment": "One predicate plus six regression nodes on an unmerged draft, before anything executes. Reverting is deleting the predicate and its tests; no schema, contract, digest or historical evidence changes."
+    },
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A microVM floor can become security theater: it is necessary and not sufficient, and it does not mediate egress or establish host trust."
+      },
+      {
+        "id": "D2",
+        "statement": "The rule creates an incentive to classify irreversible work as merely financial in order to escape the floor."
+      },
+      {
+        "id": "D3",
+        "statement": "WASM may be the safer choice for narrow capability adapters, and this floor forbids it for irreversible ones even where it would confine better."
+      },
+      {
+        "id": "D4",
+        "statement": "Operational cost and KVM dependency may block an otherwise sound pilot, and with no verifier in existence the floor's only current effect is UNAVAILABLE."
+      },
+      {
+        "id": "D5",
+        "statement": "Host compromise, credential overbreadth and misuse inside a valid capability are untouched by any containment tier."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack": "Re-attacked as though the floor were already deployed. If the floor is the only control, an attacker needs no escape at all: a compromised or merely over-broad capability inside a perfectly attested microVM can perform the irreversible action through its own sanctioned egress. The floor raises the cost of escape and does nothing about authorized misuse, which is the likelier path.",
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "disposition": "Accepted and bounded by prohibition rather than removed. The decision explicitly forbids any claim that the rule proves runtime isolation; status remains VERIFIED_POLICY_MATCH_NOT_EXECUTION and the evidence ceiling stays BUILT/IMPLEMENTED. The floor is defense in depth, not the control."
+      },
+      {
+        "disadvantage_id": "D2",
+        "disposition": "Closed by classification rule: a financial action that cannot be compensated or reversed must be classified irreversible. This moves the discretion from 'which tier' to 'which class', where it is auditable in the requirement record."
+      },
+      {
+        "disadvantage_id": "D3",
+        "disposition": "Accepted as a live cost, with a named falsifier rather than a concession. WASI/Wasmtime removes ambient authority and grants capability only through explicit host imports, so a WASM profile could plausibly confine better; the host interface must be proven rather than assumed, and the falsifier below states exactly what proof reopens this."
+      },
+      {
+        "disadvantage_id": "D4",
+        "disposition": "Accepted, and the cost is what makes UNAVAILABLE acceptable. Nothing is scheduled to execute, so a blocked pilot costs a delay rather than a failed obligation. Reconsider when a real adapter exists and a predeclared latency or cost threshold is violated."
+      },
+      {
+        "disadvantage_id": "D5",
+        "disposition": "Out of scope for a containment tier and recorded as unsolved. Named owner: the runtime and security owner, under E1 of the founder reconciliation. The tier floor is not claimed to address it."
+      }
+    ],
+    "strengthened_result": "Retain the microVM floor as a provisional constitutional default. Require maximum-consequence classification so noncompensable financial actions are irreversible. Permit no fallback tier. Make UNAVAILABLE an acceptable and expected outcome. Prohibit any claim that the rule proves runtime isolation. Leave the evidence ceiling at BUILT/IMPLEMENTED."
+  },
+  "dissent": {
+    "present": true,
+    "entries": [
+      {
+        "objection": "The floor is placed on the isolation-tier axis while the blueprint locates the binding control for outbound irreversible effect at the egress governor. A microVM with sanctioned network access does not prevent the irreversible write it is meant to contain, so the rule may be defending the wrong surface.",
+        "owner": "FOUNDER",
+        "evidence_threshold": "A Network Egress Governor exists, is independently attested, and mediates outbound effect for the actual irreversible adapter. At that point Option C becomes buildable and this floor should be re-evaluated as one layer rather than the gate.",
+        "review_trigger": "First implementation of an egress governor, or the first real irreversible adapter, whichever comes first."
+      },
+      {
+        "objection": "Every containment guarantee in PR #73 terminates in an injected verify_attestation callable and in evidence_refs strings that nothing resolves. The broker verifies that a trusted verifier said yes; it cannot verify that the verifier looked. The floor therefore constrains a policy record, not a runtime.",
+        "owner": "CLAUDE",
+        "evidence_threshold": "A real verifier and a real attestation transport exist, and a hostile-workload experiment is independently reproduced. Until then no rung above BUILT is reachable for containment.",
+        "review_trigger": "First production attestation verifier, or any attempt to claim EXERCISED or above for technologies 9, 10 or 11."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "authorized_by": "Alfonso Lopez",
+    "authorization_ref": "Founder decision message 2026-08-17, 'Founder-owned P2-F6 decision': irreversible requires ContainmentTier.MICROVM regardless of trust class, no fallback, noncompensable financial actions classified irreversible.",
+    "notes": "The decision constrains what may be admitted; it grants nothing. No capability, grant, gate or execution path is created, and the evidence ceiling for the affected technologies is unchanged."
+  },
+  "migration_plan": {
+    "owner": "CHATGPT",
+    "scope": "containment/policy.py, containment/__init__.py, containment/EVIDENCE.json, tests/unit/test_containment.py only.",
+    "steps": [
+      "Add the irreversible predicate to ContainmentRequirement.validate() as a separate constitutional commit, distinct from the P2-F1..P2-F3 corrective commit.",
+      "Add parameterized test_irreversible_consequence_requires_microvm rejecting in_process, hardened_container and wasm_component.",
+      "Add test_irreversible_microvm_without_attestation_is_unavailable so a valid requirement is not read as availability."
+    ],
+    "claude_scope": "None. P2-F4 and P2-F5 are conditionally authorized and remain gated until a corrected Part 2 head exists with its required reruns. Claude must not edit any Part 2 path."
+  },
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Delete the irreversible predicate from ContainmentRequirement.validate().",
+      "Delete the two irreversible regression nodes from tests/unit/test_containment.py.",
+      "No frozen schema, contract, bundle digest, snapshot or historical evidence record changes, so nothing else needs reverting."
+    ],
+    "notes": "Reversibility is high specifically because nothing executes yet. It falls once a real adapter depends on the floor."
+  },
+  "kill_criteria": [
+    "An independent, preregistered comparison on the actual irreversible adapter shows a hardened-container or WASM profile meets or exceeds every escape, credential-theft, egress, replay, tampering and recovery control while the microVM profile violates a predeclared latency or cost threshold.",
+    "The floor is observed being satisfied by self-attestation, by executable presence on PATH, or by any path that does not require an independent verifier.",
+    "Any code or document claims that satisfying the floor proves runtime isolation, real containment, or an external outcome.",
+    "Callers are observed classifying noncompensable actions as financial to escape the floor."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "First real irreversible adapter, first production attestation verifier, first Network Egress Governor, or any attempt to raise technologies 9, 10 or 11 above BUILT."
+}

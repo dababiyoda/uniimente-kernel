@@ -144,16 +144,101 @@ def test_dissent_is_preserved_with_an_owner_and_a_threshold(deliberations):
                 assert e["review_trigger"].strip()
 
 
-def test_every_decision_is_one_of_the_six_and_constitutional_ones_await_a_human(
+def test_every_decision_is_one_of_the_six_and_no_agent_decides_a_constitutional_one(
         deliberations):
+    """The invariant is that no *agent* settles a constitutional question.
+
+    This once asserted that a constitutional deliberation must be `pending` and
+    `NEEDS_FOUNDER_DECISION`, full stop. That conflated "no human has decided" with
+    "constitutional", and became wrong the moment the founder actually decided one
+    (DEC-OM-003). The property worth protecting is unchanged and is now checked
+    directly: either the record is still waiting for a human, or it names the human
+    and points at the authorization. An `approved` record with neither is an
+    agent's assertion wearing a human's label, which is the thing to forbid.
+    """
     for d in deliberations:
         assert d["decision"] in DECISIONS
-        if d["authority_impact"]["level"] == "constitutional":
-            assert d["authority_impact"]["requires_authorized_human"] is True
-            assert d["authority_impact"]["approval_status"] == "pending"
+        impact = d["authority_impact"]
+        if impact["level"] != "constitutional":
+            continue
+        assert impact["requires_authorized_human"] is True
+        status = impact["approval_status"]
+        assert status in {"pending", "approved"}, (
+            f"{d['decision_id']} carries approval_status {status!r}"
+        )
+        if status == "pending":
             assert d["decision"] == "NEEDS_FOUNDER_DECISION", (
                 f"{d['decision_id']} is constitutional but decided without a human"
             )
+        else:
+            assert impact.get("authorized_by", "").strip(), (
+                f"{d['decision_id']} claims approval but names no human"
+            )
+            assert impact.get("authorization_ref", "").strip(), (
+                f"{d['decision_id']} claims approval but cites no authorization"
+            )
+            assert d["decision"] != "NEEDS_FOUNDER_DECISION"
+
+
+def test_an_approved_constitutional_record_without_an_authorization_is_refused():
+    """The widened guard must still bite. Checked against a constructed record.
+
+    Loosening `pending`-only to allow `approved` would be worthless if `approved`
+    were self-certifying. These are the two shapes an agent would produce if it
+    decided a constitutional question and labelled it human-approved.
+    """
+    def check(impact: dict, decision: str = "RETAIN") -> None:
+        record = {"decision_id": "DEC-TEST", "decision": decision,
+                  "authority_impact": impact}
+        assert record["decision"] in DECISIONS
+        assert impact["requires_authorized_human"] is True
+        assert impact["approval_status"] in {"pending", "approved"}
+        if impact["approval_status"] == "approved":
+            assert impact.get("authorized_by", "").strip()
+            assert impact.get("authorization_ref", "").strip()
+
+    base = {"level": "constitutional", "changes_authority": False,
+            "requires_authorized_human": True, "approval_status": "approved"}
+
+    with pytest.raises(AssertionError):                      # no human named
+        check({**base, "authorization_ref": "somewhere"})
+    with pytest.raises(AssertionError):                      # no authorization cited
+        check({**base, "authorized_by": "Alfonso Lopez"})
+    with pytest.raises(AssertionError):                      # blank is not a name
+        check({**base, "authorized_by": "   ", "authorization_ref": "   "})
+
+    check({**base, "authorized_by": "Alfonso Lopez",
+           "authorization_ref": "founder decision message 2026-08-17"})
+
+
+def test_the_founder_decided_record_names_its_authorization(deliberations):
+    """DEC-OM-003 is the first constitutional record a human actually decided."""
+    by_id = {d["decision_id"]: d for d in deliberations}
+    assert "DEC-OM-003" in by_id, "the decided containment floor must be on record"
+    impact = by_id["DEC-OM-003"]["authority_impact"]
+    assert impact["level"] == "constitutional"
+    assert impact["approval_status"] == "approved"
+    assert impact["authorized_by"] == "Alfonso Lopez"
+    assert "microvm" in impact["authorization_ref"].lower()
+    assert impact["changes_authority"] is False
+
+
+def test_a_doctrine_derived_intent_may_not_carry_executable_authority(intents):
+    """An analysis the founder endorsed in direction is not founder law.
+
+    The founder's own hierarchy puts the supplied documents at supporting weight
+    and warns that earlier exploratory language is not executable authority. An
+    intent sourced from one of those documents must therefore stay at weak
+    authority until the founder restates it directly.
+    """
+    doc_sourced = [r for r in intents
+                   if ".pdf" in r.get("source_location", "").lower()]
+    assert doc_sourced, "the supplied analyses should be recorded as intents"
+    for record in doc_sourced:
+        assert record["authority_level"] in WEAK_AUTHORITY, (
+            f"{record['intent_id']} promotes a document to {record['authority_level']!r}"
+        )
+        assert record["status"] not in {"active", "implemented"}
 
 
 def test_no_deliberation_claims_to_change_authority(deliberations):

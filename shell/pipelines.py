@@ -157,6 +157,38 @@ def _open_questions() -> StageResult:
                       detail)
 
 
+def _cycle_audit() -> StageResult:
+    """Did the recent cycles raise rungs, or raise capability? Not the same question."""
+    from blueprint.cycle import (
+        Verdict,
+        consecutive_ceremony,
+        history,
+        kill_condition_fired,
+        load_all,
+    )
+
+    snapshots = load_all()
+    cycles = history(snapshots)
+    if not cycles:
+        return unresolved("cycle-audit",
+                          f"{len(snapshots)} snapshot(s) on record; a trend needs two",
+                          ("Record one with: python -m blueprint.cycle take",))
+    detail = tuple(c.headline for c in cycles)
+    run = consecutive_ceremony(cycles)
+    flagged = [c for c in cycles if c.verdict is Verdict.CEREMONY_SUSPECTED]
+    regressions = [c for c in cycles if c.verdict is Verdict.REGRESSION]
+    headline = (f"{len(cycles)} cycle(s); {len(flagged)} raised a rung without "
+                f"unlocking anything; {len(regressions)} regression(s)")
+    if kill_condition_fired(cycles):
+        return unresolved("cycle-audit", f"{headline} — KILL CONDITION FIRED",
+                          detail + ("",
+                                    f"{run} consecutive ceremony cycles. Retiring the "
+                                    "ladder is a founder decision, not a computation."))
+    if flagged or regressions:
+        return unresolved("cycle-audit", headline, detail)
+    return ok("cycle-audit", headline, detail)
+
+
 # ------------------------------------------------------------------- closures
 
 
@@ -251,6 +283,7 @@ EVIDENCE = Pipeline(
     "what resolves, what does not, and every question the organs left open",
     (
         Stage("honesty", _honesty, reads="blueprint.registry"),
+        Stage("cycle-audit", _cycle_audit, reads="blueprint.cycle"),
         Stage("open-questions", _open_questions, reads="linker"),
         Stage("outcomes", _outcomes, reads="blueprint.critical_path"),
     ),

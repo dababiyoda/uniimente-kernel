@@ -269,6 +269,12 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         "Not PROVEN, and deliberately not reaching for it: a terminal-only surface "
         "has no wire boundary, so typing one with a contract schema would be "
         "ceremony rather than evidence. No organ manifest declares it either.",
+        "UNLOCKED NOTHING DOWNSTREAM. Nothing in the arsenal depends on #14, so "
+        "carrying it from UNSUPPORTED to EXERCISED raised no ceiling and moved no "
+        "technology onto the frontier. `python -m blueprint.cycle` records that "
+        "cycle as CEREMONY_SUSPECTED. The shell has standalone operator value and "
+        "the verdict does not dispute that; it denies the work credit for advancing "
+        "the critical path, which it did not.",
     ], Owner.CLAUDE),
 
     _b(15, Rung.PROVEN, Reality.IMPLEMENTED, [

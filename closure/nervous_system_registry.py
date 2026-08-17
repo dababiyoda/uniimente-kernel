@@ -101,13 +101,31 @@ def register_nervous_system_closures(reg: ClosureRegistry) -> ClosureRegistry:
         )
 
     def blueprint_regenerative():
+        from blueprint.cycle import Verdict, history
         from blueprint.evidence import EvidenceRef, resolve
         from blueprint.ladder import EvidenceKind
         bogus = EvidenceRef(EvidenceKind.IMPLEMENTATION_PATH, "does/not/exist.py")
-        r = resolve(bogus)
-        return not r.ok, (
-            "an unresolvable reference is refused rather than warned about; "
-            "the ladder cannot be inflated by adding claims"
+        refuses = not resolve(bogus).ok
+        # An instrument that cannot detect its own decay is not regenerative.
+        # Strictness is proven against a constructed cycle rather than against
+        # the history, so the check stays a property of the code and cannot be
+        # satisfied by whatever happens to be on record.
+        from blueprint.cycle import Snapshot, TechnologyReading, compare
+        stamp = "2026-01-01T00:00:00+00:00"
+
+        def _s(commit, awarded, advances):
+            return Snapshot(commit=commit, taken_at=stamp, provenance="live",
+                            readings=(TechnologyReading(1, awarded, "EXERCISED",
+                                                        advances),))
+
+        convicts = compare(_s("0" * 40, None, True),
+                           _s("1" * 40, "EXERCISED", False)).verdict
+        cycles = history()
+        flagged = [c for c in cycles if c.verdict is Verdict.CEREMONY_SUSPECTED]
+        return refuses and convicts is Verdict.CEREMONY_SUSPECTED, (
+            "an unresolvable reference is refused rather than warned about, and a "
+            "rung raised without unlocking anything is convicted as ceremony "
+            f"({len(flagged)} of {len(cycles)} recorded cycles so convicted)"
         )
 
     reg.register(ModuleClosures("blueprint", {

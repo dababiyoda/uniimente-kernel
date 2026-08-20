@@ -6,11 +6,13 @@ organs:
   railscout:
     identity: spiffe://uniimente.internal/organ/railscout
     role: multi_agent_cognitive_refinery
-    repository: null   # not yet created
+    repository: dababiyoda/RAILSCOUT
     emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments, candidate_architectures, adversarial_elimination_reports, synthesis_records, highest_state_ideas]
-    doctrine: "Run evolutionary cognition on ideas and knowledge: recursively develop, challenge, combine, refine, stress-test, and synthesize toward the strongest achievable state."
-    notes: "Canonical flow: raw signal -> competing interpretations -> primitives -> mutations -> candidate architectures -> adversarial elimination -> synthesis -> stronger synthesis -> highest-state idea. Operating review, SOP capture, follow-up, and project management may supply evidence but do not define RailScout."
-    status: planned
+    doctrine: "Run evolutionary cognition on ideas and knowledge: recursively develop, challenge, combine, refine, stress-test, and synthesize toward the strongest achievable state, then translate the result into Backcasting GPS execution paths."
+    notes: "Canonical flow: raw signal -> core intent -> pros/cons -> upward passes -> primitives -> mutations -> candidate architectures -> adversarial elimination -> synthesis -> stronger synthesis -> Backcasting GPS -> falsification plan -> highest-state executable idea. The RailScout repository owns local doctrine, context packets, founder-intent records, opportunity artifacts, and local recursive-collaboration protocol. Kernel governance remains controlling for identity, authority, contracts, money, autonomy, and external effects."
+    local_protocol: docs/RECURSIVE_COLLABORATION_PROTOCOL.md
+    connection_record: docs/EGREGORE_CONNECTION.md
+    status: active_doctrine_repository
   daleobanks:
     identity: spiffe://uniimente.internal/organ/daleobanks
     role: public_voice_and_distribution

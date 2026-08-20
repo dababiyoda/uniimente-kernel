@@ -6,10 +6,11 @@ organs:
   railscout:
     identity: spiffe://uniimente.internal/organ/railscout
     role: perception_and_evidence_refinery
-    repository: null   # not yet created
+    repository: dababiyoda/RAILSCOUT
     emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments]
     doctrine: "Reality must change the position, reduce uncertainty, produce evidence, improve optionality, or strengthen the institution."
     status: planned
+    migration: consume Kernel governance and shared contracts; repo-local doctrine installation staged in dababiyoda/RAILSCOUT#5
   daleobanks:
     identity: spiffe://uniimente.internal/organ/daleobanks
     role: public_voice_and_distribution

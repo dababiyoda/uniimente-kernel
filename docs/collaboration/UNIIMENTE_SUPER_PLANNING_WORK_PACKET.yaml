@@ -1,0 +1,192 @@
+# EXTERNAL MEMORY for the UNIIMENTE super-planning round.
+#
+# This file exists so a session that loses its context rebuilds state from the
+# repository rather than from a summary. It is not a status report for a human
+# reader. If you are resuming, run the reload procedure before doing anything else.
+#
+# Reload procedure:
+#   git log --oneline -12
+#   python -m pytest -q -p no:randomly
+#   python planning/compiler/validate.py
+#   python planning/compiler/validate.py --negative-control
+#   python planning/compiler/render.py --check
+#   cat artifacts/planning/uniimente_v1/SESSION_EXECUTION_LEDGER.json
+
+work_packet:
+  as_of: '2026-08-08'
+  round: "UNIIMENTE super-planning COMPLETE. Runtime implementation lives on claude/track-a-runtime-spine, NOT here."
+  branch: claude/super-planning-prompt-h8l0oj
+  base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+  canonical_prompt:
+    file: UNIIMENTE_SUPER_PLANNING_ROUND_MOST_CURRENT.{md,txt}
+    sha256: 1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e
+    verified_by: sha256sum, matched founder-stated hash
+    precedence: >-
+      This file supersedes the earlier canonical prompt and Pasted markdown(4).
+      Earlier prompts are historical lineage only.
+
+  authorization:
+    scope: planning artifacts only, on this branch
+    permitted:
+      - read all repositories, branches, PRs, issues, CI
+      - run safe read-only baseline tests
+      - commit planning artifacts to this branch
+      - one planning issue, one draft planning PR
+    forbidden:
+      - any write to PR #66 or its branch
+      - merge, mark ready for review, or modify any default branch
+      - change kernel runtime, markers, authority, adapters
+      - external effects, credentials, money, publishing, outreach
+      - grant authority to any planning component
+      - create a second Constitution / identity root / authority root / consequence gate
+      - run Gate F, Gate G or R8
+      - activate any generated capability
+    everything_new_is: PLANNED / PROPOSED / SANDBOXED / CONSEQUENCE-INERT
+
+  hard_invariants:
+    UNAUTHORIZED_EXTERNAL_EFFECTS: 0
+    RUNTIME_FILES_MODIFIED: 0
+    PR66_RUNTIME_MODIFIED: 0
+    PR66_WRITES_OF_ANY_KIND: 0
+    DEFAULT_BRANCH_MODIFIED: 0
+    PRS_MERGED: 0
+    MONEY_MOVED: 0
+    CONTACTS_MADE: 0
+    PRODUCTION_CREDENTIALS_USED: 0
+
+  method:
+    principle: >-
+      Do not write forty planning documents. Build one canonical planning model
+      (planning/graph/) and a compiler (planning/compiler/) that projects every
+      required artifact out of it. Hand-written parallel documents drift;
+      projections cannot.
+    anti_fabrication: >-
+      Every graph node carries evidence_refs and an evidence_status. A node with
+      no evidence_refs MUST be 'unresolved', or 'derived' with refs whose chain
+      terminates in real evidence. Enforced by tests, not promised.
+    instrument_liveness: >-
+      Every validator asserts its subject exists, carries a non-vacuity witness,
+      ships a negative control that forces failure, exits nonzero on failure,
+      runs from any cwd, and reports 'examined nothing' as UNKNOWN, never PASS.
+
+  verified_state:
+    kernel_main_suite: "495 passed in 6.22s (python -m pytest -q -p no:randomly, Python 3.11.15)"
+    suite_total: "518 passed (495 main + 23 planning) — runtime tests moved to Track A"
+    planning_tests: 23
+    graph_nodes: 115
+    graph_digest: see SESSION_EXECUTION_LEDGER.json
+    runtime_contract_sha256: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c  # on Track A
+    checksum_entries: 34
+    planning_pr: 68
+    planning_issue: 69
+    change_footprint: planning/, docs/planning/, artifacts/planning/, docs/collaboration/
+
+  measured_corrections:
+    suite_495_vs_924: >-
+      Kernel main runs 495 passed. The 924/1/24 figure belongs to the PR #66
+      branch, not main. Both are real; never collapse them into one number.
+    missing_machinery_premise: >-
+      Most 'expected missing machinery' already exists on main (closure/, foundry/,
+      omnimorph/, egregore/, evolution/, developmental/, linker/, compiler/,
+      adapters/). The real question is existing-and-connected vs
+      existing-but-disconnected vs genuinely-absent. SP-3 resolves it per component.
+    pr66_body_stale: "body says head 15623a9; actual head a6f14d3"
+    issue67_stale: "says head 0ccda5c8 and 886/1/11; actual a6f14d3 and 924/1/24"
+    open_pr_backlog: "69 open PRs across five repos, many stacked or based on archived main 3d9b5779"
+
+  stage_progress:
+    SP-0_inspection_truth_freeze: COMPLETE
+    SP-1_founder_intent_and_aspirations: COMPLETE
+    SP-2_anatomy_and_ownership: COMPLETE
+    SP-3_mechanism_atlas_and_capability_inventory: COMPLETE
+    SP-4_disconnection_and_closure_map: COMPLETE
+    SP-5_strategic_tree_and_two_passes: COMPLETE
+    SP-6_backcast_gps: COMPLETE — destination + nodes 1-5; nodes 6+ deliberately deferred as gated on node 5
+    SP-7_implementation_program: COMPLETE — 5-PR stack with acceptance criteria, anti-ruin boundaries
+    SP-8_final_dossier_and_handoff: COMPLETE — decision, founder decisions, ledger, checksums
+
+  gates:
+    F: UNMEASURED
+    G: UNMEASURED
+    R8: PROHIBITED
+
+  blocked_access:
+    - IVIO-NEMT — repository discovery denied this session; never inspected
+    - CHARIO / OBVIO — not in session scope; never inspected
+    - TGH-CONTROL-RAIL — not in session scope; never inspected
+    - "three founder briefs (Egregore/Proof-to-Settlement/Continue Egregore) absent from workspace"
+
+  unresolved_founder_decisions:
+    - FD-1 authorize DALEOBANKS real publication, or keep shadow mode (highest-value blocked route)
+    - FD-2 is IVIO-NEMT still a candidate wedge, given PR #53 already excluded it
+    - FD-3 triage the 69-PR backlog, or freeze it
+    - FD-4 ratify the Constitution cryptographically, or continue operator-recorded ratification
+
+  decision:
+    primary_disposition: BUILD (staged portfolio)
+    active_bottleneck: no governed process has ever carried an input to a verified consequence
+    active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
+    baseline: 0
+    target: 1
+    tier: COMPUTATIONAL — may not be reported as institutional or economic closure
+    pr66: FREEZE_AS_TRACK_B_RESEARCH (preserve entire; do not merge, do not continue runtime)
+
+  next_exact_command: >-
+    python planning/compiler/validate.py && python planning/compiler/render.py --check
+    && python -m pytest -q -p no:randomly
+
+  founder_corrections_applied:
+    - >-
+      The Evaluator Firewall must be built INSIDE the consequence-inert Runtime
+      Spine, not beside it. The first developmental closure must occur THROUGH
+      that runtime. Supersedes this round's own P1. Recorded as
+      correction.runtime_spine_supersedes_isolated_firewall.
+    - >-
+      SBM definition strengthened to twelve conditions. Conditions 2 (the running
+      process consumes the target function) and 7 (the runtime routes work through
+      the replacement) are what a detached benchmark can never satisfy.
+    - "FD-1 RESOLVED: staged shadow -> canary -> bounded standing authority"
+    - "FD-2 RESOLVED: IVIO-NEMT = NEEDS_EVIDENCE, neither canonical nor excluded"
+    - "FD-3 RESOLVED: freeze by default, classify completely, triage top 5-10 only"
+    - "FD-4 RESOLVED: operator-recorded now; cryptographic before higher consequence"
+
+  lineage_split:
+    planning_branch: claude/super-planning-prompt-h8l0oj (PR #68) — decision genome, planning-only
+    runtime_branch: claude/track-a-runtime-spine — runtime spine, evaluator, closure experiment
+    drift_detected: >-
+      d8c9215 landed runtime code on the planning branch. Authorized work, wrong
+      lineage. Corrected by forward commit; no history rewritten. See
+      drift.pr68_planning_runtime_scope.
+
+  p0_p1_status:
+    P0_truth_reconstruction: COMPLETE — founder authorization and corrections recorded in graph
+    P1_runtime_contract: COMPLETE — on Track A: runtime/contract.py frozen, self-sealed, 18 guard tests
+    P2_evaluator_freeze: NOT_STARTED
+    P3_runtime_spine: NOT_STARTED
+    P4_candidate_builder_isolation: NOT_STARTED
+    P5_candidate_generation: NOT_STARTED
+    P6_independent_evaluation: NOT_STARTED
+    P7_experimental_attachment_and_restoration: NOT_STARTED
+    P8_restart_rollback_adversarial_verification: NOT_STARTED
+    P9_marker_result_activation: NOT_STARTED
+    P10_final_dossier_and_handoff: NOT_STARTED
+
+  instrument_status:
+    pr68_monitor: FAILED_TO_CHECK
+    pr68_monitor_detail: >-
+      send_later returned trigger_id trig_01NCTarPJBG48yoDEuxeTpu1 and fire_at
+      2026-08-08T15:00:00Z. That is a call response, not a verified monitor.
+      CronList returns none (wrong instrument — send_later creates a Routine, not
+      a cron job) and list_triggers is not loadable in this session. Enabled
+      state, last_successful_check_at and delivery acknowledgment are all
+      UNREADABLE. Treat PR #68 as UNMONITORED until a check fires and reports.
+      Silence is not a passing result.
+
+  invalid_stopping_reasons:
+    - natural handoff point
+    - the session has run long
+    - I should stop before context runs out
+    - this is work for another session
+  on_context_pressure: >-
+    finish the current atomic commit, validate, commit, push, update this packet
+    and the execution ledger, reload state from the repository, continue.

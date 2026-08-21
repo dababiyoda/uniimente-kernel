@@ -164,3 +164,131 @@ class EvolutionCapsule(KernelModel):
     @classmethod
     def _require_sha256_hex(cls, v: str, info):
         return _require_hex64(info.field_name, v)
+
+
+# ---------------------------------------------------------------- WP-06 set
+# WP-06 (SPEC-WP06 3.1) appends the fast-evolution contracts: ComparisonEntry
+# (sub-record, like AuditFinding), ComparisonReport, FailureAnalysis and
+# ImprovementProposal. Same discipline: frozen, extra-forbid, each contract
+# validates only its own fields; cross-contract enforcement stays in the
+# engine/scripts (Hard Rule 4).
+
+
+class ComparisonEntry(KernelModel):
+    """One ranked branch of a ComparisonReport (sub-record, not a contract)."""
+
+    branch_id: str
+    variant_id: str
+    measured_value: float
+    improvement_ratio: float
+    rank: int = Field(ge=1)
+    disposition: Literal["best", "beaten", "below_threshold", "not_measured"]
+
+
+class ComparisonReport(KernelModel):
+    """Sealed ranking of all measured branches against the baseline.
+
+    Cross-field invariants (fail closed on ambiguity): exactly one entry is
+    disposition ``best`` and ``winner_branch_id`` binds to it; the ranks of
+    ALL entries are a permutation of 1..len(entries), with the measured
+    entries (best/beaten/below_threshold) holding ranks 1..#measured and the
+    unmeasured (audit-killed pre-experiment) entries ranked last.
+    """
+
+    loop_id: str
+    tree_id: str
+    metric_id: str
+    metric_unit: str
+    baseline_value: float
+    ranking_rule: str
+    entries: list[ComparisonEntry] = Field(min_length=1)
+    winner_branch_id: str
+
+    @model_validator(mode="after")
+    def _winner_ranks_consistent(self):
+        bests = [e for e in self.entries if e.disposition == "best"]
+        if len(bests) != 1:
+            raise ValueError(
+                f"a comparison report needs exactly one 'best' entry, got {len(bests)}"
+            )
+        if bests[0].branch_id != self.winner_branch_id:
+            raise ValueError(
+                "winner_branch_id must equal the 'best' entry's branch_id; "
+                "ambiguity fails closed"
+            )
+        ranks = sorted(e.rank for e in self.entries)
+        if ranks != list(range(1, len(self.entries) + 1)):
+            raise ValueError("entry ranks must be a permutation of 1..len(entries)")
+        measured = [
+            e
+            for e in self.entries
+            if e.disposition in ("best", "beaten", "below_threshold")
+        ]
+        if sorted(e.rank for e in measured) != list(range(1, len(measured) + 1)):
+            raise ValueError(
+                "measured entries must hold ranks 1..#measured; unmeasured "
+                "branches rank last"
+            )
+        return self
+
+
+class FailureAnalysis(KernelModel):
+    """Sealed analysis of one killed or below-threshold branch.
+
+    A failure that does not become a regression test is refused:
+    ``regression_test_ref`` must name a pinned test for the failure classes
+    ``threshold_unmet`` and ``regression_detected``. ``experiment_spec_id``
+    is empty when the branch was killed pre-experiment (audit kill).
+    """
+
+    branch_id: str
+    experiment_spec_id: str = ""  # empty when killed pre-experiment
+    failure_class: Literal[
+        "threshold_unmet",
+        "harness_error",
+        "protocol_violation",
+        "regression_detected",
+        "verifier_disagreement",
+        "audit_killed",
+    ]
+    diagnosis: str
+    evidence_refs: list[str] = []
+    regression_test_ref: str = ""
+
+    @model_validator(mode="after")
+    def _regression_test_pinned(self):
+        if self.failure_class in ("threshold_unmet", "regression_detected") and not (
+            isinstance(self.regression_test_ref, str) and self.regression_test_ref
+        ):
+            raise ValueError(
+                f"failure_class {self.failure_class!r} requires a pinned "
+                "regression_test_ref; a failure that does not become a "
+                "regression test is refused"
+            )
+        return self
+
+
+class ImprovementProposal(KernelModel):
+    """A sealed recommendation to adopt the comparison winner.
+
+    Sovereignty: the proposal RECOMMENDS; the founder ratifies. The contract
+    is constructable ONLY as ``pending`` — ratification/rejection is an
+    InstitutionalEvent (RATIFICATION / REJECTION) carrying a founder approval
+    reference, never a mutation of this frozen record.
+    """
+
+    report_id: str
+    loop_id: str
+    recommended_branch_id: str
+    patch_summary: str
+    authority_class: Literal["C2"]
+    ratification: Literal["pending", "ratified", "rejected"] = "pending"
+
+    @model_validator(mode="after")
+    def _sealed_pending_only(self):
+        if self.ratification != "pending":
+            raise ValueError(
+                "an ImprovementProposal is sealed pending only; ratification "
+                "is a gated founder InstitutionalEvent, never self-ratification"
+            )
+        return self

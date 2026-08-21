@@ -76,14 +76,3 @@ Spec: `SPEC-WP04.md` v1.0 — implemented faithfully; **no deviations**.
   future work (the drill's replay path demonstrates the mechanism).
 - `PostgresSpine` holds one persistent connection per instance; callers doing
   their own process forking should construct per-process instances.
-
-## Resume steps for the next agent
-
-1. Read `SPEC-WP04.md`, this file, and `kernel/spine/pg.py`.
-2. Re-run the suite: `python -m pytest tests/spine_pg -q` (no DB needed).
-3. Re-run the live drill (needs the DSN env var; never commit it):
-   `UNIIMENTE_SPINE_DSN=... python scripts/rebuild_drill.py` — expect rc=0 and
-   a fresh `proof/wp04_rebuild_capsule.json`.
-4. Next work package per the locked build order: Phase 2 — the First
-   Evolution Cycle (ClosureLoop, StrategyTree, StrategyBranch, SpiderWebAudit,
-   ExperimentSpec, EvolutionCapsule, VerifierRecord, RetainRegressKillDecision).

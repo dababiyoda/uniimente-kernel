@@ -157,6 +157,53 @@ class PostgresSpine:
         except Exception:
             return False
 
+    # ------------------------------------- WP-06 ratified addition (additive)
+
+    def verify_chain_streaming(self) -> bool:
+        """Stream variant of ``verify_chain`` (WP-06, SPEC-WP06 3.5 — the
+        ratified winner of the first automated evolution cycle).
+
+        IDENTICAL Python-side hash-verification logic and identical verdicts
+        as ``verify_chain`` (parity-tested on the honest chain and all four
+        WP-04 anomaly fixtures); the ONLY difference is the fetch strategy: a
+        SELECT + fetchone loop with a single closing commit replaces
+        ``iter()``'s fetchall, so peak buffered rows during verification drops
+        from N (the whole chain) to 1. Empty chain returns True; any anomaly
+        or connection failure returns False and nothing is raised (fail
+        closed, Hard Rule 4). ``verify_chain`` itself is untouched.
+        """
+        try:
+            cur = self._conn.execute(
+                f"SELECT {', '.join(_COLUMNS)} FROM {self._table} ORDER BY seq ASC"
+            )
+            expected_seq = 0
+            prev = GENESIS_HASH
+            verdict = True
+            while True:
+                row = cur.fetchone()
+                if row is None:
+                    break
+                rec = self._row_to_record(row)
+                if not isinstance(rec, dict) or set(rec.keys()) != set(_RECORD_KEYS) | {"record_hash"}:
+                    verdict = False
+                    break
+                if rec["seq"] != expected_seq:
+                    verdict = False
+                    break
+                if rec["prev_hash"] != prev:
+                    verdict = False
+                    break
+                body = {k: rec[k] for k in _RECORD_KEYS}
+                if sha256_hex(canonical_json(body).encode("utf-8")) != rec["record_hash"]:
+                    verdict = False
+                    break
+                prev = rec["record_hash"]
+                expected_seq += 1
+            self._conn.commit()  # single closing commit, on every verdict path
+            return verdict
+        except Exception:
+            return False
+
     # ------------------------------------------------------------- writes
 
     def append(

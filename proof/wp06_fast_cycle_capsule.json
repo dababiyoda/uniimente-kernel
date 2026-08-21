@@ -1,0 +1,159 @@
+{
+  "baseline_value": 1000.0,
+  "branches": [
+    {
+      "audit_id": "896899a042f44ffd8e2cb3fab55e1ed5",
+      "audit_overall": "pass",
+      "branch_id": "459b8eca9be343f0b26c72a020ec8a0a",
+      "decision": "retain",
+      "decision_id": "c268e78f9be3410eb5daad7c86bbc94d",
+      "title": "Variant stream (fetch_strategy=stream) vs control fetchall"
+    },
+    {
+      "audit_id": "ec95177be57649d092678c2ade843272",
+      "audit_overall": "pass",
+      "branch_id": "c89bfa9b1ebd4a448a108a3bc7e3b271",
+      "decision": "regress",
+      "decision_id": "8170c94ce4b24d5e9a3cdd62ac3693e8",
+      "title": "Variant chunk64 (fetch_strategy=chunk64) vs control fetchall"
+    },
+    {
+      "audit_id": "20a71f353cda4a108d38522aa9085963",
+      "audit_overall": "pass",
+      "branch_id": "72cb12687d8d4dbbb91eff3aea231272",
+      "decision": "regress",
+      "decision_id": "27c79fc21b554da69f0936ca61c83ed3",
+      "title": "Variant chunk256 (fetch_strategy=chunk256) vs control fetchall"
+    },
+    {
+      "audit_id": "bcf7e9665b90469781bbb05e55e7e380",
+      "audit_overall": "fail",
+      "branch_id": "cf98859a4c8a40f78ad66e8682506335",
+      "decision": "kill",
+      "decision_id": "34304d82f98a4283be95fe96ce7131d8",
+      "title": "Variant no_commit_stream (fetch_strategy=no_commit_stream) vs control fetchall"
+    }
+  ],
+  "capsule_schema": "wp05-evolution-capsule/1.0",
+  "cycle_index": 2,
+  "decisions": [
+    {
+      "branch_id": "459b8eca9be343f0b26c72a020ec8a0a",
+      "decided_by": "founder",
+      "decision_id": "c268e78f9be3410eb5daad7c86bbc94d",
+      "outcome": "retain",
+      "rationale": "stream peak 1 row: measured improvement 0.999 >= pre-registered threshold 0.9"
+    },
+    {
+      "branch_id": "c89bfa9b1ebd4a448a108a3bc7e3b271",
+      "decided_by": "founder",
+      "decision_id": "8170c94ce4b24d5e9a3cdd62ac3693e8",
+      "outcome": "regress",
+      "rationale": "beaten by stream: chunk64 improvement 0.936 met threshold but ranked 2 (stream ranked 1)"
+    },
+    {
+      "branch_id": "72cb12687d8d4dbbb91eff3aea231272",
+      "decided_by": "founder",
+      "decision_id": "27c79fc21b554da69f0936ca61c83ed3",
+      "outcome": "regress",
+      "rationale": "below threshold: chunk256 improvement 0.744 < 0.9; FailureAnalysis b32fe505702043ceafe3509d8b7d078e sealed with regression test tests/evolution/test_wp06_bench_matrix.py::test_chunk256_peak_rows_below_threshold_regression_pin"
+    },
+    {
+      "branch_id": "cf98859a4c8a40f78ad66e8682506335",
+      "decided_by": "founder",
+      "decision_id": "34304d82f98a4283be95fe96ce7131d8",
+      "outcome": "kill",
+      "rationale": "audit killed: TransactionSemanticsRule + DeclaredReversibilityRule failures; FailureAnalysis fed40b9b10654c63a4e34270c2ee7bb5 sealed"
+    }
+  ],
+  "experiment": {
+    "episode_closed": true,
+    "episode_id": "6f9c3c5516c04557b40889dbb37ee587",
+    "experiment_spec_id": "340da0955c0548da9ae33f67c4209712",
+    "receipt_facts": {
+      "baseline_source_sha256": "7a24f4892bbae362e42fe65f1740cf6b9a9d9d485471da06870ad984f5645aef",
+      "baseline_value": 1000.0,
+      "candidate_value": 1.0,
+      "candidate_variant": "stream",
+      "harness_sha256": "51d4a6b93aaa7716b69a8040aa2eaa1a3f87cafe582c519733ca3453f2655da8",
+      "metric": "pg_spine_verify_peak_rows",
+      "variant_values": {
+        "chunk256": 256.0,
+        "chunk64": 64.0,
+        "stream": 1.0
+      },
+      "workload_id": "verify1000-pinned-chain"
+    },
+    "reran_tests_green": true,
+    "verifier_record_id": "a6fd2ed6e0c44f66b1e9b2be8a8594a6"
+  },
+  "improvement_ratio": 0.999,
+  "loop_id": "55cb22beb9904a22ad48bdf8bf57dbde",
+  "measured_value": 1.0,
+  "metric": {
+    "baseline_value": 1000.0,
+    "direction": "decrease",
+    "harness_ref": "scripts/wp06_bench.py",
+    "metric_id": "pg_spine_verify_peak_rows",
+    "metric_unit": "rows",
+    "threshold_improvement": 0.9,
+    "workload_id": "verify1000-pinned-chain"
+  },
+  "ok": true,
+  "spine": {
+    "chain_verified_before_seal": true,
+    "closure_loop_record_hash": "96455b09cc5b3c585e75d5c3c61e87faf0a36b50f569271d7fbda723e82d30e0",
+    "head_before_seal": "0df2f15f060cdabc71a16a6de3fab8e84aa70dd2f05796d6bdbad3188e9413f3",
+    "record_count_before_seal": 37,
+    "record_hashes_before_seal": [
+      "30998338d05c8497da072f368f6cc214c343ed2ca228cdd0bf8b611b616cc3af",
+      "a6b4aab561a57ee62b55c142544257e25792a1206bd24f67ef3d49d9028c988a",
+      "afe316a0f703acc0d6b4deabedf36868719518a8797014e207f357ec7ad9403f",
+      "8911248e1f42a31bffb336d3be865d00cf121d7ab61c2b43420fa74229bd22c4",
+      "863c065d9d32a81ad79785bc98115ff0d4ee950391cb9a9b487f59f69a315427",
+      "449eaf03cea13235adae25e958e24655b1ee7a19f13eaf5a08b386f8511f6100",
+      "9a8297f4c8cf5294595d0baf88289620aa4c738b8b75dd0d04d547a826b2dccc",
+      "688a4f08e08e2708f19aee8080e8cbdc0a0c771c2f184de6d4547ccbb8f75929",
+      "2908e2313151be5e6d6e5137d54e55abc7fac9ebf060c5e1a8d395e59df8a7ba",
+      "5b6f83978fa6067104c4f370bc74e52a00a7cc5727c299fbc76298393fef64fd",
+      "7e66d3850e94bfdafe693e1ea4130c0b9499f79cbd6b7b87ad36e2345149d1c1",
+      "81d522e67253a19e337741dd92ddbf985e75c41482ea15ae4d424f64fd40582f",
+      "282e62126c7e5e8b57f1bfa1486c7f2a2a87db95fc27df91a8a2be16cf794853",
+      "16792eee202e2642de6c0b0785da418c42bc861ce3c89b9ecf21a5ffa18cb4a5",
+      "44f4e9c6ef1ce5bf89ab1468f42aac3307be2f19fb7254314fdbb3a315fbcddb",
+      "81f15692ed07723542fced933d057452f76a836f5688bae262715691dd2addd9",
+      "7528562dfdbd21f4f4dce36b7b8f550875e7301a696732f31cb3842e2cced168",
+      "c0fe24e2d190a4a07e9035b65555b522b29a2049aea09e9f6e3e63c297288eeb",
+      "f7cb1de0c0cba95596a173967a0ba3d10117aa0d714768384fb1b2d771b40511",
+      "fa0f4807b1158dfa08f509a04f2ef4d73c48b3a6160e574469ea84ceb87bbf24",
+      "fa0654323dc12a3e519b4128eb885abddbab31683808f861a681e05483123148",
+      "229f947da0d485c0e4616b7c41ac8095e16dff27a656392d1de8c262fba4fa56",
+      "e57df425e5c3195604a7357ff1e8d1c9000341e5f32a0ade838a2932c456bd7b",
+      "9f454b343493fc5c37ff85a7c4e2c337aa2d02bc8c0bf8dcfd6cd37bc1087e6a",
+      "42677994da3aaf71e42856c1f51f98ad00b23d5b71213f4fa0e46f2be8276806",
+      "8f5241510af33130400b3f2035330b81cf8e9e5fbc4fc2b842d613d04a83cddf",
+      "f6b9c676acfbbbf5e5aa4cec9847a896f1a9ed2d3694ae84cc94c5230d23b4da",
+      "80ba16f42b2647253d0298fb4b84e7818f806405344d1013a436f585acf46989",
+      "5f8e9eb5cddfbbde749d2c587fd71a5cd913f0be4fcefb99b90b9c91e76725f6",
+      "7ef97589019ec864542c555ce9b08b9caf822a04a4ecb913b9cac51e5c0e46ed",
+      "48def012fd352d4f9f9faf85324ee00711586ca14e173f28086767cf235b55b8",
+      "4b3807818832b5c5e3e65463901492396cf4ee92456eea46dd927dbe9aee4ea2",
+      "3fec34a5ea9e186b6ea017e06c8426099ce95c973973cef64dd78baa7b46c9d9",
+      "a8dcce24ea0a102bc77810f4df50e5c1542a707f697e6908f8027e7f2f37294b",
+      "81daeed492a71942faba7ac1840b631b4195f19dccd94fbc5a904c5f631dbaa0",
+      "c3eb8af396b4d1056abdfe3c3cf775d2b2366e92bb5b1a11c2c61c6630658143",
+      "0df2f15f060cdabc71a16a6de3fab8e84aa70dd2f05796d6bdbad3188e9413f3"
+    ],
+    "sealed_head_hash": "96455b09cc5b3c585e75d5c3c61e87faf0a36b50f569271d7fbda723e82d30e0",
+    "sealed_head_note": "sealed_head_hash is the spine head after the ClosureLoop seal append — on-chain it equals the EvolutionCapsule record's prev_hash. The head after BOTH seal appends is the capsule record's own hash, which cannot be embedded in its own payload (sha256 self-reference)."
+  },
+  "threshold_met": true,
+  "tree": {
+    "horizon": "wp06",
+    "root_objective": "Cut peak buffered rows during PostgresSpine.verify_chain on a 1000-record chain (read path)",
+    "selected_branch_id": "459b8eca9be343f0b26c72a020ec8a0a",
+    "selection_rule": "max scores.expected_value among audit-passing branches with scores.risk <= 0.3 and scores.reversibility >= 0.8; ties -> lower scores.cost",
+    "tree_id": "531e5be354d649ee831c62e6072259bf"
+  },
+  "verdict": "baseline_beaten"
+}

@@ -6,7 +6,15 @@ against the authority key, expiry, one-use) so that bypassing the gate still
 fails closed.
 """
 from .base import Adapter, BoundedAdapter
+from .benchmark import BenchmarkAdapter
 from .echo import EchoAdapter
 from .http_research import FetchResult, HttpResearchAdapter
 
-__all__ = ["Adapter", "BoundedAdapter", "EchoAdapter", "FetchResult", "HttpResearchAdapter"]
+__all__ = [
+    "Adapter",
+    "BenchmarkAdapter",
+    "BoundedAdapter",
+    "EchoAdapter",
+    "FetchResult",
+    "HttpResearchAdapter",
+]

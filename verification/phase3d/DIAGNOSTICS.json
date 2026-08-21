@@ -1,0 +1,80 @@
+{
+  "d1_fault_targeting": {
+    "label": "DIAGNOSTIC ONLY - does not qualify any gate",
+    "episodes": 68,
+    "void": 18,
+    "void_by_reason": {
+      "damage produced no output loss; nothing to regenerate": 12,
+      "healthy tissue produced no output": 6
+    },
+    "gate_f_valid_episodes": 12,
+    "gate_f_recovered": 11,
+    "gate_g_valid_episodes": 11,
+    "gate_g_escaped": 5,
+    "comparison_note": "pre-registered run had 25 void, 11 valid Gate F episodes and 11 valid Gate G episodes"
+  },
+  "d2_escape_reachability": {
+    "label": "DIAGNOSTIC ONLY - does not qualify any gate",
+    "method": "enumerates every form Tissue2.precipitate() can emit and asks whether any escapes each failure class",
+    "by_failure_class": {
+      "single_path_dependency": {
+        "prohibited_motif": {
+          "role": "gate",
+          "upstream_count": 1,
+          "redundancy": 0
+        },
+        "candidate_forms_enumerated": 12,
+        "escaping_forms_available": 10,
+        "escape_reachable": true,
+        "example_escape": {
+          "control_topology": "fan_in",
+          "verification": "dual_read",
+          "resource_allocation": "static",
+          "redundancy": 0
+        }
+      },
+      "unredundant_verification": {
+        "prohibited_motif": {
+          "role": "gate",
+          "redundancy": 0,
+          "verification_class": "single_read"
+        },
+        "candidate_forms_enumerated": 12,
+        "escaping_forms_available": 10,
+        "escape_reachable": true,
+        "example_escape": {
+          "control_topology": "fan_in",
+          "verification": "dual_read",
+          "resource_allocation": "static",
+          "redundancy": 0
+        }
+      },
+      "shared_resource_exhaustion": {
+        "prohibited_motif": {
+          "role": "gate",
+          "shares_resource_with_upstream": true
+        },
+        "candidate_forms_enumerated": 12,
+        "escaping_forms_available": 0,
+        "escape_reachable": false,
+        "example_escape": null
+      },
+      "partition_intolerant_coupling": {
+        "prohibited_motif": {
+          "role": "gate",
+          "upstream_count": 1
+        },
+        "candidate_forms_enumerated": 12,
+        "escaping_forms_available": 6,
+        "escape_reachable": true,
+        "example_escape": {
+          "control_topology": "fan_in",
+          "verification": "dual_read",
+          "resource_allocation": "static",
+          "redundancy": 0
+        }
+      }
+    },
+    "conclusion": "shared_resource_exhaustion has ZERO escaping forms because precipitate() hardcodes resource_allocation='static', so the motif matches every candidate the substrate can produce. Gate G's 6 failures on that class are a readout that cannot express the prohibited dimension, not a substrate that failed to escape."
+  }
+}

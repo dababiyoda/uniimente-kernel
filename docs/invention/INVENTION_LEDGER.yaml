@@ -1,0 +1,58 @@
+invention_precedent:
+  name: preserve_mechanisms_supersede_geometry
+  problem: overlapping authority engines
+  rejected_assumption: authorization and execution must share one central gate
+  invention: proof_carrying_authorization
+  protocol: reality_aperture
+  preserved_mechanisms:
+  - policy evaluation
+  - identity
+  - budget reservation and unwind
+  - scoped actions and targets
+  - local veto
+  - receipts
+  - reconciliation
+  geometry_change:
+    before: central authority process decides and executes
+    after: canonical issuer produces exact authorization proof that independent effectors verify
+  emergent_capabilities:
+  - offline verification
+  - portable bounded authority
+  - replaceable effectors
+  - distributed organs under one constitutional issuer
+  - local refusal without local sovereignty
+  evidence:
+  - hostile conformance tests (605 kernel)
+  - sandbox proofs A-D
+  - DALEOBANKS shadow proof (22 organ tests against the installed artifact)
+  - wheel inspection proving the issuer does not ship to organs
+  surviving_limits:
+  - revocation window
+  - production custody
+  - packaging reproducibility
+  - process isolation
+  reuse_required_for:
+  - Venture Cells
+  - IoT
+  - robotics
+  - temporary organs
+  - future embodiments
+  novelty_classification:
+    known_cryptographic_primitives:
+    - Ed25519 signatures
+    - SHA-256 canonical hashing
+    - monotonic signed revocation lists (CRL/OCSP lineage)
+    known_capability_concepts:
+    - capability objects
+    - effect binding
+    - fail-closed refusal
+    - permissive action links from nuclear command and control
+    new_interaction_geometry: authority as a portable twenty-field signed artifact that the EFFECTOR validates
+      independently, combined with an organ-local veto the issuer cannot reach, so that partition makes
+      the system MORE conservative rather than less
+    emergent_capability: an organ can act correctly while unable to contact the Kernel, and an external
+      auditor can verify attribution with no access to the institution
+    unresolved_novelty: whether the staleness-by-consequence-class asymmetry is the right shape, or merely
+      the first shape that worked. It has not been tested against a real partition or a real revocation
+      emergency.
+    patentability: NOT CLAIMED. Every primitive is prior art; the composition is not assessed.

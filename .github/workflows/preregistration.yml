@@ -1,0 +1,25 @@
+name: Pre-registration ancestry
+# A hash inside a file proves nothing about ordering. This asserts from the
+# COMMIT GRAPH that the evaluation manifest was committed before any results.
+on: [pull_request, workflow_dispatch]
+jobs:
+  ancestry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Manifest commit must precede results commit
+        run: |
+          M=$(git log --diff-filter=A --format=%H -- verification/phase3c/EVALUATION_MANIFEST.json | tail -1)
+          R=$(git log --format=%H -1 -- verification/phase3c/PHASE3C_RESULTS.json)
+          echo "manifest added in: $M"
+          echo "results committed in: $R"
+          if [ -z "$R" ]; then echo "no results yet - nothing to check"; exit 0; fi
+          git merge-base --is-ancestor "$M" "$R" \
+            && echo "OK: manifest is an ancestor of results" \
+            || { echo "FAIL: results not descended from the manifest commit"; exit 1; }
+      - name: Phase 3D pre-registration
+        # Stronger than the inline check above: also asserts the manifest commit
+        # touched NOTHING but the manifest, and that the manifest has not been
+        # edited since. Skips cleanly on histories without the Phase 3D files.
+        run: python3 scripts/ci/check_phase3d_preregistration.py

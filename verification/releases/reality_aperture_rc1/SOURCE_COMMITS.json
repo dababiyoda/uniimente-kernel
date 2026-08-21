@@ -1,0 +1,7 @@
+{
+  "kernel_commit": "3d23995527d7a66397320cb5ffb416e992a98ebc",
+  "kernel_dirty_tree": true,
+  "daleobanks_commit": "5c675b247d341be5ae21c8aac113a6edd4ccdd7d",
+  "daleobanks_dirty_tree": false,
+  "source_origin": "fresh --no-local clone, checked out at the pinned commit, no working-tree carryover"
+}

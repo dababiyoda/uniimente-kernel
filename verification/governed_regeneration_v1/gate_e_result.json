@@ -1,0 +1,44 @@
+{
+  "gate": "Gate E - governed unscripted functional regeneration",
+  "status": "CLOSED",
+  "metric": "UNSCRIPTED_GOVERNED_FUNCTIONAL_REGENERATIONS",
+  "baseline": 0,
+  "result": 10,
+  "target": 1,
+  "conditions": {
+    "function_represented_independently_of_implementation": true,
+    "organ_a_admitted_and_verified": true,
+    "multiple_damage_classes": true,
+    "held_out_damage": true,
+    "original_topology_prohibited": true,
+    "multiple_replacement_candidates": true,
+    "at_least_one_rejected_candidate": true,
+    "materially_different_organ_b": true,
+    "at_least_two_valid_replacement_forms": true,
+    "old_identity_refused": true,
+    "old_authority_refused": true,
+    "new_authority_independently_issued": true,
+    "obligations_preserved": true,
+    "evidence_preserved": true,
+    "local_veto_preserved": true,
+    "held_out_recovery_demonstrated": true,
+    "baseline_comparison_completed": true,
+    "zero_unauthorized_external_effects": true
+  },
+  "evidence": {
+    "recoveries": "10/10",
+    "held_out": "3/3",
+    "distinct_forms": 10,
+    "candidates_formed": 60,
+    "candidates_rejected": 5,
+    "old_cert_refusal_reason": "certificate_revoked",
+    "cross_identity_refusal_reason": "actor_mismatch",
+    "local_veto_check": "valid successor certificate + engaged veto -> local_veto, 0 external writes"
+  },
+  "honest_limits": [
+    "The invention matches the centralized-planner UPPER BOUND (10/10). It did not beat a planner on restoration rate and cannot: the ceiling is set by the capability pool. What it adds over a planner is GOVERNANCE - fresh identity, fresh authority, refused predecessor, transferred obligations - none of which a planner provides. Do not read 10/10 as superior search.",
+    "Bounded-local-knowledge routes (section 11) were NOT implemented. The candidate former sees the whole capability pool. The morphogenetic claim of local competency is therefore UNPROVEN; only governed succession is proven.",
+    "Held-out means a former seed schedule never used in training episodes. It does NOT mean an unseen capability vocabulary.",
+    "Damage is injected by the harness; deficit DETECTION reuses the existing evolution/repair FunctionLossDetector only conceptually, not by wiring."
+  ]
+}

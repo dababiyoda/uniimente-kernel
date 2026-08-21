@@ -1,0 +1,99 @@
+{
+  "evaluation": "phase3c",
+  "purpose": "Independent qualification of Gate F and a genuine Gate G test. PR #59's Gate F 8/8 is NOT structurally held out: verified by inspection that Tissue.partition() was never called, produced_outputs was hardcoded to 0, degradation was uniform, one contract was used, and every family shared identical interfaces.",
+  "held_out_families": [
+    "zeta",
+    "eta",
+    "theta"
+  ],
+  "structural_novelty_required": {
+    "real_partition": "Tissue.partition() actually invoked; blocked edge asserted to carry zero messages",
+    "asymmetric_resource_geometry": "starve selected families only, never uniform",
+    "contract_variation": "4-role dual-verifier contract: ingest -> verify_a + verify_b -> reconcile -> emit",
+    "interface_variation": "theta family uses a fan-in arrangement never seen in development",
+    "observation_derived_deficit": "produced_outputs measured by running the damaged tissue, never hardcoded",
+    "unseen_causal_combination": "partition + asymmetric starvation together"
+  },
+  "episodes": {
+    "development": 30,
+    "gate_f_qualification_held_out": 12,
+    "gate_g_causal_escape_held_out": 12
+  },
+  "thresholds": {
+    "minimum_gate_f_recoveries": 10,
+    "minimum_gate_g_recoveries": 9,
+    "minimum_causally_distinct_forms": 3,
+    "false_role_suppression_events": 0,
+    "global_topology_leakage_events": 0,
+    "solution_leakage_events": 0,
+    "inherited_authority_events": 0,
+    "unauthorized_external_effects": 0
+  },
+  "motif_ambiguity_requirement": {
+    "minimum_compatible_predecessor_graphs": 16,
+    "exact_predecessor_uniquely_identifiable": false
+  },
+  "seeds": {
+    "development": [
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      306,
+      307,
+      308,
+      309,
+      310,
+      311,
+      312,
+      313,
+      314,
+      315,
+      316,
+      317,
+      318,
+      319,
+      320,
+      321,
+      322,
+      323,
+      324,
+      325,
+      326,
+      327,
+      328,
+      329
+    ],
+    "gate_f": [
+      8100,
+      8101,
+      8102,
+      8103,
+      8104,
+      8105,
+      8106,
+      8107,
+      8108,
+      8109,
+      8110,
+      8111
+    ],
+    "gate_g": [
+      8200,
+      8201,
+      8202,
+      8203,
+      8204,
+      8205,
+      8206,
+      8207,
+      8208,
+      8209,
+      8210,
+      8211
+    ]
+  },
+  "pre_registration_method": "This file is committed ALONE, before any implementation or results. CI asserts the manifest commit is an ancestor of the results commit. A hash inside the file is not independent proof."
+}

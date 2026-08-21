@@ -1,0 +1,18 @@
+{
+  "episodes": 30,
+  "recoveries": {
+    "do_nothing": 0,
+    "restart_same_implementation": 0,
+    "identical_replica": 0,
+    "hardcoded_backup": 15,
+    "conventional_orchestration": 15,
+    "global_planner_upper_bound": 30,
+    "local_developmental": 21
+  },
+  "global_state_required": {
+    "global_planner_upper_bound": true,
+    "conventional_orchestration": true,
+    "local_developmental": false
+  },
+  "note": "The local architecture is not expected to beat the planner on raw rate. The structural claim is that it needs NO component holding the pool, the system state, or a target topology."
+}

@@ -1,0 +1,49 @@
+{
+  "gate": "Gate F - bounded-local-knowledge morphogenetic regeneration",
+  "status": "OPEN",
+  "metric": "BOUNDED_LOCAL_KNOWLEDGE_REGENERATIONS",
+  "baseline": 0,
+  "result": 21,
+  "target": 1,
+  "threshold_required": {
+    "minimum_held_out_recoveries": 7,
+    "minimum_distinct_valid_forms": 3
+  },
+  "achieved": {
+    "held_out_recoveries": 6,
+    "distinct_valid_forms": 9
+  },
+  "conditions": {
+    "function_loss_detector_connected": true,
+    "damage_inferred_from_observations": true,
+    "detector_does_not_prescribe_the_solution": true,
+    "local_components_have_bounded_knowledge": true,
+    "no_formation_component_sees_the_full_pool": true,
+    "no_target_topology_supplied": true,
+    "candidate_emerges_through_local_interaction": true,
+    "held_out_damage_used": true,
+    "held_out_capability_family_used": true,
+    "multiple_materially_different_forms_succeed": true,
+    "constitutional_admission_external": true,
+    "old_identity_refused": true,
+    "old_certificate_refused": true,
+    "fresh_authority_issued": true,
+    "obligations_preserved": true,
+    "evidence_preserved": true,
+    "local_veto_preserved": true,
+    "independent_restoration_verified": true,
+    "inherited_authority_zero": true,
+    "unauthorized_external_effects_zero": true,
+    "held_out_recoveries_meet_threshold": false
+  },
+  "blocker": "held-out recoveries 6/10, threshold 7. NOT a substrate failure: the tissue formed a viable, fully-role-filled structure in 29 of 30 episodes. 8 of the 9 failures were ADMISSION refusals with code topology_not_materially_different - the governance layer correctly refusing a form too close to the predecessor.",
+  "the_structural_finding": "A locally-bounded substrate has no pressure to be DIFFERENT, only to be VIABLE. The predecessor's shape is often the most easily reachable one, so the tissue rebuilds an equivalent form and admission refuses it. Making the tissue avoid that shape would require telling cells about the predecessor topology - which is exactly the global knowledge Gate F exists to forbid. This is a genuine tension between bounded local knowledge and mandated novelty, not a tuning problem, and it was NOT tuned around.",
+  "not_tuned": "No parameter was changed after inspecting held-out results. Doing so would have required a fresh untouched evaluation set, per the execution order.",
+  "honest_limits": [
+    "Recovery counts include development episodes; only 6/10 held-out passed.",
+    "The tissue's neighbourhood graph is seeded by the harness, not grown.",
+    "73 redundant attachments across 21 recoveries: lateral inhibition reduces but does not eliminate over-recruitment.",
+    "Mean 318 messages per recovery vs a planner's single query - the local architecture is far more expensive in communication.",
+    "'Held out' here IS a genuinely unseen capability family (gamma), which is stronger than Gate E's unused-seed notion."
+  ]
+}

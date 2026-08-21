@@ -1,0 +1,44 @@
+{
+  "gate_f": {
+    "gate": "Gate F - independently qualified bounded-local functional regeneration",
+    "status": "REOPENED",
+    "previous_status": "CLOSED in PR #59 on 8/8",
+    "why_reopened": "PR #59's held-out was NAME novelty, not structural novelty - verified by inspection that Tissue.partition() was never called, produced_outputs was hardcoded to 0, degradation was uniform, one contract was used and every family shared identical interfaces. Under genuine structural novelty the result is 6/12 against a threshold of 10. The earlier closure was not warranted and is withdrawn.",
+    "result": {
+      "recovered": 6,
+      "of": 12,
+      "threshold": 10
+    },
+    "root_cause": "ALL 12 failures are the dual_verifier contract: 0/12. All 12 held-out CHAIN episodes recovered 12/12, including real partitions and asymmetric starvation. The substrate handles the familiar 3-role chain flawlessly and cannot form a 4-role fan-in topology at all. Independent qualification found a structural limit that name-novelty concealed."
+  },
+  "gate_g": {
+    "gate": "Gate G - bounded-local causal-escape regeneration",
+    "status": "OPEN",
+    "result": {
+      "recovered": 6,
+      "of": 12,
+      "threshold": 9
+    },
+    "improvement": "3/8 (37.5%) in PR #59 -> 6/12 (50%) here",
+    "the_fix_worked": {
+      "FALSE_ROLE_SUPPRESSION_EVENTS": 0,
+      "target": 0,
+      "met": true,
+      "evidence": "62 motif refusals fired, so the constraint channel is active, and zero roles were rendered unreachable. The PR #59 defect - INHIBIT on the role making it permanently undifferentiable - is gone.",
+      "remaining_blocker": "the same dual_verifier fan-in limit, not the motif channel"
+    }
+  },
+  "structural_novelty_actually_exercised": {
+    "partitions_verified_actually_blocked": 4,
+    "deficits_derived_from_observation": 54,
+    "asymmetric_starvation": "named families only, never uniform",
+    "contract_variation": "4-role dual-verifier fan-in, 12 episodes",
+    "interface_variation": "theta family fan-in arrangement"
+  },
+  "leakage": {
+    "solution_leakage_events": 0,
+    "global_topology_leakage_events": 0,
+    "ambiguity_set": "384 of 1152 compatible predecessor graphs; cumulative motifs do not narrow it (still 384). Replaces the bogus bit count."
+  },
+  "distinct_causally_valid_forms": 14
+}

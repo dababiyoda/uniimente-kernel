@@ -1,0 +1,337 @@
+{
+  "held_out_family": "gamma",
+  "episodes": [
+    {
+      "episode": 20,
+      "held_out": true,
+      "damage_class": "capability_loss",
+      "recovered": false,
+      "failure": "admission refused: topology_not_materially_different",
+      "candidate": [
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ]
+    },
+    {
+      "episode": 21,
+      "held_out": true,
+      "damage_class": "topology_disruption",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "4b5f3b9f89c15cc3",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 232,
+      "ticks": 6,
+      "differentiations": 6,
+      "inhibitions_sent": 96,
+      "redundant_attachments": 3,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 22,
+      "held_out": true,
+      "damage_class": "resource_degradation",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "456a0ecf27858558",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 320,
+      "ticks": 6,
+      "differentiations": 7,
+      "inhibitions_sent": 152,
+      "redundant_attachments": 4,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 23,
+      "held_out": true,
+      "damage_class": "identity_invalidation",
+      "recovered": false,
+      "failure": "admission refused: topology_not_materially_different",
+      "candidate": [
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.gamma"
+      ]
+    },
+    {
+      "episode": 24,
+      "held_out": true,
+      "damage_class": "capability_loss",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "4b5f3b9f89c15cc3",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 258,
+      "ticks": 6,
+      "differentiations": 6,
+      "inhibitions_sent": 112,
+      "redundant_attachments": 3,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 25,
+      "held_out": true,
+      "damage_class": "topology_disruption",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "456a0ecf27858558",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 292,
+      "ticks": 6,
+      "differentiations": 7,
+      "inhibitions_sent": 134,
+      "redundant_attachments": 4,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 26,
+      "held_out": true,
+      "damage_class": "resource_degradation",
+      "recovered": false,
+      "failure": "admission refused: topology_not_materially_different",
+      "candidate": [
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ]
+    },
+    {
+      "episode": 27,
+      "held_out": true,
+      "damage_class": "identity_invalidation",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "4b5f3b9f89c15cc3",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 258,
+      "ticks": 6,
+      "differentiations": 6,
+      "inhibitions_sent": 112,
+      "redundant_attachments": 3,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 28,
+      "held_out": true,
+      "damage_class": "capability_loss",
+      "families": [
+        "alpha",
+        "gamma",
+        "beta"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.beta"
+      ],
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "topology_signature": "456a0ecf27858558",
+      "material_differences": [
+        "capabilities",
+        "communication",
+        "control_topology",
+        "memory_distribution",
+        "recovery_behaviour",
+        "resource_allocation",
+        "verification"
+      ],
+      "messages": 320,
+      "ticks": 6,
+      "differentiations": 7,
+      "inhibitions_sent": 152,
+      "redundant_attachments": 4,
+      "old_certificate_refused": true,
+      "old_cert_reason": "certificate_revoked",
+      "cross_identity_refused": true,
+      "cross_reason": "actor_mismatch",
+      "authority_inherited": false,
+      "obligations_transferred": 1,
+      "function_restored": true,
+      "recovered": true
+    },
+    {
+      "episode": 29,
+      "held_out": true,
+      "damage_class": "topology_disruption",
+      "recovered": false,
+      "failure": "tissue did not fill every required role",
+      "roles_filled": [
+        "decide",
+        "ingest"
+      ],
+      "messages": 62,
+      "ticks": 8
+    }
+  ],
+  "recovered": 6,
+  "of": 10
+}

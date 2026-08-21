@@ -1,0 +1,30 @@
+{
+  "gate": "Gate F - bounded-local FUNCTIONAL regeneration",
+  "status": "CLOSED",
+  "closed_on": "a NEW pre-registered evaluation, not a retroactive pass of PR #58",
+  "pre_registered_manifest_sha256": "cd7025626bcc89b0b87bff4d9aaca029666dfcba74182002d6d316a1de4a0664",
+  "evidence": {
+    "ordinary_held_out_recoveries": {
+      "recovered": 8,
+      "of": 8,
+      "threshold": 7
+    },
+    "held_out_families": [
+      "delta",
+      "epsilon"
+    ],
+    "note": "gamma was OBSERVED by PR #58 and is demoted to a development family. delta/epsilon were hashed before this ran."
+  },
+  "why_this_is_not_a_retroactive_pass": "PR #58 conflated two claims behind one predicate and scored 6/10. This evaluation separates them: Condition A tests ONLY functional regeneration, where rebuilding the predecessor is permitted because it is causally valid. PR #58's own numbers are unchanged and its branch is untouched.",
+  "conditions": {
+    "bounded_local_knowledge": true,
+    "no_full_pool_visibility": true,
+    "no_target_topology": true,
+    "detector_wired": true,
+    "external_admission": true,
+    "held_out_threshold_met": true,
+    "solution_leakage_events": true,
+    "inherited_authority": true,
+    "unauthorized_external_effects": true
+  }
+}

@@ -1,0 +1,8 @@
+aperture_issuer/__init__.py
+aperture_issuer/issuer.py
+aperture_issuer/revocation_authority.py
+aperture_issuer/signing.py
+uniimente_aperture_issuer-0.1.0.dist-info/METADATA
+uniimente_aperture_issuer-0.1.0.dist-info/RECORD
+uniimente_aperture_issuer-0.1.0.dist-info/WHEEL
+uniimente_aperture_issuer-0.1.0.dist-info/top_level.txt

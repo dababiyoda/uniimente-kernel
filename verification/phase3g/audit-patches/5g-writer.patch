@@ -1,0 +1,48 @@
+diff --git a/substrate/v5.py b/substrate/v5.py
+index 24e3b6d..6acfd8e 100644
+--- a/substrate/v5.py
++++ b/substrate/v5.py
+@@ -235,6 +235,7 @@ COUNTER_NAMES = (
+     # can never arrive.
+     "CHILD_EDGES_RECONCILED_FROM_EVIDENCE",
+     "TERMINALS_WITH_UNRECONCILED_CHILDREN",
++    "LEGACY_TERMINAL_PROJECTION_DECISION_READS",
+     "SEARCH_CONTROLS_RECORDED",
+     "CLOSED_CHILD_EDGES",
+     "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME",
+@@ -1358,9 +1359,6 @@ class Unit:
+         # untouched here and are written only from an accepted child outcome.
+         # That is the separation -- a command is visible, and it settles
+         # nothing.
+-        o.search_edge_terminals.setdefault(t.edge_id, {
+-            "from_unit": t.from_unit, "to_unit": t.to_unit,
+-            "search_key": t.search_key, "outcomes": []})["outcomes"].append(t)
+         C.incr("SEARCH_CONTROLS_RECORDED")
+         return True
+ 
+@@ -1793,6 +1791,8 @@ class Unit:
+         admitted = self._admit_search(key, edge_id, allocation, sender, transport)
+         if admitted is not True:
+             return admitted
++        if o is not None:
++            C.incr("LEGACY_TERMINAL_PROJECTION_DECISION_READS")
+         if o is not None and edge_id in o.search_edge_terminals:
+             # Exact replay of an edge already answered: no reprocessing, no
+             # second terminal, and CRUCIALLY no second refund. Returning the
+@@ -2370,6 +2370,7 @@ class Unit:
+         if o is None:
+             return
+         for edge in sorted(node["children_outstanding"]):
++            C.incr("LEGACY_TERMINAL_PROJECTION_DECISION_READS")
+             rec = o.search_edge_terminals.get(edge)
+             if rec is None or not rec["outcomes"]:
+                 continue                    # no evidence: it stays open
+@@ -2711,6 +2712,8 @@ class Unit:
+     def replay_search_edge(self, key: SearchKey, edge_id: str) -> None:
+         """Exact replay of an already-answered edge is a no-op."""
+         o = self._organ
++        if o is not None:
++            C.incr("LEGACY_TERMINAL_PROJECTION_DECISION_READS")
+         if o is not None and edge_id in o.search_edge_terminals:
+             return
+         self.deliver_search(key, edge_id, 0.0)

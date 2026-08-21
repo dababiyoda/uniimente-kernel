@@ -1,0 +1,100 @@
+{
+  "failures": [],
+  "findings": {
+    "closed_child_edges_counter_is_dead": true,
+    "counters_reading_zero_on_every_fixture": [
+      "CLOSED_CHILD_EDGES",
+      "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME",
+      "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE",
+      "CHILD_EDGES_RECONCILED_FROM_EVIDENCE",
+      "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES",
+      "OUTCOME_SLOT_OCCUPIED_BY_CONTROL",
+      "TERMINALS_WITH_UNRECONCILED_CHILDREN"
+    ],
+    "every_stranded_edge_is_an_adopted_edge": true,
+    "no_edge_is_terminal_without_child_evidence": true,
+    "no_unclassified_stranding": true,
+    "sparse_stranding_classes": {},
+    "stranding_is_real_at_sparse_density": false,
+    "the_lc2_fixture_contains_no_stranding": true
+  },
+  "fixtures": {
+    "n_auth=3 density=0.6": {
+      "children_outstanding_total": 0,
+      "counters": {
+        "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES": 0,
+        "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME": 0,
+        "OUTCOME_SLOT_OCCUPIED_BY_CONTROL": 0,
+        "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES": 0,
+        "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0
+      },
+      "edges_marked_terminal": 37,
+      "edges_opened": 37,
+      "edges_stranded": 0,
+      "edges_with_accepted_child_outcome": 37,
+      "nodes_with_children_outstanding": 0,
+      "parents_left_waiting": {},
+      "seed": 5,
+      "stranded_holding_only_a_control": 0,
+      "stranding_classes": {},
+      "stranding_detail": [],
+      "terminal_without_child_outcome": 0
+    },
+    "n_auth=4 density=1.0": {
+      "children_outstanding_total": 0,
+      "counters": {
+        "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES": 0,
+        "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME": 0,
+        "OUTCOME_SLOT_OCCUPIED_BY_CONTROL": 0,
+        "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES": 0,
+        "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0
+      },
+      "edges_marked_terminal": 6,
+      "edges_opened": 6,
+      "edges_stranded": 0,
+      "edges_with_accepted_child_outcome": 6,
+      "nodes_with_children_outstanding": 0,
+      "parents_left_waiting": {},
+      "seed": 0,
+      "stranded_holding_only_a_control": 0,
+      "stranding_classes": {},
+      "stranding_detail": [],
+      "terminal_without_child_outcome": 0
+    },
+    "n_auth=5 density=0.8": {
+      "children_outstanding_total": 0,
+      "counters": {
+        "CHILD_EDGES_RECONCILED_FROM_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES": 0,
+        "CLOSED_CHILD_EDGES_WITHOUT_CHILD_EVIDENCE": 0,
+        "CLOSED_CHILD_EDGES_WITH_ACCEPTED_CHILD_OUTCOME": 0,
+        "OUTCOME_SLOT_OCCUPIED_BY_CONTROL": 0,
+        "PARENT_CONTROLS_RECORDED_AS_CHILD_OUTCOMES": 0,
+        "TERMINALS_WITH_UNRECONCILED_CHILDREN": 0
+      },
+      "edges_marked_terminal": 5,
+      "edges_opened": 5,
+      "edges_stranded": 0,
+      "edges_with_accepted_child_outcome": 5,
+      "nodes_with_children_outstanding": 0,
+      "parents_left_waiting": {},
+      "seed": 0,
+      "stranded_holding_only_a_control": 0,
+      "stranding_classes": {},
+      "stranding_detail": [],
+      "terminal_without_child_outcome": 0
+    }
+  },
+  "instrument": "edge_liability_diagnose",
+  "negative_control": {
+    "baseline_stranded": 0,
+    "candidate": "suppress the first accepted outcome",
+    "detected": true,
+    "injected_stranded": 1
+  },
+  "verdict": "CORRECT"
+}

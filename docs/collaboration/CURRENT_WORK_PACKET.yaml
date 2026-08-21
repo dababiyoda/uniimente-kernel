@@ -1,0 +1,155 @@
+# EXTERNAL MEMORY. This file is the reload point for a session that loses its
+# context. It is not a status report for a human reader: it exists so the next
+# pass can rebuild state from the repository instead of from a summary.
+#
+# Reload procedure:
+#   git log --oneline -12
+#   python -m pytest -q -p no:randomly
+#   python verification/phase3g/adopted_edge_return_negative_control.py --verify-results
+#   python verification/phase3g/prearrival_adversarial_twin.py --verify-results
+#   cd verification/phase3g && sha256sum -c CHECKSUMS.txt
+#   read verification/phase3g/SESSION_EXECUTION_LEDGER.json
+work_packet:
+  as_of: '2026-08-07'
+  branch: claude/uniimente-repo-audit-jpytcy
+  pull_request: 66
+  continuation_issue: 67
+  base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+  phase: 3G lifecycle completion (LC series), under the long-batch execution
+    authorization
+
+  authorization:
+    scope: uniimente-kernel only
+    forbidden:
+    - merge any PR, or mark any PR ready for review
+    - deploy, modify main, force-push over another writer
+    - enable production credentials or call real external adapters
+    - move money, create wallets or tokens
+    - publish public content, contact any person or institution
+    - execute real legal or financial commitments
+    - run Gate F, Gate G or R8
+    - mutate DALEOBANKS, WealthMachineIntelligence, PumpStation, build-your-own-x
+    - grant authority to a developmental component
+    - create a second Constitution, identity root, authority root, lifecycle
+      truth store or consequence gate
+    - weaken 2D sender-owned ingress
+    - use a compatibility projection as decision authority
+    - remove a test merely because it is difficult
+    - convert UNKNOWN into PASS through a silent instrument
+    everything_new_is: SANDBOX / SIMULATED / PROPOSED. Nothing becomes externally LIVE.
+
+  hard_invariants:
+    UNAUTHORIZED_EXTERNAL_EFFECTS: 0
+    INHERITED_AUTHORITY_EVENTS: 0
+    SOLUTION_LEAKAGE_EVENTS: 0
+    TARGET_TOPOLOGY_LEAKAGE_EVENTS: 0
+
+  instrument_liveness_invariant:
+    rule: NO_OBSERVATION_WITHOUT_EXECUTION_PROOF
+    statement: An instrument without independently observable execution can
+      silently convert UNKNOWN into PASS.
+    corollary: Silence from a monitor is unknown state, not evidence of
+      unchanged state. A missed execution is FAILED_TO_CHECK, never an
+      implicit UNCHANGED.
+    instances_found_in_this_workstream: 8
+
+  verified_state:
+    local_suite: 924 passed, 1 skipped, 24 xfailed, 0 failed
+    ci_note: CI runs on the merge ref and may report MORE skips than local,
+      because the Git-ancestry pre-registration checks skip under a shallow
+      checkout. Do not reconcile the two into one number.
+    formation_invariant: 16 events / 1012 messages
+    checksum_manifest: verification/phase3g/CHECKSUMS.txt, 36 entries, all OK
+    runtime_last_changed: NC-3 (causal need closure; was byte-identical to bc13bc3 until then)
+
+  gates:
+    F: UNMEASURED
+    G: UNMEASURED
+    R8: PROHIBITED
+
+  # See SESSION_EXECUTION_LEDGER.json for per-item status, commits and evidence.
+  ladder:
+    1: Complete every substantive Phase 3G lifecycle mechanism
+    2: Remove the unexplained widening skip
+    3: Investigate and disposition the inherited lexical-ordering defect
+    4: Development-freeze and R8-readiness packages
+    5: Five-repository UNIIMENTE contract audit
+    6: Stacked draft PR A -- Developmental Candidate Envelope
+    7: Stacked draft PR B -- Sandbox Reality Covenant vertical slice
+    8: Stacked draft PR C -- Founder Cockpit read model
+
+  invalid_stopping_reasons:
+  - natural handoff point
+  - the session has run long
+  - I should stop before context runs out
+  - this is work for another session
+  on_context_pressure: finish the current atomic commit, push it, update this
+    packet and the ledger, reload state from the repository, continue.
+
+# ---------------------------------------------------------------------------
+# Superseded packet, preserved verbatim. Gate D / PR #56 era. Retained under
+# the preservation rule: a work packet is a versioned institutional object and
+# the past is not overwritten.
+# ---------------------------------------------------------------------------
+superseded:
+- work_packet:
+    as_of: '2026-07-28'
+    accepted_architecture: proof_carrying_authorization / reality_aperture
+    evidence_states:
+      architecture_proven: true
+      package_proven: true
+      shadow_organ_proven: true
+      production_deployment_proven: false
+      note: These are DIFFERENT states. Do not compress them into 'working'.
+      reproducible_release_proven: true
+    gates:
+      A: CLOSED
+      B: CLOSED
+      C_SANDBOX: CLOSED
+      C_ORGAN_SHADOW: CLOSED
+      D: CLOSED
+    single_bottleneck_metric:
+      name: REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES
+      baseline: 0
+      result: 1
+      target: 1
+      evidence: fresh --no-local clones at pinned commits; byte-identical wheels; 605 kernel; 22 organ;
+        capsule regenerated
+    files_inspected_this_pass:
+    - aperture/*
+    - aperture_issuer/*
+    - authority/canonical-authority.yaml
+    - scripts/ci/check_authority_singleton.py
+    - DALEOBANKS/services/ledger.py
+    - DALEOBANKS/services/constitution.py
+    - DALEOBANKS/config.py
+    verified_evidence:
+      kernel_tests: 605
+      daleobanks_shadow_tests: 22 passed, 1 skipped
+      kernel_ci_checks_green: 4
+      daleobanks_ci_runs: 0
+      client_wheel_excludes_issuer: true
+      legacy_unreachable_from_client_only_env: true
+      canonical_manifest_sha256: 0f35652924039a6e977d2e735e8af4c6273ce89116cc9d5f9e7f3d5abe83dcc2
+    rejected_packaging_geometries:
+      one_package_internal_boundaries: conventions, not boundaries; issuer bytes ship to organs
+      core_plus_optional_extra: extras add DEPENDENCIES not modules; issuer ships regardless
+      schemas_plus_local_implementations: every organ reimplementing verification is a second government
+        by divergence
+    surviving_dissent:
+    - revocation window is real and unsolved
+    - capsule reproducibility claimed for the build, not yet for the capsule
+    - no production deployment evidence of any kind
+    repository_ownership:
+      uniimente-kernel: aperture, aperture_issuer, manifest, CI, capsule
+      DALEOBANKS: governance/aperture_shadow.py, shadow tests, aperture-shadow CI
+    rollback: delete both branches; main untouched in both repositories
+    next_model_assignment: 'Gate D is closed. Phase 2 (Proof-Carrying Organogenesis) was NOT started: no
+      candidate architectures generated, no mechanism cards extracted, no Organ A/B experiment built, Gate
+      E not created. Begin there on a NEW branch agent/proof-carrying-organogenesis-v1. Do not mix it into
+      PR #56.'
+    next_single_bottleneck_metric:
+      name: GOVERNED_ALTERNATIVE_TOPOLOGY_RECOVERIES
+      baseline: 0
+      target: 1
+      status: NOT STARTED - Phase 2 of the current execution order was not begun

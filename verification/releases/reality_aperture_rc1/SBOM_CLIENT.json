@@ -1,0 +1,20 @@
+{
+  "name": "uniimente-aperture-client",
+  "version": "0.1.0",
+  "sha256": "faccfd0b9b7a40ec6e9d8d7090390d3a0c0c61a89c62f10f6bfc7eb6ddbb3aa9",
+  "content_hash": "652a86c59d07209ecef48f68bc699645a6f0d4e5c9c7ec552bba071e6fbf251c",
+  "files": 13,
+  "license": "Proprietary",
+  "dependencies": [
+    {
+      "name": "cryptography",
+      "spec": ">=41.0",
+      "license": "Apache-2.0 OR BSD-3-Clause"
+    },
+    {
+      "name": "pyyaml",
+      "spec": ">=6.0",
+      "license": "MIT"
+    }
+  ]
+}

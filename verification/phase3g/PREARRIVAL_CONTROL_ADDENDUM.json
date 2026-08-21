@@ -1,0 +1,182 @@
+{
+  "addendum_id": "phase3g-pa1-prearrival-control",
+  "title": "Authenticated parent control before canonical search adoption",
+  "created_at": "2026-08-03T00:00:00Z",
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso Lopez",
+  "approval": {
+    "status": "approved",
+    "authority": "authorized_human",
+    "source": "ChatGPT project message approving the implementation plan conditional on full-corpus verification and the intended full egregore",
+    "date": "2026-08-03"
+  },
+  "lineage": {
+    "repository": "dababiyoda/uniimente-kernel",
+    "pull_request": 66,
+    "pinned_parent_head": "cd3f5114dc39027ce662760aa17a95a65837c3fa",
+    "continuation_issue": 67,
+    "diagnosis": "PA-0/PA-0B",
+    "diagnosed_classification": "SILENT_LOSS",
+    "next_stage": "PA-2 design, PA-3 minimal runtime, PA-4 marker activation, PA-5 adversarial twin"
+  },
+  "inspection_truth": {
+    "documents_inspected_completely": [
+      {
+        "path": "project_sources/01-DOCTRINE.txt",
+        "sha256": "be509f5718de7471809aaf287e9763412316c7003dc29157d5c44b94e94cde4f"
+      },
+      {
+        "title": "Proof to Settlement Egregore",
+        "pages": 22,
+        "sha256": "c5a4dba7528968f6e557a1e92602c6a66d2002d8a5301f12be18e2a152f7ab26"
+      },
+      {
+        "title": "UNIIMENTE Reality Compiler Blueprint",
+        "pages": 21,
+        "sha256": "f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8"
+      },
+      {
+        "title": "Be accumulative and repeat what you just did",
+        "pages": 4,
+        "sha256": "d6b2eafc0b537781fc0890a6e3fafe9047f49f3f2b31c94eb6f59d6958df39e6"
+      },
+      {
+        "title": "Architectural Blueprint: Autonomous Digital Egregore (ADE-1)",
+        "pages": 8,
+        "sha256": "10e4a7126b3b73c06e9fb25ba67d86dda20098e23177da5b2a8843c5e6c44ef3"
+      }
+    ],
+    "chat_context_inspected": [
+      "Injected ARTIFICIAL EGGREGOR UNIIMENTE project conversation record and cumulative memory, cutoff 2026-08-03 UTC",
+      "Current Codex-thread approval, approved plan, and outside-thread continuation messages",
+      "Personal Context searches for UNIIMENTE constitutional authority, full target state, GitHub continuation, and prohibited autonomy concepts"
+    ],
+    "repository_evidence_inspected": [
+      "PR #66 metadata and changed-file inventory at the pinned head",
+      "Issue #67 and its PA-0/PA-0B checkpoint comment",
+      "substrate/v5.py and relevant active/strict-xfail tests",
+      "Phase 3G immutable evaluation manifest, checksum manifest, ancestry checks, diagnosis, workflow, and dependency manifest"
+    ],
+    "unavailable": [
+      "Raw project-chat transcripts not surfaced to this turn beyond the injected project record and Personal Context retrieval",
+      "A native authenticated git checkout; GitHub connector evidence is authoritative and CI will execute the full repository"
+    ]
+  },
+  "founder_intent": {
+    "active_requirements": [
+      "Continue from the verified PR #66 hold point toward the full lawful UNIIMENTE egregore, not an isolated component demo.",
+      "Begin with the named pre-arrival control bottleneck and preserve preregistration, negative evidence, one source of truth, and explicit authority.",
+      "Connect the developmental substrate upward to the constitutional Kernel and ultimately to proof-to-settlement rails, organs, Founder Cockpit, and governed Venture Cells."
+    ],
+    "constitutional_invariants": [
+      "Models reason. Agents propose. Authorized humans decide. Only the Kernel may permit external consequences.",
+      "UNAUTHORIZED_EXTERNAL_EFFECTS remains zero.",
+      "No model, agent, organ, wallet, or developmental mechanism may authorize its own expansion, money movement, deployment, or external effect.",
+      "Simulation, sandbox, proposal, and live authority remain explicitly separated.",
+      "Negative, conflicting, withdrawn, and inconclusive evidence remains preserved."
+    ],
+    "historical_or_exploratory_not_executable": [
+      "sovereign machine intent",
+      "immutable self-preservation",
+      "autonomous treasury or wallet control",
+      "self-authorized self-modification",
+      "automatic on-chain trading, minting, staking, or reward distribution",
+      "pseudo-conscious, mystical, legal-person, or independent-representative claims"
+    ],
+    "deeper_control_layer": "Authenticated proof and lifecycle truth must precede consequence; transport arrival may not manufacture authority and emission alone may not count as delivery."
+  },
+  "frozen_test_contract": {
+    "path": "tests/unit/test_substrate_v5_prearrival_controls.py",
+    "sha256_with_strict_markers": "0648a9c3d1a0862608bbca0e5f3d97989b7e602a6ad949ca147e8f92b045e531",
+    "activation_marker_line": "@prearrival",
+    "strict_marker": "pytest.mark.xfail(strict=True)",
+    "expected_initial_result": "15 xfailed and zero XPASS",
+    "node_ids": [
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_real_outbox_reordering_applies_without_sender_replay",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_legitimate_prearrival_control_is_held_without_premature_mutation",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_held_control_applies_exactly_once_after_adoption",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_exact_replay_before_adoption_is_inert_and_counted",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_exact_replay_after_adoption_is_inert_and_counted",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_forged_sender_is_rejected_and_paired_legitimate_control_is_held",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_wrong_search_key_cannot_allocate_pending_state",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_probe_for_another_destination_cannot_allocate_pending_state",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_wrong_claimed_source_cannot_mark_a_control_held",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_wrong_claimed_receiver_cannot_mark_a_control_held",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_child_outcome_kind_in_parent_direction_is_rejected",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_first_full_command_identity_wins_a_same_kind_conflict",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_repeated_conflicts_are_counted_but_retained_state_is_bounded",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_pending_state_is_isolated_by_edge_and_requires_actual_delivery",
+      "tests/unit/test_substrate_v5_prearrival_controls.py::test_failed_context_gate_preserves_hold_until_a_valid_adoption"
+    ]
+  },
+  "transport_reordering_procedure": [
+    "Create the sender-owned probe with the exact edge, SearchKey, allocation, source, and destination.",
+    "Capture the real __search__ tuple and Terminal from the sender Unit outbox.",
+    "Deliver the Terminal first through Unit.step with the actual immediate sender.",
+    "Deliver the original search tuple second through Unit.step without replaying the Terminal.",
+    "Require one hold, one application, no orphan counter, no duplicate application, and no proposal or child expansion before the held command closes the new node."
+  ],
+  "non_vacuity_controls": [
+    "A forged sender using the same full Terminal is rejected while the paired legitimate sender is held.",
+    "Sender-side emission without receiver-side delivery does not apply on another edge.",
+    "A same-kind Terminal with a different reason is a full-identity conflict, not an exact replay.",
+    "Twenty-five authenticated conflicts move the conflict counter twenty-five times while retained conflict state remains one fingerprint.",
+    "A context-mismatched search creates no node and consumes no held control; the later valid search adopts and applies it."
+  ],
+  "state_bounds": {
+    "pending_registries": 0,
+    "canonical_pending_location": "Organ.search_edge_lifecycle[edge_id]",
+    "accepted_controls_retained_per_edge_max": 1,
+    "control_conflict_fingerprints_retained_per_edge_max": 1,
+    "replay_copies_retained": 0,
+    "cross_edge_reads_per_application": 0
+  },
+  "required_counters": [
+    "PREARRIVAL_CONTROLS_HELD",
+    "PREARRIVAL_CONTROLS_APPLIED",
+    "PREARRIVAL_CONTROL_REPLAYS",
+    "PREARRIVAL_CONTROL_CONFLICTS"
+  ],
+  "two_strengthening_passes": {
+    "pass_1": {
+      "finding": "The existing accepted_control is written at sender emission, so it cannot by itself prove receiver arrival.",
+      "strengthening": "Keep the full Terminal in the canonical lifecycle but add a scalar arrival state; only authenticated receiver delivery may move it to held.",
+      "disadvantages_preserved": [
+        "A held edge can remain unresolved if its search never arrives.",
+        "A special pending dictionary would be simpler to query but would duplicate lifecycle truth."
+      ]
+    },
+    "pass_2": {
+      "finding": "The arrival marker could still permit conflict growth, replay ambiguity, cross-edge application, or consumption by a failed context adoption.",
+      "strengthening": "Use full canonical Terminal identity, a one-fingerprint conflict bound, explicit replay counters, edge-local lookup only, commit-time revalidation, and delayed consumption until a valid context-bound node exists.",
+      "residual_risks": [
+        "No time-based garbage collection is added; bounded unresolved lifecycle state remains until a later separately preregistered retention policy.",
+        "The in-memory scheduler normally preserves search-before-control order; the proof boundary is adversarial transport reordering, not a scheduler rewrite."
+      ]
+    }
+  },
+  "pass_criteria": [
+    "All 15 frozen specifications pass without marker edits in the runtime commit.",
+    "The related provenance, direction, sealing, admission, completion, and projection suites do not regress.",
+    "No duplicate processing, forged acceptance, credit mutation before adoption, replay ambiguity, lifecycle divergence, second pending registry, or unbounded conflict retention occurs.",
+    "The marker-only activation commit removes exactly the 15 declared marker lines and changes no assertion or fixture.",
+    "The adversarial twin produces lifecycle, credit, message, and counter parity between normal and reversed transport after reconciliation."
+  ],
+  "kill_criteria": [
+    "Any design requires retaining unauthenticated input.",
+    "Any design requires a second pending queue or dictionary.",
+    "Any implementation applies a control on emission without receiver delivery.",
+    "Any implementation weakens SearchContext validation, sender-owned ingress, or command/outcome separation.",
+    "Any full-suite regression, unexpected XPASS before runtime, altered frozen assertion, duplicate application, or credit divergence stops the work."
+  ],
+  "explicitly_out_of_scope": [
+    "scheduler ordering changes",
+    "remaining eleven pre-existing strict xfails",
+    "Gate F measurement",
+    "Gate G measurement",
+    "R8",
+    "PR promotion or merge",
+    "deployment or live external effects",
+    "wallet, treasury, self-preservation, or self-modification capabilities"
+  ]
+}

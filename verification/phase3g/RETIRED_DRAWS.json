@@ -1,0 +1,79 @@
+{
+  "note": "Machine-readable registry of held-out draws that may never again be used for a gate claim. The held-out runner must consult this file and refuse any retired draw id, fixture id or seed.",
+  "retired_draws": [
+    {
+      "draw_id": "phase3g-heldout-draw-1",
+      "manifest": "EVALUATION_MANIFEST.json",
+      "status": "CONTAMINATED",
+      "admissibility": "NON_ADMISSIBLE",
+      "reusable_for_gate_claims": false,
+      "retired_on": "2026-07-29",
+      "retired_because": "Run before implementation freeze by an unauthorised invocation. run_phase3g.py took a positional cohort argument; the flag form '--cohorts development' matched no known cohort and fell through to a default of {development, heldout}, spending the entire draw. See HELDOUT_DISCLOSURE.md.",
+      "evidence_preserved": [
+        "PREMATURE_HELDOUT_RUN_2026-07-29.json",
+        "PREMATURE_HELDOUT_PAIRED_2026-07-29.json"
+      ],
+      "exposed_fixture_ids": [
+        "single_input_chain_break",
+        "join_arm_break_with_working_sibling",
+        "shared_ancestor_two_consumers",
+        "deep_shared_ancestor",
+        "isolated_supplier_with_working_sibling",
+        "costly_supplier_with_working_sibling",
+        "semantic_fault_with_working_sibling",
+        "semantic_fault_no_working_sibling",
+        "two_simultaneous_breaks_different_causes",
+        "no_valid_replacement"
+      ],
+      "exposed_seed_ranges": {
+        "gate_f": "4100-4119",
+        "gate_g": "4200-4219",
+        "mixed": "4300-4319",
+        "resilience": "4400-4411",
+        "no_replacement": "4500-4507",
+        "paired": "4600-4611"
+      },
+      "exposed_episode_count": 128,
+      "exposed_paired_interventions": 12
+    }
+  ],
+  "spent_draws": [],
+  "rules": [
+    "A retired draw id may never instantiate a gate run.",
+    "A retired fixture id may not appear in a replacement draw, including under a new name. A renamed copy of an exposed structure is still exposed.",
+    "A retired seed may not be reused for any held-out cohort.",
+    "Development-cohort seeds are not held out and are unaffected."
+  ],
+  "reclassified_cohorts": [
+    {
+      "cohort": "development",
+      "manifest": "EVALUATION_MANIFEST.json",
+      "episodes": 48,
+      "seeds": "4000-4047",
+      "status": [
+        "DIAGNOSTIC",
+        "STRUCTURALLY_CONFOUNDED_FOR_RESTORATION_FREEZE",
+        "NON_ADMISSIBLE_FOR_THE_41_OF_48_FREEZE_BAR"
+      ],
+      "reclassified_on": "2026-07-29",
+      "reason": "The fixture is _spine x 3 + _tail(2): three PX producers but only two AUTH producers, while reconcile requires two DISTINCT AUTH inputs. Episodes whose victim is an authorise unit have zero eligible replacements after sibling exclusion, so correct behaviour is bounded escalation, not restoration. An all-restoration freeze bar therefore scores correct behaviour as failure.",
+      "not_done": "Bounded escalation is NOT retroactively counted as restoration. The 41/48 threshold is unchanged and moves to a restoration-eligible cohort per DEVELOPMENT_PROTOCOL_V2.md.",
+      "evidence_preserved_unchanged": [
+        "DEVELOPMENT_RESULTS_R1.json",
+        "DEVELOPMENT_RESULTS_R2.json",
+        "DEVELOPMENT_RESULTS_R3.json",
+        "DEVELOPMENT_RESULTS_R3b_b529d58.json",
+        "DEVELOPMENT_RESULTS_R4.json",
+        "DEVELOPMENT_RESULTS_R5.json",
+        "DEVELOPMENT_RESULTS_R5_REPRODUCED.json",
+        "RESTORATION_FAILURE_TAXONOMY.json",
+        "RESTORATION_FAILURE_TAXONOMY_V2.json"
+      ],
+      "still_valid_evidence_about": [
+        "mechanism behaviour under 14 damage classes",
+        "the fixture-capacity defect itself",
+        "locality, authority and independence containment"
+      ]
+    }
+  ]
+}

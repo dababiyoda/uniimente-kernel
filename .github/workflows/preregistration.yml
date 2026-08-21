@@ -1,0 +1,55 @@
+name: Pre-registration ancestry
+# A hash inside a file proves nothing about ordering. This asserts from the
+# COMMIT GRAPH that the evaluation manifest was committed before any results.
+on: [pull_request, workflow_dispatch]
+jobs:
+  ancestry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Manifest commit must precede results commit
+        run: |
+          M=$(git log --diff-filter=A --format=%H -- verification/phase3c/EVALUATION_MANIFEST.json | tail -1)
+          R=$(git log --format=%H -1 -- verification/phase3c/PHASE3C_RESULTS.json)
+          echo "manifest added in: $M"
+          echo "results committed in: $R"
+          if [ -z "$R" ]; then echo "no results yet - nothing to check"; exit 0; fi
+          git merge-base --is-ancestor "$M" "$R" \
+            && echo "OK: manifest is an ancestor of results" \
+            || { echo "FAIL: results not descended from the manifest commit"; exit 1; }
+      - name: Phase 3D pre-registration
+        # Stronger than the inline check above: also asserts the manifest commit
+        # touched NOTHING but the manifest, and that the manifest has not been
+        # edited since. Skips cleanly on histories without the Phase 3D files.
+        run: python3 scripts/ci/check_phase3d_preregistration.py
+      - name: Phase 3E pre-registration
+        run: python3 scripts/ci/check_phase3e_preregistration.py
+      - name: Phase 3F pre-registration
+        run: python3 scripts/ci/check_phase3f_preregistration.py
+      - name: Phase 3G pre-registration
+        run: python3 scripts/ci/check_phase3g_preregistration.py
+      - name: Phase 3G pre-arrival control pre-registration
+        run: python3 scripts/ci/check_phase3g_prearrival_preregistration.py
+      - name: Phase 3G pre-arrival adversarial twin
+        run: |
+          python3 verification/phase3g/prearrival_adversarial_twin.py --verify-results > /dev/null
+          python3 verification/phase3g/prearrival_adversarial_twin.py --negative-control > /dev/null
+      # The LC-1 adopted-edge return negative control is NOT run here. This job
+      # is deliberately dependency-free -- it asserts from the commit graph and
+      # runs only stdlib scripts -- and that control imports the pytest-based
+      # test module so it shares one oracle with the test instead of mirroring
+      # it. It runs in `canonical-ci.yml` job 1, which installs
+      # requirements-dev.txt. Installing pytest here to reach it would couple an
+      # ancestry check to the test toolchain for no gain.
+      - name: Phase 3G evidence checksums
+        # The manifest existed and verified nothing, because nothing ran it. It
+        # sat stale from 1d7349c while DEVELOPMENT_RESULTS.json was rewritten
+        # seven times. An integrity manifest nobody executes is a claim.
+        working-directory: verification/phase3g
+        run: sha256sum -c CHECKSUMS.txt
+      - name: Phase 3G checksum coverage
+        # Executing the manifest is necessary and not sufficient: deleting a
+        # line is the cheapest way to make the step above pass. Coverage must
+        # be monotonic against the merge base.
+        run: python3 scripts/ci/check_phase3g_checksum_coverage.py

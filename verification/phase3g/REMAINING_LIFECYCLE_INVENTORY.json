@@ -1,0 +1,185 @@
+{
+  "ci_suite_note": "CI runs on the merge ref and may show additional skips; the ancestry/pre-registration checks skip under a shallow checkout. Local and CI compositions are recorded separately and MUST NOT be collapsed into one number.",
+  "commands": [
+    "python -m pytest -q -rxXs -p no:randomly",
+    "python -m pytest -q -p no:randomly --runxfail --tb=line <node-id>"
+  ],
+  "head": "ba75a1f57013594be7333543e998e3ad65d8a189",
+  "local_suite": {
+    "failed": 0,
+    "passed": 901,
+    "skipped": 1,
+    "xfailed": 11
+  },
+  "method": "real pytest node IDs executed individually under --runxfail --tb=line; no mirrored fixtures",
+  "not_established": [
+    "No runtime change is authorized by this commit and none was made.",
+    "Owning-mechanism assignments are HYPOTHESES with stated probabilities, not findings.",
+    "Gate F UNMEASURED",
+    "Gate G UNMEASURED",
+    "R8 PROHIBITED"
+  ],
+  "phase": "LC-0",
+  "skips": [
+    {
+      "active_skip_line": 528,
+      "classification": "FIXTURE_DEBT_OR_RUNTIME_DEBT_UNRESOLVED",
+      "line": 516,
+      "node_id": "tests/unit/test_substrate_v5_distinct_replacement.py::test_widening_requires_the_whole_round_to_have_completed",
+      "note": "two skip points exist; only 'no branches were opened' fires. Whether the canonical Single-Flight path lacks equivalent widening is NOT yet determined.",
+      "reason": "no branches were opened",
+      "second_skip_point": "line 525: 'reopen did not create a need'"
+    }
+  ],
+  "structural_findings": [
+    "#6 and #7 are plausibly ONE fault seen twice: a semantic success counter that increments before the canonical lifecycle accepts the corresponding outcome. CYCLE_EDGES_CLOSED fires with no recorded outcome; F reports a fully explored wave as a budget shortfall. LC-4/5/6 may be one mechanism, not three.",
+    "#4 names a counter that does not exist, so it is currently UNFALSIFIABLE. Under the instrument-liveness rule that makes it the weakest item in the set - a specification no runtime can satisfy is not a pending feature.",
+    "#3's failure message IS a non-vacuity guard firing. The discipline is working; LC-2 must produce real closed child edges before its ratio means anything.",
+    "#8 and #10 fail on their own positive controls (assert 0 >= 1; 'correlated only at the root'), so both are fixture-debt suspects before they are runtime defects."
+  ],
+  "xfails": [
+    {
+      "assertion_line": 172,
+      "candidate_owning_mechanism": "LC-2 edge-scoped liability",
+      "classification_confidence": "high",
+      "exact_failure": "assert 1 == 0",
+      "file": "tests/unit/test_substrate_v5_command_completion.py",
+      "first_causal_divergence": "one applied control has no child-owned completion",
+      "marker": "completion",
+      "node_id": "tests/unit/test_substrate_v5_command_completion.py::test_every_applied_control_receives_a_child_owned_completion",
+      "non_vacuity_witness": "PARENT_CONTROLS_APPLIED > 0 with a nonzero shortfall",
+      "runtime_defect_probability": 0.85,
+      "test_defect_probability": 0.15
+    },
+    {
+      "assertion_line": 328,
+      "candidate_owning_mechanism": "LC-2 edge-scoped liability",
+      "classification_confidence": "high",
+      "exact_failure": "1 coalesced inbound edge(s) were never closed on their own edge",
+      "file": "tests/unit/test_substrate_v5_command_completion.py",
+      "first_causal_divergence": "a coalesced alias never received its own closure",
+      "marker": "completion",
+      "node_id": "tests/unit/test_substrate_v5_command_completion.py::test_every_coalesced_inbound_edge_closes_on_its_own_edge",
+      "non_vacuity_witness": "the test asserts coalesced edges exist before dividing",
+      "runtime_defect_probability": 0.85,
+      "test_defect_probability": 0.15
+    },
+    {
+      "assertion_line": 471,
+      "candidate_owning_mechanism": "LC-2 edge-scoped liability",
+      "classification_confidence": "medium",
+      "exact_failure": "no child edge was closed at all, so the ratio below has no denominator and would be vacuously satisfied",
+      "file": "tests/unit/test_substrate_v5_control_outcome_separation.py",
+      "first_causal_divergence": "ZERO closed child edges: the guard refuses to pass vacuously",
+      "marker": "separation",
+      "node_id": "tests/unit/test_substrate_v5_control_outcome_separation.py::test_every_closed_child_edge_on_a_live_repair_carries_child_evidence",
+      "non_vacuity_witness": "the assertion IS the non-vacuity witness and it is what fires",
+      "runtime_defect_probability": 0.75,
+      "test_defect_probability": 0.25
+    },
+    {
+      "assertion_line": 117,
+      "candidate_owning_mechanism": "LC-3 projection-divergence honesty",
+      "classification_confidence": "high",
+      "exact_failure": "the runtime defines no CANONICAL_LIFECYCLE_PROJECTION_DIVERGENCES counter, so the behaviour it names cannot be measured and this specification cannot be satisfied",
+      "file": "tests/unit/test_substrate_v5_control_outcome_separation.py",
+      "first_causal_divergence": "the named counter DOES NOT EXIST; unfalsifiable as written",
+      "marker": "separation",
+      "node_id": "tests/unit/test_substrate_v5_control_outcome_separation.py::test_the_canonical_lifecycle_and_its_projection_cannot_diverge",
+      "non_vacuity_witness": "none possible until the counter exists",
+      "runtime_defect_probability": 0.2,
+      "test_defect_probability": 0.8
+    },
+    {
+      "assertion_line": 136,
+      "candidate_owning_mechanism": "LC-2 edge-scoped liability",
+      "classification_confidence": "high",
+      "exact_failure": "no lifecycle record for edge e/sep/coal/1",
+      "file": "tests/unit/test_substrate_v5_control_outcome_separation.py",
+      "first_causal_divergence": "the first coalesced inbound edge has no lifecycle record at all",
+      "marker": "separation",
+      "node_id": "tests/unit/test_substrate_v5_control_outcome_separation.py::test_two_inbound_edges_coalescing_to_one_node_close_separately",
+      "non_vacuity_witness": "requires two real inbound edges",
+      "runtime_defect_probability": 0.8,
+      "test_defect_probability": 0.2
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-5A evidence-bound terminal commit",
+      "classification_confidence": "high",
+      "exact_failure": "CYCLE_EDGES_CLOSED fired but no edge recorded the outcome",
+      "file": "tests/unit/test_substrate_v5_single_flight_echo.py",
+      "first_causal_divergence": "SUCCESS COUNTER INCREMENTS WITHOUT ACCEPTED EVIDENCE",
+      "marker": "echo",
+      "node_id": "tests/unit/test_substrate_v5_single_flight_echo.py::test_B_an_actual_cycle_is_closed_exactly_once",
+      "non_vacuity_witness": "the counter firing is itself the witness that the path executed",
+      "runtime_defect_probability": 0.9,
+      "test_defect_probability": 0.1
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-5B local frontier remainder",
+      "classification_confidence": "high",
+      "exact_failure": "a fully explored bounded wave was reported as a budget shortfall",
+      "file": "tests/unit/test_substrate_v5_single_flight_echo.py",
+      "first_causal_divergence": "genuine exhaustion MISCLASSIFIED as starvation",
+      "marker": "echo",
+      "node_id": "tests/unit/test_substrate_v5_single_flight_echo.py::test_F_unsatisfiable_join_proves_space_exhausted_once_for_the_root_key",
+      "non_vacuity_witness": "the wave is fully explored by construction",
+      "runtime_defect_probability": 0.85,
+      "test_defect_probability": 0.15
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-5B local frontier remainder",
+      "classification_confidence": "medium",
+      "exact_failure": "assert 0 >= 1",
+      "file": "tests/unit/test_substrate_v5_single_flight_echo.py",
+      "first_causal_divergence": "starvation fixture produced zero of its required positive observation",
+      "marker": "echo",
+      "node_id": "tests/unit/test_substrate_v5_single_flight_echo.py::test_G_search_credit_starvation_never_claims_no_replacement",
+      "non_vacuity_witness": "FIXTURE MAY BE VACUOUS: the positive control itself reads 0",
+      "runtime_defect_probability": 0.5,
+      "test_defect_probability": 0.5
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-1 Test H tests-only correction",
+      "classification_confidence": "high",
+      "exact_failure": "authorise.12 emitted 0 SearchOffer terminals for reconcile.13[0]:AUTH@2/reconcile.13:0:1; a node must emit exactly one",
+      "file": "tests/unit/test_substrate_v5_single_flight_echo.py",
+      "first_causal_divergence": "TEST DEFECT CONFIRMED FROM SOURCE: filters SearchCommitted, claims SearchOffer",
+      "marker": "echo",
+      "node_id": "tests/unit/test_substrate_v5_single_flight_echo.py::test_H_each_answered_node_returns_its_offer_through_its_adopted_edge",
+      "non_vacuity_witness": "answered nodes exist; the filter can never match",
+      "runtime_defect_probability": 0.05,
+      "test_defect_probability": 0.95
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-4 multi-hop routing fixture",
+      "classification_confidence": "high",
+      "exact_failure": "the accepted proposal was correlated only at the root, so multi-hop closure was never exercised",
+      "file": "tests/unit/test_substrate_v5_single_flight_live_path.py",
+      "first_causal_divergence": "FIXTURE DEBT: topology never produced a multi-hop proposal",
+      "marker": "live",
+      "node_id": "tests/unit/test_substrate_v5_single_flight_live_path.py::test_commit_and_cancel_reach_the_proposal_source_edge_multi_hop",
+      "non_vacuity_witness": "the assertion is the non-vacuity guard and it fires first",
+      "runtime_defect_probability": 0.15,
+      "test_defect_probability": 0.85
+    },
+    {
+      "assertion_line": null,
+      "candidate_owning_mechanism": "LC-8 lexical ordering (separate disposition)",
+      "classification_confidence": "high",
+      "exact_failure": "renaming units changed behaviour",
+      "file": "tests/unit/test_substrate_v5_inherited_lexical_ordering.py",
+      "first_causal_divergence": "formation depends on lexical unit-ID order at the R6 baseline",
+      "marker": "INHERITED_R6",
+      "node_id": "tests/unit/test_substrate_v5_inherited_lexical_ordering.py::test_unit_id_permutation_preserves_semantics",
+      "non_vacuity_witness": "permutation corpus is applied",
+      "runtime_defect_probability": 0.8,
+      "test_defect_probability": 0.2
+    }
+  ]
+}

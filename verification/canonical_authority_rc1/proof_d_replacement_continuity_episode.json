@@ -1,0 +1,16 @@
+{
+  "proof": "D - replacement organ continuity",
+  "implicit_inheritance_attempt": "workload_mismatch",
+  "posts_after_run": 1,
+  "posts_expected": 1,
+  "note": "exactly one post exists: the implicit-inheritance attempt produced no external effect, the explicit re-authorization produced one",
+  "explicit_reauthorization_status": "committed",
+  "old_certificate_still_bound_to_old_workload": true,
+  "lineage_preserved": {
+    "predecessor_workload": "spiffe://uniimente.internal/organ/daleobanks/workload/publisher-v1",
+    "successor_workload": "spiffe://uniimente.internal/organ/daleobanks/workload/publisher-v2",
+    "same_legal_principal": true,
+    "authority_inherited": false
+  },
+  "passed": true
+}

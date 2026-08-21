@@ -1,0 +1,4652 @@
+{
+  "summary": {
+    "frozen_implementation_sha": "40c1c1d342491ff9350624c4ec864822b40846f6",
+    "cohorts_run": [
+      "development"
+    ],
+    "HELD_OUT_EVENT_DRIVEN_LOCAL_SEMANTIC_REGENERATIONS": {
+      "n": 0,
+      "of": 0,
+      "denominator": "Gate F held-out only; Gate G is NOT combined",
+      "threshold": 17
+    },
+    "EVENT_DRIVEN_LOCAL_ACTIVATIONS_gate_f": {
+      "n": 0,
+      "of": 0
+    },
+    "HELD_OUT_SEMANTIC_RESTORATIONS_gate_f": {
+      "n": 0,
+      "of": 0
+    },
+    "GATE_G_CAUSAL_ESCAPES": {
+      "n": 0,
+      "of": 0,
+      "threshold": 15
+    },
+    "BOUNDARY_TRIGGERED_REPAIR_EVENTS": 0,
+    "SUPERVISOR_RESTART_EVENTS": 0,
+    "WHOLE_ORGAN_REVIEW_PASSES": 0,
+    "GLOBAL_REPAIR_SCANS": 0,
+    "UNIT_ENUMERATIONS_FOR_REPAIR": 0,
+    "DEVELOPMENTAL_PROVIDER_INDEX_READS": 0,
+    "evaluator_provider_index_reads": 91,
+    "STALE_DERIVATION_REUSE": 0,
+    "STALE_DERIVATIONS_REJECTED": 2,
+    "OVER_REFUSAL_EVENTS": 4,
+    "VOID_REGENERATION_EPISODES": {
+      "n": 0,
+      "of": 0,
+      "reasons": []
+    },
+    "INITIAL_TOPOLOGY_NORMALIZED_FORMS": 3,
+    "RECOVERED_TOPOLOGY_NORMALIZED_FORMS": 4,
+    "HELD_OUT_BLIND_CAUSAL_CLASS_ACCURACY": 0.0,
+    "HELD_OUT_BLIND_AFFECTED_ROLE_ACCURACY": 0.0,
+    "MIXED_FAILURE_CAUSAL_CLASS_ACCURACY": 0.0,
+    "diagnosed": 0,
+    "mixed_diagnosed": 0,
+    "RESILIENCE_TOLERATED": {
+      "n": 0,
+      "of": 0
+    },
+    "CORRECT_ESCALATIONS": {
+      "n": 0,
+      "of": 0
+    },
+    "REPAIR_AMPLIFICATION_MAX": 52.29,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "damage_classes_exercised": {
+      "supplier_disappearance": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "supplier_present_not_delivering": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "separated_communication_path": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "excessive_resource_cost": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "wrong_semantic_output": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "intermittent_delivery": {
+        "episodes": 4,
+        "observed": 4
+      },
+      "delayed_delivery": {
+        "episodes": 3,
+        "observed": 3
+      },
+      "expired_delivery_proof": {
+        "episodes": 3,
+        "observed": 3
+      },
+      "stale_supplier_return": {
+        "episodes": 3,
+        "observed": 0
+      },
+      "false_positive_suspicion": {
+        "episodes": 3,
+        "observed": 3
+      },
+      "conflicting_failure_evidence": {
+        "episodes": 3,
+        "observed": 3
+      },
+      "missing_failure_receipt": {
+        "episodes": 3,
+        "observed": 3
+      },
+      "repeated_failure_across_two_repairs": {
+        "episodes": 3,
+        "observed": 0
+      },
+      "supplier_returns_during_cooldown": {
+        "episodes": 3,
+        "observed": 0
+      }
+    },
+    "damage_classes_not_observed": [
+      "repeated_failure_across_two_repairs",
+      "stale_supplier_return",
+      "supplier_returns_during_cooldown"
+    ],
+    "development_success": {
+      "n": 27,
+      "of": 48
+    },
+    "paired_intervention": {
+      "pairs": 0,
+      "MATCHING_PROHIBITED_PROPOSALS_OBSERVED": 0,
+      "PROHIBITED_COMMITS_WITHOUT_CERTIFICATE": 0,
+      "PROHIBITED_COMMITS_WITH_CERTIFICATE": 0,
+      "ALTERNATIVE_SUCCESSFUL_COMMITS_WITH_CERTIFICATE": 0
+    },
+    "failures": []
+  },
+  "episodes": [
+    {
+      "episode": 0,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_disappearance",
+      "certificate": true,
+      "seed": 4000,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 374,
+      "repair_amplification": 22.0,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 1,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": true,
+      "seed": 4001,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 422,
+      "repair_amplification": 24.82,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 2,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "separated_communication_path",
+      "certificate": true,
+      "seed": 4002,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.14"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 50,
+      "repair_messages": 177,
+      "repair_amplification": 10.41,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.3",
+            "reconcile.10",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 3,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "excessive_resource_cost",
+      "certificate": true,
+      "seed": 4003,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.5",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "cost raised",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 66,
+      "repair_messages": 383,
+      "repair_amplification": 22.53,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "excessive_resource_cost",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 1,
+          "failure": "excessive_resource_cost",
+          "required_type": "PX",
+          "direct_supplier": "price.5",
+          "failed_derivation": [
+            "@env",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.5"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 1,
+          "failure": "excessive_resource_cost",
+          "required_type": "PX",
+          "direct_supplier": "price.5",
+          "failed_derivation": [
+            "@env",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.5"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 4,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "wrong_semantic_output",
+      "certificate": true,
+      "seed": 4004,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 381,
+      "repair_amplification": 22.41,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 5,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "intermittent_delivery",
+      "certificate": true,
+      "seed": 4005,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "flaky",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 402,
+      "repair_amplification": 23.65,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "intermittent_delivery",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12",
+            "price.8"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12",
+            "price.8"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 6,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "delayed_delivery",
+      "certificate": true,
+      "seed": 4006,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.3",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.7"
+      ],
+      "injection": "delayed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 61,
+      "repair_messages": 181,
+      "repair_amplification": 10.65,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.3",
+          "failed_derivation": [
+            "@env",
+            "receive.3"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.3"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 7,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "expired_delivery_proof",
+      "certificate": true,
+      "seed": 4007,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "proof expired",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 348,
+      "repair_amplification": 20.47,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "expired_delivery_proof",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.8",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.2",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 8,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "stale_supplier_return",
+      "certificate": true,
+      "seed": 4008,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "dissolved then revived",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 79,
+      "repair_messages": 519,
+      "repair_amplification": 30.53,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 9,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "false_positive_suspicion",
+      "certificate": true,
+      "seed": 4009,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.8",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12"
+      ],
+      "injection": "transient miss",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 73,
+      "repair_messages": 184,
+      "repair_amplification": 10.82,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "price",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.8",
+          "failed_derivation": [
+            "@env",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.8"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 10,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "conflicting_failure_evidence",
+      "certificate": true,
+      "seed": 4010,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.9"
+      ],
+      "injection": "two different causes",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 541,
+      "repair_amplification": 31.82,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": false,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 11,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "missing_failure_receipt",
+      "certificate": true,
+      "seed": 4011,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "receipts suppressed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 50,
+      "repair_messages": 342,
+      "repair_amplification": 20.12,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.11",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.10",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.10",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "dce40ea5d745",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 12,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "repeated_failure_across_two_repairs",
+      "certificate": true,
+      "seed": 4012,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "two successive breaks",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 362,
+      "repair_amplification": 21.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 13,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_returns_during_cooldown",
+      "certificate": true,
+      "seed": 4013,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.14"
+      ],
+      "injection": "returned during cooldown",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 49,
+      "repair_messages": 180,
+      "repair_amplification": 10.59,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.10",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "dce40ea5d745",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 14,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_disappearance",
+      "certificate": true,
+      "seed": 4014,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 328,
+      "repair_amplification": 19.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 15,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": true,
+      "seed": 4015,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 73,
+      "repair_messages": 600,
+      "repair_amplification": 35.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 16,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "separated_communication_path",
+      "certificate": true,
+      "seed": 4016,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.14"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 50,
+      "repair_messages": 204,
+      "repair_amplification": 12.0,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.10",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 17,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "excessive_resource_cost",
+      "certificate": true,
+      "seed": 4017,
+      "healthy_ok": true,
+      "initial_form": "2fc487d9a22b",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.2"
+      ],
+      "injection": "cost raised",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 77,
+      "repair_messages": 189,
+      "repair_amplification": 11.12,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "excessive_resource_cost",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.2",
+          "slot": 0,
+          "failure": "excessive_resource_cost",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.3"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 18,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "wrong_semantic_output",
+      "certificate": true,
+      "seed": 4018,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 386,
+      "repair_amplification": 22.71,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 19,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "intermittent_delivery",
+      "certificate": true,
+      "seed": 4019,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11"
+      ],
+      "injection": "flaky",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 53,
+      "repair_messages": 199,
+      "repair_amplification": 11.71,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "intermittent_delivery",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.11",
+          "slot": 0,
+          "failure": "intermittent_delivery",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.10",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 20,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "delayed_delivery",
+      "certificate": true,
+      "seed": 4020,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "delayed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 80,
+      "repair_messages": 513,
+      "repair_amplification": 30.18,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 21,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "expired_delivery_proof",
+      "certificate": true,
+      "seed": 4021,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.2",
+        "price.5"
+      ],
+      "injection": "proof expired",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 75,
+      "repair_messages": 381,
+      "repair_amplification": 22.41,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "expired_delivery_proof",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.2",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.6"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "price.5",
+          "slot": 0,
+          "failure": "expired_delivery_proof",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.6"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 22,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "stale_supplier_return",
+      "certificate": true,
+      "seed": 4022,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.13",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "dissolved then revived",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 50,
+      "repair_messages": 364,
+      "repair_amplification": 21.41,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.11",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.13",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.13",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.13"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.13",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.13",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.13"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "dce40ea5d745",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 23,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "false_positive_suspicion",
+      "certificate": true,
+      "seed": 4023,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.2",
+        "price.5",
+        "price.8"
+      ],
+      "injection": "transient miss",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 76,
+      "repair_messages": 197,
+      "repair_amplification": 11.59,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.2",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.0"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 24,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "conflicting_failure_evidence",
+      "certificate": true,
+      "seed": 4024,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "two different causes",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 4,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 2,
+      "events_dispatched": 3000,
+      "repair_messages": 810,
+      "repair_amplification": 47.65,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 4,
+      "evaluator_provider_index_reads": 4,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 25,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "missing_failure_receipt",
+      "certificate": true,
+      "seed": 4025,
+      "healthy_ok": true,
+      "initial_form": "2fc487d9a22b",
+      "victim": "verify.4",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.5"
+      ],
+      "injection": "receipts suppressed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 73,
+      "repair_messages": 171,
+      "repair_amplification": 10.06,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.5",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "LOW",
+          "direct_supplier": "verify.4",
+          "failed_derivation": [
+            "@env",
+            "receive.3",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.4"
+          ],
+          "uncertainty": [
+            "receive.3"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 26,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "repeated_failure_across_two_repairs",
+      "certificate": true,
+      "seed": 4026,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "two successive breaks",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 60,
+      "repair_messages": 346,
+      "repair_amplification": 20.35,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "price",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.3",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "a47c46cb8106",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 27,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_returns_during_cooldown",
+      "certificate": true,
+      "seed": 4027,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.5",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.9"
+      ],
+      "injection": "returned during cooldown",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 66,
+      "repair_messages": 176,
+      "repair_amplification": 10.35,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "price",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "PX",
+          "direct_supplier": "price.5",
+          "failed_derivation": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.5"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 28,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_disappearance",
+      "certificate": true,
+      "seed": 4028,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 83,
+      "repair_messages": 509,
+      "repair_amplification": 29.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.4",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        },
+        {
+          "at": "verify.7",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 29,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": true,
+      "seed": 4029,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.2",
+        "price.5",
+        "price.8"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 3,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 74,
+      "repair_messages": 611,
+      "repair_amplification": 35.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 3,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.2",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.3"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "price.5",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.3"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "price.8",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.3",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.3"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 30,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "separated_communication_path",
+      "certificate": true,
+      "seed": 4030,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 368,
+      "repair_amplification": 21.65,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.4",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.4",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "separated_communication_path",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.4",
+            "verify.7"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.6",
+            "verify.4",
+            "verify.7"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 31,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "excessive_resource_cost",
+      "certificate": true,
+      "seed": 4031,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "cost raised",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 389,
+      "repair_amplification": 22.88,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "excessive_resource_cost",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "excessive_resource_cost",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "excessive_resource_cost",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 32,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "wrong_semantic_output",
+      "certificate": true,
+      "seed": 4032,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 69,
+      "repair_messages": 344,
+      "repair_amplification": 20.24,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.8",
+            "receive.6",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.6",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 33,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "intermittent_delivery",
+      "certificate": true,
+      "seed": 4033,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "flaky",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 394,
+      "repair_amplification": 23.18,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "intermittent_delivery",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 34,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "delayed_delivery",
+      "certificate": true,
+      "seed": 4034,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "delayed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 64,
+      "repair_messages": 362,
+      "repair_amplification": 21.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.6",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.6",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.6",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 35,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "expired_delivery_proof",
+      "certificate": true,
+      "seed": 4035,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.5",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "proof expired",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 362,
+      "repair_amplification": 21.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "expired_delivery_proof",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 1,
+          "failure": "expired_delivery_proof",
+          "required_type": "PX",
+          "direct_supplier": "price.5",
+          "failed_derivation": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.5",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 1,
+          "failure": "expired_delivery_proof",
+          "required_type": "PX",
+          "direct_supplier": "price.5",
+          "failed_derivation": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.5",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 36,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "stale_supplier_return",
+      "certificate": true,
+      "seed": 4036,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.8",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.9"
+      ],
+      "injection": "dissolved then revived",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 74,
+      "repair_messages": 176,
+      "repair_amplification": 10.35,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "price",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "PX",
+          "direct_supplier": "price.8",
+          "failed_derivation": [
+            "@env",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.8"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 37,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "false_positive_suspicion",
+      "certificate": true,
+      "seed": 4037,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "receive.0",
+      "victim_class": "receive",
+      "direct_consumers": [
+        "verify.1",
+        "verify.4",
+        "verify.7"
+      ],
+      "injection": "transient miss",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 88,
+      "repair_messages": 182,
+      "repair_amplification": 10.71,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "delayed_delivery",
+      "inferred_capability_class": "receive",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "verify.1",
+          "slot": 0,
+          "failure": "delayed_delivery",
+          "required_type": "CLEAN",
+          "direct_supplier": "receive.0",
+          "failed_derivation": [
+            "@env",
+            "receive.0"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "receive.0"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "2fc487d9a22b",
+      "form_changed": true,
+      "success": true
+    },
+    {
+      "episode": 38,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "conflicting_failure_evidence",
+      "certificate": true,
+      "seed": 4038,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.13",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "two different causes",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 4,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 889,
+      "repair_amplification": 52.29,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 4,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "disburse.11",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.13",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "reconcile.13",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.13"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 39,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "missing_failure_receipt",
+      "certificate": true,
+      "seed": 4039,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "verify.1",
+      "victim_class": "verify",
+      "direct_consumers": [
+        "price.2"
+      ],
+      "injection": "receipts suppressed",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 75,
+      "repair_messages": 176,
+      "repair_amplification": 10.35,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "verify",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "price.2",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "LOW",
+          "direct_supplier": "verify.1",
+          "failed_derivation": [
+            "@env",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "verify.1"
+          ],
+          "uncertainty": [
+            "receive.0"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 40,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "repeated_failure_across_two_repairs",
+      "certificate": true,
+      "seed": 4040,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.12",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "two successive breaks",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 356,
+      "repair_amplification": 20.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12",
+            "price.5"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.12",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.12",
+            "price.5"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 41,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_returns_during_cooldown",
+      "certificate": true,
+      "seed": 4041,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "returned during cooldown",
+      "damage_class_observed": false,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 373,
+      "repair_amplification": 21.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": false,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9",
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.5",
+            "price.8",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9",
+            "price.2"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 42,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_disappearance",
+      "certificate": true,
+      "seed": 4042,
+      "healthy_ok": true,
+      "initial_form": "3cf5f449a80c",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "unit dissolved",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 365,
+      "repair_amplification": 21.47,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_disappearance",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "supplier_disappearance",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "receive.3",
+            "verify.1",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 43,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "supplier_present_not_delivering",
+      "certificate": true,
+      "seed": 4043,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.2",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12",
+        "authorise.9"
+      ],
+      "injection": "silent",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 366,
+      "repair_amplification": 21.53,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "supplier_present_not_delivering",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.2",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "authorise.12",
+          "slot": 0,
+          "failure": "supplier_present_not_delivering",
+          "required_type": "PX",
+          "direct_supplier": "price.2",
+          "failed_derivation": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.2",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 44,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "separated_communication_path",
+      "certificate": true,
+      "seed": 4044,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.8",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.12"
+      ],
+      "injection": "links cut",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 68,
+      "repair_messages": 184,
+      "repair_amplification": 10.82,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "separated_communication_path",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.12",
+          "slot": 1,
+          "failure": "separated_communication_path",
+          "required_type": "PX",
+          "direct_supplier": "price.8",
+          "failed_derivation": [
+            "@env",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "price.8"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 45,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "excessive_resource_cost",
+      "certificate": true,
+      "seed": 4045,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "price.8",
+      "victim_class": "price",
+      "direct_consumers": [
+        "authorise.9"
+      ],
+      "injection": "cost raised",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 1,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 186,
+      "repair_amplification": 10.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "excessive_resource_cost",
+      "inferred_capability_class": "price",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 1,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "authorise.9",
+          "slot": 1,
+          "failure": "excessive_resource_cost",
+          "required_type": "PX",
+          "direct_supplier": "price.8",
+          "failed_derivation": [
+            "@env",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "price.2",
+            "receive.0",
+            "verify.4"
+          ],
+          "distinguishing_refused": [
+            "price.8",
+            "verify.1"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    },
+    {
+      "episode": 46,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "wrong_semantic_output",
+      "certificate": true,
+      "seed": 4046,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "reconcile.10",
+      "victim_class": "reconcile",
+      "direct_consumers": [
+        "disburse.11",
+        "disburse.14"
+      ],
+      "injection": "corrupt",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 52,
+      "repair_messages": 410,
+      "repair_amplification": 24.12,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "wrong_semantic_output",
+      "inferred_capability_class": "reconcile",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": true,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "disburse.11",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "reconcile.10",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        },
+        {
+          "at": "disburse.14",
+          "slot": 0,
+          "failure": "wrong_semantic_output",
+          "required_type": "RECON",
+          "direct_supplier": "reconcile.10",
+          "failed_derivation": [
+            "@env",
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "reconcile.10",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [],
+          "distinguishing_refused": [
+            "reconcile.10"
+          ],
+          "uncertainty": [
+            "authorise.12",
+            "authorise.9",
+            "price.2",
+            "price.8",
+            "receive.0",
+            "verify.1"
+          ],
+          "had_working_sibling": false
+        }
+      ],
+      "recovered_form": "8545a37d85c9",
+      "form_changed": false,
+      "success": true
+    },
+    {
+      "episode": 47,
+      "cohort": "development",
+      "gate": null,
+      "held_out": false,
+      "fixture": "development",
+      "damage_class": "intermittent_delivery",
+      "certificate": true,
+      "seed": 4047,
+      "healthy_ok": true,
+      "initial_form": "8545a37d85c9",
+      "victim": "authorise.9",
+      "victim_class": "authorise",
+      "direct_consumers": [
+        "reconcile.10",
+        "reconcile.13"
+      ],
+      "injection": "flaky",
+      "damage_class_observed": true,
+      "semantic_loss": true,
+      "event_driven_local_activations": 2,
+      "boundary_triggered_repair_events": 0,
+      "supervisor_restart_events": 0,
+      "whole_organ_review_passes": 0,
+      "global_repair_scans": 0,
+      "unit_enumerations_for_repair": 0,
+      "developmental_provider_index_reads": 0,
+      "stale_derivations_rejected": 0,
+      "events_dispatched": 3000,
+      "repair_messages": 373,
+      "repair_amplification": 21.94,
+      "local_evidence_at_direct_consumer": true,
+      "inferred_class": "intermittent_delivery",
+      "inferred_capability_class": "authorise",
+      "blind_class_correct": true,
+      "blind_role_correct": true,
+      "semantic_restoration": false,
+      "stale_derivation_reuse": 0,
+      "over_refusal": 0,
+      "evaluator_provider_index_reads": 2,
+      "unauthorized_external_effects": 0,
+      "escalations": 0,
+      "refusal_evidence": [
+        {
+          "at": "reconcile.10",
+          "slot": 0,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        },
+        {
+          "at": "reconcile.13",
+          "slot": 1,
+          "failure": "intermittent_delivery",
+          "required_type": "AUTH",
+          "direct_supplier": "authorise.9",
+          "failed_derivation": [
+            "@env",
+            "authorise.9",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "working_sibling_derivations": [
+            "@env",
+            "authorise.12",
+            "price.2",
+            "price.5",
+            "receive.0",
+            "verify.1"
+          ],
+          "distinguishing_refused": [
+            "authorise.9"
+          ],
+          "uncertainty": [],
+          "had_working_sibling": true
+        }
+      ],
+      "success": false
+    }
+  ],
+  "paired": []
+}

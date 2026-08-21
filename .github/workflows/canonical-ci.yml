@@ -39,8 +39,57 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - name: Full unit and integration suite
         run: python -m pytest -q
+      # RUNS EVEN THOUGH THE SUITE ABOVE IS EXPECTED TO FAIL.
+      #
+      # Every specification on this branch is xfail(strict=True), so a spec that
+      # starts passing is reported as a FAILURE until its marker is removed in a
+      # reviewable commit. That makes the pytest step intentionally red, and a
+      # verifier step that only runs on success silently stops running the
+      # moment the discipline starts working. "Canonical CI ran" would then mean
+      # the unit suite produced the intended red signal and nothing more.
+      #
+      # The job still fails overall: `if: always()` changes what EXECUTES, not
+      # what the job concludes.
       - name: Institutional verifier V1-V5
+        if: always()
         run: python verifier/v2/verify.py
+      # LC-1. A corrected test that passes proves nothing on its own. This
+      # re-attacks it with three broken routing candidates and fails if any
+      # escapes, or if the unmodified runtime stops satisfying the oracle -- a
+      # negative control that fails against a runtime where everything fails is
+      # not evidence. It imports the test module so the attack and the test
+      # share one oracle and cannot drift apart, which is why it lives in this
+      # job rather than in the dependency-free ancestry job.
+      #
+      # `if: always()` for the same reason as the verifier above: the suite is
+      # expected to go red whenever a strict xfail starts passing, and a control
+      # that only runs on success stops running exactly when it is needed.
+      - name: Phase 3G adopted-edge return negative control
+        if: always()
+        run: python verification/phase3g/adopted_edge_return_negative_control.py --verify-results
+      # LC-2a. Fails if the recorded edge-liability diagnosis stops describing
+      # this runtime -- if the dense fixture starts stranding edges, if the
+      # sparse one stops, if CLOSED_CHILD_EDGES comes alive, or if the audit
+      # stops noticing a deliberately stranded edge. A diagnosis nothing
+      # re-executes decays into a claim the moment the runtime moves.
+      - name: Phase 3G edge-liability diagnosis
+        if: always()
+        run: python verification/phase3g/edge_liability_diagnose.py --verify-results
+      # NC-0. Fails if the generation-bound diagnosis stops describing this
+      # runtime -- if no open root is provably abandoned (empty denominator), or
+      # if restoring the live open need stops changing the verdict, which would
+      # mean the predicate is not reading the obligation generation at all.
+      - name: Phase 3G need-closure causal diagnosis
+        if: always()
+        run: python verification/phase3g/need_closure_diagnose.py --verify-results
+      # NC-4A/4B. Fails if a need-generation retirement stops being attributable
+      # to a cause, or if the denominator empties. It also records how many
+      # canonical roots are retired by LEGACY authority and whether corrupting
+      # the legacy ledger changes canonical repair -- both currently nonzero and
+      # FALSE respectively, which is the open defect this measures.
+      - name: Phase 3G root-retirement authority
+        if: always()
+        run: python verification/phase3g/root_retirement_authority.py --verify-results
 
   contracts:
     name: "2 · Contract schema references resolve"
@@ -64,8 +113,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: No second Constitution, Gate, identity or authority registry
-        run: python scripts/ci/check_authority_singleton.py
+      # The filename-counting singleton check was retired by founder
+      # Decision A and lives at scripts/ci/historical/ as provenance. It is
+      # deliberately NOT run: two machine checks must not express contradictory
+      # definitions of canonical authority.
+      # Added by RC1. The check above counts FILENAMES; this one checks the
+      # actual institutional invariant (one issuer, one protocol, zero organ
+      # -local issuers, zero active legacy authorizers) and reads the canonical
+      # manifest rather than its own list. The older check is deliberately NOT
+      # removed or rewritten here: a component must not alter its own approval
+      # requirements, and its proposed replacement is preserved for review.
+      - name: Canonical authority - one valid certificate issuer
+        run: |
+          pip install -r requirements-dev.txt
+          python scripts/ci/check_canonical_authority.py
 
   sealed:
     name: "4 · Developmental work stays sealed"

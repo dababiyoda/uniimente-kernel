@@ -1,0 +1,381 @@
+{
+  "ledger": "phase3g_session_execution",
+  "purpose": "Per-item execution record for the long-batch authorization. This is external memory: a session that loses context reloads from here plus CURRENT_WORK_PACKET.yaml, not from a prose summary. Every 'status' below is backed by a commit or an executable artifact, or it reads UNSTARTED.",
+  "branch": "claude/uniimente-repo-audit-jpytcy",
+  "pull_request": 66,
+  "continuation_issue": 67,
+  "base": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "as_of": "2026-08-07",
+  "execution_order": [
+    "LC-1",
+    "edge-scoped liability continuation",
+    "projection consistency disposition",
+    "deterministic multi-hop routing",
+    "evidence-bound cycle closure",
+    "genuine exhaustion / credit-starvation separation",
+    "widening activation",
+    "lexical-ordering disposition",
+    "development freeze",
+    "five-repository audit",
+    "stacked PR A",
+    "stacked PR B",
+    "stacked PR C"
+  ],
+  "items": [
+    {
+      "id": "LC-0",
+      "level": "1",
+      "title": "Exact remaining lifecycle inventory",
+      "status": "COMPLETE",
+      "commits": [
+        "bc13bc3"
+      ],
+      "evidence": [
+        "verification/phase3g/REMAINING_LIFECYCLE_INVENTORY.json",
+        "verification/phase3g/REMAINING_LIFECYCLE_INVENTORY.md"
+      ],
+      "result": "11 strict xfails enumerated by real pytest node id under --runxfail, each with first causal divergence, non-vacuity witness and stated test/runtime defect probabilities. Four structural findings recorded. No runtime or test file changed."
+    },
+    {
+      "id": "LC-1",
+      "level": "1A",
+      "title": "Adopted-parent-edge return: correct Test H",
+      "status": "COMPLETE",
+      "commits": [
+        "0b434ef",
+        "16019de"
+      ],
+      "evidence": [
+        "verification/phase3g/ADOPTED_EDGE_RETURN_DISPOSITION.md",
+        "verification/phase3g/ADOPTED_EDGE_RETURN_NEGATIVE_CONTROL.json",
+        "verification/phase3g/adopted_edge_return_negative_control.py"
+      ],
+      "disposition": "TEST DEFECT. LC-0 predicted test_defect_probability 0.95, confidence high. Prediction correct.",
+      "runtime_changed": false,
+      "node_id_before": "tests/unit/test_substrate_v5_single_flight_echo.py::test_H_each_answered_node_returns_its_offer_through_its_adopted_edge",
+      "node_id_after": "tests/unit/test_substrate_v5_single_flight_echo.py::test_H_each_answered_node_returns_its_proposal_through_its_adopted_edge",
+      "why_the_old_test_could_never_pass": [
+        "SearchCommitted is a PARENT CONTROL; the 2D rule forbids a child emitting one upward on its adopted parent edge, so the filter demanded the message the protocol prohibits",
+        "since the lifecycle/projection separation, search_edge_terminals holds accepted OUTCOMES only, and a proposal is a NONTERMINAL, so no proposal can appear there in any direction"
+      ],
+      "route_source": "emission (the unit's own outbox), cross-checked at deliver_proposal for arrival. Not the outcome projection.",
+      "fixtures": [
+        {
+          "fixture": "n_auth=4 density=1.0",
+          "seed": 0,
+          "supplies": "pre-registered; competing arrival at an answering node",
+          "proposals": 2,
+          "relays": 0,
+          "pre_emission_contested": 0,
+          "upward_edges_inspected": 2
+        },
+        {
+          "fixture": "n_auth=5 density=0.8",
+          "seed": 0,
+          "supplies": "a genuine relay hop",
+          "proposals": 4,
+          "relays": 1,
+          "pre_emission_contested": 0,
+          "upward_edges_inspected": 4
+        },
+        {
+          "fixture": "n_auth=3 density=0.6",
+          "seed": 5,
+          "supplies": "a node proposing while already holding a second arrival",
+          "proposals": 14,
+          "relays": 7,
+          "pre_emission_contested": 2,
+          "upward_edges_inspected": 1
+        }
+      ],
+      "negative_control": {
+        "verdict": "CORRECT",
+        "positive_control": "PASSED on all three fixtures",
+        "candidates_caught": 3,
+        "candidates_escaped": 0,
+        "route_clauses_exercised": [
+          "wrong_destination",
+          "wrong_edge"
+        ],
+        "runs_in_ci": ".github/workflows/canonical-ci.yml job 1, --verify-results. It was first placed in preregistration.yml and CI rejected it at 05f7b5d with ModuleNotFoundError: No module named 'pytest' -- that job is deliberately dependency-free. Fixed in 89d2de5."
+      },
+      "defects_the_negative_control_found_in_this_work": [
+        "most_recent_incoming_edge escaped: in both original fixtures every proposing node still held exactly one arrival at emission, so the broken candidate emitted what the correct one would have. A third fixture now enters that window and pre_emission_contested measures it.",
+        "a group-level route-stability check ran ahead of the per-record clauses and short-circuited them, so every attack reported the same generic message and the test had stopped naming WHICH route was wrong. Per-record clauses now run first."
+      ],
+      "model_correction": "A relayed proposal's source_edge_id is NOT rewritten at each hop, so the emitter is generally neither the source node nor the unit that opened that edge. Attribution is now checked as the path property: the emitter must stand on the adopted return path walked from the source."
+    },
+    {
+      "id": "LC-2",
+      "level": "1B",
+      "title": "Edge-scoped liability continuation (compare >=7 designs)",
+      "status": "REMEASURED after need closure. Residual is instrument/test defect, not stranding.",
+      "covers_xfails": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "commits": [
+        "<this commit>"
+      ],
+      "evidence": [
+        "verification/phase3g/EDGE_LIABILITY_DIAGNOSIS.md",
+        "verification/phase3g/EDGE_LIABILITY_DIAGNOSIS.json",
+        "verification/phase3g/edge_liability_diagnose.py"
+      ],
+      "runtime_changed": false,
+      "findings": [
+        "The defect is real but not where the tests look. Every LC-2 fixture is density 1.0 or the synthetic _pair(); at density 1.0 all 6 edges are answered and 0 are stranded. At n_auth=3 density=0.6 seed=5, 13 of 39 edges are stranded, 5 parents wait forever, 10 nodes hold children_outstanding.",
+        "Five of the seven metric counters are declared and never incremented. CLOSED_CHILD_EDGES reads 0 while 6 edges reached terminal_status=terminal, so the denominator guard fires because the counter is dead. Three further assertions in that test are vacuously satisfied.",
+        "terminal_status is written in exactly one place (_record_outcome, v5.py:1421), reached only for outcome-channel terminals. 0 edges are terminal without child evidence on any fixture. So incrementing the closure counters together at that one site would make WITH_ACCEPTED == closed and WITHOUT_EVIDENCE == 0 assertions about one increment agreeing with itself. The metric must be DERIVED from edge state.",
+        "The coalescing test's premise is inverted: e/sep/coal/2 (coalesced) is answered correctly and immediately by the receiving endpoint; e/sep/coal/1 (ADOPTED) has no lifecycle record because the node is still OPEN with reason candidate_silent. The test reads both edges when only one can yet have an answer."
+      ],
+      "what_lc2_must_be": "A continuation for the ADOPTED edge, not the coalesced one. It must not close an edge on the opener's assertion; its metric must be derived rather than a family of counters incremented together; and it must distinguish legitimately-still-open from permanently-stranded, which no current fixture can do because none drives a search to a conclusion.",
+      "next": [
+        "LC-2b compare >=7 designs",
+        "LC-2c implement, test, attack"
+      ],
+      "blocked_by": "LC-4",
+      "correction": "LC-2b's classification was wrong. Design 7 (canonical local frontier remainder) was implemented and changed nothing -- 13 stranded before, 13 after -- and was reverted. Reclassified with the proposal test applied before the frontier test: all 13 stranded edges are unresolved proposals (6 self-proposed, 7 relayed), and there is no frontier-exhaustion stranding at all. `_continue_after_child` correctly refuses to report exhaustion while eligible_offer stands.",
+      "root_cause": "_seal writes proposal dispositions into node['proposal_disposition'] AT THE SEALING NODE. The source of a losing proposal is a different unit, possibly several hops away, and nothing carries the disposition back to it, so it holds eligible_offer=True forever along with the parent's committed credit. LC-2's stranded liability is downstream of LC-4's multi-hop disposition routing; they are one defect seen from two ends.",
+      "remeasured_after_NC3": {
+        "stranded_edges": "13 -> 0 on every fixture (37 opened, 37 answered at sparse density)",
+        "abandoned_roots_with_liability": "3 -> 0",
+        "credit_in_flight": "18.0 -> 0.0",
+        "the_four_xfails": "ALL FOUR STILL FAIL, with identical messages. Need closure removed the stranding and did not move these specifications.",
+        "why": [
+          "test_every_closed_child_edge_..._carries_child_evidence: 'no child edge was closed at all' -- CLOSED_CHILD_EDGES is still declared and never incremented. LC-2a finding 2 stands unchanged; the denominator guard fires because the counter is dead, not because nothing closed.",
+          "test_two_inbound_edges_coalescing_...: 'no lifecycle record for e/sep/coal/1' -- still reads the ADOPTED edge immediately after two deliver_search calls, when only the coalesced edge can yet have an answer. LC-2a finding 4 stands.",
+          "test_every_applied_control_receives_a_child_owned_completion: assert 1 == 0, unchanged.",
+          "test_every_coalesced_inbound_edge_closes_on_its_own_edge: 1 alias uncllosed, unchanged."
+        ],
+        "conclusion": "The LC-2 residual is NOT edge-scoped liability. It is the dead metric family plus a specification that reads at the wrong time. Both are instrument/test defects that need closure could not have fixed."
+      }
+    },
+    {
+      "id": "NC-0",
+      "level": "1B-upstream",
+      "title": "Causal need closure: exact generation-bound diagnosis",
+      "status": "COMPLETE",
+      "evidence": [
+        "verification/phase3g/NEED_CLOSURE_CAUSAL_DIAGNOSIS.md",
+        "verification/phase3g/NEED_CLOSURE_CAUSAL_DIAGNOSIS.json",
+        "verification/phase3g/need_closure_diagnose.py"
+      ],
+      "runtime_changed": false,
+      "predicate": "root_obligation_retired(root) := node not terminal AND node not closing AND unit.open_needs.get(key.origin_slot) != key.need_id",
+      "why_truthful": "settle_search_offer already refuses with wrong_need_generation unless open_needs[slot] == key.need_id, so once retired the root can never settle anything again, bonded or not. Every field is local to the owning unit.",
+      "measured": {
+        "ALTERNATE_SATISFIED_OPEN_ROOTS": 3,
+        "abandoned_holding_liability": 3,
+        "abandoned_credit_in_flight": 18.0,
+        "dense_fixtures": "no abandoned root at all; their single root is already terminal",
+        "roots": [
+          "authorise.9:0:0 PROPOSAL_PENDING, 3 children, 3 proposals, 9.0 credit, slot bonded by legacy path",
+          "authorise.9:1:0 PROPOSAL_PENDING, 2 children, 2 proposals, 6.0 credit, slot bonded by legacy path",
+          "reconcile.12:0:1 PROPOSAL_PENDING, 1 child, 1 proposal, 3.0 credit, NO BOND AT ALL"
+        ]
+      },
+      "correction_to_daa1032": "daa1032 named the discriminator as `key.origin_slot in self.bonds`. Wrong: one abandoned root has no bond, and the bonded ones are already caught by the generation test. The bond is provenance for WHY the generation retired, not the condition.",
+      "corroborating": {
+        "settled_from_search_offer": "FALSE on both bonds - created by the legacy Need/Offer path, not canonical settlement",
+        "LEGACY_REPAIR_NEED_MESSAGES": 14,
+        "ELIGIBLE_PROPOSALS_COMMITTED": 0,
+        "DUAL_REPAIR_SEARCHES": "0 - names this exact hazard and reads zero while two roots are demonstrably abandoned by a second path. Tenth instrument-liveness instance, recorded not fixed."
+      },
+      "next": [
+        "NC-1 preregister the closure contract",
+        "NC-2 compare >=7 mechanisms",
+        "NC-3 implement",
+        "NC-4 adversarial twin",
+        "then remeasure LC-2 from zero"
+      ]
+    },
+    {
+      "id": "NC-1..NC-4",
+      "level": "1B-upstream",
+      "title": "Causal need closure: preregister, compare, implement, activate",
+      "status": "COMPLETE",
+      "commits": [
+        "4ee2347 NC-1 preregister 34 specs",
+        "5d9f21e NC-2 compare 8 designs + instrumentation",
+        "03a62b4 LC-1e unorderable sort fix",
+        "d9349eb NC-3 runtime",
+        "ba9cec4 NC-3b witness correction",
+        "caa8088 NC-4 activate 13 earned markers",
+        "c5a4fa4 NC-3c evidence reconciliation"
+      ],
+      "mechanism": "Generation-bound closure initiation + existing structured cascade + distributed completion join. OPEN/PROPOSAL_PENDING -> CLOSING_NEED_SATISFIED_ELSEWHERE -> CLOSED.",
+      "predicate": "unit.open_needs.get(key.origin_slot) != key.need_id",
+      "results": {
+        "stranded_edges": "13 -> 0",
+        "abandoned_roots_closed": "0 -> 3",
+        "credit_in_flight": "18.0 -> 0.0",
+        "formation": "16 events / 1012 messages, held",
+        "suite": "924 passed, 1 skipped, 24 xfailed, 0 failed"
+      },
+      "two_defects_found_by_measuring": [
+        "the join never fired: both child-completion paths short-circuit on wave_cancelled, which a closing root always has, so 2 of 3 roots sat in CLOSING with nothing outstanding",
+        "one root never reached initiation: reconcile.12:0:1 was retired by the LEGACY exhaustion path and its unit was never stepped again, so closure driven only from _settle_pending_roots could not see it"
+      ],
+      "specs_remaining_xfail": 11
+    },
+    {
+      "id": "NC-4A/4B",
+      "title": "Who retires a need generation, and by what authority",
+      "status": "DIAGNOSED. Remedy not chosen. ACTIVE BOTTLENECK.",
+      "evidence": [
+        "verification/phase3g/ROOT_RETIREMENT_AUTHORITY.md",
+        "verification/phase3g/ROOT_RETIREMENT_AUTHORITY.json",
+        "verification/phase3g/root_retirement_authority.py"
+      ],
+      "runtime_changed": false,
+      "findings": {
+        "closure_reason_is_wrong_for_one_of_three": "sparse fixture retires 3 generations: 2 SATISFIED_BY_ALTERNATE_BOND, 1 LEGACY_SEARCH_EXHAUSTED. NC-3 labels all three need_satisfied_elsewhere. For the third that is FALSE - nothing satisfied it; a legacy ledger proved itself exhausted and the canonical root (PROPOSAL_PENDING, 1 proposal, 3.0 credit) was closed as collateral.",
+        "CANONICAL_ROOTS_RETIRED_BY_LEGACY_AUTHORITY": 1,
+        "structural_cause": "_emit_need creates open_needs[slot]=nid AND self._search[nid] (LEGACY). step() iterates open_needs, calls widen(slot) against that legacy ledger, then _prove_exhaustion(slot,nid), which pops open_needs and adds to closed_needs. Every canonical repair root carries a legacy ledger shadowing it and step() drives it every pass.",
+        "canonical_repair_is_independent_of_legacy_ledger": false,
+        "decisive_probe": "Re-running the same repair with the canonical lifecycle untouched and the legacy ledger falsified three ways (emptied / marked settled / marked closed) CHANGES the canonical root states. A disabled subsystem whose corruption changes canonical outcomes is not disabled.",
+        "DUAL_REPAIR_SEARCHES": "reads 0 throughout - the counter that exists to detect exactly this reports nothing. Eleventh instrument-liveness instance."
+      },
+      "what_nc3_did": "NC-3 is not withdrawn: the discharge (13 stranded -> 0, 18.0 credit -> 0.0) stands. But it MASKED this defect - it closed the collaterally-retired root cleanly, removing the visible symptom of an authority violation while leaving the violation in place, and labelled the result with a reason false for that root.",
+      "remedy_must_produce": [
+        "CANONICAL_ROOTS_RETIRED_BY_UNAUTHORIZED_LEGACY_AUTHORITY = 0",
+        "ROOT_RETIREMENTS_WITH_UNATTRIBUTED_CAUSE = 0",
+        "FALSE_ALTERNATE_SATISFACTION_CLAIMS = 0",
+        "canonical_repair_is_independent_of_legacy_ledger = TRUE",
+        "neutral state CLOSING_RETIRED_GENERATION with reason obligation_generation_retired and a SEPARATE retirement_cause; only SATISFIED_BY_ALTERNATE_BOND may increment an alternate-satisfaction counter",
+        "no second need registry: unit:slot:activation already distinguishes owners if an owner field is attached"
+      ]
+    },
+    {
+      "id": "LC-3",
+      "level": "1C",
+      "title": "Projection-divergence specification disposition",
+      "status": "UNSTARTED",
+      "covers_xfails": [
+        4
+      ],
+      "lc0_note": "names a counter that does not exist, so it is currently unfalsifiable; may be redundant against 5G-V rather than a gap"
+    },
+    {
+      "id": "LC-4",
+      "level": "1D",
+      "title": "Deterministic multi-hop proposal/commit/cancel routing",
+      "status": "DIAGNOSED. Not the active bottleneck after all.",
+      "covers_xfails": [
+        10
+      ],
+      "lc0_note": "fails on its own positive control: the accepted proposal was correlated only at the root",
+      "why_promoted": "The authorized order runs LC-2 before LC-4. The measurement inverts the dependency: LC-2 cannot be built first because the liability it would discharge is held by nodes legitimately waiting for what LC-4 routes. Per the canonical execution order, implement the active bottleneck in dependency order. Nothing in the ladder is dropped.",
+      "must_prove": [
+        "a losing proposal's disposition reaches its SOURCE node, not merely the sealing node's dictionary",
+        "it travels the adopted chain hop by hop using each relay's own adopted edge (the LC-1 invariant, reused)",
+        "the source clears eligible_offer and local_candidate on arrival",
+        "stranded edges at _damaged(3, density=0.6) seed 5 fall from 13 toward 0, residue re-classified not assumed",
+        "_damaged(4, density=1.0) unchanged at 6 opened / 6 answered / 0 stranded",
+        "formation holds at 16 events / 1012 messages"
+      ],
+      "second_correction": "Routing _seal's dispositions downward was implemented and also changed nothing (13 stranded before and after); reverted. Traced: _seal is NEVER CALLED in this run (seals: 0). It is reached only from _commit_wave and the wave-close path, and no wave commits or closes for these searches. Better routing cannot help when no disposition is ever made."
+    },
+    {
+      "id": "LC-5",
+      "level": "1E/1F",
+      "title": "Evidence-bound terminal commit + exactly-once cycle closure (factorial audit 00/10/01/11)",
+      "status": "UNSTARTED",
+      "covers_xfails": [
+        6,
+        7
+      ],
+      "promoted": "NEED-CLOSURE PROPAGATION is the actual upstream mechanism. _settle_pending_roots skips any root whose origin_slot is already in self.bonds. A root whose obligation was satisfied by another path is therefore ABANDONED, not closed: the origin correctly stops settling, and nothing tells the subtree the need is gone. Every relay and source below keeps eligible_offer set, holding credit for a decision that will never be made because it is no longer needed. SearchNeedClosed exists for exactly this and is the one kind in both PARENT_CONTROL_KINDS and CHILD_OUTCOME_KINDS; the skip path emits neither."
+    },
+    {
+      "id": "LC-6",
+      "level": "1G",
+      "title": "Exhaustion vs credit starvation, paired fixtures",
+      "status": "UNSTARTED",
+      "covers_xfails": [
+        8
+      ],
+      "lc0_note": "fails on its own positive control (assert 0 >= 1); fixture-debt suspect"
+    },
+    {
+      "id": "LC-7",
+      "level": "2",
+      "title": "Remove the unexplained widening skip",
+      "status": "UNSTARTED",
+      "location": "tests/unit/test_substrate_v5_distinct_replacement.py:516",
+      "skip_point": "line 528, 'no branches were opened'"
+    },
+    {
+      "id": "LC-8",
+      "level": "3",
+      "title": "Inherited lexical-ordering disposition",
+      "status": "UNSTARTED",
+      "covers_xfails": [
+        11
+      ]
+    },
+    {
+      "id": "L4",
+      "level": "4",
+      "title": "Development-freeze and R8-readiness packages",
+      "status": "UNSTARTED"
+    },
+    {
+      "id": "L5",
+      "level": "5",
+      "title": "Five-repository UNIIMENTE contract audit",
+      "status": "UNSTARTED"
+    },
+    {
+      "id": "L6",
+      "level": "6",
+      "title": "Stacked draft PR A -- Developmental Candidate Envelope",
+      "status": "UNSTARTED"
+    },
+    {
+      "id": "L7",
+      "level": "7",
+      "title": "Stacked draft PR B -- Sandbox Reality Covenant vertical slice",
+      "status": "UNSTARTED"
+    },
+    {
+      "id": "L8",
+      "level": "8",
+      "title": "Stacked draft PR C -- Founder Cockpit read model",
+      "status": "UNSTARTED"
+    }
+  ],
+  "remaining_strict_xfails": 24,
+  "suite": {
+    "passed": 924,
+    "skipped": 1,
+    "xfailed": 24,
+    "failed": 0
+  },
+  "gates": {
+    "F": "UNMEASURED",
+    "G": "UNMEASURED",
+    "R8": "PROHIBITED"
+  },
+  "external_effects": 0,
+  "instruments_in_ci": [
+    "verification/phase3g/prearrival_adversarial_twin.py (preregistration.yml)",
+    "verification/phase3g/adopted_edge_return_negative_control.py (canonical-ci.yml job 1)",
+    "verification/phase3g/edge_liability_diagnose.py (canonical-ci.yml job 1)"
+  ],
+  "execution_order_correction": "LC-4 now precedes LC-2. Established by measurement, recorded in EDGE_LIABILITY_DESIGNS.md section LC-2b'. A reordering, not a reduction.",
+  "runtime_experiments_reverted": [
+    "canonical local frontier remainder (_advance_or_discharge): inert, 13 -> 13",
+    "route _seal dispositions downward: inert, 13 -> 13, because _seal is never called"
+  ],
+  "next_mechanism": "need-closure propagation from an abandoned root",
+  "corrections_to_previous_report": {
+    "marker_count": "14 need-closure markers remain, not 11. 10 pre-existing + 14 = 24 observed.",
+    "pa5_overwrite_claim_WITHDRAWN": "prearrival_adversarial_twin.py main() prints JSON and returns an exit status; it does NOT write its results file. The claim in 15623a9 that --negative-control overwrites canonical evidence is withdrawn - inferred from a sequence never run. The pipeline-status mistake ($? after | tail) was real and hid a failing verifier three times; the overwrite attribution was not.",
+    "retirement_semantics": "obligation-generation-retired is NOT satisfied-elsewhere; measured 1 of 3 mislabelled."
+  },
+  "active_bottleneck": "Truthful and exclusive authority over root-generation retirement"
+}

@@ -1,0 +1,1672 @@
+{
+  "density=0.8/MODE_00": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 0.94,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 3,
+    "events": 26,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 973,
+    "messages_before_repair": 957,
+    "nodes_with_children_outstanding": 2,
+    "repair_message_delta": 16,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.8/MODE_01": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 2,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 3,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 2,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 5,
+    "events": 28,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 975,
+    "messages_before_repair": 957,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.8/MODE_10": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 0.94,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 6,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 4,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 1,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 2,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.12",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": true,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r1/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.9",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.9"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 3,
+    "events": 26,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 973,
+    "messages_before_repair": 957,
+    "nodes_with_children_outstanding": 2,
+    "repair_message_delta": 16,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.8/MODE_11": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 2,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 3,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 2,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 8,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 4,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 2,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 4,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.12",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": true,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r1/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.9",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.9"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 5,
+    "events": 28,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 975,
+    "messages_before_repair": 957,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.9/MODE_00": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 0.94,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 3,
+    "events": 26,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 1083,
+    "messages_before_repair": 1067,
+    "nodes_with_children_outstanding": 2,
+    "repair_message_delta": 16,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.9/MODE_01": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 2,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 3,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 2,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 5,
+    "events": 28,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 1085,
+    "messages_before_repair": 1067,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.9/MODE_10": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 0.94,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 6,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 4,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 1,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 2,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.12",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": true,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r1/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.9",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.9"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 3,
+    "events": 26,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 1083,
+    "messages_before_repair": 1067,
+    "nodes_with_children_outstanding": 2,
+    "repair_message_delta": 16,
+    "restored": null,
+    "seed": 0
+  },
+  "density=0.9/MODE_11": {
+    "CANONICAL_SEARCH_EXPANSIONS": 4,
+    "COALESCED_DUPLICATE_ARRIVALS": 2,
+    "CYCLE_EDGES_CLOSED": 0,
+    "DIRECTED_SEARCH_EDGES_PROBED": 5,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 3,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 3,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 4,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 2,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          4,
+          4
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "LIN.cycle_edge_detail": {},
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [],
+        "pass": false
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {},
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 2,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 4,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 8,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 4,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 2,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 4,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.12",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCoalesced",
+        "observation": true,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.12",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.12",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r1/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.9",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.9"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 5,
+    "edges_with_accepted_control": 4,
+    "edges_with_accepted_outcome": 5,
+    "events": 28,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 2,
+    "messages": 1085,
+    "messages_before_repair": 1067,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=1.0/MODE_00": {
+    "CANONICAL_SEARCH_EXPANSIONS": 5,
+    "COALESCED_DUPLICATE_ARRIVALS": 0,
+    "CYCLE_EDGES_CLOSED": 1,
+    "DIRECTED_SEARCH_EDGES_PROBED": 6,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 4,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 5,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          5,
+          5
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "LIN.cycle_edge_detail": {
+        "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": {
+          "accepted_control": null,
+          "accepted_outcome": "SearchCycleClosed",
+          "control_conflicts": 0,
+          "legacy_len": 1,
+          "outcome_conflicts": 0
+        }
+      },
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": 1
+        },
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 3,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 6,
+    "edges_with_accepted_control": 5,
+    "edges_with_accepted_outcome": 3,
+    "events": 29,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 3,
+    "messages": 1159,
+    "messages_before_repair": 1141,
+    "nodes_with_children_outstanding": 3,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=1.0/MODE_01": {
+    "CANONICAL_SEARCH_EXPANSIONS": 5,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 1,
+    "DIRECTED_SEARCH_EDGES_PROBED": 6,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 4,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 4,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 5,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          5,
+          5
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.24,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "LIN.cycle_edge_detail": {
+        "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": {
+          "accepted_control": null,
+          "accepted_outcome": "SearchCycleClosed",
+          "control_conflicts": 0,
+          "legacy_len": 1,
+          "outcome_conflicts": 0
+        }
+      },
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": 1
+        },
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 3,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 0,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 0,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 0,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [],
+    "duplicate_probe_ids": 0,
+    "edges_total": 6,
+    "edges_with_accepted_control": 5,
+    "edges_with_accepted_outcome": 6,
+    "events": 32,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 3,
+    "messages": 1162,
+    "messages_before_repair": 1141,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 21,
+    "restored": null,
+    "seed": 0
+  },
+  "density=1.0/MODE_10": {
+    "CANONICAL_SEARCH_EXPANSIONS": 5,
+    "COALESCED_DUPLICATE_ARRIVALS": 0,
+    "CYCLE_EDGES_CLOSED": 1,
+    "DIRECTED_SEARCH_EDGES_PROBED": 6,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 4,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 2,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 5,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 0,
+        "pass": false
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          5,
+          5
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.06,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "LIN.cycle_edge_detail": {
+        "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": {
+          "accepted_control": null,
+          "accepted_outcome": "SearchCycleClosed",
+          "control_conflicts": 0,
+          "legacy_len": 1,
+          "outcome_conflicts": 0
+        }
+      },
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": 1
+        },
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 3,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 7,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 5,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 1,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 2,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0",
+        "kind": "SearchCycleClosed",
+        "observation": false,
+        "probe_from": "authorise.10",
+        "probe_to": "authorise.11",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.10",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0",
+        "kind": "SearchCycleClosed",
+        "observation": true,
+        "probe_from": "authorise.10",
+        "probe_to": "authorise.11",
+        "recorder_unit": "authorise.10",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 6,
+    "edges_with_accepted_control": 5,
+    "edges_with_accepted_outcome": 3,
+    "events": 29,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 3,
+    "messages": 1159,
+    "messages_before_repair": 1141,
+    "nodes_with_children_outstanding": 3,
+    "repair_message_delta": 18,
+    "restored": null,
+    "seed": 0
+  },
+  "density=1.0/MODE_11": {
+    "CANONICAL_SEARCH_EXPANSIONS": 5,
+    "COALESCED_DUPLICATE_ARRIVALS": 1,
+    "CYCLE_EDGES_CLOSED": 1,
+    "DIRECTED_SEARCH_EDGES_PROBED": 6,
+    "DUPLICATE_SUBTREES_OPENED": 0,
+    "INHERITED_AUTHORITY_EVENTS": 0,
+    "LEGACY_REPAIR_NEED_MESSAGES": 0,
+    "ORPHANED_SEARCH_EDGES": 0,
+    "PARENT_CONTROLS_APPLIED": 4,
+    "PARENT_CONTROLS_WITH_CHILD_OWNED_COMPLETION": 4,
+    "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+    "UNIQUE_CANONICAL_SEARCH_NODES": 5,
+    "UNSUPPORTED_CHILD_CANCELLATION_CREDIT": 0,
+    "assertions": {
+      "A.coalesced_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "A.expansions_eq_nodes": {
+        "observed": [
+          5,
+          5
+        ],
+        "pass": true
+      },
+      "A.no_duplicate_subtree": {
+        "observed": 0,
+        "pass": true
+      },
+      "A.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "A.probe_count_one": {
+        "observed": [
+          1
+        ],
+        "pass": true
+      },
+      "J.amp_le_12": {
+        "observed": 1.24,
+        "pass": true
+      },
+      "LIN.cycle_closed_positive": {
+        "observed": 1,
+        "pass": true
+      },
+      "LIN.cycle_edge_detail": {
+        "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": {
+          "accepted_control": null,
+          "accepted_outcome": "SearchCycleClosed",
+          "control_conflicts": 0,
+          "legacy_len": 1,
+          "outcome_conflicts": 0
+        }
+      },
+      "LIN.cycle_edge_found_canonically": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_found_in_legacy": {
+        "observed": [
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0"
+        ],
+        "pass": true
+      },
+      "LIN.cycle_edge_legacy_len_eq_1": {
+        "observed": {
+          "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0": 1
+        },
+        "pass": true
+      },
+      "LIN.max_lineage_depth_ge_2": {
+        "observed": 3,
+        "pass": true
+      },
+      "LIN.nodes_exist": {
+        "observed": 5,
+        "pass": true
+      },
+      "SHARED.legacy_outcomes_len_eq_1": {
+        "observed": {},
+        "pass": true
+      }
+    },
+    "audit": {
+      "AUDIT_CLASSIFICATIONS_BY_AUTHOR_DIRECTION": 9,
+      "AUDIT_CLASSIFICATIONS_BY_RECORDER_IDENTITY": 0,
+      "AUDIT_CONTROL_CLASSIFICATIONS": 5,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES": 2,
+      "AUDIT_OBSERVED_CHILD_OUTCOMES_CLASSIFIED_AS_CONTROL": 0,
+      "AUDIT_OUTCOME_CLASSIFICATIONS": 4,
+      "AUDIT_UNCLASSIFIABLE_EDGE_MESSAGES": 0
+    },
+    "audit_sample": [
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c1",
+        "kind": "SearchCommitted",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.12",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.12"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.11",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.11"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c2",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "reconcile.13",
+        "probe_to": "authorise.9",
+        "recorder_unit": "reconcile.13",
+        "selected_channel": "CONTROL",
+        "terminal_from": "reconcile.13",
+        "terminal_to": "authorise.9"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0",
+        "kind": "SearchCycleClosed",
+        "observation": false,
+        "probe_from": "authorise.10",
+        "probe_to": "authorise.11",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0",
+        "kind": "SearchCancelled",
+        "observation": false,
+        "probe_from": "authorise.11",
+        "probe_to": "authorise.10",
+        "recorder_unit": "authorise.11",
+        "selected_channel": "CONTROL",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      },
+      {
+        "edge_id": "root:reconcile.13:0:1/r0/c0/r0/c0/r0/c0",
+        "kind": "SearchCycleClosed",
+        "observation": true,
+        "probe_from": "authorise.10",
+        "probe_to": "authorise.11",
+        "recorder_unit": "authorise.10",
+        "selected_channel": "OUTCOME",
+        "terminal_from": "authorise.11",
+        "terminal_to": "authorise.10"
+      }
+    ],
+    "duplicate_probe_ids": 0,
+    "edges_total": 6,
+    "edges_with_accepted_control": 5,
+    "edges_with_accepted_outcome": 6,
+    "events": 32,
+    "legacy_helper_detail": [],
+    "legacy_helper_violations": 0,
+    "lifecycle_conflicts": 0,
+    "lifecycle_conflicts_detail": {},
+    "max_lineage_depth": 3,
+    "messages": 1162,
+    "messages_before_repair": 1141,
+    "nodes_with_children_outstanding": 0,
+    "repair_message_delta": 21,
+    "restored": null,
+    "seed": 0
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "gate": "Gate G - bounded-local CAUSAL-ESCAPE regeneration",
+  "status": "OPEN",
+  "evidence": {
+    "causal_escape_held_out": {
+      "recovered": 3,
+      "of": 8,
+      "threshold": 6
+    },
+    "distinct_causally_valid_forms": 10,
+    "max_motif_information_bits": 3,
+    "solution_leakage_events": 0,
+    "global_topology_leakage_events": 0
+  },
+  "blocker": "3/8 held-out causal escapes against a threshold of 6",
+  "root_cause_diagnosed": "10 of 11 failures are 'tissue did not fill every role' - the tissue could not form AT ALL, rather than forming a non-escaping shape. The defect is mine: local_inhibition pre-loads Tri.INHIBIT on the cell's ROLE, and INHIBIT dominates ACTIVATE by design, so those cells can never differentiate - not even into a form that WOULD escape. The inhibition blocks the role when it should block only the MOTIF.",
+  "why_not_fixed_in_this_pass": "The defect was found BY inspecting held-out results. Fixing and re-scoring on the same fixtures would be tuning against held-out data. The fix requires motif-conditional inhibition ('refuse this role in THIS configuration') plus a fresh untouched evaluation set. Recorded as the next assignment rather than quietly applied.",
+  "what_the_mechanism_DID_prove": [
+    "Rejection certificates carry at most 3 information bits while the graph has 3 nodes and 2 edges - the motif cannot reconstruct the predecessor.",
+    "Zero solution-leakage events across 40 episodes.",
+    "Every escape that did occur used dual_read - the tissue found redundant verification locally, without being told to.",
+    "10 distinct causally valid forms."
+  ]
+}

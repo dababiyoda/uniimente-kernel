@@ -1,0 +1,26 @@
+release:
+  kernel_commit: 44e2d94324774d3519026c37475dd79582c5c818
+  daleobanks_commit: 3a782c30b2da32b06634b15d7add66a6ca86120b
+  aperture_version: 0.1.0
+  canonical_manifest_hash: sha256:0f35652924039a6e977d2e735e8af4c6273ce89116cc9d5f9e7f3d5abe83dcc2
+  certificate_schema_version: aperture/authorization-certificate/1.0.0
+  revocation_schema_version: aperture/revocation-snapshot/1.0.0
+  receipt_schema_version: aperture/execution-receipt/1.0.0
+  supported_organ_client_versions:
+  - 0.1.0
+  prohibited_versions:
+  - <0.1.0 (no unknown-field refusal; would silently ignore new constraints)
+  minimum_python_version: '3.11'
+  artifact_hash:
+    client: 7e82a271beb8cb9c1c01a8e3877fc60dad86ab7f878a31f35e97706b665ca663
+    issuer: 28b3eff846fd6d1cffac667f7f6430328d949e6f22c38b0b3917d305cfdc69af
+  test_results:
+    kernel: 605 passed in 6.23s
+    daleobanks_shadow: 22 passed, 1 skipped in 0.10s
+  shadow_result: 5 candidates, 3 issued, 2 refused, 0 external publications
+refusal_policy:
+  unknown_certificate_field: refuse
+  certificate_schema_mismatch: refuse
+  manifest_mismatch: refuse
+  downgrade: refuse (schema_version is inside the signature)
+  duplicate_version_different_hash: refuse - artifact hashes are recorded here

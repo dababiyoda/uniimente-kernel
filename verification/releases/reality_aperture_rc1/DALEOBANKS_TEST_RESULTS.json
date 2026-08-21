@@ -1,0 +1,7 @@
+{
+  "result": "22 passed, 1 skipped in 0.10s",
+  "expected": "22 passed",
+  "matches_reported": true,
+  "environment": "fresh clone, client wheel installed, APERTURE_REQUIRE_INSTALLED=1",
+  "skipped": "1 - issuer-unreachability, proved separately in the client-only step"
+}

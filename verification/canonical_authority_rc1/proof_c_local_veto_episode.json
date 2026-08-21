@@ -1,0 +1,11 @@
+{
+  "proof": "C - local veto",
+  "authority_was_valid": true,
+  "veto_engaged": true,
+  "receipt_status": "local_veto",
+  "platform_state_after": [],
+  "external_state_changed": false,
+  "budget_state": "released",
+  "authority_expanded": false,
+  "passed": true
+}

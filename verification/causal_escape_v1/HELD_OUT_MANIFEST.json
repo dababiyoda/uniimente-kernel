@@ -1,0 +1,79 @@
+{
+  "pre_registered_at": "2026-07-28T03:30:00Z",
+  "note": "Hashed BEFORE execution. The gamma family from PR #58 is now OBSERVED and is demoted to a development family. Held-out uses delta and epsilon, never run before.",
+  "held_out_capability_families": [
+    "delta",
+    "epsilon"
+  ],
+  "withheld": {
+    "capability_family": "epsilon",
+    "causal_failure_motif": "shared_resource_exhaustion",
+    "communication_restriction": "broadcast_partition",
+    "resource_geometry": "asymmetric_starvation",
+    "function_contract_variation": "dual_output_contract",
+    "topology_invalidating_constraint": "single_read_verification_prohibited"
+  },
+  "development_families": [
+    "alpha",
+    "beta",
+    "gamma"
+  ],
+  "episodes": {
+    "development": 24,
+    "held_out": 16,
+    "ordinary_damage_held_out": 8,
+    "topology_invalidating_held_out": 8
+  },
+  "thresholds_pre_registered": {
+    "minimum_ordinary_held_out_recoveries": 7,
+    "minimum_causal_escape_held_out_recoveries": 6,
+    "minimum_distinct_causally_valid_forms": 3
+  },
+  "seeds": {
+    "development": [
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      209,
+      210,
+      211,
+      212,
+      213,
+      214,
+      215,
+      216,
+      217,
+      218,
+      219,
+      220,
+      221,
+      222,
+      223
+    ],
+    "held_out": [
+      7000,
+      7001,
+      7002,
+      7003,
+      7004,
+      7005,
+      7006,
+      7007,
+      7008,
+      7009,
+      7010,
+      7011,
+      7012,
+      7013,
+      7014,
+      7015
+    ]
+  },
+  "manifest_sha256": "cd7025626bcc89b0b87bff4d9aaca029666dfcba74182002d6d316a1de4a0664"
+}

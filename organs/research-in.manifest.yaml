@@ -6,6 +6,17 @@
 # No code in that repository was changed to produce this manifest. Every field
 # below is either observed in that tree or recorded as unresolved.
 #
+# SECOND PASS, 2026-08-21, same commit 5769138. The first pass could not run
+# the suites and described capabilities from directory names. Both are now
+# measured: the Rust suite was executed, and every capability description below
+# was checked against the files it points at. As with PumpStation, every
+# correction makes the organ SMALLER than the first pass described.
+#
+# One question LEFT the unresolved list because it was answered: health was
+# unverified and is now executed — 2 passed, 0 failed, the repository's entire
+# test population. The answer is in the health block. The count is unchanged,
+# because answering it surfaced a new question about the contract itself.
+#
 # RESEARCH-IN is the sixth organ and the second of the two the Institutional
 # Linker previously could not see. Registering it makes the organism's true
 # shape visible; it does not attach it to anything.
@@ -21,8 +32,11 @@ legal_operators: [alfonso_lopez]
 capabilities:
   - capability_id: research_in.ingestion
     description: >-
-      Rust ingestion service for processing and indexing research papers and
-      datasets. Observed as a Cargo crate with its own test target.
+      OVERSTATED IN THE FIRST PASS. Not an ingestion service: `src/lib.rs` is 16
+      lines and exposes one actix handler, POST /ingest, which returns 200 if the
+      posted url starts with "http" and 400 otherwise. It fetches nothing, parses
+      nothing, stores nothing and indexes nothing. The crate's two integration
+      tests assert exactly that prefix check.
     implementation_path: services/ingest/
     consumes: []
     produces: []
@@ -41,8 +55,11 @@ capabilities:
     lifecycle: DISCOVERED
   - capability_id: research_in.data_layer
     description: >-
-      Shared schema, migrations and client code over Supabase (PostgreSQL,
-      auth, storage), with Qdrant for vectors and Typesense for search.
+      OVERSTATED IN THE FIRST PASS. `packages/db/` contains a `migrations/`
+      directory and nothing else — no package.json and no client code. Supabase,
+      Qdrant and Typesense appear only as Terraform modules under
+      `infrastructure/modules/`; no TypeScript or Rust source in the repository
+      references any of the three. Declared infrastructure, unwired application.
     implementation_path: packages/db/
     consumes: []
     produces: []
@@ -61,18 +78,25 @@ authority:
   external_actions_require_kernel_gate: true
   may_self_promote: false
 health:
-  test_command: pnpm test
+  test_command: cargo test --manifest-path services/ingest/Cargo.toml
   last_verified:
-    date: "2026-08-11"
+    date: "2026-08-21"
     commit: "5769138"
-    tests_passed: 0
+    tests_passed: 2
     tests_failed: 0
     notes: >-
-      UNVERIFIED in this pass. The repository declares a Turborepo workspace and
-      the ingest crate carries tests/ingest.rs, but no suite was executed here:
-      node and Rust toolchains for this organ were not installed, and running
-      them was out of scope for a read-only inspection. Recorded as unverified
-      rather than assumed green.
+      EXECUTED, not assumed. `cargo test` in services/ingest (cargo 1.94.1) ran
+      the crate's integration target: 2 passed, 0 failed — test_valid and
+      test_invalid, both asserting the url prefix check. The lib, bin and doc
+      targets each ran 0 tests. That is the entire test population of the
+      repository: no *.test.* or *.spec.* file exists anywhere, and no
+      #[test]/#[cfg(test)] appears in any other Rust source.
+      The previously declared command `pnpm test` was WRONG and is replaced.
+      turbo.json declares a `test` pipeline task, but no workspace package —
+      root, apps/web, apps/community, packages/shared, packages/utils —
+      defines a `test` script, so the command exits 1 having run nothing.
+      2 passed is therefore the honest number and it is also a small one: two
+      assertions over a sixteen-line handler.
 shutdown_behavior: >-
   Not implemented. The organ is unattached; no kernel loop depends
   on it.
@@ -100,8 +124,23 @@ unresolved:
     the instruction-shaped-content quarantine that ARCHITECTURE.md requires of
     any evidence intake does not exist here.
   - >-
-    Health is unverified. Test counts must be established by an actual run
-    before any capability advances past DISCOVERED.
+    SHARPENED, still open. The repository is MIT licensed (LICENSE, 2024,
+    open-research-nexus), which covers its own code and says nothing about
+    ingested third-party research content. No file in the tree declares a data
+    classification or a redistribution posture for such content. The question is
+    not yet live, however, and that is the newly measured part: nothing is
+    ingested. The ingest handler performs no fetch and no write, and no
+    application code connects to the provisioned Supabase, Qdrant or Typesense.
+    Both postures must be established before the first real fetch, not before
+    the first line of further code.
   - >-
-    Data classification for ingested third-party research content, and the
-    licensing posture for redistribution, are not established.
+    CONTRACT GAP, second instance. This pass established several facts by
+    inspection, and contracts/organ-manifest.schema.json has nowhere to record
+    them: it admits `unresolved` and nothing else, so the manifest can say "we
+    do not know" but cannot say "we looked, and here is what we found". The
+    findings were therefore written into the capability descriptions and the
+    health block, and the answered questions were removed from this list — see
+    the header comment for what left and why. Adding a `findings` or `resolved`
+    field is a contract change (additionalProperties is false) and was not made
+    unilaterally. Same class of defect as the status-vocabulary contradiction
+    above, found independently; two instances in one contract.

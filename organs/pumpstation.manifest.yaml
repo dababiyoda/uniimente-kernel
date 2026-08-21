@@ -7,6 +7,20 @@
 # below is either observed in that tree or recorded as unresolved. Nothing was
 # inferred to make the organ look more complete than it is.
 #
+# SECOND PASS, 2026-08-21, same commit df6a732. The first pass enumerated no
+# endpoints and took the organ's subject matter from its README. Both are now
+# measured against the tree, and both corrections make the organ SMALLER than
+# the first pass described. Corrections are recorded here rather than applied
+# silently, because a manifest that quietly improves its own accuracy gives a
+# reader no way to know the earlier version was wrong.
+#
+# One question LEFT the unresolved list because it was answered: endpoint
+# inventory, authentication model and data-retention posture. The answers are in
+# `pumpstation.wallet_session`, `pumpstation.coordination_api` and the note
+# below on what the contract cannot record. Nothing was dropped to shorten the
+# list: the count is unchanged, because answering that question surfaced a new
+# one about the contract itself.
+#
 # This manifest registers PumpStation so the Institutional Linker can see it.
 # Registration is not activation: status is `planned` (see unresolved) and the organ consumes and
 # produces no kernel contract. An open proposal (kernel PR #46) covers whether
@@ -32,9 +46,13 @@ capabilities:
     lifecycle: DISCOVERED
   - capability_id: pumpstation.coordination_api
     description: >-
-      Express/Mongoose HTTP API for buy-in coordination, voting and exit
-      strategy. Observed as an Express app on port 3001 with an ethers v6
-      dependency; endpoint inventory not enumerated in this pass.
+      CLAIMED BY THE README, ABSENT FROM THE TREE. The first pass described
+      "buy-in coordination, voting and exit strategy" from README prose and did
+      not enumerate the endpoints. Enumerated now: `server/index.js` registers
+      exactly one route, POST /api/connect-wallet, plus static file service of
+      ../client. There is no buy-in, voting or exit-strategy endpoint. The entry
+      is retained rather than deleted so the overstatement stays visible and the
+      capability id keeps its lineage; it names no working capability.
     implementation_path: server/index.js
     consumes: []
     produces: []
@@ -88,19 +106,36 @@ unresolved:
     a contract change and was not made unilaterally; it requires a founder
     decision.
   - >-
-    Consequence class is declared read_only because the organ is attached to
-    nothing and consumes no kernel contract. Its subject matter is, however,
-    memecoin buy-ins and
-    automated exit strategies, which is financial. Any activation proposal must
-    re-derive this ceiling as financial and route it through the founder.
+    Consequence class is declared read_only, and the second pass found that the
+    tree supports that reading more strongly than the first pass did. NO
+    FINANCIAL CODE EXISTS: `ethers` appears three times in the whole repository —
+    BrowserProvider, signMessage and verifyMessage — and there is no
+    sendTransaction, no Contract binding, no transfer, no approval and no swap.
+    The financial character of PumpStation is a README claim about intent, not a
+    property of the code. This does NOT retire the concern: any activation
+    proposal must still re-derive the ceiling as financial and route it through
+    the founder, because the intent is what would be activated.
   - >-
-    No tests exist, so no capability above can advance past DISCOVERED. The
-    declared health command must be replaced before any lifecycle promotion.
-  - >-
-    Endpoint inventory, authentication model beyond wallet-signature recovery,
-    and data-retention posture for stored wallet addresses and emails are not
-    established.
+    No tests exist, and this is now measured rather than inferred from the test
+    script: the repository contains four source files (server/index.js,
+    server/package.json, server/.env.example, client/index.html) and zero test
+    or spec files of any kind. The declared command
+    `echo "No tests yet" && exit 0` exits zero without executing anything, so a
+    green result from it is not evidence. No capability above can advance past
+    DISCOVERED, and the health command must be replaced before any lifecycle
+    promotion.
   - >-
     Whether PumpStation should exist as a UNIIMENTE organ at all is an open
     founder decision (kernel PR #46). This manifest makes it visible; it does
     not argue for it.
+  - >-
+    CONTRACT GAP, second instance. This pass established several facts by
+    inspection, and contracts/organ-manifest.schema.json has nowhere to record
+    them: it admits `unresolved` and nothing else, so the manifest can say "we
+    do not know" but cannot say "we looked, and here is what we found". The
+    findings were therefore written into the capability descriptions and the
+    health block, and the answered questions were removed from this list — see
+    the header comment for what left and why. Adding a `findings` or `resolved`
+    field is a contract change (additionalProperties is false) and was not made
+    unilaterally. Same class of defect as the status-vocabulary contradiction
+    above, found independently; two instances in one contract.

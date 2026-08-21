@@ -1,9 +1,11 @@
 {
-  "attested_at": "2026-08-21T14:22:38+00:00",
+  "attested_at": "2026-08-21T15:33:59+00:00",
+  "checkout_state": "pristine_at_commit",
   "commit": "f787963a4bb3e0f150d07789d54de8dbbfefe1a1",
   "limitations": [
     "Records that a path existed with these bytes at this commit. It does not prove the peer code works, is reachable, or is authorized.",
-    "Describes one commit. A peer that moves on does not invalidate this record; the record then describes history, and `commit` says which."
+    "Describes one commit. A peer that moves on does not invalidate this record; the record then describes history, and `commit` says which.",
+    "Says nothing about whether the manifest DESCRIBES the path correctly. This limit is named because it was reached: `packages/db/` was attested as a directory of size 1 while the RESEARCH-IN manifest described it as schema, migrations and client code over three data stores. Existence and size are checked; the prose next to them is not, and no digest can check it."
   ],
   "method": "read from a local checkout of the named repository at the named commit; sizes and sha256 digests recorded from the real bytes",
   "organ": "daleobanks",
@@ -52,5 +54,5 @@
     }
   ],
   "repository": "dababiyoda/DALEOBANKS",
-  "version": 1
+  "version": 2
 }

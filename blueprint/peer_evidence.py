@@ -41,7 +41,20 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-ATTESTATION_VERSION = 1
+#: Bumped to 2 when `checkout_state` was added. Version 1 attestations recorded
+#: sizes from whatever was on disk, with no way to say whether the attester's own
+#: footprint was part of what got measured. `from_obj` refuses version 1 rather
+#: than defaulting the new field, because defaulting it would invent the very
+#: assurance the field exists to record.
+ATTESTATION_VERSION = 2
+
+#: The checkout was compared against its pinned commit and nothing inside any
+#: attested path differed.
+PRISTINE = "pristine_at_commit"
+#: No comparison was made. Sizes and digests may include the attester's own
+#: artifacts. Honest, and not good enough for a committed attestation.
+UNVERIFIED = "unverified"
+CHECKOUT_STATES = (PRISTINE, UNVERIFIED)
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ATTESTATION_DIR = os.path.join(KERNEL_ROOT, "blueprint", "attestations")
 
@@ -94,6 +107,7 @@ class PeerAttestation:
     method: str
     paths: tuple[AttestedPath, ...]
     limitations: tuple[str, ...] = ()
+    checkout_state: str = UNVERIFIED
     version: int = ATTESTATION_VERSION
 
     def __post_init__(self) -> None:
@@ -113,6 +127,10 @@ class PeerAttestation:
         seen = [p.path for p in self.paths]
         if len(set(seen)) != len(seen):
             raise PeerEvidenceError(f"attestation for {self.organ} repeats a path")
+        if self.checkout_state not in CHECKOUT_STATES:
+            raise PeerEvidenceError(
+                f"checkout_state {self.checkout_state!r} is not one of "
+                f"{list(CHECKOUT_STATES)}")
 
     def by_path(self) -> dict[str, AttestedPath]:
         return {p.path: p for p in self.paths}
@@ -125,6 +143,7 @@ class PeerAttestation:
             "commit": self.commit,
             "attested_at": self.attested_at,
             "method": self.method,
+            "checkout_state": self.checkout_state,
             "limitations": list(self.limitations),
             "paths": [
                 {"path": p.path, "kind": p.kind, "size": p.size, "digest": p.digest}
@@ -144,6 +163,7 @@ class PeerAttestation:
             commit=obj["commit"],
             attested_at=obj["attested_at"],
             method=obj["method"],
+            checkout_state=obj["checkout_state"],
             limitations=tuple(obj.get("limitations") or ()),
             paths=tuple(
                 AttestedPath(path=p["path"], kind=p["kind"], size=int(p["size"]),
@@ -152,14 +172,58 @@ class PeerAttestation:
         )
 
 
+def contaminating(dirty: tuple[str, ...] | list[str],
+                  paths: list[str]) -> tuple[tuple[str, str], ...]:
+    """Which not-at-commit files sit inside which attested paths.
+
+    Pure, so the rule is testable without a git repository. `dirty` holds paths
+    git reports as differing from the pinned commit — modified, untracked or
+    ignored alike. Ignored counts: a build artifact is invisible to `git status`
+    by default and perfectly visible to `os.listdir`, which is exactly how it
+    gets into a directory's recorded size.
+
+    This is not hypothetical. Running RESEARCH-IN's suite to answer its own
+    manifest's health question created `services/ingest/Cargo.lock`, and the
+    regenerated attestation recorded `services/ingest/` as size 4 instead of 3 —
+    the attester's own footprint, silently promoted to evidence about the peer.
+    """
+    found: list[tuple[str, str]] = []
+    for attested in sorted(set(paths)):
+        prefix = attested if attested.endswith("/") else attested + "/"
+        for entry in dirty:
+            entry = entry.strip()
+            if not entry:
+                continue
+            if entry == attested or entry.startswith(prefix):
+                found.append((attested, entry))
+    return tuple(found)
+
+
 def attest(organ: str, repository: str, commit: str, checkout: str,
-           paths: list[str], limitations: tuple[str, ...] = ()) -> PeerAttestation:
+           paths: list[str], limitations: tuple[str, ...] = (),
+           dirty: tuple[str, ...] | list[str] | None = None) -> PeerAttestation:
     """Read a real checkout and record what is there. Derived, never supplied.
 
     Every path is resolved against `checkout` and hashed. A path that is absent
     raises rather than being recorded as missing: an attestation is a statement
     that these things exist, so it must not be constructible when they do not.
+
+    `dirty` is what git reports as differing from `commit`. Passing it means the
+    comparison was made: contamination inside an attested path raises, and a
+    clean result is recorded as `checkout_state = PRISTINE`. Passing None means
+    no comparison was made, and the attestation says `UNVERIFIED` rather than
+    claiming an assurance nobody obtained. There is no third option and no
+    default that quietly asserts cleanliness.
     """
+    if dirty is not None:
+        hits = contaminating(dirty, paths)
+        if hits:
+            detail = "; ".join(f"{entry} inside {attested}" for attested, entry in hits)
+            raise PeerEvidenceError(
+                f"refusing to attest {repository} at {commit[:7]}: the checkout "
+                f"differs from its pinned commit inside attested paths ({detail}). "
+                "Recorded sizes and digests would include the attester's own "
+                "footprint. Restore the checkout and re-run.")
     recorded: list[AttestedPath] = []
     for relative in sorted(set(paths)):
         target = os.path.normpath(os.path.join(checkout, relative))
@@ -181,7 +245,8 @@ def attest(organ: str, repository: str, commit: str, checkout: str,
         attested_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         method=("read from a local checkout of the named repository at the named "
                 "commit; sizes and sha256 digests recorded from the real bytes"),
-        paths=tuple(recorded), limitations=limitations)
+        paths=tuple(recorded), limitations=limitations,
+        checkout_state=UNVERIFIED if dirty is None else PRISTINE)
 
 
 def write(attestation: PeerAttestation, directory: str = ATTESTATION_DIR) -> str:
@@ -241,6 +306,11 @@ LIMITATIONS = (
     "prove the peer code works, is reachable, or is authorized.",
     "Describes one commit. A peer that moves on does not invalidate this record; "
     "the record then describes history, and `commit` says which.",
+    "Says nothing about whether the manifest DESCRIBES the path correctly. This "
+    "limit is named because it was reached: `packages/db/` was attested as a "
+    "directory of size 1 while the RESEARCH-IN manifest described it as schema, "
+    "migrations and client code over three data stores. Existence and size are "
+    "checked; the prose next to them is not, and no digest can check it.",
 )
 
 
@@ -292,14 +362,25 @@ def main(argv: list[str] | None = None) -> int:
         if not paths:
             print(f"{organ:<15} SKIP  manifest declares no implementation paths")
             continue
+        # `--ignored` is deliberate. Build artifacts are the contamination that
+        # actually happens, and they are precisely the ones a default
+        # `git status` hides while `os.listdir` counts them.
+        status = subprocess.run(
+            ["git", "-C", checkout, "status", "--porcelain", "--ignored"],
+            capture_output=True, text=True)
+        if status.returncode != 0:
+            print(f"{organ:<15} REFUSED  cannot read git status of {checkout}")
+            continue
+        dirty = tuple(line[3:] for line in status.stdout.splitlines() if line[3:])
         try:
             attestation = attest(organ, repository, commit, checkout, paths,
-                                 LIMITATIONS)
+                                 LIMITATIONS, dirty=dirty)
         except PeerEvidenceError as exc:
             print(f"{organ:<15} REFUSED  {exc}")
             continue
         write(attestation)
-        print(f"{organ:<15} {commit[:7]}  {len(attestation.paths)} paths attested")
+        print(f"{organ:<15} {commit[:7]}  {len(attestation.paths)} paths attested  "
+              f"{attestation.checkout_state}")
     return 0
 
 

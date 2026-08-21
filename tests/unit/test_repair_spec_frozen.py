@@ -116,14 +116,70 @@ def test_continuity_hashes_describe_the_real_artifacts_now():
     assert combined.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
 
 
+BASELINE_CORPUS = os.path.join(ROOT, "evolution", "repair", "baseline_corpus")
+
+
+def _baseline_sha256sums():
+    sums = {}
+    with open(os.path.join(BASELINE_CORPUS, "SHA256SUMS"), encoding="utf-8") as handle:
+        for line in handle:
+            digest, name = line.strip().split(None, 1)
+            sums[name.strip()] = digest
+    return sums
+
+
+def test_baseline_corpus_matches_its_recorded_hashes():
+    """The snapshot is what it claims to be: the three manifests as of
+    BASELINE_COMMIT, extractable with `git show cb234fa:organs/<name>`."""
+    for name, expected in _baseline_sha256sums().items():
+        with open(os.path.join(BASELINE_CORPUS, name), "rb") as handle:
+            assert hashlib.sha256(handle.read()).hexdigest() == expected, \
+                f"baseline corpus file {name} does not match its recorded hash"
+
+
+def test_baseline_corpus_still_matches_the_live_manifests():
+    """Drift detector, stated out loud rather than resolved silently.
+
+    Today the snapshot and organs/ are byte-identical for these three files. If
+    one is legitimately edited, this fails and forces the choice: either the
+    edit was unintended, or a NEW experiment should be frozen against the new
+    corpus. The finished Package 3 experiment is never re-pointed at a corpus
+    it did not measure.
+    """
+    for name, expected in _baseline_sha256sums().items():
+        live = os.path.join(ROOT, "organs", name)
+        with open(live, "rb") as handle:
+            actual = hashlib.sha256(handle.read()).hexdigest()
+        assert actual == expected, (
+            f"organs/{name} has changed since the Package 3 baseline.\n"
+            "Freeze a new experiment against the new corpus; do not re-point "
+            "the finished one."
+        )
+
+
 def test_live_corpus_expectation_matches_the_component_being_replaced():
     """The frozen target function is measured from the real institution, not
-    imagined. If organs/ or contracts/ change, this fails and the experiment
-    must be re-frozen rather than quietly re-interpreted."""
+    imagined.
+
+    The corpus is read from evolution/repair/baseline_corpus/ — the three
+    manifests this experiment actually measured — rather than from the live
+    organs/ directory. Reading the live directory coupled a finished experiment
+    to a growing institution: registering a fourth organ moves
+    unresolved_count from 7 to 12 and fails this test, though the linker has not
+    regressed at all.
+
+    spec.py is unchanged and SPEC_SHA256 still verifies. Re-freezing the tables
+    would have retroactively altered the baseline that the recorded Package 3
+    and Package 4 results were judged against, which is the exact failure spec.py
+    describes itself as preventing. See baseline_corpus/README.md.
+
+    A real linker regression is still caught: the linker runs unchanged against
+    this corpus. Only the corpus membership is pinned.
+    """
     from linker.linker import InstitutionalLinker
     from linker.manifest import load_all
 
-    report = InstitutionalLinker(load_all()).link()
+    report = InstitutionalLinker(load_all(BASELINE_CORPUS)).link()
 
     triples = tuple(sorted((e.producer, e.contract, e.consumer)
                            for e in report.edges))

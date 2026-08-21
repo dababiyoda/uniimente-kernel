@@ -96,7 +96,10 @@ CHILD = textwrap.dedent(
     from evolution.repair.r3_local_rule import LocalRulePropagation
     from linker.manifest import load_all
 
-    manifests = load_all(__REPO_ROOT__ + "/organs")
+    from evolution.repair.harness import BASELINE_CORPUS_DIR
+
+    # The frozen Package 3 corpus, not organs/ — see baseline_corpus/README.md.
+    manifests = load_all(BASELINE_CORPUS_DIR)
     contracts_dir = __REPO_ROOT__ + "/contracts"
     contract = expectations.live_contract()
 

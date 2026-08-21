@@ -27,6 +27,11 @@
     "objective": {
       "type": "string"
     },
+    "intent_ref": {
+      "type": ["string", "null"],
+      "pattern": "^intent:[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "The IntentRecord (contracts/intent.schema.json) this decision serves. Optional for backward compatibility with decisions recorded before the Founder Intent Ledger was typed; a null or absent intent_ref makes the decision UNTRACEABLE to founder intent and is counted as a broken first link by traceability/. Never inferred — an unlinked decision stays unlinked until a human links it."
+    },
     "question": {
       "type": "string"
     },

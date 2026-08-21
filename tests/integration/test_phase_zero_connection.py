@@ -22,6 +22,7 @@ FIXTURES = os.path.join(ROOT, "tests", "fixtures")
 DALEOBANKS = "spiffe://uniimente.internal/organ/daleobanks"
 WEALTHMACHINE = "spiffe://uniimente.internal/organ/wealthmachine"
 KERNEL = "spiffe://uniimente.internal/organ/constitutional-controller"
+PUMPSTATION = "spiffe://uniimente.internal/organ/pumpstation"
 
 
 def wire_packet():
@@ -35,7 +36,33 @@ def wire_assessment():
 # --------------------------------------------------------------- manifests
 def test_all_organ_manifests_validate():
     manifests = load_all()
-    assert {m.organ_id for m in manifests} == {DALEOBANKS, KERNEL, WEALTHMACHINE}
+    assert {m.organ_id for m in manifests} == {DALEOBANKS, KERNEL, WEALTHMACHINE,
+                                               PUMPSTATION}
+
+
+def test_pumpstation_declares_no_treasury_or_signing_authority():
+    """The organ's constitutional position, asserted rather than assumed.
+
+    PumpStation is a Web3 organ, so the interesting claim is what it may NOT do.
+    Its manifest must keep saying so: authority above internal_write, or a
+    quietly dropped prohibition, changes what the institution has agreed to.
+    """
+    pump = next(m for m in load_all() if m.organ_id == PUMPSTATION)
+
+    assert pump.authority["max_consequence_class"] == "internal_write"
+    assert pump.authority["external_actions_require_kernel_gate"] is True
+    assert pump.authority["may_self_promote"] is False
+
+    prohibitions = " ".join(pump.prohibited_actions).lower()
+    for forbidden in ("treasury", "token", "defi", "spending permission"):
+        assert forbidden in prohibitions, \
+            f"pumpstation manifest no longer prohibits {forbidden!r}"
+
+    # Admission is not authority: the gate decides what may be built, never
+    # what may act.
+    gate = next(c for c in pump.raw["capabilities"]
+                if c["capability_id"] == "pumpstation.admission_gate")
+    assert "confers no authority" in gate["description"]
 
 
 def test_manifest_validation_fails_closed_with_named_fields(tmp_path):

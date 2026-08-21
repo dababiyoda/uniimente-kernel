@@ -235,6 +235,60 @@ class PostgresSpine:
             self._rollback_quietly()
             raise SpineError(f"postgres spine rebuild append failed: {exc!r}") from exc
 
+    # ---------------------------------------------- WP-05 bulk writes (additive)
+
+    def append_many(
+        self,
+        models: list[KernelModel],
+        *,
+        kind: str | None = None,
+        refs: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Append a batch of contracts in ONE transaction (WP-05, SPEC-WP05 3.4).
+
+        One advisory xact lock, one head read, N inserts, one commit —
+        all-or-nothing: any failure rolls the whole batch back ->
+        SpineError. The per-record hash formula is the FROZEN WP-01 formula,
+        byte-identical to ``append`` applied sequentially to the same models
+        (proven by the hash-parity test): each record chains prev_hash from
+        its in-batch predecessor. ``InstitutionalEvent.spine_seq`` is assigned
+        per element by the spine, never by callers. An empty batch is a no-op
+        returning [] without touching the connection.
+        """
+        models = list(models)
+        for model in models:
+            if not isinstance(model, KernelModel):
+                raise TypeError("the spine stores KernelModel instances only")
+        if not models:
+            return []
+        try:
+            head = self._locked_head()
+            seq = 0 if head is None else int(head[0]) + 1
+            prev_hash = GENESIS_HASH if head is None else str(head[1])
+            records: list[dict[str, Any]] = []
+            for model in models:
+                if isinstance(model, InstitutionalEvent):
+                    # spine_seq is assigned by the spine on append, never by callers.
+                    model = model.model_copy(update={"spine_seq": seq})
+                body: dict[str, Any] = {
+                    "seq": seq,
+                    "prev_hash": prev_hash,
+                    "kind": kind or type(model).__name__,
+                    "refs": refs or {},
+                    "payload": model.model_dump(mode="json"),
+                }
+                record_hash = sha256_hex(canonical_json(body).encode("utf-8"))
+                record = {**body, "record_hash": record_hash}
+                self._insert(record)
+                records.append(record)
+                seq += 1
+                prev_hash = record_hash
+            self._conn.commit()
+            return records
+        except Exception as exc:
+            self._rollback_quietly()
+            raise SpineError(f"postgres spine append_many failed: {exc!r}") from exc
+
     # ------------------------------------------------------------ internals
 
     def _locked_head(self) -> tuple | None:

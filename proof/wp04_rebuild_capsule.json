@@ -1,0 +1,28 @@
+{
+  "capsule_schema": "wp04-rebuild-capsule/1.0",
+  "generated_at": "2026-08-21T14:30:29.527335+00:00",
+  "ok": true,
+  "origin": {
+    "head_record_hash": "d0a05131e09782da327b8f8bd7e327a7102cbf0fd8914beb6a43ac3dee79ba13",
+    "record_count": 10,
+    "verify_chain": true
+  },
+  "rebuild_proof": true,
+  "rebuilt": {
+    "head_record_hash": "d0a05131e09782da327b8f8bd7e327a7102cbf0fd8914beb6a43ac3dee79ba13",
+    "record_count": 10,
+    "verify_chain": true
+  },
+  "record_hash_parity": true,
+  "tables": {
+    "origin": "wp04_origin",
+    "rebuilt": "wp04_rebuilt",
+    "tampered": "wp04_tampered"
+  },
+  "tamper_control": true,
+  "tampered": {
+    "tampered_field": "payload.actor_id",
+    "tampered_seq": 0,
+    "verify_chain": false
+  }
+}

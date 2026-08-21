@@ -1,0 +1,43 @@
+collaboration_record:
+  decision_id: DELIB-KIMI-2026-08-22-001
+  contributor: KIMI
+  model: "Kimi K3 (Moonshot AI)"
+  timestamp: "2026-08-22T00:00:00Z"
+  founder_intent_ids: [INTENT-0027, INTENT-0028]
+  inspected_sources:
+    - "uniimente-kernel main @ 542c8f57: commits, 80 branches, 30 PRs + bodies of #21/#26/#54/#71/#78/#79, top-level tree (45 entries), docs/, contracts/, docs/intent/, PR template, verifier/runs/, ledger.json @ PR #54 head, issue #80"
+    - "DALEOBANKS main @ ed5e95d7 + PRs/issues (survey, spot-verified)"
+    - "WealthMachineIntelligence main @ ec84b6a2 + PRs/issues (survey, spot-verified)"
+  claims:
+    observations:
+      - "Two parallel kernel lineages exist: canonical merged main line and unmerged WP build/* line; issue #80's prior reconciliation artifacts were local-only and are lost"
+      - "Organ repos carry merged vendored-schema migrations (direct-to-main, authorization not on record) alongside open SDK-shim convergence stacks (DALEOBANKS #58-#61/#73, WMI #28)"
+      - "Open founder decisions: issue #80 A/B/D; PR #54 ADR-001/D-001; PR #71 CONTRADICTION-0001 + BLK-1..4; kernel #1; DALEOBANKS EXPERIMENT-001"
+    inferences:
+      - "Alternative A (canonical main owns; WP mechanisms ported) preserves the strongest verified properties of both lines with the least authority multiplication"
+      - "The dominant trail-failure mode is local-only artifacts; in-repo records are the fix"
+    proposals:
+      - "Land docs/collaboration/ records + INTENT-0027/0028 via draft PR; comment on issue #80"
+      - "Founder rules the six open decisions; no convergence executed before that"
+    unresolved:
+      - "WP-line authorship attribution (git metadata does not establish the operating model)"
+      - "Whether vendored-pin or SDK-shim becomes the canonical contract-consumption mechanism"
+  architecture_position: "Kernel owns constitution/authority/contracts/spine/evidence/consequence; organs hold pinned deps/adapters/shims only; cockpit is a projection client, never a second governance engine"
+  evidence:
+    - "deterministic_fixture: validators exit 0 (intent ledger, deliberation); Wave-0 inventory 45/45 classified"
+    - "deterministic_fixture: GitHub API reads 2026-08-22 (kernel)"
+    - "prose_claim: WP-line test counts and live-capsule claims (not re-run)"
+  counterevidence:
+    - "WP line holds stronger-tier evidence on two mechanisms (live external capsule, Neon rebuild drill) than canonical main's in-memory equivalents; recommendation A depends on those properties surviving porting"
+  disagreements:
+    - "Ownership map is recorded before founder ratification of the ownership table; recorded as proposed with review triggers"
+  risks:
+    - "Map staleness in a fast-moving repo set (mitigated by per-record review triggers)"
+    - "Recommendation hardening into perceived fact (mitigated by NEEDS_FOUNDER_DECISION and draft status)"
+  authority_impact:
+    introduces_new_authority_source: false
+    creates_parallel_canon: false
+  implementation_impact: "none — records only; no code, merge, or closure"
+  rollback: "close the draft PR unmerged; if merged, revert the single merge commit (records are additive)"
+  requested_next_role: "Founder (Alfonso Lopez) — rulings on issue #80, PR #54, PR #71, kernel #1, EXPERIMENT-001"
+  requested_next_action: "Rule on the catalogued decisions; any contributor: re-run WP evidence against ported mechanisms before any convergence merge"

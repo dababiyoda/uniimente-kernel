@@ -249,6 +249,65 @@ def test_blocked_technologies_name_the_dependency_holding_them_down():
             assert dep in ARSENAL
 
 
+# -------------------------------------------------------------- unlock levers
+def test_only_technologies_with_dependents_are_levers():
+    """A leaf can be advanced all day without raising anyone's ceiling."""
+    report = compute()
+    dependent_count = {}
+    for tech_id, spec in ARSENAL.items():
+        for dep in spec.dependencies:
+            dependent_count[dep] = dependent_count.get(dep, 0) + 1
+    for lever in report.unlock_levers():
+        assert dependent_count.get(lever.technology_id), (
+            f"#{lever.technology_id} has no dependents and cannot be a lever"
+        )
+        assert len(lever.dependent_ids) == dependent_count[lever.technology_id]
+
+
+def test_a_technology_at_its_own_ceiling_is_not_a_lever():
+    """It cannot rise until its dependencies do, so it is not the thing to pull."""
+    report = compute()
+    lever_ids = {l.technology_id for l in report.unlock_levers()}
+    for status in report.statuses.values():
+        if status.technology_id in lever_ids:
+            assert status.can_advance
+
+
+def test_levers_and_blocked_technologies_do_not_overlap():
+    report = compute()
+    lever_ids = {l.technology_id for l in report.unlock_levers()}
+    blocked_ids = {s.technology_id for s in report.blocked}
+    assert lever_ids & blocked_ids == set()
+
+
+def test_levers_are_ordered_by_how_much_they_unlock():
+    levers = compute().unlock_levers()
+    counts = [len(l.dependent_ids) for l in levers]
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_a_lever_needing_an_external_outcome_says_so():
+    """The distinction that decides whether building can clear it."""
+    from blueprint.ladder import EvidenceKind
+
+    for lever in compute().unlock_levers():
+        expected = EvidenceKind.EXTERNAL_OUTCOME in lever.missing
+        assert lever.needs_external_reality is expected
+
+
+def test_every_lever_names_concrete_missing_evidence():
+    """A lever with nothing missing is not a lever, it is already done."""
+    for lever in compute().unlock_levers():
+        assert lever.missing, f"#{lever.technology_id} is a lever needing nothing"
+
+
+def test_a_lever_grants_nothing():
+    from blueprint.critical_path import UnlockLever
+
+    for name in ("authorize", "activate", "pull", "advance", "promote"):
+        assert not hasattr(UnlockLever, name)
+
+
 def test_the_report_grants_nothing():
     report = compute()
     assert not hasattr(report, "authorize")

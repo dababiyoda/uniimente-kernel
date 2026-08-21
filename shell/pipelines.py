@@ -83,6 +83,33 @@ def _frontier() -> StageResult:
               tuple(rows))
 
 
+def _levers() -> StageResult:
+    """What would actually unstick the institution, and who owns each one."""
+    from blueprint.critical_path import compute
+    from blueprint.registry import Owner
+
+    levers = compute().unlock_levers()
+    if not levers:
+        return unresolved("levers", "no technology can raise anyone's ceiling",
+                          ("Every technology with dependents is already at its own "
+                           "ceiling. Nothing internal can move the critical path.",))
+    rows = ["  " + lever.headline for lever in levers]
+    mine = [l for l in levers if l.owner is Owner.CLAUDE]
+    buildable = [l for l in mine if not l.needs_external_reality]
+    detail = tuple(rows) + (
+        "",
+        f"CLAUDE-owned: {[l.technology_id for l in mine]}; of those, "
+        f"{[l.technology_id for l in buildable]} need only evidence that could be "
+        "built, the rest need a reconciled external consequence.",
+    )
+    verb = "is" if len(buildable) == 1 else "are"
+    headline = (f"{len(levers)} technologies could raise a ceiling; "
+                f"{len(buildable)} of them {verb} CLAUDE-owned and buildable")
+    if not buildable:
+        return unresolved("levers", headline, detail)
+    return ok("levers", headline, detail)
+
+
 def _blocked() -> StageResult:
     from blueprint.critical_path import compute
 
@@ -302,6 +329,7 @@ FRONTIER = Pipeline(
     "what is unblocked right now and who owns it",
     (
         Stage("frontier", _frontier, reads="blueprint.critical_path"),
+        Stage("levers", _levers, reads="blueprint.critical_path"),
         Stage("blocked", _blocked, reads="blueprint.critical_path"),
     ),
 )

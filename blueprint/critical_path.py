@@ -22,7 +22,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from blueprint.evidence import KERNEL_ROOT
-from blueprint.ladder import RUNG_ORDER, Reality, Rung, next_rung, rung_index
+from blueprint.ladder import (
+    RUNG_ORDER,
+    EvidenceKind,
+    Reality,
+    Rung,
+    missing_for,
+    next_rung,
+    rung_index,
+)
 from blueprint.registry import BindingAudit, Owner, audit, binding
 from foundry.arsenal import ARSENAL
 
@@ -125,6 +133,43 @@ class TechnologyStatus:
         return next_rung(self.constrained_rung)
 
 
+@dataclass(frozen=True)
+class UnlockLever:
+    """A technology whose advance would give something downstream headroom.
+
+    The actionable half of the stall reading. `stall_condition_fired` says the
+    institution is not moving; this says exactly which technologies could move it
+    and who owns each one. A technology qualifies only if it has dependents — a
+    leaf can be advanced all day without raising anyone's ceiling — and only if it
+    is not already at its own ceiling, since one that is cannot rise until its
+    dependencies do.
+
+    `missing` is what the *next* rung needs, so the lever is a concrete piece of
+    work rather than an aspiration.
+    """
+
+    technology_id: int
+    name: str
+    awarded: Rung | None
+    ceiling: Rung
+    owner: Owner
+    dependent_ids: tuple[int, ...]
+    missing: tuple[EvidenceKind, ...]
+
+    @property
+    def needs_external_reality(self) -> bool:
+        """No amount of building clears this one; only a reconciled consequence."""
+        return EvidenceKind.EXTERNAL_OUTCOME in self.missing
+
+    @property
+    def headline(self) -> str:
+        rung = self.awarded.value if self.awarded else "UNSUPPORTED"
+        needs = ", ".join(k.value for k in self.missing) or "nothing"
+        return (f"#{self.technology_id:<3} {self.name[:34]:<34} {rung:<11} "
+                f"owner={self.owner.value:<8} unlocks {len(self.dependent_ids):<2} "
+                f"needs {needs}")
+
+
 @dataclass
 class CriticalPathReport:
     statuses: dict[int, TechnologyStatus] = field(default_factory=dict)
@@ -161,6 +206,44 @@ class CriticalPathReport:
         for s in sorted(self.statuses.values(), key=lambda s: s.technology_id):
             out[s.reality.value].append(s.technology_id)
         return {k: tuple(v) for k, v in out.items()}
+
+    def unlock_levers(self) -> tuple[UnlockLever, ...]:
+        """Every technology whose advance would raise someone's ceiling.
+
+        Ordered by how many technologies sit directly downstream, because that is
+        what "unlocks the most" means here.
+        """
+        from blueprint.evidence import resolve_all, satisfied_kinds
+        from blueprint.registry import BINDINGS
+
+        direct: dict[int, list[int]] = {}
+        for technology_id, spec in ARSENAL.items():
+            for dependency in spec.dependencies:
+                direct.setdefault(dependency, []).append(technology_id)
+
+        levers: list[UnlockLever] = []
+        for technology_id, status in sorted(self.statuses.items()):
+            downstream = direct.get(technology_id)
+            if not downstream:
+                continue                       # a leaf raises nobody's ceiling
+            if not status.can_advance:
+                continue                       # already at its own ceiling
+            target = status.target_rung
+            if target is None:
+                continue
+            binding = BINDINGS[technology_id]
+            have = satisfied_kinds(resolve_all(binding.evidence))
+            levers.append(UnlockLever(
+                technology_id=technology_id,
+                name=status.name,
+                awarded=status.awarded_rung,
+                ceiling=status.ceiling,
+                owner=status.owner,
+                dependent_ids=tuple(sorted(downstream)),
+                missing=tuple(sorted(missing_for(target, have), key=lambda k: k.value)),
+            ))
+        return tuple(sorted(levers,
+                            key=lambda l: (-len(l.dependent_ids), l.technology_id)))
 
     def owned_by(self, owner: Owner) -> tuple[TechnologyStatus, ...]:
         return tuple(sorted((s for s in self.statuses.values() if s.owner is owner),

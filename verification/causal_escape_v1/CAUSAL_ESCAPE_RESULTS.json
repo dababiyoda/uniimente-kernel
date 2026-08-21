@@ -1,0 +1,1501 @@
+{
+  "summary": {
+    "pre_registered_manifest_sha256": "cd7025626bcc89b0b87bff4d9aaca029666dfcba74182002d6d316a1de4a0664",
+    "development_episodes": 24,
+    "held_out_episodes": 16,
+    "ordinary_held_out": {
+      "recovered": 8,
+      "of": 8,
+      "threshold": 7
+    },
+    "causal_escape_held_out": {
+      "recovered": 3,
+      "of": 8,
+      "threshold": 6
+    },
+    "distinct_causally_valid_forms": 10,
+    "identical_rebuilds_allowed_in_condition_A": 0,
+    "solution_leakage_events": 0,
+    "global_topology_leakage_events": 0,
+    "max_motif_information_bits": 3,
+    "total_messages": 10117,
+    "redundant_attachments_total": 86,
+    "inherited_authority_events": 0,
+    "unauthorized_external_effects": 0,
+    "failures": [
+      {
+        "episode": 3,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "ingest.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 32
+      },
+      {
+        "episode": 7,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "decide.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 171
+      },
+      {
+        "episode": 11,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "emit.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 411
+      },
+      {
+        "episode": 15,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "ingest.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 32
+      },
+      {
+        "episode": 19,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "decide.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 231
+      },
+      {
+        "episode": 23,
+        "condition": "B",
+        "held_out": false,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "beta",
+          "gamma"
+        ],
+        "lost": [
+          "emit.alpha"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 351
+      },
+      {
+        "episode": 32,
+        "condition": "B",
+        "held_out": true,
+        "cause": "capability_loss",
+        "families": [
+          "alpha",
+          "delta",
+          "epsilon"
+        ],
+        "lost": [
+          "emit.alpha",
+          "ingest.delta"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 196
+      },
+      {
+        "episode": 33,
+        "condition": "B",
+        "held_out": true,
+        "cause": "partition",
+        "families": [
+          "alpha",
+          "delta",
+          "epsilon"
+        ],
+        "lost": [
+          "ingest.alpha",
+          "decide.delta"
+        ],
+        "failure_class": "partition_intolerant_coupling",
+        "certificate_digest": "5942c3ab01986887",
+        "certificate_carries_solution": false,
+        "motif_information_bits": 2,
+        "candidate_capabilities": [
+          "decide.epsilon",
+          "emit.epsilon",
+          "ingest.delta",
+          "ingest.epsilon"
+        ],
+        "control_topology": "pipeline",
+        "verification": "readback",
+        "identical_to_predecessor": false,
+        "causal_escape": false,
+        "causal_reason": "reproduces prohibited motif for role 'ingest' (partition_intolerant_coupling)",
+        "messages": 138,
+        "ticks": 7,
+        "redundant_attachments": 1,
+        "form_signature": "d6eb5a8bc30f3b80",
+        "recovered": false
+      },
+      {
+        "episode": 35,
+        "condition": "B",
+        "held_out": true,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "delta",
+          "epsilon"
+        ],
+        "lost": [
+          "emit.alpha",
+          "ingest.delta"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 196
+      },
+      {
+        "episode": 36,
+        "condition": "B",
+        "held_out": true,
+        "cause": "capability_loss",
+        "families": [
+          "alpha",
+          "delta",
+          "epsilon"
+        ],
+        "lost": [
+          "ingest.alpha",
+          "decide.delta"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 24
+      },
+      {
+        "episode": 39,
+        "condition": "B",
+        "held_out": true,
+        "cause": "verification",
+        "families": [
+          "alpha",
+          "delta",
+          "epsilon"
+        ],
+        "lost": [
+          "ingest.alpha",
+          "decide.delta"
+        ],
+        "recovered": false,
+        "failure": "tissue did not fill every role",
+        "messages": 24
+      }
+    ]
+  },
+  "episodes": [
+    {
+      "episode": 0,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "c120a256c39dc325",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 1,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "e1ed24050dd3fa62",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 2,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "c01176942256749d",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 401,
+      "ticks": 6,
+      "redundant_attachments": 4,
+      "form_signature": "d9665cf926f7eb9b",
+      "recovered": true
+    },
+    {
+      "episode": 3,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 32
+    },
+    {
+      "episode": 4,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "b9c3284d4e5adc83",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 5,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "da88efc2683c2893",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 401,
+      "ticks": 6,
+      "redundant_attachments": 4,
+      "form_signature": "d9665cf926f7eb9b",
+      "recovered": true
+    },
+    {
+      "episode": 6,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "09907ffaa8a5e650",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 7,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 171
+    },
+    {
+      "episode": 8,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "5103a410ebd1ded9",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 336,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "16a186b8731dff7e",
+      "recovered": true
+    },
+    {
+      "episode": 9,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "d9d8ed6b107b42fc",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 10,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "51b466a8e718de3f",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 11,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 411
+    },
+    {
+      "episode": 12,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "7265833984d55ac1",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 13,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "24f2580eeb7ab27d",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 14,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "f3cb5df0347702a7",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 461,
+      "ticks": 6,
+      "redundant_attachments": 5,
+      "form_signature": "8c2c868ac54d8960",
+      "recovered": true
+    },
+    {
+      "episode": 15,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 32
+    },
+    {
+      "episode": 16,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "22fc744ad7db965f",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 17,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "032b307730f9640a",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 336,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "16a186b8731dff7e",
+      "recovered": true
+    },
+    {
+      "episode": 18,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "5c2c0a5d3e17efb5",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 19,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 231
+    },
+    {
+      "episode": 20,
+      "condition": "A",
+      "held_out": false,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "ef5573c78e9227be",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 461,
+      "ticks": 6,
+      "redundant_attachments": 5,
+      "form_signature": "8c2c868ac54d8960",
+      "recovered": true
+    },
+    {
+      "episode": 21,
+      "condition": "B",
+      "held_out": false,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "ingest.alpha"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "f526f5c37c05d2e6",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.beta",
+        "ingest.gamma"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 235,
+      "ticks": 7,
+      "redundant_attachments": 3,
+      "form_signature": "3a8f4f6ed5c091e9",
+      "recovered": true
+    },
+    {
+      "episode": 22,
+      "condition": "A",
+      "held_out": false,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "decide.alpha"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "2d0be9db1c145daf",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.beta",
+        "decide.gamma",
+        "emit.beta",
+        "emit.gamma",
+        "ingest.alpha",
+        "ingest.beta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 348,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "9a1062f860d11ba5",
+      "recovered": true
+    },
+    {
+      "episode": 23,
+      "condition": "B",
+      "held_out": false,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "lost": [
+        "emit.alpha"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 351
+    },
+    {
+      "episode": 24,
+      "condition": "A",
+      "held_out": true,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "8041fb5c13c0d8df",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.delta",
+        "ingest.epsilon"
+      ],
+      "control_topology": "pipeline",
+      "verification": "readback",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 138,
+      "ticks": 7,
+      "redundant_attachments": 1,
+      "form_signature": "d6eb5a8bc30f3b80",
+      "recovered": true
+    },
+    {
+      "episode": 25,
+      "condition": "A",
+      "held_out": true,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "54e8923bbbbb902b",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.delta",
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.delta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 239,
+      "ticks": 6,
+      "redundant_attachments": 2,
+      "form_signature": "1ab44d3513ebd937",
+      "recovered": true
+    },
+    {
+      "episode": 26,
+      "condition": "A",
+      "held_out": true,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.delta"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "b1b3a245624289f5",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.delta",
+        "decide.epsilon",
+        "emit.delta",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.epsilon"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 267,
+      "ticks": 6,
+      "redundant_attachments": 4,
+      "form_signature": "662bfa833aa2a6ec",
+      "recovered": true
+    },
+    {
+      "episode": 27,
+      "condition": "A",
+      "held_out": true,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "e17a577b55f9693c",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.delta",
+        "ingest.epsilon"
+      ],
+      "control_topology": "pipeline",
+      "verification": "readback",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 138,
+      "ticks": 7,
+      "redundant_attachments": 1,
+      "form_signature": "d6eb5a8bc30f3b80",
+      "recovered": true
+    },
+    {
+      "episode": 28,
+      "condition": "A",
+      "held_out": true,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "6073ddef464b5b35",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.delta",
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.delta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 239,
+      "ticks": 6,
+      "redundant_attachments": 2,
+      "form_signature": "1ab44d3513ebd937",
+      "recovered": true
+    },
+    {
+      "episode": 29,
+      "condition": "A",
+      "held_out": true,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "10436e2c88660e4f",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.delta",
+        "decide.epsilon",
+        "emit.delta",
+        "emit.epsilon",
+        "ingest.alpha"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 227,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "0b84895e16ec482d",
+      "recovered": true
+    },
+    {
+      "episode": 30,
+      "condition": "A",
+      "held_out": true,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "50e6b42be7ad697c",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.delta",
+        "ingest.epsilon"
+      ],
+      "control_topology": "pipeline",
+      "verification": "readback",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 138,
+      "ticks": 7,
+      "redundant_attachments": 1,
+      "form_signature": "d6eb5a8bc30f3b80",
+      "recovered": true
+    },
+    {
+      "episode": 31,
+      "condition": "A",
+      "held_out": true,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.delta"
+      ],
+      "failure_class": "unredundant_verification",
+      "certificate_digest": "4bf76880e4870411",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 3,
+      "candidate_capabilities": [
+        "decide.delta",
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.delta",
+        "ingest.epsilon"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "condition A: predecessor form remains causally valid",
+      "messages": 286,
+      "ticks": 6,
+      "redundant_attachments": 3,
+      "form_signature": "748e0df150ba1e33",
+      "recovered": true
+    },
+    {
+      "episode": 32,
+      "condition": "B",
+      "held_out": true,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.delta"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 196
+    },
+    {
+      "episode": 33,
+      "condition": "B",
+      "held_out": true,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "5942c3ab01986887",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.delta",
+        "ingest.epsilon"
+      ],
+      "control_topology": "pipeline",
+      "verification": "readback",
+      "identical_to_predecessor": false,
+      "causal_escape": false,
+      "causal_reason": "reproduces prohibited motif for role 'ingest' (partition_intolerant_coupling)",
+      "messages": 138,
+      "ticks": 7,
+      "redundant_attachments": 1,
+      "form_signature": "d6eb5a8bc30f3b80",
+      "recovered": false
+    },
+    {
+      "episode": 34,
+      "condition": "B",
+      "held_out": true,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.delta"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "7e1c87b848ae0386",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.delta",
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.delta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 239,
+      "ticks": 6,
+      "redundant_attachments": 2,
+      "form_signature": "1ab44d3513ebd937",
+      "recovered": true
+    },
+    {
+      "episode": 35,
+      "condition": "B",
+      "held_out": true,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.delta"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 196
+    },
+    {
+      "episode": 36,
+      "condition": "B",
+      "held_out": true,
+      "cause": "capability_loss",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 24
+    },
+    {
+      "episode": 37,
+      "condition": "B",
+      "held_out": true,
+      "cause": "partition",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "decide.alpha",
+        "emit.delta"
+      ],
+      "failure_class": "partition_intolerant_coupling",
+      "certificate_digest": "031d05f0ed9b07b7",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.delta",
+        "decide.epsilon",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.delta"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 239,
+      "ticks": 6,
+      "redundant_attachments": 2,
+      "form_signature": "1ab44d3513ebd937",
+      "recovered": true
+    },
+    {
+      "episode": 38,
+      "condition": "B",
+      "held_out": true,
+      "cause": "resource",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "emit.alpha",
+        "ingest.delta"
+      ],
+      "failure_class": "shared_resource_exhaustion",
+      "certificate_digest": "d3e07d05dbd64802",
+      "certificate_carries_solution": false,
+      "motif_information_bits": 2,
+      "candidate_capabilities": [
+        "decide.alpha",
+        "decide.delta",
+        "decide.epsilon",
+        "emit.delta",
+        "emit.epsilon",
+        "ingest.alpha",
+        "ingest.epsilon"
+      ],
+      "control_topology": "fan_out_vote",
+      "verification": "dual_read",
+      "identical_to_predecessor": false,
+      "causal_escape": true,
+      "causal_reason": "escapes every prohibited causal motif",
+      "messages": 267,
+      "ticks": 6,
+      "redundant_attachments": 4,
+      "form_signature": "662bfa833aa2a6ec",
+      "recovered": true
+    },
+    {
+      "episode": 39,
+      "condition": "B",
+      "held_out": true,
+      "cause": "verification",
+      "families": [
+        "alpha",
+        "delta",
+        "epsilon"
+      ],
+      "lost": [
+        "ingest.alpha",
+        "decide.delta"
+      ],
+      "recovered": false,
+      "failure": "tissue did not fill every role",
+      "messages": 24
+    }
+  ]
+}

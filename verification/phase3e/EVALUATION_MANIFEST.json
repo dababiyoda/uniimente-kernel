@@ -1,0 +1,236 @@
+{
+  "evaluation": "phase3e",
+  "title": "Bidirectional developmental demand, executable function semantics, measured causal phenotypes",
+  "predecessor": "PR #62 (Phase 3D) - preserved as an honest negative result, not superseded",
+  "phase3d_defects_independently_reproduced": {
+    "D0_constraint_never_exercised": "prohibited_attachments_blocked == 0 in PHASE3D_RESULTS.json, so no held-out recovery was causally attributable to the motif channel",
+    "D1_no_functional_execution": "Tissue2.execute() uses `payload` only inside a hash; no Cell2 method computes anything. Structural closure was measured, not function",
+    "D2_ground_truth_leakage": "run_phase3d.py passes partitioned=ep['cause'], resource_starved=ep['cause'], failed_role=<harness choice> straight into signature_from_failure",
+    "D3_declared_phenotype": "precipitate() hardcodes resource_allocation=static, memory_distribution=central, communication=direct, recovery_behaviour=reassign",
+    "D4_unnormalized_form_identity": "38 raw form_signatures collapse to ONE causal form (fan_in, dual_read) once capability and carrier names are removed"
+  },
+  "gates_on_entry": {
+    "A": "CLOSED",
+    "B": "CLOSED",
+    "C-SANDBOX": "CLOSED",
+    "C-ORGAN-SHADOW": "CLOSED",
+    "D": "CLOSED",
+    "E": "CLOSED",
+    "F": "REOPENED",
+    "G": "OPEN"
+  },
+  "held_out_function_geometries": [
+    "recursively_missing_branch",
+    "two_independent_self_recruiting_joins",
+    "nested_quorum_delayed_evidence",
+    "late_arriving_alternative_supplier",
+    "coupled_versus_independent_supplier",
+    "partitioned_demand_route",
+    "cyclic_affordances_requiring_loop_suppression",
+    "misleading_type_compatible_supplier",
+    "two_causally_different_satisfying_structures",
+    "orchestration_correctly_superior"
+  ],
+  "episodes": {
+    "development": 40,
+    "gate_f_held_out": 20,
+    "gate_g_held_out": 20,
+    "paired_intervention_minimum": 10
+  },
+  "thresholds": {
+    "minimum_gate_f_semantic_restorations": 17,
+    "minimum_gate_g_causal_escapes": 15,
+    "healthy_semantic_outputs_held_out": 40,
+    "observed_semantic_losses_held_out": 40,
+    "void_episodes": 0,
+    "minimum_blind_causal_class_accuracy": 0.85,
+    "minimum_blind_affected_role_accuracy": 0.8,
+    "minimum_topology_normalized_causal_forms": 5,
+    "premature_join_differentiations": 0,
+    "global_formation_scans": 0,
+    "solution_leakage_events": 0,
+    "inherited_authority_events": 0,
+    "unauthorized_external_effects": 0
+  },
+  "paired_intervention_requirements": {
+    "matching_prohibited_proposals_observed": "> 0",
+    "matching_prohibited_commits_without_certificate": "> 0",
+    "matching_prohibited_commits_with_certificate": 0,
+    "alternative_successful_commits_with_certificate": "> 0",
+    "method": "same seed, same damage, same cells; only the certificate differs"
+  },
+  "blind_diagnosis_contract": {
+    "diagnostician_may_receive": [
+      "execution traces",
+      "bond receipts",
+      "resource consumption records",
+      "message delivery evidence",
+      "missing or incorrect outputs",
+      "contradiction evidence",
+      "timing"
+    ],
+    "diagnostician_may_not_receive": [
+      "fixture cause label",
+      "harness-selected damaged cell",
+      "expected causal class",
+      "intended replacement",
+      "target topology"
+    ]
+  },
+  "harness_information_boundary": {
+    "harness_may_provide": [
+      "available capability cells",
+      "accepted and produced data types",
+      "resources",
+      "local neighbourhoods",
+      "the function contract",
+      "environmental conditions"
+    ],
+    "harness_may_not_provide": [
+      "the complete target graph",
+      "exact intermediate role sequence",
+      "predetermined attachment structure",
+      "ranked capability selection",
+      "intended alternative route"
+    ],
+    "note": "A conventional planner baseline MAY receive the complete graph. The bounded-local substrate may not."
+  },
+  "damage_policy": {
+    "deterministic": true,
+    "method": "after healthy execution, collect carriers present in the signed execution trace, select one by preregistered seed, apply the preregistered damage class",
+    "injector_may_inspect": "the completed execution trace",
+    "developmental_cells_may_inspect": "nothing of the above"
+  },
+  "baselines_required": [
+    "phase3d_substrate_v2",
+    "hardcoded_reverse_edges",
+    "global_dependency_solver",
+    "conventional_workflow_dag",
+    "centralized_planner",
+    "random_local_recruitment",
+    "local_capability_auction",
+    "recursive_demand_propagation",
+    "selected_invented_mechanism"
+  ],
+  "capability_families": [
+    "nu",
+    "xi",
+    "omicron",
+    "pi",
+    "rho"
+  ],
+  "seeds": {
+    "development": [
+      900,
+      901,
+      902,
+      903,
+      904,
+      905,
+      906,
+      907,
+      908,
+      909,
+      910,
+      911,
+      912,
+      913,
+      914,
+      915,
+      916,
+      917,
+      918,
+      919,
+      920,
+      921,
+      922,
+      923,
+      924,
+      925,
+      926,
+      927,
+      928,
+      929,
+      930,
+      931,
+      932,
+      933,
+      934,
+      935,
+      936,
+      937,
+      938,
+      939
+    ],
+    "gate_f": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014,
+      1015,
+      1016,
+      1017,
+      1018,
+      1019
+    ],
+    "gate_g": [
+      1100,
+      1101,
+      1102,
+      1103,
+      1104,
+      1105,
+      1106,
+      1107,
+      1108,
+      1109,
+      1110,
+      1111,
+      1112,
+      1113,
+      1114,
+      1115,
+      1116,
+      1117,
+      1118,
+      1119
+    ],
+    "paired_intervention": [
+      1200,
+      1201,
+      1202,
+      1203,
+      1204,
+      1205,
+      1206,
+      1207,
+      1208,
+      1209,
+      1210,
+      1211
+    ]
+  },
+  "integrity": {
+    "phase3d_fixtures_are_spent": true,
+    "no_threshold_may_be_lowered_after_execution": true,
+    "no_denominator_may_be_redefined_after_execution": true,
+    "no_instrument_repair_followed_by_rescoring_observed_fixtures": true,
+    "a_failed_round_ends_with": [
+      "CONTINUE",
+      "REPLACE",
+      "KILL"
+    ]
+  },
+  "pre_registration_method": "Git ancestry. Committed alone before any Phase 3E implementation or results exist; enforced by scripts/ci/check_phase3e_preregistration.py."
+}

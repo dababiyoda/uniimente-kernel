@@ -1,0 +1,18 @@
+{
+  "verified_across_package_boundary": true,
+  "max_windows_seconds": {
+    "internal_read": 3600,
+    "internal_write": 1800,
+    "external_contact": 900,
+    "financial": 300,
+    "irreversible": 120
+  },
+  "on_stale": {
+    "internal_read": "permit",
+    "internal_write": "permit",
+    "external_contact": "refuse",
+    "financial": "refuse",
+    "irreversible": "human_escalation"
+  },
+  "note": "the window is bounded, NOT eliminated"
+}

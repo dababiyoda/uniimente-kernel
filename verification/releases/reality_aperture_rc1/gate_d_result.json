@@ -1,0 +1,28 @@
+{
+  "gate": "Gate D - reproducible cross-repository release",
+  "status": "CLOSED",
+  "metric": "REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES",
+  "baseline": 0,
+  "result": 1,
+  "target": 1,
+  "conditions": {
+    "fresh_pinned_checkouts": true,
+    "clean_declared_dependencies": true,
+    "freshly_built_artifacts": true,
+    "inspected_contents": true,
+    "clean_kernel_verification": true,
+    "clean_daleobanks_verification": true,
+    "installed_wheel_shadow_execution": true,
+    "no_source_tree_leakage": true,
+    "no_authority_leakage": true,
+    "reproducible_release_capsule": true,
+    "zero_real_external_effects": true
+  },
+  "evidence_lineage": "every file in this capsule was regenerated from the fresh-clone reproduction; nothing was copied from the previous working-tree capsule",
+  "residual": [
+    "production key custody undeployed",
+    "revocation window bounded not eliminated",
+    "vendored wheels in DALEOBANKS must be refreshed deliberately (cross-repo checkout needs a PAT)",
+    "no production deployment attempted or proven"
+  ]
+}

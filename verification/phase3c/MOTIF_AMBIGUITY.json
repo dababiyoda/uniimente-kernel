@@ -1,0 +1,15 @@
+{
+  "universe_size": 1152,
+  "single_motif": {
+    "compatible_predecessor_graphs": 384,
+    "exact_predecessor_uniquely_identifiable": false,
+    "threshold": 16,
+    "meets_threshold": true
+  },
+  "cumulative_three_motifs": {
+    "compatible_predecessor_graphs": 384,
+    "exact_predecessor_uniquely_identifiable": false,
+    "meets_threshold": true
+  },
+  "note": "Ambiguity-set measure replaces the earlier 'information_bits' count of populated fields, which was not an information measure."
+}

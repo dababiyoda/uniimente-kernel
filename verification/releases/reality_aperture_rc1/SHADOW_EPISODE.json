@@ -1,0 +1,11 @@
+{
+  "organ": "DALEOBANKS",
+  "mode": "shadow",
+  "artifact_installed": true,
+  "real_publications": 0,
+  "production_credentials": [],
+  "reachable_adapters": [
+    "fake-platform"
+  ],
+  "result": "22 passed, 1 skipped in 0.10s"
+}

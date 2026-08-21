@@ -1,0 +1,127 @@
+{
+  "baseline_value": 40.0,
+  "branches": [
+    {
+      "audit_id": "a2be0be6b0ef4eeb894e767a75eb2c1c",
+      "audit_overall": "pass",
+      "branch_id": "c9b4a5c8bf5c4a3fb2c8f07756fb46a7",
+      "decision": "retain",
+      "decision_id": "d7a203f06d4e4c2ca3c5d332ca1a7f4a",
+      "title": "Batch append API (append_many)"
+    },
+    {
+      "audit_id": "72fa30c480c749dd8c16e0c5ce84dd0a",
+      "audit_overall": "fail",
+      "branch_id": "86e283cfb7e44e978386c60e88b174da",
+      "decision": "kill",
+      "decision_id": "0ed1607115de425d9410f40d094ebebf",
+      "title": "Server-side hash chaining in SQL"
+    },
+    {
+      "audit_id": "9848cc3aca8b499bb0b78817cea3d2eb",
+      "audit_overall": "fail",
+      "branch_id": "9172d9154acb42c5a91e3d118d2912e2",
+      "decision": "kill",
+      "decision_id": "f5ee8b2a135843efbae3af7bf5d1ec1f",
+      "title": "Connection pooling for parallel appends"
+    }
+  ],
+  "capsule_schema": "wp05-evolution-capsule/1.0",
+  "cycle_index": 1,
+  "decisions": [
+    {
+      "branch_id": "c9b4a5c8bf5c4a3fb2c8f07756fb46a7",
+      "decided_by": "founder",
+      "decision_id": "d7a203f06d4e4c2ca3c5d332ca1a7f4a",
+      "outcome": "retain",
+      "rationale": "measured improvement 0.675 >= pre-registered threshold 0.5"
+    },
+    {
+      "branch_id": "86e283cfb7e44e978386c60e88b174da",
+      "decided_by": "founder",
+      "decision_id": "0ed1607115de425d9410f40d094ebebf",
+      "outcome": "kill",
+      "rationale": "audit killed: violates WP-04 ADR-1 (database is never a trusted verifier); JSONB canonicalization hazard"
+    },
+    {
+      "branch_id": "9172d9154acb42c5a91e3d118d2912e2",
+      "decided_by": "founder",
+      "decision_id": "f5ee8b2a135843efbae3af7bf5d1ec1f",
+      "outcome": "kill",
+      "rationale": "audit killed: multiplies writers against the single-chain advisory-lock design; benefit unproven at current scale"
+    }
+  ],
+  "experiment": {
+    "episode_closed": true,
+    "episode_id": "c696a961ab1b46f58f2838840a8b8f02",
+    "experiment_spec_id": "2de1824bb41e4394b90be0d6afbb16f2",
+    "receipt_facts": {
+      "baseline_source_sha256": "5fd979d1acee84c983f68ebfd73424e8c54ab53d80dc1ed8083216a3827809f4",
+      "baseline_value": 40.0,
+      "candidate_value": 13.0,
+      "harness_sha256": "19623c96b93f7f0703ac56b22794b6d07c8e395b8985afa1b7292714bf90a43d",
+      "metric": "pg_spine_bulk_append_ops",
+      "workload_id": "append10-pinned-events"
+    },
+    "reran_tests_green": true,
+    "verifier_record_id": "e288648d544448f48bbd98d33942571b"
+  },
+  "improvement_ratio": 0.675,
+  "loop_id": "31b441e4f4f84747a610bb0e46d41cb8",
+  "measured_value": 13.0,
+  "metric": {
+    "baseline_value": 40.0,
+    "direction": "decrease",
+    "harness_ref": "scripts/wp05_bench.py",
+    "metric_id": "pg_spine_bulk_append_ops",
+    "metric_unit": "connection_ops",
+    "threshold_improvement": 0.5,
+    "workload_id": "append10-pinned-events"
+  },
+  "ok": true,
+  "spine": {
+    "chain_verified_before_seal": true,
+    "closure_loop_record_hash": "d477bfb1e0aac941cc73ca677b17ef87734ef8e63aba7e4b63a850d00d1b0432",
+    "head_before_seal": "e47524eb1e7feb75b6e60fc5fbd3d73f5fbb8fe0beb3de35c8cbb40d0f6584f2",
+    "record_count_before_seal": 26,
+    "record_hashes_before_seal": [
+      "a651eef93f27cb084bfcc66bbdbfdde3dbbf367cc74582d4920cc69823d4db49",
+      "d09dbdb395650ca02f1f70ec4271add58c43b8ceefa1dfd4e995a7356d373242",
+      "ec54d7a402431a72582b233d05d18a3aaafbedfe9ba341d45b1406941975d290",
+      "6f161fcbb075cf34bf1c06ea03e139ed44e08ef8d0edb01757204bc2b595e90f",
+      "4d8797a725c2e9c6eb406a545deae06f3d257f7e81cc6ee392d66cd6aa6a6684",
+      "7c8c8886c5c8a99222123c39f66e0707b2e6a01431e2590c88008136c76adba0",
+      "b685ee3e2a9be8b461175c6f246aff8a1e5828e9ca8b3ce157c78e8e95f87384",
+      "2a82708314bb74259ec7003d6a8e1c0da4b96939baf048b2cf955d73f23f8526",
+      "3da66d853520e24d214d2e466bbd1c60f457eab93c6f1799bf0fa2c3b5e31660",
+      "0e0087e0a1310f807749d4c27fc1d01e6de58cf4d4f8be2832c81579964c6839",
+      "bcf420da0a4b5dba7af5b214eef2a7a30a60244145861887a45da7cdd4b815f1",
+      "f1dce7f5eb001448f69b6767974867a4f45f006c62ae3fe94e98729375e8fe73",
+      "ea29e5224606584b23518e1fcb75ecc7d0e7893b1c944a86842dbb2f26bc40ee",
+      "f8f3a01c3eaa325a5b7ee7a85accfb4630bea1875ca7b3dfa2b1ae34c4b005c2",
+      "46e3d4d92c4f88ecefe9c7ce692a2e59135756d36f901d1bee06b70cb0e27151",
+      "2a31dac12baf2fc77b95f503e1ef5b5ae6c36a3254eeddc1ff40c0ffb123cea7",
+      "8ab719fb13a659bd5a1e4bcbc76c0a27dbd7142c33fb4eddc4050c4ba572d7c9",
+      "ab1d1ed458e32f5d6b89db86cbcca9bfab1efe102c42d19f41ceab34773b21df",
+      "01b26d1c9f6c92d4fd0374396d7396e7020c044a28ac15c22d4c24a98688cc22",
+      "2f83b73407d2c22c008da715d8a042ac83ef6ba9f174693f4f0e6e3c486c6ad9",
+      "3a38fd90ba4706647121f79e8d5eb482b42becf5942c62450d93a30c05be6225",
+      "c442df0d6e0d113f837439325db090a55076944b0d6ecc4e84af1d17accb53aa",
+      "e1db67af39be020de87ea1f3bd51c34dc9e5ba18ed0af9516bcb8b6672673189",
+      "4331baf1a4c3b2a28188b35e458f3a241e767db29b5e907b7b59f3bfc76c328b",
+      "e175992d3bfc4eab410ada633b0aaaf0cb7f05354c181ba1e0ab8ad19e8b55e0",
+      "e47524eb1e7feb75b6e60fc5fbd3d73f5fbb8fe0beb3de35c8cbb40d0f6584f2"
+    ],
+    "sealed_head_hash": "d477bfb1e0aac941cc73ca677b17ef87734ef8e63aba7e4b63a850d00d1b0432",
+    "sealed_head_note": "sealed_head_hash is the spine head after the ClosureLoop seal append — on-chain it equals the EvolutionCapsule record's prev_hash. The head after BOTH seal appends is the capsule record's own hash, which cannot be embedded in its own payload (sha256 self-reference)."
+  },
+  "threshold_met": true,
+  "tree": {
+    "horizon": "wp05",
+    "root_objective": "Reduce connection-operation count of bulk appends on PostgresSpine",
+    "selected_branch_id": "c9b4a5c8bf5c4a3fb2c8f07756fb46a7",
+    "selection_rule": "max scores.expected_value among audit-passing branches with scores.risk <= 0.3 and scores.reversibility >= 0.8; ties -> lower scores.cost",
+    "tree_id": "55533b4fea0444b0b7f5ea4a7823cdaa"
+  },
+  "verdict": "baseline_beaten"
+}

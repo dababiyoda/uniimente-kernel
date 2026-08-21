@@ -30,7 +30,7 @@ Stages (SPEC-WP06 3.7), all machine-recorded on the spine:
     8. Decisions: retain stream, regress chunk64 (beaten), regress chunk256
        (below threshold), kill no_commit_stream.
     9. Founder ratification over the proposal fingerprint, sealed as a
-       RATIFICATION event carrying the approval id.
+       RATIFICATION InstitutionalEvent carrying the approval id.
    10. seal_capsule -> proof/wp06_fast_cycle_capsule.json; verdict line;
        exit 0 only if: completed, baseline_beaten, chain verifies, capsule
        hash verifies, all three decision types present, ratification sealed.

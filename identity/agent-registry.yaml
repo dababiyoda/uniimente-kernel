@@ -34,7 +34,7 @@ agents:
     organ: railscout
     current_level: 0
     grants: []
-    notes: Read-only perception. Emits packets, never actions.
+    notes: "One narrow perception worker inside the larger RailScout cognitive refinery. Read-only; emits evidence into the refinery and never acts externally. It does not define RailScout's mission, which is multi-agent recursive idea evolution and synthesis toward the strongest achievable state."
 
 rules:
   level_changes_require: [objective_external_evidence, logged_approver, ledger_entry]

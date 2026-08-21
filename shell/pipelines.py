@@ -145,6 +145,38 @@ def _decisions() -> StageResult:
                       tuple(rows))
 
 
+def _registries() -> StageResult:
+    """Where decision records live, and which ones this ref cannot see.
+
+    UNRESOLVED whenever a known registry is unreachable or a concern is
+    contested. Both are true states of the institution rather than errors, and
+    a shell that rendered them OK would be reporting a coherence the organism
+    does not have.
+    """
+    from governance.registries import (
+        KNOWN_REGISTRIES,
+        contested_concerns,
+        render,
+        unreachable,
+    )
+
+    missing = unreachable()
+    contested = contested_concerns()
+    detail = tuple("  " + line for line in render().splitlines())
+    if not missing and not contested:
+        return ok("registries",
+                  f"{len(KNOWN_REGISTRIES)} decision registries, all readable "
+                  "and none contested", detail)
+    parts = []
+    if missing:
+        parts.append(f"{len(missing)} unreadable from this ref")
+    if contested:
+        parts.append(f"{len(contested)} concern(s) with more than one owner")
+    return unresolved("registries",
+                      f"{len(KNOWN_REGISTRIES)} decision registries; "
+                      + "; ".join(parts), detail)
+
+
 def _blocked() -> StageResult:
     from blueprint.critical_path import compute
 
@@ -379,6 +411,7 @@ EVIDENCE = Pipeline(
         Stage("spec-anchors", _spec_anchors, reads="blueprint.evidence"),
         Stage("open-questions", _open_questions, reads="linker"),
         Stage("decisions", _decisions, reads="governance.decisions"),
+        Stage("registries", _registries, reads="governance.registries"),
         Stage("outcomes", _outcomes, reads="blueprint.critical_path"),
     ),
 )

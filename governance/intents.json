@@ -362,7 +362,7 @@
     },
     {
       "intent_id": "INT-OM-012",
-      "title": "Preserve contradictions, fail closed, report — never silently weaken",
+      "title": "Preserve contradictions, fail closed, report \u2014 never silently weaken",
       "statement": "If repository truth contradicts the plan, preserve the contradiction, fail closed, and report it. Do not silently weaken an invariant or expand scope.",
       "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
       "source_location": "founder approval message, binding interpretation clause",
@@ -577,6 +577,46 @@
       ],
       "created_at": "2026-08-17T12:00:00+00:00",
       "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-019",
+      "title": "Organize around existing contributor work rather than around my own",
+      "statement": "Use the recursive founder-intent collaboration protocol to organize around what Kimi and ChatGPT have already done: find the canonical owner, avoid duplication, strengthen with evidence, and leave a clean handoff and trail of what was done, stated transparently so collaboration is possible.",
+      "source": "founder_message",
+      "source_location": "session message 2026-08-21, '/install-recursive-founder-intent-collaboration-protocol ... Organize around what Kimi and ChatGPT have already done'",
+      "source_date_or_version": "2026-08-21",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "internal_write",
+      "intended_outcome": "One map of where every contributor's decision records live, so no contributor's work is invisible and no concern silently acquires two owners. Explicitly NOT a merged registry: the instruction was to avoid duplication, and consolidating four registries into mine would have been duplication with extra steps plus an ownership ruling I have no standing to make.",
+      "affected_systems": [
+        "governance/registries.py",
+        "shell/pipelines.py",
+        "docs/collaboration/"
+      ],
+      "rationale": "Kimi's reconciliation identified local-only artifacts as the trail-failure mode. Inspection found the harder version: three of four decision registries are durable, committed and still invisible to every other contributor because they sit on unmerged branches. A register of registries makes that computable without copying anyone's records.",
+      "evidence_refs": [
+        "python -m governance.registries \u2014 4 registries, 1 unreachable, 1 contested concern",
+        "tests/unit/test_governance_registries.py \u2014 16 tests including an AST guard that no decision content may live in the register",
+        "git ancestry: build/* lack evolution/repair (13 files) and tests/unit/test_repair* (5 files) present on main; merge commits 5e02e47 and 526e320 absent from WP ancestry"
+      ],
+      "implementation_refs": [
+        "governance/registries.py",
+        "docs/collaboration/COLLAB-HANDOFF-CLAUDE-001.yaml",
+        "shell/pipelines.py::_registries"
+      ],
+      "conflicts": [
+        "REG-DELIB-KERNEL (mine, DEC-OM-00N) and REG-COLLAB-KIMI (Kimi's, DELIB-KIMI-*) both claim the 'open founder decisions' concern. Kimi's own ownership map calls two active owners a defect. Preserved as a contest and escalated; not resolved in my favour.",
+        "INTENT-00NN (docs/intent, on main, extended by Kimi) and INT-OM-0NN (this file) are two intent namespaces. Both preserved; neither renamed."
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "Founder rules which registry is canonical for open founder decisions, or a fifth registry appears.",
+      "unresolved_questions": [
+        "Which intent namespace is canonical.",
+        "Whether Kimi's cross-repository scope or my kernel-local depth should own the decision catalogue, or whether they compose."
+      ],
+      "created_at": "2026-08-21",
+      "updated_at": "2026-08-21"
     }
   ]
 }

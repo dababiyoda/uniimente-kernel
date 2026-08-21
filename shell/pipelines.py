@@ -177,6 +177,29 @@ def _registries() -> StageResult:
                       + "; ".join(parts), detail)
 
 
+def _side_effects() -> StageResult:
+    """Can anything reach the world without crossing the gate?
+
+    Supplies the baseline Kimi's Final Plan records as unknown, and reports
+    UNRESOLVED whenever a family has unmediated sites — which is the true state,
+    not an error.
+    """
+    from assurance.side_effects import Family, coverage, inventory, render
+
+    sites = inventory()
+    detail = tuple("  " + line for line in render().splitlines())
+    open_families = [f for f in Family
+                     if coverage(f, sites)[1] > coverage(f, sites)[0]]
+    net_mediated, net_total = coverage(Family.NETWORK, sites)
+    headline = (f"{len(sites)} side-effect site(s); network egress capability: "
+                f"{'NONE' if net_total == 0 else f'{net_mediated}/{net_total} mediated'}")
+    if not open_families:
+        return ok("side-effects", headline, detail)
+    return unresolved("side-effects",
+                      f"{headline}; {len(open_families)} family(ies) with "
+                      "sites that cannot be shown to cross the gate", detail)
+
+
 def _blocked() -> StageResult:
     from blueprint.critical_path import compute
 
@@ -412,6 +435,7 @@ EVIDENCE = Pipeline(
         Stage("open-questions", _open_questions, reads="linker"),
         Stage("decisions", _decisions, reads="governance.decisions"),
         Stage("registries", _registries, reads="governance.registries"),
+        Stage("side-effects", _side_effects, reads="assurance.side_effects"),
         Stage("outcomes", _outcomes, reads="blueprint.critical_path"),
     ),
 )

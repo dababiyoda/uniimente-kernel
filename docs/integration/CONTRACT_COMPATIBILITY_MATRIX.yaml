@@ -1,0 +1,53 @@
+# Contract compatibility across the integration branches.
+# Method: dry-run merge onto current main, inspect every conflicting contract.
+# Result: exactly ONE contract conflicted, and its semantic content is identical.
+
+summary:
+  contracts_on_main: 15
+  contracts_conflicting_on_phase7_merge: 1
+  semantically_incompatible: 0
+  verdict: NO CONTRACT-BREAKING DIVERGENCE FOUND
+  caveat: >-
+    Only phase7 was diff-tested against main. phase4/event-spine and
+    build/consequence-gate were merge-tested but their contract diffs were not
+    individually inspected.
+
+contracts:
+  - name: outcome
+    file: contracts/outcome.schema.json
+    conflicted: true
+    main_required: [outcome_id, action_ref, recorded_at, recorded_by, external_observation, result_class, expected_vs_actual, validation_status]
+    phase7_required: [outcome_id, action_ref, recorded_at, recorded_by, external_observation, result_class, expected_vs_actual, validation_status]
+    semantic_difference: NONE - required arrays are identical
+    resolution: keep main
+    backward_compatible: true
+    information_lost_by_resolution: none
+    proposed_canonical_owner: uniimente-kernel
+
+  - name: [decision, evidence, event, capability-grant, context-packet, opportunity-packet, venture-assessment, venture-cell-charter, organ-manifest, egregore-cognition, intent, feature-control-matrix, wire-opportunity-packet, wire-venture-assessment]
+    conflicted: false
+    note: No conflict on merge. Not individually diffed for semantic drift.
+    proposed_canonical_owner: uniimente-kernel
+
+interoperability:
+  main_plus_phase7:
+    merges: true
+    conflicts: 4
+    conflicts_in_source_code: 0
+    tests_after_merge: 679
+    sdk_imports: true
+  main_plus_build_consequence_gate:
+    merges: true
+    conflicts: 0
+    files: 30
+    tests_after_merge: NOT_RUN
+  main_plus_phase4_event_spine:
+    merges: true
+    conflicts: 4
+    tests_after_merge: NOT_RUN
+
+open_questions:
+  - Do SDK capability grants and DALEOBANKS capability grants share an identifier
+    namespace? If yes, contradictory grants can exist simultaneously. UNVERIFIED.
+  - Does build/consequence-gate introduce contract changes? 30 files, 0 conflicts,
+    contents not inspected.

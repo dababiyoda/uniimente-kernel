@@ -1,0 +1,859 @@
+[
+  {
+    "intent_id": "INTENT-0001",
+    "title": "UNIIMENTE may act as a legal principal",
+    "statement": "UNIIMENTE may act as a legal principal.",
+    "source_refs": [
+      "docs/intent/INTENT-0001-uniimente-as-legal-principal.md",
+      "authority/legal-principals.yaml",
+      "docs/UCL.md"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "prohibited",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Every consequential effect attaches to exactly one accountable human or registered entity; UNIIMENTE is never one.",
+    "binding_scope": [
+      "every organ",
+      "every Venture Cell",
+      "every adapter",
+      "every future body"
+    ],
+    "constitutional_constraints": [
+      "UNIIMENTE has no independent legal personhood, no survival objective and no sovereignty."
+    ],
+    "rationale": "Recorded as prohibited because the proposal was actually considered and refused, and the refusal is structural: the UCL compiler will not compile a constitution that omits it.",
+    "success_evidence": [
+      "authority/legal-principals.yaml records UNIIMENTE as type not_a_legal_actor, status prohibited",
+      "compiler invariant never_uniimente_principal",
+      "policy/engine.py rejects proposals whose legal_principal is absent from the compiled registry"
+    ],
+    "failure_evidence": [
+      "Any record, proposal, grant, receipt or manifest naming UNIIMENTE as legal_principal.",
+      "Any compiled constitution lacking the invariant.",
+      "Any external effect attached to no accountable entity."
+    ],
+    "dependencies": [
+      "The legal-principal registry and the UCL compiler must both remain in the required CI set."
+    ],
+    "conflicts": [],
+    "next_review_trigger": "Any proposal to grant UNIIMENTE contractual capacity, or any jurisdiction recognising non-human legal personhood in a form a founder might wish to use.",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "authority/legal-principals.yaml",
+      "compiler/ucl_compiler.py",
+      "policy/engine.py",
+      "identity/machine_passport.py"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-26T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0002",
+    "title": "UNIIMENTE imitates life-like organization; it does not claim life",
+    "statement": "UNIIMENTE is a software-built imitation of selected properties found in living systems, institutions, organisms, markets and collective intelligence. It is not biologically alive, conscious, or metaphysically real. The defensible description is a governed synthetic institutional lifeform, nonliving in the biological sense, life-like in organization, persistence, adaptation and coordinated behaviour. The safer technical term is developmental institutional intelligence system.",
+    "source_refs": [
+      "session 2026-07-27, opening vision statement",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "No artifact, README, manifest, commit message or external communication claims consciousness or biological life for UNIIMENTE.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "DALEOBANKS",
+      "WealthMachineIntelligence",
+      "PumpStation",
+      "external communication"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "The founder's own correction: the mistake was never imagining something impossible, it was letting the discussion blur imitating life-like organization through software with claiming literal life. The first is an engineering programme; the second is unproven.",
+    "success_evidence": [
+      "No artifact, README, manifest, commit message or external communication claims consciousness or biological life for UNIIMENTE."
+    ],
+    "failure_evidence": [
+      "Any artifact, manifest, README or external communication asserting consciousness, sentience or biological life for UNIIMENTE."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any external publication describing UNIIMENTE",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "No automated check enforces this in prose artifacts; it is currently a human discipline."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0003",
+    "title": "Responsibility stays attributable as complexity rises",
+    "statement": "The danger is not human irrelevance. The danger is human responsibility becoming detached from machine-mediated execution: a system continuing to function while nobody meaningfully understands, governs, or accepts responsibility for it. The architecture exists to prevent that failure mode. The system may become more capable, but responsibility must remain attributable, authority must remain bounded, and human intervention must remain structurally possible.",
+    "source_refs": [
+      "session 2026-07-27, 'Your actual invention objective'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Every consequential action resolves to a named human legal principal, and every external effect crosses a gate a human can close.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "policy/consequence_gate.py",
+      "authority/legal-principals.yaml",
+      "traceability"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "This is the founder's stated purpose for the whole architecture, and it is the criterion that makes the project stronger rather than weaker.",
+    "success_evidence": [
+      "Every consequential action resolves to a named human legal principal, and every external effect crosses a gate a human can close.",
+      "unit_test: tests/unit/test_traceability.py TestUnauthorizedEffects",
+      "unit_test: tests/integration/test_phase_zero_connection.py::test_pumpstation_declares_no_treasury_or_signing_authority"
+    ],
+    "failure_evidence": [
+      "Any external effect whose receipt resolves to no grant, no witness, or no human legal principal.",
+      "Any running capability nobody named can stop."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any new organ registration or authority-matrix amendment",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "traceability/chain.py",
+      "policy/consequence_gate.py",
+      "contracts/intent.schema.json"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0004",
+    "title": "UNIIMENTE may grow in competence, never in sovereignty",
+    "statement": "Growth is always bounded by constitutional authority, legal identity, capability grants, budgets, data permissions, consequence ceilings, external evidence, reversibility, shutdown and participant rights. No component may authorize its own promotion or expand its own sovereignty. Intelligence never creates authority.",
+    "source_refs": [
+      "section 11, Growth Doctrine; CLAUDE.md permanent rules",
+      "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+      "canonical-v1"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "No module, agent, organ or gate can widen its own authority, and every manifest states may_self_promote false.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "organs",
+      "autonomy",
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "The single rule that separates a governed institution from an autonomous one.",
+    "success_evidence": [
+      "No module, agent, organ or gate can widen its own authority, and every manifest states may_self_promote false.",
+      "unit_test: tests/integration/test_phase_zero_connection.py::test_pumpstation_declares_no_treasury_or_signing_authority",
+      "unit_test: governance/test/admission.test.js 'there is no override field'"
+    ],
+    "failure_evidence": [
+      "Any manifest declaring may_self_promote true.",
+      "Any component that widens its own authority or alters its own approval requirement."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any change to authority/authority-matrix.yaml",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "organs/pumpstation.manifest.yaml",
+      "autonomy/levels.py",
+      "contracts/organ-manifest.schema.json"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0005",
+    "title": "One metric governs: traceability from founder intent to outcome",
+    "statement": "Percentage of completed goals that remain traceable from founder intent to decision, action, evidence, and outcome without unauthorized external effects. That metric combines intelligence, governance, continuity and safety.",
+    "source_refs": [
+      "session 2026-07-27, 'Single Bottleneck Metric'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "The metric is computable from the evidence ledger, refuses to report a number it has not earned, and names the institution's current bottleneck link.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "traceability",
+      "contracts"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "One number no single subsystem can satisfy. Raising it requires intelligence, governance, continuity and honesty at once.",
+    "success_evidence": [
+      "The metric is computable from the evidence ledger, refuses to report a number it has not earned, and names the institution's current bottleneck link.",
+      "unit_test: tests/unit/test_traceability.py (33 cases)",
+      "unit_test: TestRefusals::test_empty_ledger_refuses_a_rate_instead_of_reporting_100"
+    ],
+    "failure_evidence": [
+      "The metric reporting a rate it has not earned, such as 100% over an empty denominator.",
+      "A goal counted as traceable while an unauthorized external effect is attributed to it."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "first production ledger that emits intent and decision records",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "traceability/chain.py",
+      "traceability/metric.py",
+      "contracts/intent.schema.json",
+      "contracts/decision.schema.json"
+    ],
+    "unresolved_questions": [
+      "Nothing yet emits intent or decision records, so the metric reports NOT REPORTABLE on every real ledger today."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0006",
+    "title": "The first serious prototype must prove five things",
+    "statement": "It maintains a persistent identity across sessions and model changes; converts goals into coordinated specialist work; detects deviation from declared goals and policies; repairs or restructures itself within bounded permissions; and produces evidence explaining every meaningful decision and external action.",
+    "source_refs": [
+      "session 2026-07-27, 'The real bottleneck'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Five named, separately demonstrable proofs, each with executable evidence rather than architecture.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "identity",
+      "evolution",
+      "traceability",
+      "provenance"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "This defines the smallest complete system that demonstrates the category, which the founder identifies as the actual bottleneck.",
+    "success_evidence": [
+      "Five named, separately demonstrable proofs, each with executable evidence rather than architecture.",
+      "unit_test: tests/unit/test_traceability.py covers proof 5 (evidence for every decision) partially",
+      "unit_test: tests/unit/test_repair_harness.py covers proof 4 (bounded self-repair) partially"
+    ],
+    "failure_evidence": [
+      "A prototype milestone claimed while any of the five proofs has no executable evidence."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "before claiming any prototype milestone",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "Which of the five are demonstrated end to end today, and by which executable evidence? No mapping exists yet.",
+      "Proof 1 (identity across model changes) has no test that actually swaps a model."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0007",
+    "title": "Build the smallest bounded digital creature, then repeat",
+    "statement": "Stop debating whether the final organism is possible in the abstract. Build the smallest bounded digital creature that can receive one real goal, organize specialists, execute inside a sandbox, remember what happened, evaluate its own performance, propose a structural improvement, require approval before affecting the outside world, and preserve a complete causal record. Then repeat. Each successful cycle adds one verified mechanism.",
+    "source_refs": [
+      "session 2026-07-27, 'Highest-leverage move'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Delivery proceeds in verified cycles, each adding one mechanism with evidence, rather than in one architectural leap.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "evolution",
+      "sandbox"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Accumulation of verified mechanisms is the founder's stated path to the complex nonliving system.",
+    "success_evidence": [
+      "Delivery proceeds in verified cycles, each adding one mechanism with evidence, rather than in one architectural leap."
+    ],
+    "failure_evidence": [
+      "A build package that adds architecture without completing one verified cycle end to end."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "at the close of each build package",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "What is the one real goal for the first cycle? Not yet chosen."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0008",
+    "title": "Household egregore as a long-range product category",
+    "statement": "A persistent domestic intelligence that learns household routines, coordinates devices, protects records and privacy, manages maintenance, teaches children, preserves family knowledge, monitors risks and develops a recognizable behavioural identity.",
+    "source_refs": [
+      "session 2026-07-27, 'Where the industry could emerge'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "exploratory",
+    "authority_level": "aspiration",
+    "consequence_class": "low",
+    "intended_outcome": "Preserved as a candidate market direction. Nothing is built against it.",
+    "binding_scope": [
+      "product strategy"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "The founder identifies persistent synthetic institutions, not chatbots, as the commercial category. Recorded so the direction is not lost, and classified so it cannot become a build requirement by repetition.",
+    "success_evidence": [
+      "Preserved as a candidate market direction. Nothing is built against it."
+    ],
+    "failure_evidence": [
+      "Any implementation work started against this record while it remains an aspiration with no buyer evidence."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "after the first verified three-repository causal episode",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "No buyer, no willingness-to-pay evidence, and no regulatory analysis of a system with household record access."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0009",
+    "title": "Corporate egregore as a long-range product category",
+    "statement": "A system that preserves institutional knowledge beyond employee turnover, coordinates departments, maintains infrastructure, operates workflows continuously, monitors contracts and obligations, detects deterioration, simulates decisions, proposes repairs, enforces internal policy and negotiates through tightly limited authority.",
+    "source_refs": [
+      "session 2026-07-27, 'Where the industry could emerge'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "exploratory",
+    "authority_level": "aspiration",
+    "consequence_class": "low",
+    "intended_outcome": "Preserved as a candidate market direction. Nothing is built against it.",
+    "binding_scope": [
+      "product strategy",
+      "WealthMachineIntelligence"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Closest of the founder's product categories to what the three organs already do, so it is the most likely first commercial expression. Still aspiration until a buyer exists.",
+    "success_evidence": [
+      "Preserved as a candidate market direction. Nothing is built against it."
+    ],
+    "failure_evidence": [
+      "Any implementation work started against this record while it remains an aspiration with no buyer evidence."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "first external buyer conversation",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "Which specific institutional failure does a first customer pay to remove?"
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0010",
+    "title": "Superseded: that humanity inevitably ends with no live players",
+    "statement": "Original framing: 'The inevitable end is no live players remained in humanity.' Superseded within the same founder message: that outcome is not established, several futures are possible, and the more probable near-term outcome is that fewer humans directly understand the full systems they depend on, not that humans cease to be live players.",
+    "source_refs": [
+      "session 2026-07-27, 'The deeper infrastructure thesis'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "superseded",
+    "authority_level": "exploratory",
+    "consequence_class": "low",
+    "intended_outcome": "The rejected framing stays visible, so the reasoning that replaced it is not silently re-litigated.",
+    "binding_scope": [
+      "product strategy",
+      "external communication"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Superseded by intent:attributable-responsibility, which names the real failure mode: responsibility detaching from execution. Preserved rather than deleted because a discarded premise is evidence about how the design was reached.",
+    "success_evidence": [
+      "The rejected framing stays visible, so the reasoning that replaced it is not silently re-litigated."
+    ],
+    "failure_evidence": [
+      "Any design justified by the premise that human agency is destined to end, rather than by the attributability failure that replaced it."
+    ],
+    "dependencies": [],
+    "conflicts": [
+      "INTENT-0003"
+    ],
+    "next_review_trigger": "never revived without external evidence",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0011",
+    "title": "PumpStation is a security institution disguised as a memecoin platform",
+    "statement": "PumpStation is UNIIMENTE's security-first Web3 wealth institution. Every memecoin, NFT, DAO, DeFi, wallet, smart-contract and agent feature serves an explicit protection, coordination, ownership, proof or settlement function. Every visible feature either creates value or reduces a specific attack surface. Nothing is added because it sounds Web3.",
+    "source_refs": [
+      "session 2026-07-27, 'Canonical product definition'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "No feature enters the PumpStation architecture without a declared security function.",
+    "binding_scope": [
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Security as the central economic product rather than a pre-launch audit is the position competitors cannot copy quickly.",
+    "success_evidence": [
+      "No feature enters the PumpStation architecture without a declared security function.",
+      "unit_test: governance/test/admission.test.js (33 cases)"
+    ],
+    "failure_evidence": [
+      "Any PumpStation feature admitted without a declared security function.",
+      "Any feature added because it sounds Web3."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "each new PumpStation feature proposal",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "governance/admission.js",
+      "governance/feature-control-matrix.json",
+      "organs/pumpstation.manifest.yaml"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0012",
+    "title": "Every Web3 primitive is assigned a security job",
+    "statement": "Wallets prove control and eliminate anonymous institutional commands. Decentralized identity binds actors to persistent identities. Zero-knowledge proofs prove facts while preserving privacy. NFTs represent passports, credentials and provenance. Smart contracts enforce allocations, vesting, liquidity locks and treasury limits. Multisig or MPC prevents single-key control. DAOs separate powers. Oracles use multiple sources so one cannot define reality. Timelocks give notice. Agent capability tokens give narrow, temporary, revocable authority instead of unrestricted wallet access. Blockchain technology is not automatically secure; these are used as mechanisms inside defence in depth.",
+    "source_refs": [
+      "session 2026-07-27, 'Every Web3 primitive gets a security job'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Each primitive, when introduced, is introduced with its named security function and its own introduced-threat analysis.",
+    "binding_scope": [
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "The founder's refinement is the load-bearing part: these technologies introduce catastrophic vulnerabilities of their own, so each must earn its place as a control.",
+    "success_evidence": [
+      "Each primitive, when introduced, is introduced with its named security function and its own introduced-threat analysis.",
+      "unit_test: governance/test/admission.test.js 'R8: expanding authority while claiming zero new threats is refused'"
+    ],
+    "failure_evidence": [
+      "Any Web3 primitive introduced without its named security function and its own introduced-threat analysis."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "introduction of any new Web3 primitive",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "contracts/feature-control-matrix.schema.json",
+      "governance/admission.js"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0013",
+    "title": "PumpStation needs eight security layers",
+    "statement": "Contract security; treasury security; agent security; governance security; market security; information security; human security; recovery security.",
+    "source_refs": [
+      "session 2026-07-27, 'PumpStation needs eight security layers'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Eight named layers, each with implementation and evidence, before any real-value deployment.",
+    "binding_scope": [
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Defence in depth is what makes 'secure' mean bounded blast radius rather than absence of failure.",
+    "success_evidence": [
+      "Eight named layers, each with implementation and evidence, before any real-value deployment.",
+      "unit_test: server/test/siwe.test.js (human security, partial)",
+      "unit_test: server/test/rate-limit.test.js (recovery security, partial)"
+    ],
+    "failure_evidence": [
+      "Any real-value deployment while a layer remains architecture with no implementation and no evidence."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "before any real-value token or external DeFi connection is enabled",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "docs/RECOVERY.md",
+      "client/index.html"
+    ],
+    "unresolved_questions": [
+      "Six of eight layers are architecture with no code: contract, treasury, agent, governance, market and information security.",
+      "The layers have no ordering, so it is undecided which is built first."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0014",
+    "title": "Zero unrestricted agent or human treasury permissions",
+    "statement": "No person or agent receives unrestricted treasury access. Every transfer requires authorized identity, permitted purpose, approved recipient, amount ceiling, expiration, required signers, transaction simulation and final state verification. Compromise of one agent or key exposes only a small, predetermined amount. Research agents cannot trade. Promotion agents cannot modify contracts. Treasury agents cannot approve their own proposals.",
+    "source_refs": [
+      "session 2026-07-27, 'Treasury security' and the stage-gate external number",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "A permission with a null spending ceiling, a wildcard action list, no expiry, or self-approval is refused by an executable gate.",
+    "binding_scope": [
+      "PumpStation",
+      "uniimente-kernel"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "This is the founder's stated external number for the stage-gate: zero unrestricted agent or human treasury permissions.",
+    "success_evidence": [
+      "A permission with a null spending ceiling, a wildcard action list, no expiry, or self-approval is refused by an executable gate.",
+      "unit_test: governance/test/admission.test.js 'R4: a null spending ceiling is an unrestricted permission'",
+      "unit_test: governance/test/admission.test.js 'R5: a role that approves its own proposals is refused'",
+      "unit_test: governance/test/admission.test.js 'R4: applies even to features that expand nothing'"
+    ],
+    "failure_evidence": [
+      "Any agent permission with a null spending ceiling, a wildcard action list, no expiry, or self-approval.",
+      "Any single key or person able to move treasury funds alone."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any feature declaring an agent permission",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "governance/admission.js",
+      "organs/pumpstation.manifest.yaml"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0015",
+    "title": "Every feature becomes a threat-to-control matrix entry before entering the architecture",
+    "statement": "Convert each proposed PumpStation feature into a threat-to-control matrix before adding it to the architecture. Every consequential feature must mitigate at least one named threat.",
+    "source_refs": [
+      "session 2026-07-27, stage-gate 'Next external action'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "A machine-checkable matrix exists, is validated in CI, and refuses features that cite controls against files that do not exist.",
+    "binding_scope": [
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "The founder named this as the next external action, ahead of any further feature work.",
+    "success_evidence": [
+      "A machine-checkable matrix exists, is validated in CI, and refuses features that cite controls against files that do not exist.",
+      "unit_test: governance/test/admission.test.js 'every implementation_ref in the matrix points at a file that exists'",
+      "unit_test: governance/test/admission.test.js 'the committed matrix passes its own gate'"
+    ],
+    "failure_evidence": [
+      "Any feature entering the architecture before its matrix entry exists.",
+      "Any control cited against a file that does not exist."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "each new PumpStation feature proposal",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "governance/feature-control-matrix.json",
+      "contracts/feature-control-matrix.schema.json",
+      "governance/check.js",
+      ".github/workflows/gate.yml"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0016",
+    "title": "Termination trigger for features that buy authority without security",
+    "statement": "Reject any feature that expands authority or financial exposure without a measurable security benefit, bounded failure radius and tested recovery path.",
+    "source_refs": [
+      "session 2026-07-27, stage-gate 'Termination trigger'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "The trigger runs as code in CI with no override flag, and a DEPLOYED feature that fails it exits non-zero.",
+    "binding_scope": [
+      "PumpStation"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "A termination trigger that depends on someone remembering to apply it is a suggestion.",
+    "success_evidence": [
+      "The trigger runs as code in CI with no override flag, and a DEPLOYED feature that fails it exits non-zero.",
+      "unit_test: governance/test/admission.test.js 'there is no override field: adding one does not admit a failing feature'",
+      "unit_test: governance/test/admission.test.js 'a failing PROPOSED feature does not block, a failing DEPLOYED one does'",
+      "sandbox_execution: node governance/check.js currently REJECTs treasury-multisig on four rules"
+    ],
+    "failure_evidence": [
+      "Any override, exception flag or waiver that admits a feature failing the trigger.",
+      "A DEPLOYED feature failing the gate without the build going red."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any proposed amendment to the eleven rules",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "governance/admission.js",
+      "governance/check.js"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0017",
+    "title": "'Secure' has a precise, limited meaning and excludes market risk",
+    "statement": "PumpStation cannot promise that every token increases in value or that nobody loses money. Security means no hidden authority, no secret allocations, no unrestricted keys, no unrecorded institutional instructions, no unilateral treasury movement, no silent rule changes, no undisclosed promotion, no agent self-authorization, no unnecessary personal-data exposure, bounded financial blast radius, visible risk, attributable decisions, rapid detection and tested recovery. Market risk remains.",
+    "source_refs": [
+      "session 2026-07-27, \"'Secure' must have a precise meaning\"",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "No PumpStation communication implies protection from market loss.",
+    "binding_scope": [
+      "PumpStation",
+      "external communication"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Overclaiming what security covers is the fastest way to convert a security institution into a liability.",
+    "success_evidence": [
+      "No PumpStation communication implies protection from market loss."
+    ],
+    "failure_evidence": [
+      "Any communication implying protection from market loss, guaranteed returns, or that participants cannot lose money."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any public PumpStation communication",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "README.md"
+    ],
+    "unresolved_questions": [
+      "No automated check prevents a future README or landing page from implying protection from market loss."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0018",
+    "title": "Import the ZIP lineage into a private Golden Kernel Candidate repository",
+    "statement": "Create a new private repository dababiyoda/uniimente-golden-kernel with branches archive/zip-import-2026-07-26, candidate/golden-kernel-convergence, release/golden-kernel-v1 and a minimal main. Extract the source tree rather than committing the raw construction environment; exclude node_modules, virtual environments, caches, bytecode, build output, temporary databases, credentials and unclassified binaries. Preserve the original archive by filename, SHA-256, import date, origin, storage location and classification.",
+    "source_refs": [
+      "session 2026-07-27, 'Recommended GitHub structure'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "needs_evidence",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "The ZIP lineage gains version control, provenance, review, branches and CI without being falsely certified.",
+    "binding_scope": [
+      "uniimente-golden-kernel",
+      "uniimente-kernel"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Uploading establishes the construction site; verification and ratification are what turn it into the Golden Kernel.",
+    "success_evidence": [
+      "The ZIP lineage gains version control, provenance, review, branches and CI without being falsely certified.",
+      "primary_source: filesystem search of this session's environment found no such archive"
+    ],
+    "failure_evidence": [
+      "The archive committed raw, including dependencies, caches, build output or credentials.",
+      "The import performed without recording the original archive's SHA-256 and origin."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "when the archive is supplied to a session that can write to GitHub",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "BLOCKER: the archive does not exist in this environment. A filesystem search for *.zip and *.tar.gz found only unrelated system files. Nothing can be imported, hashed or classified without it.",
+      "BLOCKER: repository creation under dababiyoda is outside this session's granted repository scope.",
+      "Which exact archive is canonical, and what is its SHA-256 at the founder's own storage location?"
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0019",
+    "title": "Eight conditions before anything may be called the Golden Kernel",
+    "statement": "The repository may be named uniimente-golden-kernel, but its status remains GOLDEN_KERNEL_CANDIDATE and NOT_PRODUCTION_CERTIFIED until eight conditions hold: one authority path; clean reproducibility from a fresh clone; demonstrated stateful continuity including black-start recovery; truthful runtime state derived from canonical evidence rather than manual claims; security closure; completed convergence classification of every overlapping implementation; full verification on the exact release commit; and founder ratification of the release and its constitutional hash.",
+    "source_refs": [
+      "session 2026-07-27, 'When it earns the name Golden Kernel'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "No artifact carries the Golden Kernel name until all eight conditions have objective evidence and the founder has ratified.",
+    "binding_scope": [
+      "uniimente-golden-kernel",
+      "uniimente-kernel"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Calling it finished before reconciliation would turn an aspiration into a false status claim. The founder said so explicitly.",
+    "success_evidence": [
+      "No artifact carries the Golden Kernel name until all eight conditions have objective evidence and the founder has ratified."
+    ],
+    "failure_evidence": [
+      "Any artifact carrying the Golden Kernel name before all eight conditions have objective evidence and the founder has ratified."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any proposed golden-kernel release tag",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "Condition 8 is founder ratification, which no build session can supply."
+    ],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0020",
+    "title": "The ZIP lineage and the constitutional lineage connect deliberately, never silently",
+    "statement": "Do not merge directly into uniimente-kernel/main. That repository currently represents the newer constitutional lineage. The two lineages need to be connected deliberately rather than one silently overwriting the other.",
+    "source_refs": [
+      "session 2026-07-27, 'Recommended GitHub structure'",
+      "founder session message",
+      "2026-07-27"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Any convergence between the two lineages arrives as a reviewable pull request with lineage recorded, never as a direct push to a default branch.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "uniimente-golden-kernel"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Two lineages silently merged lose the record of which decisions came from which, which is the institutional memory the build order exists to protect.",
+    "success_evidence": [
+      "Any convergence between the two lineages arrives as a reviewable pull request with lineage recorded, never as a direct push to a default branch."
+    ],
+    "failure_evidence": [
+      "Any direct push to uniimente-kernel main from the ZIP lineage.",
+      "Any merge between the lineages that does not record which decisions came from which."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "first convergence pull request between the lineages",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0021",
+    "title": "Preserve every useful implementation, test, document, branch and proof record",
+    "statement": "Do not delete valuable code, tests, documents, branches, proof records, schemas, experiments, failed approaches or historical implementations. Do not destroy institutional memory to create architectural neatness. A superseded implementation may be marked inactive, wrapped, registered as experimental, isolated, retained as fallback, designated read-only, assigned to historical replay or converted into a benchmark opponent. It must not simply disappear.",
+    "source_refs": [
+      "sections 2 and 12",
+      "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+      "canonical-v1"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "constitutional_invariant",
+    "consequence_class": "constitutional",
+    "intended_outcome": "Superseded work stays reachable with its lineage, and duplication that exists for preservation is documented so an audit does not remove it.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "PumpStation",
+      "DALEOBANKS",
+      "WealthMachineIntelligence"
+    ],
+    "constitutional_constraints": [],
+    "rationale": "Code may stop being active. It must not stop being institutional memory.",
+    "success_evidence": [
+      "Superseded work stays reachable with its lineage, and duplication that exists for preservation is documented so an audit does not remove it.",
+      "unit_test: tests/unit/test_repair_spec_frozen.py::test_baseline_corpus_matches_its_recorded_hashes",
+      "historical_artifact: server/superseded/index.static-message.js preserved with a permanent regression test",
+      "unit_test: governance/test/admission.test.js retains REJECTED features rather than deleting them"
+    ],
+    "failure_evidence": [
+      "Any deletion of code, tests, branches, proof records or negative results with evidentiary value.",
+      "Any superseded implementation removed rather than marked, wrapped or archived."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "any proposed deletion of a file with evidentiary value",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "evolution/repair/baseline_corpus/README.md",
+      "organs/pumpstation.manifest.yaml"
+    ],
+    "unresolved_questions": [],
+    "recorded_at": "2026-07-27T00:00:00Z"
+  }
+]

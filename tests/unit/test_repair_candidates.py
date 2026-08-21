@@ -43,8 +43,16 @@ CANDIDATE_SOURCES = {
 
 
 def _live_inputs():
+    """The frozen Package 3 baseline corpus, not organs/.
+
+    spec.REQUIRED_EDGE_TRIPLES and REQUIRED_REFUSALS measure those three
+    manifests. Scoring a candidate against a corpus that has since grown an
+    organ would compare it to a target function that no longer describes its
+    input. See evolution/repair/baseline_corpus/README.md.
+    """
+    from evolution.repair.harness import BASELINE_CORPUS_DIR
     from linker.manifest import load_all
-    return load_all(), os.path.join(ROOT, "contracts")
+    return load_all(BASELINE_CORPUS_DIR), os.path.join(ROOT, "contracts")
 
 
 def _source_of(candidate_id):

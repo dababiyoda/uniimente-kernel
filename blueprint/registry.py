@@ -15,12 +15,18 @@ Three disciplines govern every entry:
    share one HMAC secret, so a recognized identity is a claimed identity and not
    a cryptographically isolated one" is a gap.
 
-Known limitation of this registry, recorded rather than worked around: evidence
-locators are kernel-repository-relative. Capabilities implemented in the
-DALEOBANKS and WealthMachineIntelligence organs cannot be bound to an
-implementation path from here, so they stand at BLUEPRINT from the kernel's
-point of view even where real code exists in those repositories. Cross-repository
-evidence binding is unbuilt and is itself a named gap.
+Cross-repository evidence, previously the standing limitation of this registry:
+evidence locators used to be kernel-repository-relative, so capabilities
+implemented in the peer organs stood at BLUEPRINT from here regardless of what
+existed there. `blueprint/peer_evidence.py` closes that mechanism — an
+`IMPLEMENTATION_PATH` locator may now read `peer:<organ>/<path>` and resolves
+against a commit-pinned attestation carrying content digests.
+
+No binding in this table has been re-rated on the strength of it. Deciding that a
+peer's file satisfies a kernel technology is a judgment about what the peer
+implements, and making nineteen such judgments at once is how a ladder inflates.
+The one correction the closed mechanism did produce is recorded in #32's gap: the
+boundary was not what held it at BLUEPRINT.
 """
 from __future__ import annotations
 
@@ -467,9 +473,18 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     _b(32, Rung.BLUEPRINT, Reality.BLUEPRINT_ONLY, [
         _spec(f"{FBO}#1. Governing Principle"),
     ], [
-        "Implemented in the DALEOBANKS organ. The kernel can bind no implementation "
-        "path across a repository boundary, so this stands at BLUEPRINT from here "
-        "regardless of what exists there. Cross-repository evidence binding is unbuilt.",
+        "STILL BLUEPRINT, FOR A DIFFERENT REASON THAN RECORDED. This gap used to say "
+        "the kernel could bind no implementation path across a repository boundary. "
+        "That is no longer true: `blueprint/peer_evidence.py` binds a "
+        "`peer:<organ>/<path>` locator to a commit-pinned attestation, which closes "
+        "BLK-6's mechanism. Crossing the boundary showed the assumed understatement "
+        "was not one. DALEOBANKS declares seven capabilities in its organ manifest — "
+        "bridge security, adversarial committee, decision ledger, context packets, "
+        "operator line, constitution service, wealthmachine client — and none of them "
+        "implements an owned social network or community surface. The organ operates "
+        "on a platform it does not own, which is distribution rather than ownership. "
+        "So this stands at BLUEPRINT because no declared capability implements it, "
+        "not because the kernel cannot see across the boundary.",
     ], Owner.CLAUDE),
 
     _b(33, Rung.BLUEPRINT, Reality.BLUEPRINT_ONLY, [

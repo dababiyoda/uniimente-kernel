@@ -1,0 +1,56 @@
+{
+  "attested_at": "2026-08-21T14:22:38+00:00",
+  "commit": "f787963a4bb3e0f150d07789d54de8dbbfefe1a1",
+  "limitations": [
+    "Records that a path existed with these bytes at this commit. It does not prove the peer code works, is reachable, or is authorized.",
+    "Describes one commit. A peer that moves on does not invalidate this record; the record then describes history, and `commit` says which."
+  ],
+  "method": "read from a local checkout of the named repository at the named commit; sizes and sha256 digests recorded from the real bytes",
+  "organ": "daleobanks",
+  "paths": [
+    {
+      "digest": "sha256:46c1141cda121821cb74bb13b21b0c3cfdf4673a2212cfbd821093877ea62ffb",
+      "kind": "file",
+      "path": "services/adversarial_cases.py",
+      "size": 5091
+    },
+    {
+      "digest": "sha256:5093e60cf51af81a3dcc0c2928ab4fc6db7e014577556a55acc01c279a10abc7",
+      "kind": "file",
+      "path": "services/bridge_security.py",
+      "size": 7075
+    },
+    {
+      "digest": "sha256:d147b48ce0aac39aad35d3c78a6ca5db909de2e6db9f4f7bb4bfcd04cab76792",
+      "kind": "file",
+      "path": "services/constitution.py",
+      "size": 2960
+    },
+    {
+      "digest": "sha256:cbc588428d405bfbfcc74080ea49f4527dbb03a36d89a6f85ed2451aa94f4c77",
+      "kind": "file",
+      "path": "services/context_packet.py",
+      "size": 5895
+    },
+    {
+      "digest": "sha256:848bc9dd2962137376535463a158d2965148d807783f8727143d0436f93b5311",
+      "kind": "file",
+      "path": "services/ledger.py",
+      "size": 10428
+    },
+    {
+      "digest": "sha256:e71c2b74077437433622eba2539ea45fde595441bfc25ed39ebdb4ab770283e2",
+      "kind": "file",
+      "path": "services/operator_line.py",
+      "size": 15482
+    },
+    {
+      "digest": "sha256:edd5e9b63b6ece423cd5bc85bbb6a092001303149351bd9f5f46a63f110879aa",
+      "kind": "file",
+      "path": "services/wealthmachine_client.py",
+      "size": 14343
+    }
+  ],
+  "repository": "dababiyoda/DALEOBANKS",
+  "version": 1
+}

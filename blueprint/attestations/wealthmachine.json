@@ -1,0 +1,50 @@
+{
+  "attested_at": "2026-08-21T14:22:38+00:00",
+  "commit": "f3d9a852a37826ff4d7557a742453810bfa1842c",
+  "limitations": [
+    "Records that a path existed with these bytes at this commit. It does not prove the peer code works, is reachable, or is authorized.",
+    "Describes one commit. A peer that moves on does not invalidate this record; the record then describes history, and `commit` says which."
+  ],
+  "method": "read from a local checkout of the named repository at the named commit; sizes and sha256 digests recorded from the real bytes",
+  "organ": "wealthmachine",
+  "paths": [
+    {
+      "digest": "sha256:23edd995619bef437551963022ea6bc228edbaa5107c9669243eb37658d8bc23",
+      "kind": "file",
+      "path": "src/services/adversarial.py",
+      "size": 5076
+    },
+    {
+      "digest": "sha256:d71f2d7200db8c34581a209d9338c45e9589f2e82ef382427aacc6a591d82f52",
+      "kind": "file",
+      "path": "src/services/bridge_security.py",
+      "size": 7058
+    },
+    {
+      "digest": "sha256:01adcc127cdcbf3b700aac129053f3d7d73ea812e5f5fe498fa8edc3ffb88b8a",
+      "kind": "file",
+      "path": "src/services/decision_engine.py",
+      "size": 8880
+    },
+    {
+      "digest": "sha256:c75a2af2e858fe04223e4ef9e89ff672b91f4d9dad8d2596541271727aaa633d",
+      "kind": "file",
+      "path": "src/services/opportunity_intake.py",
+      "size": 10749
+    },
+    {
+      "digest": "sha256:784fe1e373fb6e90dfda7b445ca58ed48133cc6498d86937e89fc1495f105a33",
+      "kind": "file",
+      "path": "src/services/orchestrator.py",
+      "size": 3990
+    },
+    {
+      "digest": "sha256:f206f82c01ad9580451e461f1135969c3537a924e65c39c8e4b8aa27184359f0",
+      "kind": "file",
+      "path": "src/services/risk_management.py",
+      "size": 4409
+    }
+  ],
+  "repository": "dababiyoda/WealthMachineIntelligence",
+  "version": 1
+}

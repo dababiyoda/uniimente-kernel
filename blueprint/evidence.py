@@ -38,6 +38,10 @@ CLOSURE_DIR = os.path.join(KERNEL_ROOT, "closure")
 #:   "1"  CLOSURE_MODULE resolved on a textual `ModuleClosures(...)` registration.
 #:   "2"  CLOSURE_MODULE requires a commit-pinned report in which the module's
 #:        five closures were observed to pass.
+#:   "5"  IMPLEMENTATION_PATH additionally accepts `peer:<organ>/<path>`, resolved
+#:        against a commit-pinned peer attestation. This *widens* what can
+#:        resolve, which is why it is a standard change: it corrects the
+#:        understatement BLK-6 records rather than tightening anything.
 #:   "4"  TEST_NODE requires a body capable of failing; IMPLEMENTATION_PATH
 #:        refuses an empty file or directory; CONTRACT_SCHEMA refuses a schema
 #:        that constrains nothing.
@@ -46,7 +50,7 @@ CLOSURE_DIR = os.path.join(KERNEL_ROOT, "closure")
 #:        externally_verified` and at least one evidence reference. Previously any
 #:        file containing the word "reconciled" satisfied it, which made HARDENED
 #:        — and the Single Bottleneck Metric — reachable by a sentence.
-EVIDENCE_STANDARD = "4"
+EVIDENCE_STANDARD = "5"
 
 _TEST_NODE_RE = re.compile(r"^(?P<path>[\w./-]+\.py)::(?P<name>test_\w+)$")
 _MODULE_CLOSURE_RE = re.compile(r"ModuleClosures\(\s*[\"'](?P<name>[\w.-]+)[\"']")
@@ -192,7 +196,51 @@ def weak_spec_anchors(root: str = KERNEL_ROOT) -> tuple[tuple[int, str], ...]:
 # Resolution
 # --------------------------------------------------------------------------
 
+def _resolve_peer_path(root: str, ref: EvidenceRef) -> Resolution:
+    """A path in a peer organ's repository, via a commit-pinned attestation.
+
+    Closes the understatement BLK-6 records: capabilities implemented in
+    DALEOBANKS or WealthMachineIntelligence stood at BLUEPRINT here because the
+    binder can only see this repository.
+
+    The wording of a successful resolution matters. It says *attested*, not
+    *present*: the binder did not look at the peer tree, it read a record stating
+    what was there at a named commit with a named digest. That claim is refutable
+    by anyone who fetches the commit, which is the difference between an
+    unverifiable assertion and evidence.
+    """
+    from blueprint.peer_evidence import load_all, split_locator
+
+    split = split_locator(ref.locator)
+    if split is None:
+        return Resolution(ref, False,
+                          f"malformed peer locator (want peer:<organ>/<path>): "
+                          f"{ref.locator}")
+    organ, path = split
+    attestations = load_all(root)
+    attestation = attestations.get(organ)
+    if attestation is None:
+        return Resolution(
+            ref, False,
+            f"no attestation on record for peer organ {organ!r}; a peer path "
+            "cannot be evidence until a commit-pinned attestation exists "
+            "(generate with: python -m blueprint.peer_evidence)")
+    recorded = attestation.by_path().get(path)
+    if recorded is None:
+        return Resolution(
+            ref, False,
+            f"the {organ} attestation at commit {attestation.commit[:7]} does not "
+            f"cover {path!r}; attesting a repository does not attest every path in it")
+    return Resolution(
+        ref, True,
+        f"attested in {attestation.repository} at commit "
+        f"{attestation.commit[:7]}: {recorded.kind} {path} "
+        f"({recorded.digest or str(recorded.size) + ' entries'})")
+
+
 def _resolve_path(root: str, ref: EvidenceRef) -> Resolution:
+    if ref.locator.startswith("peer:"):
+        return _resolve_peer_path(root, ref)
     target = _safe_join(root, ref.locator)
     if target is None:
         return Resolution(ref, False, f"locator escapes the repository: {ref.locator}")

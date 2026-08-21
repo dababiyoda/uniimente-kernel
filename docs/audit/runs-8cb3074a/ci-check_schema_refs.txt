@@ -1,0 +1,7 @@
+ts_utc: 2026-08-21T18:57:02.779775+00:00
+command: python3 scripts/ci/check_schema_refs.py
+---
+schemas scanned: 13, local refs checked: 12
+all document-local schema references resolve
+---
+exit_code: 0

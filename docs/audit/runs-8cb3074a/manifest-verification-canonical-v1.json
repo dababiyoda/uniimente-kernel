@@ -1,0 +1,44 @@
+{
+  "check": "canonical-v1 RELEASE_MANIFEST independent verification",
+  "subject": "docs/release/canonical-v1/RELEASE_MANIFEST.json on branch release/canonical-v1-manifest (tip a58daec61d9140de3705dd8e2dba7e6760787d3e, manifest blob 50bb790988e4df5c5a52a1903df9212a8d803a95)",
+  "verified_by": "kimi independent audit session (continuation of docs/audit/INDEPENDENT_VERIFICATION_8cb3074a.md slice)",
+  "method_note": "manifest bytes fetched via GitHub API; transcription proven byte-exact by git blob SHA (50bb7909...). self-hash recomputed by the manifest's own documented method: sha256(json.dumps(manifest, indent=2, sort_keys=True).encode()) with no trailing newline.",
+  "results": {
+    "manifest_self_hash": {
+      "recomputed": "5ef0db99353edd2cc025b09e47b4b4fb3d772cebf905a1e79a6ce6ad41dfcabc",
+      "expected_per_commit_c6a4ddc6": "5ef0db99353edd2cc025b09e47b4b4fb3d772cebf905a1e79a6ce6ad41dfcabc",
+      "match": true
+    },
+    "self_hash_lineage": {
+      "chain": [
+        "6aef5a03065cd78282cd009ad98d93f264e9ed82dac8c43579a5e1a3ac8555e2 (pre-merge era)",
+        "bb816027e9585d59f22e26598c3dc4f431ec29c3f640052c55d9bcbeaf3372ce (f9e1f874; value cited in merge commit 8cb3074a)",
+        "5ef0db99353edd2cc025b09e47b4b4fb3d772cebf905a1e79a6ce6ad41dfcabc (c6a4ddc6; current branch-tip content)"
+      ],
+      "current_supersedes_field": "bb816027e9585d59f22e26598c3dc4f431ec29c3f640052c55d9bcbeaf3372ce",
+      "consistent": true,
+      "note": "incident-001 commits 9aa12a72 and a58daec6 did not modify the manifest; the merge commit's citation of bb816027 was accurate for its time and the later move is recorded with a correct supersedes link."
+    },
+    "content_digests_vs_main_at_8cb3074a": {
+      "verified": [
+        "13/13 contracts (sha256 of file bytes)",
+        "5/5 constitution/*.ucl",
+        "authority/authority-matrix.yaml, authority/reserved-matters.yaml, authority/legal-principals.yaml",
+        "policy/consequence_gate.py, constitution/shutdown-policy.ucl",
+        "linker/linker.py, linker/manifest.py (rollback_defaults)",
+        "3/3 identity registries",
+        "constitution_combined_sha256 = sha256(concat of 5 constitution file byte-strings in sorted-key order)",
+        "rollback_defaults.DurableWorkflow_class_sha256 = sha256(ast source segment of class DurableWorkflow from events/spine.py + trailing newline)",
+        "continuity_fingerprint c1d621a8... (already independently reproduced in the Package-3 reproduction, recorded in evolution-repair-comparison.json)",
+        "post_merge_certification.main_tree 39afd41453b59fa713aa55847bed075f86d19aae = independently reconstructed root tree object of the byte-exact 291/291 mirror (all files mode 100644)"
+      ],
+      "total": "32/32 computable claims MATCH; 0 mismatches"
+    },
+    "not_rechecked_here": [
+      "CI run IDs (30223271691, 30214050333, etc.): GitHub Actions data not reachable via the tool set used in this slice",
+      "archive_anchor/archive_tag_requirement blocks: superseded by this session's own direct tag + release verification (separate record)"
+    ]
+  },
+  "conclusion": "The canonical-v1 release manifest is internally consistent (self-hash + supersedes chain) and externally consistent (every digest it asserts about the released tree recomputes to the same value from an independently built, byte-exact mirror of main @ 8cb3074a).",
+  "recorded_at_utc": "2026-08-21T19:32:34.451607+00:00"
+}

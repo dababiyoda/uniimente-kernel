@@ -1,0 +1,61 @@
+work_packet:
+  as_of: '2026-07-28'
+  accepted_architecture: proof_carrying_authorization / reality_aperture
+  evidence_states:
+    architecture_proven: true
+    package_proven: true
+    shadow_organ_proven: true
+    production_deployment_proven: false
+    note: These are DIFFERENT states. Do not compress them into 'working'.
+    reproducible_release_proven: true
+  gates:
+    A: CLOSED
+    B: CLOSED
+    C_SANDBOX: CLOSED
+    C_ORGAN_SHADOW: CLOSED
+    D: CLOSED
+  single_bottleneck_metric:
+    name: REPRODUCIBLE_CROSS_REPOSITORY_APERTURE_RELEASES
+    baseline: 0
+    result: 1
+    target: 1
+    evidence: fresh --no-local clones at pinned commits; byte-identical wheels; 605 kernel; 22 organ;
+      capsule regenerated
+  files_inspected_this_pass:
+  - aperture/*
+  - aperture_issuer/*
+  - authority/canonical-authority.yaml
+  - scripts/ci/check_authority_singleton.py
+  - DALEOBANKS/services/ledger.py
+  - DALEOBANKS/services/constitution.py
+  - DALEOBANKS/config.py
+  verified_evidence:
+    kernel_tests: 605
+    daleobanks_shadow_tests: 22 passed, 1 skipped
+    kernel_ci_checks_green: 4
+    daleobanks_ci_runs: 0
+    client_wheel_excludes_issuer: true
+    legacy_unreachable_from_client_only_env: true
+    canonical_manifest_sha256: 0f35652924039a6e977d2e735e8af4c6273ce89116cc9d5f9e7f3d5abe83dcc2
+  rejected_packaging_geometries:
+    one_package_internal_boundaries: conventions, not boundaries; issuer bytes ship to organs
+    core_plus_optional_extra: extras add DEPENDENCIES not modules; issuer ships regardless
+    schemas_plus_local_implementations: every organ reimplementing verification is a second government
+      by divergence
+  surviving_dissent:
+  - revocation window is real and unsolved
+  - capsule reproducibility claimed for the build, not yet for the capsule
+  - no production deployment evidence of any kind
+  repository_ownership:
+    uniimente-kernel: aperture, aperture_issuer, manifest, CI, capsule
+    DALEOBANKS: governance/aperture_shadow.py, shadow tests, aperture-shadow CI
+  rollback: delete both branches; main untouched in both repositories
+  next_model_assignment: 'Gate D is closed. Phase 2 (Proof-Carrying Organogenesis) was NOT started: no
+    candidate architectures generated, no mechanism cards extracted, no Organ A/B experiment built, Gate
+    E not created. Begin there on a NEW branch agent/proof-carrying-organogenesis-v1. Do not mix it into
+    PR #56.'
+  next_single_bottleneck_metric:
+    name: GOVERNED_ALTERNATIVE_TOPOLOGY_RECOVERIES
+    baseline: 0
+    target: 1
+    status: NOT STARTED - Phase 2 of the current execution order was not begun

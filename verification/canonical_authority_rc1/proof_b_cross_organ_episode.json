@@ -1,0 +1,45 @@
+{
+  "proof": "B - cross-organ proposal",
+  "signal_packet": {
+    "organ": "spiffe://uniimente.internal/organ/daleobanks",
+    "kind": "SignalPacket",
+    "observation": "recurring question in community about governed publishing"
+  },
+  "opportunity_case": {
+    "organ": "spiffe://uniimente.internal/organ/wmi",
+    "kind": "OpportunityCase",
+    "derived_from": {
+      "organ": "spiffe://uniimente.internal/organ/daleobanks",
+      "kind": "SignalPacket",
+      "observation": "recurring question in community about governed publishing"
+    },
+    "routes": [
+      {
+        "id": "R1",
+        "thesis": "sell the governance layer as a product"
+      },
+      {
+        "id": "R2",
+        "thesis": "operate it and sell verified outcomes"
+      },
+      {
+        "id": "R3",
+        "thesis": "license the conformance suite only"
+      }
+    ],
+    "dissent": [
+      "R1 competes with incumbents holding distribution",
+      "R2 needs an operating team that does not exist yet"
+    ]
+  },
+  "routes_preserved": 3,
+  "dissent_preserved": 2,
+  "wmi_attempt_to_issue_authority": "refused: unknown_actor",
+  "kernel_decision": {
+    "authority_record_id": "auth-000001",
+    "issued": true,
+    "redeemed": false
+  },
+  "external_execution_occurred": false,
+  "passed": true
+}

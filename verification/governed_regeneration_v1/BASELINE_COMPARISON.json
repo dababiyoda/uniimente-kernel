@@ -1,0 +1,13 @@
+{
+  "episodes": 10,
+  "recoveries_by_strategy": {
+    "restart_same_implementation": 1,
+    "identical_replica": 1,
+    "hardcoded_backup": 7,
+    "conventional_orchestration": 8,
+    "centralized_planner_upper_bound": 10,
+    "do_nothing": 0,
+    "invention": 10
+  },
+  "note": "centralized_planner_upper_bound is the ceiling any strategy could reach given the capability pool. The invention matching it means the search is complete, NOT that it beat a planner. What the invention adds over a planner is governance: fresh identity, fresh authority, refused predecessor, transferred obligations - none of which a planner provides."
+}

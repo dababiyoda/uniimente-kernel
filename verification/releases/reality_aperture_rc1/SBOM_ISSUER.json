@@ -1,0 +1,14 @@
+{
+  "name": "uniimente-aperture-issuer",
+  "version": "0.1.0",
+  "sha256": "4d333f172f1d4fbe27e2dd19756a3af71078d2e4414df07fd253e712f7ad12ae",
+  "content_hash": "8c576ae82dd51610938de1a2ecb7f9ce067288e8e4a4bee87f744fedc2e14003",
+  "files": 8,
+  "license": "Proprietary",
+  "dependencies": [
+    {
+      "name": "uniimente-aperture-client",
+      "spec": "==0.1.0"
+    }
+  ]
+}

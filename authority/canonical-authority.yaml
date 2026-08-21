@@ -1,0 +1,148 @@
+# THE canonical declaration of which authority system governs this repository.
+#
+# This file is the single source of truth. The singleton CI check, the
+# disposition registry, the import-boundary tests, runtime configuration and the
+# documentation all READ this file. None of them keeps its own list.
+#
+# That is the correction. Gate A was previously marked closed while
+# scripts/ci/check_authority_singleton.py still named the defective legacy
+# engine as the one source of authority. Two hardcoded lists disagreed, and a
+# gate closed on the strength of the one that happened to be consulted.
+#
+# Changing this file changes what may authorize an external effect. It is a
+# constitutional artifact.
+
+schema_version: canonical-authority/1.0.0
+
+canonical_authority:
+  architecture: proof_carrying_authorization
+  protocol_name: reality_aperture
+  canonical_package: aperture
+  issuer_package: aperture_issuer
+  certificate_type: aperture.certificate.AuthorizationCertificate
+  issuer: aperture_issuer.issuer.AuthorityIssuer
+  verifier: aperture.effector.Aperture
+  signing_algorithm: Ed25519
+  active_issuers_allowed: 1
+  legacy_engines_active: false
+  organ_local_issuers_allowed: false
+
+# The one module permitted to mint authority. Anything else that produces a
+# signature over a certificate is a second government.
+issuance:
+  module: aperture_issuer.issuer
+  symbol: AuthorityIssuer
+  requires_signing_provider: true
+  signing_provider_interface: aperture_issuer.signing.SigningProvider
+
+# Verification is distributed everywhere. It must never imply signing.
+verification:
+  module: aperture.effector
+  symbol: Aperture
+  registry: aperture.verification.VerificationRegistry
+  registry_may_sign: false
+
+# Modules that must never appear on the canonical authority path.
+forbidden_on_canonical_path:
+  - policy.consequence_gate
+  - uniimente_kernel.gate
+  - kernel.gate.pipeline
+
+# Every authority-capable implementation in the tree, with exactly one role.
+# `may_issue_authority: true` is permitted for exactly one entry.
+implementations:
+  - module: aperture_issuer.issuer
+    classification: CANONICAL_ACTIVE
+    may_issue_authority: true
+
+  - module: aperture.effector
+    classification: VERIFICATION_HELPER
+    may_issue_authority: false
+
+  - module: policy.consequence_gate
+    classification: SUPERSEDED
+    may_issue_authority: false
+    retained_functions:
+      - "regression oracle for the previous engine's behaviour"
+      - "counterfactual twin for differential conformance"
+    note: >-
+      Superseded as an AUTHORITY ENGINE. The constitutional policy evaluator it
+      called (policy.engine.evaluate) is a different module and is promoted into
+      aperture.issuer, so nothing useful is lost by superseding this one.
+    prohibited_functions:
+      - create_authorization_certificates
+      - sign_authority_records
+      - maintain_independent_trust_root
+      - bypass_aperture_verification
+      - interpret_legacy_hmac_as_new_authority
+    enforcement: tests/unit/test_legacy_gate_prohibitions.py
+
+  - module: uniimente_kernel.gate
+    classification: SUPERSEDED
+    may_issue_authority: false
+
+  - module: kernel.gate.pipeline
+    classification: CONFORMANCE_FIXTURE
+    may_issue_authority: false
+
+  - module: provenance.commit_witness
+    classification: HISTORICAL
+    may_issue_authority: false
+
+# Key custody per environment. PRODUCTION is deliberately disabled.
+environments:
+  TEST:
+    ephemeral_keys_allowed: true
+    institutional_authority: false
+    external_effects_allowed: false
+  DEVELOPMENT:
+    ephemeral_keys_allowed: true
+    institutional_authority: false
+    external_effects_allowed: false
+  SHADOW:
+    ephemeral_keys_allowed: false
+    institutional_authority: false
+    external_effects_allowed: false
+    requires_auditable_key_id: true
+  PRODUCTION:
+    enabled: false
+    blocked_reason: >-
+      Requires separate founder authorization plus custody, rotation,
+      revocation, backup, recovery and compromise procedures. See
+      docs/authority/KEY_CUSTODY_READINESS.md.
+
+# Revocation policy per consequence class. Selected model is a hybrid:
+# short-lived certificates everywhere, signed revocation snapshots for
+# effectors, and mandatory freshness for high-consequence actions.
+revocation:
+  model: hybrid_short_lived_plus_signed_snapshots
+  snapshot_signed_by_issuer: true
+  policy_by_consequence_class:
+    internal_read:
+      max_certificate_ttl_seconds: 3600
+      maximum_staleness_seconds: 86400
+      on_stale_or_unavailable: permit
+    internal_write:
+      max_certificate_ttl_seconds: 1800
+      maximum_staleness_seconds: 3600
+      on_stale_or_unavailable: permit
+    external_contact:
+      max_certificate_ttl_seconds: 900
+      maximum_staleness_seconds: 900
+      on_stale_or_unavailable: refuse
+    financial:
+      max_certificate_ttl_seconds: 300
+      maximum_staleness_seconds: 60
+      on_stale_or_unavailable: refuse
+    irreversible:
+      max_certificate_ttl_seconds: 120
+      maximum_staleness_seconds: 0
+      on_stale_or_unavailable: human_escalation
+  clock_skew_tolerance_seconds: 30
+  on_issuer_key_compromise: refuse_all_certificates_signed_by_that_key
+  on_emergency_shutdown: local_containment
+
+shadow_mode:
+  production_adapters_forbidden: true
+  production_credentials_forbidden: true
+  real_external_effects_allowed: false

@@ -37,7 +37,12 @@ CLOSURE_DIR = os.path.join(KERNEL_ROOT, "closure")
 #:   "1"  CLOSURE_MODULE resolved on a textual `ModuleClosures(...)` registration.
 #:   "2"  CLOSURE_MODULE requires a commit-pinned report in which the module's
 #:        five closures were observed to pass.
-EVIDENCE_STANDARD = "2"
+#:   "3"  EXTERNAL_OUTCOME requires an `OutcomeRecord` conforming to
+#:        `contracts/outcome.schema.json`, with `validation_status:
+#:        externally_verified` and at least one evidence reference. Previously any
+#:        file containing the word "reconciled" satisfied it, which made HARDENED
+#:        — and the Single Bottleneck Metric — reachable by a sentence.
+EVIDENCE_STANDARD = "3"
 
 _TEST_NODE_RE = re.compile(r"^(?P<path>[\w./-]+\.py)::(?P<name>test_\w+)$")
 _MODULE_CLOSURE_RE = re.compile(r"ModuleClosures\(\s*[\"'](?P<name>[\w.-]+)[\"']")
@@ -253,26 +258,131 @@ def _resolve_closure(root: str, ref: EvidenceRef) -> Resolution:
         f"five closures observed passing at commit {proof.commit[:7]}: {ref.locator}")
 
 
-def _resolve_external_outcome(root: str, ref: EvidenceRef) -> Resolution:
-    """A reconciled real-world consequence.
+#: The only `validation_status` that means reality confirmed it. The contract
+#: admits three values and the distinction is the whole point: an outcome the
+#: institution observed itself, or reported about itself, is not a reconciled
+#: external consequence however sincerely it is written down.
+_EXTERNALLY_VERIFIED = "externally_verified"
 
-    Nothing satisfies this today: the Single Bottleneck Metric stands at zero
-    verified outcomes. The check is real rather than stubbed so that the first
-    genuine outcome resolves without amending the ladder.
+
+def _resolve_external_outcome(root: str, ref: EvidenceRef) -> Resolution:
+    """A reconciled real-world consequence, typed against the canonical contract.
+
+    This check used to read any file and pass if the word "reconciled" appeared
+    anywhere in it. A markdown note reading "we discussed how invoices are
+    reconciled in general; nothing happened" satisfied it — and EXTERNAL_OUTCOME
+    is the sole requirement of HARDENED, so a passing sentence would have
+    awarded the top rung and moved the Single Bottleneck Metric off zero. That
+    was the most consequential ceremony vector in the ladder, and it was in the
+    binder's own code.
+
+    A reconciled outcome must now be a structured `OutcomeRecord` conforming to
+    `contracts/outcome.schema.json`, carrying `validation_status:
+    externally_verified` and citing at least one piece of evidence. Prose cannot
+    satisfy it, a self-report cannot satisfy it, and a record that cites nothing
+    cannot satisfy it.
+
+    Nothing satisfies it today, which is the honest state. The point of the
+    tightening is that when the first real outcome arrives, the kernel asks for
+    proof rather than for a word.
     """
     target = _safe_join(root, ref.locator)
     if target is None:
         return Resolution(ref, False, f"locator escapes the repository: {ref.locator}")
+    if not ref.locator.endswith(".json"):
+        return Resolution(
+            ref, False,
+            f"{ref.locator} is not a JSON outcome record; a reconciled external "
+            "outcome is a typed artifact validated against "
+            "contracts/outcome.schema.json, never prose")
     if not os.path.isfile(target):
         return Resolution(ref, False,
-                          f"no reconciled outcome record at {ref.locator} "
+                          f"no outcome record at {ref.locator} "
                           "(verified outcome count is 0)")
-    with open(target, encoding="utf-8") as fh:
-        body = fh.read()
-    if "reconciled" not in body:
+    try:
+        with open(target, encoding="utf-8") as fh:
+            record = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        return Resolution(ref, False, f"outcome record {ref.locator} is unreadable: {exc}")
+    if not isinstance(record, dict):
         return Resolution(ref, False,
-                          f"outcome record {ref.locator} is not marked reconciled")
-    return Resolution(ref, True, f"reconciled external outcome: {ref.locator}")
+                          f"outcome record {ref.locator} is not an object")
+
+    schema_path = os.path.join(root, "contracts", "outcome.schema.json")
+    if not os.path.isfile(schema_path):
+        return Resolution(ref, False,
+                          "contracts/outcome.schema.json is absent, so no outcome "
+                          "can be typed; failing closed rather than accepting it")
+    try:
+        with open(schema_path, encoding="utf-8") as fh:
+            schema = json.load(fh)
+        from jsonschema import Draft202012Validator, FormatChecker
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        errors = sorted(validator.iter_errors(record), key=lambda e: list(e.path))
+    except (OSError, json.JSONDecodeError, ImportError) as exc:
+        return Resolution(ref, False,
+                          f"outcome contract could not be applied ({exc}); "
+                          "failing closed")
+    if errors:
+        first = errors[0]
+        where = "/".join(str(p) for p in first.path) or "$"
+        return Resolution(
+            ref, False,
+            f"outcome record {ref.locator} violates contracts/outcome.schema.json "
+            f"at {where}: {first.message} ({len(errors)} problem(s))")
+
+    # Backstop, deliberately redundant. `format` keywords are advisory in JSON
+    # Schema — a validator without a FormatChecker ignores them entirely, and a
+    # FormatChecker silently skips any format whose optional library is absent.
+    # Either is a fail-open on the rung that matters most, so the two identity
+    # fields and the timestamp are re-checked here. In a normal environment the
+    # schema layer above catches these first; this exists for the environment
+    # where it quietly does not.
+    import uuid as _uuid
+    from datetime import datetime as _datetime
+
+    for field in ("outcome_id", "action_ref"):
+        try:
+            _uuid.UUID(str(record.get(field)))
+        except (ValueError, AttributeError, TypeError):
+            return Resolution(
+                ref, False,
+                f"outcome record {ref.locator} has {field}={record.get(field)!r}, "
+                "which is not a UUID; the contract declares format uuid and a "
+                "default validator does not enforce it")
+    stamp = str(record.get("recorded_at", ""))
+    try:
+        parsed = _datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return Resolution(ref, False,
+                          f"outcome record {ref.locator} has recorded_at={stamp!r}, "
+                          "which is not an RFC 3339 timestamp")
+    if parsed.tzinfo is None:
+        return Resolution(ref, False,
+                          f"outcome record {ref.locator} has a naive recorded_at; "
+                          "an outcome without a timezone cannot be reconciled "
+                          "against an external event")
+
+    status = record.get("validation_status")
+    if status != _EXTERNALLY_VERIFIED:
+        return Resolution(
+            ref, False,
+            f"outcome record {ref.locator} carries validation_status "
+            f"{status!r}; HARDENED requires {_EXTERNALLY_VERIFIED!r}, because an "
+            "outcome the institution observed or reported about itself is not a "
+            "reconciled external consequence")
+
+    if not record.get("evidence_refs"):
+        return Resolution(
+            ref, False,
+            f"outcome record {ref.locator} cites no evidence_refs; an outcome "
+            "that points at nothing checkable is a claim, not a reconciliation")
+
+    return Resolution(
+        ref, True,
+        f"externally verified outcome {record.get('outcome_id')!r} against action "
+        f"{record.get('action_ref')!r}, citing "
+        f"{len(record['evidence_refs'])} evidence reference(s): {ref.locator}")
 
 
 _RESOLVERS = {

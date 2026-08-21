@@ -1,0 +1,18 @@
+{
+  "verifier": "collab-protocol-skill-v1",
+  "ts_utc": "2026-08-21T19:02:05.897252+00:00",
+  "ts_note": "environment clock UTC; session date recorded as 2026-08-22 in founder-local records",
+  "command": "python3 validate_intent_ledger.py docs/collaboration/intent-records-kimi-0027-0028.json && python3 validate_deliberation.py docs/collaboration/deliberation-kimi-2026-08-22.json && inventory classification of main @ 542c8f57 top-level listing (GitHub API)",
+  "exit_code": 0,
+  "passes": [
+    "validate_intent_ledger.py: VALID (2 records) — INTENT-0027, INTENT-0028; exit 0",
+    "validate_deliberation.py: VALID — DELIB-KIMI-2026-08-22-001 (5 roles, 6 alternatives, passes [1,2], dissent with threshold); exit 0",
+    "Wave-0 inventory: 45/45 top-level paths classified, 0 unclassified; exit 0 equivalent"
+  ],
+  "skips": [
+    "verifier/v2/verify.py not re-run this session: records-only change, no code modified; last v2 run v2-2026-08-21T14-36-39 exit 0 stands",
+    "WP-line test claims (36/158/177/213) not re-run: private repo, no local clone in this environment; kept at prose_claim tier"
+  ],
+  "failures": [],
+  "scope": "docs/collaboration/ + docs/intent/ records on branch kimi/collaboration-reconciliation-2026-08-22 (draft PR #82); validators live in the founder-installed skill, not in this repository"
+}

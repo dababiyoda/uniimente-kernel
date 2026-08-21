@@ -15,6 +15,7 @@ lowers the awarded rung. It never becomes a warning that everyone ignores.
 """
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -37,12 +38,15 @@ CLOSURE_DIR = os.path.join(KERNEL_ROOT, "closure")
 #:   "1"  CLOSURE_MODULE resolved on a textual `ModuleClosures(...)` registration.
 #:   "2"  CLOSURE_MODULE requires a commit-pinned report in which the module's
 #:        five closures were observed to pass.
+#:   "4"  TEST_NODE requires a body capable of failing; IMPLEMENTATION_PATH
+#:        refuses an empty file or directory; CONTRACT_SCHEMA refuses a schema
+#:        that constrains nothing.
 #:   "3"  EXTERNAL_OUTCOME requires an `OutcomeRecord` conforming to
 #:        `contracts/outcome.schema.json`, with `validation_status:
 #:        externally_verified` and at least one evidence reference. Previously any
 #:        file containing the word "reconciled" satisfied it, which made HARDENED
 #:        — and the Single Bottleneck Metric — reachable by a sentence.
-EVIDENCE_STANDARD = "3"
+EVIDENCE_STANDARD = "4"
 
 _TEST_NODE_RE = re.compile(r"^(?P<path>[\w./-]+\.py)::(?P<name>test_\w+)$")
 _MODULE_CLOSURE_RE = re.compile(r"ModuleClosures\(\s*[\"'](?P<name>[\w.-]+)[\"']")
@@ -151,6 +155,39 @@ def known_contracts(root: str = KERNEL_ROOT) -> frozenset[str]:
     )
 
 
+def weak_spec_anchors(root: str = KERNEL_ROOT) -> tuple[tuple[int, str], ...]:
+    """Spec anchors that appear only in prose, never as a heading.
+
+    Reporting only: this changes no rung. `_resolve_spec` accepts an anchor found
+    anywhere in the document, so "the document mentions this phrase" and "the
+    document has a section on this" resolve identically. The second is a
+    specification; the first may be a passing sentence.
+
+    Tightening it to require a heading would drop the technologies listed here to
+    UNSUPPORTED, which is a material change to what the institution claims to
+    have specified. Whether prose mention counts as a specification is a
+    documentation-standard question, so it is surfaced rather than decided here.
+    """
+    from blueprint.registry import BINDINGS
+
+    weak: list[tuple[int, str]] = []
+    for technology_id, binding in sorted(BINDINGS.items()):
+        for ref in binding.evidence:
+            if ref.kind is not EvidenceKind.SPEC_DOCUMENT:
+                continue
+            document, _, anchor = ref.locator.partition("#")
+            if not anchor:
+                continue
+            target = _safe_join(root, document)
+            if target is None or not os.path.isfile(target):
+                continue
+            with open(target, encoding="utf-8") as fh:
+                lines = fh.read().splitlines()
+            if not any(line.lstrip().startswith("#") and anchor in line for line in lines):
+                weak.append((technology_id, ref.locator))
+    return tuple(weak)
+
+
 # --------------------------------------------------------------------------
 # Resolution
 # --------------------------------------------------------------------------
@@ -161,8 +198,17 @@ def _resolve_path(root: str, ref: EvidenceRef) -> Resolution:
         return Resolution(ref, False, f"locator escapes the repository: {ref.locator}")
     if not os.path.exists(target):
         return Resolution(ref, False, f"path does not exist: {ref.locator}")
-    kind = "directory" if os.path.isdir(target) else "file"
-    return Resolution(ref, True, f"{kind} present: {ref.locator}")
+    if os.path.isdir(target):
+        if not any(name for name in os.listdir(target) if not name.startswith(".")):
+            return Resolution(ref, False,
+                              f"directory {ref.locator} is empty; SKETCHED means code "
+                              "exists on disk, and an empty directory is not code")
+        return Resolution(ref, True, f"directory present: {ref.locator}")
+    if os.path.getsize(target) == 0:
+        return Resolution(ref, False,
+                          f"file {ref.locator} is zero bytes; SKETCHED means code "
+                          "exists on disk, and an empty file is not code")
+    return Resolution(ref, True, f"file present: {ref.locator}")
 
 
 def _resolve_spec(root: str, ref: EvidenceRef) -> Resolution:
@@ -182,7 +228,36 @@ def _resolve_spec(root: str, ref: EvidenceRef) -> Resolution:
     return Resolution(ref, True, f"document present: {locator}")
 
 
+def _body_can_fail(function: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Does this test body contain at least one statement capable of failing?
+
+    This is the honest bar, and it is narrower than "the test is any good".
+    `assert True` asserts nothing and is skipped; a bare `pass` or a
+    docstring-only body cannot fail at all. Any call counts, because a call can
+    raise — `jsonschema.validate(record, schema)` is a real check with no
+    `assert` in sight, and an assertion detector that only knows the `assert`
+    keyword misjudges it. What this cannot prove is that the statement tests the
+    *right* thing: `print("ok")` is a call and would pass. The floor moves from
+    "a function named test_ exists" to "a function whose body can fail exists".
+    """
+    for node in ast.walk(function):
+        if isinstance(node, ast.Assert):
+            if isinstance(node.test, ast.Constant) and bool(node.test.value):
+                continue                     # assert True / assert 1 / assert "x"
+            return True
+        if isinstance(node, (ast.Call, ast.Raise, ast.With, ast.AsyncWith)):
+            return True
+    return False
+
+
 def _resolve_test(root: str, ref: EvidenceRef) -> Resolution:
+    """A named test that exists and whose body could actually fail.
+
+    Existence alone used to be enough, which is the thin-test vector this
+    ladder's own adversarial pass recorded as unresolved: a session could lift a
+    rung by adding `def test_x(): pass`. Requiring a body capable of failing
+    narrows that. It does not close it, and the module docstring says so.
+    """
     match = _TEST_NODE_RE.match(ref.locator)
     if match is None:
         return Resolution(ref, False,
@@ -191,11 +266,26 @@ def _resolve_test(root: str, ref: EvidenceRef) -> Resolution:
     if target is None or not os.path.isfile(target):
         return Resolution(ref, False, f"test file does not exist: {match.group('path')}")
     name = match.group("name")
-    with open(target, encoding="utf-8") as fh:
-        if not re.search(rf"^\s*def {re.escape(name)}\s*\(", fh.read(), re.MULTILINE):
-            return Resolution(ref, False,
-                              f"{match.group('path')} defines no {name}")
-    return Resolution(ref, True, f"test defined: {ref.locator}")
+    try:
+        with open(target, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read(), filename=target)
+    except (OSError, SyntaxError) as exc:
+        return Resolution(ref, False,
+                          f"{match.group('path')} could not be parsed: {exc}")
+    found = None
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
+            found = node
+            break
+    if found is None:
+        return Resolution(ref, False, f"{match.group('path')} defines no {name}")
+    if not _body_can_fail(found):
+        return Resolution(
+            ref, False,
+            f"{ref.locator} is defined but its body cannot fail: no assertion, "
+            "call, raise or context manager. A test that cannot fail does not "
+            "exercise anything")
+    return Resolution(ref, True, f"test defined and able to fail: {ref.locator}")
 
 
 def _resolve_contract(root: str, ref: EvidenceRef) -> Resolution:
@@ -205,10 +295,18 @@ def _resolve_contract(root: str, ref: EvidenceRef) -> Resolution:
     path = os.path.join(root, "contracts", f"{ref.locator}.schema.json")
     try:
         with open(path, encoding="utf-8") as fh:
-            json.load(fh)
+            schema = json.load(fh)
     except (OSError, json.JSONDecodeError) as exc:
         return Resolution(ref, False, f"contract {ref.locator} is unreadable: {exc}")
-    return Resolution(ref, True, f"contract schema present: {ref.locator}")
+    if not isinstance(schema, dict) or not (
+            schema.get("properties") or schema.get("required")
+            or schema.get("$defs") or schema.get("items")
+            or schema.get("oneOf") or schema.get("allOf") or schema.get("anyOf")):
+        return Resolution(
+            ref, False,
+            f"contract {ref.locator} constrains nothing; PROVEN requires a typed "
+            "boundary, and a schema that admits every document is not one")
+    return Resolution(ref, True, f"contract schema present and constraining: {ref.locator}")
 
 
 def _resolve_manifest_capability(root: str, ref: EvidenceRef) -> Resolution:

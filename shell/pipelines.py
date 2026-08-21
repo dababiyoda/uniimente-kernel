@@ -140,6 +140,23 @@ def _edges() -> StageResult:
     return ok("edges", headline, detail)
 
 
+def _spec_anchors() -> StageResult:
+    """Spec anchors that cite a phrase rather than a section."""
+    from blueprint.evidence import weak_spec_anchors
+
+    weak = weak_spec_anchors()
+    if not weak:
+        return ok("spec-anchors", "every spec anchor resolves to a heading")
+    detail = tuple(f"#{tech_id:<3} {locator}" for tech_id, locator in weak)
+    return unresolved(
+        "spec-anchors",
+        f"{len(weak)} spec anchor(s) appear only in prose, not as a heading",
+        detail + ("",
+                  "Reporting only: these still resolve. Requiring a heading would "
+                  "drop these technologies to UNSUPPORTED, which is a founder-level "
+                  "call about what counts as a specification."))
+
+
 def _open_questions() -> StageResult:
     from linker.linker import InstitutionalLinker
     from linker.manifest import load_all
@@ -284,6 +301,7 @@ EVIDENCE = Pipeline(
     (
         Stage("honesty", _honesty, reads="blueprint.registry"),
         Stage("cycle-audit", _cycle_audit, reads="blueprint.cycle"),
+        Stage("spec-anchors", _spec_anchors, reads="blueprint.evidence"),
         Stage("open-questions", _open_questions, reads="linker"),
         Stage("outcomes", _outcomes, reads="blueprint.critical_path"),
     ),

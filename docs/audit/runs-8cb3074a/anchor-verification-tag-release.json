@@ -8,7 +8,7 @@
       "name": "main-pre-canonical-v1-2026-07-19",
       "exists": true,
       "object_type": "commit",
-      "tag_type": "lightweight (API object type 'commit' — no separate tag object, consistent with manifest archive_proof.tag_object_sha_note)",
+      "tag_type": "lightweight (API object type 'commit' \u2014 no separate tag object, consistent with manifest archive_proof.tag_object_sha_note)",
       "sha": "3d9b5779a7093d6ddd07f225c8329ead6d0c6393",
       "matches_recorded_rollback_commit": true
     },
@@ -28,8 +28,8 @@
       "name": "archive/main-2026-07-19",
       "note": "listed in manifest post_merge_certification.branches_preserved; founder-protection action tracked in issue #84 item 4"
     },
-    "protection_state": "UNPROTECTED — GitHub reports immutable=false on the release and no tag/branch protection was observed; deletion or repointing is administratively possible today. Consistent with manifest archive_anchor.accuracy_note and incident-001 OBJECTION 5 (open, unmitigated, founder-reserved)."
+    "protection_state": "UNPROTECTED \u2014 GitHub reports immutable=false on the release and no tag/branch protection was observed; deletion or repointing is administratively possible today. Consistent with manifest archive_anchor.accuracy_note and incident-001 OBJECTION 5 (open, unmitigated, founder-reserved)."
   },
   "conclusion": "Both halves of the recorded rollback anchor exist and resolve exactly where the release records say: 3d9b5779a7093d6ddd07f225c8329ead6d0c6393. The anchor is verifiable but mutable; protection remains a founder-reserved administrative action (issue #84 item 4). Independent of tag/release mutability, 3d9b5779 is also structurally preserved as parent 1 of merge commit 8cb3074a.",
-  "recorded_at_utc": "2026-08-22T00:00:00+00:00"
+  "recorded_at_utc": "2026-08-21T19:32:58.743575+00:00"
 }

@@ -40,5 +40,5 @@
     ]
   },
   "conclusion": "The canonical-v1 release manifest is internally consistent (self-hash + supersedes chain) and externally consistent (every digest it asserts about the released tree recomputes to the same value from an independently built, byte-exact mirror of main @ 8cb3074a).",
-  "recorded_at_utc": "2026-08-22T00:00:00+00:00"
+  "recorded_at_utc": "2026-08-21T19:32:34.451607+00:00"
 }

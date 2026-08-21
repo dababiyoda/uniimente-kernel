@@ -1,0 +1,12 @@
+{
+  "byte_reproducible": true,
+  "method": "two fresh clones at pinned commits; rebuilt; hashes compared to the working-tree build",
+  "client_sha256": "faccfd0b9b7a40ec6e9d8d7090390d3a0c0c61a89c62f10f6bfc7eb6ddbb3aa9",
+  "issuer_sha256": "4d333f172f1d4fbe27e2dd19756a3af71078d2e4414df07fd253e712f7ad12ae",
+  "client_content_hash": "652a86c59d07209ecef48f68bc699645a6f0d4e5c9c7ec552bba071e6fbf251c",
+  "issuer_content_hash": "8c576ae82dd51610938de1a2ecb7f9ce067288e8e4a4bee87f744fedc2e14003",
+  "prior_working_tree_hashes_differed": true,
+  "difference_diagnosed_as": "zip member timestamps only - identical file set, identical member order, ZERO differing content hashes (13 differing timestamps)",
+  "remediation": "SOURCE_DATE_EPOCH pinned; two consecutive builds and a fresh-clone build are now byte-identical",
+  "stronger_test_retained": "content_hash refuses same-version-different-contents even where byte reproducibility is unavailable"
+}

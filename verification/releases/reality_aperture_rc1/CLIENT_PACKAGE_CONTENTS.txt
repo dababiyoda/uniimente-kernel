@@ -1,0 +1,13 @@
+aperture/__init__.py
+aperture/canonical-authority.yaml
+aperture/certificate.py
+aperture/dispositions.py
+aperture/effector.py
+aperture/legacy.py
+aperture/manifest.py
+aperture/revocation.py
+aperture/verification.py
+uniimente_aperture_client-0.1.0.dist-info/METADATA
+uniimente_aperture_client-0.1.0.dist-info/RECORD
+uniimente_aperture_client-0.1.0.dist-info/WHEEL
+uniimente_aperture_client-0.1.0.dist-info/top_level.txt

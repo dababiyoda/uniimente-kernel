@@ -1,0 +1,8 @@
+{
+  "LEGACY_GATE_CAN_BE_USED_AS_REGRESSION_ORACLE": true,
+  "LEGACY_GATE_CAN_BE_IMPORTED_BY_CANONICAL_RUNTIME": false,
+  "LEGACY_GATE_CAN_CREATE_NEW_AUTHORITY": false,
+  "LEGACY_GATE_INCLUDED_IN_DEPLOYABLE_APERTURE_ARTIFACT": false,
+  "evidence": "client-only venv from a fresh clone; policy.consequence_gate, uniimente_kernel.gate and kernel.gate.pipeline all refused",
+  "retired_check": "scripts/ci/historical/check_authority_singleton.SUPERSEDED.py, 0 references in active CI"
+}

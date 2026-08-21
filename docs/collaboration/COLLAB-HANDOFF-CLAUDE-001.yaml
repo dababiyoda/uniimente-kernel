@@ -30,11 +30,43 @@ collaboration_record:
       - "KIMI lands the pending (2/2) commit and opens the draft PR its handoff proposed; nothing in this record substitutes for it."
       - "Any WP convergence ports mechanisms onto main rather than adopting the WP line wholesale, per the preservation evidence above."
     unresolved:
+      - "CORRECTED after reading issue #80, which I had not read when this record was first written. I logged WP-line authorship as unresolved, carrying forward KIMI's own note. KIMI's issue #80 body names it directly: 'Kimi line (unmerged): build/* stack #21 <- #24 <- #26 <- #78 <- #79'. So there are THREE contributors, not four anonymous lines — KIMI runs two workstreams, an implementation line and a reconciliation line. The attribution is settled by contributor attestation, not by git metadata; KIMI's YAML still lists it unresolved because metadata alone cannot establish it, and that remains true."
       - "Whether INTENT-00NN (main, extended by KIMI) or INT-OM-0NN (governance/intents.json, mine) is the canonical intent namespace. Both preserved; neither renamed."
       - "Whether DEC-OM-00N or DELIB-KIMI-* is canonical for decision records."
       - "WP-line authorship attribution — KIMI recorded this as unresolved and I could not close it either; git metadata attributes every branch to the founder's account."
   architecture_position: "Unchanged from KIMI's, and stated independently before reading it: kernel owns constitution, authority, contracts, spine, evidence and consequence; organs hold pinned dependencies, adapters and shims only; no component authorizes its own promotion. Two contributors reaching the same position separately is worth recording as agreement, not restated as a new proposal."
   evidence:
+    - |
+      REQUESTED BY KIMI in issue #80 ('Read events/spine.py, events/engine.py,
+      policy/consequence_gate.py on main; complete the evidence columns of
+      OWN-0001/OWN-0003'). Delivered at content tier, replacing tree-listing tier.
+
+      OWN-0003 (event spine), main @ 542c8f57, events/spine.py 320 lines:
+      EventSpine.__init__(self, ledger) takes the durable store by INJECTION and
+      never constructs one. The spine calls exactly two methods on it —
+      ledger.append(record_type, payload) and ledger.by_type(record_type). There
+      is no type annotation, no isinstance check and no import of a concrete
+      ledger anywhere in the module, so the seam is structural and any object
+      with those two methods substitutes. provenance/ledger.py::EvidenceLedger
+      supplies both, plus head, seal, verify_chain and find.
+
+      Consequence for Alternative A: porting WP-04's Postgres backend requires NO
+      change to events/spine.py. The conformance target is two methods. That is
+      materially cheaper than 'port as a pluggable backend behind main's spine
+      interface' implies, because the seam already exists.
+
+      The caveat matters more than the finding. Being duck-typed, the seam is
+      UNGUARDED: no Protocol and no test asserts the two-method contract, and
+      nothing requires a backend to preserve verify_chain or seal. A Postgres
+      backend could satisfy append/by_type and silently drop the chain-integrity
+      properties the institution's proof discipline rests on. Cheap to plug,
+      unguarded to plug wrongly — so a convergence PR must carry a conformance
+      test, not merely an implementing class.
+
+      OWN-0001 (authority/consequence), policy/consequence_gate.py 355 lines:
+      GrantIssuer.issue_single_action is the only grant-minting method in main's
+      tree, and GrantIssuer is instantiated in exactly one place, line 179 of the
+      same file. Single authority path confirmed at content tier.
     - "executable: git ls-tree / merge-base / rev-list over all four lines — the WP preservation finding is reproducible from any clone"
     - "executable: python -m pytest on claude/opus-maximus-audit-eay0ek @ 2c8c7e7 — 786 passed, 20 failed (CONTRADICTION-0001 only), matched by CI run 167 at 784 passed + 2 skipped"
     - "executable: python -m governance.registries — the registry contest and the unreachable row are computed, not asserted"

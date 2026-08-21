@@ -1,0 +1,99 @@
+[
+  {
+    "intent_id": "INTENT-0027",
+    "title": "Organize around what Claude and ChatGPT have already done",
+    "statement": "Organize around what Claude and ChatGPT have already done. Find the canonical owner, avoid duplication, strengthen with evidence and leave a clean handoff and trail of what u did. Explain your goals and what u are currently working on so all is transparent and collaborative.",
+    "source_refs": [
+      "founder goal-mode directive, 2026-08-22 (Kimi session)",
+      "uniimente-kernel issue #80 (Cross-model reconciliation)",
+      "docs/REPOSITORY_RATIONALIZATION_PLAN.md"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Every shared concern has exactly one named canonical owner; parallel implementations are preserved with lineage, declared provenance, and a recommended disposition; no contributor's work is overwritten without the eight-step cross-model procedure; the handoff trail lives durably in the repository, not in a session worktree.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "DALEOBANKS",
+      "WealthMachineIntelligence"
+    ],
+    "constitutional_constraints": [
+      "No model manufactures or expands authority; convergence of duplicated canon is a founder decision (NEEDS_FOUNDER_DECISION where constitutional).",
+      "INTENT-0021: preserve every useful implementation, test, document, branch and proof record."
+    ],
+    "rationale": "Three model lines (canonical main incl. Claude's canonical-v1, the unmerged WP build/* line, and organ-side stacks) accrued duplicated implementations of gate, spine, contracts, and evolution machinery. The founder's directive makes reconciliation the active work item and makes the trail itself a deliverable.",
+    "success_evidence": [
+      "Draft PR on uniimente-kernel containing the reconciliation document, architecture ownership map, validated intent records, deliberation record, and cross-model handoff envelope.",
+      "validate_intent_ledger.py exit 0 over the new records; validate_deliberation.py exit 0 over the deliberation record (outputs recorded in the reconciliation document).",
+      "Comment on issue #80 carrying the handoff envelope and noting the 2026-08-21/22 local-artifact loss."
+    ],
+    "failure_evidence": [
+      "A reconciliation claim that does not name what was inspected (fail-closed case 20).",
+      "A trail that exists only in a chat or local worktree (the 2026-08-21/22 loss recurring).",
+      "Any merge, overwrite, or closure of another contributor's branch or PR executed under this intent; this intent authorizes records and recommendations only."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "Founder ruling on the convergence alternatives in issue #80 (A/B/D), or any request to execute convergence.",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [],
+    "unresolved_questions": [
+      "Authorship of the WP line is asserted by issue #80 as Kimi and cannot be verified from git metadata (all commits carry the owner account); treated as unresolved rather than claimed."
+    ],
+    "recorded_at": "2026-08-22T00:00:00Z"
+  },
+  {
+    "intent_id": "INTENT-0028",
+    "title": "Install and operate the recursive founder-intent collaboration protocol",
+    "statement": "Use the install-recursive-founder-intent-collaboration-protocol skill when auditing or changing UNIIMENTE repositories: traceable intent, structured deliberation, bounded decision, reversible implementation, evidence, retained institutional learning.",
+    "source_refs": [
+      "founder goal-mode directive, 2026-08-22 (Kimi session): '/install-recursive-founder-intent-collabora'",
+      "user skill: /app/.user/skills/install-recursive-founder-intent-collaboration-protocol/SKILL.md",
+      "docs/RECURSIVE_COLLABORATION_PROTOCOL.md (uniimente-kernel main, installed by Package 2 commit be4aea9)",
+      "uniimente-kernel PR #42 (protocol source, closed unmerged after byte-for-byte install)"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Material changes across the three repositories carry founder-intent traces, five-role deliberation, exactly two strengthening passes, recorded dissent, explicit rollback, and one allowed decision state; constitutional changes end in NEEDS_FOUNDER_DECISION until Alfonso rules.",
+    "binding_scope": [
+      "uniimente-kernel",
+      "DALEOBANKS",
+      "WealthMachineIntelligence",
+      "all model contributors (Claude, ChatGPT, Kimi, future)"
+    ],
+    "constitutional_constraints": [
+      "ADR-001 / D-001 remains pending: the six extension fields are emitted but marked pending against the canonical contract.",
+      "No direct writes to default branches for material changes; draft PRs by default."
+    ],
+    "rationale": "The protocol is already partially installed on kernel main (PR template, FOUNDER_INTENT_LEDGER.md, RECURSIVE_COLLABORATION_PROTOCOL.md, REPOSITORY_RATIONALIZATION_PLAN.md). This record binds Kimi's operation to it so a third model does not create a parallel collaboration vocabulary (the PR #54 three-vocabularies failure).",
+    "success_evidence": [
+      "This session's material output arrives as a draft PR using the kernel's pull_request_template.md with all five roles recorded separately.",
+      "Intent and deliberation records validate against the skill's fail-closed validators with exit 0.",
+      "No Kimi-authored parallel constitution, gate, contract set, ledger, or autonomy ladder appears in any organ."
+    ],
+    "failure_evidence": [
+      "Any material Kimi change without a deliberation record or with a missing do-nothing alternative.",
+      "Any Kimi record claiming inspection that was not performed.",
+      "Any new authority source introduced under this intent."
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "The next material change in any of the three repositories, or the founder's ruling on ADR-001.",
+    "supersedes": null,
+    "superseded_by": null,
+    "implementation_refs": [
+      "docs/FOUNDER_INTENT_LEDGER.md",
+      "docs/RECURSIVE_COLLABORATION_PROTOCOL.md",
+      "docs/REPOSITORY_RATIONALIZATION_PLAN.md",
+      ".github/pull_request_template.md"
+    ],
+    "unresolved_questions": [
+      "PR #54's machine-readable ledger (docs/intent/ledger.json) and traceability walker remain unmerged; this record follows the markdown convention present on main until the founder dispositions PR #54."
+    ],
+    "recorded_at": "2026-08-22T00:00:00Z"
+  }
+]

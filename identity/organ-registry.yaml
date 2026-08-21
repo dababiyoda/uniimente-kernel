@@ -6,10 +6,11 @@ organs:
   railscout:
     identity: spiffe://uniimente.internal/organ/railscout
     role: perception_and_evidence_refinery
-    repository: null   # not yet created
-    emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments]
+    repository: dababiyoda/RAILSCOUT
+    emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments, estimate_updates, belief_updates, run_notes, launch_packets]
     doctrine: "Reality must change the position, reduce uncertainty, produce evidence, improve optionality, or strengthen the institution."
-    status: planned
+    status: active
+    notes: Dedicated repository initialized for RailScout doctrine, founder-intent preservation, recurring cognition SOPs, scheduled prompts, and ledgers. Live Workspace Agent schedules and external effects still require Kernel-compatible grants and Alfonso approval.
   daleobanks:
     identity: spiffe://uniimente.internal/organ/daleobanks
     role: public_voice_and_distribution

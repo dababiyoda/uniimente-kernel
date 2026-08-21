@@ -168,8 +168,10 @@ def test_08_capsule_hash_fields_require_64_hex():
     assert make_capsule().capsule_hash == "c" * 64
 
 
-def test_09_registry_has_28_contracts_plus_one_finding_type():
-    assert len(CONTRACTS) == 28
+def test_09_registry_has_31_contracts_plus_two_subrecords():
+    # WP-06 (SPEC-WP06 3.1) forced amendment, same pattern as the WP-05 A2
+    # count-test amendment: 28 -> 31 contracts + 2 sub-records.
+    assert len(CONTRACTS) == 31
     for name in (
         "StrategyBranch",
         "StrategyTree",
@@ -179,8 +181,16 @@ def test_09_registry_has_28_contracts_plus_one_finding_type():
         "RetainRegressKillDecision",
         "ClosureLoop",
         "EvolutionCapsule",
+        "ComparisonReport",
+        "FailureAnalysis",
+        "ImprovementProposal",
     ):
         assert name in CONTRACTS
-    # AuditFinding is a finding type, not a standalone contract.
+    # AuditFinding and ComparisonEntry are sub-records, not standalone contracts.
     assert "AuditFinding" not in CONTRACTS
     assert RegistryAuditFinding is AuditFinding
+    from kernel.contracts import ComparisonEntry as RegistryComparisonEntry
+    from kernel.contracts.evolution import ComparisonEntry
+
+    assert "ComparisonEntry" not in CONTRACTS
+    assert RegistryComparisonEntry is ComparisonEntry

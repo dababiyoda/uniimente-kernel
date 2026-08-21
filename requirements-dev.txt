@@ -1,3 +1,11 @@
 pyyaml>=6.0
 pytest>=8.0
 jsonschema>=4.20
+
+# Needed only to EXECUTE the DALEOBANKS producer in the cross-repository
+# counterfactual (tests/integration/test_p3_counterfactual.py). No kernel module
+# imports it. Declared here because the alternative is what actually happened:
+# a session pip-installed it by hand, the local suite went green, and the
+# evidence was irreproducible for everyone else — including CI, which caught it.
+# DALEOBANKS pins python-dotenv==1.1.1 in its own requirements.
+python-dotenv>=1.1.1

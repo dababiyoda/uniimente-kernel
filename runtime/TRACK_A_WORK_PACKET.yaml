@@ -1,0 +1,220 @@
+# Track-A resume packet. A fresh context should verify this file against the
+# branch and CI before acting. It is not an authority source.
+
+updated_at: '2026-08-11'
+branch: claude/track-a-runtime-spine
+previous_head: 519a390cb18994b81d2a000363f142b7b7b9db2c
+head_resolution: git rev-parse HEAD
+main_baseline: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+planning_pr: 68
+planning_issue: 69
+track_b_pr: 66
+track_b_immutable_head: a6f14d344f2ca073fd334a885e5c2bdb921d082e
+
+active_target: institutional.cross_organ_edge_resolution
+active_target_status: P3_COMPLETE_CANONICAL_CI_GREEN
+active_sbm: VERIFIED_DEVELOPMENTAL_CLOSURES
+closure_count: 0
+
+contract_hash: 408b197e73240c2c16cc805d495a1a0f5ed4ec9f6994299b49d1e14a509ea30c
+evaluator_hashes: e50b48fe1ccc50a782b97bb1d8662eab1df5fbf28892758355183f560a30154a
+
+completed_phases:
+  P1_runtime_contract: COMPLETE; frozen, self-sealed, 18 guard tests
+  P2_evaluator_isolation: PROVEN; frozen; do not polish further
+  P2_1_privilege_drop: PROVEN_LOCALLY_ONLY; setpriv uid/gid 65534, empty caps, no_new_privs
+  P3_inspection: COMPLETE; contract-to-event seam and real consumer were absent
+  P3_route_adjudication: COMPLETE; Route A rejected; Route B selected
+  P3_route_b_local_counterfactual: PASS; exact pins, four states, no external effect
+  P3_route_b_canonical_ci: COMPLETE; commit af82717, run 31282596092, all four jobs green
+
+current_phase: >-
+  P4; evaluator FROZEN and Capability Router built. Next: held-out cases and the
+  candidate-builder, which now competes rather than presides.
+
+p3_route_b:
+  commit: af827176763bd86ec2851fef272c369678c34da1
+  canonical_ci_run_id: 31282596092
+  canonical_ci_run_number: 134
+  canonical_ci_conclusion: success
+  decision: generic typed contract-delivery event on the existing EventSpine
+  decision_record: runtime/P3_ROUTE_B_DELIBERATION.json
+  adr: runtime/ADR-P3-ROUTE-B.md
+  intent_ledger: runtime/P3_SOURCE_INTENT_LEDGER.json
+  producer:
+    repository: dababiyoda/DALEOBANKS
+    revision: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+    symbol: IdeaRefinery._opportunity_from plus packet_to_wire
+  consumer:
+    repository: dababiyoda/WealthMachineIntelligence
+    revision: 6549984a22a171f68b268b775f19192aee599609
+    symbol: src.services.opportunity_intake.OpportunityIntakeService.evaluate_packet
+  route: daleobanks --wire-opportunity-packet--> wealthmachine
+  schema:
+    locator: contracts/wire-opportunity-packet.schema.json
+    sha256: 487a28729bb856f239cd2d90c12b43f8088db4b625123750f8887e56c8ba7352
+  hostile_bypass:
+    implementation: DALEOBANKS WealthMachineClient local mock
+    finding: produces a valid-looking assessment without WMI
+    control: callable provenance rejects it as the WMI consumer
+  states:
+    A_HEALTHY: PASS; real assessment; packet id matches; human approval true
+    B_EDGE_DISABLED: PASS; binding refused; no assessment
+    C_LOCAL_MOCK_BYPASS: PASS; lookalike exists; router rejects it
+    D_EDGE_RESTORED: PASS; assessment and causal receipt return
+  classification: SANDBOX_EXECUTION_CONSEQUENCE_INERT
+  external_effects: 0
+  closure_count_delta: 0
+  non_inert_binding_refused: true
+  source_revisions_verified: true
+
+next_action: >-
+  Before writing P4 candidate or evaluator code, inspect the complete evaluator,
+  experimental registry, closure controller, and planning authority already on
+  this branch. Define the held-out evaluator hashes, liveness controls, and exact
+  candidate-builder boundary without changing runtime/contract.py. Preserve P3
+  as sandbox routing evidence and keep the closure count at zero.
+
+protected_invariants:
+  - "PR #66 remains immutable at a6f14d3"
+  - no merge, deploy, public publication, money, credentials, or external effect
+  - LinkReport proves structure, never authority
+  - no second linker, event bus, closure judge, or authority source
+  - no dummy, fixture, or test consumer may stand in for WMI
+  - WealthMachineClient is excluded from the decisive path
+  - closure requires all twelve frozen conditions; no rounding
+  - runtime/contract.py remains byte-identical
+
+evidence_paths:
+  frozen_contract: runtime/contract.py
+  isolation_proof: runtime/evaluator/isolation.py
+  p3_inspection: runtime/P3_INSPECTION.md
+  p3_router: runtime/contract_events.py
+  p3_probe: runtime/probes/route_b_counterfactual.py
+  p3_test: tests/integration/test_track_a_route_b.py
+  p3_deliberation: runtime/P3_ROUTE_B_DELIBERATION.json
+  p3_adr: runtime/ADR-P3-ROUTE-B.md
+  p3_intent_ledger: runtime/P3_SOURCE_INTENT_LEDGER.json
+  provenance: runtime/PROVENANCE.md
+  # Second implementation and standing doctrine. Added after an audit found the
+  # index omitted them: a fresh context resumes from this list, so an artifact
+  # absent here is an artifact that does not exist for the next session.
+  founder_vocabulary_doctrine: docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md
+  p3_second_implementation: runtime/seam
+  p3_second_implementation_record: runtime/P3_SEAM_SECOND_IMPLEMENTATION.md
+  p3_second_episode_record: runtime/evidence/P3_EPISODE.json
+  p3_second_test: tests/integration/test_p3_counterfactual.py
+  capability_router: capabilities/router.py
+  evaluator_freeze: runtime/evaluator/freeze.py
+
+source_classification:
+  doctrine: canonical founder requirement
+  proof_to_settlement_pdf: model-output design synthesis; not independent evidence
+  reality_compiler_pdf: model-output design synthesis; not independent evidence
+  autonomous_intent_pdf: historical exploratory expression; executable form prohibited
+  autonomous_treasury_pdf: historical exploratory expression; executable form prohibited
+
+known_falsifications:
+  - a separate subprocess is not evaluator isolation
+  - the pre-P3 kernel had no contract-to-event binding
+  - the only in-kernel LinkReport consumer was a health check, not a dependent function
+  - WealthMachineClient is a transport client with a local mock, not the producer
+  - a valid-looking mock assessment does not prove WMI consumption
+  - a successful internal route is not a developmental closure
+
+unresolved:
+  - trusted production artifact attestation for bound handler revisions
+  - field-level payload retention policy before production use
+  - candidate GENERATION evidence (the evaluator is now frozen; generation is one
+    competitor among four, not the default)
+  - named external verifier, acceptance schema, payable event, and first commercial wedge
+
+local_test_status:
+  exact_pin_route_b_integration: 1 passed
+  four_state_counterfactual: PASS
+  network: DENIED
+  source_revision_attestation: PASS
+  intent_ledger_validation: VALID; 5 records
+  deliberation_validation: VALID; exactly two passes
+  canonical_full_kernel_suite: 566 passed, 1 skipped (was 512/15 at af82717)
+  canonical_verifier_v2_unit_evidence: 491 passed, 14 skipped
+  canonical_route_b_step: 1 passed
+  canonical_ci_jobs: 4 of 4 succeeded
+
+ci_regression_status: >-
+  GREEN; 4 of 4 jobs at e8ba1413620e0ed5143bd1342a0f09056df663da (run 31322276858);
+  cross-repository gate reported 18 passed, 0 skipped. Earlier green:
+  af827176763bd86ec2851fef272c369678c34da1 (run 31282596092).
+runtime_counterfactual_status: PASS_LOCAL_AND_CANONICAL_CI_EXACT_PINS
+held_out_evaluation_status: EVALUATOR_FROZEN; held-out cases not yet created
+stop_reason: none
+
+# ---------------------------------------------------------------------------
+# GOVERNED IMPLEMENTATION PLURALISM (Final Build Order §9)
+# ---------------------------------------------------------------------------
+# Two sessions built P3-B concurrently and both landed on this branch. Neither
+# is deleted (§12 forbids it) and neither is silently promoted (§3 forbids it).
+competing_implementations:
+  p3_seam:
+    canonical: runtime/contract_events.py + runtime/probes/route_b_counterfactual.py
+    canonical_commits: [af82717, 59ed076]
+    second_implementation: runtime/seam/
+    second_implementation_record: runtime/P3_SEAM_SECOND_IMPLEMENTATION.md
+    relationship: >-
+      Independent replication. Written without knowledge of each other against
+      the same frozen contract; both reached the same verdict — the route holds,
+      the four states discriminate, WealthMachineClient stays off the decisive
+      path. Agreement between two independent builds is stronger evidence than
+      either run alone.
+    each_proves_what_the_other_does_not:
+      canonical_only:
+        - schema sha256 and both organ git revisions pinned
+        - network denied by a socket tripwire rather than by assumption
+        - ADR, two-pass deliberation and source-intent ledger recorded
+      second_only:
+        - "bypass caught by execution witness (which files actually ran), not by
+           declared handler_ref — a declaration says where a call was supposed to
+           go, the profiler records where it went"
+        - "runs in the default local suite (discovers sibling checkouts) rather
+           than requiring TRACK_A_DALEOBANKS_DIR under a dedicated CI step"
+        - "write containment measured: found that importing the organs rewrote 19
+           tracked .pyc files inside read-only WMI, and that WMI's agent store
+           wrote data/agent_store.jsonl into the kernel at IMPORT time"
+    open_founder_decision: >-
+      Which seam is canonical, and what role the other keeps — comparator,
+      counterfactual twin, regression oracle, or SUPERSEDED (which per §4.3 still
+      means retained, not deleted). Recommended regardless of that choice:
+      transplant the execution witness and the write-containment guards into
+      whichever seam is selected, because both catch failures a declaration-based
+      check structurally cannot.
+    both_suites_green: "562 passed, 1 skipped (their integration test skips without its env var)"
+
+# ---------------------------------------------------------------------------
+# P4 CONSTRAINT — founder correction 2026-08-09 (mechanism neutrality)
+# ---------------------------------------------------------------------------
+# See docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md. Does not change the
+# twelve closure conditions, the evaluator freeze, or the evidence standard.
+p4_mechanism_neutrality:
+  behavior_stated_without_metaphor: >-
+    Detect a lost function, find or create another way to perform it, test the
+    replacement, restore the function, preserve what was learned.
+  correction: >-
+    "find" precedes "create". The plan had promoted candidate GENERATION —
+    the evolutionary metaphor — to the default mechanism for restoring a lost
+    function. Under the founder correction it becomes one competitor among
+    several, selected on measured fit rather than on resemblance to biology.
+  competing_mechanisms_for_condition_7:
+    - route to a preserved alternative implementation already in the registry (§9, §4.3)
+    - recompose the function from existing Capability Genomes (§4.3, §10)
+    - fall back to a specialized or degraded implementation
+    - generate a novel candidate and evaluate it (the previous default; now one option)
+  why_the_seam_already_permits_this: >-
+    runtime/seam/topology.py TopologyProvider is a behavior interface, and
+    closure condition 7 asks whether the runtime ROUTES WORK THROUGH the
+    replacement — never where the replacement came from. A retrieved
+    implementation, a recomposition and a generated candidate all satisfy it
+    identically, so P4 can compare them without re-cutting the seam.
+  what_this_does_not_license: >-
+    Not a weaker proof. "Simplest mechanism that produces the behavior" governs
+    mechanism selection only. Evaluator sovereignty, the twelve conditions, the
+    preservation rule and the evidence standard are unchanged.

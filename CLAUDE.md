@@ -4,6 +4,7 @@ Read and obey:
 
 - @docs/UNIIMENTE_FINAL_BUILD_ORDER.md
 - @docs/CANONICAL_EXECUTION_ORDER.md
+- @docs/FOUNDER_VOCABULARY_AND_MECHANISM_NEUTRALITY.md
 
 ## Permanent rules
 
@@ -22,6 +23,13 @@ Read and obey:
 - Alfonso retains ultimate lawful authority.
 - Intelligence never creates authority.
 - No component may authorize its own promotion or expand its own sovereignty.
+- Alfonso's vocabulary is biological and specifies **behavior**, never mechanism.
+  "Cells", "morphogenesis", "organ", "self-healing", "egregore" say what the
+  system must *do*. Alfonso specifies behavior; engineering decides how to
+  achieve it. Before building, state the behavior with no metaphor in it, name
+  at least two mechanisms that would produce it including the boring
+  conventional one, and measure what decides between them. A mechanism that
+  resembles the metaphor gets no head start.
 
 ## Working facts
 

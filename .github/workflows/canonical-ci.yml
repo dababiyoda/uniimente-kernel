@@ -41,6 +41,50 @@ jobs:
         run: python -m pytest -q
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
+      - name: Checkout pinned DALEOBANKS producer
+        uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/DALEOBANKS
+          ref: 829c5f2810776bef65d6ea108800a3516c9f4c2b
+          path: .track-a-organs/daleobanks
+          persist-credentials: false
+      - name: Checkout pinned WealthMachine consumer
+        uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/WealthMachineIntelligence
+          ref: 6549984a22a171f68b268b775f19192aee599609
+          path: .track-a-organs/wealthmachine
+          persist-credentials: false
+      - name: Route B real producer-to-consumer counterfactual
+        env:
+          TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
+          TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
+        run: python -m pytest -q tests/integration/test_track_a_route_b.py
+      - name: Cross-repository counterfactuals, and neither may skip
+        # Runs here rather than in the full-suite step above, which executes
+        # before the organs are checked out and where these can only skip.
+        #
+        # The skip gate is instrument liveness, not belt-and-braces: pytest
+        # exits 0 on a skipped test, so both counterfactuals would report green
+        # while executing nothing. It has already earned its place twice — once
+        # catching a wrong organ path, once catching a missing producer
+        # dependency that a hand-run `pip install` had hidden locally.
+        env:
+          TRACK_A_DALEOBANKS_DIR: ${{ github.workspace }}/.track-a-organs/daleobanks
+          TRACK_A_WMI_DIR: ${{ github.workspace }}/.track-a-organs/wealthmachine
+        run: |
+          # pipefail: without it `pytest | tee` reports tee's exit status and a
+          # failing suite reads as success — the exact defect this gate exists
+          # to prevent, in the gate itself.
+          set -o pipefail
+          python -m pytest -q --no-header -p no:randomly -rs \
+            tests/integration/test_track_a_route_b.py \
+            tests/integration/test_p3_counterfactual.py 2>&1 | tee /tmp/cf.txt
+          if grep -qiE '[0-9]+ skipped' /tmp/cf.txt; then
+            echo "::error::a cross-repository counterfactual skipped in CI; \
+            it reported green without executing"
+            exit 1
+          fi
 
   contracts:
     name: "2 · Contract schema references resolve"

@@ -24,6 +24,9 @@ import pytest
 
 from blueprint.cycle import (
     SNAPSHOT_DIR,
+    STALL_THRESHOLD,
+    consecutive_without_unlock,
+    stall_condition_fired,
     SCHEMA_VERSION,
     Snapshot,
     SnapshotError,
@@ -298,6 +301,68 @@ def test_the_committed_history_spans_the_standard_change_and_says_so():
     assert any(c.verdict is Verdict.RECALIBRATED for c in history()), (
         "the history contains two evidence standards but no RECALIBRATED cycle"
     )
+
+
+# ----------------------------------------------------------------- the stall
+def _snapshots(ceilings):
+    """One snapshot per entry; `ceilings` gives #2's ceiling at each step."""
+    letters = "abcdefghij"
+    return tuple(
+        _snap(letters[i] * 7 + str(i) * 33,
+              [(1, "BUILT", "HARDENED", True), (2, "BLUEPRINT", c, c != "BLUEPRINT")])
+        for i, c in enumerate(ceilings)
+    )
+
+
+def test_a_run_of_cycles_that_unlock_nothing_is_a_stall():
+    """The blind spot: none of these is ceremony, and the run is still stuck."""
+    snaps = _snapshots(["BLUEPRINT"] * (STALL_THRESHOLD + 1))
+    comparisons = history(snaps)
+    assert all(c.verdict is Verdict.NO_CHANGE for c in comparisons)
+    assert not kill_condition_fired(comparisons), "no rung rose, so not ceremony"
+    assert consecutive_without_unlock(comparisons) == len(comparisons)
+    assert stall_condition_fired(comparisons)
+
+
+def test_one_unlocking_cycle_clears_the_run():
+    snaps = _snapshots(["BLUEPRINT"] * STALL_THRESHOLD + ["EXERCISED"])
+    comparisons = history(snaps)
+    assert comparisons[-1].unlocked
+    assert consecutive_without_unlock(comparisons) == 0
+    assert not stall_condition_fired(comparisons)
+
+
+def test_raising_a_rung_alone_does_not_clear_a_stall():
+    """The semantic that matters. Scores are not headroom."""
+    before = _snap(A, [(1, None, "EXERCISED", True), (2, "BLUEPRINT", "BLUEPRINT", False)])
+    after = _snap(B, [(1, "EXERCISED", "EXERCISED", False),
+                      (2, "BLUEPRINT", "BLUEPRINT", False)])
+    comparison = compare(before, after)
+    assert comparison.rungs_raised
+    assert not comparison.unlocked
+    assert consecutive_without_unlock((comparison,)) == 1
+
+
+def test_an_external_outcome_clears_a_stall_even_with_no_ceiling_change():
+    before = _snap(A, [(1, "PROVEN", "HARDENED", True)])
+    after = _snap(B, [(1, "HARDENED", "HARDENED", False)])
+    assert compare(before, after).unlocked
+    assert consecutive_without_unlock((compare(before, after),)) == 0
+
+
+def test_the_committed_history_is_currently_stalled_and_says_so():
+    """Reports against my own work, which is the point of having it.
+
+    Thirteen recorded cycles at the time this was written, none of which raised a
+    ceiling, moved a technology onto the frontier, or landed an outcome. The
+    ceremony kill condition read all-clear throughout because rungs mostly did
+    not rise at all.
+    """
+    comparisons = history()
+    assert comparisons
+    assert consecutive_without_unlock(comparisons) >= 13
+    assert stall_condition_fired(comparisons)
+    assert not kill_condition_fired(comparisons)
 
 
 # ------------------------------------------------------------------ real ladder

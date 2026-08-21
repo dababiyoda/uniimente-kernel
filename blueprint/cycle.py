@@ -19,6 +19,12 @@ a number.
     NO_CHANGE            the tree moved but the ladder did not
     RECALIBRATED         the rules changed, so the rungs are not comparable
 
+Two run-level readings sit beside the per-cycle verdicts. `kill_condition_fired`
+catches rungs rising without unlocking. `stall_condition_fired` catches the
+opposite and equally stuck case — nothing unlocking at all, cycle after cycle —
+which the first reading is blind to, because a cycle that claims no rung cannot
+be ceremony by its definition.
+
 RECALIBRATED outranks everything, because it is the one case where the numbers
 moved for a reason that is not about the institution at all. When the evidence
 standard is tightened — as it was when CLOSURE_MODULE stopped resolving on a
@@ -395,6 +401,46 @@ def history(snapshots: tuple[Snapshot, ...] | None = None,
     return tuple(compare(a, b) for a, b in zip(snaps, snaps[1:]))
 
 
+#: How many consecutive cycles may pass without anything downstream gaining
+#: headroom before the run is called a stall. Preparatory cycles are legitimate —
+#: building an instrument, recording a decision, tightening a gate — so the
+#: threshold is deliberately looser than the ceremony one. Five in a row is no
+#: longer a run of preparation.
+STALL_THRESHOLD = 5
+
+
+def consecutive_without_unlock(comparisons: tuple[CycleComparison, ...]) -> int:
+    """Trailing cycles in which nothing downstream gained headroom.
+
+    The blind spot this closes. `kill_condition_fired` only fires when rungs
+    *rise* without unlocking, so a project where rungs never rise at all reads as
+    permanently healthy: NO_CHANGE, NO_CHANGE, NO_CHANGE. The instrument reported
+    all-clear through thirteen consecutive cycles in which no ceiling rose, no
+    technology entered the frontier and no external outcome landed.
+
+    A cycle that raises no rung is not thereby innocent. Building the measuring
+    apparatus is worth doing and does not move the thing being measured, and a
+    long enough run of it is a stall whatever the commit log says.
+    """
+    run = 0
+    for comparison in reversed(comparisons):
+        if comparison.unlocked:
+            break
+        run += 1
+    return run
+
+
+def stall_condition_fired(comparisons: tuple[CycleComparison, ...],
+                          threshold: int = STALL_THRESHOLD) -> bool:
+    """Has the institution gone `threshold` cycles without unlocking anything?
+
+    Reported, never acted on — the same discipline as the kill condition. Only a
+    raised ceiling or a reconciled external outcome clears it; no amount of
+    further internal work will.
+    """
+    return consecutive_without_unlock(comparisons) >= threshold
+
+
 def consecutive_ceremony(comparisons: tuple[CycleComparison, ...]) -> int:
     """How many cycles in a row raised rungs and unlocked nothing, most recent first."""
     run = 0
@@ -501,6 +547,15 @@ def _print_history(comparisons: tuple[CycleComparison, ...],
         if comparison.frontier_left:
             print(f"        closed {list(comparison.frontier_left)} "
                   "(reached its ceiling; not progress downstream)")
+
+    stalled = consecutive_without_unlock(comparisons)
+    if stall_condition_fired(comparisons):
+        print(f"\n{_RULE}")
+        print(f"STALL — {stalled} consecutive cycles unlocked nothing downstream.")
+        print("No ceiling rose, nothing entered the frontier, no external outcome")
+        print("landed. Preparatory work is legitimate and this is longer than a run")
+        print("of preparation. Only a raised ceiling or a reconciled external")
+        print("outcome clears this; more internal building will not.")
 
     run = consecutive_ceremony(comparisons)
     print(f"\n{_RULE}")

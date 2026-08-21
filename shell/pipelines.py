@@ -179,9 +179,11 @@ def _cycle_audit() -> StageResult:
     from blueprint.cycle import (
         Verdict,
         consecutive_ceremony,
+        consecutive_without_unlock,
         history,
         kill_condition_fired,
         load_all,
+        stall_condition_fired,
     )
 
     snapshots = load_all()
@@ -196,6 +198,15 @@ def _cycle_audit() -> StageResult:
     regressions = [c for c in cycles if c.verdict is Verdict.REGRESSION]
     headline = (f"{len(cycles)} cycle(s); {len(flagged)} raised a rung without "
                 f"unlocking anything; {len(regressions)} regression(s)")
+    if stall_condition_fired(cycles):
+        stalled = consecutive_without_unlock(cycles)
+        return unresolved(
+            "cycle-audit", f"{headline} — STALLED",
+            detail + ("",
+                      f"{stalled} consecutive cycles unlocked nothing downstream: no "
+                      "ceiling rose, nothing entered the frontier, no external outcome "
+                      "landed. Only one of those three clears it; more internal "
+                      "building will not."))
     if kill_condition_fired(cycles):
         return unresolved("cycle-audit", f"{headline} — KILL CONDITION FIRED",
                           detail + ("",

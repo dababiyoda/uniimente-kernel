@@ -110,6 +110,41 @@ def _levers() -> StageResult:
     return ok("levers", headline, detail)
 
 
+def _decisions() -> StageResult:
+    """What is waiting on a human, and what is in force while it waits.
+
+    Reported as UNRESOLVED whenever anything is open, because an unanswered
+    constitutional question *is* an unresolved institutional state. A shell that
+    rendered three pending founder decisions as OK would be describing an
+    institution that had decided them.
+    """
+    from governance.decisions import State, load_all, open_decisions
+
+    records = load_all()
+    still_open = open_decisions(records)
+    if not still_open:
+        return ok("decisions",
+                  f"{len(records)} deliberation record(s); none waiting on a human")
+
+    rows: list[str] = []
+    for record in still_open:
+        rows.append("  " + record.headline())
+        rows.append(f"    owner   : {record.owner}")
+        if record.default_in_force:
+            rows.append(f"    in force: {record.default_in_force}")
+        if record.defect:
+            rows.append(f"    DEFECT  : {record.defect}")
+    unsound = [d for d in still_open if d.state is not State.AWAITING_FOUNDER]
+    if unsound:
+        rows.append("")
+        rows.append(f"{len(unsound)} record(s) are open for a defect rather than "
+                    "for a pending answer — see DEFECT lines above.")
+    return unresolved("decisions",
+                      f"{len(still_open)} of {len(records)} deliberation records "
+                      "await an authorized human",
+                      tuple(rows))
+
+
 def _blocked() -> StageResult:
     from blueprint.critical_path import compute
 
@@ -331,6 +366,7 @@ FRONTIER = Pipeline(
         Stage("frontier", _frontier, reads="blueprint.critical_path"),
         Stage("levers", _levers, reads="blueprint.critical_path"),
         Stage("blocked", _blocked, reads="blueprint.critical_path"),
+        Stage("decisions", _decisions, reads="governance.decisions"),
     ),
 )
 
@@ -342,6 +378,7 @@ EVIDENCE = Pipeline(
         Stage("cycle-audit", _cycle_audit, reads="blueprint.cycle"),
         Stage("spec-anchors", _spec_anchors, reads="blueprint.evidence"),
         Stage("open-questions", _open_questions, reads="linker"),
+        Stage("decisions", _decisions, reads="governance.decisions"),
         Stage("outcomes", _outcomes, reads="blueprint.critical_path"),
     ),
 )

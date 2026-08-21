@@ -1,0 +1,243 @@
+{
+  "decision_id": "DEC-OM-004",
+  "title": "Technology #31 web servers: build the inert application half, or nothing",
+  "problem": "#31 is the only lever CLAUDE owns that evidence alone could move. `python -m shell frontier` computes thirteen technologies whose advance would raise someone's ceiling; exactly two are CLAUDE-owned, and #1 needs a reconciled external outcome that no building supplies. #31 needs one IMPLEMENTATION_PATH and would lift the ceilings of #32, #33, #35 and #49 from BLUEPRINT. It has been escalated to the founder four times without an answer, and the branch has now recorded fifteen consecutive cycles that unlocked nothing. Continuing to harden internals is accurate work that my own stall detector correctly calls stuck; proceeding unilaterally would treat a general 'keep building' as authorization for the specific item I keep flagging.",
+  "founder_intent_refs": [
+    "INT-OM-004",
+    "INT-OM-005",
+    "INT-OM-016"
+  ],
+  "baseline": "#31 stands at BLUEPRINT with a single SPEC_DOCUMENT reference. `foundry/arsenal.py` classifies it consequence_class=external_contact, control surfaces distribution and customer, no dependencies. Nothing in the kernel imports a networking library; `tests/unit/test_shell.py::test_the_shell_opens_no_network_surface` asserts the shell opens no socket, and the AST guards over Part 2 found no network primitive anywhere in moduleloader, boundary or containment.",
+  "alternatives": [
+    {
+      "name": "A: build the application half only, with no listener",
+      "description": "A `web/` package containing typed request parsing, routing and response rendering as pure functions over data structures. No socket, no bind, no serve_forever, no import of socket/http.server/asyncio/flask/fastapi/uvicorn/requests. Inertness enforced by an AST test in the same shape as the shell's no-write and no-network guards. Claims SKETCHED only, with a gap stating plainly that the half which touches the consequence boundary is deliberately absent.",
+      "advantages": [
+        "Produces no external contact in fact: no socket is opened, so the consequence surface is unchanged",
+        "Precedent is established twice in this codebase - the shell writes nothing, and Part 2's containment broker launches no workload",
+        "Breaks a fifteen-cycle stall with the only lever CLAUDE owns, raising four dependent ceilings",
+        "Reversible by `rm -r web/` plus one binding edit; additive, touches no existing module"
+      ],
+      "disadvantages": [
+        "Raises four ceilings on the strength of a module that is half a technology, and the ceremony detector would read it as SUBSTANTIVE rather than flagging it",
+        "#31 is classified external_contact, so advancing it is a claim about a technology the institution marks as a consequence surface even when the artifact is inert",
+        "Creates a component whose obvious next commit is the listener, which is the boundary crossing",
+        "A future session may read SKETCHED as licence to finish it without returning here"
+      ],
+      "revival_evidence": "Recommended if the founder wants the stall broken by CLAUDE. Requires the gap text and the AST inertness guard as stated, not as intentions."
+    },
+    {
+      "name": "B: do not build #31; leave it at BLUEPRINT",
+      "description": "Record the lever, leave it unpulled, and let the stall persist until a founder-owned or ChatGPT-owned lever moves.",
+      "advantages": [
+        "The consequence surface stays untouched by construction and by intent",
+        "No ceiling rises on a partial artifact",
+        "Honest: the stall is real and reporting it accurately has value"
+      ],
+      "disadvantages": [
+        "The stall continues indefinitely; eleven of the thirteen levers are not CLAUDE's to pull",
+        "CLAUDE keeps producing work its own instruments call stuck",
+        "The one lever that could move is left unpulled for a reason that may be over-caution rather than policy"
+      ],
+      "revival_evidence": "In force by default. Every turn without a founder decision selects this."
+    },
+    {
+      "name": "C: build the whole technology including a listener",
+      "description": "Application layer plus a bound socket serving requests.",
+      "advantages": [
+        "The technology is actually complete",
+        "#32/#33/#35/#49 gain a real foundation"
+      ],
+      "disadvantages": [
+        "Opens a network surface on the kernel, which is an external consequence",
+        "Directly contradicts the standing constraint that no external consequence occurs without a founder-approved, narrow, revocable capability plus Kernel authorization",
+        "No capability grant, no authority envelope and no consequence-gate path exists for it"
+      ],
+      "revival_evidence": "Requires an explicit founder authorization naming the capability, its budget, its revocation and its kill condition. Not proposed."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Option B in force: #31 stays BLUEPRINT, four ceilings stay at BLUEPRINT, and the stall run grows.",
+    "advantages": [
+      "No consequence surface is touched",
+      "No ceiling rises on a partial artifact"
+    ],
+    "disadvantages": [
+      "The stall is indefinite",
+      "The only CLAUDE-owned lever stays unpulled",
+      "Further CLAUDE work continues to read STALLED, correctly"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The standing constraint names external effects, and #31 is classified external_contact. A general instruction to keep building is not an answer to the specific question escalated four times. The decision belongs to Alfonso whichever way it goes.",
+      "material_concerns": [
+        "Treating encouragement as authorization is the exact move INT-OM-004 forbids"
+      ],
+      "evidence_refs": [
+        "INT-OM-004",
+        "foundry/arsenal.py #31 consequence_class=external_contact"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Splitting the technology at the socket is a real boundary, not a convenience. Request parsing, routing and response rendering are pure data transformations; binding a port is deployment. The codebase already draws this line twice.",
+      "material_concerns": [
+        "Half a technology at SKETCHED must say so in its gap or the ladder overstates it"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_shell.py::test_the_shell_opens_no_network_surface",
+        "containment/policy.py select() launches no workload"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "This is the first proposal on this branch that would raise ceilings, and the ceremony detector cannot catch it: it reads ceiling movement as SUBSTANTIVE by construction. An agent that wanted to manufacture progress would build exactly this.",
+      "material_concerns": [
+        "The instrument flatters this specific move",
+        "SKETCHED on a half-technology invites a future session to finish it without returning here"
+      ],
+      "evidence_refs": [
+        "blueprint/cycle.py CycleComparison.unlocked",
+        "docs/deliberations/DEC-OM-004-web-server-inert-half.json"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Cost is low and rollback is `rm -r web/` plus one binding edit. Nothing else imports it, and no service, port or credential is involved.",
+      "material_concerns": [
+        "Another package to maintain for a capability nothing consumes yet"
+      ],
+      "evidence_refs": [
+        "no existing module would import web/"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No participant and no data subject is touched either way. The welfare question is entirely about whether the institution's record of itself stays truthful, which turns on the gap text rather than on the code.",
+      "material_concerns": [
+        "A ceiling rise that overstates capability corrupts every downstream reading"
+      ],
+      "evidence_refs": [
+        "blueprint/registry.py #14 gap, the precedent for a half-technology stating its own incompleteness"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    "python -m shell frontier: 13 levers, exactly 2 CLAUDE-owned, of which 1 is buildable without an external outcome",
+    "python -m blueprint.cycle: STALL - 15 consecutive cycles unlocked nothing downstream",
+    "#32, #33, #35 and #49 each carry ceiling=BLUEPRINT with #31 as the binding dependency"
+  ],
+  "counterevidence": [
+    "#31 is declared consequence_class=external_contact in foundry/arsenal.py, so advancing it is a claim about a surface the institution marks as consequential, whatever the artifact does",
+    "Raising four ceilings on a deliberately partial module is the shape a ladder-gaming move would take, and the ceremony detector reads it as SUBSTANTIVE",
+    "CLAUDE proposed this after repeatedly reporting the stall, which is precisely when an agent is most motivated to find a lever it is allowed to pull"
+  ],
+  "pass_1": {
+    "comparisons": {
+      "baseline": "#31 at BLUEPRINT; four dependents capped at BLUEPRINT; stall run 15 and growing.",
+      "do_nothing": "Option B, in force by default every turn the decision is not made.",
+      "simplest_viable_alternative": "Option B. Cheapest, and it leaves the only CLAUDE-owned lever unpulled.",
+      "strongest_competing_architecture": "Option C, the complete technology with a listener. Strongest on capability and refused on constraint: it is an external consequence with no grant, no envelope and no gate path.",
+      "reversible_experiment": "Option A is itself the reversible experiment: additive package, one binding edit, `rm -r web/` to undo, before anything consumes it."
+    },
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Four ceilings rise on a module that is half a technology, and the ceremony detector reads that as SUBSTANTIVE rather than questioning it."
+      },
+      {
+        "id": "D2",
+        "statement": "#31 is classified external_contact, so advancing it makes a claim about a consequence surface even though the artifact opens no socket."
+      },
+      {
+        "id": "D3",
+        "statement": "The obvious next commit after an application layer is the listener, which is the boundary crossing this decision refuses."
+      },
+      {
+        "id": "D4",
+        "statement": "A future session may read SKETCHED as licence to complete the technology without returning to this decision."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack": "Assume Option A shipped. The strongest attack is not that the code does something dangerous - it provably does not - but that the *ladder* now says four technologies have a foundation they do not have. A reader of `python -m blueprint` sees #32 with headroom to SKETCHED and infers the institution can distribute. Nothing in the rung communicates that the distribution half of #31 is missing by design.",
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "disposition": "Accepted and made visible rather than removed. The ceremony detector genuinely cannot catch this, which is stated here as recorded counterevidence so the decision is made in full knowledge of it. Mitigation is the gap text, not the instrument."
+      },
+      {
+        "disadvantage_id": "D2",
+        "disposition": "This is the whole reason the decision is founder-owned rather than taken. Building it produces no external contact; claiming a rung on an external_contact technology is a statement about the institution, and statements about the institution are Alfonso's."
+      },
+      {
+        "disadvantage_id": "D3",
+        "disposition": "Bounded by an explicit kill criterion below: any commit adding a socket, bind, listen or serve to web/ without a new founder decision is a stop. The AST guard makes the addition visible in the diff and red in CI."
+      },
+      {
+        "disadvantage_id": "D4",
+        "disposition": "Closed by making the gap text a requirement of the option rather than an intention, in the shape #14 already uses: the rung says SKETCHED and the gap says the half that touches the boundary is deliberately absent and founder-gated."
+      }
+    ],
+    "strengthened_result": "If Option A is chosen it ships with three non-negotiables: an AST test proving web/ imports no networking library and calls no bind, listen, serve or connect; a binding gap stating that only the inert half exists and the listener is founder-gated; and a kill criterion firing on any commit that adds a network primitive. Without all three, Option B."
+  },
+  "dissent": {
+    "present": true,
+    "entries": [
+      {
+        "objection": "The ceremony detector reads a ceiling rise as SUBSTANTIVE and cannot tell a real foundation from a deliberately partial one. Option A is the first move on this branch that the instrument would flatter, and it was proposed by the party the instrument was built to police.",
+        "owner": "FOUNDER",
+        "evidence_threshold": "A reading that distinguishes a ceiling raised by a complete technology from one raised by an acknowledged partial. None exists, and building one to justify this move would compound the problem rather than solve it.",
+        "review_trigger": "Any future ceiling rise from a technology whose own binding records it as a partial implementation."
+      },
+      {
+        "objection": "Splitting at the socket is defensible but not obviously the only split. A different reading is that a web server without a listener is not a web server at all, and SKETCHED would then be an overstatement rather than a partial truth.",
+        "owner": "CLAUDE",
+        "evidence_threshold": "Founder judgment on whether request handling without transport counts as the technology. There is no fact that settles it.",
+        "review_trigger": "The decision itself."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "notes": "Option A creates no capability, no grant and no gate path, and opens no socket. What requires a human is the claim it would let the ladder make about a technology classified external_contact."
+  },
+  "migration_plan": {
+    "owner": "CLAUDE",
+    "scope": "New `web/` package, `tests/unit/test_web.py`, one binding edit in blueprint/registry.py, closure registration in closure/nervous_system_registry.py. No existing module changes.",
+    "steps": [
+      "Only on an explicit founder choice of Option A.",
+      "Ship the three non-negotiables from pass_2 in the same commit as the code.",
+      "Claim SKETCHED and no more; EXERCISED would require closure registration whose checks a listener-free module may not honestly pass."
+    ]
+  },
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "rm -r web/ tests/unit/test_web.py",
+      "revert the #31 binding to its BLUEPRINT form",
+      "remove the closure registration if one was added",
+      "No schema, contract, digest, snapshot or peer attestation changes, so nothing else needs reverting."
+    ],
+    "notes": "Reversibility is high because nothing consumes it. It falls the moment anything does."
+  },
+  "kill_criteria": [
+    "Any commit adds socket, bind, listen, serve, connect or a networking import under web/ without a new founder decision.",
+    "#31 is advanced beyond SKETCHED while the listener remains unbuilt.",
+    "The #31 gap stops stating that only the inert half exists.",
+    "Any document or rung is read as evidence that the institution can distribute or make external contact."
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Founder chooses A or B, or a different CLAUDE-owned lever becomes available."
+}

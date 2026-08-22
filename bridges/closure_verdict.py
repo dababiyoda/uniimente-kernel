@@ -106,20 +106,54 @@ def assess(ledger, *, change_id: str = "bridge-chain") -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI entry
-    """`python -m bridges.closure_verdict` — the verdict, printed plainly."""
+    """`python -m bridges.closure_verdict` — the verdict, printed plainly.
+
+    The chain is RUN first, then assessed. An earlier version assessed an empty
+    ledger and printed OPEN, which understates the finding in the flattering
+    direction: OPEN means nothing ran, and the point of this module is that
+    something ran and still did not close.
+    """
     import os
 
+    from bridges import experiment_to_reality as bridge_c
     from compiler.ucl_compiler import compile_constitution
+    from evolution.experiment import ExperimentSpec
+    from identity.machine_passport import PassportRegistry
+    from policy.consequence_gate import ConsequenceGate
+    from provenance.commit_witness import WitnessSigner
     from provenance.ledger import EvidenceLedger
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ledger = EvidenceLedger(compile_constitution(root).constitution_hash)
+    compiled = compile_constitution(root)
+    passports = PassportRegistry()
+    ledger = EvidenceLedger(compiled.constitution_hash)
+    gate = ConsequenceGate(compiled=compiled, passports=passports, ledger=ledger,
+                           signer=WitnessSigner(env="development"))
+    actor = passports.issue(
+        kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+        legal_principal="alfonso_lopez", declared_capabilities=["experiment.run"],
+        budget_ceiling_usd=5.0, consequence_class="internal_write")
+    run = bridge_c.run(
+        ExperimentSpec(
+            decisive_unknown="is the chain externally closed",
+            hypothesis="it is not", prediction="the sandbox run records a value",
+            metric="verified_outcomes", baseline=0.0, threshold=1.0,
+            direction="gte", workflow="experiment.run",
+            required_capabilities=["experiment.run"],
+            authority_requirements=["kernel.grant"], budget_usd=0.0,
+            reversible=True, rollback_path="discard the sandbox record",
+            kill_condition="measured exceeds 100",
+            verification="cryptographic_receipt"),
+        gate=gate, passports=passports, actor=actor.passport_id,
+        measure=lambda s: 2.0, ledger=ledger)
+
     verdict = assess(ledger)
 
     print("=" * 74)
     print("WHOLE-BODY VERDICT ON THE BRIDGE CHAIN")
     print("=" * 74)
-    print(f"overall   {verdict['overall']}")
+    print(f"chain ran : completed={run.completed} receipt={run.receipt_hash is not None}")
+    print(f"overall   : {verdict['overall']}")
     for loop, v in sorted(verdict["verdicts"].items()):
         if loop in {l.value for l in BRIDGE_LOOPS}:
             print(f"  {loop:<18} {v}")
@@ -127,8 +161,10 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - CLI entry
         print(f"\nfalsely closed: {verdict['falsely_closed']}")
     if verdict["required_actions"]:
         print(f"required:       {verdict['required_actions']}")
-    print("\nThis verdict is derived from the ledger. It changes when an outside")
-    print("party speaks, and not because anyone edited this file.")
+    print("\nInternal metrics moved; the external consequence is flat. That is the")
+    print("institution's own name for this, and it applies to the work that built it.")
+    print("Derived from the ledger: it changes when an outside party speaks, and")
+    print("not because anyone edited this file.")
     return 0
 
 

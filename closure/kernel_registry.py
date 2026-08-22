@@ -992,4 +992,92 @@ def build_registry() -> ClosureRegistry:
         "evidence": linker_evidence, "economic": linker_economic,
         "regenerative": linker_regenerative}))
 
+    # ------------------------------------------------------------ bridges/C
+    def _bridge_c_stack():
+        from compiler.ucl_compiler import compile_constitution
+        from identity.machine_passport import PassportRegistry
+        from policy.consequence_gate import ConsequenceGate
+        from provenance.commit_witness import WitnessSigner
+        from provenance.ledger import EvidenceLedger
+        compiled = compile_constitution(KERNEL_ROOT)
+        passports = PassportRegistry()
+        ledger = EvidenceLedger(compiled.constitution_hash)
+        gate = ConsequenceGate(compiled=compiled, passports=passports, ledger=ledger,
+                               signer=WitnessSigner(env="development"))
+        actor = passports.issue(
+            kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+            legal_principal="alfonso_lopez", declared_capabilities=["experiment.run"],
+            budget_ceiling_usd=5.0, consequence_class="internal_write")
+        return gate, passports, ledger, actor.passport_id
+
+    def _bridge_c_spec(**kw):
+        from evolution.experiment import ExperimentSpec
+        base = dict(decisive_unknown="u", hypothesis="h", prediction="p", metric="m",
+                    baseline=0.0, threshold=10.0, direction="gte",
+                    workflow="experiment.run", required_capabilities=["experiment.run"],
+                    authority_requirements=["kernel.grant"], budget_usd=0.0,
+                    reversible=True, rollback_path="discard the sandbox record",
+                    kill_condition="measured exceeds 100",
+                    verification="cryptographic_receipt")
+        base.update(kw)
+        return ExperimentSpec(**base)
+
+    def bridges_technical():
+        from bridges import experiment_to_reality as bc
+        gate, passports, ledger, actor = _bridge_c_stack()
+        run = bc.run(_bridge_c_spec(), gate=gate, passports=passports, actor=actor,
+                     measure=lambda s: 11.0, ledger=ledger)
+        return run.completed and run.resolved is True and run.receipt_hash is not None, \
+            "an ExperimentSpec traverses compiler, gate, witness, receipt and reconciliation"
+
+    def bridges_authority():
+        from bridges import experiment_to_reality as bc
+        gate, passports, ledger, actor = _bridge_c_stack()
+        over_cap = bc.run(_bridge_c_spec(required_capabilities=["treasury.transfer"]),
+                          gate=gate, passports=passports, actor=actor,
+                          measure=lambda s: 11.0, ledger=ledger)
+        over_budget = bc.run(_bridge_c_spec(budget_usd=500.0), gate=gate,
+                             passports=passports, actor=actor,
+                             measure=lambda s: 11.0, ledger=ledger)
+        refused = (over_cap.halted_at is bc.Halt.CAPABILITY_EXCEEDS_PASSPORT
+                   and over_budget.halted_at is bc.Halt.BUDGET_EXCEEDS_PASSPORT)
+        return refused and over_cap.action_id is None, \
+            "an experiment cannot widen its own capability or budget; refused before the gate is asked"
+
+    def bridges_evidence():
+        from bridges import experiment_to_reality as bc
+        gate, passports, ledger, actor = _bridge_c_stack()
+        # The executor reports exactly the expected outcome; the metric does not
+        # clear the threshold. Resolution follows the threshold, not the claim.
+        run = bc.run(_bridge_c_spec(), gate=gate, passports=passports, actor=actor,
+                     measure=lambda s: 2.0, ledger=ledger)
+        return run.completed and run.resolved is False, \
+            "self-declared success is not a result; the threshold fixed before the run decides"
+
+    def bridges_economic():
+        from bridges import experiment_to_reality as bc
+        gate, passports, ledger, actor = _bridge_c_stack()
+        run = bc.run(_bridge_c_spec(budget_usd=2.0), gate=gate, passports=passports,
+                     actor=actor, measure=lambda s: 11.0, ledger=ledger)
+        return run.halted_at is bc.Halt.GATE_REFUSED and run.granted_budget_usd == 2.0, \
+            "a budgeted experiment cannot fund itself; no standing grant, no spend"
+
+    def bridges_regenerative():
+        from bridges import experiment_to_reality as bc
+        gate, passports, ledger, actor = _bridge_c_stack()
+        passports.revoke(actor, reason="closure probe", revoker="alfonso")
+
+        def exploding(_spec):
+            raise AssertionError("instrument ran despite a refused gate")
+
+        run = bc.run(_bridge_c_spec(), gate=gate, passports=passports, actor=actor,
+                     measure=exploding, ledger=ledger)
+        return run.resolved is None and run.measured is None, \
+            "a refusal yields no measurement at all; absence of evidence never becomes a finding"
+
+    reg.register(ModuleClosures("bridges", {
+        "technical": bridges_technical, "authority": bridges_authority,
+        "evidence": bridges_evidence, "economic": bridges_economic,
+        "regenerative": bridges_regenerative}))
+
     return reg

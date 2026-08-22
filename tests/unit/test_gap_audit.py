@@ -188,3 +188,47 @@ def test_the_importer_check_ignores_tests_and_scripts():
     for module in importers:
         head = module.split(os.sep)[0]
         assert head not in ("tests", "scripts")
+
+
+# --- rung is not reality ------------------------------------------------------
+
+def test_commerce_dependencies_are_judged_on_reality_not_rung():
+    """The false STALE this check produced on its first draft.
+
+    #54 says payments, marketplaces and reputation do not exist. Payments sits
+    at EXERCISED — but with `reality=SIMULATED`, meaning it runs against
+    fixtures. Reading the rung reported the gap closed; reading the reality axis
+    reports it open, which is the truth. A false STALE costs the founder exactly
+    what a stale gap costs.
+    """
+    from blueprint.critical_path import compute
+    from blueprint.ladder import Reality, Rung
+
+    report = compute()
+    payments = report.statuses[38]
+
+    # The trap: past BLUEPRINT on the rung axis, not real on the reality axis.
+    assert payments.awarded_rung is not Rung.BLUEPRINT
+    assert payments.reality is not Reality.IMPLEMENTED
+
+    still_open, evidence = gap_audit._commerce_dependencies_unbuilt()
+    assert still_open is True
+    assert "IMPLEMENTED" in evidence
+
+
+def test_no_check_confuses_a_rung_with_a_reality():
+    """Structural: the ladder carries two axes so one cannot stand for the
+    other. A check that reads `awarded_rung` to answer whether something is
+    real repeats the mistake above."""
+    path = os.path.join(ROOT, "governance", "gap_audit.py")
+    with open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read())
+
+    fn = next(n for n in ast.walk(tree)
+              if isinstance(n, ast.FunctionDef)
+              and n.name == "_commerce_dependencies_unbuilt")
+    source = ast.unparse(fn)
+
+    assert "reality" in source
+    assert "awarded_rung" not in source, (
+        "this check must read the reality axis, not the rung")

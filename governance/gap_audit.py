@@ -159,6 +159,101 @@ def _no_verified_outcome() -> tuple[bool, str]:
 #: (technology_id, anchor, check). The anchor is a distinctive fragment of the
 #: gap text; if it stops matching, the row reports ANCHOR_LOST rather than
 #: quietly dropping out of the audit.
+#: Asymmetric primitives. Their absence is what makes "HMAC over a shared
+#: secret" true; their arrival is what would close the gap.
+ASYMMETRIC = ("cryptography", "ecdsa", "rsa", "nacl", "OpenSSL", "jwcrypto")
+
+
+def _no_asymmetric_crypto() -> tuple[bool, str]:
+    """The shared-secret claim on #7 and #26, checked at the import level.
+
+    A per-service identity needs an asymmetric primitive somewhere. None is
+    imported by any institutional module, so every signature in the transport
+    path is still an HMAC over one shared key.
+    """
+    found: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(KERNEL_ROOT):
+        dirnames[:] = [d for d in dirnames if d not in NON_INSTITUTIONAL]
+        for name in filenames:
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(dirpath, name)
+            with open(path, encoding="utf-8", errors="ignore") as fh:
+                try:
+                    tree = ast.parse(fh.read())
+                except SyntaxError:
+                    continue
+            for node in ast.walk(tree):
+                modules: list[str] = []
+                if isinstance(node, ast.Import):
+                    modules = [a.name for a in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                if any(m.split(".")[0] in ASYMMETRIC for m in modules):
+                    found.append(os.path.relpath(path, KERNEL_ROOT))
+    if not found:
+        return True, ("no asymmetric primitive is imported by any institutional "
+                      "module; every transport signature is an HMAC")
+    return False, f"asymmetric crypto now imported by {', '.join(sorted(set(found)))}"
+
+
+def _routing_decision_is_untyped() -> tuple[bool, str]:
+    """`RoutingDecision` has no schema in the canonical contract registry."""
+    contracts = os.path.join(KERNEL_ROOT, "contracts")
+    names = [n for n in os.listdir(contracts) if n.endswith(".schema.json")]
+    routing = [n for n in names if "rout" in n.lower() or "decision" in n.lower()]
+    # `decision.schema.json` is the constitutional decision record, not a
+    # routing decision. Match the specific name a typed RoutingDecision needs.
+    typed = [n for n in routing if "rout" in n.lower()]
+    if not typed:
+        return True, (f"contracts/ holds {len(names)} schemas, none for a routing "
+                      f"decision")
+    return False, f"a routing contract now exists: {', '.join(typed)}"
+
+
+def _bridge_f_is_unimplemented() -> tuple[bool, str]:
+    """Bridge F — audience to business — has no module under `bridges/`."""
+    bridges = os.path.join(KERNEL_ROOT, "bridges")
+    present = sorted(n for n in os.listdir(bridges)
+                     if n.endswith(".py") and n != "__init__.py")
+    f_like = [n for n in present if "audience" in n or "to_business" in n]
+    if not f_like:
+        return True, (f"bridges/ holds {len(present)} modules, none implementing "
+                      f"audience-to-business")
+    return False, f"a Bridge F module now exists: {', '.join(f_like)}"
+
+
+def _commerce_dependencies_unbuilt() -> tuple[bool, str]:
+    """#54 depends on payments, marketplaces and reputation. Read their REALITY.
+
+    Reality, not rung — and the distinction is the whole reason the ladder
+    carries two axes. The first draft of this check asked whether each
+    dependency had climbed past BLUEPRINT and reported the gap STALE because
+    payments sits at EXERCISED. But payments is EXERCISED with
+    `reality=SIMULATED`: it runs inside the institution's own loop against
+    fixtures, and a fixture is not a payment rail. The gap says these do not
+    exist, and against the axis that means existing, it is still right.
+
+    A false STALE costs the founder exactly what a stale gap costs — it reports
+    something closed that is open — so this check reads the axis that answers
+    the question actually asked.
+    """
+    from blueprint.critical_path import compute
+    from blueprint.ladder import Reality
+
+    report = compute()
+    named = {38: "payments", 37: "marketplaces", 41: "reputation"}
+    real = {label: report.statuses[tid].reality.value
+            for tid, label in named.items()
+            if report.statuses[tid].reality is Reality.IMPLEMENTED}
+    if not real:
+        states = ", ".join(
+            f"{label} #{tid} {report.statuses[tid].reality.value}"
+            for tid, label in named.items())
+        return True, f"none is IMPLEMENTED: {states}"
+    return False, f"now real: {real}"
+
+
 #:
 #: The #26 adapters check was retired when the gap it watched was closed: this
 #: audit reported it STALE, the register was corrected in the same change, and a
@@ -170,6 +265,16 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (38, "No payment rail is connected", _no_external_reach),
     (49, "No company has published anything", _no_external_reach),
     (25, "No live traffic has routed through either router", _no_verified_outcome),
+    (7, "HMAC over a shared secret, not asymmetric PKI", _no_asymmetric_crypto),
+    (26, "Shared-secret HMAC, not mutual TLS", _no_asymmetric_crypto),
+    (25, "RoutingDecision is not a typed institutional contract",
+     _routing_decision_is_untyped),
+    (37, "No marketplace. Bridge F has no implementation", _bridge_f_is_unimplemented),
+    (39, "No account, ledger export, or reconciliation against a real balance",
+     _no_external_reach),
+    (55, "No restricted fund, no real obligation, no reconciliation", _no_external_reach),
+    (54, "Depends on payments (#38), marketplaces (#37) and reputation (#41)",
+     _commerce_dependencies_unbuilt),
 )
 
 

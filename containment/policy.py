@@ -11,7 +11,8 @@ import shutil
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Callable, Iterable
+from types import MappingProxyType
+from typing import Callable, Iterable, Mapping
 
 from moduleloader.frozen_contract import FrozenContractError, FrozenContractSchemas
 from moduleloader.integrity import require_aware, sha256_json, utc_now, valid_sha256
@@ -31,14 +32,14 @@ class EnforcementKind(str, Enum):
     WASM_SANDBOX = "wasm_sandbox"
 
 
-TIER_ENFORCEMENT = {
+TIER_ENFORCEMENT: Mapping[ContainmentTier, EnforcementKind] = MappingProxyType({
     ContainmentTier.IN_PROCESS: EnforcementKind.POLICY_ONLY,
     ContainmentTier.HARDENED_CONTAINER: EnforcementKind.OS_KERNEL_BOUNDARY,
     ContainmentTier.MICROVM: EnforcementKind.HYPERVISOR_BOUNDARY,
     ContainmentTier.WASM_COMPONENT: EnforcementKind.WASM_SANDBOX,
-}
+})
 
-REQUIRED_CONTROLS: dict[ContainmentTier, frozenset[str]] = {
+REQUIRED_CONTROLS: Mapping[ContainmentTier, frozenset[str]] = MappingProxyType({
     ContainmentTier.IN_PROCESS: frozenset({"authority_checked_by_caller"}),
     ContainmentTier.HARDENED_CONTAINER: frozenset(
         {
@@ -72,7 +73,7 @@ REQUIRED_CONTROLS: dict[ContainmentTier, frozenset[str]] = {
             "immutable_root_or_snapshot",
         }
     ),
-}
+})
 
 CONSEQUENCE_CLASSES = (
     "read_only",
@@ -89,6 +90,13 @@ class ContainmentRefused(ValueError):
         super().__init__(f"{code}: {detail}")
         self.code = code
         self.detail = detail
+
+
+def required_controls(tier: ContainmentTier) -> frozenset[str]:
+    """Return the immutable control floor for one declared tier."""
+    if not isinstance(tier, ContainmentTier):
+        raise ContainmentRefused("INVALID_REQUIREMENT", "required tier is invalid")
+    return REQUIRED_CONTROLS[tier]
 
 
 @dataclass(frozen=True)
@@ -161,7 +169,7 @@ class ContainmentRequirement:
 
     @property
     def controls(self) -> frozenset[str]:
-        return REQUIRED_CONTROLS[self.required_tier] | self.additional_controls
+        return required_controls(self.required_tier) | self.additional_controls
 
     def validate(self) -> None:
         if not isinstance(self.module_id, str) or not self.module_id:
@@ -180,6 +188,13 @@ class ContainmentRequirement:
             )
         if not isinstance(self.resource_limits, dict):
             raise ContainmentRefused("INVALID_REQUIREMENT", "resource_limits must be an object")
+        if (
+            self.consequence_class == "irreversible"
+            and self.required_tier is not ContainmentTier.MICROVM
+        ):
+            raise ContainmentRefused(
+                "INSUFFICIENT_TIER", "irreversible consequence requires microvm"
+            )
         if self.trust in {"foreign", "generated"} and self.required_tier not in {
             ContainmentTier.MICROVM,
             ContainmentTier.WASM_COMPONENT,
@@ -229,6 +244,8 @@ class ContainmentDecision:
 
 
 AttestationVerifier = Callable[[ContainmentAttestation], tuple[bool, str]]
+AttestationReplayKey = tuple[str, str, str]
+AttestationReplayRecorder = Callable[[AttestationReplayKey, datetime], bool]
 
 
 class ContainmentBroker:
@@ -239,6 +256,7 @@ class ContainmentBroker:
         *,
         trusted_verifiers: Iterable[str],
         verify_attestation: AttestationVerifier,
+        record_replay_key: AttestationReplayRecorder | None = None,
         schemas: FrozenContractSchemas | None = None,
         max_attestation_lifetime: timedelta = timedelta(hours=24),
     ):
@@ -252,17 +270,21 @@ class ContainmentBroker:
             raise ContainmentRefused("INVALID_POLICY", "trusted verifier IDs are required")
         if not callable(verify_attestation):
             raise ContainmentRefused("INVALID_POLICY", "verify_attestation is required")
+        if not callable(record_replay_key):
+            raise ContainmentRefused(
+                "INVALID_POLICY", "an atomic durable replay recorder is required"
+            )
         if schemas is not None and not isinstance(schemas, FrozenContractSchemas):
             raise ContainmentRefused("INVALID_POLICY", "schemas must be FrozenContractSchemas")
         if not isinstance(max_attestation_lifetime, timedelta) or max_attestation_lifetime <= timedelta(0):
             raise ContainmentRefused("INVALID_POLICY", "attestation lifetime must be positive")
         self._trusted_verifiers = verifiers
         self._verify_attestation = verify_attestation
+        self._record_replay_key = record_replay_key
         self._schemas = schemas or FrozenContractSchemas()
         self._max_lifetime = max_attestation_lifetime
         self._providers: dict[str, ProviderDeclaration] = {}
         self._attestations: dict[str, list[ContainmentAttestation]] = {}
-        self._seen_nonces: set[tuple[str, str]] = set()
 
     def register(self, declaration: ProviderDeclaration) -> None:
         if not isinstance(declaration, ProviderDeclaration):
@@ -306,7 +328,7 @@ class ContainmentBroker:
             isinstance(control, str) and control for control in attestation.controls
         ):
             raise ContainmentRefused("INVALID_ATTESTATION", "controls are invalid")
-        missing = REQUIRED_CONTROLS[attestation.tier] - attestation.controls
+        missing = required_controls(attestation.tier) - attestation.controls
         if missing:
             raise ContainmentRefused("MISSING_CONTROLS", str(sorted(missing)))
         if not isinstance(attestation.evidence_refs, tuple) or not attestation.evidence_refs or not all(
@@ -317,16 +339,25 @@ class ContainmentBroker:
             raise ContainmentRefused("INVALID_ATTESTATION", "nonce is too short")
         if not isinstance(attestation.verification_ref, str) or not attestation.verification_ref:
             raise ContainmentRefused("INVALID_ATTESTATION", "verification_ref is required")
-        nonce_key = (attestation.verifier_id, attestation.nonce)
-        if nonce_key in self._seen_nonces:
-            raise ContainmentRefused("ATTESTATION_REPLAY", attestation.nonce)
         try:
             verified, reason = self._verify_attestation(attestation)
         except Exception as exc:
             raise ContainmentRefused("VERIFIER_UNAVAILABLE", type(exc).__name__) from exc
         if verified is not True:
             raise ContainmentRefused("ATTESTATION_REFUSED", str(reason))
-        self._seen_nonces.add(nonce_key)
+        replay_key: AttestationReplayKey = (
+            "containment.attestation.v1",
+            attestation.verifier_id,
+            attestation.nonce,
+        )
+        try:
+            claimed = self._record_replay_key(replay_key, expires)
+        except Exception as exc:
+            raise ContainmentRefused(
+                "REPLAY_STORE_UNAVAILABLE", type(exc).__name__
+            ) from exc
+        if claimed is not True:
+            raise ContainmentRefused("ATTESTATION_REPLAY", attestation.nonce)
         self._attestations.setdefault(attestation.provider_id, []).append(attestation)
         return attestation.attestation_digest
 
@@ -383,7 +414,13 @@ class ContainmentBroker:
                     status="UNAVAILABLE",
                 )
             )
-        candidates.sort(key=lambda item: (-item.expires_at.timestamp(), item.provider_id))
+        candidates.sort(
+            key=lambda item: (
+                -item.issued_at.timestamp(),
+                item.provider_id,
+                item.attestation_digest,
+            )
+        )
         selected = candidates[0]
         return self._validate_output(
             ContainmentDecision(
@@ -442,6 +479,6 @@ __all__ = [
     "ContainmentTier",
     "EnforcementKind",
     "ProviderDeclaration",
-    "REQUIRED_CONTROLS",
     "local_runtime_inventory",
+    "required_controls",
 ]

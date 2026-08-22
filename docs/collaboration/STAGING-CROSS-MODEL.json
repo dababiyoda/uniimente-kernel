@@ -1,0 +1,238 @@
+{
+  "common_to_both": [
+    "kernel/evolution/__init__.py",
+    "kernel/evolution/cycle.py"
+  ],
+  "reason": "KIMI's fetch pipeline is blocked on infrastructure (GitHub MCP failures, subagent quota exhausted). These files are trivial to read from a local clone. Staging them is not doing KIMI's port; the port design and PR remain KIMI's.",
+  "record": "STAGING-CROSS-MODEL",
+  "regenerate": "python scripts/stage_cross_model_sources.py",
+  "staged": {
+    "canonical_port_target": {
+      "commit": "bcbb1ab4a0c42cda4a97aec42a11125753962762",
+      "file_count": 31,
+      "files": [
+        {
+          "blob_sha1": "3632c0cd1718333b168bb0076255a04ef507d3a6",
+          "path": "evolution/README.md",
+          "size": 4759
+        },
+        {
+          "blob_sha1": "53b43035f0b58dc679a69d4009bcd10cfcb3d18c",
+          "path": "evolution/__init__.py",
+          "size": 77
+        },
+        {
+          "blob_sha1": "c34aeea2c07ecbdc5b5063e01603b4d5b1310056",
+          "path": "evolution/auto_cycle.py",
+          "size": 6452
+        },
+        {
+          "blob_sha1": "9a6c3bfd45186a0732a079f9df0445aee61a89e4",
+          "path": "evolution/branch_generator.py",
+          "size": 4063
+        },
+        {
+          "blob_sha1": "9b88a4065e7655c3b0620b9b1646ac59528fb000",
+          "path": "evolution/capsule.py",
+          "size": 4038
+        },
+        {
+          "blob_sha1": "a4906f1b132b4817495f5412aa8ff4a8dc1e7b4a",
+          "path": "evolution/comparison.py",
+          "size": 2999
+        },
+        {
+          "blob_sha1": "a2e4e0fe9f426e43b15549ffee04b33c16a35e6e",
+          "path": "evolution/experiment.py",
+          "size": 3143
+        },
+        {
+          "blob_sha1": "cd743a80743635998129cf8d65907c3e54e15192",
+          "path": "evolution/failure_analysis.py",
+          "size": 3739
+        },
+        {
+          "blob_sha1": "6bf5aad72c224c00934730bab4e7b583520ce592",
+          "path": "evolution/loop.py",
+          "size": 6780
+        },
+        {
+          "blob_sha1": "bf5a93510a73bc050d1590d2785180353ee58f1c",
+          "path": "evolution/migration/__init__.py",
+          "size": 1196
+        },
+        {
+          "blob_sha1": "8d772b21a3b3992933c3b113447dfa2b9cf5f2c8",
+          "path": "evolution/migration/__main__.py",
+          "size": 1318
+        },
+        {
+          "blob_sha1": "09222ca2811d466ad5ebdfc481aa4a43e5a5b851",
+          "path": "evolution/migration/engines.py",
+          "size": 21528
+        },
+        {
+          "blob_sha1": "5abda8305ed39b2f861c444db119c9cb7085e67a",
+          "path": "evolution/migration/harness.py",
+          "size": 21013
+        },
+        {
+          "blob_sha1": "ecca193d2842d8b58e0d1e94b41670f22bcf5434",
+          "path": "evolution/migration/migrate.py",
+          "size": 7271
+        },
+        {
+          "blob_sha1": "572e06ee404a7f5b89c9ad231c97f239e2883974",
+          "path": "evolution/migration/schema.py",
+          "size": 6105
+        },
+        {
+          "blob_sha1": "27f6600d4cc03251666ac9fab6514305b8af5b80",
+          "path": "evolution/migration/spec.py",
+          "size": 27207
+        },
+        {
+          "blob_sha1": "863feeab4e1441f85f9782cbb7b0ed582b5cc64e",
+          "path": "evolution/repair/__init__.py",
+          "size": 1488
+        },
+        {
+          "blob_sha1": "95284bd4ebe2f1f9a2b2abffbec9f828bdae119b",
+          "path": "evolution/repair/__main__.py",
+          "size": 1291
+        },
+        {
+          "blob_sha1": "002bda3ef012309aaa4097ca85ddfe61d8549e52",
+          "path": "evolution/repair/baseline.py",
+          "size": 2159
+        },
+        {
+          "blob_sha1": "04319ed3ad66b1286002a43f35c5b429f697a3aa",
+          "path": "evolution/repair/candidate.py",
+          "size": 11069
+        },
+        {
+          "blob_sha1": "3dee3cc186bf761026203b42887ccc0727a8841b",
+          "path": "evolution/repair/cost.py",
+          "size": 6507
+        },
+        {
+          "blob_sha1": "2844a79154cfddc62fc3da56ed78aabdc1ceff3a",
+          "path": "evolution/repair/detector.py",
+          "size": 9986
+        },
+        {
+          "blob_sha1": "2d4d99159bd42cc115c5196e8ce55ad032093ebe",
+          "path": "evolution/repair/disable.py",
+          "size": 5497
+        },
+        {
+          "blob_sha1": "872c92c041255ba7dc997944740a374e7deacf23",
+          "path": "evolution/repair/expectations.py",
+          "size": 2088
+        },
+        {
+          "blob_sha1": "b107980835320286fc0da79f5dbda777bd1fd973",
+          "path": "evolution/repair/harness.py",
+          "size": 31023
+        },
+        {
+          "blob_sha1": "7e3be393ced916cb24fe4b30ab9974c488c61a3d",
+          "path": "evolution/repair/r1_contract_index.py",
+          "size": 4499
+        },
+        {
+          "blob_sha1": "82271b7f796c8dde3bdb463f29e73b7500876684",
+          "path": "evolution/repair/r2_constraint.py",
+          "size": 7851
+        },
+        {
+          "blob_sha1": "3b9d2afbd6983da92a9ca79a5d4b4ccf7068660f",
+          "path": "evolution/repair/r3_local_rule.py",
+          "size": 8860
+        },
+        {
+          "blob_sha1": "4d8f267ff13de7b83f8efb30d6c5f322f2c56f8e",
+          "path": "evolution/repair/spec.py",
+          "size": 27243
+        },
+        {
+          "blob_sha1": "cb6070eeb9b4fe6d13d4c82d065496f5168936e9",
+          "path": "evolution/spider_web.py",
+          "size": 4759
+        },
+        {
+          "blob_sha1": "04003bf1ae3305e5dc32f60325d2e8efb7fcc820",
+          "path": "evolution/strategy_tree.py",
+          "size": 4682
+        }
+      ],
+      "for": "KIMI \u2014 where the port lands",
+      "note": "Canonical evolution/ on main. The port must be ADDITIVE: it must not displace evolution/repair/, which holds the sealed Package 3 and 4 proof records that no build/* branch contains.",
+      "prefix": "evolution/",
+      "ref": "origin/main"
+    },
+    "wp05_baseline": {
+      "commit": "b3bcc4314463b628ad48e48db53eb932fe4ded5b",
+      "file_count": 2,
+      "files": [
+        {
+          "blob_sha1": "6e67e3551c74e8ad5d71b3bf37694510fc68b12a",
+          "path": "kernel/evolution/__init__.py",
+          "size": 688
+        },
+        {
+          "blob_sha1": "99a3cdcd6744a6f1c871fe797316854bfb4ed66c",
+          "path": "kernel/evolution/cycle.py",
+          "size": 26666
+        }
+      ],
+      "for": "KIMI \u2014 the diff base that proves WP-06's additions",
+      "note": "WP-05. Independently confirms KIMI's claim that WP-06 adds exactly audit_rules.py, compare.py, generate.py plus an __init__.py rewrite, with the engine untouched.",
+      "prefix": "kernel/evolution/",
+      "ref": "origin/build/evolution-cycle"
+    },
+    "wp06_port_sources": {
+      "commit": "69af80db2d2fd6410ba87790a020dfdef16600e9",
+      "file_count": 5,
+      "files": [
+        {
+          "blob_sha1": "d6b581eede01023e35c92e4d8b3ceb284326e575",
+          "path": "kernel/evolution/__init__.py",
+          "size": 2146
+        },
+        {
+          "blob_sha1": "c82a0ecaebdd2046a8eb7fb587355d5b09ea773f",
+          "path": "kernel/evolution/audit_rules.py",
+          "size": 9131
+        },
+        {
+          "blob_sha1": "bc115b7b263b6644547886c1cc5176ef3f5dc262",
+          "path": "kernel/evolution/compare.py",
+          "size": 7850
+        },
+        {
+          "blob_sha1": "99a3cdcd6744a6f1c871fe797316854bfb4ed66c",
+          "path": "kernel/evolution/cycle.py",
+          "size": 26666
+        },
+        {
+          "blob_sha1": "01ac9f27183002cb4a14f073882e3055a7a9a4ce",
+          "path": "kernel/evolution/generate.py",
+          "size": 10614
+        }
+      ],
+      "for": "KIMI \u2014 Port PR 1 (WP-06 measurement machinery into canonical evolution/)",
+      "note": "The WP-06 line. Compare against wp05_baseline to see exactly what WP-06 adds; the engine file cycle.py is common to both.",
+      "prefix": "kernel/evolution/",
+      "ref": "origin/build/fast-evolution"
+    }
+  },
+  "staged_by": "CLAUDE",
+  "verification": "blob_sha1 values are git object ids. Verify any file with: git cat-file -p <blob_sha1> | git hash-object --stdin  \u2014 no trust in this script required.",
+  "wp06_adds_over_wp05": [
+    "kernel/evolution/audit_rules.py",
+    "kernel/evolution/compare.py",
+    "kernel/evolution/generate.py"
+  ]
+}

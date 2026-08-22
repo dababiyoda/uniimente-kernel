@@ -84,21 +84,22 @@ def test_an_unreachable_registry_is_reported_not_dropped(tmp_path):
         assert registry.ref in text
 
 
-def test_kimis_catalogue_is_known_even_though_this_ref_cannot_read_it():
-    """The register's first real job, asserted against the committed rows.
+def test_kimis_catalogue_is_now_merged_and_readable():
+    """The register's first real job, and the row it already caught going stale.
 
-    KIMI's records are on `kimi/collaboration-reconciliation-2026-08-22` and
-    this branch has never contained them. Before this module, nothing in the
-    kernel recorded that they exist at all.
+    KIMI's records lived on `kimi/collaboration-reconciliation-2026-08-22` and
+    this branch could not see them. PR #82 merged them to main on 2026-08-21,
+    and this test failed on the next run — the row still pinned the branch. That
+    is the guard working: the instruction it carried was to update the row
+    rather than relax the assertion, and that is what happened.
     """
     by_id = {r.registry_id: r for r in KNOWN_REGISTRIES}
     kimi = by_id["REG-COLLAB-KIMI"]
     assert kimi.owner is Owner.KIMI
-    assert kimi.ref.startswith("kimi/")
-    assert not kimi.merged
-    assert kimi in unreachable(), (
-        "this branch does not contain docs/collaboration/; if that changes, "
-        "the row's ref is stale and must be updated rather than the test relaxed"
+    assert kimi.merged, "PR #82 landed these records on main"
+    assert kimi not in unreachable(), (
+        "after merging main this branch holds KIMI's records; if this fails "
+        "again the branch has drifted behind main, not the row"
     )
 
 
@@ -161,9 +162,12 @@ def test_conflicting_id_schemes_are_reported_rather_than_reconciled():
 def test_most_records_are_invisible_to_other_contributors():
     """The measured state, not a complaint: three of four sit on branches."""
     detached = unmerged()
-    assert len(detached) == 3
+    assert len(detached) == 2, "KIMI's two rows merged via PR #82; mine have not"
     assert all(not r.merged for r in detached)
-    assert {r.owner for r in detached} == {Owner.CLAUDE, Owner.KIMI}
+    assert {r.owner for r in detached} == {Owner.CLAUDE}, (
+        "the only unmerged registries left are mine, which is now the honest "
+        "asymmetry: KIMI landed theirs and this branch has not landed its own"
+    )
 
 
 def test_render_names_every_registry_and_its_ref():

@@ -144,19 +144,25 @@ KNOWN_REGISTRIES: tuple[Registry, ...] = (
         canonical_for="open founder decisions",
         repository="dababiyoda/uniimente-kernel",
         path="docs/collaboration",
-        ref="kimi/collaboration-reconciliation-2026-08-22",
+        ref="main",
         id_namespace="DELIB-KIMI-*",
         marker="docs/collaboration/ARCHITECTURE-OWNERSHIP-MAP.yaml",
         note="Cross-repository catalogue spanning all three organs, plus the "
-             "architecture ownership map. Wider scope than REG-DELIB-KERNEL and "
-             "the reason the 'open founder decisions' concern is contested.",
+             "architecture ownership map. MERGED to main via PR #82 on "
+             "2026-08-21; this row previously pinned the branch and went stale "
+             "the moment it landed, which its own test caught.",
     ),
 )
 
 #: The one contested concern on record, and the registries contesting it.
-#: Pinned so a NEW contest breaks a test rather than passing unnoticed. Resolving
-#: this one is a founder decision: both registries are legitimate, they differ in
-#: scope, and picking a winner is an ownership ruling no module may make itself.
+#: Pinned so a NEW contest breaks a test rather than passing unnoticed.
+#:
+#: SETTLED IN POSTURE, NOT IN OWNERSHIP. The founder's ruling on issue #80
+#: (2026-08-21T19:49Z) directs every engine not to optimize for preserving any
+#: model's architecture or ownership. So this row is no longer an escalation
+#: waiting on a winner — it records that two registries cover one concern at
+#: different scopes, which is a fact to work with rather than a contest to win.
+#: It stays measured because a THIRD claimant would still be a defect.
 KNOWN_CONTESTED: tuple[str, ...] = ("open founder decisions",)
 
 

@@ -26,7 +26,10 @@
   "gaps": [
     "No container, Wasm component, or microVM workload was launched by this implementation.",
     "Executable inventory is explicitly unverified and never establishes an enforced isolation boundary.",
-    "Independent production verifier, runtime pinning, and host hardening evidence remain unavailable."
+    "Independent production verifier, runtime pinning, and host hardening evidence remain unavailable.",
+    "The governed runtime must inject an atomic durable replay recorder; this package provides no storage backend and has not crash-tested one.",
+    "Read-only Python policy mappings harden the reproduced mutation defect but are not a hostile same-process security boundary.",
+    "The microVM floor for irreversible consequences is policy validation only; no hypervisor boundary, host egress control, or guest isolation was exercised."
   ],
   "bundle_digest": "fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c"
 }

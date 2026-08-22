@@ -175,12 +175,71 @@ class CriticalPathReport:
     statuses: dict[int, TechnologyStatus] = field(default_factory=dict)
     order: tuple[int, ...] = ()
     dishonest: tuple[int, ...] = ()
+    #: Resolving evidence touches the filesystem; do it once per technology.
+    _missing_cache: dict[int, frozenset] = field(default_factory=dict, repr=False)
+
+    def _missing_for_target(self, status: TechnologyStatus) -> frozenset[EvidenceKind]:
+        """What the technology's *next* rung still needs. Cached per report."""
+        from blueprint.evidence import resolve_all, satisfied_kinds
+        from blueprint.registry import BINDINGS
+
+        target = status.target_rung
+        if target is None:
+            return frozenset()
+        cache = self._missing_cache
+        if status.technology_id not in cache:
+            have = satisfied_kinds(resolve_all(BINDINGS[status.technology_id].evidence))
+            cache[status.technology_id] = missing_for(target, have)
+        return cache[status.technology_id]
+
+    def needs_external_reality(self, status: TechnologyStatus) -> bool:
+        """No amount of building clears this one; only a reconciled consequence.
+
+        Derived from the rung's declared evidence requirements and what the
+        technology actually has — not from a hardcoded rung name. If a real
+        `OutcomeRecord` ever resolves, this goes false on its own and the
+        technology returns to the frontier with nothing edited here.
+        """
+        return EvidenceKind.EXTERNAL_OUTCOME in self._missing_for_target(status)
 
     @property
     def frontier(self) -> tuple[TechnologyStatus, ...]:
-        """Unblocked work, highest leverage first."""
-        movable = [s for s in self.statuses.values() if s.can_advance]
+        """Unblocked work, highest leverage first.
+
+        "Unblocked" has to mean buildable, and dependency headroom alone does not
+        establish that. `ladder.py` states plainly that HARDENED requires an
+        externally observable, reconciled consequence and is "currently
+        unreachable by construction" while the Single Bottleneck Metric stands at
+        zero. This property used to disagree with that sentence: it selected on
+        `can_advance`, which is purely a dependency test, so a technology sitting
+        at PROVEN with a clear ceiling was listed under "unblocked work" when its
+        only remaining rung needed something no build session can produce.
+
+        Two components of one package contradicting each other is worse than
+        either being wrong alone, because the frontier is what directs the next
+        build — it would have sent the next session to work on something the
+        ladder already knew was impossible.
+
+        Technologies in that position are reported by `awaiting_external_reality`
+        instead, which names the blocker rather than hiding the work.
+        """
+        movable = [s for s in self.statuses.values()
+                   if s.can_advance and not self.needs_external_reality(s)]
         return tuple(sorted(movable, key=lambda s: (-s.leverage, s.technology_id)))
+
+    @property
+    def awaiting_external_reality(self) -> tuple[TechnologyStatus, ...]:
+        """Dependency-clear, and still not buildable by anyone in a build session.
+
+        This is the Blocker Discipline class the execution order names: work that
+        stops on "external buyer responses" or "live platform authorization"
+        rather than on effort. Reported separately so it stays visible — dropping
+        it from the frontier without saying where it went would trade one
+        misleading report for another.
+        """
+        held = [s for s in self.statuses.values()
+                if s.can_advance and self.needs_external_reality(s)]
+        return tuple(sorted(held, key=lambda s: (-s.leverage, s.technology_id)))
 
     @property
     def blocked(self) -> tuple[TechnologyStatus, ...]:

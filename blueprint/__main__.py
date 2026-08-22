@@ -74,8 +74,8 @@ def _print_frontier(report, limit: int) -> None:
     print("-" * 78)
     frontier = report.frontier
     if not frontier:
-        print("  nothing can advance: every technology is held down by a dependency")
-        return
+        print("  nothing can advance: every technology is either held down by a")
+        print("  dependency or waiting on a consequence no build session can produce")
     for s in frontier[:limit]:
         target = s.target_rung.value if s.target_rung else "—"
         print(f"  #{s.technology_id:<3} {s.name:<40} "
@@ -83,6 +83,20 @@ def _print_frontier(report, limit: int) -> None:
               f"leverage={s.leverage:<3} owner={s.owner.value}")
     if len(frontier) > limit:
         print(f"  ... and {len(frontier) - limit} more (use --all)")
+
+    waiting = report.awaiting_external_reality
+    if waiting:
+        print()
+        print("-" * 78)
+        print("AWAITING EXTERNAL REALITY — dependency-clear, buildable by nobody")
+        print("-" * 78)
+        for s in waiting:
+            target = s.target_rung.value if s.target_rung else "—"
+            print(f"  #{s.technology_id:<3} {s.name:<40} "
+                  f"{_rung_label(s)} -> {target:<10} "
+                  f"leverage={s.leverage:<3} owner={s.owner.value}")
+        print("  These need a reconciled external consequence, not effort. No build")
+        print("  session can clear them; they move when a real counterparty acts.")
 
 
 def _print_blocked(report, limit: int) -> None:
@@ -175,6 +189,8 @@ def main(argv: list[str] | None = None) -> int:
                 for t, s in sorted(report.statuses.items())
             },
             "frontier": [s.technology_id for s in report.frontier],
+            "awaiting_external_reality": [
+                s.technology_id for s in report.awaiting_external_reality],
             "blocked": [s.technology_id for s in report.blocked],
             "by_rung": {k: list(v) for k, v in report.by_rung().items()},
             "by_reality": {k: list(v) for k, v in report.by_reality().items()},

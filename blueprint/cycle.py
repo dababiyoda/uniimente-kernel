@@ -105,6 +105,14 @@ class TechnologyReading:
     awarded: str | None
     ceiling: str
     can_advance: bool
+    #: The next rung needs a reconciled external consequence, so no build
+    #: session can advance it however clear its dependencies are.
+    #:
+    #: Defaults False so the snapshots written before this distinction existed
+    #: still load. Their frontier stays as it was read at that commit, which is
+    #: the honest record — rewriting history to match a later instrument would
+    #: destroy the very comparison these snapshots exist to support.
+    awaiting_external: bool = False
 
     def __post_init__(self) -> None:
         if self.awarded is not None and self.awarded not in {r.value for r in RUNG_ORDER}:
@@ -164,7 +172,17 @@ class Snapshot:
 
     @property
     def frontier(self) -> frozenset[int]:
-        return frozenset(r.technology_id for r in self.readings if r.can_advance)
+        """Work a build session could actually take.
+
+        One definition, shared with `critical_path.frontier`. This used to
+        reimplement it as `can_advance` alone, which is a dependency test — so a
+        technology whose only remaining rung needs an external consequence
+        counted as available work. That matters here more than anywhere: this
+        frontier feeds the stall detector, and a permanently-parked technology
+        inflating it would mask exactly the stall it exists to catch.
+        """
+        return frozenset(r.technology_id for r in self.readings
+                         if r.can_advance and not r.awaiting_external)
 
     @property
     def hardened(self) -> frozenset[int]:
@@ -210,6 +228,7 @@ class Snapshot:
                     awarded=r["awarded"],
                     ceiling=r["ceiling"],
                     can_advance=bool(r["can_advance"]),
+                    awaiting_external=bool(r.get("awaiting_external", False)),
                 )
                 for r in obj["readings"]
             ),
@@ -229,6 +248,7 @@ def take(commit: str, root: str = KERNEL_ROOT, provenance: str = "live") -> Snap
             awarded=status.awarded_rung.value if status.awarded_rung else None,
             ceiling=status.ceiling.value,
             can_advance=status.can_advance,
+            awaiting_external=report.needs_external_reality(status),
         )
         for status in sorted(report.statuses.values(), key=lambda s: s.technology_id)
     )

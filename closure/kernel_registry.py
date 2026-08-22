@@ -1023,12 +1023,48 @@ def build_registry() -> ClosureRegistry:
         return ExperimentSpec(**base)
 
     def bridges_technical():
+        """The chain, not one link: Bridge B's output is Bridge C's input."""
         from bridges import experiment_to_reality as bc
+        from bridges import venture_to_experiment as bb
+        from evolution.spider_web import (COMPLETENESS_REQUIREMENTS, EIGHT_SIDES,
+                                          SpiderWebAudit)
+        from evolution.strategy_tree import BRANCH_KINDS, StrategyBranch, StrategyTree
+
+        tree = StrategyTree(bottleneck="no verified outcome exists",
+                            objective="resolve one decisive unknown")
+        for kind in BRANCH_KINDS:
+            tree.add(StrategyBranch(
+                kind=kind, title=f"{kind} branch",
+                governing_assumption="the narrowing holds under selection",
+                mechanism="experiment.run", required_capabilities=["experiment.run"],
+                cost_usd=0.0, founder_attention_minutes=10, time_to_proof_days=1,
+                authority_requirements=["kernel.grant"], irreversible_downside="none",
+                expected_result="the metric clears its threshold",
+                strongest_counterargument="the metric may measure the wrong thing",
+                cheapest_falsification_test="re-run against the frozen corpus",
+                kill_condition="measured exceeds 100"))
+        audit = SpiderWebAudit(subject="the selected branch")
+        for side in EIGHT_SIDES:
+            audit.set_side(side, True, notes="closure probe")
+        for req in COMPLETENESS_REQUIREMENTS:
+            audit.set_completeness(req, True)
+
         gate, passports, ledger, actor = _bridge_c_stack()
-        run = bc.run(_bridge_c_spec(), gate=gate, passports=passports, actor=actor,
-                     measure=lambda s: 11.0, ledger=ledger)
-        return run.completed and run.resolved is True and run.receipt_hash is not None, \
-            "an ExperimentSpec traverses compiler, gate, witness, receipt and reconciliation"
+        b = bb.run({"assessment_id": "probe", "verdict": "go",
+                    "adversarial_cases": {"bull": "b", "bear": "r", "do_nothing": "d"},
+                    "requires_human_approval": True, "execution_authority": False},
+                   tree, audit,
+                   decisive_unknown="does the chain hold end to end",
+                   selected_branch_id=tree.branches[0].branch_id,
+                   selection_reason="cheapest falsification per founder minute",
+                   metric="verified_outcomes", baseline=0.0, threshold=1.0,
+                   direction="gte", ledger=ledger)
+        if not b.completed:
+            return False, f"Bridge B halted at {b.halted_at}"
+        c = bc.run(b.experiment, gate=gate, passports=passports, actor=actor,
+                   measure=lambda s: 2.0, ledger=ledger)
+        return c.completed and c.resolved is True and c.receipt_hash is not None, \
+            "assessment -> strategy tree -> audit -> experiment -> gate -> witness -> receipt, unbroken"
 
     def bridges_authority():
         from bridges import experiment_to_reality as bc

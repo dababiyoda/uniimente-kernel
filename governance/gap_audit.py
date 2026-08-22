@@ -156,9 +156,6 @@ def _no_verified_outcome() -> tuple[bool, str]:
     return False, f"{verified} externally verified outcome record(s) now exist"
 
 
-#: (technology_id, anchor, check). The anchor is a distinctive fragment of the
-#: gap text; if it stops matching, the row reports ANCHOR_LOST rather than
-#: quietly dropping out of the audit.
 #: Asymmetric primitives. Their absence is what makes "HMAC over a shared
 #: secret" true; their arrival is what would close the gap.
 ASYMMETRIC = ("cryptography", "ecdsa", "rsa", "nacl", "OpenSSL", "jwcrypto")
@@ -254,12 +251,67 @@ def _commerce_dependencies_unbuilt() -> tuple[bool, str]:
     return False, f"now real: {real}"
 
 
+def _no_genome_contract() -> tuple[bool, str]:
+    """#12: no schema types the Capability Genome at its boundary."""
+    contracts = os.path.join(KERNEL_ROOT, "contracts")
+    genome = [n for n in os.listdir(contracts)
+              if n.endswith(".schema.json") and "genome" in n.lower()]
+    if not genome:
+        return True, "contracts/ holds no capability-genome schema"
+    return False, f"a genome contract now exists: {', '.join(genome)}"
+
+
+def _no_module_loader() -> tuple[bool, str]:
+    """#13: the governed module loader of FBO 4.4 has no implementation.
+
+    ChatGPT owns building it. Checking whether it exists is not building it,
+    and the founder's list should not carry an entry that has quietly closed.
+    """
+    candidates = [n for n in os.listdir(KERNEL_ROOT)
+                  if os.path.isdir(os.path.join(KERNEL_ROOT, n))
+                  and n.lower() in ("moduleloader", "module_loader", "loader")]
+    if not candidates:
+        return True, "no module-loader package exists at the repository root"
+    return False, f"a module loader now exists: {', '.join(candidates)}"
+
+
+def _transport_is_in_memory_only() -> tuple[bool, str]:
+    """#24: the event transport has no durable implementation."""
+    events = os.path.join(KERNEL_ROOT, "events")
+    modules = sorted(n for n in os.listdir(events) if n.endswith(".py"))
+    durable = [n for n in modules
+               if any(k in n.lower() for k in ("sqlite", "postgres", "pg_", "broker"))]
+    if not durable:
+        return True, f"events/ holds {', '.join(modules)} — no durable backend"
+    return False, f"a durable transport now exists: {', '.join(durable)}"
+
+
+def _egregore_is_disconnected() -> tuple[bool, str]:
+    """#48: standing cognition imported by nothing and registered nowhere.
+
+    Both clauses. The gap is one sentence making two claims, and a check that
+    answered only half of it would report the gap open on the strength of a
+    condition that had already changed.
+    """
+    from closure.integration_registry import build_registry
+
+    importers = _non_test_importers("egregore")
+    registered = "egregore-standing-cognition" in build_registry().modules()
+    if not importers and not registered:
+        return True, "egregore/ has no non-test importer and is in no closure registry"
+    return False, (f"imported by {', '.join(sorted(importers)) or 'nothing'}; "
+                   f"registered with the closure controller: {registered}")
+
+
 #:
 #: The #26 adapters check was retired when the gap it watched was closed: this
 #: audit reported it STALE, the register was corrected in the same change, and a
 #: check with no subject would then report ANCHOR_LOST forever. The regression it
 #: guarded against is still covered — Bridge A's own suite asserts that
 #: `adapters/` is imported by something that is not a test.
+#: (technology_id, anchor, check). The anchor is a distinctive fragment of the
+#: gap text; if it stops matching, the row reports ANCHOR_LOST rather than
+#: quietly dropping out of the audit.
 CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (6, "No external timestamping or independent notarization", _no_external_reach),
     (38, "No payment rail is connected", _no_external_reach),
@@ -275,7 +327,31 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (55, "No restricted fund, no real obligation, no reconciliation", _no_external_reach),
     (54, "Depends on payments (#38), marketplaces (#37) and reputation (#41)",
      _commerce_dependencies_unbuilt),
+    (12, "No capability-genome contract schema types the genome", _no_genome_contract),
+    (13, "The governed module loader of FBO §4.4 does not exist", _no_module_loader),
+    (24, "In-memory only", _transport_is_in_memory_only),
 )
+
+#: The #48 egregore check was retired the same way #26 was: it reported the gap
+#: STALE, the register was corrected in the same change, and a check whose
+#: subject no longer exists would report ANCHOR_LOST forever. The connection it
+#: verified is guarded by `tests/integration/test_egregore_reaches_the_gate.py`,
+#: which asserts both the import and the closure registration directly.
+#:
+#: Deliberately NOT checked, having just shipped a false STALE on #54:
+#:
+#: #16 says no test node asserts the behaviour of `scripts/ci/*.py`. A test does
+#: reference that path — `test_developmental_inertness` — but referencing a
+#: script is not asserting its behaviour, and the two are easy to confuse from
+#: the outside.
+#:
+#: #51 says candidate generation is registered in no closure registry. A module
+#: named `evolution` is registered; whether that is the same thing as
+#: `evolution/repair/candidate.py` is a judgement, not an observation.
+#:
+#: Both claims might be stale. Guessing would risk the failure mode with the
+#: worse polarity — telling the founder something closed that is open — so they
+#: stay in the honest UNCHECKED count until someone settles what they mean.
 
 
 def audit() -> tuple[GapRow, ...]:

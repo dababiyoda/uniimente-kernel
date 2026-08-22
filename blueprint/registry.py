@@ -610,9 +610,18 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         _impl("egregore/runtime.py"),
         _test("tests/unit/test_egregore_runtime.py::test_deliberation_selects_deterministically_and_preserves_dissent"),
     ], [
-        "egregore/ is imported by no non-test module and is registered in no kernel "
-        "closure registry. The standing-cognition runtime is built, tested, and "
-        "connected to nothing that runs.",
+        # SUPERSEDED 2026-08-22. The previous text read "egregore/ is imported by
+        # no non-test module and is registered in no kernel closure registry ...
+        # connected to nothing that runs." All three clauses closed in the same
+        # session that wrote them: `closure/integration_registry.py` imports the
+        # package, `egregore-standing-cognition` is registered with the closure
+        # controller, and the signal -> tick -> candidate -> gate -> receipt
+        # pathway runs. Reported STALE by `python -m governance.gap_audit`, which
+        # caught its own author's drift. Replaced rather than deleted: what stays
+        # open is narrower than what was claimed, and saying so is the point.
+        "Every signal the standing-cognition runtime has ever ingested was "
+        "constructed by a test. The pathway to the Gate runs, but nothing has "
+        "entered it from outside the institution.",
         "Proposer and evaluator organs are callables supplied by tests, not real agents.",
     ], Owner.CLAUDE),
 

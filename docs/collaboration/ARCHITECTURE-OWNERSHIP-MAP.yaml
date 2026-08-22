@@ -1,0 +1,142 @@
+# Architecture Ownership Map — 2026-08-22 (Kimi)
+# Lineage: docs/REPOSITORY_RATIONALIZATION_PLAN.md ownership table + this session's repository survey.
+# Status: PROPOSED. Grants no authority. Ratification is a founder decision (kernel issue #80 / PR for this record).
+# Template: architecture-ownership-template.md (one canonical owner per concern; two active owners is a defect).
+
+architecture_ownership_records:
+
+  - record_id: OWN-0001
+    concern: constitution, institutional authority, consequence policy
+    canonical_owner: uniimente-kernel
+    canonical_source_ref: main @ 542c8f57 (docs/, contracts/, verifier/)
+    consumers:
+      - name: DALEOBANKS
+        integration: pinned_dependency
+        may_fork_behavior: false
+      - name: WealthMachineIntelligence
+        integration: pinned_dependency
+        may_fork_behavior: false
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0001, INTENT-0028]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "deterministic_fixture: kernel main tree listing, 2026-08-22"
+    review_trigger: "founder ratification response to issue #80 or this PR"
+
+  - record_id: OWN-0002
+    concern: shared contracts (13 schemas incl. egregore-cognition, organ-manifest, wire-*)
+    canonical_owner: uniimente-kernel (contracts/)
+    canonical_source_ref: main @ 542c8f57 contracts/; intent.schema.json extension pending ADR-001/D-001 (PR #54)
+    consumers:
+      - name: WealthMachineIntelligence
+        integration: pinned_dependency
+        may_fork_behavior: false
+        note: "vendored pinned adapters merged at ec84b6a2 with parity tests; SDK-shim alternative open as PR #28; mechanism ruling is a founder decision (DUP-3)"
+      - name: DALEOBANKS
+        integration: pinned_dependency
+        may_fork_behavior: false
+        note: "vendored pinned schemas merged at ed5e95d7; SDK-shim stack open as PRs #58-#61/#73 (DUP-4)"
+    copied_implementations:
+      - path: "WealthMachineIntelligence vendored adapters (merged)"
+        canonical_source: "uniimente-kernel contracts/"
+        sync_method: "manual pin + parity tests"
+        version: "pinned at ec84b6a2"
+        removal_trigger: "founder rules SDK-shim consumption (PR #28) canonical"
+      - path: "DALEOBANKS vendored schemas (merged)"
+        canonical_source: "uniimente-kernel contracts/"
+        sync_method: "manual pin + parity tests"
+        version: "pinned at ed5e95d7"
+        removal_trigger: "founder rules SDK-shim stack (#58-#61/#73) canonical"
+    founder_intent_ids: [INTENT-0021, INTENT-0028]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "deterministic_fixture: contract dir listings both repos; parity-test presence claimed in commit messages (prose tier)"
+    review_trigger: "founder ruling on DUP-3/DUP-4 or contract schema change"
+
+  - record_id: OWN-0003
+    concern: event spine / canonical event semantics / provenance
+    canonical_owner: uniimente-kernel (events/spine.py, provenance/)
+    canonical_source_ref: main @ 542c8f57
+    consumers:
+      - name: WP line kernel/spine + pg.py (PR #78)
+        integration: compatibility_shim
+        may_fork_behavior: false
+        note: "unmerged parallel implementation with Postgres backend + Neon rebuild drill; recommended port as pluggable backend behind main's spine interface (DUP-2)"
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0021]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "deterministic_fixture: kernel main tree; PR #78 body"
+    review_trigger: "founder ruling on issue #80 (DUP-2)"
+
+  - record_id: OWN-0004
+    concern: evolution cycle / self-improvement loop
+    canonical_owner: uniimente-kernel (evolution/)
+    canonical_source_ref: main @ 542c8f57
+    consumers:
+      - name: WP line kernel/ evolution (WP-05 PR #79, WP-06 branch build/fast-evolution)
+        integration: adapter
+        may_fork_behavior: false
+        note: "unmerged; carries pre-registered baseline harness (40->13 ops) and fast matrix; recommended port as enhancement PRs (DUP-1)"
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0021]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "deterministic_fixture: kernel main tree; PR #79 body (test claims prose tier, not re-run)"
+    review_trigger: "founder ruling on issue #80 (DUP-1)"
+
+  - record_id: OWN-0005
+    concern: public identity, media perception, publication operations
+    canonical_owner: DALEOBANKS
+    canonical_source_ref: main @ ed5e95d7
+    consumers:
+      - name: uniimente-kernel
+        integration: pinned_dependency
+        may_fork_behavior: false
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0027]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "model_output: organ survey 2026-08-22, identifiers spot-verified"
+    review_trigger: "EXPERIMENT-001 authorization decision or founder amendment"
+
+  - record_id: OWN-0006
+    concern: venture evaluation, underwriting, portfolio recommendations
+    canonical_owner: WealthMachineIntelligence
+    canonical_source_ref: main @ ec84b6a2
+    consumers:
+      - name: uniimente-kernel
+        integration: pinned_dependency
+        may_fork_behavior: false
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0027]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "model_output: organ survey 2026-08-22, identifiers spot-verified"
+    review_trigger: "founder amendment or WMI contract-consumption ruling (DUP-3)"
+
+  - record_id: OWN-0007
+    concern: founder cockpit / institutional digital twin
+    canonical_owner: integration application (projection + command client through contracts)
+    canonical_source_ref: none — not yet built; MUST NOT grow a duplicate governance engine (rationalization plan, wave 4)
+    consumers: []
+    copied_implementations: []
+    founder_intent_ids: [INTENT-0027]
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "prose_claim: rationalization plan wave 4"
+    review_trigger: "first cockpit PR opened"

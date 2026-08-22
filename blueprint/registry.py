@@ -420,8 +420,12 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     ], [
         "Shared-secret HMAC, not mutual TLS. No per-service key isolation, no "
         "certificate rotation, no network-level policy.",
-        "adapters/ is imported by no non-test module: the compatibility membrane "
-        "is built and tested but connected to nothing that runs.",
+        # CLOSED 2026-08-22 by `bridges/signal_to_venture.py`, which imports
+        # `adapters` and runs it. Corrected as an authored change after
+        # `python -m governance.gap_audit` reported it STALE — the register had
+        # drifted, and a closed item on the founder's list is noise where his
+        # attention is scarcest. The remaining zero-trust gap above is unaffected
+        # and stays open.
     ], Owner.FOUNDER),
 
     _b(27, Rung.EXERCISED, Reality.IMPLEMENTED, [

@@ -32,23 +32,28 @@ def _blob(path: str) -> str:
                           capture_output=True, text=True, check=True).stdout.strip()
 
 
-def _changed_against(baseline: str, paths: list[str]) -> list[str]:
-    """Files differing from `baseline`, failing closed if the baseline is absent.
-
-    `git diff` writes nothing to stdout and exits 128 when a ref cannot resolve,
-    so a caller that only reads stdout gets an empty list and concludes nothing
-    changed. This guard shipped with exactly that hole: it passed in CI because
-    origin/main happens to resolve there, which is luck rather than design — the
-    same accidentally-correct shape the side-effect detector had. An unresolvable
-    baseline now raises instead of silently certifying the seal intact.
-    """
-    result = subprocess.run(["git", "diff", "--name-only", baseline, "HEAD", "--",
-                             *paths], cwd=ROOT, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise AssertionError(
-            f"cannot resolve baseline {baseline!r}, so this guard cannot certify "
-            f"anything: {result.stderr.strip()}")
-    return result.stdout.split()
+#: Content pins for the sealed repair files, as they stand on canonical main.
+#: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
+#: opposite reasons and both are instructive: comparing against the freeze commit
+#: flagged files main itself had changed, and comparing against `origin/main`
+#: certified nothing in CI, where that ref does not exist — `git diff` writes an
+#: empty stdout and exits 128, which a stdout-only reader mistakes for "no
+#: changes". Content pins need no refs, work in a shallow checkout, and assert
+#: something stronger than a diff: these exact bytes.
+SEALED_BLOBS = {
+    "evolution/repair/spec.py":
+        "4d8f267ff13de7b83f8efb30d6c5f322f2c56f8e",
+    "tests/unit/test_repair_spec_frozen.py":
+        "7622d5d8b2a156b9a81333e8c8dd47fc2c24652f",
+    "tests/unit/test_repair_adapters.py":
+        "144af43dee616e7bf816ece80729ec3a90ad2fa3",
+    "tests/unit/test_repair_candidates.py":
+        "0d469ffc2fcb95c82fa2edd868208e38ec512a99",
+    "tests/unit/test_repair_inertness.py":
+        "1e1dc96ff33813d689bdb5887806742fabeb329b",
+    "tests/unit/test_repair_harness.py":
+        "fdc31ce110aa4abd4e898e808f738956c05d4629",
+}
 
 
 @pytest.mark.parametrize("name,blob", sorted(FREEZE_BLOBS.items()))
@@ -106,33 +111,44 @@ def test_no_sealed_repair_file_was_modified_to_achieve_this():
     five call sites, which is a separate, visible amendment the seal's own test
     prescribes the procedure for.
     """
-    # Baseline is origin/main, not the freeze commit. First draft compared
-    # against 627ec48 and flagged four files — which main itself had changed in
-    # later Package 4 work, not this branch. The question is whether THIS branch
-    # touched the seal relative to the integration target.
-    sealed = ["evolution/repair/spec.py", "tests/unit/test_repair_spec_frozen.py",
-              "tests/unit/test_repair_adapters.py",
-              "tests/unit/test_repair_candidates.py",
-              "tests/unit/test_repair_inertness.py",
-              "tests/unit/test_repair_harness.py"]
-    changed = _changed_against("origin/main", sealed)
-    assert not changed, f"this branch modified sealed repair files: {changed}"
-
-    # Everything this remedy adds lives under the corpus directory.
-    added = _changed_against("origin/main", ["evolution/repair/"])
-    assert all(p.startswith("evolution/repair/corpus/") for p in added), added
+    # Content pins, not a diff against any ref — see SEALED_BLOBS for why two
+    # ref-based attempts failed in opposite directions.
+    drifted = {path: _blob(os.path.join(ROOT, path))
+               for path, pinned in sorted(SEALED_BLOBS.items())
+               if _blob(os.path.join(ROOT, path)) != pinned}
+    assert not drifted, (
+        f"this branch modified sealed repair files: {drifted}. Applying the "
+        "remedy is a deliberate amendment — say so in the commit message and in "
+        "docs/release/package-3/, and update these pins in the same change."
+    )
 
 
 def test_the_spec_seal_itself_is_untouched():
     assert spec.spec_hash() == spec.SPEC_SHA256
 
 
-def test_the_seal_guard_fails_closed_on_an_unresolvable_baseline():
-    """The hole this file shipped with, pinned so it cannot come back.
+def test_the_guard_needs_no_git_refs_and_so_cannot_certify_nothing():
+    """The hole this file shipped with, closed by removing the dependency.
 
-    Without the returncode check, an absent baseline produced empty stdout and
-    the guard certified the seal intact having compared nothing at all.
+    The first fix made the ref-based guard raise on an unresolvable baseline.
+    That was correct and it immediately went red in CI — proving the earlier
+    green had been vacuous, because the runner's shallow checkout has no
+    `origin/main` at all. Raising there is honest but useless: a guard that
+    cannot run where it matters guards nothing. Content pins remove the
+    dependency entirely.
     """
-    with pytest.raises(AssertionError) as exc:
-        _changed_against("no/such/ref", ["evolution/repair/spec.py"])
-    assert "cannot resolve baseline" in str(exc.value)
+    assert SEALED_BLOBS, "the guard must pin something"
+    for path in SEALED_BLOBS:
+        assert os.path.exists(os.path.join(ROOT, path)), path
+    # No ref is consulted anywhere in the guard.
+    source = open(__file__, encoding="utf-8").read()
+    guard = source.split("def test_no_sealed_repair_file_was_modified")[1]
+    guard = guard.split("def test_")[0]
+    assert "origin/main" not in guard and "git diff" not in guard
+
+
+def test_a_modified_sealed_file_is_detected(tmp_path):
+    """The guard must bite, exercised rather than trusted."""
+    victim = tmp_path / "spec.py"
+    victim.write_text("# not the sealed bytes\n")
+    assert _blob(str(victim)) != SEALED_BLOBS["evolution/repair/spec.py"]

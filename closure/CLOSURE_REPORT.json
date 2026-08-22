@@ -1,6 +1,6 @@
 {
-  "commit": "d41afad6c999a762bfdec7c09f57f1089c76e4da",
-  "generated_at": "2026-08-22T07:00:49+00:00",
+  "commit": "6399ae28a08688aa4f39462ede150dbaddcd7001",
+  "generated_at": "2026-08-22T07:44:51+00:00",
   "modules": {
     "advantage_foundry": {
       "complete": true,
@@ -43,6 +43,10 @@
       "open_closures": []
     },
     "discovery": {
+      "complete": true,
+      "open_closures": []
+    },
+    "egregore-standing-cognition": {
       "complete": true,
       "open_closures": []
     },

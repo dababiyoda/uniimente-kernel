@@ -9,8 +9,8 @@ from .policy import (
     ContainmentTier,
     EnforcementKind,
     ProviderDeclaration,
-    REQUIRED_CONTROLS,
     local_runtime_inventory,
+    required_controls,
 )
 
 __all__ = [
@@ -22,6 +22,6 @@ __all__ = [
     "ContainmentTier",
     "EnforcementKind",
     "ProviderDeclaration",
-    "REQUIRED_CONTROLS",
     "local_runtime_inventory",
+    "required_controls",
 ]

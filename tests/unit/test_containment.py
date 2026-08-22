@@ -6,9 +6,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import containment
+import containment.policy as containment_policy
 
 from containment import (
-    REQUIRED_CONTROLS,
     ContainmentAttestation,
     ContainmentBroker,
     ContainmentRefused,
@@ -17,6 +18,7 @@ from containment import (
     EnforcementKind,
     ProviderDeclaration,
     local_runtime_inventory,
+    required_controls,
 )
 from moduleloader.integrity import sha256_bytes
 from moduleloader import FrozenContractSchemas
@@ -25,16 +27,29 @@ from moduleloader import FrozenContractSchemas
 NOW = datetime(2026, 8, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def broker(verifier=None):
+def replay_recorder(store=None):
+    claimed = {} if store is None else store
+
+    def record(key, expires_at):
+        if key in claimed:
+            return False
+        claimed[key] = expires_at
+        return True
+
+    return record
+
+
+def broker(verifier=None, recorder=None):
     return ContainmentBroker(
         trusted_verifiers=("verifier:independent",),
         verify_attestation=verifier or (lambda item: (True, "signature:test")),
+        record_replay_key=recorder if recorder is not None else replay_recorder(),
     )
 
 
-def declaration(tier=ContainmentTier.MICROVM):
+def declaration(tier=ContainmentTier.MICROVM, provider_id=None):
     return ProviderDeclaration(
-        provider_id=f"provider:{tier.value}",
+        provider_id=provider_id or f"provider:{tier.value}",
         tier=tier,
         runtime_name=f"runtime:{tier.value}",
         enforcement_kind={
@@ -54,7 +69,7 @@ def attestation(item: ProviderDeclaration, **updates):
         "runtime_name": item.runtime_name,
         "enforcement_kind": item.enforcement_kind,
         "runtime_digest": sha256_bytes(b"pinned runtime image"),
-        "controls": REQUIRED_CONTROLS[item.tier],
+        "controls": required_controls(item.tier),
         "evidence_refs": ("test:runtime-controls",),
         "issued_at": NOW - timedelta(minutes=1),
         "expires_at": NOW + timedelta(hours=1),
@@ -150,6 +165,126 @@ def test_attestation_nonce_replay_is_refused_and_history_is_preserved():
     assert instance.attestation_history(item.provider_id) == (first, second)
 
 
+def test_policy_maps_are_read_only_not_exported_and_exploit_remains_refused():
+    with pytest.raises(TypeError):
+        containment_policy.REQUIRED_CONTROLS[ContainmentTier.MICROVM] = frozenset()
+    with pytest.raises(TypeError):
+        containment_policy.TIER_ENFORCEMENT[ContainmentTier.MICROVM] = (
+            EnforcementKind.POLICY_ONLY
+        )
+    assert "REQUIRED_CONTROLS" not in containment.__all__
+    assert "REQUIRED_CONTROLS" not in containment_policy.__all__
+
+    instance = broker()
+    item = declaration()
+    instance.register(item)
+    with pytest.raises(ContainmentRefused) as error:
+        instance.accept_attestation(
+            attestation(item, controls=frozenset()), now=NOW
+        )
+    assert error.value.code == "MISSING_CONTROLS"
+
+
+def test_broker_requires_a_callable_durable_replay_recorder():
+    for invalid in (None, "not-callable"):
+        with pytest.raises(ContainmentRefused) as error:
+            ContainmentBroker(
+                trusted_verifiers=("verifier:independent",),
+                verify_attestation=lambda item: (True, "signature:test"),
+                record_replay_key=invalid,
+            )
+        assert error.value.code == "INVALID_POLICY"
+
+
+def test_attestation_replay_is_refused_across_broker_reconstruction():
+    shared_store = {}
+    item = declaration()
+    first = broker(recorder=replay_recorder(shared_store))
+    second = broker(recorder=replay_recorder(shared_store))
+    first.register(item)
+    second.register(item)
+    proof = attestation(item)
+
+    first.accept_attestation(proof, now=NOW)
+    with pytest.raises(ContainmentRefused) as error:
+        second.accept_attestation(proof, now=NOW)
+    assert error.value.code == "ATTESTATION_REPLAY"
+    assert second.attestation_history(item.provider_id) == ()
+
+
+def test_replay_store_outage_fails_closed_without_recording_history():
+    def unavailable(key, expires_at):
+        raise RuntimeError("store unavailable")
+
+    instance = broker(recorder=unavailable)
+    item = declaration()
+    instance.register(item)
+    with pytest.raises(ContainmentRefused) as error:
+        instance.accept_attestation(attestation(item), now=NOW)
+    assert error.value.code == "REPLAY_STORE_UNAVAILABLE"
+    assert instance.attestation_history(item.provider_id) == ()
+
+
+def test_failed_verification_does_not_consume_the_replay_key():
+    shared_store = {}
+    item = declaration()
+    refused = broker(
+        verifier=lambda proof: (False, "bad signature"),
+        recorder=replay_recorder(shared_store),
+    )
+    refused.register(item)
+    proof = attestation(item)
+    with pytest.raises(ContainmentRefused) as error:
+        refused.accept_attestation(proof, now=NOW)
+    assert error.value.code == "ATTESTATION_REFUSED"
+    assert shared_store == {}
+
+    accepted = broker(recorder=replay_recorder(shared_store))
+    accepted.register(item)
+    accepted.accept_attestation(proof, now=NOW)
+    assert len(shared_store) == 1
+
+
+def test_selection_prefers_freshest_issued_attestation_not_longest_ttl():
+    instance = broker()
+    item = declaration()
+    instance.register(item)
+    older_long_lived = attestation(
+        item,
+        issued_at=NOW - timedelta(minutes=10),
+        expires_at=NOW + timedelta(hours=20),
+        nonce="oldest-0123456789",
+    )
+    newer_short_lived = attestation(
+        item,
+        issued_at=NOW - timedelta(minutes=1),
+        expires_at=NOW + timedelta(minutes=15),
+        nonce="newest-012345678",
+    )
+    instance.accept_attestation(older_long_lived, now=NOW)
+    instance.accept_attestation(newer_short_lived, now=NOW)
+
+    decision = instance.select(generated_requirement(), now=NOW)
+    assert decision.attestation_evidence == newer_short_lived.attestation_digest
+
+
+def test_freshness_tie_break_is_deterministic():
+    instance = broker()
+    provider_b = declaration(provider_id="provider:b")
+    provider_a = declaration(provider_id="provider:a")
+    instance.register(provider_b)
+    instance.register(provider_a)
+    instance.accept_attestation(
+        attestation(provider_b, nonce="provider-b-012345"), now=NOW
+    )
+    instance.accept_attestation(
+        attestation(provider_a, nonce="provider-a-012345"), now=NOW
+    )
+
+    decision = instance.select(generated_requirement(), now=NOW)
+    assert decision.provider_id == "provider:a"
+
+
 def test_attestation_is_reverified_at_selection_and_failure_reports_unavailable():
     verifier_state = {"ok": True}
     instance = broker(lambda item: (verifier_state["ok"], "live verifier"))
@@ -160,6 +295,39 @@ def test_attestation_is_reverified_at_selection_and_failure_reports_unavailable(
     decision = instance.select(generated_requirement(), now=NOW)
     assert decision.granted_tier == "UNAVAILABLE"
     assert decision.attested is False
+
+
+@pytest.mark.parametrize(
+    "tier",
+    [
+        ContainmentTier.IN_PROCESS,
+        ContainmentTier.HARDENED_CONTAINER,
+        ContainmentTier.WASM_COMPONENT,
+    ],
+)
+def test_irreversible_consequence_requires_microvm(tier):
+    requirement = ContainmentRequirement(
+        module_id="irreversible-adapter",
+        consequence_class="irreversible",
+        trust="internal_trusted",
+        required_tier=tier,
+    )
+    with pytest.raises(ContainmentRefused) as error:
+        broker().select(requirement, now=NOW)
+    assert error.value.code == "INSUFFICIENT_TIER"
+
+
+def test_irreversible_microvm_without_attestation_is_unavailable():
+    requirement = ContainmentRequirement(
+        module_id="irreversible-adapter",
+        consequence_class="irreversible",
+        trust="internal_trusted",
+        required_tier=ContainmentTier.MICROVM,
+    )
+    decision = broker().select(requirement, now=NOW)
+    assert decision.status == "UNAVAILABLE"
+    assert decision.attested is False
+    assert decision.granted_tier == "UNAVAILABLE"
 
 
 @pytest.mark.parametrize(

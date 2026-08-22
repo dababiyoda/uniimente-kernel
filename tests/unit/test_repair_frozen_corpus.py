@@ -32,6 +32,25 @@ def _blob(path: str) -> str:
                           capture_output=True, text=True, check=True).stdout.strip()
 
 
+def _changed_against(baseline: str, paths: list[str]) -> list[str]:
+    """Files differing from `baseline`, failing closed if the baseline is absent.
+
+    `git diff` writes nothing to stdout and exits 128 when a ref cannot resolve,
+    so a caller that only reads stdout gets an empty list and concludes nothing
+    changed. This guard shipped with exactly that hole: it passed in CI because
+    origin/main happens to resolve there, which is luck rather than design — the
+    same accidentally-correct shape the side-effect detector had. An unresolvable
+    baseline now raises instead of silently certifying the seal intact.
+    """
+    result = subprocess.run(["git", "diff", "--name-only", baseline, "HEAD", "--",
+                             *paths], cwd=ROOT, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise AssertionError(
+            f"cannot resolve baseline {baseline!r}, so this guard cannot certify "
+            f"anything: {result.stderr.strip()}")
+    return result.stdout.split()
+
+
 @pytest.mark.parametrize("name,blob", sorted(FREEZE_BLOBS.items()))
 def test_each_corpus_file_is_byte_identical_to_the_freeze_commit(name, blob):
     """Content-pinned, not path-pinned. Path pinning would not have been enough.
@@ -96,18 +115,24 @@ def test_no_sealed_repair_file_was_modified_to_achieve_this():
               "tests/unit/test_repair_candidates.py",
               "tests/unit/test_repair_inertness.py",
               "tests/unit/test_repair_harness.py"]
-    changed = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD", "--", *sealed],
-        cwd=ROOT, capture_output=True, text=True).stdout.split()
+    changed = _changed_against("origin/main", sealed)
     assert not changed, f"this branch modified sealed repair files: {changed}"
 
     # Everything this remedy adds lives under the corpus directory.
-    added = subprocess.run(
-        ["git", "diff", "--name-only", "origin/main", "HEAD", "--",
-         "evolution/repair/"],
-        cwd=ROOT, capture_output=True, text=True).stdout.split()
+    added = _changed_against("origin/main", ["evolution/repair/"])
     assert all(p.startswith("evolution/repair/corpus/") for p in added), added
 
 
 def test_the_spec_seal_itself_is_untouched():
     assert spec.spec_hash() == spec.SPEC_SHA256
+
+
+def test_the_seal_guard_fails_closed_on_an_unresolvable_baseline():
+    """The hole this file shipped with, pinned so it cannot come back.
+
+    Without the returncode check, an absent baseline produced empty stdout and
+    the guard certified the seal intact having compared nothing at all.
+    """
+    with pytest.raises(AssertionError) as exc:
+        _changed_against("no/such/ref", ["evolution/repair/spec.py"])
+    assert "cannot resolve baseline" in str(exc.value)

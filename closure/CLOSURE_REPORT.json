@@ -1,6 +1,6 @@
 {
-  "commit": "4211d6530445900f5c4e4fa9e64a8884f903ead6",
-  "generated_at": "2026-08-21T14:49:54+00:00",
+  "commit": "d41afad6c999a762bfdec7c09f57f1089c76e4da",
+  "generated_at": "2026-08-22T07:00:49+00:00",
   "modules": {
     "advantage_foundry": {
       "complete": true,
@@ -11,6 +11,10 @@
       "open_closures": []
     },
     "blueprint": {
+      "complete": true,
+      "open_closures": []
+    },
+    "bridges": {
       "complete": true,
       "open_closures": []
     },

@@ -1063,8 +1063,19 @@ def build_registry() -> ClosureRegistry:
             return False, f"Bridge B halted at {b.halted_at}"
         c = bc.run(b.experiment, gate=gate, passports=passports, actor=actor,
                    measure=lambda s: 2.0, ledger=ledger)
-        return c.completed and c.resolved is True and c.receipt_hash is not None, \
-            "assessment -> strategy tree -> audit -> experiment -> gate -> witness -> receipt, unbroken"
+        if not (c.completed and c.receipt_hash):
+            return False, f"Bridge C halted at {c.halted_at}"
+
+        from bridges import reality_to_learning as bd
+        d = bd.run({"action_id": c.action_id,
+                    "observer": "spiffe://external/customer/closure-probe",
+                    "external_observation": b.experiment.prediction,
+                    "result_class": "positive",
+                    "validation_status": bd.EXTERNALLY_VERIFIED},
+                   ledger=ledger)
+        return d.completed and d.clean_verified_outcomes == 1, \
+            ("assessment -> tree -> audit -> experiment -> gate -> witness -> receipt "
+             "-> external observation -> measured outcome, unbroken")
 
     def bridges_authority():
         from bridges import experiment_to_reality as bc
@@ -1077,8 +1088,17 @@ def build_registry() -> ClosureRegistry:
                              measure=lambda s: 11.0, ledger=ledger)
         refused = (over_cap.halted_at is bc.Halt.CAPABILITY_EXCEEDS_PASSPORT
                    and over_budget.halted_at is bc.Halt.BUDGET_EXCEEDS_PASSPORT)
-        return refused and over_cap.action_id is None, \
-            "an experiment cannot widen its own capability or budget; refused before the gate is asked"
+        # And the learning loop cannot verify its own work either.
+        from bridges import reality_to_learning as bd
+        c = bc.run(_bridge_c_spec(), gate=gate, passports=passports, actor=actor,
+                   measure=lambda s: 11.0, ledger=ledger)
+        selfie = bd.run({"action_id": c.action_id, "observer": actor,
+                         "external_observation": "p", "result_class": "positive",
+                         "validation_status": bd.EXTERNALLY_VERIFIED}, ledger=ledger)
+        return (refused and over_cap.action_id is None
+                and selfie.halted_at is bd.Halt.SELF_ATTESTATION), \
+            ("an experiment cannot widen its own capability or budget, and no actor "
+             "may externally verify its own outcome")
 
     def bridges_evidence():
         from bridges import experiment_to_reality as bc

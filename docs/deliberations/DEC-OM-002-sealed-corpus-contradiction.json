@@ -165,7 +165,10 @@
       "tier": "primary_source",
       "reference": "tests/unit/test_repair_spec_frozen.py docstring",
       "finding": "'If organs/ or contracts/ change, this fails and the experiment must be re-frozen rather than quietly re-interpreted.'"
-    }
+    },
+    "2026-08-22 VERIFIED REMEDY, built without touching any sealed file. evolution/repair/corpus/ holds the three freeze-time manifests byte-identical to commit 627ec48 (blobs 7b894e47, 533c55ee, 3c649b10). Pointing the linker at it reproduces EVERY sealed expectation exactly: unresolved 7, edges 4, edge triples an exact sorted match, and unproduced/untyped/unconsumed all matching. No expectation value is altered by the remedy \u2014 the expectations were always correct and only the binding from experiment to input was unsound. Proven by tests/unit/test_repair_frozen_corpus.py (7 tests).",
+    "2026-08-22 DRIFT ALREADY OCCURRED, which upgrades this from a latent defect to a demonstrated one. organs/kernel.manifest.yaml changed after the freeze (7b894e47 -> 303ee198) and nobody noticed, because that particular change happened not to move the unresolved count. A path-pinned corpus would therefore NOT have been sufficient; only content pinning makes the recorded run reproducible. The PumpStation and RESEARCH-IN manifests were simply the first drift that moved the number, 7 -> 17.",
+    "2026-08-22 APPLICATION SCOPE MEASURED: five call sites read the live organs/ directory (evolution/repair/harness.py:152, tests/unit/test_repair_adapters.py:40, test_repair_candidates.py:47, test_repair_inertness.py:99, test_repair_spec_frozen.py:126), plus MEASUREMENT_CORPUS and a recomputed SPEC_SHA256. Six files of another session's sealed proof record."
   ],
   "counterevidence": [
     {
@@ -173,7 +176,9 @@
       "tier": "model_output",
       "reference": "Adversarial Reviewer position in this record",
       "finding": "Freezing the corpus removes the experiment's external validity. Package 3 claimed to test the linker against the real institution; a snapshot can pass while the live linker is broken. The recommendation is also self-serving, since Option A is the option that unblocks this branch."
-    }
+    },
+    "The seal's own test prescribes the amendment procedure \u2014 'If this is a deliberate amendment, say so explicitly in the commit message and in docs/release/package-3/ \u2014 do not just update the hash' \u2014 so amending is sanctioned rather than forbidden, and the argument for leaving it unapplied is proportionality, not prohibition.",
+    "Kimi independently classified the same item as BLOCKED-founder-decision in their gap table (G-CONTRA). Two engines reading it the same way is evidence about the reading, and it is why the remedy was built and proven rather than applied."
   ],
   "pass_1": {
     "intended_outcome": "Resolve the collision between a founder-approved deliverable and a sealed proof record without weakening either, and fix the reproducibility defect underneath.",
@@ -359,5 +364,5 @@
   ],
   "decision": "NEEDS_FOUNDER_DECISION",
   "decision_owner": "Alfonso Lopez",
-  "review_trigger": "Founder chooses option A, B or C; or seven days elapse with the branch red."
+  "review_trigger": "Founder or Kimi applies the five-line repoint, or rules that the live-corpus binding stays. The remedy is built, byte-verified and test-proven; what remains is a decision, not an investigation."
 }

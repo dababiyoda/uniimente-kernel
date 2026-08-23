@@ -401,6 +401,26 @@ CONTINUITY_ARTIFACT_SHA256 = {
 CONTINUITY_COMBINED_SHA256 = \
     "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa"
 
+#: Absolute path to the frozen freeze-time copies of the twelve artifacts above,
+#: so no caller reconstructs it by hand.
+#:
+#: AMENDMENT 002, 2026-08-23, under FOUNDER-RULING-2026-08-23 (CONTRADICTION-0002
+#: Option A). Every hash in `CONTINUITY_ARTIFACT_SHA256` and the combined hash
+#: above are **unchanged** — this amendment moves only *where the bytes are read
+#: from*, never *what was expected*. That is why neither `SPEC_SHA256` nor
+#: `EXPECTATIONS_SHA256` moves: this is a module-level path constant, not a
+#: frozen table, exactly as `CORPUS_DIR` is for Amendment 001. The stronger
+#: property Amendment 001 could not claim — the seal does not move at all — is
+#: available here because the pins were always correct; only their binding to a
+#: *live* tree was unsound.
+#:
+#: This directory answers "can the historical experiment be reproduced?" —
+#: nothing else. It is NOT a tripwire on constitutional change. That duty is
+#: real, and the founder ruled it must move somewhere explicit rather than
+#: remain a side effect of an experiment's baseline: `governance/integrity/`.
+CONTINUITY_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "continuity")
+
 AUTHORITY_INVARIANTS = (
     "no capability grant is issued to any replacement candidate",
     "no candidate may register itself as the provider of the target capability",

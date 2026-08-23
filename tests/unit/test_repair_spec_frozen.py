@@ -103,17 +103,75 @@ def test_original_linker_is_byte_identical_to_the_frozen_hashes():
     assert combined.hexdigest() == spec.ORIGINAL_LINKER_PACKAGE_SHA256
 
 
-def test_continuity_hashes_describe_the_real_artifacts_now():
+def test_continuity_hashes_describe_the_frozen_artifacts_at_freeze_time():
     """The continuity baseline must be true at freeze time, or the later
-    before/after comparison proves nothing."""
+    before/after comparison proves nothing.
+
+    Amended 2026-08-23 (CONTRADICTION-0002 Option A): reads the byte-identical
+    freeze-time copies under `evolution/repair/continuity/` rather than the live
+    tree. The assertion is the same assertion — every pinned hash, and the
+    combined hash, unchanged. What changed is that "freeze time" is now actually
+    freeze time instead of "whatever is on disk today", which is what the
+    docstring always claimed.
+    """
     combined = hashlib.sha256()
     for rel, expected in spec.CONTINUITY_ARTIFACT_SHA256.items():
-        with open(os.path.join(ROOT, rel), "rb") as handle:
+        with open(os.path.join(spec.CONTINUITY_DIR, rel), "rb") as handle:
             raw = handle.read()
         assert hashlib.sha256(raw).hexdigest() == expected, \
             f"{rel} does not match its frozen continuity hash"
         combined.update(raw)
     assert combined.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
+
+
+def test_amendment_002_moved_no_expectation_and_did_not_move_the_seal():
+    """Proof, not promise, that CONTRADICTION-0002's remedy repointed a binding
+    and nothing else.
+
+    Amendment 001 had to move `SPEC_SHA256` because the corpus binding lived
+    *inside* a frozen table. The continuity binding never did: the pins are
+    relative paths, and the root they were joined to lived in `harness.py`. So
+    this amendment can claim the stronger property — the experiment's seal is
+    bit-identical across it, and so is the expectations hash.
+
+    If a later session is tempted to "fix" a constitutional amendment by editing
+    a pinned hash, this test is what fails.
+    """
+    assert spec.spec_hash() == spec.SPEC_SHA256
+    assert spec.expectations_hash() == spec.EXPECTATIONS_SHA256
+    assert spec.CONTINUITY_COMBINED_SHA256 == \
+        "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa"
+    assert len(spec.CONTINUITY_ARTIFACT_SHA256) == 12
+
+
+def test_the_frozen_continuity_corpus_is_complete_and_holds_nothing_extra():
+    """Twelve artifacts pinned, twelve files frozen. A copy that silently missed
+    one would still pass the hash loop above by never being read."""
+    on_disk = set()
+    for dirpath, _dirnames, filenames in os.walk(spec.CONTINUITY_DIR):
+        for name in filenames:
+            rel = os.path.relpath(os.path.join(dirpath, name),
+                                  spec.CONTINUITY_DIR)
+            if rel != "README.md":
+                on_disk.add(rel)
+    assert on_disk == set(spec.CONTINUITY_ARTIFACT_SHA256)
+
+
+def test_the_historical_check_is_not_bound_to_the_live_tree():
+    """The defect itself, pinned so it cannot return.
+
+    The live consequence gate is about to diverge from its freeze-time bytes
+    (Witness v2 emission). When it does, the sealed experiment must still
+    reproduce. This test asserts the fingerprint reads the frozen copies —
+    it fails the moment someone repoints it back at `KERNEL_ROOT`.
+    """
+    import inspect
+
+    from evolution.repair.harness import continuity_fingerprint
+
+    default = inspect.signature(continuity_fingerprint).parameters["root"].default
+    assert default == spec.CONTINUITY_DIR
+    assert continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256
 
 
 def test_live_corpus_expectation_matches_the_component_being_replaced():

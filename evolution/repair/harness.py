@@ -63,8 +63,47 @@ CANDIDATES = {
 REPAIR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
-    """One hash over the twelve artifacts that define identity and authority."""
+def continuity_fingerprint(root: str = spec.CONTINUITY_DIR) -> str:
+    """One hash over the twelve artifacts that define identity and authority,
+    **as they stood at freeze time**.
+
+    Amended 2026-08-23 under CONTRADICTION-0002 Option A. The default root was
+    `KERNEL_ROOT` — the live tree — which made a sealed historical experiment
+    fail whenever the institution lawfully amended its own constitution. Growth
+    read as breakage, the same defect CONTRADICTION-0001 had in `organs/`.
+
+    This function is part of the *historical* half. It answers "does the Package
+    3 run reproduce?" and must never be read as "is the live constitution
+    intact?" — `governance.integrity` answers that, against the live tree, with
+    its own baseline and its own authorised-amendment path.
+    """
+    digest = hashlib.sha256()
+    for rel in spec.CONTINUITY_ARTIFACT_SHA256:
+        with open(os.path.join(root, rel), "rb") as handle:
+            digest.update(handle.read())
+    return digest.hexdigest()
+
+
+def live_continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
+    """The same twelve artifacts, read from the **live** tree.
+
+    Split out from `continuity_fingerprint` on 2026-08-23 (CONTRADICTION-0002
+    Option A). The two readings answer different questions and were fused:
+
+    - `continuity_fingerprint()` — freeze-time bytes. "Does the historical
+      experiment reproduce?" Compared against `CONTINUITY_COMBINED_SHA256`.
+    - `live_continuity_fingerprint()` — today's bytes. "Did this run disturb
+      anything?" Compared against *itself* across the run, never against a
+      freeze-time constant.
+
+    The second comparison is the one that carries real safety weight during a
+    run, and it is the one that survives a lawful constitutional amendment: it
+    asks whether the experiment changed the institution, not whether the
+    institution still looks like it did in July.
+
+    Neither of these is the institution's tripwire on unauthorised
+    constitutional change. That is `governance.integrity`.
+    """
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACT_SHA256:
         with open(os.path.join(root, rel), "rb") as handle:
@@ -135,6 +174,12 @@ class ReplacementExperiment:
         self.ledger = ledger
         self.contracts_dir = os.path.join(root, "contracts")
         self.events: list[dict] = []
+        #: The live continuity artifacts as they stand when this experiment is
+        #: constructed. Every in-run continuity gate compares against THIS, not
+        #: against the freeze-time constant, so the gate keeps meaning "the
+        #: experiment disturbed nothing" after a lawful amendment moves the live
+        #: bytes away from their July values.
+        self._live_continuity_at_start = live_continuity_fingerprint(root)
 
     # -- inputs ------------------------------------------------------------
 
@@ -197,8 +242,13 @@ class ReplacementExperiment:
 
         refusals_ok = not any(s.kind in ("refusal_incorrect", "health_check_failed")
                               for s in live.symptoms)
-        continuity_ok = continuity_fingerprint(self.root) == \
-            spec.CONTINUITY_COMBINED_SHA256
+        # Two distinct duties, no longer fused (CONTRADICTION-0002 Option A):
+        # the candidate must not have disturbed the live artifacts, AND the
+        # sealed historical baseline must still reproduce.
+        continuity_ok = (
+            live_continuity_fingerprint(self.root) ==
+            self._live_continuity_at_start
+            and continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256)
 
         gates = {
             "live_edges_4_of_4": live.function_fraction == 1.0,
@@ -276,8 +326,10 @@ class ReplacementExperiment:
                         "environment": {"python": platform.python_version(),
                                         "platform": platform.system()}}
 
-        # 1. continuity before anything happens
-        before = continuity_fingerprint(self.root)
+        # 1. continuity before anything happens — LIVE bytes, so the
+        # before/after comparison measures what this run did rather than how
+        # far the institution has lawfully travelled since July.
+        before = live_continuity_fingerprint(self.root)
         record["continuity"] = {"before": before}
         manifests = self._live_manifests()
 
@@ -298,7 +350,8 @@ class ReplacementExperiment:
                 expectations.live_contract(), manifests, self.contracts_dir)
             record["detected_loss"] = lost.to_dict()
             # 4. governance holds while the function is absent
-            record["continuity"]["while_absent"] = continuity_fingerprint(self.root)
+            record["continuity"]["while_absent"] = \
+                live_continuity_fingerprint(self.root)
             record["governance_while_absent"] = {
                 "authority_compiles": authority_still_compiles(self.root),
                 "shutdown_succeeds": shutdown_still_works(),
@@ -406,10 +459,19 @@ class ReplacementExperiment:
         record["spider_web_audit"] = self._audit().to_dict()
 
         # 12. continuity after
-        after = continuity_fingerprint(self.root)
+        after = live_continuity_fingerprint(self.root)
         record["continuity"].update({
             "after": after,
-            "unchanged": before == after == spec.CONTINUITY_COMBINED_SHA256,
+            #: The run-scoped safety property: this experiment changed nothing.
+            "unchanged": before == after,
+            #: The historical property, recorded separately so neither can be
+            #: read as the other (CONTRADICTION-0002 Option A).
+            "frozen_baseline_reproduces":
+                continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256,
+            #: True only while the live tree still happens to sit on its
+            #: freeze-time bytes. Recorded, never gated on: a lawful
+            #: constitutional amendment makes this False and that is correct.
+            "live_matches_freeze_time": after == spec.CONTINUITY_COMBINED_SHA256,
             "artifact_count": len(spec.CONTINUITY_ARTIFACT_SHA256),
         })
 

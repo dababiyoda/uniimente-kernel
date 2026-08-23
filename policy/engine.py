@@ -37,6 +37,35 @@ EVIDENCE_THRESHOLDS = {
 # Consequence classes that always wait for a human, per doctrine.
 ALWAYS_HUMAN_CLASSES = ("irreversible",)
 
+#: What an external action must demonstrate, beyond the evidence floor.
+#:
+#: CONTRADICTION-0003 Option B, ratified 2026-08-23. The floor alone was being
+#: asked to mean two things, and for a first canary they point opposite ways:
+#: the evidence that running it is justified is strong *because* the outcome is
+#: uncertain. The founder's ruling names what the external-action policy should
+#: actually judge — "sufficiently evidenced, contained, authorized, reversible,
+#: observable, killable, and proportionate" — "rather than requiring us to
+#: pretend beforehand that the experiment will probably succeed".
+#:
+#: These are additional REQUIREMENTS, not a discount on the floor. Nothing here
+#: lowers 0.70; a proposal must now clear the floor *and* declare containment.
+#: Each must be stated affirmatively in `proposal.context` — absence is refusal,
+#: never assent, so an action that simply forgot to declare its kill switch is
+#: refused exactly like one that has none.
+CONTAINMENT_REQUIREMENTS = {
+    "contained": "the blast radius is bounded and stated",
+    "reversible": "the effect can be undone, or its persistence is stated and accepted",
+    "observable": "the outcome can be verified from outside the acting process",
+    "killable": "a kill switch exists and is reachable during the action",
+    "proportionate": "the exposure is proportionate to what is being learned",
+}
+
+#: Consequence classes that must satisfy `CONTAINMENT_REQUIREMENTS`.
+#: `read_only` and `internal_write` are excluded: they touch nothing outside the
+#: institution, and demanding a containment declaration for a log write would
+#: turn a real check into a form everybody fills in without reading.
+CONTAINED_CLASSES = ("external_contact", "financial", "irreversible")
+
 
 @dataclass
 class Proposal:
@@ -48,12 +77,26 @@ class Proposal:
     payload: dict
     target: str
     consequence_class: str
+    #: "How strong is the evidence that taking this bounded action is
+    #: justified?" This is what the floors above gate on, and the only
+    #: confidence that governs admission.
     evidence_confidence: float
     evidence_refs: list[str]
     estimated_cost_usd: float
     requested_capability: str
     expected_outcome: str
     context: dict = field(default_factory=dict)
+    #: "How likely do we predict this achieves its preregistered outcome?"
+    #:
+    #: Added 2026-08-23 under CONTRADICTION-0003 Option A. **Never read by
+    #: `evaluate`** — asserted structurally by
+    #: `test_the_engine_never_reads_the_prediction_when_deciding`. It exists so
+    #: the durable record can carry a forecast for Bridge D to score, without
+    #: that forecast having to clear a policy floor.
+    #:
+    #: `None` for the majority of actions, which predict nothing because they
+    #: are not experiments. None means absent, never 0.5.
+    predicted_success_probability: float | None = None
     proposal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 
@@ -164,6 +207,19 @@ def evaluate(compiled: CompiledConstitution, proposal: Proposal,
         reasons.append("no evidence references supplied")
         missing.append("sufficient_evidence")
     law.append("evidence.schema.json")
+
+    # Containment sufficiency (CONTRADICTION-0003 Option B). Additional to the
+    # floor above, never a substitute for it. Fails closed: an undeclared
+    # property is treated exactly like an absent one.
+    if proposal.consequence_class in CONTAINED_CLASSES:
+        for prop, description in CONTAINMENT_REQUIREMENTS.items():
+            if proposal.context.get(prop) is not True:
+                reasons.append(
+                    f"{proposal.consequence_class} action does not declare "
+                    f"'{prop}': {description}")
+                missing.append(f"containment:{prop}")
+        rules.append("containment_declared")
+        law.append("sovereignty.ucl")
 
     if reasons:
         return PolicyDecision(Verdict.DENY, reasons, law, missing, rules + ["deny_by_default"])

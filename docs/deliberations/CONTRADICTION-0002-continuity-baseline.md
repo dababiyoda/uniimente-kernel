@@ -1,8 +1,10 @@
 # CONTRADICTION-0002 — the continuity baseline is bound to live files
 
-**Status:** open. Reported, not resolved.
+**Status:** RESOLVED 2026-08-23 — Option A, ratified by
+`FOUNDER-RULING-2026-08-23`. The analysis below is preserved verbatim as it
+stood when the contradiction was open; §7 records what was applied.
 **Found:** 2026-08-22, while implementing ruling 3 of `FOUNDER-RULING-2026-08-22`.
-**Requires:** a founder decision. Not taken unilaterally, for the reason in §5.
+**Required:** a founder decision. Not taken unilaterally, for the reason in §5.
 
 ---
 
@@ -125,3 +127,48 @@ second is real and deserves its own mechanism under the amendment policy, rather
 than being a side effect of an experiment's baseline.
 
 No option is applied. The gap register carries this as open.
+
+
+---
+
+## 7. Resolution (added 2026-08-23)
+
+**Option A applied**, exactly as recommended in §6 and ratified by the founder.
+
+| Half | Where |
+|---|---|
+| Historical reproducibility | `evolution/repair/continuity/` — byte-identical freeze-time copies of all twelve artifacts, verified against their pins *before* being written |
+| Live constitutional integrity | `governance/integrity/` — genesis baseline + append-only founder-authorised amendment chain, replayed rather than stored |
+
+Both sealed experiments were affected, not one: `evolution/migration/spec.py`
+pinned the same twelve artifacts with the same combined hash and had the same
+defect. It shares the one frozen corpus, and a test asserts the sharing stays
+valid rather than assuming it.
+
+**The cost §6 anticipated was paid explicitly.** "The pins stop being a tripwire
+on constitutional change, so that duty must move somewhere explicit" — it moved
+to `governance/integrity`, which makes `amendment-policy.ucl`'s
+`no_silent_amendment = true` executable for the first time.
+
+**Nothing was weakened to achieve it.** Amendment 002 moved no expectation value
+and, unlike Amendment 001, did not move the experiment's seal at all:
+`SPEC_SHA256` and `EXPECTATIONS_SHA256` are bit-identical across it. The
+continuity binding was never inside a frozen table — the pins are relative paths
+and the root lived in `harness.py` — so the stronger property was available and
+is asserted.
+
+**Then the gate migration the founder authorised.** `policy/consequence_gate.py`
+now emits Witness contract v2. The live tripwire caught that edit on its first
+run and refused to give a verdict until an amendment record naming this ruling
+was added. That is the mechanism working on its first real use, one hour old.
+
+**Two further defects surfaced, and are recorded rather than smoothed over:**
+
+1. Amendment 002 missed two call sites that still compared live bytes against
+   the freeze-time constant. They were invisible until the live gate actually
+   diverged. Fixed as Amendment 003.
+2. The amendment scope-guard pattern introduced at 002 compared each guard
+   against the *current* pins, so the third amendment broke the first two
+   guards. Each guard now compares its own frozen before/after pair. The flaw
+   and its fix are documented in `tests/unit/test_repair_frozen_corpus.py` for
+   whoever writes Amendment 004.

@@ -54,18 +54,35 @@ def test_governance_and_continuity_held_while_the_function_was_absent(run):
     assert record["governance_while_absent"] == {
         "authority_compiles": True, "shutdown_succeeds": True,
         "original_on_disk_intact": True}
-    assert record["continuity"]["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+    # Self-comparison against the reading taken before the run began
+    # (CONTRADICTION-0002 Option A): governance held while the function was
+    # absent, which is the claim — not that the tree still matches July.
+    assert record["continuity"]["while_absent"] == \
+        record["continuity"]["before"]
 
 
 def test_continuity_is_unchanged_before_during_and_after(run):
     record, _ = run
     continuity = record["continuity"]
-    assert continuity["before"] == continuity["after"] == \
-        continuity["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+
+    # The run-scoped property, which is the one that carries safety weight:
+    # this experiment disturbed nothing. A self-comparison on LIVE bytes, so it
+    # keeps meaning that after a lawful constitutional amendment
+    # (CONTRADICTION-0002 Option A).
+    assert continuity["before"] == continuity["while_absent"] == \
+        continuity["after"]
     assert continuity["unchanged"] is True
     assert continuity["artifact_count"] == 12
-    # And still true now, after the whole run.
+
+    # The historical property, recorded separately so neither reads as the
+    # other: the sealed baseline still reproduces from the frozen copies.
+    assert continuity["frozen_baseline_reproduces"] is True
     assert continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256
+
+    # `live_matches_freeze_time` is recorded and deliberately NOT asserted: it
+    # is False now that the Gate emits Witness v2, and that is correct.
+    assert continuity["live_matches_freeze_time"] is False
+
     assert original_is_intact() is True
 
 

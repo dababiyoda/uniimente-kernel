@@ -136,7 +136,29 @@ GENESIS_SHA256 = {
 
 #: Append-only. Never edit a landed record: to correct one, add another.
 #: Ordering matters — records for the same artifact replay in list order.
-AMENDMENTS: tuple[Amendment, ...] = ()
+AMENDMENTS: tuple[Amendment, ...] = (
+    Amendment(
+        artifact="policy/consequence_gate.py",
+        from_sha256="0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce",
+        to_sha256="3b78eb2f4378dc3c99ada3215d24ceb9e04c675e33f0d538cb7a5e44e3cc1f0e",
+        authorization="docs/deliberations/"
+                      "FOUNDER-RULING-2026-08-23-infinite-goal-chase.md",
+        date="2026-08-23",
+        reason=(
+            "Two changes, both authorised by the same ruling. (1) Witness v2 "
+            "live emission: the Gate passes evidence_confidence, "
+            "consequence_class, exposure_ceiling_usd and "
+            "predicted_success_probability into new_witness — values it "
+            "already held and dropped. (2) The `authorized` criterion from "
+            "CONTRADICTION-0003 Option B: the Gate no longer issues its own "
+            "grant for a consequence class that reaches outside. The second "
+            "was found only because the first removed what hid it — the "
+            "evidence floor had been refusing external proposals before the "
+            "capability step could be reached. This record is the first "
+            "amendment in the chain; the live tripwire caught the edit and "
+            "required it."),
+    ),
+)
 
 
 class Verdict(str, Enum):

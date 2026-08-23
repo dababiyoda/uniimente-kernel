@@ -34,9 +34,14 @@ def _v1_record() -> dict:
     Constructed through `provenance.commit_witness` rather than hand-written, so
     these tests measure the real historical format instead of a restatement of
     it that could drift.
-    """
-    from dataclasses import asdict
 
+    Built through `unsigned()` rather than `asdict()`, because that is the
+    shape actually stored and signed. Since the v2 migration the dataclass also
+    declares the v2 fields, defaulted to None; `unsigned()` drops them, so a
+    witness that sets none of them is byte-identical to a pre-migration record.
+    `asdict()` would keep them as explicit nulls and quietly stop describing
+    the historical format these tests exist to measure.
+    """
     witness = v1mod.new_witness(
         actor="mp-001", legal_principal="Alfonso Lopez",
         action_class="publish", payload={"body": "hello"}, target="sandbox://x",
@@ -46,14 +51,35 @@ def _v1_record() -> dict:
         evidence_refs=["ev-1"])
     signer = v1mod.WitnessSigner(key=KEY)
     signer.sign(witness)
-    return asdict(witness)
+    return {**witness.unsigned(), "signature": witness.signature}
 
 
 def _v2_record() -> dict:
+    """A routine v2 action: admitted on evidence, carrying no prediction.
+
+    Most actions look like this. A routine internal write is not an experiment,
+    so it preregisters nothing and `predicted_success_probability` is absent —
+    the honest record, rather than a manufactured 0.5.
+    """
     record = wc.upgrade_shape(
         {k: v for k, v in _v1_record().items() if k != "signature"},
         evidence_confidence=0.72, consequence_class="reversible",
         exposure_ceiling_usd=25.0)
+    record["signature"] = wc.sign(record, KEY)
+    return record
+
+
+def _v2_predicted_record() -> dict:
+    """A v2 action that IS an experiment, so it carries a prediction.
+
+    Note the two numbers disagree, deliberately: well-evidenced decision to
+    act (0.72), genuinely uncertain outcome (0.55). Under the pre-0003 contract
+    that pair could not be expressed at all.
+    """
+    record = wc.upgrade_shape(
+        {k: v for k, v in _v1_record().items() if k != "signature"},
+        evidence_confidence=0.72, consequence_class="reversible",
+        exposure_ceiling_usd=25.0, predicted_success_probability=0.55)
     record["signature"] = wc.sign(record, KEY)
     return record
 
@@ -96,8 +122,10 @@ def test_reading_a_v1_record_reports_unrecorded_and_never_a_default():
     assert reading.evidence_confidence == UNRECORDED
     assert reading.consequence_class == UNRECORDED
     assert reading.exposure_ceiling_usd == UNRECORDED
+    assert reading.predicted_success_probability == UNRECORDED
     assert set(reading.unrecorded) == {
-        "evidence_confidence", "consequence_class", "exposure_ceiling_usd"}
+        "evidence_confidence", "consequence_class", "exposure_ceiling_usd",
+        "predicted_success_probability"}
 
     assert reading.evidence_confidence != 0.0
     assert reading.evidence_confidence is not None
@@ -126,13 +154,62 @@ def test_a_v2_record_answers_all_five_questions_the_ruling_named():
     assert reading.grant_id == "grant-1"               # under what authority
     assert reading.exposure_ceiling_usd == 25.0        # what exposure permitted
     assert reading.consequence_class == "reversible"
-    assert reading.unrecorded == ()
+
+    # A routine action preregisters no prediction, so the calibration field is
+    # legitimately absent. Absent is the honest record; the alternative is
+    # every writer inventing a forecast it never made.
+    assert reading.unrecorded == ("predicted_success_probability",)
+    assert reading.admission_basis_recorded is True
+    assert reading.calibratable is False
+
+    # An experiment carries both, and they disagree — which is the shape
+    # CONTRADICTION-0003 existed to make expressible.
+    experiment = wc.read(_v2_predicted_record())
+    assert experiment.evidence_confidence == 0.72
+    assert experiment.predicted_success_probability == 0.55
+    assert experiment.unrecorded == ()
 
 
 def test_only_v2_records_are_calibratable_and_v1_never_becomes_so():
-    """The Bridge D gap, closed for new records and honestly open for old ones."""
-    assert wc.read(_v2_record()).calibratable is True
+    """The Bridge D gap, closed for new records and honestly open for old ones.
+
+    Amended 2026-08-23 (CONTRADICTION-0003): calibration keys on the
+    *prediction*, not on the admission confidence. A v2 record without a
+    preregistered prediction has nothing to score, and saying so is the point —
+    the earlier reading would have joined "we were justified in acting" to an
+    outcome and reported the difference as forecast error.
+    """
+    assert wc.read(_v2_predicted_record()).calibratable is True
+    assert wc.read(_v2_record()).calibratable is False
     assert wc.read(_v1_record()).calibratable is False
+
+    # Being unscoreable is not the same as being unauditable.
+    assert wc.read(_v2_record()).admission_basis_recorded is True
+    assert wc.read(_v1_record()).admission_basis_recorded is False
+
+
+def test_the_two_confidences_are_carried_separately_and_never_substituted():
+    """CONTRADICTION-0003's core claim, asserted on the durable record.
+
+    If a future writer collapses these back into one field, the record can no
+    longer distinguish "we were right to try" from "we thought it would work",
+    and the calibration loop silently starts measuring the wrong thing.
+    """
+    record = _v2_predicted_record()
+
+    assert record["evidence_confidence"] != record["predicted_success_probability"]
+    assert set(wc.CONFIDENCE_FIELDS) <= set(wc.V2_SIGNED_FIELDS)
+
+    # Both are covered by the signature: neither can be edited after the fact.
+    for field_name in wc.CONFIDENCE_FIELDS:
+        tampered = dict(record)
+        tampered[field_name] = 0.99
+        assert wc.verify(tampered, KEY) is False
+
+    # And the optional one cannot be stripped after signing either.
+    stripped = {k: v for k, v in record.items()
+                if k != "predicted_success_probability"}
+    assert wc.verify(stripped, KEY) is False
 
 
 def test_only_v2_records_can_reconstruct_the_authority_they_ran_under():
@@ -308,7 +385,14 @@ def test_the_canonical_bytes_are_json_with_sorted_keys():
     unsigned = {k: v for k, v in record.items() if k != "signature"}
     parsed = json.loads(wc.canonical_bytes(unsigned))
     assert list(parsed) == sorted(parsed)
-    assert set(parsed) == set(wc.V2_SIGNED_FIELDS)
+    # Every signed field except the optional one this record does not carry.
+    assert set(parsed) == set(wc.V2_SIGNED_FIELDS) - wc.OPTIONAL_SIGNED_FIELDS
+
+    # When it is carried, it is covered.
+    predicted = _v2_predicted_record()
+    parsed_predicted = json.loads(wc.canonical_bytes(
+        {k: v for k, v in predicted.items() if k != "signature"}))
+    assert set(parsed_predicted) == set(wc.V2_SIGNED_FIELDS)
 
 
 # ------------------------------------------------- the audit check discriminates
@@ -350,14 +434,20 @@ def test_the_adoption_check_reports_open_today_and_would_flip_when_adopted(
     assert "emits witness contract v2" in detail
 
 
-def test_the_real_gate_still_drops_the_facts_it_holds():
-    """The finding itself, asserted against the live file.
+def test_the_real_gate_emits_the_facts_it_holds():
+    """The finding, closed — asserted against the live file, not a restatement.
 
-    Not a restatement of the check: this reads the gate directly and confirms
-    the three values are in scope at the call site and absent from it.
+    This read `still_open is True` until 2026-08-23. CONTRADICTION-0002 Option A
+    unblocked `policy/consequence_gate.py` and the Gate now passes the v2 facts
+    into `new_witness`, so the probe reports the gap shut.
+
+    The probe is kept and inverted rather than deleted: it is now the
+    regression guard. Dropping the keywords again would make this fail, which
+    is the only thing standing between "the contract exists" and "the contract
+    is used" — the exact proxy failure the gap audit records elsewhere.
     """
     from governance import gap_audit
 
     still_open, detail = gap_audit._witness_v2_is_not_emitted()
-    assert still_open is True
-    assert "reads as UNRECORDED" in detail
+    assert still_open is False
+    assert detail == "the gate now emits witness contract v2"

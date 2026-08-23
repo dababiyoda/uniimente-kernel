@@ -14,6 +14,27 @@ from closure.framework import ClosureRegistry, ModuleClosures
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+#: Containment declared (CONTRADICTION-0003 Option B). True of every closure
+#: check below: sandbox targets, in-process executors, nothing leaves the
+#: process. These checks prove the loops close; none of them is an external act.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
+def _granted(gate, proposal):
+    """Issue the grant outside the run, as an authorised operator would.
+
+    Since CONTRADICTION-0003's authorization fix the Gate refuses to mint its
+    own grant for anything reaching outside, so these closure checks supply
+    one explicitly. That is the fix working: authorising an external act is a
+    separate, visible step.
+    """
+    return gate.grants.issue_single_action(
+        proposal=proposal, policy_version=gate.policy_version)
+
+
+
 def _compile():
     from compiler.ucl_compiler import compile_constitution
     return compile_constitution(KERNEL_ROOT)
@@ -140,19 +161,22 @@ def build_registry() -> ClosureRegistry:
             objective="test.objective", payload={"text": "hello governed world"}, target="sandbox:outbox",
             consequence_class="external_contact", evidence_confidence=0.9,
             evidence_refs=["sha256:" + "a" * 64], estimated_cost_usd=0.0,
-            requested_capability="draft.publish", expected_outcome="draft queued")
+            requested_capability="draft.publish", expected_outcome="draft queued",
+            context=dict(SANDBOX_CONTAINMENT))
 
     def gate_technical():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
-                       executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p),
+                       executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         return rec.state == "recorded" and rec.receipt_hash is not None, \
             f"full pipeline to recorded; receipt {str(rec.receipt_hash)[:24]}..."
 
     def gate_authority():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
-                       executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p),
+                       executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         # tamper: revoke the grant after issue, replay must fail closed
         from policy.engine import Proposal
         p2 = _proposal(actor.passport_id)
@@ -164,8 +188,9 @@ def build_registry() -> ClosureRegistry:
 
     def gate_evidence():
         gate, passports, ledger, actor = _gate_stack()
-        gate.run(_proposal(actor.passport_id),
-                 executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        gate.run(p, standing_grant=_granted(gate, p),
+                 executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         ok, msg = ledger.verify_chain()
         witnesses = len(ledger.by_type("witness")) == 1
         outcomes = len(ledger.by_type("outcome")) == 1
@@ -186,7 +211,8 @@ def build_registry() -> ClosureRegistry:
         # executor explosion -> failed, budget released, incident recorded, nothing concealed
         def boom(p):
             raise RuntimeError("adapter exploded")
-        rec = gate.run(_proposal(actor.passport_id), executor=boom)
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p), executor=boom)
         ok, msg = ledger.verify_chain()
         return rec.state == "failed" and rec.incident is not None and ok, \
             "failure preserved on-chain (negative evidence kept); fails toward silence, not external action"
@@ -633,7 +659,9 @@ def build_registry() -> ClosureRegistry:
                             target="sandbox:outbox", consequence_class="external_contact",
                             evidence_confidence=c, evidence_refs=["sha256:" + "a" * 64],
                             estimated_cost_usd=0.0, requested_capability="draft.publish",
-                            expected_outcome="q"), "good" if c >= 0.8 else "weak")
+                            expected_outcome="q",
+                            context=dict(SANDBOX_CONTAINMENT)),
+                   "good" if c >= 0.8 else "weak")
                   for c in (0.95, 0.9, 0.85, 0.8, 0.72, 0.71)]
         from policy.engine import evaluate
         main_d = [evaluate(compiled, p, identity_ok=True, grant=None) for p, _ in corpus]

@@ -104,7 +104,60 @@ SEALED_BLOBS_PRE_AMENDMENT_002 = {
         "fdc31ce110aa4abd4e898e808f738956c05d4629",
 }
 
-#: Content pins for the sealed repair files, as they stand after Amendment 002.
+#: NOTE FOR THE NEXT AMENDMENT — a defect in this guard pattern, fixed at 003.
+#:
+#: Guards 001 and 002 originally compared their pre-state against `SEALED_BLOBS`,
+#: the *current* pins. That works for exactly one amendment. When 003 moved
+#: `test_repair_harness.py`, both earlier guards failed: measured against the
+#: moving target, 003's change looked like an undeclared file inside 001's and
+#: 002's scope.
+#:
+#: The pattern is now: **each guard compares its own before-snapshot against its
+#: own after-snapshot**, both frozen. `SEALED_BLOBS_PRE_AMENDMENT_002` is the
+#: post-001 state, `SEALED_BLOBS_PRE_AMENDMENT_003` is the post-002 state, and
+#: `SEALED_BLOBS` is the post-003 state. A fourth amendment adds
+#: `SEALED_BLOBS_PRE_AMENDMENT_004` (= the current `SEALED_BLOBS` values),
+#: repoints guard 003 at it, and adds its own guard against `SEALED_BLOBS`.
+#:
+#: Recorded here rather than silently fixed: the flaw was introduced by the
+#: session that wrote 002 and was only exposed by 003 existing at all.
+
+#: Exactly the files Amendment 003 is authorized to touch, and why.
+#:
+#: Amendment 002 repointed the continuity BINDING. It missed two call sites that
+#: still compared LIVE bytes against the freeze-time constant, which only became
+#: visible once the live gate actually diverged — Witness v2 emission, authorised
+#: by the same ruling, changed `policy/consequence_gate.py` and both assertions
+#: failed. That is the remedy's own test finding the rest of the remedy.
+#:
+#: Both are converted to self-comparisons: the property worth asserting inside a
+#: run is "this experiment disturbed nothing", not "the tree still matches July".
+AMENDED_BY_003 = {
+    "tests/unit/test_repair_adapters.py":
+        "compares the fingerprint before/after the component is disabled, "
+        "instead of against CONTINUITY_COMBINED_SHA256",
+    "tests/unit/test_repair_harness.py":
+        "asserts the run-scoped before/during/after self-comparison, plus the "
+        "separately recorded frozen_baseline_reproduces",
+}
+
+#: The sealed files as they stood after Amendment 002 and BEFORE Amendment 003.
+SEALED_BLOBS_PRE_AMENDMENT_003 = {
+    "evolution/repair/spec.py":
+        "ae8d1e9af90bc6bd71e31da146d890f47b357571",
+    "tests/unit/test_repair_spec_frozen.py":
+        "a01fafe01038b4b9541d6b7a708c00319303a565",
+    "tests/unit/test_repair_adapters.py":
+        "e76fd1f75d7f79c3d4f52374b9c193c6643d8062",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    "tests/unit/test_repair_harness.py":
+        "fdc31ce110aa4abd4e898e808f738956c05d4629",
+}
+
+#: Content pins for the sealed repair files, as they stand after Amendment 003.
 #: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
 #: opposite reasons and both are instructive: comparing against the freeze commit
 #: flagged files main itself had changed, and comparing against `origin/main`
@@ -118,15 +171,15 @@ SEALED_BLOBS = {
         "ae8d1e9af90bc6bd71e31da146d890f47b357571",
     "tests/unit/test_repair_spec_frozen.py":
         "a01fafe01038b4b9541d6b7a708c00319303a565",
+    # Moved by Amendment 003 (the two remaining live comparisons).
     "tests/unit/test_repair_adapters.py":
-        "e76fd1f75d7f79c3d4f52374b9c193c6643d8062",
+        "0df5ae99971aa423e5318ac99dd651215062efa4",
     "tests/unit/test_repair_candidates.py":
         "d4522f53891ff5503994fcbfcf2d1244378462eb",
     "tests/unit/test_repair_inertness.py":
         "f464459817c648296f6867a5799e765dde4dfc8b",
-    # Untouched by the amendment: its pin is the same value it always had.
     "tests/unit/test_repair_harness.py":
-        "fdc31ce110aa4abd4e898e808f738956c05d4629",
+        "6f464f037079d65668f73e2952703af33f66a78a",
 }
 
 
@@ -224,13 +277,13 @@ def test_the_amendment_touched_exactly_the_files_it_declared():
     pin dutifully updated, and quietly dropping one of the five fails too.
     """
     moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT.items()
-             if SEALED_BLOBS[path] != before}
+             if SEALED_BLOBS_PRE_AMENDMENT_002[path] != before}
     assert moved == set(AMENDED_BY_001), (
         f"amendment scope mismatch. moved={sorted(moved)} "
         f"declared={sorted(AMENDED_BY_001)}. Every file the amendment touches "
         "must be declared in AMENDED_BY_001 with the reason it was touched."
     )
-    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT), (
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_002) == set(SEALED_BLOBS_PRE_AMENDMENT), (
         "the amendment may not add or drop a sealed file, only change one"
     )
 
@@ -248,15 +301,37 @@ def test_amendment_002_touched_exactly_the_files_it_declared():
     the content-pin design, and it is cheaper than a seal nobody can audit.
     """
     moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_002.items()
-             if SEALED_BLOBS[path] != before}
+             if SEALED_BLOBS_PRE_AMENDMENT_003[path] != before}
     assert moved == set(AMENDED_BY_002), (
         f"amendment 002 scope mismatch. moved={sorted(moved)} "
         f"declared={sorted(AMENDED_BY_002)}. Every file the amendment touches "
         "must be declared in AMENDED_BY_002 with the reason it was touched."
     )
-    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT_002), (
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_003) == set(SEALED_BLOBS_PRE_AMENDMENT_002), (
         "the amendment may not add or drop a sealed file, only change one"
     )
+
+
+def test_amendment_003_touched_exactly_the_files_it_declared():
+    """Third amendment, third scope guard. The pattern is now the rule.
+
+    Amendment 002's guard cannot see 003 for the same reason 001's could not
+    see 002: measured against the pre-002 pins, `test_repair_adapters.py` and
+    `test_repair_harness.py` had not moved, so 003 would have been invisible
+    inside 002's declared scope.
+
+    Every amendment declares against the pins as they stood immediately before
+    it. That is the cost of content pinning, and it is cheaper than a seal
+    nobody can audit.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_003.items()
+             if SEALED_BLOBS[path] != before}
+    assert moved == set(AMENDED_BY_003), (
+        f"amendment 003 scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_003)}. Every file the amendment touches "
+        "must be declared in AMENDED_BY_003 with the reason it was touched."
+    )
+    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT_003)
 
 
 def test_amendment_002_left_the_historical_evidence_exactly_where_it_was():

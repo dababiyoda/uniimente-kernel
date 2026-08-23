@@ -399,7 +399,19 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
      _asymmetric_identity_is_not_adopted),
     (26, "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`",
      _asymmetric_identity_is_not_adopted),
-    (30, "The Gate does not emit witness contract v2", _witness_v2_is_not_emitted),
+    # The #30 witness-v2-emission check was retired 2026-08-23, the same way
+    # #25, #26 and #48 were: it reported the gap STALE, the register was
+    # corrected in the same change, and a check whose subject no longer exists
+    # would report ANCHOR LOST forever. The Gate now passes all four v2 facts
+    # into `new_witness`; `_witness_v2_is_not_emitted` is retained below as the
+    # regression probe and asserted directly by
+    # `tests/unit/test_witness_v2_migration.py::test_the_real_gate_emits_the_facts_it_holds`,
+    # so a future edit that drops the keywords still fails the build.
+    #
+    # #30's row now carries a NARROWER gap — no emitted witness describes a real
+    # external effect — which `_no_verified_outcome` already measures.
+    (30, "No emitted witness describes a real external effect",
+     _no_verified_outcome),
     # The #25 RoutingDecision-typing check was retired 2026-08-22, the same way
     # #26 and #48 were: it reported the gap STALE, the register was corrected in
     # the same change, and a check whose subject no longer exists would report

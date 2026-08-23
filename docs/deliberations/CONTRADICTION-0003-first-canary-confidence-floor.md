@@ -1,8 +1,10 @@
 # CONTRADICTION-0003 — the confidence floor forbids an honest first canary
 
-**Status:** open. Reported, not resolved.
+**Status:** RESOLVED 2026-08-23 — Options A + B, ratified by
+`FOUNDER-RULING-2026-08-23`. The analysis below is preserved verbatim as it
+stood when the contradiction was open; §8 records what was applied.
 **Found:** 2026-08-23, by running CANARY-0001's rehearsal through the real Gate.
-**Requires:** a founder decision. Policy floors are constitutional.
+**Required:** a founder decision. Policy floors are constitutional.
 
 ---
 
@@ -122,3 +124,57 @@ The refusal is preserved as the finding.
 `tests/integration/test_graduation_rehearsal.py::test_the_gate_refuses_the_honest_first_canary_and_that_is_the_finding`
 pins it, so if the floor or the prediction ever moves, the change is deliberate
 and visible rather than a quiet unblocking.
+
+
+---
+
+## 8. Resolution (added 2026-08-23)
+
+**Options A + B applied together**, as recommended in §6 — A separates the
+quantities, B says what the floor is for once they are separate.
+
+**A — the split.** `predicted_success_probability` is a new field on `Proposal`
+and on Witness contract v2, added before v2 emitted a single durable record.
+That window was the founder's "cleanest versioned contract design" condition and
+it closed the moment the Gate started signing v2 witnesses, which happened in
+the same session. `policy.engine.evaluate` never reads it — asserted over the
+AST, because a single attribute access would re-fuse the two quantities while
+every behavioural test still passed.
+
+Calibration now keys on the prediction rather than on the admission confidence.
+Grading "we were justified in acting" against an outcome would have measured the
+institution's judgement about permission and called the difference forecast
+error.
+
+**B — what the floor protects.** External classes must now additionally declare
+`contained`, `reversible`, `observable`, `killable` and `proportionate`. Fails
+closed: an undeclared property is refused exactly like an absent one, and only
+literal `True` counts — `"yes"`, `1` and `"false"` are all refused.
+
+**Nothing was relaxed.** The floor is still 0.70. The sealed prediction is still
+0.55. The seal is unmoved. A proposal must now clear *more* than before, not
+less: the floor **and** five containment declarations **and** an external grant.
+
+**A third defect surfaced, and it is the important one.** With the confidence
+conflation removed, an honest first canary reached step 7 of the Gate for the
+first time — and the Gate **issued its own capability grant**. An external act
+was authorising itself. The evidence floor had been refusing these proposals
+earlier in the pipeline, so the missing check had never been reachable, and the
+two failures were indistinguishable from outside.
+
+`authorized` is one of the seven properties the ruling named. It is now enforced
+where it belongs: the Gate refuses to mint a grant for any consequence class
+that reaches outside. Internal effects may still be self-granted; the
+restriction is scoped to what leaves the institution.
+
+I had asserted, in this session, that `authorized` was "already enforced by the
+grant and identity checks". That was wrong, and was falsified within the hour by
+a test written to protect the canary. The correction is kept visible in
+`tests/unit/test_two_confidences.py` rather than tidied away, because the way it
+was found — removing one conflation exposed another — is the reusable part.
+
+**CANARY-0001 is unchanged in status.** The Gate now admits the *rehearsal*,
+which is consequence-inert by construction. `authorized_by` is `None`, no code
+path sets it, `proves_external_reality` returns a literal `False`, and CVO
+remains 0. Gate admission is not execution authorisation, and the GO/NO-GO
+remains the founder's.

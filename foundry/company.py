@@ -117,7 +117,17 @@ class CompanyFoundry:
 
     def publish(self, charter_hash: str, node_id: str, *, gate, actor: str,
                 executor, platform: str, estimated_cost_usd: float = 0.0,
-                approver=None):
+                approver=None, containment: dict | None = None):
+        """Publish one node through the Gate.
+
+        `containment` carries the CONTRADICTION-0003 Option B declaration —
+        contained, reversible, observable, killable, proportionate — and is
+        deliberately a caller argument with no default. This module cannot
+        honestly assert that a publication to an arbitrary `platform` is
+        reversible or observable; only the caller arranging the publication
+        knows. Omitting it is refused by the Gate, which is the correct
+        outcome for an undeclared external act.
+        """
         company = self.company(charter_hash)
         if not self.is_operational(charter_hash):
             raise FoundryError(f"charter {charter_hash[:16]}... not ratified; an unratified company does not speak")
@@ -140,5 +150,14 @@ class CompanyFoundry:
             evidence_refs=node.evidence_refs,
             estimated_cost_usd=estimated_cost_usd,
             requested_capability="media.publish",
-            expected_outcome="artifact live on declared account")
-        return gate.run(proposal, executor=executor, approver=approver)
+            expected_outcome="artifact live on declared account",
+            context=dict(containment or {}))
+        # An external publication needs a grant issued outside this run
+        # (CONTRADICTION-0003, the `authorized` criterion). The foundry issues
+        # it explicitly here rather than letting the Gate mint its own, so the
+        # authorising step is visible in this file instead of invisible in the
+        # Gate.
+        grant = gate.grants.issue_single_action(
+            proposal=proposal, policy_version=gate.policy_version)
+        return gate.run(proposal, executor=executor, approver=approver,
+                        standing_grant=grant)

@@ -81,10 +81,32 @@ V1_SIGNED_FIELDS: Final[tuple[str, ...]] = (
 #: under a new name would have manufactured the appearance of a fix.
 V2_ADDED_FIELDS: Final[tuple[str, ...]] = (
     "witness_version",
-    "evidence_confidence",     # what we believed, and how strongly
+    "evidence_confidence",     # how well-evidenced the decision to act was
     "consequence_class",       # what class of consequence was authorised
     "exposure_ceiling_usd",    # the effective ceiling, not a reservation id
+    # Added 2026-08-23 under CONTRADICTION-0003 Option A, before v2 emitted a
+    # single durable record — the founder's "cleanest versioned contract
+    # design" window, which closes the moment the first v2 witness is signed.
+    "predicted_success_probability",
 )
+
+#: The two confidences, kept apart on purpose. They are the same number for
+#: routine actions and *opposite* for a first canary, which is how the fusion
+#: went unnoticed for so long.
+#:
+#: - `evidence_confidence` — "how strong is the evidence that taking this
+#:   bounded action is justified?" Governs Gate admission. A high bar is right.
+#: - `predicted_success_probability` — "how likely is it to achieve its
+#:   preregistered outcome?" Governs nothing. This is the quantity Bridge D
+#:   later joins against reality.
+#:
+#: For CANARY-0001 the first is high and the second is 0.55, and both are
+#: honest: the argument for running it is strong precisely *because* the
+#: outcome is uncertain. Fused into one field, clearing the floor required
+#: writing a success prediction nobody believed — manufacturing the
+#: miscalibration the calibration loop exists to detect.
+CONFIDENCE_FIELDS: Final[tuple[str, ...]] = (
+    "evidence_confidence", "predicted_success_probability")
 
 V2_SIGNED_FIELDS: Final[tuple[str, ...]] = V1_SIGNED_FIELDS + V2_ADDED_FIELDS
 
@@ -125,6 +147,18 @@ def detect_version(record: dict[str, Any]) -> int:
     return version
 
 
+#: Signed when present, not required to be present.
+#:
+#: Most actions carry no preregistered prediction — a routine internal write is
+#: not an experiment — and requiring the field would force every writer to
+#: invent a number for something it never predicted. That is the failure mode
+#: `UNRECORDED` exists to prevent, so the field is optional in *presence* and
+#: mandatory in *coverage*: when it is there the signature covers it, so adding
+#: or stripping it after signing breaks verification.
+OPTIONAL_SIGNED_FIELDS: Final[frozenset[str]] = frozenset(
+    {"predicted_success_probability"})
+
+
 def signed_fields(version: int) -> tuple[str, ...]:
     return V1_SIGNED_FIELDS if version == 1 else V2_SIGNED_FIELDS
 
@@ -141,11 +175,17 @@ def canonical_bytes(record: dict[str, Any], *, version: int | None = None) -> by
     Fields outside the version's set are excluded, not merely ignored: a v2
     field smuggled into a v1 record must not change its canonical form, or the
     signature would stop covering what the record appears to say.
+
+    `OPTIONAL_SIGNED_FIELDS` may be absent without making the record partial,
+    but are covered whenever present — so an absent prediction stays absent
+    rather than becoming a fabricated number, and a present one cannot be
+    stripped or altered without breaking the signature.
     """
     version = version if version is not None else detect_version(record)
     payload = {name: record[name] for name in signed_fields(version)
                if name in record}
-    missing = [n for n in signed_fields(version) if n not in record]
+    missing = [n for n in signed_fields(version)
+               if n not in record and n not in OPTIONAL_SIGNED_FIELDS]
     if missing:
         raise WitnessContractError(
             f"v{version} record is missing signed fields {missing}; refusing to "
@@ -229,15 +269,35 @@ class WitnessReading:
     evidence_confidence: float | str
     consequence_class: str
     exposure_ceiling_usd: float | str
+    #: The preregistered prediction, which is what calibration measures.
+    #: Separate from `evidence_confidence` by CONTRADICTION-0003 Option A.
+    predicted_success_probability: float | str = UNRECORDED
     unrecorded: tuple[str, ...] = field(default_factory=tuple)
 
     @property
     def calibratable(self) -> bool:
         """Whether this record can contribute a (prediction, outcome) pair.
 
+        Keys on `predicted_success_probability`, not `evidence_confidence`.
+        That correction is the whole point of CONTRADICTION-0003: calibration
+        compares *what we predicted would happen* against what happened.
+        `evidence_confidence` answers a different question — whether acting was
+        justified — and joining it to an outcome would measure the institution's
+        judgement about permission, then call the result a forecast error.
+
         False for every v1 record, permanently and correctly. The alternative —
-        imputing a confidence — would produce a calibration curve measuring the
+        imputing a prediction — would produce a calibration curve measuring the
         imputation, and would do it silently.
+        """
+        return self.predicted_success_probability != UNRECORDED
+
+    @property
+    def admission_basis_recorded(self) -> bool:
+        """Whether the record states what the Gate actually admitted it on.
+
+        Distinct from `calibratable` on purpose. A record can be auditable for
+        *why it was allowed* while carrying no prediction to score, and a
+        reviewer must be able to tell those apart.
         """
         return self.evidence_confidence != UNRECORDED
 
@@ -269,6 +329,7 @@ def read(record: dict[str, Any]) -> WitnessReading:
     confidence = v2_field("evidence_confidence")
     consequence = v2_field("consequence_class")
     ceiling = v2_field("exposure_ceiling_usd")
+    predicted = v2_field("predicted_success_probability")
 
     return WitnessReading(
         witness_id=record.get("witness_id", ""),
@@ -283,12 +344,14 @@ def read(record: dict[str, Any]) -> WitnessReading:
         evidence_confidence=confidence,
         consequence_class=consequence,
         exposure_ceiling_usd=ceiling,
+        predicted_success_probability=predicted,
         unrecorded=tuple(absent),
     )
 
 
 def upgrade_shape(record: dict[str, Any], *, evidence_confidence: float,
-                  consequence_class: str, exposure_ceiling_usd: float
+                  consequence_class: str, exposure_ceiling_usd: float,
+                  predicted_success_probability: float | None = None
                   ) -> dict[str, Any]:
     """Build a v2 record from v1 fields plus values the CALLER actually holds.
 
@@ -301,6 +364,13 @@ def upgrade_shape(record: dict[str, Any], *, evidence_confidence: float,
     A caller tempted to pass zeros here to "migrate the archive" would be
     fabricating evidence, so the signature makes that a deliberate act with
     named arguments rather than a default.
+
+    `predicted_success_probability` is the one optional argument, and its
+    default is `None` rather than a number. Most actions carry no preregistered
+    prediction — routine internal writes are not experiments — and the honest
+    record for those is the absence, not a manufactured 0.5. Passing `None`
+    stores nothing, so the field reads back as `UNRECORDED` and
+    `calibratable` is False.
     """
     if detect_version(record) != 1:
         raise WitnessContractError("upgrade_shape expects a v1-shaped record")
@@ -310,4 +380,7 @@ def upgrade_shape(record: dict[str, Any], *, evidence_confidence: float,
     upgraded["evidence_confidence"] = float(evidence_confidence)
     upgraded["consequence_class"] = consequence_class
     upgraded["exposure_ceiling_usd"] = float(exposure_ceiling_usd)
+    if predicted_success_probability is not None:
+        upgraded["predicted_success_probability"] = \
+            float(predicted_success_probability)
     return upgraded

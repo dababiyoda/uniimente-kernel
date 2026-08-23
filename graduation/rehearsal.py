@@ -126,11 +126,30 @@ def rehearse(*, gate, actor: str, legal_principal: str, target: str,
                  "marker": REHEARSAL_MARKER},
         target=target,
         consequence_class=PACKET.consequence_class,
-        evidence_confidence=PACKET.preregistration.predicted_confidence,
+        # CONTRADICTION-0003 Option A. Admission is governed by how
+        # well-evidenced the decision to act is; the sealed prediction rides
+        # along to be scored later and buys no permission. Before the split
+        # this line passed 0.55 into the floor and the Gate refused — correctly,
+        # on a number that was answering a different question.
+        evidence_confidence=PACKET.evidence_confidence,
+        predicted_success_probability=(
+            PACKET.preregistration.predicted_confidence),
         evidence_refs=[f"graduation-packet:{PACKET.sealed[:16]}"],
         estimated_cost_usd=PACKET.budget_usd,
         requested_capability=PACKET.capability,
         expected_outcome="published",
+        # CONTRADICTION-0003 Option B. Each is true of the REHEARSAL, which is
+        # what this proposal is: an inert in-process executor against a
+        # `rehearsal:` target. The real canary would have to earn these
+        # separately, against a real platform, under a grant that does not yet
+        # exist.
+        context={
+            "contained": True,      # zero budget, zero ceiling, single-use grant
+            "reversible": True,     # nothing was published; nothing to undo
+            "observable": True,     # the inert executor records what it received
+            "killable": True,       # 15-minute TTL, revocable, shutdown supersedes
+            "proportionate": True,  # one bounded item against a structural unknown
+        },
     )
     reached.append("proposal compiled")
 

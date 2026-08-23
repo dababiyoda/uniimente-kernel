@@ -209,17 +209,32 @@ def test_calibration_is_blocked_and_says_why(committed):
     assert "evidence_confidence" in run.calibration_blocked_by
 
 
-def test_the_witness_really_has_no_field_for_the_prediction_it_was_graded_on():
-    """The gap asserted against the structure rather than against a symptom.
+def test_the_witness_now_carries_the_prediction_it_is_graded_on():
+    """The gap, closed — and the test that forced the revisit, doing its job.
 
-    If someone ratifies the contract change and widens `CommitWitness`, this
-    test fails and the pinned gap above has to be revisited — which is the
-    point. A gap nobody is forced to revisit is a gap that becomes permanent.
+    This assertion used to read `"evidence_confidence" not in fields`, with the
+    note: *"If someone ratifies the contract change and widens CommitWitness,
+    this test fails and the pinned gap has to be revisited — which is the
+    point. A gap nobody is forced to revisit is a gap that becomes
+    permanent."*
+
+    The founder ratified it (FOUNDER-RULING-2026-08-23), the witness widened,
+    and this test failed exactly as designed. The inversion is kept in place
+    rather than deleted so the closure is visible as a closure.
+
+    Both quantities are now present and they are not the same field —
+    CONTRADICTION-0003. Grading a decision-to-act confidence against an outcome
+    would have measured the wrong thing while looking correct.
     """
     fields = set(CommitWitness.__dataclass_fields__)
 
-    assert "expected_outcome" in fields       # the prediction's *content* is kept
-    assert "evidence_confidence" not in fields  # its *confidence* is not
+    assert "expected_outcome" in fields               # the prediction's content
+    assert "evidence_confidence" in fields            # why it was admitted
+    assert "predicted_success_probability" in fields  # what calibration scores
+    assert "witness_version" in fields
+
+    # Still empty for an empty ledger: emitting the field is not the same as
+    # having anything to calibrate. CVO remains 0 and nothing here changes it.
     assert bridge.predicted_versus_realized(EvidenceLedger("probe")) == []
 
 

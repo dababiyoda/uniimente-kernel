@@ -522,18 +522,26 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     ], [
         "The Gate has never executed a real external effect. Every recorded "
         "traversal terminates in a test executor.",
-        # ADDED 2026-08-22 implementing ruling 3 of FOUNDER-RULING-2026-08-22.
-        "The Gate does not emit witness contract v2. `provenance/witness_v2.py` "
-        "records evidence_confidence, consequence_class and exposure_ceiling_usd "
-        "under the signature, and the Gate already holds all three — Proposal "
-        "carries the first two and grant['spending_limit_usd'] the third — but "
-        "it calls the v1 constructor and drops them. Every witness in the ledger "
-        "is therefore v1: calibration is impossible and Bridge G falls back to "
-        "the actor's standing passport ceiling, which over-estimates. Adoption "
-        "is roughly three lines and is blocked because "
-        "policy/consequence_gate.py is a sealed continuity artifact — see "
-        "docs/deliberations/CONTRADICTION-0002-continuity-baseline.md, which "
-        "needs a founder decision.",
+        # CLOSED 2026-08-23 under FOUNDER-RULING-2026-08-23. The gap text is
+        # replaced rather than deleted, so a reader sees what was true and what
+        # closed it. Previously: "The Gate does not emit witness contract v2 …
+        # blocked because policy/consequence_gate.py is a sealed continuity
+        # artifact." CONTRADICTION-0002 Option A unblocked the file; the Gate
+        # now passes all four v2 facts into `new_witness`.
+        #
+        # What remains open is narrower and is NOT the same gap: the emitted
+        # records exist, but no external action has produced one, so there is
+        # still nothing to calibrate against reality.
+        "No emitted witness describes a real external effect. The Gate emits "
+        "witness contract v2 — evidence_confidence, consequence_class, "
+        "exposure_ceiling_usd and predicted_success_probability, all under the "
+        "signature — and Bridge G now reads the exercised authority from the "
+        "action's own record instead of over-estimating from the actor's "
+        "standing passport. But every v2 record so far terminates in a test "
+        "executor, so `predicted_versus_realized` has no pair to score and "
+        "clean_verified_outcomes remains 0. Calibration is now POSSIBLE and "
+        "still UNPERFORMED, which is a different claim from the one this row "
+        "carried before.",
     ], Owner.FOUNDER),
 
     _b(31, Rung.BUILT, Reality.SIMULATED, [

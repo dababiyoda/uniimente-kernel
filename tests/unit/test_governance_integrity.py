@@ -45,11 +45,42 @@ def tree(tmp_path):
 
 # -- the baseline is true of the real institution ---------------------------
 
-def test_every_genesis_hash_describes_the_live_artifact():
-    """The baseline has to start out true, or every later verdict is noise."""
-    for rel, expected in GENESIS_SHA256.items():
+def test_the_authorised_baseline_describes_the_live_artifacts():
+    """The baseline has to be true, or every later verdict is noise.
+
+    Compares against the REPLAYED baseline, not against genesis. Genesis was
+    true on 2026-08-23 and the institution has lawfully amended one artifact
+    since; a test pinned to genesis would have to be edited every time the
+    Constitution legitimately changes, which is the pressure that produces
+    exactly the silent hash-bump this mechanism exists to catch.
+    """
+    baseline = authorized_baseline()
+    for rel, expected in baseline.items():
         with open(os.path.join(ROOT, rel), "rb") as handle:
-            assert _sha(handle.read()) == expected, f"{rel} drifted from genesis"
+            assert _sha(handle.read()) == expected, f"{rel} is not as authorised"
+
+
+def test_the_amendment_chain_replays_from_genesis_without_a_gap():
+    """Every artifact still traces to its genesis hash through stated records.
+
+    The chain is the whole guarantee: a baseline value that cannot be reached
+    by replaying declared amendments from genesis is a value someone typed.
+    """
+    baseline = authorized_baseline()
+
+    for rel, genesis in GENESIS_SHA256.items():
+        chain = [a for a in AMENDMENTS if a.artifact == rel]
+        current = genesis
+        for amendment in chain:
+            assert amendment.from_sha256 == current
+            current = amendment.to_sha256
+        assert baseline[rel] == current
+
+    # The gate is the one artifact amended so far, and it is amended once.
+    amended = {a.artifact for a in AMENDMENTS}
+    assert amended == {"policy/consequence_gate.py"}
+    assert baseline["policy/consequence_gate.py"] != \
+        GENESIS_SHA256["policy/consequence_gate.py"]
 
 
 def test_the_live_institution_is_currently_intact():
@@ -92,7 +123,9 @@ def test_an_authorised_amendment_is_accepted(tree):
     target.write_bytes(target.read_bytes() + b"\n// ratified change\n")
     after = _sha(target.read_bytes())
 
-    amendments = (Amendment(
+    # Appended to the real chain, not substituted for it: the fixture tree is
+    # a copy of the LIVE artifacts, which already include one landed amendment.
+    amendments = AMENDMENTS + (Amendment(
         artifact="constitution/participant-rights.ucl",
         from_sha256=before, to_sha256=after,
         authorization="docs/deliberations/FOUNDER-RULING-2026-08-23-"
@@ -134,13 +167,13 @@ def test_rewriting_history_to_fit_todays_bytes_breaks_the_chain(tree):
 
     auth = ("docs/deliberations/FOUNDER-RULING-2026-08-23-"
             "infinite-goal-chase.md")
-    honest = (
+    honest = AMENDMENTS + (
         Amendment(rel, v0, v1, auth, "2026-08-23", "one"),
         Amendment(rel, v1, v2, auth, "2026-08-23", "two"),
     )
     assert verify(root=str(tree), amendments=honest).intact
 
-    tampered = (
+    tampered = AMENDMENTS + (
         Amendment(rel, v0, v2, auth, "2026-08-23", "one, rewritten"),
         Amendment(rel, v1, v2, auth, "2026-08-23", "two"),
     )
@@ -296,7 +329,7 @@ def test_the_two_readings_may_disagree_without_either_being_wrong(tree):
     target.write_bytes(target.read_bytes() + b"\n// ratified amendment\n")
     after = _sha(target.read_bytes())
 
-    amendments = (Amendment(
+    amendments = AMENDMENTS + (Amendment(
         rel, before, after,
         "docs/deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md",
         "2026-08-23", "founder-ratified"),)

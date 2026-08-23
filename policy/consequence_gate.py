@@ -33,9 +33,10 @@ from typing import Callable, Any
 
 from compiler.ucl_compiler import CompiledConstitution
 from identity.machine_passport import PassportRegistry
-from policy.engine import Proposal, Verdict, evaluate
+from policy.engine import CONTAINED_CLASSES, Proposal, Verdict, evaluate
 from provenance.ledger import EvidenceLedger
 from provenance.commit_witness import WitnessSigner, new_witness, sha256_obj
+from provenance.witness_v2 import WITNESS_CONTRACT_VERSION
 
 TERMINAL_STATES = {"recorded", "refused", "denied", "expired", "revoked", "failed"}
 APPROVAL_TTL = timedelta(hours=72)          # pending_human expires after 72 hours
@@ -236,6 +237,26 @@ class ConsequenceGate:
                 return self._refuse(rec, "refused", decision.reasons)
 
         # 7. capability ----------------------------------------------------
+        # An action that reaches outside may not be granted by the same run
+        # that proposes it. Self-issuance is fine for internal effects and is
+        # authority creation for external ones — "no component may authorize
+        # its own promotion or expand its own sovereignty".
+        #
+        # Found 2026-08-23 while discharging CONTRADICTION-0003 Option B, and
+        # found only because that remedy removed what was hiding it: the
+        # evidence floor had been refusing these proposals earlier in the
+        # pipeline, so no external_contact run had ever reached this line
+        # without a supplied grant. A floor was doing an authorization check's
+        # job, and the two failures looked identical from outside.
+        #
+        # `authorized` is one of the seven properties the founder's ruling
+        # named. This is where it is enforced.
+        if standing_grant is None and \
+                proposal.consequence_class in CONTAINED_CLASSES:
+            return self._refuse(rec, "refused", [
+                f"{proposal.consequence_class} requires a grant issued outside "
+                "this run; the Gate does not issue its own authority to act "
+                "externally"])
         grant = standing_grant or self.grants.issue_single_action(
             proposal=proposal, policy_version=self.policy_version)
         rec.grant_id = grant["grant_id"]
@@ -249,13 +270,32 @@ class ConsequenceGate:
             return self._refuse(rec, "refused", [f"budget: {e}"])
 
         # 9. Commit Witness ---------------------------------------------------
+        # Emits Witness contract v2, authorised by FOUNDER-RULING-2026-08-23.
+        #
+        # The gap this closes was never that the values were unavailable: the
+        # Proposal has carried `consequence_class` and `evidence_confidence`
+        # all along, and the grant states the ceiling at the moment budget is
+        # reserved. The gate held all of them and dropped them, so the durable
+        # record could not answer "what did we believe, how strongly, under
+        # exactly what authority, and what exposure was permitted".
+        #
+        # `predicted_success_probability` rides along unchanged from the
+        # proposal, including when it is None. None means the action
+        # preregistered no forecast, the field is dropped from the signed
+        # payload, and the record reads back as UNRECORDED rather than as a
+        # prediction of zero.
         witness = new_witness(
             actor=proposal.actor, legal_principal=proposal.legal_principal,
             action_class=proposal.action_class, payload=proposal.payload, target=proposal.target,
             policy_version=self.policy_version, constitution_hash=self.compiled.constitution_hash,
             grant_id=grant["grant_id"], capability=proposal.requested_capability,
             budget_reservation_id=reservation["reservation_id"],
-            expected_outcome=proposal.expected_outcome, evidence_refs=proposal.evidence_refs)
+            expected_outcome=proposal.expected_outcome, evidence_refs=proposal.evidence_refs,
+            witness_version=WITNESS_CONTRACT_VERSION,
+            evidence_confidence=proposal.evidence_confidence,
+            consequence_class=proposal.consequence_class,
+            exposure_ceiling_usd=float(grant.get("spending_limit_usd", 0)),
+            predicted_success_probability=proposal.predicted_success_probability)
         self.signer.sign(witness)
         rec.witness_id = witness.witness_id
         self.ledger.append("witness", asdict(witness))

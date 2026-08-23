@@ -15,6 +15,14 @@ from business.commercial_loop import CommercialLoop, CommercialLoopError
 from business.genome import BusinessGenome, BusinessGenomeCompiler, GenomeCompileError
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#: Containment declared (CONTRADICTION-0003 Option B). True of this harness:
+#: the executors are in-process test doubles, nothing reaches a real buyer or
+#: payment rail, and every effect ends with the test.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
 EV = ["sha256:" + "e" * 64]
 PAY_OK = lambda p: {"observed_outcome": "payment settled", "result_class": "positive"}
 SHIP_OK = lambda p: {"observed_outcome": "offer delivered", "result_class": "positive"}
@@ -107,23 +115,27 @@ def test_no_delivery_before_recorded_payment(stack):
     loop, case, actor = open_to_offer(stack)
     with pytest.raises(CommercialLoopError, match="no delivery before payment"):
         loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP_OK,
-                     evidence_confidence=0.9, evidence_refs=EV)
+                     evidence_confidence=0.9, evidence_refs=EV,
+                 containment=SANDBOX_CONTAINMENT)
 
 
 def test_weak_evidence_payment_does_not_happen(stack):
     loop, case, actor = open_to_offer(stack)
     with pytest.raises(CommercialLoopError, match="did not happen"):
         loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY_OK,
-                          evidence_confidence=0.5, evidence_refs=EV)
+                          evidence_confidence=0.5, evidence_refs=EV,
+                          containment=SANDBOX_CONTAINMENT)
     assert case.stage == "offer" and case.payment_receipt_hash is None
 
 
 def test_full_external_closure(stack):
     loop, case, actor = open_to_offer(stack)
     loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY_OK,
-                      evidence_confidence=0.9, evidence_refs=EV)
+                      evidence_confidence=0.9, evidence_refs=EV,
+                 containment=SANDBOX_CONTAINMENT)
     loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP_OK,
-                 evidence_confidence=0.9, evidence_refs=EV)
+                 evidence_confidence=0.9, evidence_refs=EV,
+                 containment=SANDBOX_CONTAINMENT)
     loop.verify_outcome(case.case_id, verified_by="external_receipt",
                         detail="buyer accepted the report")
     loop.resolve(case.case_id, retained=True, reason="quarterly re-audit")
@@ -133,9 +145,11 @@ def test_full_external_closure(stack):
 def test_self_report_does_not_verify_customer_value(stack):
     loop, case, actor = open_to_offer(stack)
     loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY_OK,
-                      evidence_confidence=0.9, evidence_refs=EV)
+                      evidence_confidence=0.9, evidence_refs=EV,
+                 containment=SANDBOX_CONTAINMENT)
     loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP_OK,
-                 evidence_confidence=0.9, evidence_refs=EV)
+                 evidence_confidence=0.9, evidence_refs=EV,
+                 containment=SANDBOX_CONTAINMENT)
     with pytest.raises(CommercialLoopError, match="cannot verify customer value"):
         loop.verify_outcome(case.case_id, verified_by="self_report", detail="great")
 

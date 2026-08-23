@@ -145,9 +145,22 @@ def _replay(thresholds):
                      target="sandbox:outbox", consequence_class="external_contact",
                      evidence_confidence=conf, evidence_refs=["sha256:" + "a" * 64],
                      estimated_cost_usd=0.0, requested_capability="draft.publish",
-                     expected_outcome="queued")
+                     expected_outcome="queued",
+                     # Containment declared (CONTRADICTION-0003 Option B). True
+                     # of this corpus: sandbox target, in-process inert
+                     # executor. Declared here so the replay keeps measuring the
+                     # floor rather than the new containment requirement.
+                     context={"contained": True, "reversible": True,
+                              "observable": True, "killable": True,
+                              "proportionate": True})
+        # An external_contact action needs a grant issued outside the run
+        # (CONTRADICTION-0003's authorization fix). Issued here so the replay
+        # keeps measuring the evidence FLOOR, which is its subject.
+        g = gate.grants.issue_single_action(proposal=p,
+                                            policy_version=gate.policy_version)
         rec = gate.run(p, executor=lambda pr: {"observed_outcome": "queued",
-                                               "result_class": "positive"})
+                                               "result_class": "positive"},
+                       standing_grant=g)
         if rec.state == "recorded":
             if conf in WEAK_CONF:
                 weak += 1

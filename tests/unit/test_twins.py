@@ -20,6 +20,14 @@ GENESIS = "sha256:" + "0" * 64
 GOOD_CONF = [0.95, 0.9, 0.85, 0.8]
 WEAK_CONF = [0.72, 0.71]               # floor 0.70 admits them; 0.75 refuses
 
+#: Containment declared (CONTRADICTION-0003 Option B), true of this corpus:
+#: sandbox target, no executor reaches outside the process. Declared so the
+#: twin comparison keeps measuring the FLOOR, which is its subject.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
 
 def _corpus():
     return ([(Proposal(actor="a", legal_principal="alfonso_lopez",
@@ -27,13 +35,15 @@ def _corpus():
                        target="sandbox:outbox", consequence_class="external_contact",
                        evidence_confidence=c, evidence_refs=["sha256:" + "a" * 64],
                        estimated_cost_usd=0.0, requested_capability="draft.publish",
-                       expected_outcome="queued"), "good") for c in GOOD_CONF]
+                       expected_outcome="queued", context=dict(SANDBOX_CONTAINMENT)),
+              "good") for c in GOOD_CONF]
             + [(Proposal(actor="a", legal_principal="alfonso_lopez",
                          action_class="draft.publish", objective="t", payload={"c": c},
                          target="sandbox:outbox", consequence_class="external_contact",
                          evidence_confidence=c, evidence_refs=["sha256:" + "a" * 64],
                          estimated_cost_usd=0.0, requested_capability="draft.publish",
-                         expected_outcome="queued"), "weak") for c in WEAK_CONF])
+                         expected_outcome="queued", context=dict(SANDBOX_CONTAINMENT)),
+                "weak") for c in WEAK_CONF])
 
 
 class TestTwin:

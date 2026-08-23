@@ -390,6 +390,22 @@ CONTINUITY_ARTIFACTS = (
     "identity/service-identities.yaml", "policy/consequence_gate.py",
 )
 
+#: Where the freeze-time bytes of those twelve artifacts live.
+#:
+#: CONTRADICTION-0002 Option A, 2026-08-23. This spec had the same defect the
+#: Package 3 spec had: freeze-time hashes asserted against the LIVE tree, so a
+#: lawful constitutional amendment would fail a sealed experiment.
+#:
+#: It shares Package 3's frozen corpus deliberately rather than keeping a second
+#: copy. The artifact list is identical and so is `CONTINUITY_COMBINED_SHA256` —
+#: these two experiments pinned the same twelve files at the same bytes — and
+#: two copies of the same freeze-time truth could drift apart, which is the
+#: failure mode this whole remedy exists to prevent. The sharing is asserted,
+#: not assumed: see `test_both_sealed_experiments_pin_the_same_freeze_time_bytes`.
+#:
+#: No value above changed. Only the binding did.
+from evolution.repair.spec import CONTINUITY_DIR  # noqa: E402
+
 AUTHORITY_INVARIANTS = (
     "the original DurableWorkflow remains available and byte-identical as the "
     "default provider",

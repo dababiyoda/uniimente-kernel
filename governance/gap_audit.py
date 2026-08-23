@@ -156,25 +156,59 @@ def _no_verified_outcome() -> tuple[bool, str]:
     return False, f"{verified} externally verified outcome record(s) now exist"
 
 
-#: Asymmetric primitives. Their absence is what makes "HMAC over a shared
-#: secret" true; their arrival is what would close the gap.
-ASYMMETRIC = ("cryptography", "ecdsa", "rsa", "nacl", "OpenSSL", "jwcrypto")
+#: SUPERSEDED 2026-08-22, retained as the record of a measurement that expired.
+#:
+#: These were the primitives whose *absence* made "HMAC over a shared secret"
+#: true, and whose arrival was expected to close #7 and #26. The reasoning was
+#: sound and the proxy was still wrong: `identity/pki/` imports `cryptography`,
+#: so this tuple would have reported both gaps closed while the live transport
+#: kept authenticating with one shared key.
+#:
+#: Kept rather than deleted because it is the clearest example in this file of
+#: how a proxy measurement decays — it stops tracking the gap at exactly the
+#: moment the work starts, and it fails toward "closed". Replaced by
+#: `_asymmetric_identity_is_not_adopted`, which measures use instead of
+#: presence.
+_SUPERSEDED_ASYMMETRIC_PRIMITIVES = (
+    "cryptography", "ecdsa", "rsa", "nacl", "OpenSSL", "jwcrypto")
 
 
-def _no_asymmetric_crypto() -> tuple[bool, str]:
-    """The shared-secret claim on #7 and #26, checked at the import level.
+#: Where the asymmetric identity mechanism lives. Its own imports of
+#: `cryptography` are not evidence that anything uses it.
+_PKI_PACKAGE = os.path.join("identity", "pki")
 
-    A per-service identity needs an asymmetric primitive somewhere. None is
-    imported by any institutional module, so every signature in the transport
-    path is still an HMAC over one shared key.
+
+def _asymmetric_identity_is_not_adopted() -> tuple[bool, str]:
+    """The shared-secret claim on #7 and #26, measured by ADOPTION.
+
+    REPLACED 2026-08-22. This check previously asked whether any institutional
+    module imported an asymmetric primitive, on the reasoning that a per-service
+    identity needs one somewhere and none existed. That proxy held exactly until
+    `identity/pki/` was built — at which point it would have reported the gap
+    STALE, because `cryptography` was now imported.
+
+    Which would have been wrong, and wrong in the worse direction: telling the
+    founder a trust boundary had closed when the live transport was still
+    authenticating with one shared key. Building a replacement is not adopting
+    one.
+
+    So the question changed to the one that is actually still open: does any
+    institutional module OUTSIDE the PKI package and outside the tests actually
+    use it? The PKI importing its own crypto proves nothing, and neither does a
+    test — a test is how the mechanism is exercised, not how the institution
+    adopts it.
     """
-    found: list[str] = []
+    users: list[str] = []
     for dirpath, dirnames, filenames in os.walk(KERNEL_ROOT):
         dirnames[:] = [d for d in dirnames if d not in NON_INSTITUTIONAL]
         for name in filenames:
             if not name.endswith(".py"):
                 continue
             path = os.path.join(dirpath, name)
+            relative = os.path.relpath(path, KERNEL_ROOT)
+            # The mechanism does not adopt itself, and a test is not adoption.
+            if relative.startswith(_PKI_PACKAGE) or relative.startswith("tests"):
+                continue
             with open(path, encoding="utf-8", errors="ignore") as fh:
                 try:
                     tree = ast.parse(fh.read())
@@ -186,12 +220,14 @@ def _no_asymmetric_crypto() -> tuple[bool, str]:
                     modules = [a.name for a in node.names]
                 elif isinstance(node, ast.ImportFrom) and node.module:
                     modules = [node.module]
-                if any(m.split(".")[0] in ASYMMETRIC for m in modules):
-                    found.append(os.path.relpath(path, KERNEL_ROOT))
-    if not found:
-        return True, ("no asymmetric primitive is imported by any institutional "
-                      "module; every transport signature is an HMAC")
-    return False, f"asymmetric crypto now imported by {', '.join(sorted(set(found)))}"
+                if any(m.startswith("identity.pki") for m in modules):
+                    users.append(relative)
+    if not users:
+        return True, ("identity/pki/ exists and is tested, but no institutional "
+                      "module outside it imports it; the live transport is still "
+                      "HMAC over one shared key")
+    return False, ("asymmetric identity is now used by "
+                   f"{', '.join(sorted(set(users)))}")
 
 
 def _routing_decision_is_untyped() -> tuple[bool, str]:
@@ -317,8 +353,13 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (38, "No payment rail is connected", _no_external_reach),
     (49, "No company has published anything", _no_external_reach),
     (25, "No live traffic has routed through either router", _no_verified_outcome),
-    (7, "HMAC over a shared secret, not asymmetric PKI", _no_asymmetric_crypto),
-    (26, "Shared-secret HMAC, not mutual TLS", _no_asymmetric_crypto),
+    # Anchors re-pointed 2026-08-22 with the gap texts they track. Both rows
+    # measure adoption now, not the presence of a primitive — see
+    # `_asymmetric_identity_is_not_adopted`.
+    (7, "The live bridge transport is still HMAC over a shared secret",
+     _asymmetric_identity_is_not_adopted),
+    (26, "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`",
+     _asymmetric_identity_is_not_adopted),
     (25, "RoutingDecision is not a typed institutional contract",
      _routing_decision_is_untyped),
     (37, "No marketplace. Bridge F has no implementation", _bridge_f_is_unimplemented),

@@ -187,15 +187,41 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     _b(7, Rung.EXERCISED, Reality.IMPLEMENTED, [
         _spec(f"{ARCH}#Identity + Authority Fabric"),
         _impl("identity/machine_passport.py"),
+        _impl("identity/pki/handshake.py"),
         _test("tests/unit/test_identity.py::test_identity_is_not_authority"),
+        _test("tests/unit/test_pki_mutual_tls.py::"
+              "test_a_foreign_ca_cannot_mint_a_kernel_identity"),
         _closure("identity"), _cap("kernel.machine_passports"),
     ], [
-        "HMAC over a shared secret, not asymmetric PKI. The DALEOBANKS, "
-        "WealthMachine and kernel bridge mirrors share one WEALTHMACHINE_SIGNING_KEY, "
-        "so a recognized transport identity is a CLAIMED identity, not a "
-        "cryptographically isolated per-service identity: any holder of the shared "
-        "secret can assert any known identity. Per-service keys or mTLS required.",
-        "No SPIFFE/SPIRE issuance, rotation or revocation infrastructure.",
+        # AMENDED 2026-08-22 under FOUNDER-RULING-2026-08-22, which ratified
+        # asymmetric workload identity. The shared-key gap below is NOT closed:
+        # `identity/pki/` exists and is adversarially tested, but no bridge has
+        # migrated to it, so the live transport still authenticates exactly as
+        # it did. Building a replacement is not adopting one, and recording it
+        # as closed would be the kind of credit the founder ruled out for a
+        # change that moves no integration boundary.
+        "The live bridge transport is still HMAC over a shared secret. The "
+        "DALEOBANKS, WealthMachine and kernel mirrors share one "
+        "WEALTHMACHINE_SIGNING_KEY, so a recognized transport identity remains a "
+        "CLAIMED identity: any holder of the shared secret can assert any known "
+        "identity. `adapters/bridge_transport.py` now reports "
+        "`identity_isolated: false` on every path so no reader can mistake a "
+        "valid signature for isolation, and refuses to run unsigned unless a "
+        "human sets UNIIMENTE_BRIDGE_DEV_UNSIGNED=1 — but the underlying "
+        "symmetry is unchanged until the bridges move to `identity/pki/`.",
+        "The asymmetric replacement has no transport. `mutual_tls` runs over "
+        "ssl.MemoryBIO: a real TLS 1.3 handshake with real chain validation and "
+        "no socket, because the founder's standing constraints forbid opening a "
+        "network surface. No real peer has ever spoken it.",
+        "Certificate distribution and key custody are unsolved. The CA is "
+        "constructed in-process and `WorkloadIdentity.materialise()` writes the "
+        "private key to a 0600 file inside a 0700 directory for the duration of "
+        "a handshake, because Python's ssl module loads chains from paths and "
+        "not from memory. Acceptable for consequence-inert internal use; not "
+        "acceptable for production key custody.",
+        "Revocation is an in-process serial set, not a signed CRL or OCSP. It is "
+        "sufficient while revocation data never crosses a trust boundary, and "
+        "insufficient the moment it does.",
     ], Owner.FOUNDER),
 
     _b(8, Rung.PROVEN, Reality.IMPLEMENTED, [
@@ -416,10 +442,26 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     _b(26, Rung.BUILT, Reality.IMPLEMENTED, [
         _spec(f"{FBO}#4.11 Operating-System Capability Security"),
         _impl("adapters/bridge_transport.py"),
+        _impl("identity/pki/ca.py"),
         _test("tests/integration/test_phase_zero_connection.py::test_forged_identity_replay_and_tamper_all_fail_closed"),
+        _test("tests/unit/test_pki_mutual_tls.py::"
+              "test_rotation_issues_an_independent_key_and_the_old_serial_can_be_retired"),
     ], [
-        "Shared-secret HMAC, not mutual TLS. No per-service key isolation, no "
-        "certificate rotation, no network-level policy.",
+        # AMENDED 2026-08-22 under FOUNDER-RULING-2026-08-22. Three of the four
+        # things this gap named now exist and are tested; the rung deliberately
+        # does NOT move. EXERCISED requires a CLOSURE_MODULE — it means the
+        # technology runs inside the institution's own loop — and no loop uses
+        # the PKI yet. The founder's instruction was to advance only what the
+        # evidence earns and not to game the ladder, and passing tests are not
+        # adoption.
+        "Mutual TLS, per-service key isolation and certificate rotation now "
+        "exist in `identity/pki/` and are adversarially tested (impersonation, "
+        "wrong-cert identity, expiry, revocation, rotation, replay, downgrade "
+        "and cross-organ handshakes all fail closed). NOT ADOPTED: no bridge, "
+        "gate or organ calls `mutual_tls`, so the live trust boundary is "
+        "unchanged.",
+        "No network-level policy, and no network. The handshake is proven over "
+        "in-memory BIOs; the transport half remains absent and founder-gated.",
         # CLOSED 2026-08-22 by `bridges/signal_to_venture.py`, which imports
         # `adapters` and runs it. Corrected as an authored change after
         # `python -m governance.gap_audit` reported it STALE — the register had

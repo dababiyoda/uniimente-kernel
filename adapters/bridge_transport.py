@@ -152,7 +152,12 @@ def verify_headers(
         return getter.get(name.lower(), "")
 
     key = signing_key()
+    #: An explicit `require_signature=True` is a caller DEMANDING a signature,
+    #: and the dev flag must not override it. The flag only rescues the default
+    #: and the explicit-unsigned cases.
+    demanded = require_signature is True
     must_sign = require_signature if require_signature is not None else True
+    dev_unsigned = os.getenv(DEV_UNSIGNED_ENV) == "1"
 
     identity = get(H_IDENTITY)
     schema_version = get(H_SCHEMA) or MIN_SCHEMA_VERSION
@@ -162,9 +167,11 @@ def verify_headers(
             "downgrade rejected"
         )
 
-    if must_sign and not key:
+    if must_sign and not key and (demanded or not dev_unsigned):
         # Fail closed. The old code inferred `must_sign` from whether a key
         # happened to be configured, so this branch used to be a silent success.
+        # `demanded` keeps the dev flag from overriding a caller that explicitly
+        # asked for a signature.
         raise BridgeSecurityError(
             f"no signing key configured ({SIGNING_KEY_ENV} unset) and signature "
             f"required. Set the key, or set {DEV_UNSIGNED_ENV}=1 to opt into the "
@@ -172,8 +179,13 @@ def verify_headers(
             "disabled by the absence of configuration."
         )
 
-    if not must_sign:
-        if os.getenv(DEV_UNSIGNED_ENV) != "1":
+    # `not key` is here as well as `not must_sign` because the opt-in would
+    # otherwise be unreachable: every real caller — including the WealthMachine
+    # intake route — calls verify_headers WITHOUT require_signature, so
+    # must_sign is True and this branch never ran. An opt-in no caller can reach
+    # is not a compatibility mode, it is a dead constant.
+    if not must_sign or not key:
+        if not dev_unsigned:
             raise BridgeSecurityError(
                 f"unsigned transport requested but {DEV_UNSIGNED_ENV} is not set "
                 "to 1. The legacy path is development-only and must be asked for "

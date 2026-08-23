@@ -238,12 +238,16 @@ def test_crossing_the_boundary_did_not_raise_a_single_rung():
     pass.
 
     UPDATED 2026-08-22 and worth reading carefully, because "update the pinned
-    distribution" is exactly how this test could be made worthless. #25 moved
-    EXERCISED -> PROVEN, and NOT because of peer evidence: FOUNDER-RULING-
-    2026-08-22 ruling 4 added `contracts/routing-decision.schema.json`, and
-    PROVEN is the rung whose requirement is a typed boundary plus an organ
-    declaration. Both now genuinely resolve, so the ladder awarded what the
-    evidence supports.
+    distribution" is exactly how this test could be made worthless. Two
+    technologies moved, neither on peer evidence:
+
+    - #25 EXERCISED -> PROVEN. Ruling 4 added
+      `contracts/routing-decision.schema.json`, and PROVEN is the rung whose
+      requirement is a typed boundary plus an organ declaration. Both now
+      genuinely resolve.
+    - #31 BLUEPRINT -> BUILT. Ruling 5 built the inert application half, which
+      named tests exercise. BUILT is exactly what the ladder awards for that,
+      and the rung stops there: no closure module, no traffic.
 
     The peer-evidence claim this test exists to defend is unchanged: still no
     binding has been re-rated on the strength of a peer path. If a future edit
@@ -253,7 +257,7 @@ def test_crossing_the_boundary_did_not_raise_a_single_rung():
     from blueprint.critical_path import compute
 
     counts = {rung: len(ids) for rung, ids in compute().by_rung().items()}
-    assert counts == {"BLUEPRINT": 17, "SKETCHED": 1, "BUILT": 5,
+    assert counts == {"BLUEPRINT": 16, "SKETCHED": 1, "BUILT": 6,
                       "EXERCISED": 21, "PROVEN": 11, "HARDENED": 0,
                       "UNSUPPORTED": 0}, counts
 

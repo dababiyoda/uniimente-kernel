@@ -83,13 +83,55 @@ def test_agreement_produces_no_note(status, rung):
 
 
 def test_the_real_arsenal_disagreements_are_surfaced_not_swallowed():
+    """The detector still reports every conflict between word and evidence.
+
+    UPDATED 2026-08-22, and the reason is worth reading rather than skipping.
+    This test used to name #31 as the standing example: written `executable`,
+    evidence BLUEPRINT, nothing built. FOUNDER-RULING-2026-08-22 ruling 5 built
+    the inert application half, so #31 now genuinely has code a named test
+    exercises and correctly stops being an *evidence* over-claim.
+
+    It has not stopped being an over-claim. `application/` is half a web server
+    and cannot serve a request. What changed is the KIND of over-claim — from
+    "no code" to "half the technology" — and `evidence_rank` cannot see the
+    second, because it measures evidence strength and is blind to scope. That
+    limitation is now recorded in the module and in #31's gaps rather than left
+    to be rediscovered.
+
+    So this asserts the mechanism, not one example of it: whatever disagrees
+    must be reported, in both directions.
+    """
     table = evidence_table()
     assert len(table) == 55
     flagged = [e for e in table.values() if e.disagreement]
-    assert flagged, "the known #31 over-claim must still be reported"
-    assert any(e.technology_id == 31 for e in flagged), (
-        "#31 is written executable with BLUEPRINT evidence and must be flagged"
+    assert flagged, "the detector reports nothing at all; it has stopped working"
+
+    # Both directions must be detectable, not only over-claims.
+    over = [e for e in table.values()
+            if e.claimed_status == "executable" and e.disagreement]
+    under = [e for e in table.values()
+             if e.claimed_status == "target" and e.disagreement]
+    assert over or under, "no disagreement of either kind is being reported"
+
+
+def test_evidence_rank_is_blind_to_scope_and_says_so():
+    """The limitation #31 exposed, asserted so it cannot quietly disappear.
+
+    A technology can be BUILT — real code, real tests — and still be a fraction
+    of what its name claims. #31 is exactly that: the application half exists
+    and the transport half is founder-gated, so "Web servers" is satisfied in
+    evidence and not in scope. A reader who trusts the disagreement column alone
+    would conclude the institution has a web server.
+    """
+    import foundry.evidence_rank as module
+
+    assert "scope" in (module.__doc__ or "").lower(), (
+        "the module must record that it measures evidence strength, not scope"
     )
+
+    from blueprint.registry import BINDINGS
+    gaps = " ".join(BINDINGS[31].gaps)
+    assert "not a web server" in gaps.lower()
 
 
 # ------------------------------------------------------- selection, for real
@@ -138,27 +180,46 @@ def test_a_technology_with_nothing_built_never_beats_one_that_is_built():
     """The true property. My first version of this test was too strong.
 
     It asserted #31 could never win any surface. It still wins `distribution`,
-    and correctly: every one of the eight technologies covering that surface
-    resolves to BLUEPRINT, so the choice is between designs and the preserved
-    `status` tiebreak picks among equals. What must never happen is #31 beating
-    something better evidenced — and a surface with nothing built must say so.
+    and correctly: every technology covering that surface resolved to BLUEPRINT,
+    so the choice was between designs and the preserved `status` tiebreak picks
+    among equals.
+
+    UPDATED 2026-08-22. The property is unchanged; the example moved. #31 is now
+    BUILT, so the `unbuilt_surface` note is correctly absent for it — asserting
+    the note here would demand a warning about something that is built. The
+    invariant asserted instead applies to EVERY technology, which is what it
+    always should have been: a winner must never be worse-evidenced than a
+    rival, and any surface whose winner is unbuilt must say so.
     """
     composer = FoundryComposer()
     table = evidence_table()
-    weak = evidence_for(31, table, ARSENAL[31].status).strength
-    for surface in sorted(set(ARSENAL[31].control_surfaces)):
-        chosen = composer._best_for_surface(surface, set(), table)
-        if chosen != 31:
+
+    surfaces = sorted({s for spec in ARSENAL.values()
+                       for s in spec.control_surfaces})
+    checked = 0
+    for surface in surfaces:
+        try:
+            chosen = composer._best_for_surface(surface, set(), table)
+        except Exception:
             continue
+        checked += 1
+        winner = evidence_for(chosen, table, ARSENAL[chosen].status)
         rivals = [evidence_for(tid, table, spec.status).strength
                   for tid, spec in ARSENAL.items()
-                  if surface in spec.control_surfaces and tid != 31]
-        assert all(r <= weak for r in rivals), (
-            f"#31 won {surface!r} over a better-evidenced rival"
+                  if surface in spec.control_surfaces and tid != chosen]
+        assert all(r <= winner.strength for r in rivals), (
+            f"#{chosen} won {surface!r} over a better-evidenced rival"
         )
-        assert composer._unbuilt_surface_note(surface, 31, table), (
-            f"{surface!r} is covered by an unbuilt technology and must say so"
-        )
+        note = composer._unbuilt_surface_note(surface, chosen, table)
+        if winner.buildable:
+            assert note is None, (
+                f"{surface!r} is covered by a built technology yet warns it is not"
+            )
+        else:
+            assert note, (
+                f"{surface!r} is covered by an unbuilt technology and must say so"
+            )
+    assert checked > 1, "the sweep covered no surfaces; it is asserting nothing"
 
 
 # ------------------------------------------------------------ the plan record

@@ -536,12 +536,36 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         "needs a founder decision.",
     ], Owner.FOUNDER),
 
-    _b(31, Rung.BLUEPRINT, Reality.BLUEPRINT_ONLY, [
+    _b(31, Rung.BUILT, Reality.SIMULATED, [
         _spec("docs/PHASE_ZERO_REPORT.md#embassy pattern"),
+        _impl("application/router.py"),
+        _test("tests/unit/test_application_inertness.py::"
+              "test_the_whole_request_path_produces_zero_external_effects"),
     ], [
+        # BUILT under FOUNDER-RULING-2026-08-22 ruling 5 (DEC-OM-004), Option A:
+        # the inert application half only. BUILT is what the ladder awards for a
+        # tested implementation, and the rung deliberately stops there — there
+        # is no closure module and no traffic, so EXERCISED would be inflation.
+        # Reality is SIMULATED, not IMPLEMENTED: every byte this package has
+        # ever parsed came from a fixture.
+        "TRANSPORT HALF ABSENT AND FOUNDER-GATED. No listener, socket, bind, "
+        "port, outbound connection or HTTP client exists in this institution. "
+        "`application/` cannot serve a request and has never processed a byte "
+        "originating outside its own process. Building the transport half "
+        "requires a separate explicit founder authorization; it is not "
+        "scheduled work.",
+        "This is not a web server and must not be described as one. What exists "
+        "is the pure half — bytes in, bytes out — with the seam at a function "
+        "signature so that adding a network would be an addition someone has to "
+        "make and review, never an emergent property of this package.",
+        "Any network primitive appearing in application/ is a STOP-THE-LINE "
+        "failure, not a code-review finding: its presence means the boundary "
+        "was not being maintained. Enforced structurally over every module's "
+        "AST and independently by running the full request path under "
+        "sys.addaudithook with the parent process asserting.",
         "No kernel-side HTTP surface. The intake endpoint named as the next gate in "
         "the Phase Zero report is unbuilt, so organs must deliver through tests.",
-    ], Owner.CLAUDE),
+    ], Owner.FOUNDER),
 
     _b(32, Rung.BLUEPRINT, Reality.BLUEPRINT_ONLY, [
         _spec(f"{FBO}#1. Governing Principle"),

@@ -6,10 +6,33 @@ Composer used it as the *primary* sort key when choosing which technology covers
 a control surface, so the institution selected what it had described most
 confidently rather than what it had actually built.
 
-The divergence is measurable, not hypothetical. On this repository:
+The divergence is measurable, not hypothetical. As this module was written:
 
     #31 Web servers         status=executable (best rank)  evidence=BLUEPRINT
     #14 Institutional shell status=target     (worst rank) evidence=EXERCISED
+
+## This measures evidence strength. It is blind to SCOPE.
+
+Recorded 2026-08-22, when #31 stopped being flagged and the reason mattered.
+FOUNDER-RULING-2026-08-22 ruling 5 built the inert application half of #31 —
+real request parsing, routing and response rendering, exercised by named tests.
+The disagreement detector correctly stopped reporting it: `executable` versus
+BUILT is no conflict by these definitions.
+
+But #31 is called *Web servers*, and what exists cannot serve a request. The
+transport half is absent and founder-gated. So the over-claim did not go away;
+it changed kind, from "no code" to "half the technology" — and **nothing in this
+module can see the second**. Strength answers "is there code a test exercises?"
+It never asks "is this all of what the name promises?"
+
+A reader trusting the disagreement column alone would conclude the institution
+has a web server. The scope gap lives in `blueprint/registry.py` under #31,
+where it is written in words, and `tests/unit/test_evidence_rank.py::
+test_evidence_rank_is_blind_to_scope_and_says_so` keeps the two in step.
+
+Worth generalising: any technology here can be BUILT and still be a fraction of
+its own name. This module ranks evidence honestly and is not a completeness
+oracle.
 
 So the old key would preferentially select a technology with nothing built, and
 deprioritise one that runs inside the institution's own loop with tests and a

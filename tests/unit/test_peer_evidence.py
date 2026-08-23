@@ -236,13 +236,37 @@ def test_crossing_the_boundary_did_not_raise_a_single_rung():
     what the peer implements, and nineteen such judgments at once is how a ladder
     inflates. The mechanism is built and the mappings are left for a deliberate
     pass.
+
+    UPDATED 2026-08-22 and worth reading carefully, because "update the pinned
+    distribution" is exactly how this test could be made worthless. #25 moved
+    EXERCISED -> PROVEN, and NOT because of peer evidence: FOUNDER-RULING-
+    2026-08-22 ruling 4 added `contracts/routing-decision.schema.json`, and
+    PROVEN is the rung whose requirement is a typed boundary plus an organ
+    declaration. Both now genuinely resolve, so the ladder awarded what the
+    evidence supports.
+
+    The peer-evidence claim this test exists to defend is unchanged: still no
+    binding has been re-rated on the strength of a peer path. If a future edit
+    changes these counts, the question to answer is which technology moved and
+    on what evidence — not which number to retype.
     """
     from blueprint.critical_path import compute
 
     counts = {rung: len(ids) for rung, ids in compute().by_rung().items()}
     assert counts == {"BLUEPRINT": 17, "SKETCHED": 1, "BUILT": 5,
-                      "EXERCISED": 22, "PROVEN": 10, "HARDENED": 0,
+                      "EXERCISED": 21, "PROVEN": 11, "HARDENED": 0,
                       "UNSUPPORTED": 0}, counts
+
+    # The reason #25 advanced, asserted rather than described, so this pin
+    # cannot be re-typed later without the justification also being true.
+    from blueprint.registry import BINDINGS
+    from blueprint.ladder import EvidenceKind
+
+    kinds = {ref.kind for ref in BINDINGS[25].evidence}
+    assert EvidenceKind.CONTRACT_SCHEMA in kinds
+    assert EvidenceKind.MANIFEST_CAPABILITY in kinds
+    # And HARDENED stays out of reach, which needs a real external outcome.
+    assert EvidenceKind.EXTERNAL_OUTCOME not in kinds
 
 
 def test_peer_evidence_grants_nothing():

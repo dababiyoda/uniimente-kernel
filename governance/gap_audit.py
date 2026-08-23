@@ -400,8 +400,13 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (26, "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`",
      _asymmetric_identity_is_not_adopted),
     (30, "The Gate does not emit witness contract v2", _witness_v2_is_not_emitted),
-    (25, "RoutingDecision is not a typed institutional contract",
-     _routing_decision_is_untyped),
+    # The #25 RoutingDecision-typing check was retired 2026-08-22, the same way
+    # #26 and #48 were: it reported the gap STALE, the register was corrected in
+    # the same change, and a check whose subject no longer exists would report
+    # ANCHOR LOST forever. `contracts/routing-decision.schema.json` now types the
+    # boundary and `tests/unit/test_routing_decision_contract.py` validates real
+    # router output against it — including that an extra field fails, which is
+    # what keeps it ONE contract rather than the first of two.
     (37, "No marketplace. Bridge F has no implementation", _bridge_f_is_unimplemented),
     (39, "No account, ledger export, or reconciliation against a real balance",
      _no_external_reach),

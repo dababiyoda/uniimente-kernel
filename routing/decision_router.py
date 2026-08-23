@@ -161,6 +161,14 @@ class RoutingDecision:
     criteria: dict
     weights_are_declared_not_learned: bool = True
     authorizes: None = None                  # explicit: a decision is not a grant
+    #: Where the selected implementation came from, carried for audit only.
+    #: Rehomed from PR #70, where `Implementation.origin` was correct and was
+    #: deliberately kept out of the scorer's reach so a mechanism could not win
+    #: for resembling a metaphor. That separation is preserved: this field is
+    #: written to the decision AFTER selection and is absent from
+    #: `Implementation.selectable_view()`, which is the only projection a scorer
+    #: sees.
+    selected_origin: str | None = None
 
     @property
     def is_refusal(self) -> bool:
@@ -182,6 +190,18 @@ class RoutingDecision:
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
+        """The canonical typed boundary, matching `contracts/routing-decision`.
+
+        Ratified as canonical by FOUNDER-RULING-2026-08-22 ruling 4: there is
+        one typed RoutingDecision owned by the Kernel, and organ adapters
+        consume it rather than copying it into a parallel shape. The schema sets
+        `additionalProperties: false`, so a field added here without being added
+        there fails validation instead of quietly becoming a second dialect.
+
+        `authorizes` is typed `null` and `grants_issued` is `const 0`. Both are
+        required: the absence of authority is asserted at the boundary rather
+        than left to be inferred from the absence of a field.
+        """
         return {
             "contract": self.contract,
             "consequence_class": self.consequence_class,
@@ -191,7 +211,9 @@ class RoutingDecision:
             "decided_at": self.decided_at,
             "criteria": self.criteria,
             "weights_are_declared_not_learned": self.weights_are_declared_not_learned,
+            "authorizes": self.authorizes,
             "grants_issued": 0,
+            "selected_origin": self.selected_origin,
         }
 
 

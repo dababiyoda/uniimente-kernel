@@ -418,25 +418,40 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         _spec(f"{FBO}#4.14 Load Balancer and Cognitive Router"),
         _impl("routing/decision_router.py"),
         _test("tests/unit/test_decision_router.py::test_router_authorizes_nothing"),
-        _closure("decision_router"), _cap("kernel.decision_router"),
+        _test("tests/unit/test_routing_decision_contract.py::"
+              "test_the_provider_is_called_in_exactly_one_place_in_the_institution"),
+        _closure("decision_router"), _contract("routing-decision"),
+        _cap("kernel.decision_router"),
     ], [
-        "CANONICAL SELECTOR UNRESOLVED — this technology is not closed. Two routers "
-        "exist. `routing/decision_router.py` (this one, canonical on this branch) "
-        "returns a RoutingDecision and never invokes a provider. Draft PR #70 ships "
-        "`capabilities/router.py`, whose `select()` is decision-only but whose "
-        "`resolve()` calls `chosen.provider()` and therefore instantiates code — it "
-        "does not satisfy the decision-only invariant. Both are preserved (FBO §9, "
-        "§12); neither may be silently promoted (§3).",
-        "MIGRATION PATH for PR #70's router, if the founder makes this one canonical: "
-        "`resolve()` moves out of the router to a caller holding a capability grant, "
-        "leaving `select()` as a decision-only adapter over this router. PR #70 also "
-        "carries lifecycle machinery (Implementation.origin, LIFECYCLES, "
-        "restore/set_lifecycle) that this router does not — that machinery should be "
-        "retained and rehomed, not discarded.",
+        # RESOLVED 2026-08-22 by FOUNDER-RULING-2026-08-22 ruling 4 (DEC-OM-001),
+        # which selected routing/decision_router.py as the canonical selector.
+        # The two gaps that named the unresolved selection and the untyped
+        # boundary are closed and replaced by the record of what was done, so a
+        # reader is not told a settled question is open. The third gap below is
+        # UNCHANGED, because no outcome has been observed.
+        "CANONICAL SELECTOR RESOLVED — `routing/decision_router.py` is canonical. "
+        "PR #70 is preserved and its useful machinery rehomed rather than "
+        "discarded (FBO §9, §12): `Implementation.origin`, the §4.3 LIFECYCLES, "
+        "set_lifecycle and loss-recording now live in "
+        "`capabilities/implementations.py`, which holds implementations and "
+        "moves them through their lifecycle but neither ranks nor constructs. "
+        "PR #70's `resolve()` — the three lines that selected and then called "
+        "`chosen.provider()` — moved to `capabilities/instantiate.py`, where "
+        "construction requires a capability and crosses the Consequence Gate. "
+        "`provider()` now has exactly one call site in the institution, asserted "
+        "structurally.",
+        "PR #70's rule that `origin` is recorded but never scored is preserved: "
+        "`Implementation.selectable_view()` is the only projection a selector "
+        "sees and excludes both `origin` (so a mechanism cannot win for "
+        "resembling a metaphor) and `provider` (so a selector that could reach "
+        "the constructor could call it).",
         "No live traffic has routed through either router. Every decision is recorded, "
         "none has been compared against an outcome, so selection weights are declared "
         "rather than learned.",
-        "RoutingDecision is not a typed institutional contract.",
+        "The two routers are NOT yet benchmarked against each other. The ruling "
+        "was explicit that architectural selection today must not be "
+        "misrepresented as evidence that one router produces better outcomes; "
+        "challenger evaluation waits for real outcomes, and CVO reads 0.",
     ], Owner.FOUNDER),
 
     _b(26, Rung.BUILT, Reality.IMPLEMENTED, [

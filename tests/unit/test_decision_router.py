@@ -77,14 +77,41 @@ def test_the_canonical_selector_never_invokes_a_provider():
     assert not hasattr(DecisionRouter, "resolve")
 
 
-def test_the_router_conflict_is_recorded_rather_than_quietly_settled():
-    """Technology #25 must not read as closed while two routers exist."""
+def test_the_router_conflict_is_recorded_as_resolved_and_says_how():
+    """Technology #25 was settled by a founder, and the record must show it.
+
+    This test previously asserted the opposite — that #25 read as UNRESOLVED —
+    and that was correct while two routers competed with no ruling between them.
+    FOUNDER-RULING-2026-08-22 ruling 4 selected `routing/decision_router.py`, so
+    asserting the question is still open would now be the falsehood.
+
+    What is asserted instead is the harder property: a resolution recorded with
+    its mechanism. "We picked one" is not enough — the register must say what
+    happened to the one not picked, because the Build Order's whole preservation
+    rule turns on the difference between superseded and deleted.
+    """
     from blueprint.registry import BINDINGS
 
     gaps = " ".join(BINDINGS[25].gaps)
-    assert "CANONICAL SELECTOR UNRESOLVED" in gaps
-    assert "capabilities/router.py" in gaps and "resolve()" in gaps
-    assert "MIGRATION PATH" in gaps
+    assert "CANONICAL SELECTOR RESOLVED" in gaps
+    # Preserved, and specifically where its machinery went.
+    assert "capabilities/implementations.py" in gaps
+    assert "capabilities/instantiate.py" in gaps
+    assert "resolve()" in gaps, "the record must say what happened to resolve()"
+    # And the claim that is still NOT made.
+    assert "No live traffic has routed through either router" in gaps
+
+
+def test_the_registry_does_not_claim_the_routers_were_benchmarked():
+    """The ruling's explicit caution, held in the register.
+
+    > Architectural selection today must not be misrepresented as evidence that
+    > one router produces better outcomes.
+    """
+    from blueprint.registry import BINDINGS
+
+    gaps = " ".join(BINDINGS[25].gaps)
+    assert "NOT yet benchmarked" in gaps
 
 
 def test_a_request_beyond_every_ceiling_refuses_rather_than_picking_least_bad():

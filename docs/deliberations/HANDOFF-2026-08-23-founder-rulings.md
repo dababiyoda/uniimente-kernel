@@ -137,11 +137,36 @@ selector with construction behind the Gate; an application boundary with no
 transport.
 
 Did not move: persistent state across restart, the Founder Cockpit, standing
-bounded mandates, RailScout as an actual research-refinery runtime. DALEOBANKS
-and WMI were not touched this session — the kernel-side blockers came first, and
-the peer-repo `KNOWN_IDENTITIES` change is still outstanding on both mirrors.
+bounded mandates, RailScout as an actual research-refinery runtime.
+
+**Correction, made later in the same session.** An earlier draft of this file
+said the peer-repo `KNOWN_IDENTITIES` change was still outstanding on both
+mirrors. It is not — both carry `"kernel"` on this branch (DALEOBANKS
+`f787963`). The kernel manifests still report it unresolved because they pin
+commit `829c5f2`, where the claim was true. That is the commit pin working, not
+drift; the manifests update when the peer PRs merge.
+
+Both peers WERE touched, after that correction, and it surfaced a live defect:
+`verify_headers` auto-downgraded in all three mirrors, and in WealthMachine the
+downgrade reached a live HTTP endpoint — an unsigned POST to
+`/api/opportunities/intake` returned `200` whenever `WEALTHMACHINE_SIGNING_KEY`
+was unset, while the function's own docstring said "fail closed, never degrade".
+Now `401`, with a permanent guard. Four WMI tests were relying on that
+permissiveness without saying so; each now opts in explicitly.
+
+Deployment note: if any environment runs that service without a signing key
+today, intake will now reject rather than accept. That is intended, and it is a
+behaviour change worth knowing before merge.
 
 ---
+
+## Session close
+
+`docs/deliberations/SESSION-CLOSE-2026-08-23-continuation-brief.md` carries the
+founder-set execution order, the verified end state across all three repos, and
+one hazard: routine `trig_01R7tPEGQxM5G2WLaHZH81EN` is stale, could not be
+disabled from the session (every trigger tool returned "requires approval"), and
+its prompt would instruct a session to restore the 20 failures this work closed.
 
 ## Working notes
 

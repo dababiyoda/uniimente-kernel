@@ -212,3 +212,40 @@ def test_bridge_a_still_halts_at_transport_when_the_peer_cannot_authenticate():
     assert run.completed is False
     assert run.halted_at is sv.Halt.TRANSPORT_REFUSED
     assert "transport refused" in run.reason
+
+
+# ---------------------------------- the opt-in must be REACHABLE, not decorative
+def test_the_opt_in_works_for_a_caller_that_passes_no_require_signature(monkeypatch):
+    """The bug this pins: an opt-in no real caller could reach.
+
+    The first version of this fix put the dev branch behind `if not must_sign`,
+    and `must_sign` defaults to True. Every real caller — including
+    WealthMachine's HTTP intake route — calls `verify_headers` WITHOUT
+    `require_signature`, so the branch never ran and the opt-in was a dead
+    constant: setting it changed nothing, and the endpoint returned 401
+    regardless.
+
+    Found by running the peer suites, not by reading the diff.
+    """
+    monkeypatch.setenv(bt.DEV_UNSIGNED_ENV, "1")
+    meta = bt.verify_headers(_headers(), b"{}", nonce_cache=bt.NonceCache())
+    assert meta["signed"] == "false"
+    assert meta["identity_isolated"] == "false"
+    assert meta["dev_compatibility_mode"] == "true"
+
+
+def test_an_explicit_demand_for_a_signature_beats_the_dev_flag(monkeypatch):
+    """`require_signature=True` means the caller demands one. The flag must not
+    override a demand — only the default and the explicit-unsigned cases."""
+    monkeypatch.setenv(bt.DEV_UNSIGNED_ENV, "1")
+    with pytest.raises(bt.BridgeSecurityError, match="no signing key configured"):
+        bt.verify_headers(_headers(), b"{}", nonce_cache=bt.NonceCache(),
+                          require_signature=True)
+
+
+def test_a_configured_key_still_requires_a_real_signature(monkeypatch):
+    """The opt-in must not weaken the signed path when a key IS configured."""
+    monkeypatch.setenv(bt.SIGNING_KEY_ENV, "shared-secret")
+    monkeypatch.setenv(bt.DEV_UNSIGNED_ENV, "1")
+    with pytest.raises(bt.BridgeSecurityError):
+        bt.verify_headers(_headers(), b"{}", nonce_cache=bt.NonceCache())

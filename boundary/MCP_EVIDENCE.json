@@ -1,0 +1,32 @@
+{
+  "evidence_version": "1.0.0",
+  "component": "mcp-proposal-boundary",
+  "owner": "CHATGPT",
+  "claimed_state": "BUILT",
+  "reality": "IMPLEMENTED",
+  "evidence": [
+    {
+      "kind": "IMPLEMENTATION_PATH",
+      "locator": "boundary/mcp.py",
+      "resolved": true
+    },
+    {
+      "kind": "CONTRACT_SCHEMA",
+      "locator": "handoff/schemas/boundary-envelope.schema.json",
+      "resolved": true
+    },
+    {
+      "kind": "TEST_NODE",
+      "locator": "tests/unit/test_mcp_boundary.py::test_well_formed_mcp_is_an_inert_proposal_and_shared_hmac_is_not_isolated",
+      "resolved": true
+    }
+  ],
+  "external_effects": 0,
+  "authority_minted": false,
+  "gaps": [
+    "No live MCP peer, network transport, tool invocation, or external outcome was exercised.",
+    "A durable replay store and institutional sender resolver must be supplied by the governed runtime.",
+    "Shared HMAC authenticates a claimed identity but does not provide per-service identity isolation."
+  ],
+  "bundle_digest": "fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c"
+}

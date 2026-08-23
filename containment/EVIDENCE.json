@@ -1,0 +1,35 @@
+{
+  "evidence_version": "1.0.0",
+  "component": "containment-policy-and-evidence",
+  "owner": "CHATGPT",
+  "claimed_state": "BUILT",
+  "reality": "IMPLEMENTED",
+  "evidence": [
+    {
+      "kind": "IMPLEMENTATION_PATH",
+      "locator": "containment/policy.py",
+      "resolved": true
+    },
+    {
+      "kind": "CONTRACT_SCHEMA",
+      "locator": "handoff/schemas/containment-requirement.schema.json",
+      "resolved": true
+    },
+    {
+      "kind": "TEST_NODE",
+      "locator": "tests/unit/test_containment.py::test_unavailable_is_an_honest_schema_valid_decision_not_a_downgrade",
+      "resolved": true
+    }
+  ],
+  "external_effects": 0,
+  "authority_minted": false,
+  "gaps": [
+    "No container, Wasm component, or microVM workload was launched by this implementation.",
+    "Executable inventory is explicitly unverified and never establishes an enforced isolation boundary.",
+    "Independent production verifier, runtime pinning, and host hardening evidence remain unavailable.",
+    "The governed runtime must inject an atomic durable replay recorder; this package provides no storage backend and has not crash-tested one.",
+    "Read-only Python policy mappings harden the reproduced mutation defect but are not a hostile same-process security boundary.",
+    "The microVM floor for irreversible consequences is policy validation only; no hypervisor boundary, host egress control, or guest isolation was exercised."
+  ],
+  "bundle_digest": "fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c"
+}

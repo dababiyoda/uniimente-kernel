@@ -95,6 +95,41 @@ capabilities:
     consumes: [wire-opportunity-packet, wire-venture-assessment]
     produces: [opportunity-packet, venture-assessment]
     lifecycle: TESTED
+  - capability_id: kernel.opus_maximus_blueprint
+    description: >-
+      Evidence-bound hardening ladder over the 55-technology Foundry arsenal;
+      awards a rung only where the evidence resolves, and computes the unblocked
+      build frontier from the arsenal's own dependency graph
+    implementation_path: blueprint/
+    consumes: [organ-manifest]
+    produces: []
+    lifecycle: TESTED
+  - capability_id: kernel.capability_discovery
+    description: >-
+      Read-only institutional directory over organ manifests; publishes offered
+      capabilities, contract versions, declared health and authority requirements.
+      Discovery does not grant access
+    implementation_path: discovery/service.py
+    consumes: [organ-manifest]
+    produces: []
+    lifecycle: TESTED
+  - capability_id: kernel.knowledge_graph
+    description: >-
+      Provenance-aware projection of repository, contract, capability, organ and
+      technology into one traversable graph; a node with no provenance is refused
+    implementation_path: knowledge/graph.py
+    consumes: [organ-manifest]
+    produces: []
+    lifecycle: TESTED
+  - capability_id: kernel.decision_router
+    description: >-
+      Ranks competing implementations of a contract by declared evidence maturity,
+      health, reversibility, reliability, cost and latency. Records every decision
+      and authorizes none
+    implementation_path: routing/decision_router.py
+    consumes: [organ-manifest]
+    produces: []
+    lifecycle: TESTED
 contracts:
   consumes: [wire-opportunity-packet, wire-venture-assessment, organ-manifest]
   produces: [opportunity-packet, venture-assessment, capability-grant, decision,

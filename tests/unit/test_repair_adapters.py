@@ -37,7 +37,7 @@ REPAIR_DIR = os.path.join(ROOT, "evolution", "repair")
 
 def _live_inputs():
     from linker.manifest import load_all
-    return load_all(), os.path.join(ROOT, "contracts")
+    return load_all(spec.CORPUS_DIR), os.path.join(ROOT, "contracts")
 
 
 def _registry_with_original():

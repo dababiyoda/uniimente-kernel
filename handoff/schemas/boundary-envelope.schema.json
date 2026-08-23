@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/handoff/boundary-envelope.schema.json",
+  "title": "MCP/A2A boundary envelope",
+  "description": "The only shape that may cross the institution's outer boundary. Acceptance proves authenticity and well-formedness. It proves nothing about authority: a perfectly valid envelope becomes a PROPOSAL and nothing else.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "protocol_version", "envelope_id", "sender", "issued_at",
+               "nonce", "payload_kind", "payload", "disposition"],
+  "properties": {
+    "protocol": {"enum": ["mcp", "a2a"]},
+    "protocol_version": {
+      "const": "1.0.0",
+      "description": "Exact match. A different version is rejected outright — never downgraded, never best-effort parsed."
+    },
+    "envelope_id": {"type": "string", "minLength": 8, "maxLength": 128},
+    "sender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "authenticated"],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "pattern": "^spiffe://uniimente\\.internal/(organ|agent|guest)/[a-z0-9-]+$",
+          "description": "Must resolve in the Capability Discovery directory. Unknown senders are refused."
+        },
+        "authenticated": {"type": "boolean"},
+        "authentication_method": {"enum": ["hmac_shared_secret", "mtls", "none"]},
+        "identity_is_isolated": {
+          "type": "boolean",
+          "description": "False when authentication_method is hmac_shared_secret: the identity is CLAIMED, not cryptographically isolated, because every mirror holds the same secret."
+        }
+      }
+    },
+    "issued_at": {"type": "string", "format": "date-time"},
+    "nonce": {"type": "string", "minLength": 16, "description": "Single use. A repeat is a replay and is refused."},
+    "payload_kind": {"enum": ["capability_request", "observation", "question", "status"]},
+    "payload": {"type": "object"},
+    "disposition": {
+      "const": "PROPOSAL",
+      "description": "Structural. An inbound envelope cannot declare itself an instruction, a command, or an authorization."
+    },
+    "confers_authority": {
+      "const": false,
+      "description": "Present and false so the answer is explicit rather than inferred from absence."
+    }
+  }
+}

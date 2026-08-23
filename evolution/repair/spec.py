@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 
 from evolution.experiment import ExperimentCompiler, ExperimentSpec
 
@@ -122,14 +123,37 @@ POST_DISABLE_BASELINE = 0.0
 # 3. Measurement corpus and held-out corpus
 # --------------------------------------------------------------------------
 
-#: The measurement corpus is the live institution: organs/*.manifest.yaml
-#: against contracts/*.schema.json at BASELINE_COMMIT.
+#: AMENDED 2026-08-22 under founder ruling FOUNDER-RULING-2026-08-22, which
+#: approved Option A of DEC-OM-002. This is a deliberate spec amendment and it
+#: moves SPEC_SHA256; the procedure the seal's own test prescribes — say so in
+#: the commit message and in docs/release/package-3/ — has been followed.
+#:
+#: It previously read `"manifests": "organs/*.manifest.yaml"` with
+#: `corpus_id: "LIVE"`: a sealed experiment bound to a mutable directory. That
+#: binding is CONTRADICTION-0001. An experiment whose inputs can change cannot
+#: be reproduced, and the recorded Package 3 run could not be re-executed and
+#: get its recorded answer once two new organ manifests took the live corpus
+#: from 7 unresolved rows to 17.
+#:
+#: **No expectation value is changed by this amendment.** REQUIRED_EDGE_TRIPLES,
+#: REQUIRED_REFUSALS and unresolved_count = 7 are exactly as frozen. Only the
+#: binding from experiment to input is corrected, from a live glob to the
+#: byte-identical freeze-time snapshot under `evolution/repair/corpus/`.
+#:
+#: This corpus answers "can the historical experiment be reproduced?" — nothing
+#: else. It is NOT a statement about the institution's current health, and
+#: `evolution/repair/live_health.py` exists so the two can never be confused.
 MEASUREMENT_CORPUS = {
-    "corpus_id": "LIVE",
-    "manifests": "organs/*.manifest.yaml",
+    "corpus_id": "FROZEN-627ec48",
+    "manifests": "evolution/repair/corpus/*.manifest.yaml",
     "contracts": "contracts/*.schema.json",
     "expected": "REQUIRED_EDGE_TRIPLES + REQUIRED_REFUSALS",
+    "amended_by": "FOUNDER-RULING-2026-08-22 (DEC-OM-002 Option A)",
+    "supersedes": {"corpus_id": "LIVE", "manifests": "organs/*.manifest.yaml"},
 }
+
+#: Absolute path to the frozen corpus, so no caller reconstructs it by hand.
+CORPUS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpus")
 
 #: HELD-OUT CORPUS. Inputs and expected outputs are frozen here, in the first
 #: commit, before any candidate exists. Expectations were derived by hand from
@@ -560,7 +584,44 @@ def spec_hash() -> str:
     return hashlib.sha256(canonical_json().encode()).hexdigest()
 
 
+def expectations_hash() -> str:
+    """Seal every frozen table EXCEPT the corpus binding.
+
+    The amendment below repoints which input the experiment reads. The whole
+    claim it rests on is that it changes *what is measured against*, never *what
+    was expected*. A sentence in a docstring cannot carry that claim, because
+    the reader would have to trust it. This hash can: it is computed over every
+    expectation table with `measurement_corpus` removed, so it is invariant
+    under a corpus repoint and moves the moment any threshold, edge triple,
+    refusal count or result expectation is touched.
+
+    `EXPECTATIONS_SHA256` below is the value computed from the spec **as it
+    stood before the amendment**, at seal `6f6d7dab…c4ab7f4a`. Its equality with
+    this function today is the proof, not the promise, that no expectation value
+    moved.
+    """
+    tables = {k: v for k, v in _FROZEN_TABLES.items() if k != "measurement_corpus"}
+    return hashlib.sha256(
+        json.dumps(tables, sort_keys=True, separators=(",", ":"),
+                   default=list).encode()).hexdigest()
+
+
+#: Computed from the PRE-amendment spec (seal `6f6d7dab…c4ab7f4a`) and pinned
+#: here unchanged. Deliberately not in `_FROZEN_TABLES`: a value that sealed
+#: itself would prove nothing.
+EXPECTATIONS_SHA256 = "8720b0b1c94ceba58ef2babfb0adef3466b85e72c8c5e0a8d4d069d7b3cd746a"
+
+
 #: The seal. Computed from the tables above at the moment of freezing. A test
 #: asserts equality, so any later edit to this module fails the build instead
 #: of quietly moving the goalposts.
-SPEC_SHA256 = "6f6d7dab40cf023dd69995511a3db298482c31b0bb39675d4a5c47f7c4ab7f4a"
+#:
+#: AMENDED once, 2026-08-22, under FOUNDER-RULING-2026-08-22 (DEC-OM-002 Option
+#: A). The prior seal was `6f6d7dab40cf023dd69995511a3db298482c31b0bb39675d4a5c47f7c4ab7f4a`
+#: and covered a MEASUREMENT_CORPUS bound to a live glob. The amendment repoints
+#: that binding at the frozen corpus and changes no expectation value. Rationale
+#: and full diff of intent: `docs/release/package-3/AMENDMENT-001-frozen-corpus.md`.
+#: The superseded seal is retained here rather than deleted, so the amendment is
+#: visible in the file and not only in git history.
+SPEC_SHA256_ORIGINAL = "6f6d7dab40cf023dd69995511a3db298482c31b0bb39675d4a5c47f7c4ab7f4a"
+SPEC_SHA256 = "c02e634203e2dd2e4689cc90548a917eadaadfcdc324350ac086ed937b0a6fc8"

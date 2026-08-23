@@ -1,0 +1,15 @@
+{
+  "document": {
+    "consequence_class": "read_only",
+    "enforcement_kind": "os_kernel_boundary",
+    "granted_tier": "in_process",
+    "module_id": "m",
+    "required_tier": "in_process",
+    "requirement_version": "1.0.0",
+    "trust": "internal_trusted"
+  },
+  "expect": "REJECT",
+  "schema": "containment-requirement",
+  "vector_id": "con-03-in-process-claiming-kernel-boundary-refused",
+  "why": "INV-7. In-process execution is policy enforcement and may not claim an OS boundary."
+}

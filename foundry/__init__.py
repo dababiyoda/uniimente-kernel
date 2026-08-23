@@ -18,6 +18,12 @@ from .composition import (
     EvidenceExperiment,
     FoundryComposer,
 )
+from .evidence_rank import (
+    TechnologyEvidence,
+    UnknownTechnology,
+    evidence_table,
+    selection_rank,
+)
 from .advantage import (
     AdvantageArchitecture,
     AdvantageFoundry,
@@ -50,6 +56,7 @@ __all__ = [
     "ARSENAL", "TechnologySpec", "by_surface", "technology",
     "AttachmentStep", "CompositionPlan", "CompositionRefused",
     "CompositionRequest", "EvidenceExperiment", "FoundryComposer",
+    "TechnologyEvidence", "UnknownTechnology", "evidence_table", "selection_rank",
     "AdvantageArchitecture", "AdvantageFoundry", "AdvantageRefused",
     "CapabilityNeed", "ClosureState", "ExternalOutcome", "OpportunitySpec",
     "SealedAdvantageGenome", "StrategyBranch", "STRATEGY_ROUTES",

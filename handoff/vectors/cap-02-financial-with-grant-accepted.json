@@ -1,0 +1,16 @@
+{
+  "document": {
+    "budget_usd": 100.0,
+    "capability_id": "wealthmachine.decision_engine",
+    "consequence_class": "financial",
+    "grant_reference": "grant-7f31",
+    "legal_principal": "alfonso_lopez",
+    "request_version": "1.0.0",
+    "requested_by": "spiffe://uniimente.internal/organ/wealthmachine",
+    "reversible": false
+  },
+  "expect": "ACCEPT",
+  "schema": "capability-request",
+  "vector_id": "cap-02-financial-with-grant-accepted",
+  "why": "A financial request is well-formed only when it already names a grant."
+}

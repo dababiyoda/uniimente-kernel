@@ -44,7 +44,7 @@ CANDIDATE_SOURCES = {
 
 def _live_inputs():
     from linker.manifest import load_all
-    return load_all(), os.path.join(ROOT, "contracts")
+    return load_all(spec.CORPUS_DIR), os.path.join(ROOT, "contracts")
 
 
 def _source_of(candidate_id):

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/routing-decision.schema.json",
+  "title": "RoutingDecision",
+  "description": "One canonical typed boundary for a routing recommendation, owned by the Kernel. A routing decision is a recommendation and its complete rationale. It confers no authority: reading one grants nothing, and `authorizes` is required to be null so the absence is asserted rather than assumed. Organ adapters CONSUME this contract; they do not copy it into a parallel shape. Ratified by FOUNDER-RULING-2026-08-22 ruling 4 (DEC-OM-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "consequence_class",
+    "selected",
+    "ranking",
+    "refused",
+    "decided_at",
+    "criteria",
+    "weights_are_declared_not_learned",
+    "authorizes",
+    "grants_issued"
+  ],
+  "properties": {
+    "contract": {
+      "type": "string",
+      "description": "The capability or contract this decision routes for"
+    },
+    "consequence_class": {
+      "type": "string",
+      "enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"],
+      "description": "The consequence class of the request being routed, in the institution's ONE canonical vocabulary — the same values used by policy.engine, capabilities.genome, discovery.service and every organs/*.manifest.yaml. A candidate whose authority ceiling is below this is removed from consideration, never merely down-ranked. The first draft of this schema invented a parallel set (internal/reversible/external); it is recorded here because a second consequence vocabulary is exactly the parallel contract this ruling forbids, and it would have type-checked cleanly while meaning something different to every other component."
+    },
+    "selected": {
+      "type": ["string", "null"],
+      "description": "The chosen candidate, or null. Null is a valid FINAL answer meaning no candidate may serve this request — not an invitation to retry with weaker criteria."
+    },
+    "ranking": {
+      "type": "array",
+      "description": "Every eligible candidate with its score and breakdown, so a reader can reconstruct why the selection was made rather than trusting it.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "score", "breakdown"],
+        "properties": {
+          "candidate_id": { "type": "string" },
+          "score": { "type": "number" },
+          "breakdown": {
+            "type": "object",
+            "description": "Per-criterion contribution. Present so a decision can be audited without re-running the scorer.",
+            "additionalProperties": { "type": "number" }
+          }
+        }
+      }
+    },
+    "refused": {
+      "type": "array",
+      "description": "Candidates removed from consideration, each with its reason. A decision that reported only the winner would hide the refusals, which are the part worth reviewing.",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "prefixItems": [
+          { "type": "string", "description": "candidate_id" },
+          { "type": "string", "description": "why it was refused" }
+        ]
+      }
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp"
+    },
+    "criteria": {
+      "type": "object",
+      "description": "The weights actually applied, carried with the decision. A decision whose weights are not recorded cannot be compared against a later one.",
+      "additionalProperties": true
+    },
+    "weights_are_declared_not_learned": {
+      "type": "boolean",
+      "description": "True while the weights are hand-chosen rather than fitted to outcomes. Cannot become false until real outcomes exist to fit them; until then, presenting a router as outcome-optimised would be a claim the institution has not earned. See FOUNDER-RULING-2026-08-22: architectural selection today must not be misrepresented as evidence that one router produces better outcomes."
+    },
+    "authorizes": {
+      "type": "null",
+      "description": "Always null, and required. A routing decision is not a capability grant, a budget, an approval or an execution right. Typed as null rather than omitted so that any future attempt to carry authority through this boundary fails schema validation instead of passing silently."
+    },
+    "grants_issued": {
+      "const": 0,
+      "description": "Always exactly zero, and typed as a const rather than a minimum. A router that issued one grant would be a router that authorised, and this boundary makes that a schema violation instead of a code review finding."
+    },
+    "selected_origin": {
+      "type": ["string", "null"],
+      "enum": ["CANONICAL", "RETRIEVED", "RECOMPOSED", "GENERATED", null],
+      "description": "Where the selected implementation came from. Recorded for audit and NEVER an input to selection — a mechanism must not win for resembling a metaphor nor lose for being conventional. The scorer cannot read it; see capabilities.implementations.Implementation.selectable_view."
+    }
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "contract_version": "1.0.0",
+  "digest_algorithm": "sha256",
+  "digest_definition": "The bundle digest is SHA-256 over the exact bytes of this file as committed, serialized with indent=2, sort_keys=True and a trailing newline.",
+  "file_count": 36,
+  "files": [
+    {
+      "path": "contracts/capability-grant.schema.json",
+      "sha256": "eb7fb4a01308f016fb1c15f907dfd6f3237eccf4f419ff8c3b633c9bbe179a3d"
+    },
+    {
+      "path": "contracts/evidence.schema.json",
+      "sha256": "9fbda9f16482870e2a713b028df9a6cc0f28cb4097b84f3f68f09af1eeed0deb"
+    },
+    {
+      "path": "contracts/organ-manifest.schema.json",
+      "sha256": "38def15ae2f68b6cbb98e50020c268e6fdd7ee204f3660564eeefc9f0e078b6f"
+    },
+    {
+      "path": "handoff/CHATGPT_BRIEF.md",
+      "sha256": "7129ff1ee5a72ea4739c22079d83c6ebdb9e43863429623d00cdd26718fe98ec"
+    },
+    {
+      "path": "handoff/conform.py",
+      "sha256": "2db80cee2e4e3eb230d5adc270a93e50a7b6d49f0b1c46ccffb68610c077a084"
+    },
+    {
+      "path": "handoff/contract.json",
+      "sha256": "408e865945ada14a00d0fc8fa639ecf2c7b818b303c2388595319aa5461b303c"
+    },
+    {
+      "path": "handoff/schemas/boundary-envelope.schema.json",
+      "sha256": "3e8e74667f29a5242b142f971cde7746cff220df2310150e2bfa19b7ddf6d5da"
+    },
+    {
+      "path": "handoff/schemas/capability-request.schema.json",
+      "sha256": "db990caf58975adfd0931f9a8f84be1291d0d8fb860f535f06343ea13ef09145"
+    },
+    {
+      "path": "handoff/schemas/containment-requirement.schema.json",
+      "sha256": "618a17cbc8f0b67c707969a265b49222dd0a5f72a003f35389a917c4e166ed1b"
+    },
+    {
+      "path": "handoff/schemas/evidence-record.schema.json",
+      "sha256": "e04ccede64c32f369f58b61531f2e9bbb87b8fac8dbec1e82ab77e6e7ce92de9"
+    },
+    {
+      "path": "handoff/vectors/cap-01-read-only-without-grant-accepted.json",
+      "sha256": "a9580b8fd448327f4e5826dd34d8c30e666a276ef8a5ac0138882346bff5b3cd"
+    },
+    {
+      "path": "handoff/vectors/cap-02-financial-with-grant-accepted.json",
+      "sha256": "219fc1fee2824083d380ec1db9cf3e2ce4e7f5a3e27fcec10a21114a878f7a7f"
+    },
+    {
+      "path": "handoff/vectors/cap-03-financial-without-grant-refused.json",
+      "sha256": "8a3a9c95c89bce05d98b7db31c3bae4cbc7c666eeec8ca4d39862747ca177d45"
+    },
+    {
+      "path": "handoff/vectors/cap-04-uniimente-as-legal-principal-refused.json",
+      "sha256": "1273b083933d3a1e4a52b51e055c83a48d016151bb3e6578f788980796214e14"
+    },
+    {
+      "path": "handoff/vectors/cap-05-unknown-consequence-class-refused.json",
+      "sha256": "b92c4666ea74dc3c60bba1960d045723d8e4aaafb083a17ce0b417ca208a0b57"
+    },
+    {
+      "path": "handoff/vectors/cap-06-negative-budget-refused.json",
+      "sha256": "878b852b45498327c396fc0981ca9769d76ae54bff50b325cfd18c8b7001c760"
+    },
+    {
+      "path": "handoff/vectors/con-01-generated-code-in-microvm-accepted.json",
+      "sha256": "4870e5286b958610a38b3930049c3851e42fd395ffe7ecc21c1dc7a9a6f536a3"
+    },
+    {
+      "path": "handoff/vectors/con-02-unavailable-tier-reported-honestly.json",
+      "sha256": "2f9443185ca88d0480784e9a68ef2bb4fcda0962ee069fa7b80573919872e524"
+    },
+    {
+      "path": "handoff/vectors/con-03-in-process-claiming-kernel-boundary-refused.json",
+      "sha256": "854e637b3af45924c2360d45c90d7a187fd489ee1e9f79f10c6a98c0ca33f99c"
+    },
+    {
+      "path": "handoff/vectors/con-04-generated-code-in-container-refused.json",
+      "sha256": "7970636a9b8b4bf7313e6d26dd2f60536c49d95acb6b12f98edfefeb994ab7b3"
+    },
+    {
+      "path": "handoff/vectors/con-05-unknown-enforcement-kind-refused.json",
+      "sha256": "727ad2a60a9beb3f00e8dca5c5a8c62bee8db57931648db2ec02fd199daa2851"
+    },
+    {
+      "path": "handoff/vectors/env-01-well-formed-proposal-accepted.json",
+      "sha256": "b8d63ae688976be9ba17cbf990e144d5fcd56c46763de3ce5efadbf5624d44f0"
+    },
+    {
+      "path": "handoff/vectors/env-02-shared-secret-identity-marked-not-isolated.json",
+      "sha256": "dd4f9932c7704e4bd1e21f0c360d9f3489e1de41a2c450e75cf5e7b7e4eb4a2a"
+    },
+    {
+      "path": "handoff/vectors/env-03-newer-protocol-version-rejected.json",
+      "sha256": "032647be9c55280d5d1e95ed0ea9347528544901e660434746af871df4573ed5"
+    },
+    {
+      "path": "handoff/vectors/env-04-older-protocol-version-not-downgraded.json",
+      "sha256": "c69a13bffe7bc7fc5f7600d2cee1556d2dd5dd41e4aa33d341008f36e46ae50e"
+    },
+    {
+      "path": "handoff/vectors/env-05-instruction-disposition-refused.json",
+      "sha256": "889a6ef60a78e73e20d02be746ba6da820c3aedc5e96fac7decbb632f101ac68"
+    },
+    {
+      "path": "handoff/vectors/env-06-self-declared-authority-refused.json",
+      "sha256": "c9d7cbda25a660c1b0e4cf3b354e8e2d7672d683b6531c43305713976dc20574"
+    },
+    {
+      "path": "handoff/vectors/env-07-unknown-sender-shape-refused.json",
+      "sha256": "5307e830340ff2d77295c35c54a55909f8e757317f21c05f2f33679d474988ca"
+    },
+    {
+      "path": "handoff/vectors/env-08-missing-nonce-refused.json",
+      "sha256": "71158925ec5fefd371af3bae620bf9f5d4652bb1428e0c18aaf45ab8f22516a8"
+    },
+    {
+      "path": "handoff/vectors/env-09-short-nonce-refused.json",
+      "sha256": "3e23cc2a8223e78fdafd29fce5a8a6c9d0f1b4ccbe566fd8396770276ca35951"
+    },
+    {
+      "path": "handoff/vectors/env-10-unknown-field-refused.json",
+      "sha256": "d3bd2130a5f7e9a8e684d5dbceede4669d5634aff12c8075d7debed11bfef011"
+    },
+    {
+      "path": "handoff/vectors/evi-01-built-claim-with-resolving-evidence-accepted.json",
+      "sha256": "067950ba3e372244c9055c09e68261c33e1bedc4d2b82183780fcc98d8c7c3d8"
+    },
+    {
+      "path": "handoff/vectors/evi-02-hardened-without-external-outcome-refused.json",
+      "sha256": "adfcd4c842bf0ffc7da67506fec0ceb286eda0cc0205635e1ff35d357ccb57d6"
+    },
+    {
+      "path": "handoff/vectors/evi-03-nonzero-external-effects-refused.json",
+      "sha256": "448653c1d1e821096d90a86b699ed76a751f52d4fa864acce259a5b201341677"
+    },
+    {
+      "path": "handoff/vectors/evi-04-authority-minted-refused.json",
+      "sha256": "f5c61f3c9bb528816ef85692f3bd02f6922dc881be01233c03024b247deeaefc"
+    },
+    {
+      "path": "handoff/vectors/evi-05-claim-with-no-evidence-refused.json",
+      "sha256": "9b76d19bbd53751df2905c296f1a895aa89cb4faf6dfbf1fd324dbd14911fa6a"
+    }
+  ],
+  "manifest_version": "1.0.0"
+}

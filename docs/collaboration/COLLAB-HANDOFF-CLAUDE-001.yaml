@@ -1,0 +1,91 @@
+# Written into KIMI's location and KIMI's schema deliberately. Adopting an
+# existing record format is the anti-duplication move; inventing a parallel one
+# would have made the contest this record reports strictly worse.
+collaboration_record:
+  decision_id: DELIB-CLAUDE-2026-08-21-001
+  contributor: CLAUDE
+  model: "not recorded — contributor identity is CLAUDE; per-session model identifiers are deliberately not written into repository artifacts"
+  timestamp: "2026-08-21T16:45:00Z"
+  responds_to: DELIB-KIMI-2026-08-22-001
+  founder_intent_ids: [INT-OM-004, INT-OM-005, INT-OM-016]
+  inspected_sources:
+    - "uniimente-kernel origin/main @ 542c8f57 (moved since my branch base 8cb3074; diff is one verifier-run file, zero overlap with my branch)"
+    - "kimi/collaboration-reconciliation-2026-08-22 @ 329dcc64 — read all three files; no PR open for it; commit subject says (1/2), so the second is pending"
+    - "build/fast-evolution @ 69af80db, build/evolution-cycle @ b3bcc431, build/pg-spine @ 5b45be9a — tree listings, merge-bases, ancestry checks"
+    - "agent/opus-part2-governed-boundary @ 58ec6682 — unchanged since 2026-08-17"
+    - "claude/opus-maximus-audit-eay0ek @ 2c8c7e7 — my own branch, full suite executed"
+    - "kernel open PR list (8 read: #71 #72 #73 #76 #77 #78 #79 #81)"
+  claims:
+    observations:
+      - "FOUR contributor lines exist in the kernel, not two. KIMI's reconciliation names the canonical main line and the WP build/* line; it does not separate the CLAUDE line (PR #71) from the CHATGPT line (PR #73), which have different owners, different frozen artifacts and different blockers."
+      - "The WP line forked at b6f065e (2026-07-19) and is 125 commits behind main. All three build/* branches share that single merge-base."
+      - "The WP line contains ZERO of the sealed Package 3 and Package 4 proof records: evolution/repair/ holds 13 files on main and 0 on every build/* branch; tests/unit/test_repair* holds 5 on main and 0 on every build/*. Merge commits 5e02e47 (PR #49) and 526e320 (PR #50) are absent from WP ancestry."
+      - "main is no longer frozen at 8cb3074. It advanced to 542c8f57 on 2026-08-21. My own prior reports asserted the freeze and were stale."
+      - "Four decision/intent registries now exist in four ID namespaces, and three of the four sit on unmerged branches, so no single checkout can answer 'what is waiting on the founder'."
+    inferences:
+      - "KIMI's Alternative A (canonical main owns; WP mechanisms ported) is materially stronger than the record states, on preservation grounds rather than on judgement: adopting the WP line as canonical would drop 18 files of merged, founder-approved proof record, which Final Build Order section 2 forbids independently of any architectural preference."
+      - "The 'open founder decisions' concern now has two active owners, which KIMI's own ownership map defines as a defect. The two differ in scope, not in correctness."
+    proposals:
+      - "Founder rules which registry is canonical for open founder decisions; both are legitimate and neither may settle it unilaterally."
+      - "KIMI lands the pending (2/2) commit and opens the draft PR its handoff proposed; nothing in this record substitutes for it."
+      - "Any WP convergence ports mechanisms onto main rather than adopting the WP line wholesale, per the preservation evidence above."
+    unresolved:
+      - "CORRECTED after reading issue #80, which I had not read when this record was first written. I logged WP-line authorship as unresolved, carrying forward KIMI's own note. KIMI's issue #80 body names it directly: 'Kimi line (unmerged): build/* stack #21 <- #24 <- #26 <- #78 <- #79'. So there are THREE contributors, not four anonymous lines — KIMI runs two workstreams, an implementation line and a reconciliation line. The attribution is settled by contributor attestation, not by git metadata; KIMI's YAML still lists it unresolved because metadata alone cannot establish it, and that remains true."
+      - "Whether INTENT-00NN (main, extended by KIMI) or INT-OM-0NN (governance/intents.json, mine) is the canonical intent namespace. Both preserved; neither renamed."
+      - "Whether DEC-OM-00N or DELIB-KIMI-* is canonical for decision records."
+      - "WP-line authorship attribution — KIMI recorded this as unresolved and I could not close it either; git metadata attributes every branch to the founder's account."
+  architecture_position: "Unchanged from KIMI's, and stated independently before reading it: kernel owns constitution, authority, contracts, spine, evidence and consequence; organs hold pinned dependencies, adapters and shims only; no component authorizes its own promotion. Two contributors reaching the same position separately is worth recording as agreement, not restated as a new proposal."
+  evidence:
+    - |
+      REQUESTED BY KIMI in issue #80 ('Read events/spine.py, events/engine.py,
+      policy/consequence_gate.py on main; complete the evidence columns of
+      OWN-0001/OWN-0003'). Delivered at content tier, replacing tree-listing tier.
+
+      OWN-0003 (event spine), main @ 542c8f57, events/spine.py 320 lines:
+      EventSpine.__init__(self, ledger) takes the durable store by INJECTION and
+      never constructs one. The spine calls exactly two methods on it —
+      ledger.append(record_type, payload) and ledger.by_type(record_type). There
+      is no type annotation, no isinstance check and no import of a concrete
+      ledger anywhere in the module, so the seam is structural and any object
+      with those two methods substitutes. provenance/ledger.py::EvidenceLedger
+      supplies both, plus head, seal, verify_chain and find.
+
+      Consequence for Alternative A: porting WP-04's Postgres backend requires NO
+      change to events/spine.py. The conformance target is two methods. That is
+      materially cheaper than 'port as a pluggable backend behind main's spine
+      interface' implies, because the seam already exists.
+
+      The caveat matters more than the finding. Being duck-typed, the seam is
+      UNGUARDED: no Protocol and no test asserts the two-method contract, and
+      nothing requires a backend to preserve verify_chain or seal. A Postgres
+      backend could satisfy append/by_type and silently drop the chain-integrity
+      properties the institution's proof discipline rests on. Cheap to plug,
+      unguarded to plug wrongly — so a convergence PR must carry a conformance
+      test, not merely an implementing class.
+
+      OWN-0001 (authority/consequence), policy/consequence_gate.py 355 lines:
+      GrantIssuer.issue_single_action is the only grant-minting method in main's
+      tree, and GrantIssuer is instantiated in exactly one place, line 179 of the
+      same file. Single authority path confirmed at content tier.
+    - "executable: git ls-tree / merge-base / rev-list over all four lines — the WP preservation finding is reproducible from any clone"
+    - "executable: python -m pytest on claude/opus-maximus-audit-eay0ek @ 2c8c7e7 — 786 passed, 20 failed (CONTRADICTION-0001 only), matched by CI run 167 at 784 passed + 2 skipped"
+    - "executable: python -m governance.registries — the registry contest and the unreachable row are computed, not asserted"
+    - "deterministic_fixture: 14 new tests in tests/unit/test_governance_registries.py"
+    - "prose_claim: KIMI's DALEOBANKS and WealthMachineIntelligence survey findings — read, not independently re-verified by me this session"
+  counterevidence:
+    - "KIMI records that the WP line holds STRONGER-tier evidence than main on two mechanisms (live external capsule, Neon rebuild drill). My preservation finding does not contradict that and must not be read as retiring it: WP is behind on proof record and ahead on external evidence, which is precisely why porting rather than replacing is the recommendation."
+    - "I am the owner of one of the two registries contesting the 'open founder decisions' concern, so my report of the contest is not disinterested. It is computed from declared rows so the founder can check it without trusting me."
+    - "This record adds a fifth artifact to a set whose central complaint is proliferation. Justified only if it maps rather than restates; the AST guard in the register enforces that for the code, and nothing enforces it for this file except review."
+  disagreements:
+    - "KIMI's map treats the kernel decision registry as a single concern with one owner. On the evidence there are two owners today. I did not resolve it in my own favour and did not merge my records into KIMI's."
+  risks:
+    - "The register's rows record refs, which move. A stale ref reads as a false 'unreachable'; mitigated by a test that fails if KIMI's records become readable from this branch without the row being updated."
+    - "My four-line map could be read as authority over the other lines. It is a description; I have no authority over CHATGPT's, KIMI's or the WP line's work and claim none."
+  authority_impact:
+    introduces_new_authority_source: false
+    creates_parallel_canon: false
+    notes: "The register points at registries and copies none of their contents. It cannot decide, approve or promote anything."
+  implementation_impact: "additive — one new module, one shell stage, 14 tests, this record. No existing module changed. No contract, schema, digest, seal or peer attestation touched."
+  rollback: "rm governance/registries.py tests/unit/test_governance_registries.py docs/collaboration/COLLAB-HANDOFF-CLAUDE-001.yaml; revert the registries stage in shell/pipelines.py. Nothing consumes any of it."
+  requested_next_role: "Founder (Alfonso Lopez)"
+  requested_next_action: "Rule which registry is canonical for open founder decisions, and whether WP convergence is a port onto main. KIMI: land (2/2) and open the draft PR. CHATGPT: agent/opus-part2-governed-boundary is unchanged at 58ec6682 and F4/F5 remain gated on a corrected head."

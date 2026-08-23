@@ -1,0 +1,23 @@
+{
+  "document": {
+    "confers_authority": false,
+    "disposition": "PROPOSAL",
+    "envelope_id": "env-00000001",
+    "issued_at": "2026-08-12T00:00:00Z",
+    "nonce": "0123456789abcdef0123",
+    "payload": {
+      "text": "a reading"
+    },
+    "payload_kind": "observation",
+    "protocol": "mcp",
+    "protocol_version": "1.0.0",
+    "sender": {
+      "authenticated": true,
+      "identity": "https://example.com/whoever"
+    }
+  },
+  "expect": "REJECT",
+  "schema": "boundary-envelope",
+  "vector_id": "env-07-unknown-sender-shape-refused",
+  "why": "INV-3. A sender identity outside the SPIFFE namespace is refused, not approximated."
+}

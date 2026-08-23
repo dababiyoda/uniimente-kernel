@@ -1,0 +1,146 @@
+# Organ Manifest: RESEARCH-IN (Open-Research Nexus).
+# Validated against contracts/organ-manifest.schema.json.
+# Discovery, never authority: nothing here grants permission to act.
+#
+# Written from a READ-ONLY inspection of dababiyoda/RESEARCH-IN at 5769138.
+# No code in that repository was changed to produce this manifest. Every field
+# below is either observed in that tree or recorded as unresolved.
+#
+# SECOND PASS, 2026-08-21, same commit 5769138. The first pass could not run
+# the suites and described capabilities from directory names. Both are now
+# measured: the Rust suite was executed, and every capability description below
+# was checked against the files it points at. As with PumpStation, every
+# correction makes the organ SMALLER than the first pass described.
+#
+# One question LEFT the unresolved list because it was answered: health was
+# unverified and is now executed — 2 passed, 0 failed, the repository's entire
+# test population. The answer is in the health block. The count is unchanged,
+# because answering it surfaced a new question about the contract itself.
+#
+# RESEARCH-IN is the sixth organ and the second of the two the Institutional
+# Linker previously could not see. Registering it makes the organism's true
+# shape visible; it does not attach it to anything.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/research-in
+name: research-in
+role: proposed_evidence_refinery_research_discovery_and_retrieval
+repository: dababiyoda/RESEARCH-IN
+source:
+  branch: main
+  commit: "5769138"
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: research_in.ingestion
+    description: >-
+      OVERSTATED IN THE FIRST PASS. Not an ingestion service: `src/lib.rs` is 16
+      lines and exposes one actix handler, POST /ingest, which returns 200 if the
+      posted url starts with "http" and 400 otherwise. It fetches nothing, parses
+      nothing, stores nothing and indexes nothing. The crate's two integration
+      tests assert exactly that prefix check.
+    implementation_path: services/ingest/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.web_surface
+    description: Next.js user-facing application for discovery and reading.
+    implementation_path: apps/web/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.community_surface
+    description: Discussion and community application.
+    implementation_path: apps/community/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+  - capability_id: research_in.data_layer
+    description: >-
+      OVERSTATED IN THE FIRST PASS. `packages/db/` contains a `migrations/`
+      directory and nothing else — no package.json and no client code. Supabase,
+      Qdrant and Typesense appear only as Terraform modules under
+      `infrastructure/modules/`; no TypeScript or Rust source in the repository
+      references any of the three. Declared infrastructure, unwired application.
+    implementation_path: packages/db/
+    consumes: []
+    produces: []
+    lifecycle: DISCOVERED
+contracts:
+  consumes: []
+  produces: []
+prohibited_actions:
+  - acting as a legal principal for UNIIMENTE
+  - self-promotion to any active lifecycle or organ status
+  - executing external side effects outside the kernel consequence gate
+  - presenting retrieved or generated research content as institutional evidence
+    without passing the kernel evidence contract
+authority:
+  max_consequence_class: read_only
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: cargo test --manifest-path services/ingest/Cargo.toml
+  last_verified:
+    date: "2026-08-21"
+    commit: "5769138"
+    tests_passed: 2
+    tests_failed: 0
+    notes: >-
+      EXECUTED, not assumed. `cargo test` in services/ingest (cargo 1.94.1) ran
+      the crate's integration target: 2 passed, 0 failed — test_valid and
+      test_invalid, both asserting the url prefix check. The lib, bin and doc
+      targets each ran 0 tests. That is the entire test population of the
+      repository: no *.test.* or *.spec.* file exists anywhere, and no
+      #[test]/#[cfg(test)] appears in any other Rust source.
+      The previously declared command `pnpm test` was WRONG and is replaced.
+      turbo.json declares a `test` pipeline task, but no workspace package —
+      root, apps/web, apps/community, packages/shared, packages/utils —
+      defines a `test` script, so the command exits 1 having run nothing.
+      2 passed is therefore the honest number and it is also a small one: two
+      assertions over a sixteen-line handler.
+shutdown_behavior: >-
+  Not implemented. The organ is unattached; no kernel loop depends
+  on it.
+recovery: >-
+  Not implemented. State lives in externally managed Supabase, Qdrant and
+  Typesense instances with no kernel-anchored provenance.
+status: planned
+unresolved:
+  - >-
+    STATUS VOCABULARY CONTRADICTION, preserved rather than papered over.
+    contracts/organ-manifest.schema.json admits only active | planned |
+    this_repository. The true state of this organ is "code exists in a real
+    repository, but the organ is registered and not attached" — which the
+    canonical contract cannot express. `planned` is recorded as the nearest
+    legal value and understates that working code exists. Widening the enum is
+    a contract change and was not made unilaterally; it requires a founder
+    decision.
+  - >-
+    RESEARCH-IN is the natural home of the evidence-refinery role that
+    docs/ARCHITECTURE.md assigns to "RailScout". Whether it becomes that organ,
+    or stays a separate research product, is an open founder decision.
+  - >-
+    No kernel contract is consumed or produced. For this organ to feed the
+    institution it would need to emit the canonical `evidence` contract, and
+    the instruction-shaped-content quarantine that ARCHITECTURE.md requires of
+    any evidence intake does not exist here.
+  - >-
+    SHARPENED, still open. The repository is MIT licensed (LICENSE, 2024,
+    open-research-nexus), which covers its own code and says nothing about
+    ingested third-party research content. No file in the tree declares a data
+    classification or a redistribution posture for such content. The question is
+    not yet live, however, and that is the newly measured part: nothing is
+    ingested. The ingest handler performs no fetch and no write, and no
+    application code connects to the provisioned Supabase, Qdrant or Typesense.
+    Both postures must be established before the first real fetch, not before
+    the first line of further code.
+  - >-
+    CONTRACT GAP, second instance. This pass established several facts by
+    inspection, and contracts/organ-manifest.schema.json has nowhere to record
+    them: it admits `unresolved` and nothing else, so the manifest can say "we
+    do not know" but cannot say "we looked, and here is what we found". The
+    findings were therefore written into the capability descriptions and the
+    health block, and the answered questions were removed from this list — see
+    the header comment for what left and why. Adding a `findings` or `resolved`
+    field is a contract change (additionalProperties is false) and was not made
+    unilaterally. Same class of defect as the status-vocabulary contradiction
+    above, found independently; two instances in one contract.

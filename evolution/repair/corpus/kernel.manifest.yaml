@@ -1,0 +1,129 @@
+# Organ Manifest: UNIIMENTE Kernel (this repository).
+# Validated against contracts/organ-manifest.schema.json.
+# Discovery, never authority: nothing here grants permission to act.
+manifest_version: "1.0"
+organ_id: spiffe://uniimente.internal/organ/constitutional-controller
+name: uniimente-kernel
+role: constitutional_law_authority_proof_identity_memory_composition
+repository: dababiyoda/uniimente-kernel
+source:
+  branch: claude/uniimente-integration-architecture-1qyrbv
+  commit: 3d9b5779a7093d6ddd07f225c8329ead6d0c6393
+legal_operators: [alfonso_lopez]
+capabilities:
+  - capability_id: kernel.ucl_compiler
+    description: Compiles UCL constitutional doctrine into executable policy
+    implementation_path: compiler/
+    consumes: []
+    produces: [decision]
+    lifecycle: ACTIVE
+  - capability_id: kernel.consequence_gate
+    description: Canonical gate every external side effect must cross
+    implementation_path: policy/consequence_gate.py
+    consumes: [capability-grant, evidence]
+    produces: [outcome, event]
+    lifecycle: ACTIVE
+  - capability_id: kernel.evidence_ledger
+    description: Hash-chained append-only ledger with Merkle inclusion proofs
+    implementation_path: provenance/
+    consumes: [event]
+    produces: [evidence]
+    lifecycle: ACTIVE
+  - capability_id: kernel.event_spine
+    description: Durable event log, pub/sub, mediated outbox, durable workflows
+    implementation_path: events/spine.py
+    consumes: [event]
+    produces: [event]
+    lifecycle: ACTIVE
+  - capability_id: kernel.machine_passports
+    description: Identity issuance and verification; identity carries zero authority
+    implementation_path: identity/machine_passport.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: kernel.causal_memory
+    description: Ancestry, descendants, precedents, calibration over the ledger
+    implementation_path: memory/causal.py
+    consumes: [event, outcome]
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: kernel.evolution_loop
+    description: Strategy trees, spider-web audits, experiment compiler, capsules
+    implementation_path: evolution/
+    consumes: [evidence]
+    produces: [decision]
+    lifecycle: ACTIVE
+  - capability_id: kernel.autonomy_ladder
+    description: 9-dimension autonomy licenses; promotion needs evidence, never self-grant
+    implementation_path: autonomy/levels.py
+    consumes: [outcome]
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: kernel.loom
+    description: Machine-authored, human-ratified durable workflow patterns
+    implementation_path: loom/
+    consumes: [event]
+    produces: [event]
+    lifecycle: ACTIVE
+  - capability_id: kernel.institutional_twins
+    description: Counterfactual constitution forks and tribunal comparison
+    implementation_path: twins/
+    consumes: [decision]
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: kernel.agent_embassy
+    description: Bounded admission for foreign agents; short-lived minimal privilege
+    implementation_path: embassy/gate.py
+    consumes: []
+    produces: [event]
+    lifecycle: ACTIVE
+  - capability_id: kernel.genome_registry
+    description: Capability genome validation and bounded instantiation checks
+    implementation_path: capabilities/genome.py
+    consumes: []
+    produces: []
+    lifecycle: ACTIVE
+  - capability_id: kernel.institutional_linker
+    description: Resolves typed cross-organ edges from manifests; reports unresolved fields
+    implementation_path: linker/
+    consumes: [organ-manifest]
+    produces: []
+    lifecycle: TESTED
+  - capability_id: kernel.bridge_adapters
+    description: Wire v1.1 <-> canonical contract adapters with explicit field mappings
+    implementation_path: adapters/
+    consumes: [wire-opportunity-packet, wire-venture-assessment]
+    produces: [opportunity-packet, venture-assessment]
+    lifecycle: TESTED
+contracts:
+  consumes: [wire-opportunity-packet, wire-venture-assessment, organ-manifest]
+  produces: [opportunity-packet, venture-assessment, capability-grant, decision,
+             evidence, event, outcome, context-packet, venture-cell-charter]
+prohibited_actions:
+  - acting as a legal principal (UNIIMENTE is infrastructure, never a contracting party)
+  - self-granting authority or widening its own approval requirements
+  - executing external side effects outside the consequence gate
+  - deleting ledger records or proof artifacts
+authority:
+  max_consequence_class: external_contact
+  external_actions_require_kernel_gate: true
+  may_self_promote: false
+health:
+  test_command: python -m pytest
+  last_verified:
+    date: "2026-07-20"
+    commit: 3d9b5779a7093d6ddd07f225c8329ead6d0c6393
+    tests_passed: 172
+    tests_failed: 0
+    notes: >-
+      Verified in-session after fixing misplaced $defs in 7 contract schemas
+      (2 tests failed pre-fix on the shipped tree; jsonschema dependency also
+      had to be installed per requirements-dev.txt).
+shutdown_behavior: >-
+  Affect controller completes shutdown from every state; workflows checkpoint on
+  the ledger and resume without restatement.
+recovery: Replay from the evidence ledger; memory is never truth.
+status: this_repository
+unresolved:
+  - constitutional ratification by the founder (external dependency)
+  - peer organs do not yet consume kernel-issued grants (Bridges B/C incomplete)

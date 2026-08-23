@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/handoff/evidence-record.schema.json",
+  "title": "Handoff evidence record",
+  "description": "What a collaborator claims, and what backs it. A claimed_state above what the evidence supports is a conformance failure, not a rounding.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence_version", "component", "owner", "claimed_state", "evidence", "external_effects"],
+  "properties": {
+    "evidence_version": {"const": "1.0.0"},
+    "component": {"type": "string"},
+    "owner": {"enum": ["CLAUDE", "CHATGPT", "FOUNDER", "EXTERNAL"]},
+    "claimed_state": {"enum": ["BLUEPRINT", "SKETCHED", "BUILT", "EXERCISED", "PROVEN", "HARDENED"]},
+    "reality": {"enum": ["BLUEPRINT_ONLY", "SIMULATED", "IMPLEMENTED"]},
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "locator"],
+        "properties": {
+          "kind": {"enum": ["SPEC_DOCUMENT", "IMPLEMENTATION_PATH", "TEST_NODE", "CLOSURE_MODULE",
+                            "CONTRACT_SCHEMA", "MANIFEST_CAPABILITY", "EXTERNAL_OUTCOME"]},
+          "locator": {"type": "string", "minLength": 1},
+          "resolved": {"type": "boolean"}
+        }
+      }
+    },
+    "external_effects": {"const": 0, "description": "Part 2 is inert. Any nonzero value is a conformance failure."},
+    "authority_minted": {"const": false},
+    "gaps": {"type": "array", "items": {"type": "string", "minLength": 24}},
+    "bundle_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$",
+                      "description": "The frozen bundle digest this report was produced against."}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"claimed_state": {"const": "HARDENED"}}, "required": ["claimed_state"]},
+      "then": {
+        "properties": {
+          "evidence": {"contains": {"properties": {"kind": {"const": "EXTERNAL_OUTCOME"}}, "required": ["kind"]}}
+        },
+        "description": "HARDENED requires a reconciled external outcome. The institution has none."
+      }
+    }
+  ]
+}

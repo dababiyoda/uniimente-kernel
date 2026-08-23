@@ -1,0 +1,23 @@
+{
+  "document": {
+    "authority_minted": false,
+    "bundle_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "claimed_state": "HARDENED",
+    "component": "moduleloader",
+    "evidence": [
+      {
+        "kind": "IMPLEMENTATION_PATH",
+        "locator": "moduleloader/loader.py",
+        "resolved": true
+      }
+    ],
+    "evidence_version": "1.0.0",
+    "external_effects": 0,
+    "owner": "CHATGPT",
+    "reality": "IMPLEMENTED"
+  },
+  "expect": "REJECT",
+  "schema": "evidence-record",
+  "vector_id": "evi-02-hardened-without-external-outcome-refused",
+  "why": "HARDENED requires a reconciled external outcome. The institution has zero."
+}

@@ -1,0 +1,354 @@
+{
+  "decision_id": "DEC-OM-001",
+  "title": "Canonical selector for Foundry technology #25 (Capability Router)",
+  "problem": "Two routers now exist in the kernel line. routing/decision_router.py on claude/opus-maximus-audit-eay0ek returns a RoutingDecision and never invokes a provider. capabilities/router.py on draft PR #70 has select() (decision-only) plus resolve(), which returns chosen.provider() and therefore instantiates code. Final Build Order section 3 forbids multiple active authorities; section 9 and section 12 forbid deleting either. No canonical selector is named, so technology #25 cannot be called closed.",
+  "founder_intent_refs": [
+    "INT-OM-010",
+    "INT-OM-004",
+    "INT-OM-013"
+  ],
+  "baseline": "Before this branch, capabilities/router.py existed only on unmerged draft PR #70; main had no router at all and Foundry technology #25 stood at 'target' in foundry/arsenal.py.",
+  "alternatives": [
+    {
+      "name": "A: decision router canonical, PR #70 registered as second implementation",
+      "description": "routing/decision_router.py becomes the canonical selector. capabilities/router.py is preserved and registered under FBO section 9 with a written migration path: resolve() moves to a caller holding a capability grant, select() becomes a decision-only adapter, and PR #70's lifecycle machinery (Implementation.origin, LIFECYCLES, restore, set_lifecycle) is rehomed rather than discarded.",
+      "advantages": [
+        "The canonical selector cannot instantiate code, asserted by AST test",
+        "Neither implementation is deleted",
+        "PR #70's lifecycle machinery is explicitly retained rather than lost"
+      ],
+      "disadvantages": [
+        "PR #70 must change before merge, which is another session's branch",
+        "Two routers coexist until the founder decides"
+      ],
+      "revival_evidence": "Adopted as the recorded position on this branch; it is not a founder decision."
+    },
+    {
+      "name": "B: PR #70's router canonical, delegating to the decision layer",
+      "description": "capabilities/router.py stays canonical but drops direct provider invocation and delegates selection to routing/decision_router.py before merge.",
+      "advantages": [
+        "Keeps the richer lifecycle model in the canonical position",
+        "One router surface for callers"
+      ],
+      "disadvantages": [
+        "Requires editing an active branch owned by another session",
+        "resolve() has callers whose contract would change"
+      ],
+      "revival_evidence": "Founder prefers the lifecycle model to hold the canonical position."
+    },
+    {
+      "name": "C: merge both into one router",
+      "description": "Combine decision-only selection and lifecycle management into a single new module.",
+      "advantages": [
+        "One implementation to maintain"
+      ],
+      "disadvantages": [
+        "Destroys two working implementations, which FBO section 12 forbids",
+        "Highest migration cost and largest review surface",
+        "Loses the disagreement that FBO section 4.13 says to preserve"
+      ],
+      "revival_evidence": "Both routers are proven equivalent on a shared behavioural parity suite and neither dominates in any context."
+    },
+    {
+      "name": "D: reversible experiment - run both as registered competitors",
+      "description": "Register both behind one interface and route real work to each, comparing decisions against outcomes as FBO section 4.14 requires.",
+      "advantages": [
+        "Turns the disagreement into evidence rather than argument",
+        "Directly satisfies section 9's governed implementation pluralism"
+      ],
+      "disadvantages": [
+        "There is no real traffic and zero verified outcomes, so the comparison cannot run today",
+        "Leaves two active selectors in the meantime, the section 3 condition"
+      ],
+      "revival_evidence": "The first verified external outcome exists, giving the comparison something to measure."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Two routers remain with no named canonical one. Technology #25 stays open and any claim of router closure stays false.",
+    "advantages": [
+      "Costs nothing",
+      "Preserves both implementations by default"
+    ],
+    "disadvantages": [
+      "Leaves exactly the multiple-active-authority condition FBO section 3 forbids",
+      "A future session may pick one by accident rather than by decision",
+      "Blocks any honest claim that the nervous system is complete"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The founder's correction was explicit: name one canonical selector and ensure it never invokes providers. Recording the conflict satisfies the second half; only the founder can satisfy the first.",
+      "material_concerns": [
+        "Naming a canonical selector unilaterally would be the agent deciding its own architecture",
+        "Leaving it unnamed indefinitely is also a failure of the instruction"
+      ],
+      "evidence_refs": [
+        "founder correction 1",
+        "INT-OM-010"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Decision-only selection and lifecycle management are separable concerns and should not have been fused in one class. Option A separates them correctly; the lifecycle machinery belongs in a registry, not a selector.",
+      "material_concerns": [
+        "capabilities/router.py conflates choosing with instantiating",
+        "Neither router has a typed contract at its boundary"
+      ],
+      "evidence_refs": [
+        "capabilities/router.py:243-246",
+        "routing/decision_router.py"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Option A's guarantee is narrower than it sounds. The AST test forbids a fixed list of call names (provider, execute, invoke, run, call, apply). A caller can still take the selected candidate_id and invoke it themselves, which the router cannot prevent. The invariant is 'this module does not execute', not 'nothing executes as a result of this module'.",
+      "material_concerns": [
+        "The AST guard is a denylist and can be evaded by a new verb",
+        "Decision-only is a property of the module, not of the system",
+        "Renaming my class to DecisionRouter removed a collision but not the ambiguity for a reader who sees both"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_decision_router.py::test_the_canonical_selector_never_invokes_a_provider"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Two routers with similar names across two open branches is a live maintenance hazard. The class and test-file collision already occurred and was only caught by reading PR #70's tree.",
+      "material_concerns": [
+        "A merge of both branches would previously have collided on tests/unit/test_capability_router.py",
+        "Whoever merges second inherits an unnamed choice"
+      ],
+      "evidence_refs": [
+        "Both branches originally defined CapabilityRouter and tests/unit/test_capability_router.py"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No participants and no external effects are involved. The evidence tier here is unit test and static analysis only; neither router has ever routed real work, so no claim about routing quality is supportable in either direction.",
+      "material_concerns": [
+        "Selection weights in both routers are declared, not learned",
+        "outcomes_compared() returns 0 and will until a verified outcome exists"
+      ],
+      "evidence_refs": [
+        "routing/decision_router.py outcomes_compared() == 0"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "capabilities/router.py instantiates code via resolve()",
+      "tier": "primary_source",
+      "reference": "git show origin/claude/track-a-runtime-spine:capabilities/router.py line 246",
+      "finding": "def resolve(self, capability): chosen, _ = self.select(capability); return chosen.provider()"
+    },
+    {
+      "claim": "routing/decision_router.py contains no invocation call site",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_decision_router.py::test_the_canonical_selector_never_invokes_a_provider",
+      "finding": "AST walk finds no Call to .provider/.execute/.invoke/.run/.call/.apply; DecisionRouter exposes no resolve attribute"
+    },
+    {
+      "claim": "Neither router imports the Consequence Gate",
+      "tier": "unit_test",
+      "reference": "closure/nervous_system_registry.py _authority_free('routing')",
+      "finding": "No policy.consequence_gate or policy.engine import; CI job 3 'One source of authority' passed on 84fab8f9"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "PR #70's router is simply wrong and should be superseded",
+      "tier": "primary_source",
+      "reference": "origin/claude/track-a-runtime-spine:capabilities/router.py docstring and lifecycle code",
+      "finding": "It carries machinery the decision router lacks entirely: Implementation.origin with a scorer-blind guarantee, all thirteen FBO section 4.3 lifecycle statuses, set_lifecycle and restore. On preservation grounds it is the richer implementation; only resolve() violates the invariant."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Exactly one named canonical selector for technology #25 that cannot instantiate code, with the other implementation preserved and its migration path written down.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "A decision-only selector cannot become an execution path by accident.",
+        "amplified_value": "Makes the section 3 authority boundary structural rather than procedural: there is no code path from selection to execution to review."
+      },
+      {
+        "id": "A2",
+        "statement": "Both implementations are preserved with a written migration path.",
+        "amplified_value": "Converts a duplication into governed pluralism per section 9, and keeps PR #70's lifecycle model available for rehoming rather than rediscovery."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The AST guard is a denylist of call names and can be evaded by a verb it does not list.",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Bounded and made observable rather than removed: the guard also asserts DecisionRouter has no resolve attribute, so evasion requires adding a new public execution surface, which is visible in the diff. Converted into a review obligation, not a solved problem."
+      },
+      {
+        "id": "D2",
+        "statement": "Two routers coexist with no canonical one until the founder decides.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Escalated as BLK-1 in the frozen handoff contract under CONTESTED_UNRESOLVED, recorded in blueprint technology #25's gaps, and asserted by a test that fails if the conflict text is removed. Technology #25 is explicitly not closed."
+      },
+      {
+        "id": "D3",
+        "statement": "Decision-only is a property of the module, not of the system: a caller can still invoke the selected candidate.",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Accepted and stated. RoutingDecision.explain() ends with the sentence that execution still requires a capability grant and the Consequence Gate, so the boundary is documented at the point of use rather than only in a docstring."
+      }
+    ],
+    "comparisons": {
+      "baseline": "No router on main; technology #25 at 'target' with no implementation. Any router is an improvement on nothing, which is a low bar and not an argument for this one.",
+      "do_nothing": "Two unnamed routers persist. Rejected: it leaves the exact condition section 3 forbids.",
+      "simplest_viable_alternative": "Write no router and let the Composer choose inline. Rejected: it hides selection inside callers, where it cannot be recorded or compared against outcomes as section 4.14 requires.",
+      "strongest_competing_architecture": "Option B, PR #70's router canonical with resolve() removed and selection delegated. Genuinely strong because it keeps the lifecycle model canonical; not chosen here only because editing another session's active branch is not mine to do.",
+      "reversible_experiment": "Option D, register both as competitors and compare decisions against outcomes. Cannot run: zero real traffic, zero verified outcomes."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "C: merge both into one router",
+        "rejection_reason": "Destroys two working implementations and the disagreement between them, which FBO sections 12 and 4.13 forbid.",
+        "revival_evidence": "A behavioural parity suite shows the two are equivalent in every context tested."
+      },
+      {
+        "name": "D: run both as registered competitors now",
+        "rejection_reason": "There is no traffic and no verified outcome, so the comparison has nothing to measure.",
+        "revival_evidence": "The first verified external outcome exists."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Re-attacked Option A as though it were already the canonical answer. The strongest new finding is that 'decision-only' is being used to mean two different things - a module that contains no invocation, and a system in which selection cannot cause execution. Only the first is proven. The second is a property of every caller and is not enforced anywhere.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "The AST guard enumerates six call names. A future implementation could add a method named dispatch or materialize and pass.",
+        "strengthening_response": "Recorded as a review obligation with a named owner rather than claimed as solved. The complementary assertion (no resolve attribute on the class) means evasion requires a visible new public surface. Not closed."
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "Two similarly named routers across two branches will confuse any reader who encounters them out of order, and the rename to DecisionRouter helps only readers who see both.",
+        "strengthening_response": "The conflict is written into three places that a reader is likely to hit: the technology #25 binding gaps, the frozen contract's CONTESTED_UNRESOLVED entry, and the PR body. A test fails if the binding text is removed."
+      },
+      {
+        "id": "W3",
+        "category": "reversibility",
+        "statement": "If the founder chooses Option B, the work on routing/decision_router.py becomes a second implementation to migrate rather than the canonical one.",
+        "strengthening_response": "Accepted as cheap: routing/ is read-only, authority-free and imported by nothing outside its own tests and closure registration. Reverting it is a directory deletion plus one registry line."
+      },
+      {
+        "id": "W4",
+        "category": "centralization",
+        "statement": "Naming one canonical selector concentrates a decision that currently has no evidence behind it - neither router has routed anything.",
+        "strengthening_response": "This is precisely why the verdict is NEEDS_FOUNDER_DECISION rather than RETAIN. Choosing on architectural grounds is legitimate; claiming evidential grounds would not be."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "A denylist guard cannot be made complete. It is paired with a structural assertion and a review obligation.",
+        "owner": "CLAUDE",
+        "review_trigger": "Any new public method is added to DecisionRouter."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "Only the founder can name the canonical selector; recording the conflict is the whole of what this branch may do.",
+        "owner": "FOUNDER",
+        "review_trigger": "Founder names the canonical selector."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "System-level non-execution is enforced by the Consequence Gate, not by the router, and that is the correct place for it.",
+        "owner": "CLAUDE",
+        "review_trigger": "A caller is written that acts on a RoutingDecision."
+      }
+    ],
+    "final_design": "routing/decision_router.py stands as the recorded canonical candidate on this branch: decision-only, AST-asserted, no resolve surface, registered for five-closure verification. capabilities/router.py is preserved untouched with its migration path written into the technology #25 binding. Technology #25 is marked NOT closed in the blueprint, the frozen contract and the pull request. No promotion occurs without a founder decision.",
+    "residual_risks": [
+      {
+        "risk": "A future session adds an execution verb the AST denylist does not cover.",
+        "mitigation": "Guard also asserts the absence of a resolve attribute; any new public execution surface appears in the diff.",
+        "owner": "CLAUDE",
+        "review_trigger": "Any new public method on DecisionRouter."
+      },
+      {
+        "risk": "The conflict record is deleted or softened in a later edit, and #25 silently reads as closed.",
+        "mitigation": "tests/unit/test_decision_router.py::test_the_router_conflict_is_recorded_rather_than_quietly_settled fails if the gap text loses its markers.",
+        "owner": "CLAUDE",
+        "review_trigger": "blueprint/registry.py technology #25 is edited."
+      },
+      {
+        "risk": "Both branches merge without a decision and two active selectors ship.",
+        "mitigation": "BLK-1 is in the frozen handoff contract and named in the merge order; ChatGPT's acceptance forbids claiming #25 closed.",
+        "owner": "FOUNDER",
+        "review_trigger": "Either branch is marked ready for review."
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded and carried forward. The decision does not proceed past recording; no promotion occurs.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Calling routing/decision_router.py 'the canonical decision-only selector' overstates what is proven. What is proven is that this module contains no invocation.",
+        "rationale": "The AST guard is a denylist over six verbs and cannot prove a system-level property.",
+        "evidence_threshold": "A caller exists that acts on a RoutingDecision without holding a capability grant.",
+        "owner": "CLAUDE",
+        "review_trigger": "The first caller of DecisionRouter.route outside tests."
+      },
+      {
+        "role": "Systems Architect",
+        "position": "PR #70's router is the richer implementation and its lifecycle machinery is the part the institution actually lacks; resolve() is the only defect.",
+        "rationale": "Choosing the thinner module as canonical risks losing the lifecycle model to attrition.",
+        "evidence_threshold": "The lifecycle machinery is not rehomed within one cycle of a canonical decision.",
+        "owner": "FOUNDER",
+        "review_trigger": "Founder names the canonical selector."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez",
+    "authorized_by": "Alfonso Lopez",
+    "authorization_ref": "FOUNDER-RULING-2026-08-22 (docs/deliberations/FOUNDER-RULING-2026-08-22-opus-maximus-frontier.md)"
+  },
+  "migration_plan": "No migration executes until the founder decides. If Option A is chosen: PR #70 moves resolve() to a caller holding a capability grant, leaves select() as a decision-only adapter over routing/decision_router.py, and rehomes Implementation.origin, LIFECYCLES, set_lifecycle and restore into the Capability Genome Registry (technology #12), which the blueprint already records as lacking all thirteen lifecycle states. If Option B is chosen: routing/decision_router.py is reclassified as a registered second implementation under FBO section 9 and its closure registration is retargeted.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Delete the routing/ package.",
+      "Remove the decision_router registration from closure/nervous_system_registry.py.",
+      "Remove the technology #25 evidence references in blueprint/registry.py, leaving the gap text.",
+      "Delete tests/unit/test_decision_router.py.",
+      "Remove kernel.decision_router from organs/kernel.manifest.yaml."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "The founder names PR #70's capabilities/router.py canonical and its resolve() is removed.",
+    "Every real caller is shown to require instantiation in the same breath as selection, making a decision-only selector unusable.",
+    "Two consecutive cycles pass with no caller of DecisionRouter.route outside tests."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Founder names the canonical selector, or either branch is marked ready for review.",
+  "founder_ruling": "Option A selected by founder ruling 2026-08-22: routing/decision_router.py is the canonical selector. A router decides; it does not instantiate or execute. PR #70 is preserved; its Implementation.origin, lifecycle states and restore/set_lifecycle machinery are to be rehomed into the canonical capability/module-management layer rather than left fused to routing. Provider construction moves downstream to a caller holding the required capability and crossing the Consequence Gate. One canonical typed RoutingDecision boundary owned by the Kernel; organ adapters consume it, never copy it. Competing routers may later be evaluated as challengers once real outcomes exist; this architectural selection is NOT evidence that one router produces better outcomes."
+}

@@ -1,0 +1,23 @@
+{
+  "document": {
+    "attestation_evidence": "firecracker jailer config hash 9c1f...",
+    "attested": true,
+    "consequence_class": "internal_write",
+    "enforcement_kind": "hypervisor_boundary",
+    "granted_tier": "microvm",
+    "module_id": "candidate-r3",
+    "required_tier": "microvm",
+    "requirement_version": "1.0.0",
+    "resource_limits": {
+      "cpu_ms": 5000,
+      "memory_mb": 256,
+      "network": "denied",
+      "wall_clock_ms": 10000
+    },
+    "trust": "generated"
+  },
+  "expect": "ACCEPT",
+  "schema": "containment-requirement",
+  "vector_id": "con-01-generated-code-in-microvm-accepted",
+  "why": "Generated code in a microVM with a hypervisor boundary is the intended shape."
+}

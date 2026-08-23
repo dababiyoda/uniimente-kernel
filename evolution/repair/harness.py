@@ -149,7 +149,10 @@ class ReplacementExperiment:
         """
         from linker.manifest import load_all
 
-        return load_all(os.path.join(self.root, "organs"))
+        # The frozen corpus, not the live organs/ directory. DEC-OM-002
+        # Option A: this harness re-runs a historical experiment and must
+        # read the institution that experiment actually measured.
+        return load_all(spec.CORPUS_DIR)
 
     def _record(self, event: dict) -> dict:
         self.events.append(event)

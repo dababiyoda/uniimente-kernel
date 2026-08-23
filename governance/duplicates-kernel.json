@@ -1,0 +1,78 @@
+{
+  "algorithm": "sha256",
+  "complete": true,
+  "errors": [],
+  "excluded_subtrees": [
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    "adapters/__pycache__",
+    "autonomy/__pycache__",
+    "blueprint/__pycache__",
+    "business/__pycache__",
+    "capabilities/__pycache__",
+    "capital/__pycache__",
+    "closure/__pycache__",
+    "compiler/__pycache__",
+    "developmental/__pycache__",
+    "discovery/__pycache__",
+    "egregore/__pycache__",
+    "embassy/__pycache__",
+    "events/__pycache__",
+    "evolution/__pycache__",
+    "evolution/migration/__pycache__",
+    "evolution/repair/__pycache__",
+    "foundry/__pycache__",
+    "handoff/__pycache__",
+    "identity/__pycache__",
+    "knowledge/__pycache__",
+    "linker/__pycache__",
+    "loom/__pycache__",
+    "memory/__pycache__",
+    "morphogenesis/__pycache__",
+    "omnimorph/__pycache__",
+    "policy/__pycache__",
+    "provenance/__pycache__",
+    "routing/__pycache__",
+    "tests/integration/__pycache__",
+    "tests/unit/__pycache__",
+    "twins/__pycache__",
+    "ventures/ivio_nemt/__pycache__"
+  ],
+  "generated_at": "2026-08-12T20:04:26.768724+00:00",
+  "groups": [],
+  "mode": "report_only",
+  "repository": "/home/user/uniimente-kernel",
+  "skipped_files": [
+    {
+      "path": "adapters/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "linker/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/integration/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/unit/__init__.py",
+      "reason": "below_min_size"
+    }
+  ],
+  "summary": {
+    "candidate_files_hashed": 29,
+    "duplicate_file_count": 0,
+    "duplicate_group_count": 0,
+    "error_count": 0,
+    "excluded_subtree_count": 35,
+    "files_scanned": 349,
+    "potential_reclaimable_bytes": 0,
+    "skipped_file_count": 4
+  },
+  "tool": "detect_exact_duplicates.py",
+  "truncated": false,
+  "version": 1,
+  "warning": "Byte identity does not prove semantic redundancy or authorize deletion. Confirm authorship, canonical ownership, consumers, evidence value, and provenance before any migration."
+}

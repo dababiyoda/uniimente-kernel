@@ -1,0 +1,622 @@
+{
+  "intents": [
+    {
+      "intent_id": "INT-OM-001",
+      "title": "Opus Maximus blueprint must exist in full for future building",
+      "statement": "The complete blueprint of the greatest imaginable egregore must be available so future sessions build against it rather than re-deriving it.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "original task prompt: 'at least its complete blueprint is available for future building'",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A machine-readable, evidence-bound blueprint covering all 55 Foundry technologies that any future session can read and act on.",
+      "affected_systems": [
+        "blueprint/",
+        "foundry/arsenal.py"
+      ],
+      "rationale": "foundry/arsenal.py already encoded all 55 technologies with dependency edges, but as a description bound to no proof.",
+      "conflicts": [],
+      "evidence_refs": [
+        "python -m blueprint: 55 technologies resolved, 18-item frontier, 18 blocked"
+      ],
+      "implementation_refs": [
+        "blueprint/ladder.py",
+        "blueprint/evidence.py",
+        "blueprint/registry.py",
+        "blueprint/critical_path.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "A sixth rung or a new evidence kind is proposed.",
+      "unresolved_questions": [
+        "Whether the six rungs generalise beyond this repository (see DEC-OM-001 overfit risk)."
+      ],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-002",
+      "title": "Partly built features must be maximized to a fully hardened level",
+      "statement": "Features that are slightly built should grow into their fully hardened form, with the maturity difference made explicit.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "original task prompt: 'features that are slightly built, but then they get maximized into its fully hardened level'",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A six-rung ladder where HARDENED is defined and currently unreachable, so partial states cannot be described as finished.",
+      "affected_systems": [
+        "blueprint/ladder.py"
+      ],
+      "rationale": "The prior three-rung vocabulary (executable|partial|target) could not distinguish 'code exists' from 'an organ depends on it'.",
+      "conflicts": [],
+      "evidence_refs": [
+        "HARDENED count = 0 across all 55; requires a reconciled external outcome"
+      ],
+      "implementation_refs": [
+        "blueprint/ladder.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "The first reconciled external outcome exists.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-003",
+      "title": "Two-part plan with seamless Claude/ChatGPT collaboration",
+      "statement": "Claude completes a large part; ChatGPT completes the next big part; the two must integrate seamlessly rather than each redefining the seam.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "original task prompt; founder answer to handoff question",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A frozen, digest-sealed, transport-neutral handoff contract that is canonical over prose.",
+      "affected_systems": [
+        "handoff/"
+      ],
+      "rationale": "Without a machine-checkable seam, either collaborator can 'integrate' by silently redefining it.",
+      "conflicts": [],
+      "evidence_refs": [
+        "python -m handoff.conform: CONFORMANT, 26/26 acceptance vectors"
+      ],
+      "implementation_refs": [
+        "handoff/contract.json",
+        "handoff/BUNDLE_MANIFEST.json",
+        "handoff/SEAL.json",
+        "handoff/conform.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "ChatGPT returns a conformance report citing the bundle digest.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-004",
+      "title": "No self-authorized authority, autonomous treasury, self-preservation, or organ ownership of Kernel functions",
+      "statement": "Do not add self-authorized authority, autonomous treasury control, self-preservation objectives, or DALEOBANKS ownership of Kernel functions.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder approval message, 'Do not add...' clause",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "constitutional_invariant",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Every component added is structurally incapable of authorizing, executing, or widening authority.",
+      "affected_systems": [
+        "blueprint/",
+        "discovery/",
+        "knowledge/",
+        "routing/"
+      ],
+      "rationale": "Intelligence never creates authority; the Kernel control plane is the single authority path.",
+      "conflicts": [],
+      "evidence_refs": [
+        "AST tests assert no policy.consequence_gate or policy.engine import in any of the four new packages",
+        "CI job 3 'One source of authority' passed on head 84fab8f9"
+      ],
+      "implementation_refs": [
+        "closure/nervous_system_registry.py",
+        "tests/unit/test_decision_router.py::test_router_authorizes_nothing",
+        "tests/unit/test_capability_discovery.py::test_discovery_grants_no_access"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Any new package is added to the kernel.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-005",
+      "title": "Implemented, simulated and blueprint-only states must be marked separately",
+      "statement": "Mark implemented, simulated, and blueprint-only states separately.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder answer to Part 1 scope question",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A reality axis orthogonal to the maturity rung, so neither can be inferred from the other.",
+      "affected_systems": [
+        "blueprint/ladder.py",
+        "blueprint/registry.py"
+      ],
+      "rationale": "Conflating maturity with reality is how a specification becomes a production claim.",
+      "conflicts": [],
+      "evidence_refs": [
+        "18 BLUEPRINT_ONLY, 13 SIMULATED, 24 IMPLEMENTED across 55",
+        "tests/unit/test_blueprint_ladder.py::test_reality_is_independent_of_rung"
+      ],
+      "implementation_refs": [
+        "blueprint/ladder.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "The reality axis and rung stop disagreeing anywhere (axis becomes decoration).",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-006",
+      "title": "Kernel identity is transport authentication, never authorization",
+      "statement": "Add 'kernel' to KNOWN_IDENTITIES in both bridge mirrors strictly as transport authentication; kernel payloads must still pass every gate and gain no execution rights.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder answer to peer-repo question",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Kernel-signed messages verify in both peer organs while carrying zero execution authority.",
+      "affected_systems": [
+        "DALEOBANKS/services/bridge_security.py",
+        "WealthMachineIntelligence/src/services/bridge_security.py"
+      ],
+      "rationale": "The Phase Zero report has carried this as an open blocker since 2026-07-20.",
+      "conflicts": [
+        "INT-OM-007"
+      ],
+      "evidence_refs": [
+        "11 tests per repo; DALEOBANKS 269->280 passed, WMI 43->54 passed",
+        "test_kernel_gets_no_more_than_any_other_sender proves identical result shape"
+      ],
+      "implementation_refs": [
+        "DALEOBANKS PR #71",
+        "WealthMachineIntelligence PR #31"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Per-service keys or mTLS lands (INT-OM-007).",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-007",
+      "title": "Per-service keys or mTLS is a required hardening step, not delivered",
+      "statement": "Record per-service keys/mTLS as a hardening step; do not overclaim the shared-secret patch as per-service identity isolation.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder answer to peer-repo question, caveat paragraph",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "deferred",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "The shared-secret limit is stated in code, docstring and an executable test until real isolation exists.",
+      "affected_systems": [
+        "adapters/bridge_transport.py",
+        "DALEOBANKS/services/bridge_security.py",
+        "WealthMachineIntelligence/src/services/bridge_security.py"
+      ],
+      "rationale": "All mirrors share one WEALTHMACHINE_SIGNING_KEY, so any holder can assert any known identity.",
+      "conflicts": [
+        "INT-OM-006"
+      ],
+      "evidence_refs": [
+        "test_the_shared_secret_means_identity_is_claimed_not_isolated proves impersonation succeeds"
+      ],
+      "implementation_refs": [
+        "blueprint/registry.py technology #7 and #26 gaps",
+        "handoff/contract.json BLK-3"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder authorizes per-service key issuance or mTLS.",
+      "unresolved_questions": [
+        "Whether per-service keys or mTLS is the right mechanism, and who issues them."
+      ],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-008",
+      "title": "The frozen contract, not prose, is canonical for the handoff",
+      "statement": "Commit a frozen, versioned, transport-neutral handoff contract; the contract, not prose, must be canonical.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder answer to handoff question",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "handoff/contract.json carries the ownership matrix, protocol versions, invariants, blockers and merge order.",
+      "affected_systems": [
+        "handoff/contract.json",
+        "handoff/CHATGPT_BRIEF.md"
+      ],
+      "rationale": "A prose brief cannot be mechanically checked against what comes back.",
+      "conflicts": [],
+      "evidence_refs": [
+        "26 acceptance vectors validate against 4 JSON Schema Draft 2020-12 specs"
+      ],
+      "implementation_refs": [
+        "handoff/contract.json",
+        "handoff/schemas/"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "Any amendment to a sealed file.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-009",
+      "title": "The seal must cover the whole bundle, via a two-commit freeze",
+      "statement": "Do not hash contract.json alone. Build a bundle manifest of path+SHA-256 over every bundle file, hash that, and use a two-commit freeze because a file cannot contain the SHA of its own commit.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder correction 3",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A content-addressed seam where no sealed file can drift under an unchanged advertised digest.",
+      "affected_systems": [
+        "handoff/BUNDLE_MANIFEST.json",
+        "handoff/SEAL.json",
+        "handoff/conform.py"
+      ],
+      "rationale": "Hashing the contract alone leaves schemas and vectors mutable under the same digest.",
+      "conflicts": [],
+      "evidence_refs": [
+        "36 files sealed; digest fe1556048a9ca60f5956388adb9ddb81cbf060491b1fc8f38c6e2892e42d2c0c",
+        "commit A 99163767f634115b3d7c331d87888df5484b92d8; conform reports CONFORMANT"
+      ],
+      "implementation_refs": [
+        "handoff/conform.py check_integrity and verify_seal"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "Any bundle file changes.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-010",
+      "title": "One canonical selector must be named for Foundry technology #25",
+      "statement": "Resolve PR #70 versus Router #25 by naming one canonical selector and ensuring the canonical router never invokes providers. Preserve both histories; do not leave two unnamed canonical routers.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder correction 1",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "conflicted",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Exactly one named canonical selector, decision-only, with the other preserved and its migration path recorded.",
+      "affected_systems": [
+        "routing/decision_router.py",
+        "capabilities/router.py (PR #70)"
+      ],
+      "rationale": "capabilities/router.py resolve() returns chosen.provider(), instantiating code; two active selectors is the condition FBO section 3 forbids.",
+      "conflicts": [
+        "INT-OM-004"
+      ],
+      "evidence_refs": [
+        "capabilities/router.py:246 return chosen.provider() (read from origin/claude/track-a-runtime-spine)",
+        "tests/unit/test_decision_router.py::test_the_canonical_selector_never_invokes_a_provider (AST)"
+      ],
+      "implementation_refs": [
+        "blueprint/registry.py technology #25 gaps",
+        "handoff/contract.json CONTESTED_UNRESOLVED and BLK-1",
+        "docs/deliberations/DEC-OM-001-canonical-selector.json"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder names the canonical selector.",
+      "unresolved_questions": [
+        "Whether PR #70's lifecycle machinery is rehomed into the decision router or kept in a separate registry."
+      ],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-011",
+      "title": "Organ counting must be exact; discovery is not identity or activation",
+      "statement": "main has three manifests; PumpStation plus RESEARCH-IN makes five. Name the sixth or report five. Reconcile schema-valid status and identity registration without treating discovery as activation or authority.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder correction 2",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Five manifests reported, eight identity registrations reported separately, and the two registers reconciled without conflation.",
+      "affected_systems": [
+        "organs/",
+        "identity/organ-registry.yaml",
+        "discovery/service.py"
+      ],
+      "rationale": "A six-organ claim would be arithmetically and schematically false.",
+      "conflicts": [
+        "INT-OM-012"
+      ],
+      "evidence_refs": [
+        "CapabilityDiscoveryService.identity_reconciliation(): 8 registered, 5 manifests, 3 both, 5 registered-without-manifest, 2 manifested-without-registration",
+        "tests/unit/test_capability_discovery.py::test_exactly_five_manifests_exist_not_six"
+      ],
+      "implementation_refs": [
+        "organs/pumpstation.manifest.yaml",
+        "organs/research-in.manifest.yaml",
+        "discovery/service.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "A sixth manifest is proposed, or the status enum is widened.",
+      "unresolved_questions": [
+        "Whether RESEARCH-IN becomes the RailScout evidence refinery.",
+        "Whether PumpStation should be a UNIIMENTE organ at all (kernel PR #46)."
+      ],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-012",
+      "title": "Preserve contradictions, fail closed, report \u2014 never silently weaken",
+      "statement": "If repository truth contradicts the plan, preserve the contradiction, fail closed, and report it. Do not silently weaken an invariant or expand scope.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder approval message, binding interpretation clause",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "constitutional_invariant",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Contradictions are recorded as first-class artifacts and escalated rather than resolved unilaterally.",
+      "affected_systems": [
+        "docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md",
+        "evolution/repair/"
+      ],
+      "rationale": "Amending a sealed experiment to make a branch green is exactly the in-place weakening this forbids.",
+      "conflicts": [],
+      "evidence_refs": [
+        "20 tests left red; no file under evolution/repair/ or tests/unit/test_repair*.py modified",
+        "organ manifest status contradiction recorded in unresolved rather than widening the enum"
+      ],
+      "implementation_refs": [
+        "docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md",
+        "docs/deliberations/DEC-OM-002-sealed-corpus-contradiction.json"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder decides CONTRADICTION-0001.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-013",
+      "title": "Biological vocabulary names technical capability, never sovereignty",
+      "statement": "Language such as egregore, life, metabolism, morphogenesis, self-healing, embodiment and evolution represents intended technical capabilities and developmental mechanisms, not consciousness, independent sovereignty, self-preservation authority, autonomous treasury ownership, or permission to bypass Alfonso or the Kernel.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "founder approval message, binding interpretation clause",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "constitutional_invariant",
+      "consequence_class": "constitutional",
+      "intended_outcome": "The long-term aspiration is preserved in the evidence-bound blueprint without any component gaining sovereignty.",
+      "affected_systems": [
+        "blueprint/",
+        "docs/"
+      ],
+      "rationale": "Preserving ambition and refusing sovereignty are not in tension when maturity is bound to evidence.",
+      "conflicts": [],
+      "evidence_refs": [
+        "No component added can authorize, activate or schedule; asserted by test"
+      ],
+      "implementation_refs": [
+        "blueprint/registry.py",
+        "tests/unit/test_blueprint_ladder.py::test_the_report_grants_nothing"
+      ],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Any proposal that would let a component act on its own recommendation.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-014",
+      "title": "Report actual results, not test ceremony",
+      "statement": "Do not do excessive testing for its own sake; give the actual result.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "original task prompt",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "Real command output (ladder, linker, conformance) reported rather than test counts alone.",
+      "affected_systems": [
+        "blueprint/__main__.py",
+        "handoff/conform.py"
+      ],
+      "rationale": "A test count is not a result; the ladder and frontier are.",
+      "conflicts": [],
+      "evidence_refs": [
+        "python -m blueprint and python -m handoff.conform outputs reported verbatim"
+      ],
+      "implementation_refs": [
+        "blueprint/__main__.py"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "A report is delivered that leads with test counts instead of output.",
+      "unresolved_questions": [],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-015",
+      "title": "Use the named skills",
+      "statement": "Use backcast-gps, spider-web-hegemony, install-recursive-founder-intent-collaboration-protocol, mechanism-recombination-foundry and any other skills necessary.",
+      "source": "founder message in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "original task prompt",
+      "source_date_or_version": "2026-08-12T11:27:14+00:00",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "The named skills are invoked and their protocols applied, not approximated from committed artifacts.",
+      "affected_systems": [
+        "docs/",
+        "governance/"
+      ],
+      "rationale": "Part 1 was delivered without invoking them; the missing merge-proof section in PR #71 was the direct consequence.",
+      "conflicts": [],
+      "evidence_refs": [
+        "install-recursive-founder-intent-collaboration-protocol invoked 2026-08-12; this ledger is its output"
+      ],
+      "implementation_refs": [
+        "governance/intents.json",
+        "docs/deliberations/"
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "Remaining named skills are applied.",
+      "unresolved_questions": [
+        "backcast-gps, spider-web-hegemony and mechanism-recombination-foundry are not yet applied."
+      ],
+      "created_at": "2026-08-12T11:27:14+00:00",
+      "updated_at": "2026-08-12T11:27:14+00:00"
+    },
+    {
+      "intent_id": "INT-OM-016",
+      "title": "Operating doctrine: unlock recurring physical-world money trapped behind broken proof and settlement",
+      "statement": "Find streams of large, recurring, physical-world money trapped behind broken proof, trust, and settlement infrastructure. Map the participants. Build the substrate that removes the friction dam. The business compounds because every participant becomes more capable, more trusted, more eligible, and easier to transact with inside the rail. The moat strengthens because the market gets healthier. Win the wedge. Expand to the operating system. Every answer should serve this architecture.",
+      "source": "founder-authored operating doctrine supplied in Claude Code session 01Ao5gTL8a3hs74XDp37J9HQ",
+      "source_location": "01-DOCTRINE.txt, supplied verbatim and in the first person",
+      "source_date_or_version": "2026-08-17",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "strategic",
+      "intended_outcome": "Kernel work is judged by whether it moves proof, trust and settlement for a real money stream, not by internal completeness.",
+      "affected_systems": [
+        "blueprint/",
+        "foundry/arsenal.py",
+        "docs/BACKCAST_SBM_0_TO_1.md"
+      ],
+      "rationale": "Recorded because it is the founder speaking in the first person about what all work is for. It is the standard against which the Single Bottleneck Metric of zero verified outcomes is a live indictment: the kernel is internally elaborate and has removed no friction dam yet.",
+      "conflicts": [],
+      "evidence_refs": [
+        "Single Bottleneck Metric: verified external outcome count is 0 (python -m shell evidence)",
+        "HARDENED is unreachable by construction until a reconciled external consequence exists (blueprint/ladder.py)"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "First verified external outcome, or any decision that selects the wedge market.",
+      "unresolved_questions": [
+        "Which money stream is the wedge is not decided in the kernel and is not an agent's call.",
+        "A1: does a free consented deliverable count toward the Single Bottleneck Metric?",
+        "A2: who is named legal principal for the first outcome?"
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-017",
+      "title": "Prove one external verified outcome before expanding the platform",
+      "statement": "Among the credible branches the path that most increases expected founder advantage is to prove one external Verified Outcome before expanding the platform, because it creates owned proof acceptance rather than software usage. General-platform-first, content-first and marketplace-replacement-first either burn capital before proof, leave bypass paths open, or create operational liabilities before the control plane is real.",
+      "source": "Proof-to-Settlement Egregore analysis, endorsed in direction by the founder",
+      "source_location": "02-Proof-to-Settlement-Egregore.pdf, executive summary and strategic-tree result",
+      "source_date_or_version": "2026-08-17",
+      "status": "needs_evidence",
+      "authority_level": "advisory",
+      "consequence_class": "strategic",
+      "intended_outcome": "Sequencing pressure stays on the first reconciled external outcome rather than on further internal breadth.",
+      "affected_systems": [
+        "blueprint/ladder.py",
+        "blueprint/cycle.py",
+        "docs/BACKCAST_SBM_0_TO_1.md"
+      ],
+      "rationale": "Recorded at advisory authority on purpose. The founder placed the document in the intent hierarchy as *supporting* fail-closed, capability-bound, evidence-reconciled execution, which endorses its direction and does not ratify each sentence as executable law. Promoting an analysis to an active requirement is the specific move the founder's hierarchy warns against. It is recorded because it independently converges with an already-implemented kernel invariant: HARDENED requires a reconciled external consequence and nothing internal can supply one.",
+      "conflicts": [],
+      "evidence_refs": [
+        "blueprint/ladder.py: EXTERNAL_OUTCOME is required only at HARDENED and resolves for nothing",
+        "python -m blueprint.cycle: the CEREMONY_SUSPECTED verdict exists to detect internal breadth that unlocks nothing"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder ratifies or rejects the sequencing claim, or the first verified outcome lands.",
+      "unresolved_questions": [
+        "The vertical named in the source document was explicitly not imported into the current decision; only its generally applicable proof and containment principles were used."
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-018",
+      "title": "No frontier model and no sensing organ sits directly on the settlement path",
+      "statement": "Do not let DALEOBANKS or any frontier model sit directly on the settlement path. Sensing and narrative organs feed signals; strategy and underwriting evaluate; the control plane authorizes; settlement happens behind the consequence boundary.",
+      "source": "Proof-to-Settlement Egregore analysis, endorsed in direction by the founder",
+      "source_location": "02-Proof-to-Settlement-Egregore.pdf, recommended configuration",
+      "source_date_or_version": "2026-08-17",
+      "status": "needs_evidence",
+      "authority_level": "advisory",
+      "consequence_class": "authority",
+      "intended_outcome": "Settlement authority never becomes reachable from a perception organ or from model output.",
+      "affected_systems": [
+        "organs/",
+        "linker/",
+        "discovery/",
+        "policy/consequence_gate"
+      ],
+      "rationale": "Recorded at advisory rather than constitutional authority because it comes from an analysis the founder endorsed in direction, not from a founder statement of law. Ratifying it as a constitutional invariant requires an explicit founder statement. It is proposed for ratification because it is checkable: it can be expressed as an executable guard over the organ manifests and the gate, which no current test asserts.",
+      "conflicts": [],
+      "evidence_refs": [
+        "No current test asserts that a settlement-class capability is unreachable from daleobanks",
+        "organs/daleobanks.manifest.yaml declares external targets and a read_only kernel relationship"
+      ],
+      "implementation_refs": [],
+      "owner": "FOUNDER",
+      "next_review_trigger": "Founder ratifies this as a constitutional invariant, at which point CLAUDE builds the executable guard over organs/ and the consequence gate.",
+      "unresolved_questions": [
+        "Whether to ratify at constitutional_invariant authority, which would make the guard mandatory rather than proposed."
+      ],
+      "created_at": "2026-08-17T12:00:00+00:00",
+      "updated_at": "2026-08-17T12:00:00+00:00"
+    },
+    {
+      "intent_id": "INT-OM-019",
+      "title": "Organize around existing contributor work rather than around my own",
+      "statement": "Use the recursive founder-intent collaboration protocol to organize around what Kimi and ChatGPT have already done: find the canonical owner, avoid duplication, strengthen with evidence, and leave a clean handoff and trail of what was done, stated transparently so collaboration is possible.",
+      "source": "founder_message",
+      "source_location": "session message 2026-08-21, '/install-recursive-founder-intent-collaboration-protocol ... Organize around what Kimi and ChatGPT have already done'",
+      "source_date_or_version": "2026-08-21",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "internal_write",
+      "intended_outcome": "One map of where every contributor's decision records live, so no contributor's work is invisible and no concern silently acquires two owners. Explicitly NOT a merged registry: the instruction was to avoid duplication, and consolidating four registries into mine would have been duplication with extra steps plus an ownership ruling I have no standing to make.",
+      "affected_systems": [
+        "governance/registries.py",
+        "shell/pipelines.py",
+        "docs/collaboration/"
+      ],
+      "rationale": "Kimi's reconciliation identified local-only artifacts as the trail-failure mode. Inspection found the harder version: three of four decision registries are durable, committed and still invisible to every other contributor because they sit on unmerged branches. A register of registries makes that computable without copying anyone's records.",
+      "evidence_refs": [
+        "python -m governance.registries \u2014 4 registries, 1 unreachable, 1 contested concern",
+        "tests/unit/test_governance_registries.py \u2014 16 tests including an AST guard that no decision content may live in the register",
+        "git ancestry: build/* lack evolution/repair (13 files) and tests/unit/test_repair* (5 files) present on main; merge commits 5e02e47 and 526e320 absent from WP ancestry"
+      ],
+      "implementation_refs": [
+        "governance/registries.py",
+        "docs/collaboration/COLLAB-HANDOFF-CLAUDE-001.yaml",
+        "shell/pipelines.py::_registries"
+      ],
+      "conflicts": [
+        "REG-DELIB-KERNEL (mine, DEC-OM-00N) and REG-COLLAB-KIMI (Kimi's, DELIB-KIMI-*) both claim the 'open founder decisions' concern. Kimi's own ownership map calls two active owners a defect. Preserved as a contest and escalated; not resolved in my favour.",
+        "INTENT-00NN (docs/intent, on main, extended by Kimi) and INT-OM-0NN (this file) are two intent namespaces. Both preserved; neither renamed."
+      ],
+      "owner": "CLAUDE",
+      "next_review_trigger": "Founder rules which registry is canonical for open founder decisions, or a fifth registry appears.",
+      "unresolved_questions": [
+        "Which intent namespace is canonical.",
+        "Whether Kimi's cross-repository scope or my kernel-local depth should own the decision catalogue, or whether they compose."
+      ],
+      "created_at": "2026-08-21",
+      "updated_at": "2026-08-21"
+    }
+  ]
+}

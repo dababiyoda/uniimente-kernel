@@ -8,6 +8,8 @@ from closure.kernel_registry import build_registry as build_kernel_registry
 from closure.commercial_registry import register_commercial_closures
 from closure.advantage_registry import register_advantage_closures
 from closure.developmental_registry import register_developmental_closures
+from closure.nervous_system_registry import register_nervous_system_closures
+from egregore.closure import standing_cognition_closures
 
 
 def build_registry():
@@ -15,4 +17,12 @@ def build_registry():
     register_commercial_closures(registry)
     register_advantage_closures(registry)
     register_developmental_closures(registry)
+    register_nervous_system_closures(registry)
+    # `egregore/` shipped its own five closures and was never registered here,
+    # so the Whole-Body Closure Controller — the section 5.7 component whose
+    # whole job is detecting a loop left open — had never checked the one organ
+    # that wrote its own checks. In this module, named for the Egregore
+    # integration line. The closures were correct and unread; they are
+    # registered as they stand rather than rewritten.
+    registry.register(standing_cognition_closures())
     return registry

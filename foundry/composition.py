@@ -10,12 +10,20 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from capabilities.genome import CapabilityGenome, CONSEQUENCE_CLASSES
 from .arsenal import ARSENAL, TechnologySpec
+from .evidence_rank import (
+    BUILDABLE_FLOOR,
+    disagreement_notes,
+    evidence_for,
+    evidence_table,
+    rung_map,
+    selection_rank,
+)
 
 ALLOWED_CONTROL_SURFACES = frozenset(
     surface for spec in ARSENAL.values() for surface in spec.control_surfaces
@@ -27,6 +35,10 @@ ALLOWED_METRICS = frozenset({
     "authorized_completion_rate", "state_continuity", "security_incidents",
     "clean_verified_outcome_count", "time_to_validated_genome",
 })
+#: Preserved, and no longer the primary selection key. `status` is a written
+#: claim; `evidence_rank.selection_rank` is what resolves against the tree. The
+#: word is retained as a subordinate ranked term rather than deleted (FBO §9,
+#: §12), so a tie on evidence still breaks toward the more confident design.
 _STATUS_RANK = {"executable": 0, "partial": 1, "target": 2}
 _LOWER_IS_BETTER = frozenset({
     "customer_acquisition_cost", "dispute_rate", "error_rate", "founder_minutes",
@@ -153,6 +165,12 @@ class CompositionPlan:
     legal_principal: str
     created_at: str
     notes: tuple[str, ...] = ()
+    #: What the evidence ladder awarded each selected technology, beside the
+    #: `implementation_status` claim above. Two signals, never merged.
+    evidence_rungs: dict[int, str] = field(default_factory=dict)
+    #: Every place the written status and the resolved evidence conflict. Empty
+    #: is a real answer; a populated tuple is not a warning to be skimmed.
+    evidence_disagreements: tuple[str, ...] = ()
     schema_version: str = "1.0.0"
 
     def canonical_payload(self) -> dict[str, Any]:
@@ -165,7 +183,29 @@ class CompositionPlan:
 
     @property
     def implementation_ready(self) -> bool:
+        """Every selected technology *claims* to be executable.
+
+        Deliberately unchanged. `closure/advantage_registry.py` and
+        `omnimorph/engine.py` both read this, and quietly redefining a property
+        two other modules depend on would be the silent weakening §12 forbids.
+        It means what it always meant: the written status says executable.
+        """
         return all(status == "executable" for status in self.implementation_status.values())
+
+    @property
+    def evidence_ready(self) -> bool:
+        """Every selected technology has code a named test actually exercises.
+
+        The evidence counterpart to `implementation_ready`. A plan can be
+        implementation-ready and not evidence-ready — that is precisely the
+        condition worth being able to see, and it is why both exist.
+        """
+        if not self.evidence_rungs:
+            return False
+        strengths = {"BLUEPRINT": 0, "SKETCHED": 1, "BUILT": 2,
+                     "EXERCISED": 3, "PROVEN": 4, "HARDENED": 5}
+        return all(strengths.get(rung, -1) >= BUILDABLE_FLOOR
+                   for rung in self.evidence_rungs.values())
 
 
 def request_hash(request: CompositionRequest) -> str:
@@ -221,10 +261,21 @@ class FoundryComposer:
         if selected & prohibited:
             raise CompositionRefused("requested technologies include prohibited technologies")
 
+        # One ladder read per composition. The table describes this repository;
+        # a caller supplying a synthetic arsenal still gets the real evidence,
+        # and any id the ladder does not cover is reported UNKNOWN rather than
+        # assumed sound.
+        evidence = evidence_table()
+        unbuilt_surfaces: list[str] = []
+
         for surface in sorted(set(request.control_surfaces)):
             if any(surface in self.arsenal[technology_id].control_surfaces for technology_id in selected):
                 continue
-            selected.add(self._best_for_surface(surface, prohibited))
+            covering = self._best_for_surface(surface, prohibited, evidence)
+            selected.add(covering)
+            unbuilt = self._unbuilt_surface_note(surface, covering, evidence)
+            if unbuilt:
+                unbuilt_surfaces.append(unbuilt)
 
         ordered_ids = self._topological_order(selected, prohibited)
         consequence_class = max(
@@ -269,6 +320,11 @@ class FoundryComposer:
             elif spec.status == "partial":
                 notes.append(f"implementation_gap: technology {technology_id} ({spec.name}) is partial")
 
+        evidence_rungs = rung_map(ordered_ids, evidence)
+        conflicts = disagreement_notes(ordered_ids, evidence, self.arsenal)
+        notes.extend(conflicts)
+        notes.extend(unbuilt_surfaces)
+
         draft = CompositionPlan(
             plan_id="",
             request_hash=request_hash(request),
@@ -287,11 +343,22 @@ class FoundryComposer:
             legal_principal=request.legal_principal,
             created_at=utc_now(),
             notes=tuple(notes),
+            evidence_rungs=evidence_rungs,
+            evidence_disagreements=conflicts,
         )
         return replace(draft, plan_id=plan_id_for(draft.canonical_payload()))
 
-    def _best_for_surface(self, surface: str, prohibited: set[int]) -> int:
-        candidates: list[tuple[tuple[int, int, int, int], int]] = []
+    def _best_for_surface(self, surface: str, prohibited: set[int],
+                          evidence: dict) -> int:
+        """Choose the technology covering `surface`, on evidence before claim.
+
+        The primary key is what resolves against the real tree; `status` is the
+        second term, so a tie on evidence still breaks toward the more confident
+        design. Before this seam existed the written word was primary, which on
+        this repository would prefer #31 (written executable, evidence
+        BLUEPRINT) over technologies that are genuinely built.
+        """
+        candidates: list[tuple[tuple[int, int, int, int, int], int]] = []
         for technology_id, spec in self.arsenal.items():
             if technology_id in prohibited or surface not in spec.control_surfaces:
                 continue
@@ -300,6 +367,7 @@ class FoundryComposer:
             except CompositionRefused:
                 continue
             score = (
+                selection_rank(evidence_for(technology_id, evidence, spec.status)),
                 _STATUS_RANK[spec.status], len(closure),
                 CONSEQUENCE_CLASSES.index(spec.consequence_class), technology_id,
             )
@@ -307,6 +375,27 @@ class FoundryComposer:
         if not candidates:
             raise CompositionRefused(f"no feasible technology covers control surface {surface!r}")
         return sorted(candidates)[0][1]
+
+    def _unbuilt_surface_note(self, surface: str, technology_id: int,
+                              evidence: dict) -> str | None:
+        """Say so when the best available cover for a surface is not built.
+
+        Discovered by a test that expected #31 never to win: on the
+        `distribution` surface every one of the eight candidates resolves to
+        BLUEPRINT, so the strongest choice is still a design. Selecting the best
+        of several unbuilt options is correct behaviour and a plan that does not
+        mention it reads as though the surface were covered.
+        """
+        best = evidence_for(technology_id, evidence,
+                            self.arsenal[technology_id].status)
+        if best.strength >= BUILDABLE_FLOOR:
+            return None
+        return (
+            f"unbuilt_surface: control surface {surface!r} is covered by "
+            f"technology {technology_id} ({self.arsenal[technology_id].name}), whose "
+            f"evidence is {best.awarded or 'nothing'}; no technology covering this "
+            "surface has code a named test exercises"
+        )
 
     def _dependency_closure(self, root: int, prohibited: set[int]) -> set[int]:
         closure: set[int] = set()

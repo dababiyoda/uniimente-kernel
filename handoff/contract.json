@@ -1,0 +1,227 @@
+{
+  "contract_id": "uniimente.handoff.claude-chatgpt",
+  "contract_version": "1.0.0",
+  "status": "FROZEN",
+  "authority_note": "This contract coordinates two collaborators. It creates no authority, grants no capability, and does not bind the founder. Alfonso Lopez remains the sole constitutional authority.",
+
+  "ownership_matrix": {
+    "principle": "Non-overlapping file and component boundaries. Neither collaborator writes inside the other's paths. A path claimed by neither requires a founder decision before either writes it.",
+    "CLAUDE": {
+      "components": [
+        "Opus Maximus blueprint: hardening ladder, evidence binder, critical-path compiler",
+        "Capability Discovery Service (Foundry technology #27)",
+        "Institutional Knowledge Graph (technology #18)",
+        "Decision Router (technology #25, decision-only selector)",
+        "Organ manifests hosted in the kernel",
+        "This handoff bundle"
+      ],
+      "owns_paths": [
+        "blueprint/",
+        "discovery/",
+        "knowledge/",
+        "routing/",
+        "handoff/",
+        "organs/",
+        "closure/nervous_system_registry.py",
+        "tests/unit/test_blueprint_ladder.py",
+        "tests/unit/test_capability_discovery.py",
+        "tests/unit/test_knowledge_graph.py",
+        "tests/unit/test_decision_router.py"
+      ]
+    },
+    "CHATGPT": {
+      "components": [
+        "Governed module loader / dynamic linker (FBO §4.4)",
+        "MCP boundary (technology #28)",
+        "A2A boundary (technology #29 wire protocol)",
+        "Containment tier selection (technologies #9 container, #10 microVM, #11 WebAssembly)"
+      ],
+      "owns_paths": [
+        "moduleloader/",
+        "boundary/",
+        "containment/",
+        "tests/unit/test_module_loader.py",
+        "tests/unit/test_mcp_boundary.py",
+        "tests/unit/test_a2a_boundary.py",
+        "tests/unit/test_containment.py"
+      ],
+      "must_not_write": [
+        "blueprint/", "discovery/", "knowledge/", "routing/", "handoff/",
+        "organs/", "contracts/", "policy/", "constitution/", "authority/",
+        "evolution/repair/", "capabilities/router.py", "runtime/"
+      ]
+    },
+    "FOUNDER_ONLY": {
+      "components": [
+        "Widening contracts/organ-manifest.schema.json status enum",
+        "Naming the canonical selector between routing/decision_router.py and capabilities/router.py (draft PR #70)",
+        "Resolving CONTRADICTION-0001",
+        "Registering a new organ identity in identity/organ-registry.yaml",
+        "Per-service signing keys or mTLS replacing the shared HMAC secret"
+      ]
+    },
+    "CONTESTED_UNRESOLVED": [
+      {
+        "subject": "Foundry technology #25, the Capability Router",
+        "claimants": [
+          "routing/decision_router.py (this branch) — returns a RoutingDecision, never invokes a provider; AST-asserted",
+          "capabilities/router.py (draft PR #70) — select() is decision-only, resolve() calls chosen.provider() and instantiates code"
+        ],
+        "state": "Two routers exist. Neither is promoted. Technology #25 is NOT closed and no conformance result may claim it is.",
+        "migration_path": "If decision_router.py is made canonical: move resolve() out of the router to a caller holding a capability grant, leaving select() as a decision-only adapter. PR #70's lifecycle machinery (Implementation.origin, LIFECYCLES, restore/set_lifecycle) is not duplicated here and must be rehomed, not discarded.",
+        "owner": "FOUNDER"
+      }
+    ]
+  },
+
+  "protocol_identifiers": {
+    "handoff_bundle": {
+      "id": "uniimente.handoff",
+      "version": "1.0.0",
+      "downgrade": "REJECT. A conformance report naming a lower bundle version is refused, not negotiated."
+    },
+    "boundary_envelope": {
+      "id": "uniimente.boundary.envelope",
+      "version": "1.0.0",
+      "exact_match_required": true,
+      "downgrade": "REJECT. An envelope whose protocol_version is not exactly 1.0.0 is refused. There is no fallback, no best-effort parse, and no negotiation to an older shape.",
+      "rationale": "Mirrors adapters/bridge_transport.py, which already rejects any schema version below MIN_SCHEMA_VERSION rather than degrading."
+    },
+    "capability_request": {
+      "id": "uniimente.capability.request",
+      "version": "1.0.0",
+      "downgrade": "REJECT."
+    },
+    "containment_requirement": {
+      "id": "uniimente.containment.requirement",
+      "version": "1.0.0",
+      "downgrade": "REJECT."
+    },
+    "evidence_record": {
+      "id": "uniimente.handoff.evidence",
+      "version": "1.0.0",
+      "downgrade": "REJECT."
+    }
+  },
+
+  "required_invariants": [
+    {
+      "id": "INV-1",
+      "statement": "Identity and authentication never imply authorization.",
+      "test": "A correctly signed, correctly versioned envelope from a known sender still carries zero execution authority."
+    },
+    {
+      "id": "INV-2",
+      "statement": "Inbound messages become proposals, never instructions.",
+      "test": "Every accepted envelope yields an object whose disposition is PROPOSAL and which has no execute path."
+    },
+    {
+      "id": "INV-3",
+      "statement": "Unknown organs, unknown capabilities and unknown protocol versions are rejected.",
+      "test": "Each of the three is refused with a named reason; none is approximated to a nearest match."
+    },
+    {
+      "id": "INV-4",
+      "statement": "No arbitrary dynamic imports. A module is loadable only from a pre-declared, pinned allowlist.",
+      "test": "A load request naming a module outside the allowlist is refused before any import executes."
+    },
+    {
+      "id": "INV-5",
+      "statement": "No external consequence without a founder-approved, narrow, revocable capability plus Kernel authorization at the Consequence Gate.",
+      "test": "An external_contact or higher request with no grant is refused; a revoked grant fails at commit time."
+    },
+    {
+      "id": "INV-6",
+      "statement": "No module may attach itself, activate itself, widen its own authority, alter its own approval requirements, prevent detachment, hide its state, or resist shutdown.",
+      "test": "Each of the seven is attempted and refused."
+    },
+    {
+      "id": "INV-7",
+      "statement": "Isolation that is only policy enforcement must be labelled as policy enforcement.",
+      "test": "A containment decision reports its enforcement_kind, and reports UNAVAILABLE rather than claiming a tier the host cannot provide."
+    }
+  ],
+
+  "implementation_state_labels": {
+    "note": "The same six rungs the blueprint uses, so both halves speak one vocabulary. Cumulative: each rung requires everything below it.",
+    "BLUEPRINT": "A committed specification document exists.",
+    "SKETCHED": "Code exists on disk at a named path.",
+    "BUILT": "A named, executable test exercises it.",
+    "EXERCISED": "It runs inside the institution's own loop — registered in a closure registry.",
+    "PROVEN": "A contract schema types its boundary AND an organ manifest declares it.",
+    "HARDENED": "An externally observable, reconciled consequence exists. Nothing in this institution has reached this rung; the verified external outcome count is 0."
+  },
+
+  "acceptance": {
+    "conformance_command": "python -m handoff.conform",
+    "rule": "ChatGPT's return is accepted only when its conformance report references the frozen bundle digest recorded in handoff/SEAL.json AND every acceptance vector passes — or names the exact unsatisfied vector without weakening it.",
+    "forbidden": [
+      "Editing any vector to make it pass.",
+      "Editing any schema to admit a payload it previously refused.",
+      "Reporting a rung above what the evidence resolves.",
+      "Claiming technology #25 closed while two routers exist."
+    ]
+  },
+
+  "seal": {
+    "method": "two_commit_freeze",
+    "rationale": "A digest of contract.json alone would leave schemas and vectors free to drift under the same advertised digest. A file cannot contain the SHA of the commit that contains it, so the seal is split.",
+    "commit_A": "Freezes every bundle file and handoff/BUNDLE_MANIFEST.json, which lists sorted path + SHA-256 for each.",
+    "commit_B": "Records commit A's SHA and the recomputed digest of BUNDLE_MANIFEST.json in handoff/SEAL.json.",
+    "bundle_digest_definition": "SHA-256 over the exact bytes of handoff/BUNDLE_MANIFEST.json.",
+    "verification": "python -m handoff.conform recomputes every file hash against BUNDLE_MANIFEST.json, recomputes the manifest digest against SEAL.json, and confirms commit A is an ancestor of HEAD.",
+    "amendment": "Any change produces a new contract_version and a new bundle digest, in a new two-commit freeze. Never an in-place edit under the same advertised digest."
+  },
+
+  "known_blockers": [
+    {
+      "id": "BLK-1",
+      "subject": "Canonical selector for technology #25",
+      "detail": "routing/decision_router.py versus capabilities/router.py in draft PR #70, whose resolve() invokes chosen.provider(). Both preserved; neither promoted.",
+      "owner": "FOUNDER",
+      "blocks": "Any claim of canonical router closure."
+    },
+    {
+      "id": "BLK-2",
+      "subject": "CONTRADICTION-0001",
+      "detail": "The sealed Package 3 repair experiment measures organs/*.manifest.yaml as a live glob and pins unresolved_count=7. Publishing the two approved manifests takes it to 17, failing 20 tests. No sealed file was modified. See docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md.",
+      "owner": "FOUNDER",
+      "blocks": "A fully green python -m pytest on this branch."
+    },
+    {
+      "id": "BLK-3",
+      "subject": "Shared HMAC secret across all three bridge mirrors",
+      "detail": "One WEALTHMACHINE_SIGNING_KEY. Adding 'kernel' to KNOWN_IDENTITIES makes it a RECOGNIZED CLAIMED identity, not a cryptographically isolated per-service identity: any holder of the shared secret can assert any known identity. Per-service keys or mTLS required.",
+      "owner": "FOUNDER",
+      "blocks": "Any claim of per-service identity isolation."
+    },
+    {
+      "id": "BLK-4",
+      "subject": "Organ manifest status vocabulary",
+      "detail": "contracts/organ-manifest.schema.json admits only active | planned | this_repository. It cannot express 'code exists in a real repository, but the organ is registered and not attached'. Both new manifests record 'planned' plus the contradiction in unresolved.",
+      "owner": "FOUNDER",
+      "blocks": "An accurate status for PumpStation and RESEARCH-IN."
+    },
+    {
+      "id": "BLK-5",
+      "subject": "Organ counting",
+      "detail": "There are FIVE organ manifests, not six: three on main plus PumpStation and RESEARCH-IN. identity/organ-registry.yaml separately registers EIGHT organ identities, five of which have no manifest, while the two new manifests have no identity registration. A manifest is discovery-only and implies neither identity nor activation.",
+      "owner": "FOUNDER",
+      "blocks": "Any six-organ claim."
+    },
+    {
+      "id": "BLK-6",
+      "subject": "Cross-repository evidence binding",
+      "detail": "Blueprint evidence locators are kernel-repository-relative. Capabilities implemented in DALEOBANKS and WealthMachineIntelligence cannot be bound to an implementation path from the kernel, so they stand at BLUEPRINT here even where real code exists there.",
+      "owner": "CLAUDE",
+      "blocks": "An accurate rung for technologies #32 and others implemented in peer organs."
+    }
+  ],
+
+  "merge_order": [
+    "1. uniimente-kernel — this bundle and the Part 1 components must land first; it is the shared source of truth.",
+    "2. DALEOBANKS — transport identity only.",
+    "3. WealthMachineIntelligence — transport identity only.",
+    "4. ChatGPT's Part 2 — opens only after the kernel branch exists and its conformance report cites this bundle's digest."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "document": {
+    "attestation_evidence": null,
+    "attested": false,
+    "consequence_class": "internal_write",
+    "enforcement_kind": "policy_only",
+    "granted_tier": "UNAVAILABLE",
+    "module_id": "candidate-r3",
+    "required_tier": "microvm",
+    "requirement_version": "1.0.0",
+    "trust": "generated"
+  },
+  "expect": "ACCEPT",
+  "schema": "containment-requirement",
+  "vector_id": "con-02-unavailable-tier-reported-honestly",
+  "why": "A host that cannot provide the required tier reports UNAVAILABLE. Refusing is correct behaviour, not a failure of the schema."
+}

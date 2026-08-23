@@ -95,8 +95,9 @@ CHILD = textwrap.dedent(
     from evolution.repair.r2_constraint import ConstraintSatisfaction
     from evolution.repair.r3_local_rule import LocalRulePropagation
     from linker.manifest import load_all
+    from evolution.repair import spec
 
-    manifests = load_all(__REPO_ROOT__ + "/organs")
+    manifests = load_all(spec.CORPUS_DIR)
     contracts_dir = __REPO_ROOT__ + "/contracts"
     contract = expectations.live_contract()
 

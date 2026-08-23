@@ -1,0 +1,3170 @@
+{
+  "categories": [
+    "canonical authored source",
+    "organ-specific authored source",
+    "shared contract",
+    "compatibility shim",
+    "generated output",
+    "vendored dependency",
+    "fixture",
+    "runtime state",
+    "evidence artifact",
+    "proof artifact",
+    "historical snapshot",
+    "archive",
+    "documentation",
+    "duplicate candidate",
+    "unknown"
+  ],
+  "classification_status": "provisional",
+  "classification_warning": "Path heuristics do not prove authorship, semantic duplication, or canonical ownership. Confirm material findings from code, history, governance, and actual consumers.",
+  "complete": true,
+  "entries": [
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": ".git",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": ".github/pull_request_template.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1802
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": ".github/workflows/ade1-standing-cognition.yml",
+      "reason": "documentation path or extension",
+      "size_bytes": 1083
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": ".github/workflows/canonical-ci.yml",
+      "reason": "documentation path or extension",
+      "size_bytes": 2860
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": ".github/workflows/tests.yml",
+      "reason": "documentation path or extension",
+      "size_bytes": 1175
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": ".gitignore",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 34
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": ".pytest_cache",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "CLAUDE.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1760
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "LICENSE",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1083
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 10477
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "adapters/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1817
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "adapters/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 0
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "adapters/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "adapters/bridge_transport.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6472
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "adapters/daleobanks_opportunity.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8850
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "adapters/wealthmachine_assessment.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5612
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "affect/affect-policy.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4649
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "affect/identity-coherence.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1480
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "affect/pathological-state-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1657
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "authority/authority-matrix.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2546
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "authority/legal-principals.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1199
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "authority/reserved-matters.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2112
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "autonomy/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3299
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "autonomy/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 95
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "autonomy/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "autonomy/levels.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7510
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2276
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/__main__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6914
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "blueprint/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/critical_path.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9093
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/evidence.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 10612
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/ladder.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5375
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "blueprint/registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 32785
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "business/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1883
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "business/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 416
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "business/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "business/commercial_loop.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9503
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "business/genome.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7100
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "capabilities/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2310
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capabilities/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 75
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "capabilities/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capabilities/genome.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5015
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "capital/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1792
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 456
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "capital/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/acquisition-gates.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 931
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/allocation-policy.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2066
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/concentration-limits.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 786
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/liquidity-policy.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 659
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "capital/treasury.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7352
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "closure/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2243
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 82
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "closure/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/advantage_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 15513
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/commercial_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 15982
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/developmental_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3593
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/framework.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3791
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/integration_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 904
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/kernel_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 51190
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/nervous_system_registry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 12858
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "closure/whole_body.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7076
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "compiler/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2846
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "compiler/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 88
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "compiler/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "compiler/ucl_compiler.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14690
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "compiler/ucl_parser.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7341
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "conftest.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 78
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "constitution/amendment-policy.ucl",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1780
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "constitution/constitution.ucl",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4536
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "constitution/participant-rights.ucl",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2214
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "constitution/shutdown-policy.ucl",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2533
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "constitution/sovereignty.ucl",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2455
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/capability-grant.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 3387
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/context-packet.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2742
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/decision.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 3033
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/egregore-cognition.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2194
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/event.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2606
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/evidence.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 4442
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/opportunity-packet.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2466
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/organ-manifest.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 4452
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/outcome.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2473
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/venture-assessment.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 3222
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/venture-cell-charter.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2970
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/wire-opportunity-packet.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2212
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/wire-venture-assessment.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2400
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "developmental/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3991
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "developmental/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 776
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "developmental/__main__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 755
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "developmental/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "developmental/cdpe.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 13590
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "developmental/contracts.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7522
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "developmental/mica.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 13513
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "discovery/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 907
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "discovery/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "discovery/service.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 15048
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/ADE1_GOVERNED_RUNTIME.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4944
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/ADE1_GOVERNED_TRANSLATION.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 9791
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4159
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/BACKCAST_GPS.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 11461
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/BUILD_ORDER.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4536
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/CANONICAL_EXECUTION_ORDER.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3545
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/CONTRADICTION-0001-live-corpus-vs-organ-growth.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4564
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/EGREGORE_V1_INTEGRATION_PROGRAM.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 11421
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/FOUNDER_INTENT_LEDGER.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2441
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/FOUNDRY_OMNIMORPH_V1.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 6037
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/PHASE_ZERO_REPORT.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 6111
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/RECURSIVE_COLLABORATION_PROTOCOL.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3649
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/REPOSITORY_RATIONALIZATION_PLAN.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4696
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/TARGET_FORM_001.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4077
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/UCL.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4454
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 20975
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/developmental/TARGET_FORM_002_SPEC.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4155
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/intent/INTENT-0001-uniimente-as-legal-principal.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3239
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/00-README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2000
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/01-comparison.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2728
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/02-authority-duplication.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1424
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/03-core-venture-boundary.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 6917
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/04-contract-inventory.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2752
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/05-rollback.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2774
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/06-ci-two-run-record.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2854
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/canonical-v1/boundary.json",
+      "reason": "documentation path or extension",
+      "size_bytes": 4140
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-2/PROTECTED_RECORD_HASH.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 121
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-3/EVIDENCE_RECORD.json",
+      "reason": "documentation path or extension",
+      "size_bytes": 83501
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-3/EXPERIMENT_SPEC.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 8704
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-3/PLAN.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 11472
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-3/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3355
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-3/RESULTS.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 10376
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-4/EVIDENCE_RECORD.json",
+      "reason": "documentation path or extension",
+      "size_bytes": 21942
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/release/package-4/RESULTS.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 6309
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "egregore/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2960
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 867
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "egregore/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/closure.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2377
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/contracts.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14733
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/drift.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2667
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/gate_adapter.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2550
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/resources.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5040
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "egregore/runtime.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 22300
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "embassy/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2398
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "embassy/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 80
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "embassy/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "embassy/gate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3599
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "events/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3116
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "events/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 68
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "events/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "events/engine.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9255
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "events/spine.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14785
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "evolution/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4759
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 77
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "evolution/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/auto_cycle.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6452
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/branch_generator.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4063
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/capsule.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4038
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/comparison.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2999
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/experiment.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3143
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/failure_analysis.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3739
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/loop.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6780
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1196
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/__main__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1318
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "evolution/migration/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/engines.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 21528
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/harness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 21013
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/migrate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7271
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/schema.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6105
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/migration/spec.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 27207
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1488
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/__main__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1291
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "evolution/repair/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/baseline.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2159
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/candidate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11069
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/cost.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6507
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/detector.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9986
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/disable.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5497
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/expectations.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2088
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/harness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 31023
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/r1_contract_index.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4499
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/r2_constraint.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7851
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/r3_local_rule.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8860
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/repair/spec.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 27243
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/spider_web.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4759
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "evolution/strategy_tree.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4682
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "foundry/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4337
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2197
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "foundry/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/advantage.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 18136
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/arsenal.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8356
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/company.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6048
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/composition.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 18949
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/distribution.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3639
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/intake.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6437
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/outcome_bridge.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3815
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/pipeline.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14673
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/territory.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7536
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "foundry/tribunal.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7225
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/BUNDLE_MANIFEST.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 6309
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "handoff/CHATGPT_BRIEF.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 8589
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/SEAL.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1048
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1146
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "handoff/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/conform.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 12869
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/contract.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 11893
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "handoff/schemas/boundary-envelope.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2386
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "handoff/schemas/capability-request.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2179
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "handoff/schemas/containment-requirement.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2803
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "handoff/schemas/evidence-record.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2175
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-01-read-only-without-grant-accepted.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 512
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-02-financial-with-grant-accepted.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 539
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-03-financial-without-grant-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 525
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-04-uniimente-as-legal-principal-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 484
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-05-unknown-consequence-class-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 506
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/cap-06-negative-budget-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 484
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/con-01-generated-code-in-microvm-accepted.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 708
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/con-02-unavailable-tier-reported-honestly.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 583
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/con-03-in-process-claiming-kernel-boundary-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 493
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/con-04-generated-code-in-container-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 503
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/con-05-unknown-enforcement-kind-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 436
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-01-well-formed-proposal-accepted.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 765
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-02-shared-secret-identity-marked-not-isolated.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 811
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-03-newer-protocol-version-rejected.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 752
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-04-older-protocol-version-not-downgraded.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 760
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-05-instruction-disposition-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 742
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-06-self-declared-authority-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 727
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-07-unknown-sender-shape-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 645
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-08-missing-nonce-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 684
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-09-short-nonce-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 693
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/env-10-unknown-field-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 764
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/evi-01-built-claim-with-resolving-evidence-accepted.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 932
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/evi-02-hardened-without-external-outcome-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 680
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/evi-03-nonzero-external-effects-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 645
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/evi-04-authority-minted-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 609
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "handoff/vectors/evi-05-claim-with-no-evidence-refused.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 527
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "identity/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2653
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "identity/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 92
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "identity/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "identity/agent-registry.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2274
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "identity/machine_passport.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5785
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "identity/organ-registry.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2945
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "identity/service-identities.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1694
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "integration/egregore-v1.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 9391
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "knowledge/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1100
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "knowledge/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "knowledge/graph.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 13808
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "linker/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1043
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "linker/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 0
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "linker/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "linker/linker.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4711
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "linker/manifest.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2611
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "loom/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2727
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "loom/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 96
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "loom/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "loom/canonical.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4850
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "loom/pattern.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4221
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "loom/ratify.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2395
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "loom/weaver.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3089
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "memory/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3000
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "memory/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 82
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "memory/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "memory/affect.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6197
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "memory/causal.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6655
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "morphogenesis/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 693
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "morphogenesis/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "morphogenesis/contracts.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9356
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "morphogenesis/engine.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8255
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "observability/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 232
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "omnimorph/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 3094
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "omnimorph/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 475
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "omnimorph/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "omnimorph/engine.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 18195
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "organs/daleobanks.manifest.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4161
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "organs/kernel.manifest.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 6818
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "organs/pumpstation.manifest.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4706
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "organs/research-in.manifest.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4530
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "organs/wealthmachine.manifest.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 3428
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "policy/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2992
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "policy/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 85
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "policy/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "policy/consequence_gate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 17356
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "policy/engine.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9051
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "provenance/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2939
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "provenance/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 92
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "provenance/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "provenance/commit_witness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4635
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "provenance/ledger.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4830
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "provenance/proof.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5021
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "requirements-dev.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 41
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "routing/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 905
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "routing/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "routing/decision_router.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 13396
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "sandbox/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 240
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "scripts/ci/check_authority_singleton.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2076
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "scripts/ci/check_schema_refs.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2670
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "scripts/ci/check_sealed_developmental.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2519
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "sdk-python/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 209
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "sdk-typescript/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 99
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/authority/authority-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1139
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/capital/capital-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 754
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/constitutional/constitutional-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1579
+    },
+    {
+      "category": "fixture",
+      "confidence": "high",
+      "kind": "file",
+      "path": "tests/fixtures/PROVENANCE.md",
+      "reason": "path is inside a fixture or test-data tree",
+      "size_bytes": 1368
+    },
+    {
+      "category": "fixture",
+      "confidence": "high",
+      "kind": "file",
+      "path": "tests/fixtures/wire_opportunity_packet.json",
+      "reason": "path is inside a fixture or test-data tree",
+      "size_bytes": 1456
+    },
+    {
+      "category": "fixture",
+      "confidence": "high",
+      "kind": "file",
+      "path": "tests/fixtures/wire_venture_assessment.json",
+      "reason": "path is inside a fixture or test-data tree",
+      "size_bytes": 3349
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/integration/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 0
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "tests/integration/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/integration/test_phase_zero_connection.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 16297
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/provenance/provenance-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 995
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/recovery/recovery-tests.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 750
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "tests/security/security-tests.yaml",
+      "reason": "documentation path or extension",
+      "size_bytes": 1228
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 0
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "tests/unit/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_advantage_foundry_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 10749
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_autonomy.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5768
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_blueprint_ladder.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9956
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_business.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6515
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_capabilities.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3550
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_capability_discovery.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6615
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_closure.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2019
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_consequence_gate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11928
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_core_venture_boundary.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 15286
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_decision_router.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8866
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_developmental_inertness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6917
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_developmental_substrate_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5337
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_egregore_runtime.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14934
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_embassy.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4903
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_events.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7416
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_evolution.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11696
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_fast_evolution.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8601
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_foundry.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6841
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_foundry_intake_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5418
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_foundry_pipeline_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 10784
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_identity.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2406
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_knowledge_graph.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5646
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_loom.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6841
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_memory.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7627
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_migration_adversarial.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 25703
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_migration_inertness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8189
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_migration_spec_frozen.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 13029
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_morphogenesis.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6750
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_omnimorph_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9902
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_outcome_bridge_v1.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3107
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_proof.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3798
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_provenance.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3467
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_repair_adapters.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 24911
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_repair_candidates.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 18969
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_repair_harness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14750
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_repair_inertness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7595
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_repair_spec_frozen.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 12101
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_treasury.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2464
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_twins.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5359
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_ucl_compiler.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5583
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/unit/test_whole_body.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2392
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "twins/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 2543
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "twins/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 98
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "twins/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "twins/tribunal.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4391
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "twins/twin.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1912
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "ventures/ivio_nemt/LINEAGE.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1512
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "ventures/ivio_nemt/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1161
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": "ventures/ivio_nemt/__pycache__",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "ventures/ivio_nemt/first_cell.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2897
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "ventures/ivio_nemt/fixtures.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2001
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "verifier/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1334
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/2026-07-19T15-04-34.025330+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 606
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/2026-07-19T15-05-01.846980+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 516
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T17-27-01.053313+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 562
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T17-54-27.446185+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 601
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T17-54-38.888832+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 573
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T18-48-41.624467+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 736
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T18-51-57.892865+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 736
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T19-31-35.815796+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 803
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-19T19-32-00.803112+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 781
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-26T12-45-24.562659+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 686
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-26T12-46-01.199678+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 674
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-26T13-05-27.969203+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 674
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-07-26T17-57-07.320628+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 674
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/runs/v2-2026-08-12T11-07-57.157725+00-00.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 744
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/v1/criteria.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 3744
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/v2/criteria.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1751
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/v2/verify.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4356
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "verifier/verify.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3639
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "workflows/approval-lifecycle.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1935
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "workflows/incident-response.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1470
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "workflows/shutdown-recovery.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1232
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "workflows/venture-validation.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1711
+    }
+  ],
+  "errors": [],
+  "generated_at": "2026-08-12T20:04:26.503299+00:00",
+  "pruned_subtrees": [
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    "adapters/__pycache__",
+    "autonomy/__pycache__",
+    "blueprint/__pycache__",
+    "business/__pycache__",
+    "capabilities/__pycache__",
+    "capital/__pycache__",
+    "closure/__pycache__",
+    "compiler/__pycache__",
+    "developmental/__pycache__",
+    "discovery/__pycache__",
+    "egregore/__pycache__",
+    "embassy/__pycache__",
+    "events/__pycache__",
+    "evolution/__pycache__",
+    "evolution/migration/__pycache__",
+    "evolution/repair/__pycache__",
+    "foundry/__pycache__",
+    "handoff/__pycache__",
+    "identity/__pycache__",
+    "knowledge/__pycache__",
+    "linker/__pycache__",
+    "loom/__pycache__",
+    "memory/__pycache__",
+    "morphogenesis/__pycache__",
+    "omnimorph/__pycache__",
+    "policy/__pycache__",
+    "provenance/__pycache__",
+    "routing/__pycache__",
+    "tests/integration/__pycache__",
+    "tests/unit/__pycache__",
+    "twins/__pycache__",
+    "ventures/ivio_nemt/__pycache__"
+  ],
+  "repository": "/home/user/uniimente-kernel",
+  "summary": {
+    "category_bytes": {
+      "archive": 0,
+      "canonical authored source": 1292828,
+      "compatibility shim": 0,
+      "documentation": 377007,
+      "duplicate candidate": 0,
+      "evidence artifact": 0,
+      "fixture": 6173,
+      "generated output": 0,
+      "historical snapshot": 0,
+      "organ-specific authored source": 0,
+      "proof artifact": 0,
+      "runtime state": 0,
+      "shared contract": 48142,
+      "unknown": 134852,
+      "vendored dependency": 0
+    },
+    "category_counts": {
+      "archive": 0,
+      "canonical authored source": 178,
+      "compatibility shim": 0,
+      "documentation": 70,
+      "duplicate candidate": 0,
+      "evidence artifact": 0,
+      "fixture": 3,
+      "generated output": 0,
+      "historical snapshot": 0,
+      "organ-specific authored source": 0,
+      "proof artifact": 0,
+      "runtime state": 35,
+      "shared contract": 17,
+      "unknown": 80,
+      "vendored dependency": 0
+    },
+    "entry_count": 383,
+    "error_count": 0,
+    "pruned_subtree_count": 35
+  },
+  "tool": "inventory_repository.py",
+  "truncated": false,
+  "version": 1
+}

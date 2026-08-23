@@ -1,0 +1,28 @@
+{
+  "attested_at": "2026-08-21T15:33:59+00:00",
+  "checkout_state": "pristine_at_commit",
+  "commit": "df6a732f44412c626098ee9591b9d19f420d02dd",
+  "limitations": [
+    "Records that a path existed with these bytes at this commit. It does not prove the peer code works, is reachable, or is authorized.",
+    "Describes one commit. A peer that moves on does not invalidate this record; the record then describes history, and `commit` says which.",
+    "Says nothing about whether the manifest DESCRIBES the path correctly. This limit is named because it was reached: `packages/db/` was attested as a directory of size 1 while the RESEARCH-IN manifest described it as schema, migrations and client code over three data stores. Existence and size are checked; the prose next to them is not, and no digest can check it."
+  ],
+  "method": "read from a local checkout of the named repository at the named commit; sizes and sha256 digests recorded from the real bytes",
+  "organ": "pumpstation",
+  "paths": [
+    {
+      "digest": "sha256:ba150e6449697f3cf70c364244593e1782131d3b6caea42bb48c5fc0e1871aae",
+      "kind": "file",
+      "path": "client/index.html",
+      "size": 2396
+    },
+    {
+      "digest": "sha256:0cbbf3c935bcf9d2f31a127069bd46f8e15a35948f95d94aa5b0824437592042",
+      "kind": "file",
+      "path": "server/index.js",
+      "size": 1673
+    }
+  ],
+  "repository": "dababiyoda/PumpStation",
+  "version": 2
+}

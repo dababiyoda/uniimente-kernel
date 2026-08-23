@@ -1,0 +1,25 @@
+{
+  "document": {
+    "confers_authority": true,
+    "disposition": "PROPOSAL",
+    "envelope_id": "env-00000001",
+    "issued_at": "2026-08-12T00:00:00Z",
+    "nonce": "0123456789abcdef0123",
+    "payload": {
+      "text": "a reading"
+    },
+    "payload_kind": "observation",
+    "protocol": "mcp",
+    "protocol_version": "1.0.0",
+    "sender": {
+      "authenticated": true,
+      "authentication_method": "hmac_shared_secret",
+      "identity": "spiffe://uniimente.internal/agent/external-tool",
+      "identity_is_isolated": false
+    }
+  },
+  "expect": "REJECT",
+  "schema": "boundary-envelope",
+  "vector_id": "env-06-self-declared-authority-refused",
+  "why": "INV-1. An envelope cannot confer authority on itself."
+}

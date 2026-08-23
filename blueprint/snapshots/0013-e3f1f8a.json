@@ -1,0 +1,339 @@
+{
+  "commit": "e3f1f8a0da510a69eb0adf2810fd65ee078a19fb",
+  "provenance": "live",
+  "readings": [
+    {
+      "awarded": "PROVEN",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 1
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "PROVEN",
+      "technology_id": 2
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 3
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 4
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 5
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 6
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 7
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 8
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 9
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 10
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 11
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 12
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 13
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 14
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 15
+    },
+    {
+      "awarded": "SKETCHED",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 16
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 17
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 18
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 19
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 20
+    },
+    {
+      "awarded": "BUILT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 21
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BUILT",
+      "technology_id": 22
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 23
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 24
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 25
+    },
+    {
+      "awarded": "BUILT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 26
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BUILT",
+      "technology_id": 27
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "BUILT",
+      "technology_id": 28
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BUILT",
+      "technology_id": 29
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 30
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "HARDENED",
+      "technology_id": 31
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 32
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 33
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 34
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 35
+    },
+    {
+      "awarded": "PROVEN",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 36
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 37
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 38
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 39
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 40
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 41
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BUILT",
+      "technology_id": 42
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": true,
+      "ceiling": "PROVEN",
+      "technology_id": 43
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 44
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 45
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 46
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 47
+    },
+    {
+      "awarded": "BUILT",
+      "can_advance": false,
+      "ceiling": "BUILT",
+      "technology_id": 48
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 49
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 50
+    },
+    {
+      "awarded": "BUILT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 51
+    },
+    {
+      "awarded": "BUILT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 52
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": true,
+      "ceiling": "EXERCISED",
+      "technology_id": 53
+    },
+    {
+      "awarded": "BLUEPRINT",
+      "can_advance": false,
+      "ceiling": "BLUEPRINT",
+      "technology_id": 54
+    },
+    {
+      "awarded": "EXERCISED",
+      "can_advance": false,
+      "ceiling": "EXERCISED",
+      "technology_id": 55
+    }
+  ],
+  "schema_version": 2,
+  "standard": "4",
+  "taken_at": "2026-08-21T14:18:16+00:00"
+}

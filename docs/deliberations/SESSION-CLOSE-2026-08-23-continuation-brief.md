@@ -21,7 +21,7 @@ explanation would be indistinguishable from one that was always there.
 | Witness v2 live emission | **done** | kernel PR #87 |
 | Workload-identity adoption | **1/6 edges** | kernel PR #87 |
 | Peer parity | **proposed** | DALEOBANKS PR #74, WMI PR #32 |
-| Internal Alpha | **blocked** | see §4 |
+| Internal Alpha | **bottleneck named** | see §4 |
 | Recompute the goal chase | **done** | `docs/INFINITE_GOAL_CHASE_RECOMPUTE-2026-08-23.md` |
 | CANARY-0001 GO/NO-GO | **awaiting founder** | §5 |
 
@@ -30,7 +30,7 @@ explanation would be indistinguishable from one that was always there.
 ## 2. Verification at session close
 
 ```
-python -m pytest                  1227 passed        (1169 at PR #71 head)
+python -m pytest                  1234 passed        (1169 at PR #71 head)
 python -m governance.integrity    12 artifacts, all as authorised, 1 amendment
 python -m governance.gap_audit    14 checked, 14 verified open, 0 stale, 0 anchor lost
 python verifier/v2/verify.py      PASS (V1–V5)
@@ -53,7 +53,7 @@ session's changes stashed. Not caused by this work, and not fixed by it.
 
 ---
 
-## 3. Three defects found by the mechanisms, not by inspection
+## 3. Four defects found by the mechanisms, not by inspection
 
 Recorded because *how* they were found is the reusable part.
 
@@ -74,7 +74,16 @@ Recorded because *how* they were found is the reusable part.
    compares its own frozen before/after pair. Documented in
    `tests/unit/test_repair_frozen_corpus.py` for whoever writes Amendment 004.
 
-A fourth, smaller: I asserted in-session that the `authorized` criterion was
+4. **Replay protection did not survive a restart.** `EventSpine._seen_ids`
+   started empty at construction, so a reloaded ledger came back with a spine
+   that had never seen anything: a byte-identical peer event was accepted and
+   ledgered a second time, and the hash chain over the duplicate verifies
+   exactly as well as the chain over the original. Found by testing a claim
+   this brief had asserted without checking. Fixed by deriving the inbox from
+   the ledger, like every other view; pinned by
+   `tests/unit/test_restart_resume.py`.
+
+A fifth, smaller: I asserted in-session that the `authorized` criterion was
 "already enforced by the grant and identity checks". Wrong, and falsified within
 the hour by a test written to protect the canary. The correction is kept visible
 in `tests/unit/test_two_confidences.py` rather than tidied away.
@@ -83,21 +92,29 @@ in `tests/unit/test_two_confidences.py` rather than tidied away.
 
 ## 4. The bottleneck, for whoever picks this up
 
-**Persistent state.** Not the Founder Cockpit, and not a reasoning organ.
+**Composing a durable runtime.** Not the Founder Cockpit, and not a reasoning
+organ.
 
-Every Alpha component currently marked done is done *within one process*. The
-ledger, the identity mesh, the causal memory and the witness history all vanish
-on exit. A standing mandate has nothing to stand in; a cockpit would command a
-body that forgets between commands.
+This brief's first draft said "persistent state is absent". Checking that claim
+against the code corrected it and found the real defect — see §3, item 4. The
+ledger already persists and reverifies on reload, and causal memory and
+`replay()` are views over it, so they rebuild for free.
 
-**Smallest falsifiable step:** make the evidence ledger survive a restart with
-its hash chain intact — write a witness, kill the process, restart, re-verify
-from disk. One test.
+What is missing is that **nothing boots the institution from a state
+directory**. Every entry point still constructs a fresh in-memory
+`EvidenceLedger("sha256:" + "0" * 64)`. A standing mandate has nothing to stand
+in; a cockpit would command a body that forgets between commands.
 
-**Do not write a third implementation.** PR #78 (WP-04) already built a Postgres
-spine backend and a rebuild-from-spine drill, and DUP-2 in the Kimi
-reconciliation recommends porting it behind main's existing spine interface.
-Reuse it.
+**Smallest falsifiable step:** an `InstitutionalRuntime.boot(state_dir)` that
+composes a durable ledger with the gate, spine and causal memory, plus a test
+that runs a governed action, discards every object, boots again from the same
+directory, and finds the witness, the chain and the inbox intact.
+
+**Do not write a third implementation.** PR #78 (WP-04) built a Postgres spine
+backend and a rebuild-from-spine drill, and DUP-2 in the Kimi reconciliation
+recommends porting it behind main's existing spine interface. The JSONL path
+already satisfies the Alpha requirement; Postgres is the scale-up, not the
+prerequisite.
 
 ---
 

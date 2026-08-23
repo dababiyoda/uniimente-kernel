@@ -31,13 +31,14 @@ evidence."*
 
 | # | Item | Was | Now | Evidence |
 |---|---|---|---|---|
-| — | Witness v2 emitted by the live Gate | ❌ | ✅ | `governance.gap_audit._witness_v2_is_not_emitted` reports closed; 1227 tests |
+| — | Witness v2 emitted by the live Gate | ❌ | ✅ | `governance.gap_audit._witness_v2_is_not_emitted` reports closed; 1234 tests |
 | — | Two confidences distinguishable in the durable record | ❌ | ✅ | `provenance/witness_v2.py` `CONFIDENCE_FIELDS`; `tests/unit/test_two_confidences.py` |
 | — | Live constitutional-integrity mechanism | ❌ | ✅ | `python -m governance.integrity` exit 0, 12 artifacts, 1 authorised amendment |
 | — | `no_silent_amendment` executable rather than prose | ❌ | ✅ | replayed chain refuses a forged or rewritten record; 16 tests |
 | 7 | Isolated workload identity adopted (kernel side) | 🟡 | 🟡→ | `_asymmetric_identity_is_not_adopted` closed; **1/6 trust edges** |
 | 26 | Mutual TLS called by something real | ❌ | 🟡 | `bridges/signal_to_venture.py` via `identity/mesh.py` |
 | — | Peer-repository transport parity | ❌ | 🟡 | DALEOBANKS PR #74, WMI PR #32 — proposed, unmerged |
+| — | Replay protection survives a restart | ❌ | ✅ | defect found and fixed; `tests/unit/test_restart_resume.py` |
 | 5 | Golden Kernel canonical authority root | 🟡 | 🟡 | unchanged; the Gate no longer self-grants externally, which narrows it |
 
 **Nothing moved to HARDENED. CVO remains 0.** Every item above is internal and
@@ -63,38 +64,61 @@ evidence rather than against intent.
 | Peer-repository parity | **proposed** | two draft PRs; unmerged, so parity is not yet a fact |
 | Standing bounded mandates | **partial** | `autonomy/` A0–A9 ladder exists; no mandate is actually issued and running |
 | Reserved decisions escalate | **done** | `governance.decisions` AWAITING_FOUNDER=0, reserved matters route to human |
-| Persistent state / restart-resume | **absent** | nothing persists across processes. `InternalMesh` dies with the process; the ledger is in-memory |
+| Persistent state / restart-resume | **partial** | see §3.1 — corrected after checking the claim against the code |
 | Founder Cockpit | **absent** | no module. `shell/` is a pipeline runner, not a command surface |
 | Genuine reasoning / refinery organ | **absent** | WMI is a peer repo, not an attached organ; RailScout is PRs #72/#76/#77, unmerged |
 
-### The current bottleneck
+### 3.1 The bottleneck — corrected, and sharper than the first draft
 
-**Persistent state.** Not the cockpit, and not the reasoning organ.
+**This section's first draft said "nothing persists across processes; the ledger
+is in-memory". That was wrong, and checking it is what found the real defect.**
 
-Everything above that says "done" is done *within one process*. The ledger, the
-mesh, the causal memory and the witness history all vanish on exit. Under that
-constraint:
+`EvidenceLedger` has carried optional JSONL persistence with
+reload-and-reverify for some time, and `closure/kernel_registry.py::ledger_evidence`
+already proved it. `CausalMemory` and `EventSpine.replay()` are *views over the
+ledger*, so they rebuild for free once it reloads. Considerably more of
+restart/resume existed than the snapshot implied.
 
-- a **standing mandate** cannot stand — there is nothing for it to survive in;
+What did not survive a restart was one thing, and it was the dangerous one:
+
+> **`EventSpine._seen_ids` — the idempotent inbox — started empty at
+> construction.** Replay protection lived only in process memory. A reloaded
+> ledger came back with a spine that had never seen anything, so a
+> byte-identical peer event was accepted a second time and written to the chain
+> again. The hash chain over the duplicate verifies exactly as well as the chain
+> over the original, so nothing downstream would have noticed.
+
+Demonstrated before it was fixed (ingest → reload → ingest → two records), then
+fixed by deriving the inbox from the ledger like every other view, and pinned by
+`tests/unit/test_restart_resume.py`. A standing mandate resuming after a crash
+would otherwise have re-ingested every fact it had already processed.
+
+**So the bottleneck is not "build persistence". It is "compose a durable
+runtime that uses the persistence that exists."** Every entry point still
+constructs a fresh in-memory `EvidenceLedger("sha256:" + "0" * 64)`. Nothing
+boots the institution from a state directory.
+
+Under that constraint:
+
+- a **standing mandate** has nothing to stand in;
 - a **cockpit** would command a body that forgets between commands;
-- **restart/resume** is not a feature to add, it is the precondition;
-- and a reasoning organ's outputs would not accumulate into anything.
+- a reasoning organ's outputs would not accumulate into anything.
 
-Alpha's remaining five components are all downstream of one missing capability.
-That is the shape a dependency graph is supposed to reveal, and it is why the
-recompute is worth doing before building the most visible thing next.
+**Smallest falsifiable next step:** an `InstitutionalRuntime.boot(state_dir)`
+that composes a durable ledger with the gate, spine and causal memory, and a
+test that runs a governed action, discards every object, boots again from the
+same directory, and finds the witness, the chain and the inbox intact.
 
-**Smallest falsifiable next step:** make the evidence ledger survive a process
-restart with its hash chain intact, and prove it by writing a witness, killing
-the process, restarting, and re-verifying the chain from disk. Falsifiable in
-one test. Unlocks mandates, cockpit and resume.
-
-Prior art to reuse rather than reinvent: **PR #78 (WP-04)** already built a
-Postgres spine backend and a rebuild-from-spine drill. DUP-2 in the Kimi
+Prior art to reuse rather than reinvent: **PR #78 (WP-04)** built a Postgres
+spine backend and a rebuild-from-spine drill, and DUP-2 in the Kimi
 reconciliation recommends porting it behind main's existing spine interface.
-This is the same bottleneck, already partly solved on an unmerged branch —
-which is exactly the recombination the founder's "one institution, not competing
-architectures" rule asks for.
+The JSONL path already satisfies the Alpha requirement; Postgres is the
+scale-up, not the prerequisite.
+
+**Method note.** The correction is left visible rather than edited away. The
+first draft's error was the ordinary kind — restating a plausible snapshot claim
+instead of running the code — and the recompute only earned its keep at the
+moment it was checked.
 
 ---
 

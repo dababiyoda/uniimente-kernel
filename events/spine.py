@@ -72,8 +72,37 @@ class EventSpine:
     def __init__(self, ledger):
         self.ledger = ledger
         self._subscribers: dict[str, list] = {}      # type prefix -> [callables]
-        self._seen_ids: set[str] = set()             # idempotent inbox
         self._outbox: list[Event] = []               # staged for mediated delivery
+        #: Idempotent inbox, REBUILT from the ledger rather than started empty.
+        #:
+        #: Fixed 2026-08-23 while establishing restart/resume. The inbox was an
+        #: empty set at construction, so replay protection lived only in process
+        #: memory: a durable ledger reloaded after a restart came back with a
+        #: fresh spine that had never seen anything, and re-ingesting a
+        #: byte-identical peer event was accepted and ledgered a second time.
+        #:
+        #: Demonstrated before it was fixed — ingest, reload, ingest the same
+        #: event, two records — and pinned by
+        #: `test_replay_protection_survives_a_restart`.
+        #:
+        #: This makes the inbox what every other reader here already is: a view
+        #: derived from the ledger. `CausalMemory` and `replay()` were already
+        #: built that way, which is why they survived a restart and this did not.
+        self._seen_ids: set[str] = self._seen_from_ledger()
+
+    def _seen_from_ledger(self) -> set[str]:
+        """Every event id the ledger already carries, emitted or ingested.
+
+        Both directions count. An emitted event whose id later arrived as an
+        ingested one would be the institution accepting its own claim back from
+        a peer as an external fact — the authority laundering the emit/ingest
+        split exists to prevent.
+        """
+        return {
+            record.payload["event_id"]
+            for record in self.ledger.by_type("event")
+            if isinstance(record.payload, dict) and "event_id" in record.payload
+        }
 
     # ------------------------------------------------------------ write
     def emit(self, event: Event) -> Event:

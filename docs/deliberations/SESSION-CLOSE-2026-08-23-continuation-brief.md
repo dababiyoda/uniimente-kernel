@@ -30,7 +30,8 @@ explanation would be indistinguishable from one that was always there.
 ## 2. Verification at session close
 
 ```
-python -m pytest                  1234 passed        (1169 at PR #71 head)
+python -m pytest                  1236 passed        (1169 at PR #71 head)
+scripts/ci/*.py                   all three PASS, including check 3
 python -m governance.integrity    12 artifacts, all as authorised, 1 amendment
 python -m governance.gap_audit    14 checked, 14 verified open, 0 stale, 0 anchor lost
 python verifier/v2/verify.py      PASS (V1–V5)
@@ -53,7 +54,7 @@ session's changes stashed. Not caused by this work, and not fixed by it.
 
 ---
 
-## 3. Four defects found by the mechanisms, not by inspection
+## 3. Five defects found by the mechanisms, not by inspection
 
 Recorded because *how* they were found is the reusable part.
 
@@ -83,7 +84,19 @@ Recorded because *how* they were found is the reusable part.
    the ledger, like every other view; pinned by
    `tests/unit/test_restart_resume.py`.
 
-A fifth, smaller: I asserted in-session that the `authorized` criterion was
+5. **The frozen corpus was an importable second Consequence Gate.** Storing the
+   freeze-time artifacts under their real names made
+   `evolution/repair/continuity/policy/consequence_gate.py` importable — PEP 420
+   namespace packages need no `__init__.py` — so the remedy for
+   CONTRADICTION-0002 had created a genuine second path to external effect under
+   a reassuring directory name. **CI check 3 ("one source of authority") caught
+   it within minutes of the push and was right.** Fixed by suffixing every
+   frozen artifact `.frozen` (Amendment 004), *not* by excluding the directory
+   from that check — an exclusion would have let the check pass while the
+   importable duplicate stayed on disk. No pinned hash changed; only filenames
+   moved.
+
+A sixth, smaller: I asserted in-session that the `authorized` criterion was
 "already enforced by the grant and identity checks". Wrong, and falsified within
 the hour by a test written to protect the canary. The correction is kept visible
 in `tests/unit/test_two_confidences.py` rather than tidied away.

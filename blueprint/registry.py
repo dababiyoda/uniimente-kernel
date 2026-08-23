@@ -200,19 +200,32 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         # it did. Building a replacement is not adopting one, and recording it
         # as closed would be the kind of credit the founder ruled out for a
         # change that moves no integration boundary.
-        "The live bridge transport is still HMAC over a shared secret. The "
-        "DALEOBANKS, WealthMachine and kernel mirrors share one "
-        "WEALTHMACHINE_SIGNING_KEY, so a recognized transport identity remains a "
-        "CLAIMED identity: any holder of the shared secret can assert any known "
-        "identity. `adapters/bridge_transport.py` now reports "
-        "`identity_isolated: false` on every path so no reader can mistake a "
-        "valid signature for isolation, and refuses to run unsigned unless a "
-        "human sets UNIIMENTE_BRIDGE_DEV_UNSIGNED=1 — but the underlying "
-        "symmetry is unchanged until the bridges move to `identity/pki/`.",
-        "The asymmetric replacement has no transport. `mutual_tls` runs over "
+        # AMENDED AGAIN 2026-08-23 under FOUNDER-RULING-2026-08-23, which
+        # required workload identities "actually adopted in the live internal
+        # bridges, not merely implemented beside them". Bridge A now
+        # authenticates its peer through `identity/mesh.py` and reads the organ
+        # off a chain-validated certificate; `governance.gap_audit` measures
+        # adoption and reports it closed. The previous text is preserved in the
+        # git history of this file and in AMENDMENT records, not restated here
+        # as though still true.
+        #
+        # What remains open is narrower and real. The HMAC path still EXISTS —
+        # `verify_headers` is unchanged and the peer repositories still speak
+        # it — so the shared secret is no longer the kernel bridge's identity
+        # mechanism, but it has not been removed and the organs have not
+        # migrated. That is a cross-repository change, not a kernel one.
+        "The peer repositories have not adopted isolated identity. Bridge A's "
+        "kernel side now authenticates with a per-workload key via "
+        "`identity/mesh.py`, and `identity_isolated` reads `true` on that leg "
+        "for the first time. But DALEOBANKS and WealthMachineIntelligence still "
+        "ship the shared-secret mirror, so any real cross-repository traffic "
+        "would fall back to `verify_headers` and its `identity_isolated: false`. "
+        "Parity is a change in two other repositories and is not claimed here.",
+        "The asymmetric transport still has no network. `mutual_tls` runs over "
         "ssl.MemoryBIO: a real TLS 1.3 handshake with real chain validation and "
         "no socket, because the founder's standing constraints forbid opening a "
-        "network surface. No real peer has ever spoken it.",
+        "network surface. Adoption means the in-process bridge authenticates "
+        "with an isolated key; no real peer has ever spoken it over a wire.",
         "Certificate distribution and key custody are unsolved. The CA is "
         "constructed in-process and `WorkloadIdentity.materialise()` writes the "
         "private key to a 0600 file inside a 0700 directory for the duration of "
@@ -469,12 +482,24 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
         # the PKI yet. The founder's instruction was to advance only what the
         # evidence earns and not to game the ladder, and passing tests are not
         # adoption.
-        "Mutual TLS, per-service key isolation and certificate rotation now "
-        "exist in `identity/pki/` and are adversarially tested (impersonation, "
-        "wrong-cert identity, expiry, revocation, rotation, replay, downgrade "
-        "and cross-organ handshakes all fail closed). NOT ADOPTED: no bridge, "
-        "gate or organ calls `mutual_tls`, so the live trust boundary is "
-        "unchanged.",
+        # ADOPTED 2026-08-23 under FOUNDER-RULING-2026-08-23. The previous text
+        # read "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`, so the
+        # live trust boundary is unchanged." `bridges/signal_to_venture.py` now
+        # does, through `identity/mesh.py`, and the adoption probe names both.
+        # The gap is rewritten rather than deleted: what is still missing is a
+        # different and smaller thing than what was missing yesterday.
+        "Adoption is one bridge deep. `bridges/signal_to_venture.py` "
+        "authenticates its peer through `identity/mesh.py` with a per-workload "
+        "key, and the organ is read off a chain-validated certificate rather "
+        "than a literal. Every OTHER internal caller — the embassy, the event "
+        "spine, discovery, the remaining bridges — still runs without workload "
+        "authentication, so the trust boundary has moved on exactly one edge of "
+        "the graph.",
+        "Key custody remains unsolved for anything but in-process use. The CA "
+        "is constructed per mesh and holds its key in memory; there is no "
+        "persistence, no rotation schedule in operation, and no distribution "
+        "story. A mesh dies with the process, which is acceptable precisely "
+        "because nothing it authenticates crosses a process boundary.",
         "No network-level policy, and no network. The handshake is proven over "
         "in-memory BIOs; the transport half remains absent and founder-gated.",
         # CLOSED 2026-08-22 by `bridges/signal_to_venture.py`, which imports

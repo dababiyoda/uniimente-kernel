@@ -156,17 +156,59 @@ def test_the_asymmetric_replacement_refuses_the_same_impersonation():
 
 
 # --------------------------------------------------------- the bridge caller
-def test_bridge_a_halts_honestly_when_transport_cannot_be_verified():
-    """Behaviour change, pinned deliberately.
+def test_bridge_a_no_longer_needs_a_shared_secret_to_have_verified_transport():
+    """Second behaviour change, pinned deliberately.
 
-    With no key and no opt-in, Bridge A now halts at TRANSPORT_REFUSED instead
-    of traversing on a verification that verified nothing. A bridge that reports
-    it has no verified transport is more useful than one that reports success it
-    did not earn.
+    The first (2026-08-22) was: with no key and no opt-in, Bridge A halts at
+    TRANSPORT_REFUSED rather than traversing on a verification that verified
+    nothing. That test asserted the halt.
+
+    The second (2026-08-23, FOUNDER-RULING-2026-08-23) is the adoption: Bridge A
+    authenticates its peer with an isolated workload key via `identity.mesh`, so
+    there is no shared secret to be missing. `WEALTHMACHINE_SIGNING_KEY` is
+    irrelevant to this leg now, and the run gets *past* transport with no
+    environment configured at all.
+
+    That is strictly stronger, not weaker. The old path could only fail closed;
+    this one authenticates. The run below still does not complete — it stops
+    later, on the packet's own contract — and the distinction between "the peer
+    is unverified" and "the payload is malformed" is exactly what was previously
+    impossible to draw here.
     """
+    import os
+
     from bridges import signal_to_venture as sv
 
+    assert os.getenv("WEALTHMACHINE_SIGNING_KEY") is None
+    assert os.getenv("UNIIMENTE_BRIDGE_DEV_UNSIGNED") != "1"
+
     run = sv.run({"id": "OPP-TRANSPORT-CHECK", "schema_version": "1.1"}, {})
+
+    assert run.completed is False
+    assert run.halted_at is not sv.Halt.TRANSPORT_REFUSED, (
+        "the peer authenticated with an isolated key; a TRANSPORT_REFUSED here "
+        "would mean the mesh handshake regressed to the shared-secret path")
+
+
+def test_bridge_a_still_halts_at_transport_when_the_peer_cannot_authenticate():
+    """The property the previous test protected, kept — on the new mechanism.
+
+    A revoked workload must not traverse the bridge. Revocation is the cheapest
+    honest way to make a real handshake fail: the certificate is well-formed and
+    correctly issued, and trust in it has been withdrawn.
+    """
+    from bridges import signal_to_venture as sv
+    from identity.mesh import InternalMesh
+
+    mesh = InternalMesh()
+    # Revoke and then re-pin the same serial, so the identity the bridge uses is
+    # the revoked one rather than a freshly minted replacement.
+    workload = mesh.identity_for("bridge_daleobanks")
+    mesh.revocations.revoke(workload.serial, reason="adversarial test")
+
+    run = sv.run({"id": "OPP-TRANSPORT-CHECK", "schema_version": "1.1"}, {},
+                 mesh=mesh)
+
     assert run.completed is False
     assert run.halted_at is sv.Halt.TRANSPORT_REFUSED
     assert "transport refused" in run.reason

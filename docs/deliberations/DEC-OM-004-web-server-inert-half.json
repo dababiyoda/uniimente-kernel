@@ -209,8 +209,10 @@
     "level": "constitutional",
     "changes_authority": false,
     "requires_authorized_human": true,
-    "approval_status": "pending",
-    "notes": "Option A creates no capability, no grant and no gate path, and opens no socket. What requires a human is the claim it would let the ladder make about a technology classified external_contact."
+    "approval_status": "approved",
+    "notes": "Option A creates no capability, no grant and no gate path, and opens no socket. What requires a human is the claim it would let the ladder make about a technology classified external_contact.",
+    "authorized_by": "Alfonso Lopez",
+    "authorization_ref": "FOUNDER-RULING-2026-08-22 (docs/deliberations/FOUNDER-RULING-2026-08-22-opus-maximus-frontier.md)"
   },
   "migration_plan": {
     "owner": "CLAUDE",
@@ -237,7 +239,8 @@
     "The #31 gap stops stating that only the inert half exists.",
     "Any document or rung is read as evidence that the institution can distribute or make external contact."
   ],
-  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision": "RETAIN",
   "decision_owner": "Alfonso Lopez",
-  "review_trigger": "Founder chooses A or B, or a different CLAUDE-owned lever becomes available."
+  "review_trigger": "Founder chooses A or B, or a different CLAUDE-owned lever becomes available.",
+  "founder_ruling": "Option A approved by founder ruling 2026-08-22: build the inert application half of technology #31 \u2014 typed request parsing, routing and response rendering only. No listener, socket, bind, public port, outbound connection, HTTP client or hidden network primitive. Three non-negotiables ship with it: structural/AST inertness enforcement; explicit gap text recording that the transport/listener half remains absent and founder-gated; and a kill criterion turning any unauthorized network primitive into a stop-the-line failure. Do not game the ladder: if this earns only SKETCHED, call it SKETCHED."
 }

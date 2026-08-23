@@ -123,7 +123,7 @@ def test_live_corpus_expectation_matches_the_component_being_replaced():
     from linker.linker import InstitutionalLinker
     from linker.manifest import load_all
 
-    report = InstitutionalLinker(load_all()).link()
+    report = InstitutionalLinker(load_all(spec.CORPUS_DIR)).link()
 
     triples = tuple(sorted((e.producer, e.contract, e.consumer)
                            for e in report.edges))

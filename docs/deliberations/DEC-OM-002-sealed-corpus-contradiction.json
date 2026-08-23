@@ -343,8 +343,10 @@
     "level": "constitutional",
     "changes_authority": false,
     "requires_authorized_human": true,
-    "approval_status": "pending",
-    "approver": "Alfonso Lopez"
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez",
+    "authorized_by": "Alfonso Lopez",
+    "authorization_ref": "FOUNDER-RULING-2026-08-22 (docs/deliberations/FOUNDER-RULING-2026-08-22-opus-maximus-frontier.md)"
   },
   "migration_plan": "None executes without authorisation. Option A: create evolution/repair/corpus/ containing the three freeze-time manifests byte-identically, change MEASUREMENT_CORPUS and the four sealed test modules to read that path, add a divergence check that reports snapshot-versus-live drift without failing, and confirm SPEC_SHA256 and every expectation value are unchanged. Option B: re-run the Package 3 experiment against the five-manifest corpus, record v2 values alongside v1 with lineage per FBO section 4.5, and re-record docs/release/package-3/RESULTS.md and EVIDENCE_RECORD.json.",
   "rollback_plan": {
@@ -362,7 +364,8 @@
     "An implementation of Option A is found to let the live linker break undetected while the snapshot suite passes.",
     "Option B is chosen and the experiment cannot be re-run to produce a recordable result."
   ],
-  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision": "RETAIN",
   "decision_owner": "Alfonso Lopez",
-  "review_trigger": "Founder or Kimi applies the five-line repoint, or rules that the live-corpus binding stays. The remedy is built, byte-verified and test-proven; what remains is a decision, not an investigation."
+  "review_trigger": "Founder or Kimi applies the five-line repoint, or rules that the live-corpus binding stays. The remedy is built, byte-verified and test-proven; what remains is a decision, not an investigation.",
+  "founder_ruling": "Option A approved by founder ruling 2026-08-22: apply the frozen-corpus remedy now. Package 3 is a historical experiment and must reproduce the institution it actually measured. Point the sealed experiment at the byte-identical freeze-time corpus under evolution/repair/corpus/. Do not change the frozen expectation values and do not rewrite historical evidence. STRENGTHENING CONDITION: a separate current-institution health check must evaluate the live manifests and live linker without pretending the historical expectation of 7 applies today. The frozen experiment answers 'can I reproduce the historical experiment?'; the live check answers 'is the institution healthy now?'. Neither may masquerade as the other."
 }

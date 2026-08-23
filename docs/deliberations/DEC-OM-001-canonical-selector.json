@@ -325,8 +325,10 @@
     "level": "constitutional",
     "changes_authority": false,
     "requires_authorized_human": true,
-    "approval_status": "pending",
-    "approver": "Alfonso Lopez"
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez",
+    "authorized_by": "Alfonso Lopez",
+    "authorization_ref": "FOUNDER-RULING-2026-08-22 (docs/deliberations/FOUNDER-RULING-2026-08-22-opus-maximus-frontier.md)"
   },
   "migration_plan": "No migration executes until the founder decides. If Option A is chosen: PR #70 moves resolve() to a caller holding a capability grant, leaves select() as a decision-only adapter over routing/decision_router.py, and rehomes Implementation.origin, LIFECYCLES, set_lifecycle and restore into the Capability Genome Registry (technology #12), which the blueprint already records as lacking all thirteen lifecycle states. If Option B is chosen: routing/decision_router.py is reclassified as a registered second implementation under FBO section 9 and its closure registration is retargeted.",
   "rollback_plan": {
@@ -345,7 +347,8 @@
     "Every real caller is shown to require instantiation in the same breath as selection, making a decision-only selector unusable.",
     "Two consecutive cycles pass with no caller of DecisionRouter.route outside tests."
   ],
-  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision": "RETAIN",
   "decision_owner": "Alfonso Lopez",
-  "review_trigger": "Founder names the canonical selector, or either branch is marked ready for review."
+  "review_trigger": "Founder names the canonical selector, or either branch is marked ready for review.",
+  "founder_ruling": "Option A selected by founder ruling 2026-08-22: routing/decision_router.py is the canonical selector. A router decides; it does not instantiate or execute. PR #70 is preserved; its Implementation.origin, lifecycle states and restore/set_lifecycle machinery are to be rehomed into the canonical capability/module-management layer rather than left fused to routing. Provider construction moves downstream to a caller holding the required capability and crossing the Consequence Gate. One canonical typed RoutingDecision boundary owned by the Kernel; organ adapters consume it, never copy it. Competing routers may later be evaluated as challengers once real outcomes exist; this architectural selection is NOT evidence that one router produces better outcomes."
 }

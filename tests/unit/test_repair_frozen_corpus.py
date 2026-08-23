@@ -1,9 +1,15 @@
-"""The remedy for CONTRADICTION-0001, proven without touching the sealed files.
+"""The remedy for CONTRADICTION-0001 — proven first, then applied under ruling.
 
-`spec.MEASUREMENT_CORPUS` binds a sealed experiment to a live glob. These tests
-prove a frozen corpus reproduces every sealed expectation exactly, so the
-outstanding decision is about applying a verified remedy rather than choosing
-between options described in prose.
+`spec.MEASUREMENT_CORPUS` bound a sealed experiment to a live glob. These tests
+first proved, without touching a sealed file, that a frozen corpus reproduces
+every sealed expectation exactly — so the outstanding decision was about
+applying a verified remedy rather than choosing between options in prose.
+
+The founder approved Option A on 2026-08-22, and Amendment 001 applied it. The
+tests below now do double duty: they still prove the frozen corpus reproduces
+the sealed run, and they additionally bound the amendment itself — its scope,
+its authority, and the constraint that it changed the corpus binding and nothing
+else. See `docs/release/package-3/AMENDMENT-001-frozen-corpus.md`.
 """
 from __future__ import annotations
 
@@ -32,15 +38,10 @@ def _blob(path: str) -> str:
                           capture_output=True, text=True, check=True).stdout.strip()
 
 
-#: Content pins for the sealed repair files, as they stand on canonical main.
-#: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
-#: opposite reasons and both are instructive: comparing against the freeze commit
-#: flagged files main itself had changed, and comparing against `origin/main`
-#: certified nothing in CI, where that ref does not exist — `git diff` writes an
-#: empty stdout and exits 128, which a stdout-only reader mistakes for "no
-#: changes". Content pins need no refs, work in a shallow checkout, and assert
-#: something stronger than a diff: these exact bytes.
-SEALED_BLOBS = {
+#: The sealed files as they stood BEFORE Amendment 001, retained rather than
+#: overwritten. An amendment that erased the values it replaced would be
+#: indistinguishable, to a later reader, from an experiment never amended.
+SEALED_BLOBS_PRE_AMENDMENT = {
     "evolution/repair/spec.py":
         "4d8f267ff13de7b83f8efb30d6c5f322f2c56f8e",
     "tests/unit/test_repair_spec_frozen.py":
@@ -51,6 +52,42 @@ SEALED_BLOBS = {
         "0d469ffc2fcb95c82fa2edd868208e38ec512a99",
     "tests/unit/test_repair_inertness.py":
         "1e1dc96ff33813d689bdb5887806742fabeb329b",
+    "tests/unit/test_repair_harness.py":
+        "fdc31ce110aa4abd4e898e808f738956c05d4629",
+}
+
+#: Exactly the files Amendment 001 is authorized to touch, and why. The guard
+#: below asserts the *set* of files whose bytes moved equals this set — so
+#: repointing a sixth file under cover of the amendment fails the build even
+#: though its pin would have been updated in the same commit.
+AMENDED_BY_001 = {
+    "evolution/repair/spec.py": "the corpus binding itself, plus CORPUS_DIR",
+    "tests/unit/test_repair_spec_frozen.py": "reads spec.CORPUS_DIR",
+    "tests/unit/test_repair_adapters.py": "reads spec.CORPUS_DIR",
+    "tests/unit/test_repair_candidates.py": "reads spec.CORPUS_DIR",
+    "tests/unit/test_repair_inertness.py": "reads spec.CORPUS_DIR in the child",
+}
+
+#: Content pins for the sealed repair files, as they stand after Amendment 001.
+#: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
+#: opposite reasons and both are instructive: comparing against the freeze commit
+#: flagged files main itself had changed, and comparing against `origin/main`
+#: certified nothing in CI, where that ref does not exist — `git diff` writes an
+#: empty stdout and exits 128, which a stdout-only reader mistakes for "no
+#: changes". Content pins need no refs, work in a shallow checkout, and assert
+#: something stronger than a diff: these exact bytes.
+SEALED_BLOBS = {
+    "evolution/repair/spec.py":
+        "349c73463835b2e244f14d85781fb42dba4e4903",
+    "tests/unit/test_repair_spec_frozen.py":
+        "768aef0efa0abea5b759a4f17c09b90ade59d4b1",
+    "tests/unit/test_repair_adapters.py":
+        "e76fd1f75d7f79c3d4f52374b9c193c6643d8062",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    # Untouched by the amendment: its pin is the same value it always had.
     "tests/unit/test_repair_harness.py":
         "fdc31ce110aa4abd4e898e808f738956c05d4629",
 }
@@ -91,11 +128,18 @@ def test_the_frozen_corpus_reproduces_every_sealed_expectation():
 
 
 def test_the_live_corpus_still_disagrees_and_that_is_the_contradiction():
-    """The defect stays visible. This test would pass if it were papered over.
+    """The divergence stays visible — now expected and named, not unexplained.
 
-    Kept deliberately: a remedy that quietly made the contradiction invisible
-    would be worse than the contradiction, because the next reader could not see
-    why the frozen corpus exists.
+    Kept deliberately, and its meaning changed with Amendment 001. Before, it
+    demonstrated the contradiction: a sealed expectation that the live corpus no
+    longer met. After, it demonstrates that the two corpora are genuinely
+    different inputs — which is precisely why the frozen experiment cannot be
+    read as a statement about the institution's current health, and why
+    `evolution/repair/live_health.py` had to exist.
+
+    If this ever fails, the two readings have converged and someone could
+    plausibly mistake one for the other. That is the moment to re-examine the
+    remedy, not to delete the test.
     """
     live = InstitutionalLinker(load_all(os.path.join(ROOT, "organs"))).link()
     assert len(live.unresolved) != spec.REQUIRED_REFUSALS["unresolved_count"], (
@@ -105,11 +149,18 @@ def test_the_live_corpus_still_disagrees_and_that_is_the_contradiction():
 
 
 def test_no_sealed_repair_file_was_modified_to_achieve_this():
-    """The constraint this remedy was built under, asserted rather than promised.
+    """The guard, still doing its job one amendment later.
 
-    The corpus and this test are additive. Applying the remedy means repointing
-    five call sites, which is a separate, visible amendment the seal's own test
-    prescribes the procedure for.
+    Before Amendment 001 this asserted that the frozen-corpus proof was built
+    without touching a sealed file, which it was. The amendment then applied the
+    proven remedy, so the pins moved — under the procedure this test's own
+    failure message prescribes.
+
+    The re-pinned guard is deliberately *not* the weaker "these are the bytes
+    now". It still refuses any drift from the pins, and
+    `test_the_amendment_touched_exactly_the_files_it_declared` binds those pins
+    to a declared scope, so bumping a pin is no longer sufficient to smuggle a
+    file through.
     """
     # Content pins, not a diff against any ref — see SEALED_BLOBS for why two
     # ref-based attempts failed in opposite directions.
@@ -117,10 +168,83 @@ def test_no_sealed_repair_file_was_modified_to_achieve_this():
                for path, pinned in sorted(SEALED_BLOBS.items())
                if _blob(os.path.join(ROOT, path)) != pinned}
     assert not drifted, (
-        f"this branch modified sealed repair files: {drifted}. Applying the "
-        "remedy is a deliberate amendment — say so in the commit message and in "
+        f"this branch modified sealed repair files: {drifted}. Amending a sealed "
+        "experiment is a deliberate act — say so in the commit message and in "
         "docs/release/package-3/, and update these pins in the same change."
     )
+
+
+def test_the_amendment_touched_exactly_the_files_it_declared():
+    """Re-pinning is not a blank cheque.
+
+    The weakness of a content-pin guard is that the procedure for changing a
+    sealed file is "update the pin", which an author doing something broader can
+    follow just as easily as an author doing something narrow. So the pins are
+    tied to a declared scope: the set of files whose bytes moved across the
+    amendment must equal `AMENDED_BY_001` exactly.
+
+    Sneaking a sixth sealed file into the amendment now fails here even with its
+    pin dutifully updated, and quietly dropping one of the five fails too.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT.items()
+             if SEALED_BLOBS[path] != before}
+    assert moved == set(AMENDED_BY_001), (
+        f"amendment scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_001)}. Every file the amendment touches "
+        "must be declared in AMENDED_BY_001 with the reason it was touched."
+    )
+    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT), (
+        "the amendment may not add or drop a sealed file, only change one"
+    )
+
+
+def test_the_amendment_changed_the_corpus_binding_and_nothing_else():
+    """The founder's constraint on Option A, machine-checked.
+
+    The ruling was: *"Do not change the frozen expectation values and do not
+    rewrite the historical evidence."* `expectations_hash()` seals every frozen
+    table except `measurement_corpus`, so it is invariant under a corpus
+    repoint and moves the instant a threshold, edge triple, refusal count or
+    expected result is touched.
+
+    `EXPECTATIONS_SHA256` was computed from the spec as it stood BEFORE the
+    amendment, at seal `6f6d7dab…c4ab7f4a`. This equality is therefore proof
+    across the amendment rather than a self-consistent restatement of it.
+    """
+    assert spec.expectations_hash() == spec.EXPECTATIONS_SHA256, (
+        "an expectation value moved. The corpus repoint is authorized; changing "
+        "what was expected is not."
+    )
+    # The specific values the ruling named, spelled out so a reader need not
+    # trust a hash to see that the historical answer is intact.
+    assert spec.REQUIRED_REFUSALS["unresolved_count"] == 7
+    assert len(spec.REQUIRED_EDGE_TRIPLES) == 4
+
+    # And the seal itself moved, because the binding did. A sealed experiment
+    # whose seal did NOT move across a real amendment would mean the seal was
+    # not covering the thing that changed.
+    assert spec.SPEC_SHA256 != spec.SPEC_SHA256_ORIGINAL
+    assert spec.spec_hash() == spec.SPEC_SHA256
+
+
+def test_the_amendment_is_documented_where_the_guard_says_it_must_be():
+    """The failure message above names a location. That location must exist.
+
+    A guard that instructs an author to document something, and then never
+    checks, trains authors to skip the documentation.
+    """
+    record = os.path.join(ROOT, "docs", "release", "package-3",
+                          "AMENDMENT-001-frozen-corpus.md")
+    assert os.path.exists(record), (
+        "the amendment record the seal's own failure message prescribes is missing"
+    )
+    text = open(record, encoding="utf-8").read()
+    assert "FOUNDER-RULING-2026-08-22" in text, "must name its authority"
+    assert spec.SPEC_SHA256 in text and spec.SPEC_SHA256_ORIGINAL in text, (
+        "must record both the superseded and the current seal"
+    )
+    for path in AMENDED_BY_001:
+        assert path in text, f"amended file not listed in the record: {path}"
 
 
 def test_the_spec_seal_itself_is_untouched():

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import pytest
 
@@ -218,16 +219,29 @@ def test_the_reader_agrees_with_the_record_guard_on_every_committed_record():
             assert raw["decision"] == "NEEDS_FOUNDER_DECISION"
 
 
-def test_the_committed_corpus_has_open_constitutional_questions():
-    """The institution's actual state: decisions are waiting, and are named.
+def test_whatever_is_open_in_the_committed_corpus_is_well_formed():
+    """The corpus's shape, without asserting how many questions are open.
 
-    This asserts the *shape* of the corpus, not a count that every new record
-    would have to chase: at least one question is open, exactly one is
-    authorized, and nothing is malformed or self-approved.
+    HISTORY, kept because the change matters. This test used to open with
+    `assert still_open` — "the reader must surface the questions that are
+    waiting" — and that was an accurate description of the corpus when written:
+    three constitutional questions sat unanswered. On 2026-08-22 the founder
+    answered DEC-OM-001, DEC-OM-002 and DEC-OM-004 in one ruling, and the
+    assertion started failing.
+
+    It was removed rather than satisfied, because it was never an invariant of
+    the institution — it was a snapshot of one moment written as though it were
+    a law. A test that goes red when the founder does exactly what the escalation
+    asked of them is a badly specified test, and the tempting repair (keep a
+    decoy question open) would be worse than the defect.
+
+    What remains is the part that is a genuine invariant and holds at any count,
+    zero included: whatever is open is well formed, owned, and states the cost of
+    silence. `test_every_authorized_record_names_a_reference_that_resolves`
+    carries the load the removed assertion was standing in for.
     """
     found = load_all()
     still_open = open_decisions(found)
-    assert still_open, "the reader must surface the questions that are waiting"
     assert all(d.state is State.AWAITING_FOUNDER for d in still_open), (
         "no committed record may be malformed or claim an unsubstantiated approval"
     )
@@ -236,8 +250,65 @@ def test_the_committed_corpus_has_open_constitutional_questions():
         "every open record must state what is in force while it waits"
     )
     assert any(d.state is State.AUTHORIZED for d in found), (
-        "DEC-OM-003 is decided and must not read as open"
+        "decided records must not read as open"
     )
+
+
+def test_every_authorized_record_names_a_reference_that_resolves():
+    """An authorization is only as good as the thing it points at.
+
+    This is the guard the corpus actually needed, and it did not exist while
+    every record was still pending — the risk only appears once records start
+    being marked approved. `_classify` already refuses an approval with an empty
+    `authorization_ref`, but a *non-empty* ref naming a document that was never
+    written would pass every existing check while substantiating nothing.
+
+    So: when a ref names a repository path, that path must exist on disk. When
+    it does not name a path, it must be a substantive citation of a founder
+    communication rather than a bare word. An agent marking its own proposal
+    approved and citing an imaginary ruling file fails here.
+    """
+    raw_by_id = {}
+    for name in sorted(os.listdir(DELIBERATIONS)):
+        if name.endswith(".json"):
+            with open(os.path.join(DELIBERATIONS, name), encoding="utf-8") as fh:
+                raw = json.load(fh)
+            raw_by_id[raw["decision_id"]] = raw
+
+    authorized = [d for d in load_all() if d.state is State.AUTHORIZED]
+    assert authorized, "fixture assumption: the corpus contains a decided record"
+
+    for record in authorized:
+        ref = raw_by_id[record.decision_id]["authority_impact"]["authorization_ref"]
+        paths = re.findall(r"[\w./-]+\.(?:md|json|txt|yaml)", ref)
+        for path in paths:
+            assert os.path.exists(os.path.join(ROOT, path)), (
+                f"{record.decision_id} cites {path!r}, which does not exist. An "
+                "authorization pointing at a document nobody wrote substantiates "
+                "nothing."
+            )
+        if not paths:
+            # A founder message rather than a committed document. It must still
+            # be citable: who said it, and enough of what, to be looked up.
+            assert len(ref.split()) >= 5, (
+                f"{record.decision_id} cites {ref!r}, too thin to verify"
+            )
+
+
+def test_the_report_says_so_plainly_when_nothing_is_waiting():
+    """The empty queue must be stated, not left as an absence.
+
+    A report that simply omits the section when nothing is open reads
+    identically to a report that failed to load the records. The distinction
+    between "nothing is waiting" and "I could not tell you what is waiting" is
+    the entire value of this surface.
+    """
+    text = render()
+    if not open_decisions():
+        assert "no decision is waiting on a human" in text
+    # Either way the state table is printed, including the states sitting at zero.
+    for state in State:
+        assert state.value in text
 
 
 def test_the_rendered_report_names_each_open_decision():

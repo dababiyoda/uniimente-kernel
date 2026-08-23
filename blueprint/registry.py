@@ -507,7 +507,19 @@ _BINDINGS: tuple[TechnologyBinding, ...] = (
     ], [
         "The Gate has never executed a real external effect. Every recorded "
         "traversal terminates in a test executor.",
-    ], Owner.EXTERNAL),
+        # ADDED 2026-08-22 implementing ruling 3 of FOUNDER-RULING-2026-08-22.
+        "The Gate does not emit witness contract v2. `provenance/witness_v2.py` "
+        "records evidence_confidence, consequence_class and exposure_ceiling_usd "
+        "under the signature, and the Gate already holds all three — Proposal "
+        "carries the first two and grant['spending_limit_usd'] the third — but "
+        "it calls the v1 constructor and drops them. Every witness in the ledger "
+        "is therefore v1: calibration is impossible and Bridge G falls back to "
+        "the actor's standing passport ceiling, which over-estimates. Adoption "
+        "is roughly three lines and is blocked because "
+        "policy/consequence_gate.py is a sealed continuity artifact — see "
+        "docs/deliberations/CONTRADICTION-0002-continuity-baseline.md, which "
+        "needs a founder decision.",
+    ], Owner.FOUNDER),
 
     _b(31, Rung.BLUEPRINT, Reality.BLUEPRINT_ONLY, [
         _spec("docs/PHASE_ZERO_REPORT.md#embassy pattern"),

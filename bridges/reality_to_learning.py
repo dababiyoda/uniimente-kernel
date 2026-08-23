@@ -50,6 +50,7 @@ from enum import Enum
 
 from events.spine import Event, EventSpine
 from memory.causal import VALIDATION_WEIGHT, CausalMemory
+from provenance import witness_v2
 from provenance.ledger import EvidenceLedger
 
 KERNEL = "spiffe://uniimente.internal/organ/constitutional-controller"
@@ -196,10 +197,20 @@ def clean_verified_outcomes(ledger: EvidenceLedger) -> int:
 #: field set — so it is a contract change requiring a version and a founder
 #: decision, not a repair to slip into a bridge. Recorded as an unresolved field
 #: in the sense section 4.1 means: named, not invented around.
+#: AMENDED 2026-08-22 under FOUNDER-RULING-2026-08-22, which approved the
+#: coordinated contract migration. The contract now exists — `provenance/
+#: witness_v2.py` carries evidence_confidence, consequence_class and the
+#: effective exposure ceiling, all covered by the signature. What remains is
+#: adoption, and the gap is rewritten to say so rather than closed: a contract
+#: nothing writes produces no pairs, exactly as before.
 CALIBRATION_GAP = (
-    "CommitWitness does not record evidence_confidence, so no (prediction, "
-    "result) pair can be reconstructed from the ledger. Widening a signed "
-    "structure is a contract change and was not made unilaterally."
+    "Witness contract v2 records evidence_confidence, but no v2 witness has "
+    "been written: policy/consequence_gate.py is a sealed continuity artifact "
+    "(pinned in evolution/repair/spec.CONTINUITY_ARTIFACT_SHA256) and still "
+    "calls the v1 constructor, dropping the consequence_class and "
+    "evidence_confidence its own Proposal already carries. Every historical "
+    "record is v1 and reads as UNRECORDED, never as zero. See "
+    "docs/deliberations/CONTRADICTION-0002-continuity-baseline.md."
 )
 
 
@@ -225,10 +236,16 @@ def predicted_versus_realized(ledger: EvidenceLedger) -> list[tuple[float, bool]
         witness = witnesses.get(receipt["witness_id"]) if receipt else None
         if witness is None:
             continue
-        confidence = witness.get("evidence_confidence")
-        if confidence is None:
+        # Read through the versioned contract rather than reaching for the raw
+        # key. A v1 record yields UNRECORDED and `calibratable` is False, so it
+        # is skipped as *absent* rather than coerced into a number — the
+        # distinction the ruling insisted on, and the reason this join stays
+        # empty over a historical ledger instead of reporting a flattering curve.
+        reading = witness_v2.read(witness)
+        if not reading.calibratable:
             continue
-        pairs.append((float(confidence), outcome.get("result_class") in POSITIVE))
+        pairs.append((float(reading.evidence_confidence),
+                      outcome.get("result_class") in POSITIVE))
     return pairs
 
 

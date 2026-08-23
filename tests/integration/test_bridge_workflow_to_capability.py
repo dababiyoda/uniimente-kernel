@@ -238,8 +238,22 @@ def test_the_ledger_really_cannot_supply_the_authority_envelope(ran):
 
 
 def test_the_gap_is_named_in_the_module_not_only_in_a_commit_message():
-    assert "consequence class" in bridge_g.GAP_BRIDGE_G_001
-    assert "budget ceiling" in bridge_g.GAP_BRIDGE_G_001
+    """Still asserted after the v2 migration, with the vocabulary it now uses.
+
+    The purpose is unchanged: a reader of this module must find the gap in the
+    module. What changed is that the gap is no longer "the fields do not exist"
+    but "the fields exist and nothing writes them", so the text names the
+    concrete fields and the reason adoption is blocked.
+    """
+    gap = bridge_g.GAP_BRIDGE_G_001
+    assert "consequence_class" in gap
+    assert "exposure_ceiling_usd" in gap
+    # The gap must say why it is still open, not merely that it is.
+    assert "CONTRADICTION-0002" in gap
+    assert "actor_passport" in gap, (
+        "the fallback is an over-estimate and the gap text must say which "
+        "source a reader is actually looking at"
+    )
 
 
 def test_the_bridge_introduces_no_new_mechanism():

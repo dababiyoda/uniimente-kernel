@@ -230,6 +230,45 @@ def _asymmetric_identity_is_not_adopted() -> tuple[bool, str]:
                    f"{', '.join(sorted(set(users)))}")
 
 
+def _witness_v2_is_not_emitted() -> tuple[bool, str]:
+    """GAP-BRIDGE-D-001 / G-001 after the migration: is v2 actually written?
+
+    The contract exists (`provenance/witness_v2.py`) and both bridges read it.
+    Whether the institution can answer "how confident were we, under what
+    exposure" depends entirely on whether the gate EMITS it — and the gate is a
+    sealed continuity artifact, so it still calls the v1 constructor.
+
+    Checked at the one place it can be settled: the `new_witness(...)` call in
+    `policy/consequence_gate.py`. If its keywords carry the v2 facts, the gap is
+    closed; if not, every witness in the ledger is v1 regardless of how complete
+    the contract module is. Deliberately not satisfied by the contract merely
+    existing — that is the proxy failure `_SUPERSEDED_ASYMMETRIC_PRIMITIVES`
+    records.
+    """
+    gate = os.path.join(KERNEL_ROOT, "policy", "consequence_gate.py")
+    try:
+        with open(gate, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read())
+    except OSError:
+        return True, "policy/consequence_gate.py is unreadable"
+
+    required = {"evidence_confidence", "consequence_class", "exposure_ceiling_usd"}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = node.func.id if isinstance(node.func, ast.Name) else (
+            node.func.attr if isinstance(node.func, ast.Attribute) else "")
+        if name != "new_witness":
+            continue
+        passed = {kw.arg for kw in node.keywords if kw.arg}
+        missing = sorted(required - passed)
+        if not missing:
+            return False, "the gate now emits witness contract v2"
+        return True, (f"the gate calls new_witness without {missing}; every "
+                      "witness in the ledger is v1 and reads as UNRECORDED")
+    return True, "no new_witness call found in the gate"
+
+
 def _routing_decision_is_untyped() -> tuple[bool, str]:
     """`RoutingDecision` has no schema in the canonical contract registry."""
     contracts = os.path.join(KERNEL_ROOT, "contracts")
@@ -360,6 +399,7 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
      _asymmetric_identity_is_not_adopted),
     (26, "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`",
      _asymmetric_identity_is_not_adopted),
+    (30, "The Gate does not emit witness contract v2", _witness_v2_is_not_emitted),
     (25, "RoutingDecision is not a typed institutional contract",
      _routing_decision_is_untyped),
     (37, "No marketplace. Bridge F has no implementation", _bridge_f_is_unimplemented),

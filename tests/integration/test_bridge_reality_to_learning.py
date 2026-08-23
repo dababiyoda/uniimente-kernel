@@ -235,16 +235,34 @@ def test_the_join_reads_confidence_from_the_witness_not_the_outcome():
 
     fn = next(n for n in ast.walk(tree)
               if isinstance(n, ast.FunctionDef) and n.name == "predicted_versus_realized")
-    # The outcome is read for the *result*; the confidence must come only from
-    # the witness. One read, and it must be off `witness`.
-    confidence_reads = [n for n in ast.walk(fn)
-                        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-                        and n.func.attr == "get"
-                        and any(isinstance(a, ast.Constant) and a.value == "evidence_confidence"
-                                for a in n.args)]
-    assert len(confidence_reads) == 1
-    assert isinstance(confidence_reads[0].func.value, ast.Name)
-    assert confidence_reads[0].func.value.id == "witness"
+
+    # UPDATED for witness contract v2. The invariant is unchanged and is the
+    # whole point of this test; only the mechanism it inspects moved. Confidence
+    # used to be read as `witness.get("evidence_confidence")`; it is now read
+    # through `witness_v2.read(witness)`, which additionally distinguishes an
+    # UNRECORDED v1 field from a genuine value.
+    reads = [n for n in ast.walk(fn)
+             if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+             and n.func.attr == "read"
+             and isinstance(n.func.value, ast.Name)
+             and n.func.value.id == "witness_v2"]
+    assert len(reads) == 1, "confidence must be read once, through the contract"
+    assert isinstance(reads[0].args[0], ast.Name)
+    assert reads[0].args[0].id == "witness", (
+        "the reading must be taken from the witness, which is written BEFORE "
+        "execution, not from the outcome, which is written after"
+    )
+
+    # The invariant restated as a prohibition, so a future edit that reaches for
+    # the outcome fails here rather than silently reporting perfect calibration.
+    outcome_confidence = [
+        n for n in ast.walk(fn)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "get"
+        and isinstance(n.func.value, ast.Name) and n.func.value.id == "outcome"
+        and any(isinstance(a, ast.Constant) and a.value == "evidence_confidence"
+                for a in n.args)]
+    assert not outcome_confidence, "confidence was read off the outcome"
 
 
 # --- promotion stays governed ------------------------------------------------

@@ -79,7 +79,9 @@ def continuity_fingerprint(root: str = spec.CONTINUITY_DIR) -> str:
     """
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACT_SHA256:
-        with open(os.path.join(root, rel), "rb") as handle:
+        path = (spec.frozen_path(rel) if root == spec.CONTINUITY_DIR
+                else os.path.join(root, rel))
+        with open(path, "rb") as handle:
             digest.update(handle.read())
     return digest.hexdigest()
 

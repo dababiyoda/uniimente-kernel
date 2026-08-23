@@ -5,6 +5,25 @@ Byte-identical freeze-time copies of the twelve artifacts pinned in
 documents, the three authority documents, the three identity registries and
 `policy/consequence_gate.py`.
 
+**Every file here carries a `.frozen` suffix, and that is load-bearing.**
+
+The first version of this corpus stored them under their real names. That made
+`policy/consequence_gate.py` importable — PEP 420 namespace packages need no
+`__init__.py` — so the remedy for CONTRADICTION-0002 had quietly created a
+genuine **second path to external effect**, sitting in the tree under a
+reassuring directory name. CI check 3 ("one source of authority") failed on the
+push and was right to: `**/consequence_gate.py` found two.
+
+Fixed by suffixing, not by excluding this directory from that check. An
+exclusion would have let the check keep passing while the importable duplicate
+stayed on disk — weakening the check to accommodate the defect it correctly
+found. A frozen artifact is a byte record of what the law *was*; the suffix
+makes it unloadable as law, unimportable as code, and invisible to every glob
+that looks for the real thing.
+
+Read them through `spec.frozen_path(relative)`, which maps a pinned relative
+path to where its bytes actually live. Amendment 004.
+
 Every file here was verified against its pinned hash **before** it was written,
 and the sha256 over their concatenated bytes equals `CONTINUITY_COMBINED_SHA256`
 exactly:

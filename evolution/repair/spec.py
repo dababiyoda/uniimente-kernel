@@ -421,6 +421,33 @@ CONTINUITY_COMBINED_SHA256 = \
 CONTINUITY_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "continuity")
 
+#: Every frozen artifact carries this suffix. It is not decoration.
+#:
+#: The first version of this corpus stored the artifacts under their real
+#: names, which made `evolution/repair/continuity/policy/consequence_gate.py`
+#: importable as a module — PEP 420 namespace packages need no `__init__.py` —
+#: and therefore a genuine SECOND PATH TO EXTERNAL EFFECT sitting in the tree
+#: under a reassuring directory name.
+#:
+#: CI check 3 ("one source of authority") caught it within minutes of the push,
+#: and it was correct to: counting `**/consequence_gate.py` found two. The fix
+#: is the suffix rather than an exclusion in that check, because an exclusion
+#: would have let the check keep passing while the importable duplicate stayed
+#: on disk. A frozen artifact is a byte record of what the law WAS; suffixing
+#: it makes it unloadable as law, unimportable as code, and invisible to every
+#: glob that looks for the real thing.
+FROZEN_SUFFIX = ".frozen"
+
+
+def frozen_path(relative: str) -> str:
+    """Absolute path to one frozen continuity artifact.
+
+    The pins in `CONTINUITY_ARTIFACT_SHA256` are keyed by the artifact's REAL
+    relative path — that is what the hashes describe and what the historical
+    record says. This maps that key to where the bytes actually live.
+    """
+    return os.path.join(CONTINUITY_DIR, relative + FROZEN_SUFFIX)
+
 AUTHORITY_INVARIANTS = (
     "no capability grant is issued to any replacement candidate",
     "no candidate may register itself as the provider of the target capability",

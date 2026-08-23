@@ -157,7 +157,44 @@ SEALED_BLOBS_PRE_AMENDMENT_003 = {
         "fdc31ce110aa4abd4e898e808f738956c05d4629",
 }
 
-#: Content pins for the sealed repair files, as they stand after Amendment 003.
+#: Exactly the files Amendment 004 is authorized to touch, and why.
+#:
+#: CI check 3 ("one source of authority") failed on the Amendment 002/003 push
+#: and was RIGHT. Storing the frozen artifacts under their real names made
+#: `evolution/repair/continuity/policy/consequence_gate.py` importable — PEP 420
+#: namespace packages need no `__init__.py` — so the remedy for
+#: CONTRADICTION-0002 had created a genuine SECOND PATH TO EXTERNAL EFFECT,
+#: sitting in the tree under a reassuring directory name.
+#:
+#: Fixed by suffixing every frozen artifact `.frozen` rather than by excluding
+#: the directory from that check. An exclusion would have let the check keep
+#: passing while the importable duplicate stayed on disk — the check would have
+#: been weakened to accommodate the defect it correctly found.
+AMENDED_BY_004 = {
+    "evolution/repair/spec.py":
+        "adds FROZEN_SUFFIX and frozen_path(); no expectation value moves",
+    "tests/unit/test_repair_spec_frozen.py":
+        "reads through frozen_path(), and asserts every frozen artifact is "
+        "stored suffixed rather than under its real name",
+}
+
+#: The sealed files as they stood after Amendment 003 and BEFORE Amendment 004.
+SEALED_BLOBS_PRE_AMENDMENT_004 = {
+    "evolution/repair/spec.py":
+        "ae8d1e9af90bc6bd71e31da146d890f47b357571",
+    "tests/unit/test_repair_spec_frozen.py":
+        "a01fafe01038b4b9541d6b7a708c00319303a565",
+    "tests/unit/test_repair_adapters.py":
+        "0df5ae99971aa423e5318ac99dd651215062efa4",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    "tests/unit/test_repair_harness.py":
+        "6f464f037079d65668f73e2952703af33f66a78a",
+}
+
+#: Content pins for the sealed repair files, as they stand after Amendment 004.
 #: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
 #: opposite reasons and both are instructive: comparing against the freeze commit
 #: flagged files main itself had changed, and comparing against `origin/main`
@@ -166,11 +203,11 @@ SEALED_BLOBS_PRE_AMENDMENT_003 = {
 #: changes". Content pins need no refs, work in a shallow checkout, and assert
 #: something stronger than a diff: these exact bytes.
 SEALED_BLOBS = {
-    # Moved by Amendment 002 (continuity binding).
+    # Moved again by Amendment 004 (frozen artifacts suffixed).
     "evolution/repair/spec.py":
-        "ae8d1e9af90bc6bd71e31da146d890f47b357571",
+        "f98f040940896dd0393ddc73cec08f0230265701",
     "tests/unit/test_repair_spec_frozen.py":
-        "a01fafe01038b4b9541d6b7a708c00319303a565",
+        "2122c4e436588af8f8285f885a28a1e1acfde500",
     # Moved by Amendment 003 (the two remaining live comparisons).
     "tests/unit/test_repair_adapters.py":
         "0df5ae99971aa423e5318ac99dd651215062efa4",
@@ -325,13 +362,52 @@ def test_amendment_003_touched_exactly_the_files_it_declared():
     nobody can audit.
     """
     moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_003.items()
-             if SEALED_BLOBS[path] != before}
+             if SEALED_BLOBS_PRE_AMENDMENT_004[path] != before}
     assert moved == set(AMENDED_BY_003), (
         f"amendment 003 scope mismatch. moved={sorted(moved)} "
         f"declared={sorted(AMENDED_BY_003)}. Every file the amendment touches "
         "must be declared in AMENDED_BY_003 with the reason it was touched."
     )
-    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT_003)
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_004) == set(SEALED_BLOBS_PRE_AMENDMENT_003)
+
+
+def test_amendment_004_touched_exactly_the_files_it_declared():
+    """Fourth amendment, fourth guard — the documented pattern, applied.
+
+    Measured against the post-003 snapshot, per the note above. Amendment 004
+    exists because CI check 3 correctly refused the Amendment 002/003 push: the
+    frozen corpus had introduced an importable second Consequence Gate.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_004.items()
+             if SEALED_BLOBS[path] != before}
+    assert moved == set(AMENDED_BY_004), (
+        f"amendment 004 scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_004)}."
+    )
+    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT_004)
+
+
+def test_no_frozen_artifact_is_importable_or_loadable_as_the_real_thing():
+    """The defect Amendment 004 closed, pinned so it cannot return.
+
+    A frozen artifact stored under its real name is not merely untidy: for
+    `consequence_gate.py` it was an importable second gate, and for the YAML
+    registries it would be a second hit for any glob that looks for authority.
+    """
+    import importlib.util
+
+    frozen_dir = os.path.join(ROOT, "evolution", "repair", "continuity")
+    for dirpath, _dirnames, filenames in os.walk(frozen_dir):
+        for name in filenames:
+            if name == "README.md":
+                continue
+            assert name.endswith(".frozen"), f"{name} is stored unsuffixed"
+            assert not name.endswith(".py"), f"{name} is importable Python"
+
+    assert importlib.util.find_spec(
+        "evolution.repair.continuity.policy.consequence_gate") is None, (
+        "the frozen consequence gate is importable again — a second path to "
+        "external effect, which is exactly what CI check 3 refuses")
 
 
 def test_amendment_002_left_the_historical_evidence_exactly_where_it_was():

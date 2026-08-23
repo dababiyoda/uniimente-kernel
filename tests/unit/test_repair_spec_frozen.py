@@ -116,7 +116,7 @@ def test_continuity_hashes_describe_the_frozen_artifacts_at_freeze_time():
     """
     combined = hashlib.sha256()
     for rel, expected in spec.CONTINUITY_ARTIFACT_SHA256.items():
-        with open(os.path.join(spec.CONTINUITY_DIR, rel), "rb") as handle:
+        with open(spec.frozen_path(rel), "rb") as handle:
             raw = handle.read()
         assert hashlib.sha256(raw).hexdigest() == expected, \
             f"{rel} does not match its frozen continuity hash"
@@ -153,7 +153,10 @@ def test_the_frozen_continuity_corpus_is_complete_and_holds_nothing_extra():
             rel = os.path.relpath(os.path.join(dirpath, name),
                                   spec.CONTINUITY_DIR)
             if rel != "README.md":
-                on_disk.add(rel)
+                assert rel.endswith(spec.FROZEN_SUFFIX), (
+                    f"{rel} is stored under its real name; a frozen artifact "
+                    "must not be loadable as the thing it is a record of")
+                on_disk.add(rel[:-len(spec.FROZEN_SUFFIX)])
     assert on_disk == set(spec.CONTINUITY_ARTIFACT_SHA256)
 
 

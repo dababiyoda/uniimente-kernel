@@ -288,6 +288,8 @@ def test_repair_cost_gains_the_two_state_terms():
 
 
 def test_continuity_baseline_is_true_at_freeze_time():
+    from evolution.repair import spec as repair_spec
+
     """Amended 2026-08-23 (CONTRADICTION-0002 Option A).
 
     Read the live tree until today, which meant this sealed experiment could
@@ -296,7 +298,7 @@ def test_continuity_baseline_is_true_at_freeze_time():
     """
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACTS:
-        with open(os.path.join(spec.CONTINUITY_DIR, rel), "rb") as fh:
+        with open(repair_spec.frozen_path(rel), "rb") as fh:
             digest.update(fh.read())
     assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
 

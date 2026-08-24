@@ -215,17 +215,32 @@ def test_the_session_mints_no_grant_for_bridge_c(state_dir):
     assert "issue_single_action" not in inspect.getsource(module)
 
 
-def test_bridge_c_gets_a_fresh_identity_per_session(state_dir):
-    """A caller holding an actor id across a restart must not get to reuse it."""
+def test_bridge_c_refuses_an_actor_that_a_previous_session_issued(state_dir):
+    """A caller holding a real actor id across a restart must not get to reuse it.
+
+    The id below is genuinely issued and genuinely valid in the first session —
+    not a made-up string, which would only prove the Gate rejects nonsense. What
+    is being asserted is that a *real* passport stops working once the session
+    that issued it is gone, because the registry is re-issued rather than
+    restored.
+    """
     first = Session.open(state_dir)
-    a, b, _ = _chain(first)
+    _, b, _ = _chain(first)
+    issued = first.runtime.passports.issue(
+        kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+        legal_principal="alfonso_lopez",
+        declared_capabilities=["experiment.run"], budget_ceiling_usd=5.0,
+        consequence_class="internal_write").passport_id
+    assert first.runtime.passports.verify(issued)[0] is True
+    spec = b.run.experiment
     del first
 
     second = Session.open(state_dir)
-    stale = "spiffe://uniimente.internal/agent/does-not-exist"
     record = second.traverse_experiment_to_reality(
-        b.run.experiment, measure=lambda spec: 1.0, actor=stale)
+        spec, measure=lambda s: 1.0, actor=issued)
+
     assert record.completed is False
+    assert second.runtime.passports.verify(issued) == (False, "unknown_identity")
 
 
 # =============================================================== what a session holds

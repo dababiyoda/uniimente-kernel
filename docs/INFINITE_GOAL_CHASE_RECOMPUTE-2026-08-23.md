@@ -1,5 +1,36 @@
 # Infinite Goal Chase — recompute, 2026-08-23
 
+> ## UPDATE 2026-08-24 — §3.1's bottleneck was built; the next one is named
+>
+> `runtime/InstitutionalRuntime.boot(state_dir)` exists and passes the exact
+> falsification §3.1 specified — run a governed action, discard every object,
+> boot again from the same directory, find the witness, chain and inbox intact.
+> `tests/unit/test_institutional_runtime.py`, 18 tests.
+>
+> **This does not close the Alpha bottleneck, and §3.1 below is left standing
+> rather than rewritten.** Adoption is **0 of 6**: every bridge and registry
+> still constructs its own in-memory ledger. Building a durable runtime and
+> booting through one are different facts, and only the second is progress —
+> the same distinction `identity/pki/` was held to a day earlier. Counted by
+> `test_runtime_adoption_is_counted_not_asserted`, which fails in both
+> directions so the count and this document move together.
+>
+> **The bottleneck is now migration**, not construction: mechanical,
+> independently testable per entry point, and unblocked.
+>
+> Composing the runtime surfaced three defects, none reachable while the gate
+> and spine sat on separate in-memory ledgers, each demonstrated before it was
+> fixed: the transactional **outbox** did not survive a restart; a durable chain
+> **silently adopted a different constitution**; and `EventSpine.replay()`
+> **raised `KeyError: 'source'`** on Gate lifecycle records — pre-existing on
+> unmodified `main`, and unreachable until one ledger carried both writers.
+>
+> §4 item 1 said "port WP-04's mechanism rather than writing a third one".
+> WP-04's Postgres backend was **not** ported and is not in this change; the
+> JSONL path is what satisfies Alpha, and gap #24 stays open. See
+> `runtime/README.md`.
+
+
 **Trigger:** `FOUNDER-RULING-2026-08-23`, which requires the whole graph be
 recomputed after each capability lands rather than a flat checklist be ticked.
 

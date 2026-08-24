@@ -1164,4 +1164,100 @@ def build_registry() -> ClosureRegistry:
         "evidence": bridges_evidence, "economic": bridges_economic,
         "regenerative": bridges_regenerative}))
 
+    # ------------------------------------------------------ runtime (2026-08-24)
+    def _booted(tmp):
+        from runtime import InstitutionalRuntime
+        return InstitutionalRuntime.boot(tmp)
+
+    def _governed_action(rt):
+        actor = rt.passports.issue(
+            kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+            legal_principal="alfonso_lopez", declared_capabilities=["draft.publish"],
+            budget_ceiling_usd=5.0, consequence_class="external_contact")
+        p = _proposal(actor.passport_id)
+        return rt.gate.run(p, standing_grant=_granted(rt.gate, p),
+                           executor=lambda pr: {"observed_outcome": "draft queued",
+                                                "result_class": "positive"})
+
+    def runtime_technical():
+        """The falsification the goal-chase recompute specified, as a closure."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            record = _governed_action(first)
+            receipt = record.receipt_hash
+            del first, record
+            second = _booted(tmp)             # every object discarded
+            found = second.ledger.find(receipt) is not None
+            ok, detail = second.ledger.verify_chain()
+        return found and ok and second.report.resumed, \
+            f"governed action outlived its process; {detail}"
+
+    def runtime_authority():
+        """Evidence is restored; identity is not. A restart does not renew a
+        passport the institution deliberately made short-lived."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            actor = first.passports.issue(
+                kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+                legal_principal="alfonso_lopez", declared_capabilities=["draft.publish"],
+                budget_ceiling_usd=5.0, consequence_class="external_contact")
+            del first
+            second = _booted(tmp)
+            known, why = second.passports.verify(actor.passport_id)
+        return known is False and why == "unknown_identity", \
+            "a pre-restart identity is unknown after boot; memory persists, permission does not"
+
+    def runtime_evidence():
+        """Boot refuses a chain written under law it was never checked against."""
+        import tempfile
+
+        from provenance.ledger import EvidenceLedger
+        from runtime import BootRefused
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "ledger.jsonl")
+            EvidenceLedger("sha256:" + "f" * 64, path=path).append("witness", {"x": 1})
+            try:
+                _booted(tmp)
+                return False, "booted on a chain anchored to a different constitution"
+            except BootRefused as exc:
+                return "anchored to" in str(exc), \
+                    "a foreign-constitution chain is refused, not silently adopted"
+
+    def runtime_economic():
+        """A staged delivery is a debt. It must not be discharged by a crash."""
+        import tempfile
+
+        from events.spine import Event
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            for name in ("external.kept", "external.sent"):
+                first.spine.outbox_stage(Event(
+                    type=name, source="spiffe://uniimente.internal/kernel/x",
+                    actor="kernel", payload={}, legal_principal="alfonso"))
+            first.spine.outbox_flush(mediator=lambda e: e.type == "external.sent")
+            del first
+            owed = [e.type for e in _booted(tmp).outstanding_deliveries]
+        return owed == ["external.kept"], \
+            "refused delivery still owed after restart; flushed one not owed twice"
+
+    def runtime_regenerative():
+        """The restart itself is kept, so the institution's own history has no
+        silent gaps between processes."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            _booted(tmp)
+            _booted(tmp)
+            third = _booted(tmp)
+            boots = [r.payload for r in third.ledger.by_type("event")
+                     if r.payload.get("type") == "runtime.booted"]
+        return len(boots) == 3 and [b["resumed"] for b in boots] == [False, True, True], \
+            "every boot ledgered, first as fresh and the rest as resumed"
+
+    reg.register(ModuleClosures("runtime", {
+        "technical": runtime_technical, "authority": runtime_authority,
+        "evidence": runtime_evidence, "economic": runtime_economic,
+        "regenerative": runtime_regenerative}))
+
     return reg

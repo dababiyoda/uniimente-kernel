@@ -72,7 +72,20 @@ class EventSpine:
     def __init__(self, ledger):
         self.ledger = ledger
         self._subscribers: dict[str, list] = {}      # type prefix -> [callables]
-        self._outbox: list[Event] = []               # staged for mediated delivery
+        #: Transactional outbox, REBUILT from the ledger for the same reason the
+        #: inbox below is. Found 2026-08-23 while composing `runtime/`, by the
+        #: probe that the inbox fix suggested: if one in-process view of the
+        #: ledger was wrong, look at the others.
+        #:
+        #: An outbox exists precisely so that a delivery survives the crash
+        #: between deciding to send and sending. This one was a plain list, so a
+        #: staged-but-unflushed event was ledgered as owed and then forgotten by
+        #: the only object that could act on it — the durable record said the
+        #: institution owed a delivery and nothing was left holding the debt.
+        #: Demonstrated before it was fixed (stage, reload, depth 0 against one
+        #: unsettled `outbox_staged` record) and pinned by
+        #: `test_a_staged_delivery_survives_a_restart`.
+        self._outbox: list[Event] = self._outbox_from_ledger()
         #: Idempotent inbox, REBUILT from the ledger rather than started empty.
         #:
         #: Fixed 2026-08-23 while establishing restart/resume. The inbox was an
@@ -98,11 +111,67 @@ class EventSpine:
         a peer as an external fact — the authority laundering the emit/ingest
         split exists to prevent.
         """
-        return {
-            record.payload["event_id"]
-            for record in self.ledger.by_type("event")
-            if isinstance(record.payload, dict) and "event_id" in record.payload
-        }
+        return {p["event_id"] for p in self._spine_payloads()}
+
+    @staticmethod
+    def _is_spine_event(payload) -> bool:
+        """Is this ledger record one of *this* spine's events?
+
+        `record_type="event"` is a shared namespace. `ConsequenceGate._transition`
+        writes action-lifecycle records under it too — `{"type": "action.refused",
+        "action_id": ..., "proposal_id": ...}` — with no `source`, `actor` or
+        `event_id`, because they are a different kind of thing that happens to
+        share a bucket.
+
+        Every view here must therefore identify its own records POSITIVELY.
+        `_seen_from_ledger` and `CausalMemory._events` both did; `replay()` did
+        not, and raised `KeyError: 'source'` the first time a gate and a spine
+        shared one ledger — which is to say, the first time anything composed
+        them, which is `runtime/`. Demonstrated on unmodified main before it was
+        fixed here.
+
+        Renaming the gate's record type would be the tidier fix and is the wrong
+        one: those records are already on disk in existing chains, and changing
+        what a historical record is called rewrites what it meant. The reader
+        adapts to the record, not the record to the reader.
+        """
+        return isinstance(payload, dict) and "event_id" in payload
+
+    def _spine_payloads(self) -> list[dict]:
+        return [r.payload for r in self.ledger.by_type("event")
+                if self._is_spine_event(r.payload)]
+
+    @staticmethod
+    def _event_from_payload(p: dict) -> Event:
+        """One reconstruction, used by every view. Memory is never truth."""
+        return Event(type=p["type"], source=p["source"], actor=p["actor"],
+                     payload=p["payload"], legal_principal=p["legal_principal"],
+                     sensitivity=p["sensitivity"], event_id=p["event_id"],
+                     occurred_at=p["occurred_at"],
+                     causal_parent=p.get("causal_parent"),
+                     policy_version=p.get("policy_version"))
+
+    def _outbox_from_ledger(self) -> list[Event]:
+        """Staged deliveries the ledger has not yet seen settled, in order.
+
+        Only a flush settles a debt. A refusal is deliberately *not* settlement:
+        `outbox_flush` re-keeps a refused event, because the mediator declining
+        today does not mean the institution stopped owing the delivery. Rebuild
+        must preserve that or a restart would silently discharge everything the
+        gate had ever refused — turning a refusal into a delivery that never
+        happens and is never owed again.
+        """
+        staged: list[Event] = []
+        for p in self._spine_payloads():
+            direction = p.get("direction")
+            if direction == "outbox_staged":
+                staged.append(self._event_from_payload(p))
+            elif direction == "outbox_flushed":
+                for i, pending in enumerate(staged):
+                    if pending.event_id == p["event_id"]:
+                        del staged[i]
+                        break
+        return staged
 
     # ------------------------------------------------------------ write
     def emit(self, event: Event) -> Event:
@@ -137,16 +206,10 @@ class EventSpine:
     def replay(self, type_prefix: str | None = None) -> list[Event]:
         """Rebuild the event stream from the ledger. Memory is never truth."""
         out = []
-        for rec in self.ledger.by_type("event"):
-            p = rec.payload
+        for p in self._spine_payloads():
             if type_prefix and not p["type"].startswith(type_prefix):
                 continue
-            out.append(Event(type=p["type"], source=p["source"], actor=p["actor"],
-                             payload=p["payload"], legal_principal=p["legal_principal"],
-                             sensitivity=p["sensitivity"], event_id=p["event_id"],
-                             occurred_at=p["occurred_at"],
-                             causal_parent=p.get("causal_parent"),
-                             policy_version=p.get("policy_version")))
+            out.append(self._event_from_payload(p))
         return out
 
     # ------------------------------------------------------------ outbox

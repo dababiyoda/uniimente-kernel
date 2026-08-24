@@ -203,35 +203,72 @@ def clean_verified_outcomes(ledger: EvidenceLedger) -> int:
 #: effective exposure ceiling, all covered by the signature. What remains is
 #: adoption, and the gap is rewritten to say so rather than closed: a contract
 #: nothing writes produces no pairs, exactly as before.
+#: AMENDED AGAIN 2026-08-24. The text above described a state that had stopped
+#: being true: the sealed-artifact blocker was resolved by CONTRADICTION-0002
+#: Option A (the frozen corpus), the gate now calls the v2 constructor, and v2
+#: witnesses carrying a forecast are being written. Reporting a resolved
+#: blocker as the live one is the stale-gap failure #25, #26, #30 and #48 were
+#: each corrected for, so it is rewritten here to what is measurably still open
+#: rather than deleted — and what remains is smaller, and is not about the
+#: contract at all.
 CALIBRATION_GAP = (
-    "Witness contract v2 records evidence_confidence, but no v2 witness has "
-    "been written: policy/consequence_gate.py is a sealed continuity artifact "
-    "(pinned in evolution/repair/spec.CONTINUITY_ARTIFACT_SHA256) and still "
-    "calls the v1 constructor, dropping the consequence_class and "
-    "evidence_confidence its own Proposal already carries. Every historical "
-    "record is v1 and reads as UNRECORDED, never as zero. See "
-    "docs/deliberations/CONTRADICTION-0002-continuity-baseline.md."
+    "Witness contract v2 is emitted and carries predicted_success_probability, "
+    "so the contract half of this gap is closed. Two halves remain, and a pair "
+    "needs both. (1) NO FORECAST IS SUPPLIED: ExperimentSpec carries `prediction` "
+    "as prose and no numeric forecast, so bridges/experiment_to_reality.py — the "
+    "path that actually commits experiments — builds its Proposal with "
+    "evidence_confidence and leaves the forecast unset, and the witness records "
+    "UNRECORDED. The institution cannot derive a forecast from a spec, and "
+    "inventing one is the fabricated field the adapters forbid, so it has to be "
+    "supplied by whoever writes the spec. (2) NO OUTSIDER HAS SPOKEN: a pair "
+    "also needs an EXTERNALLY_VERIFIED outcome, which is why "
+    "clean_verified_outcomes is 0 by the same standard. Every pair produced so "
+    "far exists in tests and closure probes, where both halves are supplied "
+    "rather than earned."
 )
 
 
 def predicted_versus_realized(ledger: EvidenceLedger) -> list[tuple[float, bool]]:
-    """Join the confidence written in the witness to what was later observed.
+    """Join the forecast written in the witness to what an outsider later saw.
 
-    Returns empty today, and the emptiness is the finding — see
-    `CALIBRATION_GAP`. The join is written against the field the witness would
-    have to carry, so it starts working the moment that contract change is
-    ratified, and reports nothing rather than something convenient until then.
+    Empty over a historical ledger, because every historical witness is v1 and
+    carries no forecast. It stops being empty as v2 records accumulate — which
+    began 2026-08-23 when the gate started emitting v2.
 
-    Deliberately reads confidence off the *witness* and not the outcome. The
-    witness is written before execution; the outcome after. Sourcing it from the
-    outcome would compare a result to itself and report perfect calibration
-    forever, which is the shape this whole bridge exists to refuse.
+    Three separate refusals, each of which was wrong here at some point:
+
+    **The confidence comes off the witness, never the outcome.** The witness is
+    written before execution and the outcome after; sourcing it from the outcome
+    would compare a result to itself and report perfect calibration forever.
+    This one was right from the start.
+
+    **The forecast is `predicted_success_probability`, not
+    `evidence_confidence`.** CONTRADICTION-0003 Option A separated these because
+    they are opposite by construction for a novel experiment: a well-evidenced
+    decision to run an unlikely test is *both* high-evidence and low-forecast.
+    `calibratable` was moved onto the forecast when the split landed; this join
+    was not, so it gated on the forecast's presence and then graded the
+    institution on its evidence instead. Demonstrated 2026-08-24 with a
+    proposal carrying prediction 0.20 and evidence 0.90: the pair reported 0.90.
+    Grading a forecast by how well-evidenced it was is precisely the conflation
+    the ruling removed, reintroduced at the one place the data is consumed.
+
+    **Only an outsider's verification closes the loop.** Every consequential
+    action writes its own `internally_observed` outcome at the gate, so counting
+    all outcomes meant one action produced two pairs — and one of them graded
+    the forecast against the institution's own account of what happened. That is
+    the same self-assessment the first refusal exists to prevent, arriving
+    through the realized side instead of the predicted side. `EXTERNALLY_VERIFIED`
+    is the same standard `clean_verified_outcomes` already applies, for the same
+    reason.
     """
     witnesses = {w.payload["witness_id"]: w.payload for w in ledger.by_type("witness")}
     receipts = {r.payload["action_id"]: r.payload for r in ledger.by_type("receipt")}
     pairs: list[tuple[float, bool]] = []
     for record in ledger.by_type("outcome"):
         outcome = record.payload
+        if outcome.get("validation_status") != EXTERNALLY_VERIFIED:
+            continue
         receipt = receipts.get(outcome.get("action_ref"))
         witness = witnesses.get(receipt["witness_id"]) if receipt else None
         if witness is None:
@@ -244,7 +281,7 @@ def predicted_versus_realized(ledger: EvidenceLedger) -> list[tuple[float, bool]
         reading = witness_v2.read(witness)
         if not reading.calibratable:
             continue
-        pairs.append((float(reading.evidence_confidence),
+        pairs.append((float(reading.predicted_success_probability),
                       outcome.get("result_class") in POSITIVE))
     return pairs
 

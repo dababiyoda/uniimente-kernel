@@ -118,7 +118,7 @@ evidence rather than against intent.
 | No parallel constitutional authority | **near** | one Gate, one policy engine; DUP-1/DUP-2 (evolution loop, event spine) remain open per the Kimi reconciliation |
 | Cross-organ workflow | **partial** | Bridge A runs end to end on fixtures; SIMULATED by construction |
 | Peer-repository parity | **proposed** | two draft PRs; unmerged, so parity is not yet a fact |
-| Standing bounded mandates | **partial** | `autonomy/` A0–A9 ladder exists; no mandate is actually issued and running |
+| Standing bounded mandates | **blocked** | `autonomy/` A0–A9 ladder exists and correctly refuses A5: no external outcomes, no calibrated prediction. Blocked on the missing outsider, not on state. Until 2026-08-24 the ladder could be skipped entirely via `issue(level=8)` — see §4 item 3 |
 | Reserved decisions escalate | **done** | `governance.decisions` AWAITING_FOUNDER=0, reserved matters route to human |
 | Persistent state / restart-resume | **partial** | see §3.1 — corrected after checking the claim against the code |
 | Founder Cockpit | **absent** | no module. `shell/` is a pipeline runner, not a command surface |
@@ -217,6 +217,28 @@ moment it was checked.
    > all, and what it is. That is a trust-model decision, not an adoption task.
 3. **Standing bounded mandate**, once state persists — one A5/A6 mandate that
    runs, refuses correctly, and is revocable.
+
+   > **CORRECTED 2026-08-24. This is not unblocked by state persistence.**
+   > State now persists (`runtime/`), so the stated precondition is met and the
+   > item still cannot proceed: `AutonomyAuthority.promote` refuses A5 because
+   > `repeated_successful_external_outcomes` is false (CVO is 0) and
+   > `calibrated_prediction` is false (no pair has ever come from reality), and
+   > the weakest-link rule means all ten criteria or nothing. Verified by
+   > running it, not by reading the docstring.
+   >
+   > **A standing A5/A6 mandate is blocked by the same missing outsider that
+   > holds CVO at 0 and the calibration join empty.** That is one blocker
+   > wearing three faces, and it is the honest shape of the graph: several
+   > "next" items are the same item.
+   >
+   > Asking the question found something worse than a blocked item.
+   > `issue(subject, tuple_, level=8)` returned an **A8 license against an empty
+   > ledger** — production environment, $10,000 budget, external target. The
+   > promotion path enforced ten criteria and the constructor enforced none, so
+   > the ladder was optional. Fixed: autonomy above A0 now needs a named human
+   > authorizer, never UNIIMENTE, recorded on the ledger. The fix creates no
+   > second promotion path — `authorized_by` buys a starting position, never a
+   > promotion.
 4. **Founder Cockpit** over a body that remembers.
 5. **Attach a reasoning organ.** WMI is the fastest working path per the ruling;
    RailScout's research-refinery intent stays preserved and subsequently built,

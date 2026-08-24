@@ -1,6 +1,6 @@
 {
-  "commit": "6399ae28a08688aa4f39462ede150dbaddcd7001",
-  "generated_at": "2026-08-22T07:44:51+00:00",
+  "commit": "c3e6cfedaaec38486261ffee7fc54406ca75ac63",
+  "generated_at": "2026-08-24T05:26:38+00:00",
   "modules": {
     "advantage_foundry": {
       "complete": true,
@@ -95,6 +95,10 @@
       "open_closures": []
     },
     "proof": {
+      "complete": true,
+      "open_closures": []
+    },
+    "runtime": {
       "complete": true,
       "open_closures": []
     },

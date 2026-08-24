@@ -287,9 +287,34 @@ def test_repair_cost_gains_the_two_state_terms():
     assert spec.EXPERIMENT.budget_usd == 0.0
 
 
-def test_continuity_baseline_is_true_right_now():
+def test_continuity_baseline_is_true_at_freeze_time():
+    from evolution.repair import spec as repair_spec
+
+    """Amended 2026-08-23 (CONTRADICTION-0002 Option A).
+
+    Read the live tree until today, which meant this sealed experiment could
+    not survive the institution lawfully amending its own constitution. Reads
+    the byte-identical freeze-time copies now. No pinned hash changed.
+    """
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACTS:
-        with open(os.path.join(ROOT, rel), "rb") as fh:
+        with open(repair_spec.frozen_path(rel), "rb") as fh:
             digest.update(fh.read())
     assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
+
+
+def test_both_sealed_experiments_pin_the_same_freeze_time_bytes():
+    """Why one frozen corpus serves two experiments.
+
+    The migration spec and the Package 3 repair spec pin the same twelve files
+    at the same bytes. Keeping two copies would double the freeze-time truth and
+    let the copies drift — the exact failure this remedy exists to prevent. The
+    sharing is only safe while this holds, so it is asserted rather than assumed.
+    """
+    from evolution.repair import spec as repair_spec
+
+    assert tuple(spec.CONTINUITY_ARTIFACTS) == \
+        tuple(repair_spec.CONTINUITY_ARTIFACT_SHA256)
+    assert spec.CONTINUITY_COMBINED_SHA256 == \
+        repair_spec.CONTINUITY_COMBINED_SHA256
+    assert spec.CONTINUITY_DIR == repair_spec.CONTINUITY_DIR

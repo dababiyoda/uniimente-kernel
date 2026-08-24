@@ -102,37 +102,43 @@ def test_the_unauthorized_canary_does_not_reach_a_receipt_by_default(wired):
     assert result.halted_at == "gate"
 
 
-def test_the_gate_refuses_the_honest_first_canary_and_that_is_the_finding():
-    """CONTRADICTION-0003, pinned so it cannot be quietly unblocked.
+def test_the_honest_first_canary_still_predicts_below_the_floor_and_that_is_fine():
+    """CONTRADICTION-0003, resolved — updated deliberately, as this test asked.
 
-    The packet preregisters 0.55 — the honest prior for a first integration that
-    has never run. `policy.engine.EVIDENCE_THRESHOLDS` requires 0.70 for
-    external_contact. Both are defensible and together they make an honestly
-    predicted first canary unauthorizable, which is a bootstrap: confidence
-    comes from calibration, calibration comes from external outcomes, external
-    outcomes require acting externally.
+    The previous version asserted `predicted < floor` as a *finding*: the packet
+    preregisters 0.55, the floor for external_contact is 0.70, and an honestly
+    predicted first canary was therefore unauthorizable. Its own failure message
+    named the condition for changing it:
 
-    The single most tempting edit in this repository is 0.55 -> 0.71. It would
-    turn the rehearsal green in one character and would be the institution
-    lying to itself about its first external act, in the exact place the whole
-    apparatus exists to prevent.
+        "If the floor was lowered or the field was split under
+         CONTRADICTION-0003, update this test deliberately."
 
-    This test exists so that moving either number is deliberate and visible.
-    See docs/deliberations/CONTRADICTION-0003-first-canary-confidence-floor.md.
+    The field was split (FOUNDER-RULING-2026-08-23, Options A+B). Neither number
+    moved. What changed is that they are no longer compared to each other: 0.55
+    is a `predicted_success_probability`, which governs nothing and will be
+    scored against reality; admission is judged on `evidence_confidence`, which
+    carries its own itemised basis.
+
+    So the assertion is kept and its meaning inverted: a prediction below the
+    floor is now an ordinary, honest state of affairs rather than a wall. The
+    tempting edit — 0.55 to 0.71 — is still pinned as forbidden.
     """
     from policy.engine import EVIDENCE_THRESHOLDS
 
     predicted = PACKET.preregistration.predicted_confidence
     floor = EVIDENCE_THRESHOLDS[PACKET.consequence_class]
 
-    assert predicted < floor, (
-        "the predicted confidence now clears the floor. If the floor was "
-        "lowered or the field was split under CONTRADICTION-0003, update this "
-        "test deliberately. If the prediction was raised to clear the gate, "
-        "that is the miscalibration this institution exists to refuse."
-    )
+    # Both numbers unchanged. Neither was moved to unblock anything.
     assert floor == 0.7
     assert predicted == 0.55
+    assert predicted < floor
+
+    # And the prediction is no longer what admission is judged on.
+    assert PACKET.evidence_confidence >= floor
+    assert PACKET.evidence_confidence != predicted
+    assert PACKET.evidence_basis, (
+        "evidence_confidence must carry a written basis; a bare number above "
+        "the floor is exactly the inflation this contradiction was about")
 
 
 # ------------------------- the assertion the whole packet exists to protect

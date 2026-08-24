@@ -238,8 +238,70 @@ def verify_headers(
             "trace_id": get(H_TRACE)}
 
 
+def verify_mutual_identity(mesh, client_service: str, server_service: str, *,
+                           schema_version: str = MIN_SCHEMA_VERSION,
+                           idempotency_key: str = "",
+                           trace_id: str | None = None) -> Dict[str, str]:
+    """Authenticate a peer with an isolated workload key instead of a shared one.
+
+    Added 2026-08-23 under FOUNDER-RULING-2026-08-23 — the adoption half of
+    technologies #7 and #26. `identity/pki/` was built and tested a day earlier
+    and deliberately left unused; this is the call site that uses it.
+
+    Returns the same shape `verify_headers` returns, so a caller can move
+    between the two paths without reshaping its record. Two fields differ, and
+    they are the whole point:
+
+        identity_isolated : "true"   (the HMAC path can only ever say "false")
+        peer_spiffe_id    : the workload identity that actually authenticated
+
+    **Why the HMAC path can never say "true".** One shared secret both signs and
+    verifies, so every participant able to check a signature is able to forge
+    one. `X-Service-Identity` is a *claim* the holder makes about itself. Here
+    the SPIFFE ID comes from a chain-validated certificate whose private key
+    never leaves its own workload, so no peer can assert another's identity.
+
+    **`identity` stays the organ, not the workload.** The organ is what the
+    canonical packet records as `created_by` — the claim belongs to DALEOBANKS,
+    not to one of its processes — while `peer_spiffe_id` keeps the narrower fact
+    about which workload connected. Both travel; neither is inferred from the
+    other.
+
+    Raises `IdentityError` on any handshake failure, and does not fall back.
+    A transport that downgraded to the shared secret when the handshake failed
+    would make the strong path decorative.
+    """
+    _server_seen_by_client, client_seen_by_server = mesh.connect(
+        client_service, server_service)
+
+    if schema_version < MIN_SCHEMA_VERSION:
+        raise BridgeSecurityError(
+            f"schema version {schema_version} below minimum "
+            f"{MIN_SCHEMA_VERSION} — downgrade rejected")
+
+    peer = client_seen_by_server
+    if peer.organ not in KNOWN_IDENTITIES:
+        raise BridgeSecurityError(
+            f"authenticated workload {peer.spiffe_id!r} maps to organ "
+            f"{peer.organ!r}, which is not a known bridge identity. A valid "
+            "certificate from the internal CA is proof of identity, never of "
+            "membership in this transport's peer set.")
+
+    return {
+        "identity": peer.organ,
+        "peer_spiffe_id": peer.spiffe_id,
+        "peer_serial": str(peer.serial),
+        "schema_version": schema_version,
+        "signed": "true",
+        "identity_isolated": "true",
+        "idempotency_key": idempotency_key,
+        "trace_id": trace_id or "",
+    }
+
+
 __all__ = [
     "BridgeSecurityError", "NonceCache", "build_headers", "verify_headers",
+    "verify_mutual_identity",
     "sign", "signing_key", "SIGNING_KEY_ENV", "MAX_SKEW_SECONDS",
     "MIN_SCHEMA_VERSION", "KNOWN_IDENTITIES",
     "H_IDENTITY", "H_TIMESTAMP", "H_NONCE", "H_IDEMPOTENCY",

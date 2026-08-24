@@ -37,6 +37,15 @@ def make_territory(*, ledger=None, weak=False, stale=False):
     return graph
 
 
+#: Containment declared (CONTRADICTION-0003 Option B). True of this harness:
+#: the executor is an in-process double and "platform:declared" is not a real
+#: platform.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
+
 def make_charter(**overrides):
     values = dict(
         name="evidence-company", persona="Synthetic Analyst",
@@ -83,7 +92,8 @@ def test_unratified_company_cannot_publish(stack):
     h = foundry.submit_charter(make_charter(), make_territory(ledger=ledger))
     with pytest.raises(FoundryError, match="unratified company"):
         foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                        executor=LIVE, platform="platform:declared")
+                        executor=LIVE, platform="platform:declared",
+                        containment=SANDBOX_CONTAINMENT)
 
 
 def test_ratified_publish_crosses_gate(stack):
@@ -92,7 +102,8 @@ def test_ratified_publish_crosses_gate(stack):
     h = foundry.submit_charter(make_charter(), make_territory(ledger=ledger))
     foundry.ratifier.decide(h, ratified=True, reason="human review")
     record = foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                             executor=LIVE, platform="platform:declared")
+                             executor=LIVE, platform="platform:declared",
+                        containment=SANDBOX_CONTAINMENT)
     assert record.state == "recorded" and record.receipt_hash
 
 
@@ -104,7 +115,8 @@ def test_edited_charter_loses_ratification(stack):
     foundry.company(h).charter.persona = "changed after ratification"
     with pytest.raises(FoundryError, match="edited charter"):
         foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                        executor=LIVE, platform="platform:declared")
+                        executor=LIVE, platform="platform:declared",
+                        containment=SANDBOX_CONTAINMENT)
 
 
 @pytest.mark.parametrize("graph,match", [
@@ -119,7 +131,8 @@ def test_weak_or_stale_nodes_cannot_publish(stack, graph, match):
     foundry.ratifier.decide(h, ratified=True, reason="human review")
     with pytest.raises(FoundryError, match=match):
         foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                        executor=LIVE, platform="platform:declared")
+                        executor=LIVE, platform="platform:declared",
+                        containment=SANDBOX_CONTAINMENT)
 
 
 def test_correction_and_retirement_are_preserved(stack):

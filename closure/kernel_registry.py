@@ -14,6 +14,27 @@ from closure.framework import ClosureRegistry, ModuleClosures
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+#: Containment declared (CONTRADICTION-0003 Option B). True of every closure
+#: check below: sandbox targets, in-process executors, nothing leaves the
+#: process. These checks prove the loops close; none of them is an external act.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
+def _granted(gate, proposal):
+    """Issue the grant outside the run, as an authorised operator would.
+
+    Since CONTRADICTION-0003's authorization fix the Gate refuses to mint its
+    own grant for anything reaching outside, so these closure checks supply
+    one explicitly. That is the fix working: authorising an external act is a
+    separate, visible step.
+    """
+    return gate.grants.issue_single_action(
+        proposal=proposal, policy_version=gate.policy_version)
+
+
+
 def _compile():
     from compiler.ucl_compiler import compile_constitution
     return compile_constitution(KERNEL_ROOT)
@@ -140,19 +161,22 @@ def build_registry() -> ClosureRegistry:
             objective="test.objective", payload={"text": "hello governed world"}, target="sandbox:outbox",
             consequence_class="external_contact", evidence_confidence=0.9,
             evidence_refs=["sha256:" + "a" * 64], estimated_cost_usd=0.0,
-            requested_capability="draft.publish", expected_outcome="draft queued")
+            requested_capability="draft.publish", expected_outcome="draft queued",
+            context=dict(SANDBOX_CONTAINMENT))
 
     def gate_technical():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
-                       executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p),
+                       executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         return rec.state == "recorded" and rec.receipt_hash is not None, \
             f"full pipeline to recorded; receipt {str(rec.receipt_hash)[:24]}..."
 
     def gate_authority():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
-                       executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p),
+                       executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         # tamper: revoke the grant after issue, replay must fail closed
         from policy.engine import Proposal
         p2 = _proposal(actor.passport_id)
@@ -164,8 +188,9 @@ def build_registry() -> ClosureRegistry:
 
     def gate_evidence():
         gate, passports, ledger, actor = _gate_stack()
-        gate.run(_proposal(actor.passport_id),
-                 executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
+        p = _proposal(actor.passport_id)
+        gate.run(p, standing_grant=_granted(gate, p),
+                 executor=lambda pr: {"observed_outcome": "draft queued", "result_class": "positive"})
         ok, msg = ledger.verify_chain()
         witnesses = len(ledger.by_type("witness")) == 1
         outcomes = len(ledger.by_type("outcome")) == 1
@@ -186,7 +211,8 @@ def build_registry() -> ClosureRegistry:
         # executor explosion -> failed, budget released, incident recorded, nothing concealed
         def boom(p):
             raise RuntimeError("adapter exploded")
-        rec = gate.run(_proposal(actor.passport_id), executor=boom)
+        p = _proposal(actor.passport_id)
+        rec = gate.run(p, standing_grant=_granted(gate, p), executor=boom)
         ok, msg = ledger.verify_chain()
         return rec.state == "failed" and rec.incident is not None and ok, \
             "failure preserved on-chain (negative evidence kept); fails toward silence, not external action"
@@ -402,7 +428,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_technical():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=2)
+        lic = auth.issue("agent-1", t, level=2, authorized_by="Alfonso Lopez")
         auth.promote(lic.license_id, _full_evidence())
         return auth.level_of("agent-1", t) == 3, "issue -> promote -> level_of reads back exactly"
 
@@ -410,10 +436,10 @@ def build_registry() -> ClosureRegistry:
         auth, t = _aut()
         a9_refused = False
         try:
-            auth.issue("agent-1", t, level=9)
+            auth.issue("agent-1", t, level=9, authorized_by="Alfonso Lopez")
         except ValueError:
             a9_refused = True
-        lic = auth.issue("agent-2", t, level=1)
+        lic = auth.issue("agent-2", t, level=1, authorized_by="Alfonso Lopez")
         weak = False
         try:
             auth.promote(lic.license_id, _full_evidence(missing_outcome_records=1))
@@ -424,7 +450,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_evidence():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=1)
+        lic = auth.issue("agent-1", t, level=1, authorized_by="Alfonso Lopez")
         auth.promote(lic.license_id, _full_evidence())
         auth.regress(lic.license_id, failure_class="sloppy", detail="late records")
         types = [r.payload["type"] for r in auth.ledger.by_type("event")]
@@ -435,14 +461,14 @@ def build_registry() -> ClosureRegistry:
     def autonomy_economic():
         from autonomy.levels import AutonomyTuple
         auth, t = _aut()
-        auth.issue("agent-1", t, level=5)
+        auth.issue("agent-1", t, level=5, authorized_by="Alfonso Lopez")
         other = AutonomyTuple(**{**t.__dict__, "action": "delete"})
         return auth.level_of("agent-1", t) == 5 and auth.level_of("agent-1", other) == 0, \
             "autonomy is exact per 9-dimension tuple; no broad personality grants to misuse"
 
     def autonomy_regenerative():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=7)
+        lic = auth.issue("agent-1", t, level=7, authorized_by="Alfonso Lopez")
         auth.regress(lic.license_id, failure_class="harm", detail="unforeseen risk")
         immediate = lic.level == 0 and not lic.active
         try:
@@ -633,7 +659,9 @@ def build_registry() -> ClosureRegistry:
                             target="sandbox:outbox", consequence_class="external_contact",
                             evidence_confidence=c, evidence_refs=["sha256:" + "a" * 64],
                             estimated_cost_usd=0.0, requested_capability="draft.publish",
-                            expected_outcome="q"), "good" if c >= 0.8 else "weak")
+                            expected_outcome="q",
+                            context=dict(SANDBOX_CONTAINMENT)),
+                   "good" if c >= 0.8 else "weak")
                   for c in (0.95, 0.9, 0.85, 0.8, 0.72, 0.71)]
         from policy.engine import evaluate
         main_d = [evaluate(compiled, p, identity_ok=True, grant=None) for p, _ in corpus]
@@ -1135,5 +1163,101 @@ def build_registry() -> ClosureRegistry:
         "technical": bridges_technical, "authority": bridges_authority,
         "evidence": bridges_evidence, "economic": bridges_economic,
         "regenerative": bridges_regenerative}))
+
+    # ------------------------------------------------------ runtime (2026-08-24)
+    def _booted(tmp):
+        from runtime import InstitutionalRuntime
+        return InstitutionalRuntime.boot(tmp)
+
+    def _governed_action(rt):
+        actor = rt.passports.issue(
+            kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+            legal_principal="alfonso_lopez", declared_capabilities=["draft.publish"],
+            budget_ceiling_usd=5.0, consequence_class="external_contact")
+        p = _proposal(actor.passport_id)
+        return rt.gate.run(p, standing_grant=_granted(rt.gate, p),
+                           executor=lambda pr: {"observed_outcome": "draft queued",
+                                                "result_class": "positive"})
+
+    def runtime_technical():
+        """The falsification the goal-chase recompute specified, as a closure."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            record = _governed_action(first)
+            receipt = record.receipt_hash
+            del first, record
+            second = _booted(tmp)             # every object discarded
+            found = second.ledger.find(receipt) is not None
+            ok, detail = second.ledger.verify_chain()
+        return found and ok and second.report.resumed, \
+            f"governed action outlived its process; {detail}"
+
+    def runtime_authority():
+        """Evidence is restored; identity is not. A restart does not renew a
+        passport the institution deliberately made short-lived."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            actor = first.passports.issue(
+                kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+                legal_principal="alfonso_lopez", declared_capabilities=["draft.publish"],
+                budget_ceiling_usd=5.0, consequence_class="external_contact")
+            del first
+            second = _booted(tmp)
+            known, why = second.passports.verify(actor.passport_id)
+        return known is False and why == "unknown_identity", \
+            "a pre-restart identity is unknown after boot; memory persists, permission does not"
+
+    def runtime_evidence():
+        """Boot refuses a chain written under law it was never checked against."""
+        import tempfile
+
+        from provenance.ledger import EvidenceLedger
+        from runtime import BootRefused
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "ledger.jsonl")
+            EvidenceLedger("sha256:" + "f" * 64, path=path).append("witness", {"x": 1})
+            try:
+                _booted(tmp)
+                return False, "booted on a chain anchored to a different constitution"
+            except BootRefused as exc:
+                return "anchored to" in str(exc), \
+                    "a foreign-constitution chain is refused, not silently adopted"
+
+    def runtime_economic():
+        """A staged delivery is a debt. It must not be discharged by a crash."""
+        import tempfile
+
+        from events.spine import Event
+        with tempfile.TemporaryDirectory() as tmp:
+            first = _booted(tmp)
+            for name in ("external.kept", "external.sent"):
+                first.spine.outbox_stage(Event(
+                    type=name, source="spiffe://uniimente.internal/kernel/x",
+                    actor="kernel", payload={}, legal_principal="alfonso"))
+            first.spine.outbox_flush(mediator=lambda e: e.type == "external.sent")
+            del first
+            owed = [e.type for e in _booted(tmp).outstanding_deliveries]
+        return owed == ["external.kept"], \
+            "refused delivery still owed after restart; flushed one not owed twice"
+
+    def runtime_regenerative():
+        """The restart itself is kept, so the institution's own history has no
+        silent gaps between processes."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            _booted(tmp)
+            _booted(tmp)
+            third = _booted(tmp)
+            boots = [r.payload for r in third.ledger.by_type("event")
+                     if r.payload.get("type") == "runtime.booted"]
+        return len(boots) == 3 and [b["resumed"] for b in boots] == [False, True, True], \
+            "every boot ledgered, first as fresh and the rest as resumed"
+
+    reg.register(ModuleClosures("runtime", {
+        "technical": runtime_technical, "authority": runtime_authority,
+        "evidence": runtime_evidence, "economic": runtime_economic,
+        "regenerative": runtime_regenerative}))
 
     return reg

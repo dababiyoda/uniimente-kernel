@@ -1,0 +1,58 @@
+# Canonical organ registry. Organs are durable subsystems with distinct missions
+# and trust boundaries. Organs consume shared governance; none owns it.
+version: "1.0.0"
+
+organs:
+  railscout:
+    identity: spiffe://uniimente.internal/organ/railscout
+    role: perception_and_evidence_refinery
+    repository: null   # not yet created
+    emits: [context_packets, evidence_packets, contradiction_reports, stakeholder_maps, opportunity_hypotheses, threat_packets, validation_experiments]
+    doctrine: "Reality must change the position, reduce uncertainty, produce evidence, improve optionality, or strengthen the institution."
+    status: planned
+  daleobanks:
+    identity: spiffe://uniimente.internal/organ/daleobanks
+    role: public_voice_and_distribution
+    repository: dababiyoda/DALEOBANKS
+    emits: [commentary_candidates, public_authority, qualified_relationships, routed_opportunities]
+    doctrine: "Challenge, Analyze, Propose, Inspire. Attention to trust to relationship to leverage to durable impact."
+    status: active
+    migration: extract governance into kernel services (Phase 2)
+  wealthmachine:
+    identity: spiffe://uniimente.internal/organ/wealthmachine
+    role: venture_evaluation_and_cell_management
+    repository: dababiyoda/WealthMachineIntelligence
+    emits: [venture_assessments, cell_charter_proposals, termination_recommendations]
+    doctrine: "Find large recurring money flows obstructed by broken proof, trust, eligibility, coordination, routing, or settlement. Enter through the smallest capital-light control wedge."
+    status: active
+    migration: consume shared contracts instead of mirrored copies (Phase 3)
+  ivio_nemt:
+    identity: spiffe://uniimente.internal/venture/ivio
+    role: first_closed_loop_proving_ground
+    repository: null   # venture, not code
+    legal_principal: IVIO_NEMT_LLC
+    status: planned
+  personal_command:
+    identity: spiffe://uniimente.internal/organ/personal-command
+    role: founder_development_and_capacity
+    emits: [daily_brief, decision_training_cycles, priority_defense]
+    status: planned
+  constitutional_control:
+    identity: spiffe://uniimente.internal/organ/constitutional-controller
+    role: policy_budget_kill_authority
+    notes: Is the Kernel's enforcement surface. Holds kill authority over subordinate systems.
+    status: this_repository
+  adversarial_intelligence:
+    identity: spiffe://uniimente.internal/organ/adversarial-intelligence
+    role: attacks_uniimentes_own_reasoning
+    emits: [dissent_records, falsification_attempts, red_team_reports]
+    status: planned
+  portfolio_governor:
+    identity: spiffe://uniimente.internal/organ/portfolio-governor
+    role: constrained_allocation_cognition
+    notes: Scores never authorize spending.
+    status: planned
+
+rules:
+  organ_to_organ_calls: prohibited   # coordination through governed events only
+  new_organ_requires: [unique_mission, trust_boundary, charter, founder_approval]

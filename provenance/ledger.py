@@ -20,6 +20,10 @@ from datetime import datetime, timezone
 GENESIS_PREV = "sha256:" + "0" * 64
 
 
+class ConstitutionMismatch(ValueError):
+    """A durable chain was opened under law it was not written under."""
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -52,6 +56,7 @@ class EvidenceLedger:
         self.records.append(LedgerRecord(0, _now(), "genesis", genesis_payload, GENESIS_PREV, gh))
         if path and os.path.exists(path):
             self._load(path)
+            self._check_constitution(constitution_hash)
         elif path:
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(json.dumps(asdict(self.records[0]), default=str) + "\n")
@@ -72,6 +77,69 @@ class EvidenceLedger:
             with open(self.path, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(asdict(rec), default=str) + "\n")
         return rec
+
+    # -- the doctrine the chain is bound to -------------------------------
+    @property
+    def effective_constitution(self) -> str:
+        """The doctrine this chain is currently appending under.
+
+        Genesis, unless a recorded transition has lawfully moved it.
+        """
+        for rec in reversed(self.records):
+            if rec.record_type == "constitution_transition":
+                return rec.payload["to_hash"]
+        return self.records[0].payload["constitution_hash"]
+
+    def _check_constitution(self, requested: str) -> None:
+        """Refuse to append to a chain written under different law.
+
+        The genesis docstring already claimed the chain was "bound to the exact
+        doctrine that authorized it". It was not: loading only re-verified the
+        hash links, so opening a durable ledger with a different constitution
+        hash silently adopted the existing chain and appended new records under
+        law it had never been checked against. Demonstrated 2026-08-24 while
+        composing `runtime/` — the failure a state directory makes reachable
+        and an in-memory ledger never could.
+
+        Fails closed. The lawful way forward is `adopt_constitution`, which
+        leaves a record; the unlawful way is now an exception instead of
+        silence.
+        """
+        effective = self.effective_constitution
+        if requested != effective:
+            raise ConstitutionMismatch(
+                f"ledger at {self.path} is anchored to {effective}, "
+                f"but was opened under {requested}. An amendment does not "
+                f"migrate a chain by itself: record the transition with "
+                f"adopt_constitution(), or start a new chain. History stays "
+                f"under the law that authorized it.")
+
+    def adopt_constitution(self, to_hash: str, *, authorized_by: str,
+                           reason: str) -> LedgerRecord:
+        """Record that this chain now appends under an amended constitution.
+
+        The transition is a ledgered, hash-chained fact naming who authorized
+        it, so the record that moves the anchor states the hash it moves *from*
+        — the same replayed-not-stored property `governance/integrity` relies
+        on, for the same reason.
+
+        Honest limitation, stated rather than overclaimed: `authorized_by` is a
+        caller-supplied string. This makes a constitutional transition an
+        explicit, attributable, permanent act. It does not make it an
+        unforgeable one — the same gap as a caller issuing its own grant.
+        """
+        if not authorized_by or authorized_by.strip() in ("", "UNIIMENTE"):
+            raise ConstitutionMismatch(
+                "a constitutional transition needs a human authorizer; "
+                "UNIIMENTE may not authorize its own change of law")
+        if not reason or not reason.strip():
+            raise ConstitutionMismatch("a constitutional transition needs a stated reason")
+        return self.append("constitution_transition", {
+            "from_hash": self.effective_constitution,
+            "to_hash": to_hash,
+            "authorized_by": authorized_by,
+            "reason": reason,
+        })
 
     def seal(self, *, sealed_by: str, reason: str) -> LedgerRecord:
         """Seal the head (shutdown propagation step 5). Returns the seal record."""

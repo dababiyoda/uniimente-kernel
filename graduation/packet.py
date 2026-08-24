@@ -97,6 +97,24 @@ class GraduationPacket:
     #: The Bridge C -> D -> learning path this run traverses, in order.
     bridge_path: tuple[str, ...]
 
+    #: "How strong is the evidence that taking this bounded action is
+    #: justified?" — the quantity the Gate's floor governs, and a DIFFERENT
+    #: question from `preregistration.predicted_confidence`, which asks how
+    #: likely the run is to succeed.
+    #:
+    #: Deliberately outside `Preregistration`: the founder ruled the sealed
+    #: preregistration must be preserved, so the seal does not move. This is not
+    #: a prediction and nothing calibrates against it.
+    #:
+    #: Set to 0.0 by default so a packet that omits its justification is refused
+    #: by the floor rather than admitted by a convenient default.
+    evidence_confidence: float = 0.0
+
+    #: Why that number, itemised. Each entry is a fact a reviewer can check
+    #: against the repository, not an adjective. The value above is a judgement,
+    #: and this is the argument it has to survive.
+    evidence_basis: tuple[str, ...] = field(default_factory=tuple)
+
     #: Never set by code. The founder grants authorization separately.
     authorized_by: None = None
     authorization_ref: None = None
@@ -197,6 +215,40 @@ PACKET = GraduationPacket(
         "that makes the content bound part of the design rather than a "
         "formality — the item must be something whose persistence is harmless."
     ),
+    # -- CONTRADICTION-0003 Option A, ratified 2026-08-23 --------------------
+    # The two numbers this packet now carries, and why they differ:
+    #
+    #   predicted_confidence  0.55  (sealed, unchanged) — will it work?
+    #   evidence_confidence   0.85  (here)              — are we right to try?
+    #
+    # 0.55 was never a measure of how well-evidenced the decision was; it was
+    # the only field available, so it carried both. The argument for running
+    # CANARY-0001 is strong *because* the outcome is uncertain — the
+    # uncertainty is the reason the experiment exists.
+    #
+    # 0.85 rather than higher: the residual is real and named in `rollback`.
+    # Deletion is incomplete, a reader may have seen the item, a cache may
+    # retain it. An institution claiming 0.95 for its first external act would
+    # be making the same error in the other field.
+    evidence_confidence=0.85,
+    evidence_basis=(
+        "selected by score over five candidates with written arguments "
+        "(graduation/candidates.py): CAN-A 24, CAN-C 22 — not suggested, "
+        "compared",
+        "budget_usd is 0.0 and exposure_ceiling_usd is 0.0: nothing is spent "
+        "and nothing can be",
+        "single-use grant with a 15-minute TTL: the window closes by itself "
+        "even if revocation is never issued",
+        "reconciliation is a digest comparison, not a status code, so the "
+        "run can be shown WRONG rather than merely finished",
+        "external verification requires an observer identity distinct from "
+        "the acting identity; Bridge D refuses self-attestation",
+        "the content bound makes the acknowledged rollback residue harmless, "
+        "which is why the residue is a design parameter and not a defect",
+        "the institution cannot calibrate any prediction without one external "
+        "outcome, so the information value is structural rather than nice to "
+        "have",
+    ),
     bridge_path=(
         "Bridge B: ExperimentSpec with an approval requirement (granted=False)",
         "founder authorization (ABSENT — the blocker)",
@@ -241,27 +293,50 @@ def blockers() -> tuple[str, ...]:
              "a public network surface, which is founder-gated (#31 transport "
              "half is absent by design)"]
 
-    # CONTRADICTION-0003, discovered by running the rehearsal rather than by
-    # reading anything: the institution's own policy refuses this packet as
-    # preregistered. Reported here because a blocker list that omitted the
-    # blocker the institution itself imposes would be the least useful kind of
-    # incomplete.
+    # CONTRADICTION-0003, resolved 2026-08-23 (FOUNDER-RULING-2026-08-23,
+    # Options A+B). The Gate used to refuse this packet because one field
+    # carried two quantities: a preregistered success prediction of 0.55 was
+    # being measured against an admission floor of 0.70.
+    #
+    # The check is kept and now asks the RIGHT question — is the decision to act
+    # sufficiently evidenced — rather than being deleted. If a future edit drops
+    # `evidence_confidence` below the floor, this blocker returns, and the fix
+    # then is more evidence, never a larger number.
     floor = EVIDENCE_THRESHOLDS.get(PACKET.consequence_class, 0.0)
-    predicted = PACKET.preregistration.predicted_confidence
-    if predicted < floor:
+    if PACKET.evidence_confidence < floor:
         found.append(
-            f"the Consequence Gate refuses this packet: predicted confidence "
-            f"{predicted} is below the {floor} floor for "
-            f"{PACKET.consequence_class}. Raising the prediction to clear the "
-            f"floor is the miscalibration this institution exists to refuse. "
-            f"See docs/deliberations/"
-            f"CONTRADICTION-0003-first-canary-confidence-floor.md — needs a "
-            f"founder decision.")
+            f"the Consequence Gate refuses this packet: evidence confidence "
+            f"{PACKET.evidence_confidence} is below the {floor} floor for "
+            f"{PACKET.consequence_class}. The remedy is stronger evidence in "
+            f"`evidence_basis`, never a larger number.")
 
     still_open, detail = gap_audit._witness_v2_is_not_emitted()
     if still_open:
         found.append(f"witness contract v2 is not emitted: {detail}")
     return tuple(found)
+
+
+def resolved_blockers() -> tuple[str, ...]:
+    """What used to be on the list above, and what took it off.
+
+    Kept because a blocker list that silently shortens is indistinguishable
+    from one nobody is maintaining. A reader comparing this packet against the
+    2026-08-22 version must be able to see which walls came down and why —
+    especially since neither of these was removed by relaxing anything.
+    """
+    return (
+        "the Consequence Gate refused the packet on a 0.55 predicted "
+        "confidence against a 0.70 floor — RESOLVED by CONTRADICTION-0003 "
+        "Options A+B: the two quantities are separate fields now. The floor is "
+        "unchanged at 0.70, the sealed prediction is unchanged at 0.55, and "
+        "admission is judged on evidence_confidence with its itemised basis. "
+        "Option B additionally REQUIRES containment to be declared, so the "
+        "packet must clear more than it did before, not less.",
+        "witness contract v2 was built but not emitted — RESOLVED by "
+        "CONTRADICTION-0002 Option A, which unblocked "
+        "policy/consequence_gate.py by freezing the historical continuity "
+        "corpus. The Gate now emits all four v2 facts.",
+    )
 
 
 def render() -> str:

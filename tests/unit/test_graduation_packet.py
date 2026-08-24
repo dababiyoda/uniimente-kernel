@@ -237,13 +237,52 @@ def test_the_read_only_option_is_rejected_for_the_right_reason():
 
 # ------------------------------------------------------------- the blockers
 def test_the_blockers_are_reported_and_none_can_be_cleared_here():
+    """What remains is exactly what no build session can supply.
+
+    Amended 2026-08-23. Two blockers came off this list under
+    FOUNDER-RULING-2026-08-23 — the confidence floor (CONTRADICTION-0003) and
+    unemitted witness v2 (CONTRADICTION-0002). Neither was removed by relaxing
+    a threshold, and `resolved_blockers()` records both so the list cannot
+    shorten silently.
+
+    Everything left is founder-gated or external, which is the correct
+    end-state for a packet that is prepared and unauthorised.
+    """
     found = packet.blockers()
     joined = " ".join(found)
     assert "founder authorization" in joined
     assert "credential" in joined
     assert "network surface" in joined
-    # And the one the institution can still act on is named as such.
-    assert any("witness contract v2" in b for b in found)
+
+    # The two internal blockers are gone, and gone for a stated reason.
+    assert not any("witness contract v2 is not emitted" in b for b in found)
+    assert not any("Consequence Gate refuses" in b for b in found)
+
+    resolved = " ".join(packet.resolved_blockers())
+    assert "CONTRADICTION-0003" in resolved
+    assert "CONTRADICTION-0002" in resolved
+    assert "unchanged at 0.70" in resolved
+
+
+def test_removing_a_blocker_never_removed_the_thing_it_protected():
+    """The adversarial reading of two blockers disappearing in one session.
+
+    Both walls came down, which is exactly the pattern that should attract
+    suspicion. So the protections are asserted still standing: the floor is
+    where it was, the sealed prediction is where it was, the packet is still
+    unauthorised, and the rehearsal still cannot claim reality.
+    """
+    from policy.engine import EVIDENCE_THRESHOLDS
+
+    assert EVIDENCE_THRESHOLDS["external_contact"] == 0.7
+    assert PACKET.preregistration.predicted_confidence == 0.55
+    assert PACKET.sealed == PREREGISTRATION_SHA256
+    assert PACKET.is_authorized is False
+    assert PACKET.authorized_by is None
+
+    # Admission is argued, not asserted: the number carries an itemised basis.
+    assert PACKET.evidence_confidence >= EVIDENCE_THRESHOLDS["external_contact"]
+    assert len(PACKET.evidence_basis) >= 5
 
 
 def test_the_packet_names_the_second_canary_rather_than_hiding_the_runner_up():

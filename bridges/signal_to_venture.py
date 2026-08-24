@@ -42,6 +42,7 @@ from adapters import bridge_transport as transport
 from adapters import daleobanks_opportunity as packet_adapter
 from adapters import wealthmachine_assessment as assessment_adapter
 from events.spine import Event, EventSpine
+from identity.pki.errors import IdentityError
 from memory.causal import CausalMemory
 from provenance.ledger import EvidenceLedger
 
@@ -63,6 +64,14 @@ class Halt(Enum):
     """Why a run stopped short. Every value is a refusal the institution wanted."""
 
     TRANSPORT_REFUSED = "transport_refused"
+    #: The peer authenticated, and then sent something that violates the wire
+    #: contract. Added 2026-08-23: previously unreachable, because the transport
+    #: leg refused every run before a body was read. Adopting isolated identity
+    #: made a genuinely authenticated peer with a malformed payload possible for
+    #: the first time, and an authenticated peer is exactly the case where
+    #: "crash" is the wrong answer — the institution should record that a
+    #: verified organ sent something it could not accept.
+    SIGNAL_MALFORMED = "signal_malformed"
     SIGNAL_UNRESOLVED = "signal_unresolved"
     ASSESSMENT_REFUSED = "assessment_refused"
 
@@ -127,32 +136,54 @@ def _emit_kernel_fact(spine: EventSpine, *, event_type: str, payload: dict,
 def run(wire_packet: dict, wire_assessment: dict, *,
         ledger: EvidenceLedger | None = None,
         resolver_answers: dict | None = None,
-        resolved_by: str = KERNEL) -> BridgeRun:
+        resolved_by: str = KERNEL,
+        mesh: "InternalMesh | None" = None) -> BridgeRun:
     """Traverse Bridge A once.
 
     `resolver_answers` supplies attributed answers for fields the packet adapter
     cannot translate. Omit them and the run halts at the unresolved list rather
     than inventing values — which is the behaviour worth having, so the default
     is the honest one.
+
+    `mesh` is the internal identity mesh used to authenticate the peer. It
+    defaults to a fresh `InternalMesh`, which reads
+    `identity/service-identities.yaml` and issues an isolated workload key per
+    declared service. Passing one in lets a caller share an anchor across
+    traversals, or supply a revocation list.
     """
+    from identity.mesh import InternalMesh
+
     ledger = ledger or EvidenceLedger("sha256:" + "0" * 64)
+    mesh = mesh or InternalMesh()
     spine = EventSpine(ledger)
     events: list[str] = []
 
     # --- leg 1: the peer boundary, verified before anything is read ----------
-    body = json.dumps(wire_packet, sort_keys=True).encode()
+    #
+    # Adopted 2026-08-23 under FOUNDER-RULING-2026-08-23. This leg used to build
+    # HMAC headers and verify them against a shared secret — a loop in which the
+    # kernel signed a message as "daleobanks" and then congratulated itself on
+    # verifying that DALEOBANKS had sent it. Every participant holds the one key,
+    # so the identity header was a claim, not a proof.
+    #
+    # Now the peer authenticates with an isolated workload key it alone holds.
+    # `identity_isolated` reads "true" for the first time in the live pathway,
+    # and it is the handshake that earns it rather than the string.
     packet_id = wire_packet.get("id")
     try:
-        headers = transport.build_headers(
-            body, identity="daleobanks", schema_version=WIRE_SCHEMA_VERSION,
+        headers = transport.verify_mutual_identity(
+            mesh, "bridge_daleobanks", "kernel_gateway",
+            schema_version=WIRE_SCHEMA_VERSION,
             idempotency_key=str(packet_id or ""))
-        # A fresh cache per run, so replay protection is real within a traversal
-        # and never shared across unrelated ones.
-        transport.verify_headers(headers, body,
-                                 nonce_cache=transport.NonceCache())
-    except (transport.BridgeSecurityError, ValueError, KeyError) as exc:
+    except (transport.BridgeSecurityError, IdentityError,
+            ValueError, KeyError) as exc:
         return BridgeRun(completed=False, halted_at=Halt.TRANSPORT_REFUSED,
                          reason=f"transport refused the peer message: {exc}")
+
+    # The organ is read from the certificate, never from the payload or from a
+    # literal in this file. If the handshake ever authenticated a different
+    # workload, this is where the pathway would notice.
+    peer_organ = headers["identity"]
 
     events.append(_ingest_peer_fact(
         spine, event_type="bridge.opportunity_signal_received",
@@ -161,7 +192,14 @@ def run(wire_packet: dict, wire_assessment: dict, *,
         causal_parent=None))
 
     # --- leg 2: translate, and stop if the translation is incomplete ---------
-    adapted = packet_adapter.adapt(wire_packet, transport_identity="daleobanks")
+    try:
+        adapted = packet_adapter.adapt(wire_packet,
+                                       transport_identity=peer_organ)
+    except packet_adapter.AdapterError as exc:
+        return BridgeRun(
+            completed=False, event_ids=tuple(events),
+            halted_at=Halt.SIGNAL_MALFORMED,
+            reason=f"the verified peer sent a packet its own contract rejects: {exc}")
     if not adapted.resolved:
         if not resolver_answers:
             return BridgeRun(
@@ -182,15 +220,41 @@ def run(wire_packet: dict, wire_assessment: dict, *,
         causal_parent=events[-1]))
 
     # --- leg 3: the second organ, same discipline ----------------------------
+    #
+    # It said "same discipline" for a day while not being that. Leg 2 passed
+    # `transport_identity=peer_organ`, read off a chain-validated certificate;
+    # this leg passed the literal `"wealthmachine"`. The adapter's own refusal
+    # message states the rule — "identity comes from verified transport, never
+    # the payload" — and a constant in this file is not the payload, but it is
+    # not verified transport either. Nothing had authenticated WealthMachine,
+    # and its assessment is what Bridge B and every downstream decision read.
+    #
+    # Adopted 2026-08-24, mirroring leg 1: `bridge_wealthmachine` was already a
+    # declared service in `identity/service-identities.yaml` and `identity/mesh.py`
+    # could already authenticate it. The edge was adoptable the whole time; the
+    # comment claiming it was already adopted is what hid that.
+    try:
+        assessment_headers = transport.verify_mutual_identity(
+            mesh, "bridge_wealthmachine", "kernel_gateway",
+            schema_version=WIRE_SCHEMA_VERSION,
+            idempotency_key=str(packet_id or ""))
+    except (transport.BridgeSecurityError, IdentityError,
+            ValueError, KeyError) as exc:
+        return BridgeRun(completed=False, event_ids=tuple(events),
+                         halted_at=Halt.TRANSPORT_REFUSED, signal=signal,
+                         reason=f"transport refused the assessment peer: {exc}")
+
+    assessment_organ = assessment_headers["identity"]
+
     events.append(_ingest_peer_fact(
         spine, event_type="bridge.venture_assessment_received",
         origin=WEALTHMACHINE,
-        payload={"assessment_of": packet_id},
+        payload={"assessment_of": packet_id, "verified": True},
         causal_parent=events[-1]))
 
     try:
         assessment = assessment_adapter.adapt(
-            wire_assessment, transport_identity="wealthmachine")
+            wire_assessment, transport_identity=assessment_organ)
     except assessment_adapter.AdapterError as exc:
         return BridgeRun(completed=False, event_ids=tuple(events),
                          halted_at=Halt.ASSESSMENT_REFUSED, signal=signal,

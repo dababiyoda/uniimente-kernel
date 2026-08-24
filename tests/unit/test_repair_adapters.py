@@ -545,11 +545,14 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
                 digest.update(fh.read())
         return digest.hexdigest()
 
+    # A self-comparison, not a comparison against freeze-time bytes
+    # (CONTRADICTION-0002 Option A). The property under test is "disabling the
+    # component changed no constitutional artifact" — which stays true, and
+    # stays meaningful, after the institution lawfully amends one.
     before = fingerprint()
-    assert before == spec.CONTINUITY_COMBINED_SHA256
 
     with ComponentDisabled(spec.SUBJECT_PACKAGE):
-        assert fingerprint() == spec.CONTINUITY_COMBINED_SHA256
+        assert fingerprint() == before
 
         # Authority still compiles and still refuses what it always refused.
         from compiler.ucl_compiler import compile_constitution
@@ -563,4 +566,5 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
         controller.trigger("degraded", intensity=0.9, trigger_event_id="p3-disable")
         assert controller.shutdown() == "shutdown_complete"
 
-    assert fingerprint() == spec.CONTINUITY_COMBINED_SHA256
+    # Restored to exactly what it was before the component was disabled.
+    assert fingerprint() == before

@@ -6,6 +6,7 @@ bridge exposed stays visible until someone with the authority closes it.
 """
 import ast
 import os
+import tempfile
 
 import pytest
 
@@ -199,6 +200,13 @@ def test_calibration_is_blocked_and_says_why(committed):
 
     `CausalMemory.calibrate` works perfectly on hand-built pairs, which is how
     the gap stayed invisible: the institution never produces the data it needs.
+
+    The `committed` spec supplies no forecast, so this stays blocked — and the
+    assertion below now names the half that is actually missing. It used to
+    assert `"evidence_confidence" in ...`, which stopped being true on
+    2026-08-24 when the gap text was corrected: v2 emission had closed the
+    contract half, and reporting a resolved blocker as the live one is the
+    stale-gap failure #25, #26, #30 and #48 were each corrected for.
     """
     ledger, action_id, _ = committed
 
@@ -206,20 +214,148 @@ def test_calibration_is_blocked_and_says_why(committed):
 
     assert run.calibration is None
     assert run.calibration_blocked_by == bridge.CALIBRATION_GAP
-    assert "evidence_confidence" in run.calibration_blocked_by
+    assert "NO FORECAST IS SUPPLIED" in run.calibration_blocked_by
+    assert "NO OUTSIDER HAS SPOKEN" in run.calibration_blocked_by
 
 
-def test_the_witness_really_has_no_field_for_the_prediction_it_was_graded_on():
-    """The gap asserted against the structure rather than against a symptom.
+# --- what calibration is allowed to score ------------------------------------
 
-    If someone ratifies the contract change and widens `CommitWitness`, this
-    test fails and the pinned gap above has to be revisited — which is the
-    point. A gap nobody is forced to revisit is a gap that becomes permanent.
+def _spec(**kw):
+    from evolution.experiment import ExperimentSpec
+
+    base = dict(
+        decisive_unknown="does an outside party ever speak",
+        hypothesis="it does not, yet", prediction="the sandbox run records a value",
+        metric="verified_outcomes", baseline=0.0, threshold=1.0, direction="gte",
+        workflow="experiment.run", required_capabilities=["experiment.run"],
+        authority_requirements=["kernel.grant"], budget_usd=0.0, reversible=True,
+        rollback_path="discard the sandbox record",
+        kill_condition="measured exceeds 100",
+        verification="cryptographic_receipt")
+    base.update(kw)
+    return ExperimentSpec(**base)
+
+
+def _committed_with(forecast):
+    """One real committed action whose spec carries the given forecast."""
+    from runtime.session import Session
+
+    session = Session.open(tempfile.mkdtemp())
+    run = session.traverse_experiment_to_reality(
+        _spec(predicted_success_probability=forecast), measure=lambda s: 2.0)
+    assert run.completed, run.reason
+    return session.runtime.ledger, run.run.action_id
+
+
+def test_calibration_scores_the_forecast_and_not_the_evidence():
+    """CONTRADICTION-0003 Option A, at the one place the data is consumed.
+
+    The two quantities are opposite by construction for a novel experiment, so
+    a test that used the same number for both would pass either way. This spec
+    forecasts 0.25 while Bridge C's evidence_confidence is 0.9, and the pair
+    must carry 0.25.
+
+    The defect this pins was mine, introduced in the same session as the split:
+    `calibratable` was moved onto the forecast and this join was not, so it
+    gated on the forecast's presence and then graded the institution on its
+    evidence.
+    """
+    ledger, action_id = _committed_with(0.25)
+    bridge.run(observation(action_id), ledger=ledger)
+
+    assert bridge.predicted_versus_realized(ledger) == [(0.25, True)]
+
+
+def test_an_unforecast_experiment_produces_no_pair_rather_than_a_zero():
+    """Absent is not a prediction of failure, and must not be scored as one."""
+    ledger, action_id = _committed_with(None)
+    bridge.run(observation(action_id), ledger=ledger)
+
+    assert bridge.predicted_versus_realized(ledger) == []
+
+
+def test_an_internally_observed_outcome_does_not_calibrate_anything():
+    """The institution may not grade its forecast against its own account.
+
+    Every consequential action writes its own `internally_observed` outcome at
+    the gate. Counting those meant one action produced two pairs, one of them
+    scored against the institution's own report of what happened — the same
+    self-assessment this bridge's `SELF_ATTESTATION` halt refuses, arriving
+    through the realized side instead of the observer side.
+    """
+    ledger, _ = _committed_with(0.25)
+
+    internal = [r.payload for r in ledger.by_type("outcome")]
+    assert internal, "the gate wrote its own outcome"
+    assert all(o["validation_status"] != bridge.EXTERNALLY_VERIFIED for o in internal)
+    assert bridge.predicted_versus_realized(ledger) == []
+
+
+def test_one_action_yields_one_pair_not_one_per_outcome_record():
+    ledger, action_id = _committed_with(0.25)
+    bridge.run(observation(action_id), ledger=ledger)
+
+    assert len(ledger.by_type("outcome")) == 2, "internal + external"
+    assert len(bridge.predicted_versus_realized(ledger)) == 1
+
+
+def test_a_forecast_outside_zero_to_one_is_refused_by_the_spec():
+    """Absent is fine; present-and-nonsensical would be scored as if it meant
+    something."""
+    assert _spec(predicted_success_probability=1.7).validate() == [
+        "predicted_success_probability must be within 0..1"]
+    assert _spec(predicted_success_probability=-0.1).validate() == [
+        "predicted_success_probability must be within 0..1"]
+    assert _spec(predicted_success_probability=0.0).validate() == []
+    assert _spec(predicted_success_probability=None).validate() == []
+
+
+def test_the_forecast_governs_no_admission_decision():
+    """It is the number reality grades, never the number that buys entry.
+
+    Asserted over the AST rather than by behaviour, because a behavioural test
+    would only cover the thresholds it happened to pick.
+    """
+    import ast
+
+    source = open(os.path.join(ROOT, "policy", "engine.py"), encoding="utf-8").read()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.FunctionDef) and node.name == "evaluate":
+            names = {n.attr for n in ast.walk(node) if isinstance(n, ast.Attribute)}
+            assert "predicted_success_probability" not in names, (
+                "policy.engine.evaluate reads the forecast; admission must "
+                "depend on evidence_confidence alone")
+            break
+    else:                                          # pragma: no cover
+        raise AssertionError("policy.engine.evaluate not found")
+
+
+def test_the_witness_now_carries_the_prediction_it_is_graded_on():
+    """The gap, closed — and the test that forced the revisit, doing its job.
+
+    This assertion used to read `"evidence_confidence" not in fields`, with the
+    note: *"If someone ratifies the contract change and widens CommitWitness,
+    this test fails and the pinned gap has to be revisited — which is the
+    point. A gap nobody is forced to revisit is a gap that becomes
+    permanent."*
+
+    The founder ratified it (FOUNDER-RULING-2026-08-23), the witness widened,
+    and this test failed exactly as designed. The inversion is kept in place
+    rather than deleted so the closure is visible as a closure.
+
+    Both quantities are now present and they are not the same field —
+    CONTRADICTION-0003. Grading a decision-to-act confidence against an outcome
+    would have measured the wrong thing while looking correct.
     """
     fields = set(CommitWitness.__dataclass_fields__)
 
-    assert "expected_outcome" in fields       # the prediction's *content* is kept
-    assert "evidence_confidence" not in fields  # its *confidence* is not
+    assert "expected_outcome" in fields               # the prediction's content
+    assert "evidence_confidence" in fields            # why it was admitted
+    assert "predicted_success_probability" in fields  # what calibration scores
+    assert "witness_version" in fields
+
+    # Still empty for an empty ledger: emitting the field is not the same as
+    # having anything to calibrate. CVO remains 0 and nothing here changes it.
     assert bridge.predicted_versus_realized(EvidenceLedger("probe")) == []
 
 

@@ -119,6 +119,16 @@ def _treasury():
     return RegenerativeTreasury(ledger), ledger
 
 
+#: Containment declared (CONTRADICTION-0003 Option B). True of these closure
+#: checks: every executor is an in-process double, "platform:declared" is not a
+#: real platform, and no buyer or payment rail is reached. These checks prove
+#: the loops close; they are not external acts.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
+
 def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
     """Extend a canonical registry in-place and return it."""
 
@@ -126,7 +136,8 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         foundry, h, gate, _, actor = _foundry_stack()
         foundry.ratifier.decide(h, ratified=True, reason="closure check")
         record = foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                                 executor=LIVE, platform="platform:declared")
+                                 executor=LIVE, platform="platform:declared",
+                                 containment=SANDBOX_CONTAINMENT)
         return record.state == "recorded" and bool(record.receipt_hash), \
             "ratified company publishes through the full Gate pipeline"
 
@@ -135,7 +146,8 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         foundry, h, gate, _, actor = _foundry_stack()
         try:
             foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                            executor=LIVE, platform="platform:declared")
+                            executor=LIVE, platform="platform:declared",
+                                 containment=SANDBOX_CONTAINMENT)
             return False, "unratified charter published"
         except FoundryError:
             pass
@@ -143,7 +155,8 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         foundry.company(h).charter.persona = "edited-after-ratification"
         try:
             foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                            executor=LIVE, platform="platform:declared")
+                            executor=LIVE, platform="platform:declared",
+                                 containment=SANDBOX_CONTAINMENT)
             return False, "edited charter published"
         except FoundryError:
             return True, "unratified and post-ratification-edited charters cannot speak"
@@ -192,9 +205,11 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         case = loop.open_case("acme")
         loop.present_offer(case.case_id)
         loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY,
-                          evidence_confidence=0.9, evidence_refs=EVREF)
+                          evidence_confidence=0.9, evidence_refs=EVREF,
+                          containment=SANDBOX_CONTAINMENT)
         loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP,
-                     evidence_confidence=0.9, evidence_refs=EVREF)
+                     evidence_confidence=0.9, evidence_refs=EVREF,
+                          containment=SANDBOX_CONTAINMENT)
         loop.verify_outcome(case.case_id, verified_by="external_receipt",
                             detail="buyer accepted")
         loop.resolve(case.case_id, retained=True, reason="subscribed")
@@ -209,13 +224,15 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
         loop.present_offer(case.case_id)
         try:
             loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY,
-                              evidence_confidence=0.5, evidence_refs=EVREF)
+                              evidence_confidence=0.5, evidence_refs=EVREF,
+                              containment=SANDBOX_CONTAINMENT)
             return False, "weak-evidence payment happened"
         except CommercialLoopError:
             pass
         try:
             loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP,
-                         evidence_confidence=0.9, evidence_refs=EVREF)
+                         evidence_confidence=0.9, evidence_refs=EVREF,
+                          containment=SANDBOX_CONTAINMENT)
             return False, "delivery happened without payment"
         except CommercialLoopError:
             return True, "weak payment evidence and out-of-order delivery fail closed"

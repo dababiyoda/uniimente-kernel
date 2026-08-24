@@ -68,15 +68,28 @@ AMENDED_BY_001 = {
     "tests/unit/test_repair_inertness.py": "reads spec.CORPUS_DIR in the child",
 }
 
-#: Content pins for the sealed repair files, as they stand after Amendment 001.
-#: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
-#: opposite reasons and both are instructive: comparing against the freeze commit
-#: flagged files main itself had changed, and comparing against `origin/main`
-#: certified nothing in CI, where that ref does not exist — `git diff` writes an
-#: empty stdout and exits 128, which a stdout-only reader mistakes for "no
-#: changes". Content pins need no refs, work in a shallow checkout, and assert
-#: something stronger than a diff: these exact bytes.
-SEALED_BLOBS = {
+#: Exactly the files Amendment 002 is authorized to touch, and why.
+#: CONTRADICTION-0002 Option A, 2026-08-23: repoint the *continuity* binding at
+#: byte-identical freeze-time copies, as 001 did for the corpus binding.
+#:
+#: Narrower than 001 by construction. The continuity pins are relative paths and
+#: the root they were joined to lived in `harness.py`, which is not a sealed
+#: file — so the binding moves without touching a single frozen table, and
+#: `SPEC_SHA256` and `EXPECTATIONS_SHA256` are bit-identical across this
+#: amendment. 001 could not claim that; this one can, and
+#: `test_amendment_002_moved_no_expectation_and_did_not_move_the_seal` proves it.
+AMENDED_BY_002 = {
+    "evolution/repair/spec.py": "adds CONTINUITY_DIR, a path constant outside "
+                                "_FROZEN_TABLES — no expectation value moves",
+    "tests/unit/test_repair_spec_frozen.py": "reads spec.CONTINUITY_DIR instead "
+                                             "of the live tree, plus three new "
+                                             "guards on the amendment itself",
+}
+
+#: The sealed files as they stood after Amendment 001 and BEFORE Amendment 002.
+#: Retained for the same reason 001's pre-values are: an amendment that erased
+#: what it replaced would be indistinguishable from no amendment at all.
+SEALED_BLOBS_PRE_AMENDMENT_002 = {
     "evolution/repair/spec.py":
         "349c73463835b2e244f14d85781fb42dba4e4903",
     "tests/unit/test_repair_spec_frozen.py":
@@ -87,9 +100,123 @@ SEALED_BLOBS = {
         "d4522f53891ff5503994fcbfcf2d1244378462eb",
     "tests/unit/test_repair_inertness.py":
         "f464459817c648296f6867a5799e765dde4dfc8b",
-    # Untouched by the amendment: its pin is the same value it always had.
     "tests/unit/test_repair_harness.py":
         "fdc31ce110aa4abd4e898e808f738956c05d4629",
+}
+
+#: NOTE FOR THE NEXT AMENDMENT — a defect in this guard pattern, fixed at 003.
+#:
+#: Guards 001 and 002 originally compared their pre-state against `SEALED_BLOBS`,
+#: the *current* pins. That works for exactly one amendment. When 003 moved
+#: `test_repair_harness.py`, both earlier guards failed: measured against the
+#: moving target, 003's change looked like an undeclared file inside 001's and
+#: 002's scope.
+#:
+#: The pattern is now: **each guard compares its own before-snapshot against its
+#: own after-snapshot**, both frozen. `SEALED_BLOBS_PRE_AMENDMENT_002` is the
+#: post-001 state, `SEALED_BLOBS_PRE_AMENDMENT_003` is the post-002 state, and
+#: `SEALED_BLOBS` is the post-003 state. A fourth amendment adds
+#: `SEALED_BLOBS_PRE_AMENDMENT_004` (= the current `SEALED_BLOBS` values),
+#: repoints guard 003 at it, and adds its own guard against `SEALED_BLOBS`.
+#:
+#: Recorded here rather than silently fixed: the flaw was introduced by the
+#: session that wrote 002 and was only exposed by 003 existing at all.
+
+#: Exactly the files Amendment 003 is authorized to touch, and why.
+#:
+#: Amendment 002 repointed the continuity BINDING. It missed two call sites that
+#: still compared LIVE bytes against the freeze-time constant, which only became
+#: visible once the live gate actually diverged — Witness v2 emission, authorised
+#: by the same ruling, changed `policy/consequence_gate.py` and both assertions
+#: failed. That is the remedy's own test finding the rest of the remedy.
+#:
+#: Both are converted to self-comparisons: the property worth asserting inside a
+#: run is "this experiment disturbed nothing", not "the tree still matches July".
+AMENDED_BY_003 = {
+    "tests/unit/test_repair_adapters.py":
+        "compares the fingerprint before/after the component is disabled, "
+        "instead of against CONTINUITY_COMBINED_SHA256",
+    "tests/unit/test_repair_harness.py":
+        "asserts the run-scoped before/during/after self-comparison, plus the "
+        "separately recorded frozen_baseline_reproduces",
+}
+
+#: The sealed files as they stood after Amendment 002 and BEFORE Amendment 003.
+SEALED_BLOBS_PRE_AMENDMENT_003 = {
+    "evolution/repair/spec.py":
+        "ae8d1e9af90bc6bd71e31da146d890f47b357571",
+    "tests/unit/test_repair_spec_frozen.py":
+        "a01fafe01038b4b9541d6b7a708c00319303a565",
+    "tests/unit/test_repair_adapters.py":
+        "e76fd1f75d7f79c3d4f52374b9c193c6643d8062",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    "tests/unit/test_repair_harness.py":
+        "fdc31ce110aa4abd4e898e808f738956c05d4629",
+}
+
+#: Exactly the files Amendment 004 is authorized to touch, and why.
+#:
+#: CI check 3 ("one source of authority") failed on the Amendment 002/003 push
+#: and was RIGHT. Storing the frozen artifacts under their real names made
+#: `evolution/repair/continuity/policy/consequence_gate.py` importable — PEP 420
+#: namespace packages need no `__init__.py` — so the remedy for
+#: CONTRADICTION-0002 had created a genuine SECOND PATH TO EXTERNAL EFFECT,
+#: sitting in the tree under a reassuring directory name.
+#:
+#: Fixed by suffixing every frozen artifact `.frozen` rather than by excluding
+#: the directory from that check. An exclusion would have let the check keep
+#: passing while the importable duplicate stayed on disk — the check would have
+#: been weakened to accommodate the defect it correctly found.
+AMENDED_BY_004 = {
+    "evolution/repair/spec.py":
+        "adds FROZEN_SUFFIX and frozen_path(); no expectation value moves",
+    "tests/unit/test_repair_spec_frozen.py":
+        "reads through frozen_path(), and asserts every frozen artifact is "
+        "stored suffixed rather than under its real name",
+}
+
+#: The sealed files as they stood after Amendment 003 and BEFORE Amendment 004.
+SEALED_BLOBS_PRE_AMENDMENT_004 = {
+    "evolution/repair/spec.py":
+        "ae8d1e9af90bc6bd71e31da146d890f47b357571",
+    "tests/unit/test_repair_spec_frozen.py":
+        "a01fafe01038b4b9541d6b7a708c00319303a565",
+    "tests/unit/test_repair_adapters.py":
+        "0df5ae99971aa423e5318ac99dd651215062efa4",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    "tests/unit/test_repair_harness.py":
+        "6f464f037079d65668f73e2952703af33f66a78a",
+}
+
+#: Content pins for the sealed repair files, as they stand after Amendment 004.
+#: Deliberately NOT a `git diff` against a ref. Two earlier attempts failed for
+#: opposite reasons and both are instructive: comparing against the freeze commit
+#: flagged files main itself had changed, and comparing against `origin/main`
+#: certified nothing in CI, where that ref does not exist — `git diff` writes an
+#: empty stdout and exits 128, which a stdout-only reader mistakes for "no
+#: changes". Content pins need no refs, work in a shallow checkout, and assert
+#: something stronger than a diff: these exact bytes.
+SEALED_BLOBS = {
+    # Moved again by Amendment 004 (frozen artifacts suffixed).
+    "evolution/repair/spec.py":
+        "f98f040940896dd0393ddc73cec08f0230265701",
+    "tests/unit/test_repair_spec_frozen.py":
+        "2122c4e436588af8f8285f885a28a1e1acfde500",
+    # Moved by Amendment 003 (the two remaining live comparisons).
+    "tests/unit/test_repair_adapters.py":
+        "0df5ae99971aa423e5318ac99dd651215062efa4",
+    "tests/unit/test_repair_candidates.py":
+        "d4522f53891ff5503994fcbfcf2d1244378462eb",
+    "tests/unit/test_repair_inertness.py":
+        "f464459817c648296f6867a5799e765dde4dfc8b",
+    "tests/unit/test_repair_harness.py":
+        "6f464f037079d65668f73e2952703af33f66a78a",
 }
 
 
@@ -187,15 +314,124 @@ def test_the_amendment_touched_exactly_the_files_it_declared():
     pin dutifully updated, and quietly dropping one of the five fails too.
     """
     moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT.items()
-             if SEALED_BLOBS[path] != before}
+             if SEALED_BLOBS_PRE_AMENDMENT_002[path] != before}
     assert moved == set(AMENDED_BY_001), (
         f"amendment scope mismatch. moved={sorted(moved)} "
         f"declared={sorted(AMENDED_BY_001)}. Every file the amendment touches "
         "must be declared in AMENDED_BY_001 with the reason it was touched."
     )
-    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT), (
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_002) == set(SEALED_BLOBS_PRE_AMENDMENT), (
         "the amendment may not add or drop a sealed file, only change one"
     )
+
+
+def test_amendment_002_touched_exactly_the_files_it_declared():
+    """The same scope discipline, one amendment later.
+
+    Amendment 002 moves two files that Amendment 001 had already moved, so the
+    001 guard above cannot see it: measured against the pre-001 pins, the set of
+    moved files is unchanged. A second amendment that hid inside the first one's
+    scope would have been invisible.
+
+    This guard measures against the post-001 pins, so 002 has to declare its own
+    scope. Every future amendment needs the same treatment — that is the cost of
+    the content-pin design, and it is cheaper than a seal nobody can audit.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_002.items()
+             if SEALED_BLOBS_PRE_AMENDMENT_003[path] != before}
+    assert moved == set(AMENDED_BY_002), (
+        f"amendment 002 scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_002)}. Every file the amendment touches "
+        "must be declared in AMENDED_BY_002 with the reason it was touched."
+    )
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_003) == set(SEALED_BLOBS_PRE_AMENDMENT_002), (
+        "the amendment may not add or drop a sealed file, only change one"
+    )
+
+
+def test_amendment_003_touched_exactly_the_files_it_declared():
+    """Third amendment, third scope guard. The pattern is now the rule.
+
+    Amendment 002's guard cannot see 003 for the same reason 001's could not
+    see 002: measured against the pre-002 pins, `test_repair_adapters.py` and
+    `test_repair_harness.py` had not moved, so 003 would have been invisible
+    inside 002's declared scope.
+
+    Every amendment declares against the pins as they stood immediately before
+    it. That is the cost of content pinning, and it is cheaper than a seal
+    nobody can audit.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_003.items()
+             if SEALED_BLOBS_PRE_AMENDMENT_004[path] != before}
+    assert moved == set(AMENDED_BY_003), (
+        f"amendment 003 scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_003)}. Every file the amendment touches "
+        "must be declared in AMENDED_BY_003 with the reason it was touched."
+    )
+    assert set(SEALED_BLOBS_PRE_AMENDMENT_004) == set(SEALED_BLOBS_PRE_AMENDMENT_003)
+
+
+def test_amendment_004_touched_exactly_the_files_it_declared():
+    """Fourth amendment, fourth guard — the documented pattern, applied.
+
+    Measured against the post-003 snapshot, per the note above. Amendment 004
+    exists because CI check 3 correctly refused the Amendment 002/003 push: the
+    frozen corpus had introduced an importable second Consequence Gate.
+    """
+    moved = {path for path, before in SEALED_BLOBS_PRE_AMENDMENT_004.items()
+             if SEALED_BLOBS[path] != before}
+    assert moved == set(AMENDED_BY_004), (
+        f"amendment 004 scope mismatch. moved={sorted(moved)} "
+        f"declared={sorted(AMENDED_BY_004)}."
+    )
+    assert set(SEALED_BLOBS) == set(SEALED_BLOBS_PRE_AMENDMENT_004)
+
+
+def test_no_frozen_artifact_is_importable_or_loadable_as_the_real_thing():
+    """The defect Amendment 004 closed, pinned so it cannot return.
+
+    A frozen artifact stored under its real name is not merely untidy: for
+    `consequence_gate.py` it was an importable second gate, and for the YAML
+    registries it would be a second hit for any glob that looks for authority.
+    """
+    import importlib.util
+
+    frozen_dir = os.path.join(ROOT, "evolution", "repair", "continuity")
+    for dirpath, _dirnames, filenames in os.walk(frozen_dir):
+        for name in filenames:
+            if name == "README.md":
+                continue
+            assert name.endswith(".frozen"), f"{name} is stored unsuffixed"
+            assert not name.endswith(".py"), f"{name} is importable Python"
+
+    assert importlib.util.find_spec(
+        "evolution.repair.continuity.policy.consequence_gate") is None, (
+        "the frozen consequence gate is importable again — a second path to "
+        "external effect, which is exactly what CI check 3 refuses")
+
+
+def test_amendment_002_left_the_historical_evidence_exactly_where_it_was():
+    """The founder's constraint on CONTRADICTION-0002, machine-checked.
+
+    *"Historical expectations, evidence, lineage, and freeze-time truth must
+    remain unchanged"* and *"do not update an old historical hash merely to make
+    current implementation pass"*.
+
+    The stronger reading of that constraint is available here and asserted:
+    not merely that expectations are unchanged, but that the experiment's own
+    seal did not move at all. If a later session unblocks itself by editing a
+    pinned constitutional hash, this is the test that stops it.
+    """
+    assert spec.spec_hash() == spec.SPEC_SHA256
+    assert spec.expectations_hash() == spec.EXPECTATIONS_SHA256
+
+    # Amendment 001's seal-move is preserved as history, not overwritten.
+    assert spec.SPEC_SHA256_ORIGINAL != spec.SPEC_SHA256
+
+    # The twelve pins themselves: same paths, same hashes, same combined value.
+    assert len(spec.CONTINUITY_ARTIFACT_SHA256) == 12
+    assert spec.CONTINUITY_COMBINED_SHA256 == \
+        "c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa"
 
 
 def test_the_amendment_changed_the_corpus_binding_and_nothing_else():

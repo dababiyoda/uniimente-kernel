@@ -31,15 +31,48 @@ def stack():
     return gate, passports, ledger, actor, compiled
 
 
+#: Every containment property, declared true because for this fixture each one
+#: genuinely is: the target is `sandbox:outbox`, the executor is in-process and
+#: inert, nothing leaves the process, and the whole effect vanishes with the
+#: test. Stated explicitly rather than defaulted — CONTRADICTION-0003 Option B
+#: fails closed, and a fixture that inherited these silently would be the first
+#: place the requirement stopped meaning anything.
+SANDBOX_CONTAINMENT = {
+    "contained": True, "reversible": True, "observable": True,
+    "killable": True, "proportionate": True,
+}
+
+
 def make_proposal(actor_id, **kw):
     defaults = dict(
         actor=actor_id, legal_principal="alfonso_lopez", action_class="draft.publish",
         objective="test.objective", payload={"text": "hello governed world"}, target="sandbox:outbox",
         consequence_class="external_contact", evidence_confidence=0.9,
         evidence_refs=["sha256:" + "a" * 64], estimated_cost_usd=0.0,
-        requested_capability="draft.publish", expected_outcome="draft queued")
+        requested_capability="draft.publish", expected_outcome="draft queued",
+        context=dict(SANDBOX_CONTAINMENT))
     defaults.update(kw)
     return Proposal(**defaults)
+
+
+def granted(gate, proposal):
+    """Issue the grant outside the run, the way an authorised operator would.
+
+    Since CONTRADICTION-0003's authorization fix the Gate refuses to mint its
+    own grant for anything that reaches outside, so an external_contact test
+    that wants to exercise the pipeline has to supply one. That is the point:
+    authorising an external act is now a separate, visible step.
+    """
+    return gate.grants.issue_single_action(
+        proposal=proposal, policy_version=gate.policy_version)
+
+def _run_granted(gate, proposal, **kw):
+    """Run a proposal, supplying an externally issued grant when the class
+    requires one."""
+    from policy.engine import CONTAINED_CLASSES
+    if proposal.consequence_class in CONTAINED_CLASSES:
+        kw.setdefault("standing_grant", granted(gate, proposal))
+    return gate.run(proposal, **kw)
 
 
 GOOD = lambda p: {"observed_outcome": "draft queued", "result_class": "positive"}
@@ -49,7 +82,7 @@ GOOD = lambda p: {"observed_outcome": "draft queued", "result_class": "positive"
 
 def test_full_pipeline_reaches_recorded(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id), executor=GOOD)
     states = [t["state"] for t in rec.trajectory]
     assert rec.state == "recorded"
     assert states[0] == "proposed"
@@ -67,7 +100,7 @@ def test_full_pipeline_reaches_recorded(stack):
 def test_outcome_record_matches_contract(stack):
     import json, jsonschema
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id), executor=GOOD)
     schema = json.load(open(os.path.join(ROOT, "contracts", "outcome.schema.json")))
     jsonschema.validate(rec.outcome, schema)
 
@@ -102,27 +135,27 @@ def test_explain_states_law_and_reasons(stack):
 
 def test_no_identity_no_action(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal("spiffe://uniimente.internal/agent/ghost"), executor=GOOD)
+    rec = _run_granted(gate, make_proposal("spiffe://uniimente.internal/agent/ghost"), executor=GOOD)
     assert rec.state == "refused"
     assert any("identity" in r for r in rec.refusal_reasons)
 
 
 def test_unknown_legal_principal_refused(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id, legal_principal="PHANTOM_INC"), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id, legal_principal="PHANTOM_INC"), executor=GOOD)
     assert rec.state == "refused"
     assert any("legal principal" in r for r in rec.refusal_reasons)
 
 
 def test_uniimente_principal_refused(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id, legal_principal="UNIIMENTE"), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id, legal_principal="UNIIMENTE"), executor=GOOD)
     assert rec.state == "refused"
 
 
 def test_absolute_prohibition_refused(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id, action_class="physical_harm"), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id, action_class="physical_harm"), executor=GOOD)
     assert rec.state == "refused"
     assert any("absolutely prohibited" in r for r in rec.refusal_reasons)
 
@@ -139,7 +172,8 @@ def test_reserved_matter_requires_human_and_denial_is_terminal(stack):
 def test_reserved_matter_with_approval_proceeds(stack):
     gate, passports, ledger, actor, _ = stack
     p = make_proposal(actor.passport_id, action_class="material_debt")
-    rec = gate.run(p, executor=GOOD, approver=lambda pr, rs: (True, "alfonso approved"))
+    rec = _run_granted(gate, p, executor=GOOD,
+                       approver=lambda pr, rs: (True, "alfonso approved"))
     assert rec.state == "recorded"
 
 
@@ -188,6 +222,8 @@ def test_effect_mismatch_is_hard_refusal_and_incident(stack):
 
 def test_budget_overflow_refused(stack):
     gate, passports, ledger, actor, _ = stack
+    # No standing grant on purpose: this refusal happens at evaluation, on
+    # missing budget authorization, before the capability step is reached.
     rec = gate.run(make_proposal(actor.passport_id, estimated_cost_usd=999.0), executor=GOOD)
     assert rec.state == "refused"
     assert any("cost" in r or "budget" in r for r in rec.refusal_reasons)
@@ -195,7 +231,7 @@ def test_budget_overflow_refused(stack):
 
 def test_weak_evidence_refused_for_external_contact(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id, evidence_confidence=0.3), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id, evidence_confidence=0.3), executor=GOOD)
     assert rec.state == "refused"
     assert any("evidence" in r for r in rec.refusal_reasons)
 
@@ -221,7 +257,7 @@ def test_executor_explosion_fails_closed_and_preserves_evidence(stack):
     gate, passports, ledger, actor, _ = stack
     def boom(p):
         raise RuntimeError("adapter exploded")
-    rec = gate.run(make_proposal(actor.passport_id), executor=boom)
+    rec = _run_granted(gate, make_proposal(actor.passport_id), executor=boom)
     assert rec.state == "failed"
     assert rec.incident == "executor_exception:RuntimeError"
     ok, _ = ledger.verify_chain()
@@ -231,7 +267,7 @@ def test_executor_explosion_fails_closed_and_preserves_evidence(stack):
 def test_witness_proves_the_exact_sentence(stack):
     """This exact machine, entity, permission, law, evidence, result."""
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id), executor=GOOD)
     witness = [r for r in ledger.by_type("witness")][0].payload
     assert witness["actor"] == actor.passport_id              # this exact machine
     assert witness["legal_principal"] == "alfonso_lopez"      # this exact entity
@@ -246,7 +282,7 @@ def test_witness_proves_the_exact_sentence(stack):
 
 def test_witness_tamper_detected(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = _run_granted(gate, make_proposal(actor.passport_id), executor=GOOD)
     witness = [r for r in ledger.by_type("witness")][0].payload
     witness["expected_outcome"] = "forged outcome"
     from provenance.commit_witness import CommitWitness

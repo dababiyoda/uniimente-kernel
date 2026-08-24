@@ -269,6 +269,148 @@ def _witness_v2_is_not_emitted() -> tuple[bool, str]:
     return True, "no new_witness call found in the gate"
 
 
+#: Internal call sites that cross a trust boundary and should eventually
+#: authenticate their peer. Enumerated rather than discovered, because "which
+#: edges need workload identity" is a judgement about the trust model and not
+#: something a file walk can infer. Adding an edge here is how a future session
+#: widens the obligation; removing one requires saying why it is not a boundary.
+_TRUST_EDGES = (
+    "bridges/signal_to_venture.py",
+    "bridges/venture_to_experiment.py",
+    "bridges/experiment_to_reality.py",
+    "bridges/reality_to_learning.py",
+    "bridges/workflow_to_capability.py",
+    "embassy/gate.py",
+)
+
+
+def _asymmetric_identity_is_only_one_edge_deep() -> tuple[bool, str]:
+    """#26 after adoption: how much of the internal graph authenticates?
+
+    The previous check asked whether ANY institutional module used
+    `identity.pki`. That question is now answered yes, permanently, and a check
+    that can never fail again is a check that has stopped measuring anything.
+
+    So the question moved to the one still open: adoption is one bridge deep.
+    This counts trust edges that authenticate against those that do not, and
+    closes only when every declared edge does. It will report open for a while,
+    which is correct — the alternative is a green row over an internal graph
+    that mostly still trusts by assumption.
+    """
+    adopted, missing = [], []
+    for relative in _TRUST_EDGES:
+        path = os.path.join(KERNEL_ROOT, relative)
+        if not os.path.isfile(path):
+            missing.append(f"{relative} (absent)")
+            continue
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            try:
+                tree = ast.parse(fh.read())
+            except SyntaxError:
+                missing.append(f"{relative} (unparseable)")
+                continue
+        uses = False
+        for node in ast.walk(tree):
+            modules: list[str] = []
+            if isinstance(node, ast.Import):
+                modules = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                modules = [node.module]
+            if any(m.startswith("identity.pki") or m == "identity.mesh"
+                   for m in modules):
+                uses = True
+                break
+        (adopted if uses else missing).append(relative)
+
+    unauthenticated_hops = _declared_hops_without_a_handshake()
+
+    if not missing and not unauthenticated_hops:
+        return False, (f"every declared trust edge authenticates its peer "
+                       f"({len(adopted)}/{len(_TRUST_EDGES)}), and every "
+                       f"declared hop inside them handshakes")
+    detail = (f"{len(adopted)}/{len(_TRUST_EDGES)} declared trust edges "
+              f"authenticate their peer")
+    if missing:
+        detail += f"; still unauthenticated: {sorted(missing)}"
+    if unauthenticated_hops:
+        detail += (f"; declared hops with no handshake: "
+                   f"{sorted(unauthenticated_hops)}")
+    return True, detail
+
+
+#: Peer hops that must each run their own handshake, as
+#: `path -> ((client_service, server_service), ...)`.
+#:
+#: WHY THIS EXISTS, and it is the second time this probe has had to be made
+#: finer. The check above asks whether a FILE imports `identity.mesh`. On
+#: 2026-08-24 that reported `bridges/signal_to_venture.py` as adopted while its
+#: leg 3 handed the adapter the literal string `"wealthmachine"` — the module
+#: imported the mesh, authenticated its first peer, and trusted its second by
+#: assumption. A file-level check cannot see that, because a module with two
+#: boundaries and one handshake imports the mesh exactly as hard as a module
+#: with two handshakes.
+#:
+#: So the unit moved from the file to the hop. Enumerated, not discovered, for
+#: the same reason `_TRUST_EDGES` is: which boundaries need a handshake is a
+#: judgement about the trust model.
+#:
+#: An empty tuple means "this file crosses a boundary, but whose peers should
+#: hold declared workload identities has not been settled". That is a real
+#: state and not a pass: `embassy/gate.py` admits foreign MCP/A2A agents and
+#: `bridges/reality_to_learning.py` receives an outside observer's claim —
+#: neither peer is a declared internal service, so the internal mesh is not
+#: the mechanism, and saying so is more honest than enumerating hops that
+#: cannot exist. Settling those is open work, tracked by the file-level count
+#: above.
+_TRUST_HOPS: dict[str, tuple[tuple[str, str], ...]] = {
+    "bridges/signal_to_venture.py": (
+        ("bridge_daleobanks", "kernel_gateway"),
+        ("bridge_wealthmachine", "kernel_gateway"),
+    ),
+    "bridges/venture_to_experiment.py": (),
+    "bridges/experiment_to_reality.py": (),
+    "bridges/reality_to_learning.py": (),
+    "bridges/workflow_to_capability.py": (),
+    "embassy/gate.py": (),
+}
+
+
+def _declared_hops_without_a_handshake() -> list[str]:
+    """Declared hops with no matching `verify_mutual_identity` call."""
+    missing: list[str] = []
+    for relative, hops in _TRUST_HOPS.items():
+        if not hops:
+            continue
+        path = os.path.join(KERNEL_ROOT, relative)
+        if not os.path.isfile(path):
+            missing.extend(f"{relative}:{c}->{s} (file absent)" for c, s in hops)
+            continue
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            try:
+                tree = ast.parse(fh.read())
+            except SyntaxError:
+                missing.extend(f"{relative}:{c}->{s} (unparseable)" for c, s in hops)
+                continue
+        handshakes: set[tuple[str, str]] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            name = func.attr if isinstance(func, ast.Attribute) else getattr(
+                func, "id", None)
+            if name != "verify_mutual_identity":
+                continue
+            # (mesh, client, server, ...) — the two service names are the
+            # positional arguments that identify the hop.
+            names = [a.value for a in node.args
+                     if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            if len(names) >= 2:
+                handshakes.add((names[0], names[1]))
+        missing.extend(f"{relative}:{c}->{s}" for c, s in hops
+                       if (c, s) not in handshakes)
+    return missing
+
+
 def _routing_decision_is_untyped() -> tuple[bool, str]:
     """`RoutingDecision` has no schema in the canonical contract registry."""
     contracts = os.path.join(KERNEL_ROOT, "contracts")
@@ -392,14 +534,40 @@ CHECKS: tuple[tuple[int, str, Callable[[], tuple[bool, str]]], ...] = (
     (38, "No payment rail is connected", _no_external_reach),
     (49, "No company has published anything", _no_external_reach),
     (25, "No live traffic has routed through either router", _no_verified_outcome),
-    # Anchors re-pointed 2026-08-22 with the gap texts they track. Both rows
-    # measure adoption now, not the presence of a primitive — see
-    # `_asymmetric_identity_is_not_adopted`.
-    (7, "The live bridge transport is still HMAC over a shared secret",
-     _asymmetric_identity_is_not_adopted),
-    (26, "NOT ADOPTED: no bridge, gate or organ calls `mutual_tls`",
-     _asymmetric_identity_is_not_adopted),
-    (30, "The Gate does not emit witness contract v2", _witness_v2_is_not_emitted),
+    # Anchors re-pointed 2026-08-22 to measure adoption rather than the presence
+    # of a primitive, then AGAIN 2026-08-23 when adoption actually happened.
+    #
+    # `_asymmetric_identity_is_not_adopted` reported both rows STALE the moment
+    # `bridges/signal_to_venture.py` began authenticating through
+    # `identity/mesh.py`. Per the procedure #25, #26, #30 and #48 followed, the
+    # register was corrected in the same change and the anchors now track what
+    # is measurably still open — which is not adoption, and is not the same
+    # sentence with a weaker verb.
+    #
+    # #7 is now cross-repository parity: the kernel side is isolated, the peer
+    # repositories still ship the shared-secret mirror, and that is a change in
+    # two other repositories. Measured by the same external-reach probe that
+    # governs every other claim this institution cannot settle alone.
+    #
+    # #26 is now adoption BREADTH: one bridge authenticates, the rest of the
+    # internal graph does not. `_asymmetric_identity_is_only_one_edge_deep`
+    # counts the edges rather than asking whether any exist.
+    (7, "The peer repositories have not adopted isolated identity",
+     _no_external_reach),
+    (26, "Adoption is one bridge deep", _asymmetric_identity_is_only_one_edge_deep),
+    # The #30 witness-v2-emission check was retired 2026-08-23, the same way
+    # #25, #26 and #48 were: it reported the gap STALE, the register was
+    # corrected in the same change, and a check whose subject no longer exists
+    # would report ANCHOR LOST forever. The Gate now passes all four v2 facts
+    # into `new_witness`; `_witness_v2_is_not_emitted` is retained below as the
+    # regression probe and asserted directly by
+    # `tests/unit/test_witness_v2_migration.py::test_the_real_gate_emits_the_facts_it_holds`,
+    # so a future edit that drops the keywords still fails the build.
+    #
+    # #30's row now carries a NARROWER gap — no emitted witness describes a real
+    # external effect — which `_no_verified_outcome` already measures.
+    (30, "No emitted witness describes a real external effect",
+     _no_verified_outcome),
     # The #25 RoutingDecision-typing check was retired 2026-08-22, the same way
     # #26 and #48 were: it reported the gap STALE, the register was corrected in
     # the same change, and a check whose subject no longer exists would report

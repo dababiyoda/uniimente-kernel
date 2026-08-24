@@ -39,7 +39,7 @@ without restatement, reverse compensation, approval gating.
 - **Resource ceiling**: replay bounded by ledger size; outbox bounded by staged count; retries bounded per step (`max_retries`).
 - **Operating cost**: one ledger append per event/checkpoint; dispatch is in-memory.
 - **Legal operator**: Alfonso (every event names its legal principal; the institution never is one).
-- **Handoff state**: the ledger IS the handoff — a fresh process replays the full stream and resumes any interrupted workflow from checkpoints.
+- **Handoff state**: the ledger IS the handoff — a fresh process replays the full stream and resumes any interrupted workflow from checkpoints. *This line was two claims, and only one of them was true when it was written.* `DurableWorkflow.resume` did rebuild cursor and state from checkpoints. The spine's own in-process state did not: the idempotent inbox started empty (fixed 2026-08-23) and the transactional outbox was a plain list, so a staged, unflushed delivery was ledgered as owed and then forgotten (fixed 2026-08-24). Both are now derived from the ledger, and the sentence is earned rather than aspirational.
 - **Replaceable**: ledger, mediator, approver, and step callables are all injected; the spine survives any swap.
 
 ## Orthogonal closures

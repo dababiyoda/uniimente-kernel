@@ -114,27 +114,77 @@ def test_no_caller_can_set_the_consequence_class_or_budget():
         assert banned not in params, f"extract() accepts {banned}"
 
 
-def test_the_envelope_matches_the_authority_the_actor_actually_held(ran):
+def test_the_envelope_matches_the_authority_the_action_actually_ran_under(ran):
+    """GAP-BRIDGE-G-001, closed: the envelope is now the exercised authority.
+
+    This test used to compare the genome against the actor's PASSPORT, because
+    the passport was the only authority source the ledger could offer. That was
+    always an over-estimate — a passport states what an identity may *ever* do,
+    not what this action was authorised to do — and the bridge labelled it as
+    one.
+
+    Since the Gate emits Witness v2 the action carries its own answer, so the
+    ceiling here is the one the grant actually permitted (0.0 for a zero-cost
+    action) rather than the actor's standing 5.0. A capability packaged with a
+    5.0 ceiling it never exercised would over-state its own authority every
+    time it was transplanted.
+    """
     ledger, action_id, passports, actor = ran
     held = passports.to_dict(actor)
 
     result = bridge_g.extract(ledger, action_id, passports=passports,
                               failure_modes=MODES)
 
-    assert result.genome.authority.max_consequence_class == held["consequence_class"]
-    assert result.genome.authority.budget_ceiling_usd == held["budget_ceiling_usd"]
-    assert result.exercised_consequence_class == held["consequence_class"]
+    assert result.authority_source == "witness"
+
+    witness = ledger.by_type("witness")[0].payload
+    assert result.genome.authority.max_consequence_class == \
+        witness["consequence_class"]
+    assert result.genome.authority.budget_ceiling_usd == \
+        witness["exposure_ceiling_usd"]
+    assert result.exercised_consequence_class == witness["consequence_class"]
+
+    # The exercised ceiling is BELOW the standing one, which is the whole point.
+    assert result.genome.authority.budget_ceiling_usd < held["budget_ceiling_usd"]
 
 
-def test_an_unresolvable_identity_refuses_rather_than_defaulting(ran):
-    """An invented ceiling is worse than no capability.
+def test_a_v2_action_no_longer_depends_on_the_passport_being_resolvable(ran):
+    """The dependency GAP-BRIDGE-G-001 created, removed.
 
-    The passport registry is the only authority source available, so when it
-    cannot answer, extraction stops. It must not fall back to `read_only`, to
-    zero, or to anything else that would look like a safe default while being a
-    fabricated authority claim.
+    This test used to assert that an unresolvable passport halts extraction,
+    because the passport was the only authority source. It still must never
+    invent a ceiling — but for a v2 action it no longer has to ask, since the
+    action's own witness states what it ran under. An extraction that survives
+    the identity registry being unavailable is strictly better evidence.
     """
     ledger, action_id, _, _ = ran
+
+    class Empty:
+        def to_dict(self, _passport_id):
+            raise KeyError("unknown identity")
+
+    result = bridge_g.extract(ledger, action_id, passports=Empty(),
+                              failure_modes=MODES)
+
+    assert result.completed is True
+    assert result.authority_source == "witness"
+
+
+def test_a_v1_action_with_an_unresolvable_identity_still_refuses(ran):
+    """The original protection, preserved for the records it was written for.
+
+    v1 witnesses carry no authority envelope, so for those the passport remains
+    the only source and an unreadable one must still halt extraction. An
+    invented ceiling is worse than no capability, and that has not changed for
+    any record written before the migration.
+    """
+    ledger, action_id, _, _ = ran
+
+    # Strip the v2 facts from the stored witness, reproducing a v1 record.
+    witness_record = ledger.by_type("witness")[0]
+    for field in ("witness_version", "evidence_confidence", "consequence_class",
+                  "exposure_ceiling_usd", "predicted_success_probability"):
+        witness_record.payload.pop(field, None)
 
     class Empty:
         def to_dict(self, _passport_id):
@@ -214,19 +264,26 @@ def test_the_faster_or_cheaper_claim_is_explicitly_not_made(ran):
 
 # --- the gap this bridge found ------------------------------------------------
 
-def test_the_ledger_really_cannot_supply_the_authority_envelope(ran):
-    """GAP-BRIDGE-G-001, asserted against the records rather than the prose.
+def test_the_ledger_now_supplies_the_authority_envelope(ran):
+    """GAP-BRIDGE-G-001, closed — by the test that pinned it open.
 
-    If someone widens the witness or starts recording the budget, this fails and
-    the bridge should be revisited to read from the ledger instead of the
-    passport — which is the point of pinning it.
+    The previous assertion was `"consequence_class" not in witness`, with the
+    note: *"If someone widens the witness or starts recording the budget, this
+    fails and the bridge should be revisited to read from the ledger instead of
+    the passport — which is the point of pinning it."*
+
+    Someone did. The inversion is kept so the closure is legible as a closure
+    rather than as a test that quietly disappeared.
     """
     ledger, action_id, _, _ = ran
 
     witness = ledger.by_type("witness")[0].payload
-    assert "consequence_class" not in witness
-    assert "budget_ceiling_usd" not in witness
+    assert witness["witness_version"] == 2
+    assert "consequence_class" in witness
+    assert "exposure_ceiling_usd" in witness
 
+    # The receipt still carries no budget, and does not need to: the ceiling is
+    # a property of the authority, not of the result.
     receipt = ledger.by_type("receipt")[0].payload
     assert "budget_usd" not in receipt
 

@@ -92,7 +92,8 @@ class CommercialLoop:
 
     def take_payment(self, case_id: str, *, actor: str, executor,
                      evidence_confidence: float, evidence_refs: list[str],
-                     approver=None) -> CustomerCase:
+                     approver=None,
+                     containment: dict | None = None) -> CustomerCase:
         self._require_alive()
         case = self._cases[case_id]
         if case.stage != "offer":
@@ -108,7 +109,11 @@ class CommercialLoop:
             evidence_confidence=evidence_confidence, evidence_refs=evidence_refs,
             estimated_cost_usd=g.price_usd,
             requested_capability="business.charge",
-            expected_outcome="payment settled")
+            expected_outcome="payment settled",
+            # CONTRADICTION-0003 Option B. Caller-supplied for the same reason
+            # as delivery: whether a payment is reversible is a fact about the
+            # payment rail, which this module does not know.
+            context=dict(containment or {}))
         grant = self.gate.grants.issue_single_action(
             proposal=proposal, policy_version=self.gate.policy_version)
         rec = self.gate.run(proposal, executor=executor, approver=approver,
@@ -125,7 +130,7 @@ class CommercialLoop:
 
     def deliver(self, case_id: str, *, actor: str, executor,
                 evidence_confidence: float, evidence_refs: list[str],
-                approver=None) -> CustomerCase:
+                approver=None, containment: dict | None = None) -> CustomerCase:
         self._require_alive()
         case = self._cases[case_id]
         if case.stage != "payment":
@@ -141,7 +146,11 @@ class CommercialLoop:
             evidence_confidence=evidence_confidence, evidence_refs=evidence_refs,
             estimated_cost_usd=g.marginal_cost_usd,
             requested_capability="business.deliver",
-            expected_outcome="offer delivered")
+            expected_outcome="offer delivered",
+            # CONTRADICTION-0003 Option B. Caller-supplied: whether a delivery
+            # to a real buyer is reversible or observable is a fact about the
+            # fulfilment arrangement, not about this function.
+            context=dict(containment or {}))
         grant = self.gate.grants.issue_single_action(
             proposal=proposal, policy_version=self.gate.policy_version)
         rec = self.gate.run(proposal, executor=executor, approver=approver,

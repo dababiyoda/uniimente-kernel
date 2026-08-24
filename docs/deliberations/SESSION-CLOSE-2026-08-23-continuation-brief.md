@@ -8,9 +8,113 @@ This file is that reconstruction point. It is committed rather than left in a
 chat log because the whole reason for the fresh start is that chat state carries
 superseded assumptions and the repository does not.
 
+
 ---
 
-## 1. Opening instruction for the next session
+# UPDATE — the order in §2 has been executed
+
+Added by the session that acted on this brief. **Everything below this heading
+is new; §1–§7 of the original are preserved verbatim underneath and are the
+state as it stood when this brief was written, not now.**
+
+Two documents named "session close 2026-08-23" existed briefly because two
+lines were working the same day: the original (pre-work handoff, written to set
+the order) and a completion record. They are merged here rather than one
+overwriting the other.
+
+**Convergent fix, worth noting.** Both lines independently found and fixed the
+same peer-transport defect — the dev opt-in being unreachable and the
+auto-downgrade — within hours, in different repositories, arriving at
+compatible formulations. The base branch's version (`demanded`) is the one that
+survived the merge because it handles one case mine did not: a caller passing
+`require_signature=True` explicitly must not be overridden by the env var.
+
+## Status of the founder-set order
+
+| Step | State |
+|---|---|
+| 1. CONTRADICTION-0002 | **done** — Option A, Amendments 002/003/004 |
+| 2. CONTRADICTION-0003 | **done** — Options A + B |
+| 3. Witness v2 live emission | **done** |
+| 4. Identity adoption / peer parity | **1/6 trust edges**; peer PRs open |
+| 5. Internal Alpha | **bottleneck named**, see below |
+| 6. Recompute the Infinite Goal Chase | **done** — `docs/INFINITE_GOAL_CHASE_RECOMPUTE-2026-08-23.md` |
+| 7. CANARY-0001 GO/NO-GO | **awaiting founder** |
+
+## The bottleneck for Alpha
+
+**Composing a durable runtime.** Not the Founder Cockpit and not a reasoning
+organ — both are downstream of it.
+
+The first draft of the recompute said "persistent state is absent". Checking
+that against the code corrected it and found the real defect: `EvidenceLedger`
+already persists and reverifies on reload, and `CausalMemory` and
+`EventSpine.replay()` are views over it, so they rebuild for free. What was
+missing is that **nothing boots the institution from a state directory** —
+every entry point still constructs a fresh in-memory ledger.
+
+Smallest falsifiable step: `InstitutionalRuntime.boot(state_dir)` composing a
+durable ledger with the gate, spine and causal memory, plus a test that runs a
+governed action, discards every object, boots again from the same directory,
+and finds the witness, the chain and the inbox intact. Port PR #78's WP-04
+mechanism rather than writing a third one.
+
+## Five defects found by the mechanisms, not by inspection
+
+1. **The Gate issued its own capability grant** for external actions — an
+   external act could authorise itself. Only reachable once CONTRADICTION-0003
+   removed the confidence conflation, because the evidence floor had been
+   refusing those proposals earlier in the pipeline. A floor was doing an
+   authorization check's job.
+2. **Replay protection did not survive a restart.** `EventSpine._seen_ids`
+   started empty at construction, so a byte-identical peer event was accepted
+   and ledgered twice after a reload — and the hash chain over the duplicate
+   verifies exactly as well as the original.
+3. **The frozen continuity corpus was an importable second Consequence Gate.**
+   Storing freeze-time artifacts under their real names made
+   `evolution/repair/continuity/policy/consequence_gate.py` importable via
+   namespace packages. CI check 3 caught it and was right; fixed by suffixing
+   every frozen artifact `.frozen` (Amendment 004), *not* by excluding the
+   directory from the check.
+4. **Amendment 002 missed two call sites** still comparing live bytes against
+   the freeze-time constant — invisible until the live gate diverged.
+5. **The amendment scope-guard pattern was wrong** — each guard compared
+   against the current pins, so the third amendment broke the first two.
+
+Two of my own claims were falsified in-session and the corrections are left
+visible rather than tidied away: that `authorized` was already enforced, and
+that the ledger was in-memory.
+
+## Verification at this update
+
+```
+python -m pytest                  1236 passed
+scripts/ci/*.py                   all three PASS, including check 3
+python -m governance.integrity    12 artifacts, all as authorised, 1 amendment
+python -m governance.gap_audit    14 checked, 0 stale, 0 anchor lost
+python verifier/v2/verify.py      PASS (V1-V5)
+python -m bridges.closure_verdict FALSELY_CLOSED (all 7 loops)
+```
+
+`CVO = 0`. `HARDENED = 0`. Unchanged, deliberately.
+
+## CANARY-0001 — a state change the founder should see
+
+Both **internal** blockers are closed, and neither by relaxing anything: the
+0.70 floor and the sealed 0.55 prediction are both unchanged and simply no
+longer compared to each other. The Gate now admits the **consequence-inert
+rehearsal**. That is not authorisation: `authorized_by` is `None` with no code
+path that sets it, `proves_external_reality` returns a literal `False`, and the
+rehearsal target must carry a `rehearsal:` prefix.
+
+Remaining blockers are founder-reserved or external. Run
+`python -m graduation.packet` for the one-screen decision.
+
+---
+
+---
+
+## 1. Opening instruction for the next session (original, unchanged)
 
 Paste this first, then the founder ruling reproduced in §6.
 

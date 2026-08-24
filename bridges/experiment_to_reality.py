@@ -231,6 +231,13 @@ def run(spec: ExperimentSpec, *, gate, passports, actor: str,
         target=target,
         consequence_class=passport.get("consequence_class") or "internal_write",
         evidence_confidence=0.9,
+        # Passed through, never invented. `None` reaches the witness as
+        # UNRECORDED and the calibration join skips the action as *absent*
+        # rather than scoring it — the distinction CONTRADICTION-0003 insisted
+        # on. Before 2026-08-24 this line did not exist, so no committing path
+        # ever wrote a forecast and `predicted_versus_realized` gated on a
+        # field nothing populated.
+        predicted_success_probability=compiled.predicted_success_probability,
         evidence_refs=[f"experiment:{compiled.experiment_id}"],
         estimated_cost_usd=granted,
         requested_capability=compiled.required_capabilities[0],

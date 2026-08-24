@@ -92,10 +92,14 @@ unmodified `main`. Fixed by giving all three views one shared discriminator
 rather than renaming the Gate's records — those are already on disk in existing
 chains, and changing what a historical record is called rewrites what it meant.
 
-## Adoption: 0 of 6
+## Adoption, and the migration backlog
 
-**The runtime exists and nothing uses it.** Six modules still construct their
-own in-memory ledger:
+**Adopted.** `runtime/session.py` is a composition root that boots and does real
+work: `python -m runtime <state_dir> --rehearse` runs a full Bridge A traversal
+across three organs over the durable ledger, and a second process reads the four
+events, their causal ancestry and the verified chain back out.
+
+**Still open: six modules build their own in-memory ledger.**
 
 ```
 bridges/closure_verdict.py        bridges/venture_to_experiment.py
@@ -103,20 +107,23 @@ bridges/experiment_to_reality.py  closure/advantage_registry.py
 bridges/signal_to_venture.py      closure/commercial_registry.py
 ```
 
-`closure/kernel_registry.py` does boot the runtime — inside the `runtime`
-closures, which is the module being *exercised*, not a caller having *adopted*
-it. It is excluded from both columns by name, because counting a module's own
-verification as its adoption would inflate the number using the very test
-written to measure it.
-
-This is the same state `identity/pki/` was in the day before Bridge A adopted
-it, and it is recorded the same way — counted by
-`test_runtime_adoption_is_counted_not_asserted`, which fails in both directions
-so that migrating an entry point forces the count and the recompute to move
+That count is the migration backlog and it is pinned by
+`test_the_migration_backlog_is_counted_not_asserted`, which fails in both
+directions so migrating a module forces the count and the recompute to move
 together.
 
-"A durable runtime exists" is not "the Alpha bottleneck is closed". Migration is
-the next step, and it is mechanical and independently testable per entry point.
+The probe has already been re-pointed once, for exactly the reason
+`_asymmetric_identity_is_only_one_edge_deep` was: its first version asked "does
+anything boot?", `session.py` answered yes within hours of the runtime existing,
+and a check that can never fail again has stopped measuring anything.
+
+`closure/kernel_registry.py` also boots — inside the `runtime` closures, which
+is the module being *exercised*, not a caller having *adopted* it. Excluded from
+both columns by name, because counting a module's own verification as its
+adoption would inflate the number using the very test written to measure it.
+
+"A durable runtime exists" is still not "the Alpha bottleneck is closed". Six
+migrations remain, each mechanical and independently testable.
 
 ## Not ported: WP-04's Postgres backend
 

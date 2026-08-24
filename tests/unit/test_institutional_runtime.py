@@ -348,11 +348,12 @@ def test_booting_twice_resumes_one_chain_rather_than_starting_two(state_dir):
 
 
 # ================================================================ adoption, counted
-#: Entry points that still construct their own in-memory ledger instead of
-#: booting. Recorded, not aspirational: the runtime EXISTS as of 2026-08-24 and
-#: is adopted by NOTHING, which is exactly the state `identity/pki/` was in the
-#: day before Bridge A started using it.
-RECORDED_ADOPTION = 0
+#: Modules that still construct their own in-memory ledger instead of booting.
+#: This is the migration backlog, and it is the number that still means
+#: something: `runtime/session.py` adopted the runtime the same day it was
+#: built, so "does anything boot?" stopped measuring anything within hours.
+#: What is still open is that six modules do not.
+RECORDED_UNMIGRATED = 6
 
 #: `closure/` is the verification harness — `kernel_registry.py` boots the
 #: runtime inside the `runtime` closures, which is the module being *exercised*,
@@ -365,18 +366,20 @@ RECORDED_ADOPTION = 0
 VERIFICATION_HARNESS = ("closure/kernel_registry.py",)
 
 
-def test_runtime_adoption_is_counted_not_asserted():
+def test_the_migration_backlog_is_counted_not_asserted():
     """Building a thing is not using it, and only one of those is progress.
 
-    This mirrors `_asymmetric_identity_is_only_one_edge_deep` deliberately. The
-    lesson that probe encoded — a check that can never fail again has stopped
-    measuring anything — applies with full force here, because "a durable
-    runtime exists" is precisely the sentence someone could quote to mean the
-    Alpha bottleneck is closed. It is not. Nothing boots through it yet.
+    This mirrors `_asymmetric_identity_is_only_one_edge_deep` deliberately, and
+    it has already been re-pointed once for the same reason that probe was:
+    the first version asked "does anything boot?", `runtime/session.py` answered
+    yes within hours, and a check that can never fail again has stopped
+    measuring anything. So it now counts what is measurably still open — the
+    six modules that still build their own in-memory ledger — rather than the
+    question that has been settled.
 
-    Fails in BOTH directions on purpose. When an entry point is migrated this
-    test breaks, and whoever migrated it updates the count and the recompute in
-    the same change — the procedure #25, #26, #30 and #48 already follow.
+    Fails in BOTH directions on purpose. Migrating a module breaks this test,
+    and whoever migrates it updates the count and the recompute in the same
+    change, which is the procedure #25, #26, #30 and #48 already follow.
     """
     import os
 
@@ -390,7 +393,9 @@ def test_runtime_adoption_is_counted_not_asserted():
             if not name.endswith(".py"):
                 continue
             rel = os.path.relpath(os.path.join(dirpath, name), root)
-            if rel.startswith(("runtime/", "provenance/ledger.py")):
+            # `runtime/__init__.py` defines boot and `provenance/ledger.py`
+            # defines the ledger; neither can be a caller of itself.
+            if rel in ("runtime/__init__.py", "provenance/ledger.py"):
                 continue
             if rel in VERIFICATION_HARNESS:
                 continue
@@ -401,14 +406,14 @@ def test_runtime_adoption_is_counted_not_asserted():
             if "InstitutionalRuntime.boot" in source:
                 boots.append(rel)
 
-    assert len(boots) == RECORDED_ADOPTION, (
-        f"runtime adoption changed: {len(boots)} entry points boot through it "
-        f"({boots}), the recorded count is {RECORDED_ADOPTION}. Update "
-        f"RECORDED_ADOPTION and docs/INFINITE_GOAL_CHASE_RECOMPUTE together.")
-    assert own_ledger, (
-        "if nothing constructs its own ledger any more, adoption is complete "
-        "and this probe should be retired the way #25/#26/#30/#48 were — "
-        "reported stale, register corrected in the same change")
+    assert boots, (
+        "nothing boots the runtime; it would be built-and-unused, the state "
+        "identity/pki/ was in before Bridge A adopted it")
+    assert len(own_ledger) == RECORDED_UNMIGRATED, (
+        f"the migration backlog changed: {len(own_ledger)} modules still build "
+        f"their own ledger ({sorted(own_ledger)}), the recorded count is "
+        f"{RECORDED_UNMIGRATED}. Update RECORDED_UNMIGRATED and "
+        f"docs/INFINITE_GOAL_CHASE_RECOMPUTE together.")
 
 
 # ============================================================== no external reach

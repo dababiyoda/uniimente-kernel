@@ -7,16 +7,29 @@
 > boot again from the same directory, find the witness, chain and inbox intact.
 > `tests/unit/test_institutional_runtime.py`, 18 tests.
 >
-> **This does not close the Alpha bottleneck, and §3.1 below is left standing
-> rather than rewritten.** Adoption is **0 of 6**: every bridge and registry
-> still constructs its own in-memory ledger. Building a durable runtime and
-> booting through one are different facts, and only the second is progress —
-> the same distinction `identity/pki/` was held to a day earlier. Counted by
-> `test_runtime_adoption_is_counted_not_asserted`, which fails in both
+> **It is adopted, not merely built.** `runtime/session.py` is a composition
+> root: `python -m runtime <dir> --rehearse` runs a full Bridge A traversal
+> across three organs over the durable ledger, and a second process reads the
+> four events, their causal ancestry and the verified chain back out. Building a
+> durable runtime and booting through one are different facts and only the
+> second is progress — the distinction `identity/pki/` was held to a day
+> earlier — so the second was done in the same change.
+>
+> **This still does not close the Alpha bottleneck, and §3.1 below is left
+> standing rather than rewritten.** Six modules still construct their own
+> in-memory ledger:
+> `bridges/{closure_verdict,experiment_to_reality,signal_to_venture,venture_to_experiment}.py`,
+> `closure/{advantage_registry,commercial_registry}.py`. That backlog is pinned
+> by `test_the_migration_backlog_is_counted_not_asserted`, which fails in both
 > directions so the count and this document move together.
 >
+> The probe was re-pointed once already, for the reason
+> `_asymmetric_identity_is_only_one_edge_deep` was: it first asked "does
+> anything boot?", `session.py` answered yes within hours, and a check that can
+> never fail again has stopped measuring anything.
+>
 > **The bottleneck is now migration**, not construction: mechanical,
-> independently testable per entry point, and unblocked.
+> independently testable per module, and unblocked.
 >
 > Composing the runtime surfaced three defects, none reachable while the gate
 > and spine sat on separate in-memory ledgers, each demonstrated before it was

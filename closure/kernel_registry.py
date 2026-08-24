@@ -428,7 +428,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_technical():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=2)
+        lic = auth.issue("agent-1", t, level=2, authorized_by="Alfonso Lopez")
         auth.promote(lic.license_id, _full_evidence())
         return auth.level_of("agent-1", t) == 3, "issue -> promote -> level_of reads back exactly"
 
@@ -436,10 +436,10 @@ def build_registry() -> ClosureRegistry:
         auth, t = _aut()
         a9_refused = False
         try:
-            auth.issue("agent-1", t, level=9)
+            auth.issue("agent-1", t, level=9, authorized_by="Alfonso Lopez")
         except ValueError:
             a9_refused = True
-        lic = auth.issue("agent-2", t, level=1)
+        lic = auth.issue("agent-2", t, level=1, authorized_by="Alfonso Lopez")
         weak = False
         try:
             auth.promote(lic.license_id, _full_evidence(missing_outcome_records=1))
@@ -450,7 +450,7 @@ def build_registry() -> ClosureRegistry:
 
     def autonomy_evidence():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=1)
+        lic = auth.issue("agent-1", t, level=1, authorized_by="Alfonso Lopez")
         auth.promote(lic.license_id, _full_evidence())
         auth.regress(lic.license_id, failure_class="sloppy", detail="late records")
         types = [r.payload["type"] for r in auth.ledger.by_type("event")]
@@ -461,14 +461,14 @@ def build_registry() -> ClosureRegistry:
     def autonomy_economic():
         from autonomy.levels import AutonomyTuple
         auth, t = _aut()
-        auth.issue("agent-1", t, level=5)
+        auth.issue("agent-1", t, level=5, authorized_by="Alfonso Lopez")
         other = AutonomyTuple(**{**t.__dict__, "action": "delete"})
         return auth.level_of("agent-1", t) == 5 and auth.level_of("agent-1", other) == 0, \
             "autonomy is exact per 9-dimension tuple; no broad personality grants to misuse"
 
     def autonomy_regenerative():
         auth, t = _aut()
-        lic = auth.issue("agent-1", t, level=7)
+        lic = auth.issue("agent-1", t, level=7, authorized_by="Alfonso Lopez")
         auth.regress(lic.license_id, failure_class="harm", detail="unforeseen risk")
         immediate = lic.level == 0 and not lic.active
         try:

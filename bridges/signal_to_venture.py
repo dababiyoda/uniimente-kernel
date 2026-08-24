@@ -220,15 +220,41 @@ def run(wire_packet: dict, wire_assessment: dict, *,
         causal_parent=events[-1]))
 
     # --- leg 3: the second organ, same discipline ----------------------------
+    #
+    # It said "same discipline" for a day while not being that. Leg 2 passed
+    # `transport_identity=peer_organ`, read off a chain-validated certificate;
+    # this leg passed the literal `"wealthmachine"`. The adapter's own refusal
+    # message states the rule — "identity comes from verified transport, never
+    # the payload" — and a constant in this file is not the payload, but it is
+    # not verified transport either. Nothing had authenticated WealthMachine,
+    # and its assessment is what Bridge B and every downstream decision read.
+    #
+    # Adopted 2026-08-24, mirroring leg 1: `bridge_wealthmachine` was already a
+    # declared service in `identity/service-identities.yaml` and `identity/mesh.py`
+    # could already authenticate it. The edge was adoptable the whole time; the
+    # comment claiming it was already adopted is what hid that.
+    try:
+        assessment_headers = transport.verify_mutual_identity(
+            mesh, "bridge_wealthmachine", "kernel_gateway",
+            schema_version=WIRE_SCHEMA_VERSION,
+            idempotency_key=str(packet_id or ""))
+    except (transport.BridgeSecurityError, IdentityError,
+            ValueError, KeyError) as exc:
+        return BridgeRun(completed=False, event_ids=tuple(events),
+                         halted_at=Halt.TRANSPORT_REFUSED, signal=signal,
+                         reason=f"transport refused the assessment peer: {exc}")
+
+    assessment_organ = assessment_headers["identity"]
+
     events.append(_ingest_peer_fact(
         spine, event_type="bridge.venture_assessment_received",
         origin=WEALTHMACHINE,
-        payload={"assessment_of": packet_id},
+        payload={"assessment_of": packet_id, "verified": True},
         causal_parent=events[-1]))
 
     try:
         assessment = assessment_adapter.adapt(
-            wire_assessment, transport_identity="wealthmachine")
+            wire_assessment, transport_identity=assessment_organ)
     except assessment_adapter.AdapterError as exc:
         return BridgeRun(completed=False, event_ids=tuple(events),
                          halted_at=Halt.ASSESSMENT_REFUSED, signal=signal,

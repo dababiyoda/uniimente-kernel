@@ -322,12 +322,93 @@ def _asymmetric_identity_is_only_one_edge_deep() -> tuple[bool, str]:
                 break
         (adopted if uses else missing).append(relative)
 
-    if not missing:
+    unauthenticated_hops = _declared_hops_without_a_handshake()
+
+    if not missing and not unauthenticated_hops:
         return False, (f"every declared trust edge authenticates its peer "
-                       f"({len(adopted)}/{len(_TRUST_EDGES)})")
-    return True, (f"{len(adopted)}/{len(_TRUST_EDGES)} declared trust edges "
-                  f"authenticate their peer; still unauthenticated: "
-                  f"{sorted(missing)}")
+                       f"({len(adopted)}/{len(_TRUST_EDGES)}), and every "
+                       f"declared hop inside them handshakes")
+    detail = (f"{len(adopted)}/{len(_TRUST_EDGES)} declared trust edges "
+              f"authenticate their peer")
+    if missing:
+        detail += f"; still unauthenticated: {sorted(missing)}"
+    if unauthenticated_hops:
+        detail += (f"; declared hops with no handshake: "
+                   f"{sorted(unauthenticated_hops)}")
+    return True, detail
+
+
+#: Peer hops that must each run their own handshake, as
+#: `path -> ((client_service, server_service), ...)`.
+#:
+#: WHY THIS EXISTS, and it is the second time this probe has had to be made
+#: finer. The check above asks whether a FILE imports `identity.mesh`. On
+#: 2026-08-24 that reported `bridges/signal_to_venture.py` as adopted while its
+#: leg 3 handed the adapter the literal string `"wealthmachine"` — the module
+#: imported the mesh, authenticated its first peer, and trusted its second by
+#: assumption. A file-level check cannot see that, because a module with two
+#: boundaries and one handshake imports the mesh exactly as hard as a module
+#: with two handshakes.
+#:
+#: So the unit moved from the file to the hop. Enumerated, not discovered, for
+#: the same reason `_TRUST_EDGES` is: which boundaries need a handshake is a
+#: judgement about the trust model.
+#:
+#: An empty tuple means "this file crosses a boundary, but whose peers should
+#: hold declared workload identities has not been settled". That is a real
+#: state and not a pass: `embassy/gate.py` admits foreign MCP/A2A agents and
+#: `bridges/reality_to_learning.py` receives an outside observer's claim —
+#: neither peer is a declared internal service, so the internal mesh is not
+#: the mechanism, and saying so is more honest than enumerating hops that
+#: cannot exist. Settling those is open work, tracked by the file-level count
+#: above.
+_TRUST_HOPS: dict[str, tuple[tuple[str, str], ...]] = {
+    "bridges/signal_to_venture.py": (
+        ("bridge_daleobanks", "kernel_gateway"),
+        ("bridge_wealthmachine", "kernel_gateway"),
+    ),
+    "bridges/venture_to_experiment.py": (),
+    "bridges/experiment_to_reality.py": (),
+    "bridges/reality_to_learning.py": (),
+    "bridges/workflow_to_capability.py": (),
+    "embassy/gate.py": (),
+}
+
+
+def _declared_hops_without_a_handshake() -> list[str]:
+    """Declared hops with no matching `verify_mutual_identity` call."""
+    missing: list[str] = []
+    for relative, hops in _TRUST_HOPS.items():
+        if not hops:
+            continue
+        path = os.path.join(KERNEL_ROOT, relative)
+        if not os.path.isfile(path):
+            missing.extend(f"{relative}:{c}->{s} (file absent)" for c, s in hops)
+            continue
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            try:
+                tree = ast.parse(fh.read())
+            except SyntaxError:
+                missing.extend(f"{relative}:{c}->{s} (unparseable)" for c, s in hops)
+                continue
+        handshakes: set[tuple[str, str]] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            name = func.attr if isinstance(func, ast.Attribute) else getattr(
+                func, "id", None)
+            if name != "verify_mutual_identity":
+                continue
+            # (mesh, client, server, ...) — the two service names are the
+            # positional arguments that identify the hop.
+            names = [a.value for a in node.args
+                     if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            if len(names) >= 2:
+                handshakes.add((names[0], names[1]))
+        missing.extend(f"{relative}:{c}->{s}" for c, s in hops
+                       if (c, s) not in handshakes)
+    return missing
 
 
 def _routing_decision_is_untyped() -> tuple[bool, str]:

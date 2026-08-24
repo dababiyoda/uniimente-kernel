@@ -86,6 +86,148 @@ def test_a_rehearsal_claims_nothing_about_the_outside_world(state_dir):
     assert traversal.proves_external_reality is False
 
 
+# ============================================== the whole chain, one durable ledger
+def _branch(kind):
+    from evolution.strategy_tree import StrategyBranch
+
+    return StrategyBranch(
+        kind=kind, title=f"{kind} branch",
+        governing_assumption="the narrowing holds under selection",
+        mechanism="experiment.run", required_capabilities=["experiment.run"],
+        cost_usd=0.0, founder_attention_minutes=10, time_to_proof_days=1,
+        authority_requirements=["kernel.grant"], irreversible_downside="none",
+        expected_result="the metric clears its threshold",
+        strongest_counterargument="the metric may be measuring the wrong thing",
+        cheapest_falsification_test="re-run against the frozen corpus",
+        kill_condition="measured exceeds 100")
+
+
+def _analysis():
+    """The caller's analysis, built here because it is the caller's to build.
+
+    `Session` deliberately has no method that produces a strategy tree. A
+    composition root that generated its own would be inventing the
+    institutional judgement Bridge B exists to refuse to proceed without.
+    """
+    from evolution.spider_web import (COMPLETENESS_REQUIREMENTS, EIGHT_SIDES,
+                                      SpiderWebAudit)
+    from evolution.strategy_tree import BRANCH_KINDS, StrategyTree
+
+    tree = StrategyTree(bottleneck="no verified outcome exists",
+                        objective="resolve one decisive unknown")
+    for kind in BRANCH_KINDS:
+        tree.add(_branch(kind))
+    audit = SpiderWebAudit(subject="the selected branch")
+    for side in EIGHT_SIDES:
+        audit.set_side(side, True, notes="probe")
+    for requirement in COMPLETENESS_REQUIREMENTS:
+        audit.set_completeness(requirement, True)
+    return tree, audit
+
+
+def _chain(session):
+    """A -> B -> C, each fed by the last, over one durable ledger."""
+    tree, audit = _analysis()
+    a = session.rehearse()
+    b = session.traverse_venture_to_experiment(
+        a.run.assessment, tree, audit,
+        decisive_unknown="does the pathway hold end to end",
+        selected_branch_id=tree.branches[0].branch_id,
+        selection_reason="cheapest falsification per hour of founder attention",
+        metric="verified_outcomes", baseline=0.0, threshold=1.0, direction="gte")
+    c = session.traverse_experiment_to_reality(b.run.experiment,
+                                               measure=lambda spec: 1.0)
+    return a, b, c
+
+
+def test_the_whole_bridge_chain_runs_over_one_durable_ledger(state_dir):
+    """A's output is B's input is C's input, and all of it lands in one chain.
+
+    Three adjacent traversals into three separate in-memory ledgers is what this
+    replaces. The evidence of the whole pathway now accumulates in one place
+    that outlives the process.
+    """
+    session = Session.open(state_dir)
+    a, b, c = _chain(session)
+
+    assert (a.completed, b.completed, c.completed) == (True, True, True), \
+        (a.reason, b.reason, c.reason)
+    assert (a.bridge, b.bridge, c.bridge) == ("A", "B", "C")
+    assert c.run.resolved is True
+    assert c.run.gate_state == "recorded"
+    assert c.records_after > a.records_before
+    ok, detail = session.runtime.ledger.verify_chain()
+    assert ok, detail
+
+
+def test_the_whole_chain_is_still_there_after_a_restart(state_dir):
+    """The point of doing it over a runtime rather than three ledgers."""
+    first = Session.open(state_dir)
+    a, b, c = _chain(first)
+    depth = len(first.runtime.ledger.records)
+    receipt = c.run.receipt_hash
+    del first, a, b, c
+
+    second = Session.open(state_dir)
+
+    assert second.runtime.report.resumed is True
+    assert len(second.runtime.ledger.records) == depth + 1   # +1 boot record
+    assert second.runtime.ledger.find(receipt) is not None
+    assert second.runtime.ledger.verify_chain()[0]
+
+
+def test_bridge_b_and_c_records_do_not_claim_a_causal_depth(state_dir):
+    """Only Bridge A exposes an ancestry walker.
+
+    `causal_depth` is None for B and C rather than 0 — absent and empty are
+    different findings, and a 0 would read as "walked the ancestry and found
+    none", which is not what happened.
+    """
+    session = Session.open(state_dir)
+    a, b, c = _chain(session)
+    assert a.causal_depth == 4
+    assert b.causal_depth is None and c.causal_depth is None
+
+
+def test_a_traversal_record_keeps_the_bridge_s_own_result(state_dir):
+    """No information lost in the wrapper.
+
+    Each bridge reports things the summary does not — B its rejected branches,
+    C its granted-versus-requested budget. A record that flattened them would be
+    the silent loss `adapters/` forbids by name, so the native run is carried
+    whole and the summary states only what it *adds*.
+    """
+    session = Session.open(state_dir)
+    a, b, c = _chain(session)
+
+    assert b.run.rejected_branches, "B's preserved losers survive the wrapper"
+    assert b.run.audit_verdict == "COMPLETE"
+    assert c.run.requested_budget_usd is not None
+    assert c.run.measured == 1.0 and c.run.threshold == 1.0
+    assert a.run.signal is not None
+
+
+def test_the_session_mints_no_grant_for_bridge_c(state_dir):
+    """Bridge C never funds itself, and neither does its composition root."""
+    import inspect
+
+    import runtime.session as module
+    assert "issue_single_action" not in inspect.getsource(module)
+
+
+def test_bridge_c_gets_a_fresh_identity_per_session(state_dir):
+    """A caller holding an actor id across a restart must not get to reuse it."""
+    first = Session.open(state_dir)
+    a, b, _ = _chain(first)
+    del first
+
+    second = Session.open(state_dir)
+    stale = "spiffe://uniimente.internal/agent/does-not-exist"
+    record = second.traverse_experiment_to_reality(
+        b.run.experiment, measure=lambda spec: 1.0, actor=stale)
+    assert record.completed is False
+
+
 # =============================================================== what a session holds
 def test_the_identity_mesh_is_re_minted_per_session(state_dir):
     """Same rule as passports, one layer up: workload certificates are

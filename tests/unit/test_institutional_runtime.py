@@ -438,20 +438,43 @@ def test_the_migration_backlog_is_counted_not_asserted():
         f"in VERIFICATION_HARNESS instead, say why there rather than here.")
 
 
-def test_one_bridge_of_three_is_driven_over_a_durable_ledger():
+def test_every_bridge_that_takes_a_ledger_has_a_composition_root():
     """Breadth, counted — the `_asymmetric_identity_is_only_one_edge_deep` shape.
 
-    Bridges A, B and C all accept an injected ledger. A composition root exists
-    for one of them. Asserting "a composition root exists" would be true and
-    would stop being informative immediately, so this counts which bridges it
-    can actually drive.
+    Bridges A, B and C each accept an injected ledger and each fall back to an
+    ephemeral one. All three now have a composition root, so the *count* has
+    stopped being the interesting number and the probe changes shape rather
+    than being retired: it now asserts the correspondence, so adding a fourth
+    bridge that takes a ledger without giving it a root fails here.
+
+    That is the third re-pointing of this probe in one day. Each time for the
+    same reason, which is worth saying plainly: a check that can never fail
+    again has stopped measuring anything.
     """
+    import os
+
     from runtime.session import Session
 
-    driven = [name for name in dir(Session) if name.startswith("traverse_")]
-    assert driven == ["traverse_signal_to_venture"], (
-        f"the session drives {driven}; update this count and the recompute "
-        f"together when Bridge B or C gets a composition root")
+    driven = {name.removeprefix("traverse_")
+              for name in dir(Session) if name.startswith("traverse_")}
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    takes_a_ledger = set()
+    for name in sorted(os.listdir(os.path.join(root, "bridges"))):
+        if not name.endswith(".py") or name.startswith("_"):
+            continue
+        module = name[:-3]
+        if module in ("closure_verdict",):        # see VERIFICATION_HARNESS
+            continue
+        source = open(os.path.join(root, "bridges", name), encoding="utf-8").read()
+        if "ledger: EvidenceLedger | None = None" in source:
+            takes_a_ledger.add(module)
+
+    assert takes_a_ledger, "no bridge takes an injectable ledger; probe is lost"
+    assert takes_a_ledger <= driven, (
+        f"these bridges accept a durable ledger but no composition root hands "
+        f"them one: {sorted(takes_a_ledger - driven)}. Add a Session.traverse_* "
+        f"for each, or say in VERIFICATION_HARNESS why it should not have one.")
 
 
 # ============================================================== no external reach

@@ -54,15 +54,30 @@ FIXTURE_ASSESSMENT = os.path.join(_FIXTURES, "wire_venture_assessment.json")
 
 @dataclass(frozen=True)
 class TraversalRecord:
-    """What one traversal added, reported against the chain rather than claimed."""
+    """What one traversal added, reported against the chain rather than claimed.
 
+    Carries the bridge's **own run object** in `run`, unwrapped and unflattened.
+    `BridgeRun`, `VentureRun` and `ExperimentRun` each report things this
+    summary does not — rejected branches, granted-versus-requested budget,
+    whether a kill condition fired — and a wrapper that dropped them would be
+    the silent information loss `adapters/` forbids by name. What is *added*
+    here is stated instead: chain growth, causal depth, and the reality flag.
+    """
+
+    #: "A", "B" or "C" — which bridge produced `run`.
+    bridge: str
     completed: bool
     halted_at: str | None
     reason: str
     event_ids: tuple[str, ...]
-    causal_depth: int
     records_before: int
     records_after: int
+    #: The bridge's own result, complete. Nothing here is a re-derivation of it.
+    run: object
+    #: Ancestry depth, where the bridge exposes a walker. Only Bridge A does, so
+    #: this is None for B and C rather than a zero that would read as "no
+    #: ancestry" — absent and empty are different findings.
+    causal_depth: int | None = None
     #: Always False. A fixture traversal is a rehearsal; nothing external moved.
     proves_external_reality: bool = False
 
@@ -96,14 +111,77 @@ class Session:
                      ledger=self.runtime.ledger, mesh=self.mesh,
                      resolver_answers=answers or {"governing_bottleneck": "buyer access"},
                      resolved_by=KERNEL)
+        return self._record("A", result, before,
+                            causal_depth=len(causal_chain(result, self.runtime.ledger)))
+
+    def traverse_venture_to_experiment(self, assessment: dict, tree, audit, *,
+                                       decisive_unknown: str,
+                                       selected_branch_id: str,
+                                       selection_reason: str,
+                                       metric: str, baseline: float,
+                                       threshold: float, direction: str,
+                                       **kw) -> TraversalRecord:
+        """Bridge B over this session's durable ledger.
+
+        `tree` and `audit` are the **caller's analysis** and stay the caller's.
+        A session that generated its own strategy tree would be inventing the
+        institutional judgement the bridge exists to refuse to proceed without —
+        and the measurement parameters are the caller's for the same reason the
+        bridge states: nothing can derive a threshold from an assessment, and
+        inventing one is the fabricated field `adapters/` forbids.
+        """
+        from bridges.venture_to_experiment import run
+
+        before = len(self.runtime.ledger.records)
+        result = run(assessment, tree, audit,
+                     decisive_unknown=decisive_unknown,
+                     selected_branch_id=selected_branch_id,
+                     selection_reason=selection_reason,
+                     metric=metric, baseline=baseline, threshold=threshold,
+                     direction=direction, ledger=self.runtime.ledger, **kw)
+        return self._record("B", result, before)
+
+    def traverse_experiment_to_reality(self, spec, *, measure, actor=None,
+                                       **kw) -> TraversalRecord:
+        """Bridge C over this session's durable ledger, gate and passports.
+
+        `actor` defaults to a passport minted from *this session's* registry,
+        which is the point: after a restart there is no actor until one is
+        issued again, so a caller cannot accidentally carry a stale identity
+        across a process boundary by holding on to an id.
+
+        `measure` is the caller's instrument, unchanged. This method mints no
+        grant — Bridge C never funds itself, and neither does its composition
+        root.
+        """
+        from bridges.experiment_to_reality import run
+
+        if actor is None:
+            actor = self.runtime.passports.issue(
+                kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
+                legal_principal="alfonso_lopez",
+                declared_capabilities=list(spec.required_capabilities),
+                budget_ceiling_usd=5.0,
+                consequence_class="internal_write").passport_id
+
+        before = len(self.runtime.ledger.records)
+        result = run(spec, gate=self.runtime.gate,
+                     passports=self.runtime.passports, actor=actor,
+                     measure=measure, ledger=self.runtime.ledger, **kw)
+        return self._record("C", result, before)
+
+    def _record(self, bridge: str, result, before: int, *,
+                causal_depth: int | None = None) -> TraversalRecord:
         return TraversalRecord(
+            bridge=bridge,
             completed=result.completed,
             halted_at=result.halted_at.name if result.halted_at else None,
             reason=result.reason,
             event_ids=tuple(result.event_ids),
-            causal_depth=len(causal_chain(result, self.runtime.ledger)),
             records_before=before,
-            records_after=len(self.runtime.ledger.records))
+            records_after=len(self.runtime.ledger.records),
+            run=result,
+            causal_depth=causal_depth)
 
     def rehearse(self) -> TraversalRecord:
         """One traversal on the committed wire fixtures. Consequence-inert."""

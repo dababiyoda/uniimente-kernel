@@ -15,11 +15,19 @@
 > second is progress — the distinction `identity/pki/` was held to a day
 > earlier — so the second was done in the same change.
 >
-> **This still does not close the Alpha bottleneck, and §3.1 below is left
-> standing rather than rewritten.** Bridges A, B and C all fall back to an
-> ephemeral ledger when nobody injects one, and a composition root exists for
-> **one of the three**. Pinned by
-> `test_one_bridge_of_three_is_driven_over_a_durable_ledger`.
+> **All three bridges now have a composition root**, and `A → B → C` runs as
+> one pathway into one durable chain: A's assessment feeds B, B's compiled
+> experiment feeds C, the Gate records a receipt, and a second process finds the
+> receipt and the verified chain intact. Asserted by
+> `test_the_whole_chain_is_still_there_after_a_restart`, and the correspondence
+> — not a count — is pinned by
+> `test_every_bridge_that_takes_a_ledger_has_a_composition_root`.
+>
+> **§3.1 below is still left standing rather than rewritten**, and the Alpha
+> bottleneck is still not closed: what exists is one internally-running pathway
+> whose evidence accumulates. `clean_verified_outcomes` is still 0, the
+> whole-body verdict is still FALSELY_CLOSED, and a fixture traversal is a
+> rehearsal — `proves_external_reality` is a literal `False`.
 >
 > **Correction to this very update, kept visible.** Its first version said the
 > backlog was *six modules* and called the work "mechanical". Checking each

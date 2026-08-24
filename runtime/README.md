@@ -99,18 +99,28 @@ work: `python -m runtime <state_dir> --rehearse` runs a full Bridge A traversal
 across three organs over the durable ledger, and a second process reads the four
 events, their causal ancestry and the verified chain back out.
 
-**Still open: three bridge libraries, one composition root.**
+**All three bridges now have a composition root.**
 
 ```
-bridges/signal_to_venture.py       driven by Session.traverse_signal_to_venture
-bridges/venture_to_experiment.py   no composition root
-bridges/experiment_to_reality.py   no composition root
+bridges/signal_to_venture.py       Session.traverse_signal_to_venture
+bridges/venture_to_experiment.py   Session.traverse_venture_to_experiment
+bridges/experiment_to_reality.py   Session.traverse_experiment_to_reality
 ```
 
-Each falls back to an ephemeral ledger when nobody injects one. They are
-*libraries*, so the fix is not an edit to them — it is a composition root that
-hands them a durable ledger, which is what `session.py` does for Bridge A.
-Counted by `test_one_bridge_of_three_is_driven_over_a_durable_ledger`.
+Each still falls back to an ephemeral ledger when nobody injects one, which is
+correct for a library; what changed is that something injects a durable one.
+A → B → C now runs as one pathway into one chain — A's assessment feeds B, B's
+compiled experiment feeds C — and the whole thing survives a restart with the
+Gate's receipt still findable.
+
+`test_every_bridge_that_takes_a_ledger_has_a_composition_root` asserts the
+correspondence rather than a count, so a fourth bridge that accepts a ledger
+without getting a root fails there.
+
+The session deliberately has **no method that produces a strategy tree or an
+audit**. Those are the caller's analysis, and a composition root that generated
+its own would be inventing the institutional judgement Bridge B exists to refuse
+to proceed without.
 
 ### A correction, kept visible
 

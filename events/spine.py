@@ -73,9 +73,9 @@ class EventSpine:
         self.ledger = ledger
         self._subscribers: dict[str, list] = {}      # type prefix -> [callables]
         #: Transactional outbox, REBUILT from the ledger for the same reason the
-        #: inbox below is. Found 2026-08-23 while composing `runtime/`, by the
-        #: probe that the inbox fix suggested: if one in-process view of the
-        #: ledger was wrong, look at the others.
+        #: inbox below is. Found 2026-08-24 while composing `runtime/`, by the
+        #: probe the inbox fix suggested a day earlier: if one in-process view of
+        #: the ledger was wrong, look at the others.
         #:
         #: An outbox exists precisely so that a delivery survives the crash
         #: between deciding to send and sending. This one was a plain list, so a

@@ -91,8 +91,8 @@ evidence."*
 | — | Two confidences distinguishable in the durable record | ❌ | ✅ | `provenance/witness_v2.py` `CONFIDENCE_FIELDS`; `tests/unit/test_two_confidences.py` |
 | — | Live constitutional-integrity mechanism | ❌ | ✅ | `python -m governance.integrity` exit 0, 12 artifacts, 1 authorised amendment |
 | — | `no_silent_amendment` executable rather than prose | ❌ | ✅ | replayed chain refuses a forged or rewritten record; 16 tests |
-| 7 | Isolated workload identity adopted (kernel side) | 🟡 | 🟡→ | `_asymmetric_identity_is_not_adopted` closed; **1/6 trust edges** |
-| 26 | Mutual TLS called by something real | ❌ | 🟡 | `bridges/signal_to_venture.py` via `identity/mesh.py` |
+| 7 | Isolated workload identity adopted (kernel side) | 🟡 | 🟡→ | `_asymmetric_identity_is_not_adopted` closed; **1/6 trust edges, 2/2 declared hops** (leg 3 adopted 2026-08-24) |
+| 26 | Mutual TLS called by something real | ❌ | 🟡 | `bridges/signal_to_venture.py` via `identity/mesh.py`, on both peer boundaries |
 | — | Peer-repository transport parity | ❌ | 🟡 | DALEOBANKS PR #74, WMI PR #32 — proposed, unmerged |
 | — | Replay protection survives a restart | ❌ | ✅ | defect found and fixed; `tests/unit/test_restart_resume.py` |
 | 5 | Golden Kernel canonical authority root | 🟡 | 🟡 | unchanged; the Gate no longer self-grants externally, which narrows it |
@@ -114,7 +114,7 @@ evidence rather than against intent.
 | Auditable lineage | **done** | evidence ledger + causal memory + amendment chain |
 | Causal memory | **done** | `memory/causal.py`, exercised by Bridge A |
 | Automatic refusal / kill | **done** | Gate fails closed on 9 classes; shutdown policy enforceable |
-| Isolated workload identities *adopted* | **1/6** | Bridge A only. `venture_to_experiment`, `experiment_to_reality`, `reality_to_learning`, `workflow_to_capability`, `embassy/gate.py` still unauthenticated |
+| Isolated workload identities *adopted* | **1/6 files, 2/2 hops** | Bridge A only, and now on **both** its peer boundaries — leg 3 authenticated WealthMachine on 2026-08-24, having passed a literal until then. The other five files have no peer that is a declared internal service (see the correction under §4 item 2), so the file count is not a path to 6/6 |
 | No parallel constitutional authority | **near** | one Gate, one policy engine; DUP-1/DUP-2 (evolution loop, event spine) remain open per the Kimi reconciliation |
 | Cross-organ workflow | **partial** | Bridge A runs end to end on fixtures; SIMULATED by construction |
 | Peer-repository parity | **proposed** | two draft PRs; unmerged, so parity is not yet a fact |
@@ -184,6 +184,37 @@ moment it was checked.
    mechanism rather than writing a third one.
 2. **Widen identity adoption** from 1/6 to 6/6 trust edges. Mechanical now that
    `identity/mesh.py` exists; each edge is a small, independently testable change.
+
+   > **CORRECTED 2026-08-24. "Mechanical" and "6/6" were both wrong**, and the
+   > original wording is left standing above so the correction is legible.
+   >
+   > Examining the five remaining edges one at a time — rather than trusting the
+   > sentence — found that **none of them has a peer that is a declared internal
+   > service**. `bridges/reality_to_learning.py` receives an outside observer's
+   > claim; `embassy/gate.py` admits foreign MCP/A2A agents; `venture_to_experiment`,
+   > `experiment_to_reality` and `workflow_to_capability` have no peer hop at all,
+   > operating on data already inside the institution. The internal mesh is not
+   > the mechanism for any of them, so **6/6 is not reachable by mesh adoption**
+   > and the goal as written could never close. A gap that cannot close by the
+   > means named is mis-specified, not merely open.
+   >
+   > What the examination *did* find was a sixth hop nobody had counted.
+   > **Bridge A has two peer boundaries and only one authenticated.** Leg 3,
+   > commented "the second organ, same discipline", handed the adapter the
+   > literal string `"wealthmachine"` while leg 2 passed a certificate-derived
+   > organ. `bridge_wealthmachine` was already declared and the mesh could
+   > already authenticate it. Now fixed: Bridge A is 2/2 hops.
+   >
+   > **The file-level count stays 1/6 and deliberately did not move** —
+   > strengthening an already-counted file is not widening adoption. But the
+   > probe was over-reporting, because a file with two boundaries and one
+   > handshake imports the mesh exactly as hard as a file with two. The unit
+   > moved from the file to the hop (`_TRUST_HOPS`), which is the third time
+   > this probe has been sharpened for the same reason.
+   >
+   > **The real next question is not mechanical**: it is whether external peers
+   > — an outcome observer, a foreign agent — get an attestation mechanism at
+   > all, and what it is. That is a trust-model decision, not an adoption task.
 3. **Standing bounded mandate**, once state persists — one A5/A6 mandate that
    runs, refuses correctly, and is revocable.
 4. **Founder Cockpit** over a body that remembers.

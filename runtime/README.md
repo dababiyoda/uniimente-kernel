@@ -99,31 +99,47 @@ work: `python -m runtime <state_dir> --rehearse` runs a full Bridge A traversal
 across three organs over the durable ledger, and a second process reads the four
 events, their causal ancestry and the verified chain back out.
 
-**Still open: six modules build their own in-memory ledger.**
+**Still open: three bridge libraries, one composition root.**
 
 ```
-bridges/closure_verdict.py        bridges/venture_to_experiment.py
-bridges/experiment_to_reality.py  closure/advantage_registry.py
-bridges/signal_to_venture.py      closure/commercial_registry.py
+bridges/signal_to_venture.py       driven by Session.traverse_signal_to_venture
+bridges/venture_to_experiment.py   no composition root
+bridges/experiment_to_reality.py   no composition root
 ```
 
-That count is the migration backlog and it is pinned by
-`test_the_migration_backlog_is_counted_not_asserted`, which fails in both
-directions so migrating a module forces the count and the recompute to move
-together.
+Each falls back to an ephemeral ledger when nobody injects one. They are
+*libraries*, so the fix is not an edit to them — it is a composition root that
+hands them a durable ledger, which is what `session.py` does for Bridge A.
+Counted by `test_one_bridge_of_three_is_driven_over_a_durable_ledger`.
 
-The probe has already been re-pointed once, for exactly the reason
-`_asymmetric_identity_is_only_one_edge_deep` was: its first version asked "does
-anything boot?", `session.py` answered yes within hours of the runtime existing,
-and a check that can never fail again has stopped measuring anything.
+### A correction, kept visible
 
-`closure/kernel_registry.py` also boots — inside the `runtime` closures, which
-is the module being *exercised*, not a caller having *adopted* it. Excluded from
-both columns by name, because counting a module's own verification as its
-adoption would inflate the number using the very test written to measure it.
+The first version of this section said **six** modules and called the remaining
+work "mechanical and independently testable". Both were wrong, and checking each
+module individually is what showed it:
 
-"A durable runtime exists" is still not "the Alpha bottleneck is closed". Six
-migrations remain, each mechanical and independently testable.
+- `closure/{kernel,advantage,commercial}_registry.py` are the **verification
+  harness**. A closure check must be self-contained and deterministic; one that
+  read accumulated state would pass or fail depending on what happened earlier,
+  which is the opposite of a check. These must *not* migrate.
+- `bridges/closure_verdict.py` **runs the chain it then assesses**, deliberately
+  — its docstring records that an earlier version assessed an empty ledger and
+  printed OPEN, "which understates the finding in the flattering direction".
+  Pointing it at a state directory would make the whole-body verdict depend on
+  which directory you passed: a design change with a real trade-off, not a
+  migration.
+
+So the backlog was never six mechanical edits. It is three libraries needing two
+more composition roots, and the difference is exactly the kind of thing a tidy
+count hides.
+
+The adoption probe has now been re-pointed twice — once because its first
+version asked "does anything boot?" and `session.py` answered yes within hours,
+and again for the miscount above. Both for the reason
+`_asymmetric_identity_is_only_one_edge_deep` exists: a check that can never fail
+again has stopped measuring anything.
+
+"A durable runtime exists" is still not "the Alpha bottleneck is closed".
 
 ## Not ported: WP-04's Postgres backend
 

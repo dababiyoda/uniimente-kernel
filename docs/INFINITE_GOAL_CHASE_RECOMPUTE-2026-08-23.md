@@ -16,20 +16,24 @@
 > earlier — so the second was done in the same change.
 >
 > **This still does not close the Alpha bottleneck, and §3.1 below is left
-> standing rather than rewritten.** Six modules still construct their own
-> in-memory ledger:
-> `bridges/{closure_verdict,experiment_to_reality,signal_to_venture,venture_to_experiment}.py`,
-> `closure/{advantage_registry,commercial_registry}.py`. That backlog is pinned
-> by `test_the_migration_backlog_is_counted_not_asserted`, which fails in both
-> directions so the count and this document move together.
+> standing rather than rewritten.** Bridges A, B and C all fall back to an
+> ephemeral ledger when nobody injects one, and a composition root exists for
+> **one of the three**. Pinned by
+> `test_one_bridge_of_three_is_driven_over_a_durable_ledger`.
 >
-> The probe was re-pointed once already, for the reason
-> `_asymmetric_identity_is_only_one_edge_deep` was: it first asked "does
-> anything boot?", `session.py` answered yes within hours, and a check that can
-> never fail again has stopped measuring anything.
+> **Correction to this very update, kept visible.** Its first version said the
+> backlog was *six modules* and called the work "mechanical". Checking each
+> module individually showed both were wrong: `closure/{kernel,advantage,
+> commercial}_registry.py` are the verification harness and must *not* read
+> accumulated state, and `bridges/closure_verdict.py` deliberately runs the
+> chain it assesses — an earlier author already fixed the empty-ledger version
+> of it. The real backlog is three libraries needing two more composition roots,
+> which is smaller, different, and not mechanical. The adoption probe has been
+> re-pointed twice in one day, both times for the reason
+> `_asymmetric_identity_is_only_one_edge_deep` exists.
 >
-> **The bottleneck is now migration**, not construction: mechanical,
-> independently testable per module, and unblocked.
+> **The bottleneck is now composition roots for Bridges B and C**, and beyond
+> that §4 item 2 — widening identity adoption from 1/6 trust edges.
 >
 > Composing the runtime surfaced three defects, none reachable while the gate
 > and spine sat on separate in-memory ledgers, each demonstrated before it was

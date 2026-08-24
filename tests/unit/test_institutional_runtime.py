@@ -348,22 +348,43 @@ def test_booting_twice_resumes_one_chain_rather_than_starting_two(state_dir):
 
 
 # ================================================================ adoption, counted
-#: Modules that still construct their own in-memory ledger instead of booting.
-#: This is the migration backlog, and it is the number that still means
-#: something: `runtime/session.py` adopted the runtime the same day it was
-#: built, so "does anything boot?" stopped measuring anything within hours.
-#: What is still open is that six modules do not.
-RECORDED_UNMIGRATED = 6
+#: Bridge libraries that fall back to an ephemeral ledger when no caller
+#: injects one. These are the real backlog: they are libraries, so adoption
+#: happens at a composition root that hands them a durable ledger, and
+#: `runtime/session.py` does that for exactly one of the three.
+#:
+#: The first version of this constant said 6 and the README called the work
+#: "mechanical". Both were wrong, and checking each module individually is what
+#: showed it: two of the six are the closure harness, one is a deliberately
+#: self-contained command, and the three that remain need a composition root
+#: rather than an edit. Corrected here rather than left as a tidy number.
+RECORDED_EPHEMERAL_FALLBACK = 3
 
-#: `closure/` is the verification harness — `kernel_registry.py` boots the
-#: runtime inside the `runtime` closures, which is the module being *exercised*,
-#: not a caller having *adopted* it. Counting that as adoption would inflate the
-#: number using the test written to measure it, which is precisely the move this
-#: probe exists to catch. Excluded from both sides of the count, by name, for
-#: that stated reason — and `closure/kernel_registry.py` accordingly drops out of
-#: the "still builds its own ledger" list too, so the exclusion cannot flatter
-#: either column.
-VERIFICATION_HARNESS = ("closure/kernel_registry.py",)
+#: Modules whose own ledger is correct and must NOT be migrated. Each is here
+#: for a stated reason, not to make a number smaller — and each was checked
+#: individually after the first version of this probe lumped all six together
+#: and the README called the remaining work "mechanical", which was wrong.
+#:
+#: `closure/*_registry.py` are the verification harness. A closure check must be
+#: self-contained and deterministic; one that read accumulated state would pass
+#: or fail depending on what had happened earlier, which is the opposite of a
+#: check. `kernel_registry.py` additionally boots the runtime inside the
+#: `runtime` closures — the module being *exercised*, not a caller having
+#: *adopted* it, and counting that would inflate the number using the very test
+#: written to measure it.
+#:
+#: `bridges/closure_verdict.py` RUNS the chain it then assesses, deliberately.
+#: Its docstring records that an earlier version assessed an empty ledger and
+#: printed OPEN, "which understates the finding in the flattering direction".
+#: Pointing it at a state directory would make the whole-body verdict depend on
+#: which directory you passed — a design change with a real trade-off, not a
+#: migration.
+VERIFICATION_HARNESS = (
+    "closure/kernel_registry.py",
+    "closure/advantage_registry.py",
+    "closure/commercial_registry.py",
+    "bridges/closure_verdict.py",
+)
 
 
 def test_the_migration_backlog_is_counted_not_asserted():
@@ -409,11 +430,28 @@ def test_the_migration_backlog_is_counted_not_asserted():
     assert boots, (
         "nothing boots the runtime; it would be built-and-unused, the state "
         "identity/pki/ was in before Bridge A adopted it")
-    assert len(own_ledger) == RECORDED_UNMIGRATED, (
-        f"the migration backlog changed: {len(own_ledger)} modules still build "
-        f"their own ledger ({sorted(own_ledger)}), the recorded count is "
-        f"{RECORDED_UNMIGRATED}. Update RECORDED_UNMIGRATED and "
-        f"docs/INFINITE_GOAL_CHASE_RECOMPUTE together.")
+    assert len(own_ledger) == RECORDED_EPHEMERAL_FALLBACK, (
+        f"the backlog changed: {len(own_ledger)} bridge libraries fall back to "
+        f"an ephemeral ledger ({sorted(own_ledger)}), the recorded count is "
+        f"{RECORDED_EPHEMERAL_FALLBACK}. Update RECORDED_EPHEMERAL_FALLBACK and "
+        f"docs/INFINITE_GOAL_CHASE_RECOMPUTE together — and if a module belongs "
+        f"in VERIFICATION_HARNESS instead, say why there rather than here.")
+
+
+def test_one_bridge_of_three_is_driven_over_a_durable_ledger():
+    """Breadth, counted — the `_asymmetric_identity_is_only_one_edge_deep` shape.
+
+    Bridges A, B and C all accept an injected ledger. A composition root exists
+    for one of them. Asserting "a composition root exists" would be true and
+    would stop being informative immediately, so this counts which bridges it
+    can actually drive.
+    """
+    from runtime.session import Session
+
+    driven = [name for name in dir(Session) if name.startswith("traverse_")]
+    assert driven == ["traverse_signal_to_venture"], (
+        f"the session drives {driven}; update this count and the recompute "
+        f"together when Bridge B or C gets a composition root")
 
 
 # ============================================================== no external reach

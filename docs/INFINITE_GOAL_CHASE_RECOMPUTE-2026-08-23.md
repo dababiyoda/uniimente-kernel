@@ -243,6 +243,36 @@ moment it was checked.
 5. **Attach a reasoning organ.** WMI is the fastest working path per the ruling;
    RailScout's research-refinery intent stays preserved and subsequently built,
    not silently replaced.
+
+   > **ASSESSED 2026-08-24. Feasible, and currently unevidenceable — which is
+   > a different status from either "done" or "open".**
+   >
+   > The mechanism exists on both sides. WMI's `OpportunityIntakeService`
+   > "validates packets, runs the venture loop, returns assessments" and
+   > validates its output against the wire contract; Bridge A already consumes
+   > exactly that contract and, since 2026-08-24, authenticates the peer that
+   > sends it. Replacing the committed fixture with a computed assessment is a
+   > small change on paper.
+   >
+   > **The kernel's CI never sees WMI.** `canonical-ci.yml` runs four
+   > `actions/checkout@v4` calls, all default, no `repository:` and no
+   > `submodules:`. A test that imported or invoked WMI would have to be
+   > skipped there, which makes it evidence that exists on one machine — a
+   > claim, not truth, by this repository's own standard. Building it would
+   > produce a green local run and nothing an independent verifier could
+   > repeat.
+   >
+   > **Note what attaching does NOT mean.** The kernel must not import WMI:
+   > §7 forbids flattening the organism, and the current shape — wire contract
+   > plus adapter plus authenticated transport — is the correct one. Attaching
+   > means a *real* assessment crossing that contract, not a shared process.
+   >
+   > **Exact requirement, stated rather than worked around:** either a CI job
+   > that checks out both repositories, or WMI published as an installable
+   > package the kernel's CI can pin. Both couple the canonical line's
+   > green/red to a peer repository's state, which is an institutional
+   > decision about what "the kernel's tests pass" is allowed to mean — not a
+   > build step to take unilaterally at the end of a session.
 6. **CANARY-0001 GO/NO-GO** — founder-reserved. Internal prerequisites are now
    closed (see §5).
 

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uniimente-slice"
+version = "0.1.0"
+description = "UNIIMENTE constitutional kernel — Consequence Gate vertical slice"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0",
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+include = ["kernel*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

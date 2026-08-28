@@ -469,13 +469,24 @@ def _commerce_dependencies_unbuilt() -> tuple[bool, str]:
 
 
 def _no_genome_contract() -> tuple[bool, str]:
-    """#12: no schema types the Capability Genome at its boundary."""
+    """#12: no schema types the Capability Genome at its boundary.
+
+    An OrchestrationGenome is a different institutional contract. Matching any
+    filename containing "genome" would let organization-design work falsely
+    close the Capability Genome Registry gap, collapsing two canonical owners.
+    The audit therefore requires the one explicit capability boundary name.
+    """
     contracts = os.path.join(KERNEL_ROOT, "contracts")
-    genome = [n for n in os.listdir(contracts)
-              if n.endswith(".schema.json") and "genome" in n.lower()]
-    if not genome:
+    capability_genome = [
+        n for n in os.listdir(contracts)
+        if n.lower() == "capability-genome.schema.json"
+    ]
+    if not capability_genome:
         return True, "contracts/ holds no capability-genome schema"
-    return False, f"a genome contract now exists: {', '.join(genome)}"
+    return False, (
+        "a capability-genome contract now exists: "
+        + ", ".join(capability_genome)
+    )
 
 
 def _no_module_loader() -> tuple[bool, str]:

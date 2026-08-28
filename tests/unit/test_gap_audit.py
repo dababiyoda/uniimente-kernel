@@ -232,3 +232,17 @@ def test_no_check_confuses_a_rung_with_a_reality():
     assert "reality" in source
     assert "awarded_rung" not in source, (
         "this check must read the reality axis, not the rung")
+
+def test_orchestration_genome_does_not_close_capability_genome_gap(monkeypatch):
+    """Organization design and capability typing remain distinct boundaries."""
+    monkeypatch.setattr(
+        gap_audit.os,
+        "listdir",
+        lambda _path: ["orchestration-genome.schema.json"],
+    )
+
+    still_open, evidence = gap_audit._no_genome_contract()
+
+    assert still_open is True
+    assert evidence == "contracts/ holds no capability-genome schema"
+

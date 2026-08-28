@@ -1,0 +1,49 @@
+{
+  "intent_id": "INTENT-OM-2026-08-28",
+  "title": "Test OMNIMORPH as an institutional organization compiler",
+  "statement": "Upgrade OMNIMORPH through existing canonical seams so an authorized mission can be represented by materially different organizational hypotheses, compared against the conventional durable workflow, and preserved as executed institutional evidence without creating authority or a second runtime.",
+  "source": "Alfonso master implementation directive and attached founder architecture sources",
+  "source_location": "ChatGPT project conversation, 2026-08-28; DOCTRINE.txt; Proof to Settlement Egregore.pdf; UNIIMENTE Reality Compiler Blueprint.pdf",
+  "source_date_or_version": "2026-08-28",
+  "status": "needs_evidence",
+  "authority_level": "active_requirement",
+  "consequence_class": "constitutional",
+  "intended_outcome": "A preregistered, authority-bounded experiment that can falsify whether mission-specific organization adds verified value beyond the static durable workflow.",
+  "affected_systems": [
+    "contracts/",
+    "omnimorph/",
+    "events/",
+    "provenance/",
+    "governance/",
+    "docs/collaboration/"
+  ],
+  "rationale": "The repository already owns capability composition, event durability and consequence control. The missing asset is evidence that different mission geometries warrant different organizations. The existing developmental and PumpStation results protect the conventional durable workflow as the strongest competitor.",
+  "conflicts": [
+    "PR #70 and PR #87 assign different mechanisms to runtime/",
+    "Dynamic organizational forms have not beaten the conventional durable workflow on available evidence",
+    "The architecture ownership map is proposed rather than founder-ratified"
+  ],
+  "evidence_refs": [
+    "uniimente-kernel PR #66 conventional-workflow dissent",
+    "uniimente-kernel PR #87 CVO=0 HARDENED=0 whole-body closure false",
+    "PumpStation PR #7 V1 benchmark",
+    "PumpStation PR #13 V2 benchmark",
+    "docs/organizational-morphogenesis/INSPECTION_LEDGER.md"
+  ],
+  "implementation_refs": [
+    "contracts/mission-contract.schema.json",
+    "contracts/orchestration-genome.schema.json",
+    "contracts/topology-episode.schema.json",
+    "tests/unit/test_organizational_morphogenesis_contracts.py",
+    "docs/organizational-morphogenesis/EXPERIMENT_PLAN.md"
+  ],
+  "owner": "Alfonso",
+  "next_review_trigger": "Alfonso rules on the draft contract ownership proposal or the preregistered Phase-4 experiment produces executed TopologyEpisodes.",
+  "unresolved_questions": [
+    "Which open runtime line becomes the canonical Phase-2 composition seam?",
+    "Who independently seals the held-out opportunity corpus?",
+    "What empirical threshold constitutes a material dynamic-topology advantage without unacceptable complexity?"
+  ],
+  "created_at": "2026-08-28T12:00:00Z",
+  "updated_at": "2026-08-28T12:00:00Z"
+}

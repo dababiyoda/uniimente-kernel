@@ -1,0 +1,23 @@
+flowchart TD
+    MC["Authorized MissionContract"] --> PG["Problem Geometry"]
+    PG --> OC["OMNIMORPH organization hypotheses"]
+    CG["Capability Genomes"] --> OC
+    OC --> CMP["Frozen phenotype comparison"]
+    CMP --> ES["One Event Spine + DurableWorkflow"]
+    ES --> WL["Bounded worker leases"]
+    WL --> IE["Independent evaluation + dissent"]
+    IE --> CR["Closure receipt"]
+    CR --> TE["Executed TopologyEpisode"]
+    TE --> MEM["Verified organizational memory"]
+    MEM -. "evidence, never authority" .-> PG
+
+    GOV["Mission authority"] --> MC
+    GATE["Consequence authority"] -. "only canonical effect path" .-> ES
+    OC -. "cannot authorize" .-> GATE
+    IE -. "cannot execute" .-> GATE
+
+    STATIC["Static durable workflow"] --> CMP
+    CENTRAL["Centralized"] --> CMP
+    HIER["Hierarchical"] --> CMP
+    HYBRID["Hybrid"] --> CMP
+    NONE["Do not instantiate"] --> CMP

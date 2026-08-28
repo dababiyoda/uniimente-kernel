@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/topology-episode.schema.json",
+  "title": "TopologyEpisode",
+  "description": "Evidence record for an actually executed organizational episode. Predictions and simulations cannot be stored as organizational knowledge under this contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "episode_id", "schema_version", "record_kind", "mission_ref", "mission_digest",
+    "problem_geometry_digest", "orchestration_genome_digest", "capability_genome_versions",
+    "worker_composition", "provider_composition", "task_graph_digest", "resource_consumption",
+    "coordination_message_amplification", "failure_events", "reconfigurations", "dissent_records",
+    "completion_quality", "verification_quality", "cost_usd", "latency_ms", "recovery",
+    "closure_disposition", "metrics", "lineage", "authority_results", "evidence_refs",
+    "verified_durable_mission_closure", "promotion_disposition", "model_prediction"
+  ],
+  "properties": {
+    "episode_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "record_kind": {"const": "EXECUTED_TOPOLOGY_EPISODE"},
+    "mission_ref": {"type": "string", "format": "uuid"},
+    "mission_digest": {"$ref": "#/$defs/digest"},
+    "problem_geometry_digest": {"$ref": "#/$defs/digest"},
+    "orchestration_genome_digest": {"$ref": "#/$defs/digest"},
+    "capability_genome_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "version", "digest"],
+        "properties": {
+          "capability": {"type": "string", "minLength": 1},
+          "version": {"type": "string", "minLength": 1},
+          "digest": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "worker_composition": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "worker_count", "lease_refs"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "worker_count": {"type": "integer", "minimum": 0},
+          "lease_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "provider_composition": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "provider", "model", "calls"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "provider": {"type": "string", "minLength": 1},
+          "model": {"type": "string", "minLength": 1},
+          "calls": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "task_graph_digest": {"$ref": "#/$defs/digest"},
+    "resource_consumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_calls", "compute_used", "compute_unit", "founder_attention_minutes", "wall_time_seconds"],
+      "properties": {
+        "model_calls": {"type": "integer", "minimum": 0},
+        "compute_used": {"type": "number", "minimum": 0},
+        "compute_unit": {"type": "string", "minLength": 1},
+        "founder_attention_minutes": {"type": "integer", "minimum": 0},
+        "wall_time_seconds": {"type": "number", "minimum": 0}
+      }
+    },
+    "coordination_message_amplification": {"type": "number", "minimum": 0},
+    "failure_events": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "reconfigurations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "dissent_records": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "completion_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "verification_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "cost_usd": {"type": "number", "minimum": 0},
+    "latency_ms": {"type": "number", "minimum": 0},
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interruptions", "restart_state_exactness", "rto_seconds", "rpo_seconds", "lost_tasks", "duplicate_consequential_work"],
+      "properties": {
+        "interruptions": {"type": "integer", "minimum": 0},
+        "restart_state_exactness": {"type": "number", "minimum": 0, "maximum": 1},
+        "rto_seconds": {"type": "number", "minimum": 0},
+        "rpo_seconds": {"type": "number", "minimum": 0},
+        "lost_tasks": {"type": "integer", "minimum": 0},
+        "duplicate_consequential_work": {"type": "integer", "minimum": 0}
+      }
+    },
+    "external_outcome_ref": {"type": ["string", "null"]},
+    "closure_disposition": {"enum": ["CLOSED_VERIFIED", "CLOSED_UNVERIFIED", "TERMINATED", "QUARANTINED", "INCOMPLETE"]},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_loss_rate", "duplicate_work_rate", "unresolved_task_rate", "failure_containment_rate",
+        "worker_utilization", "maximum_coordinator_load", "evidence_lineage_completeness",
+        "dissent_preservation_rate", "context_policy_violation_count"
+      ],
+      "properties": {
+        "task_loss_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "duplicate_work_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "unresolved_task_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "failure_containment_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "worker_utilization": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_coordinator_load": {"type": "number", "minimum": 0},
+        "evidence_lineage_completeness": {"type": "number", "minimum": 0, "maximum": 1},
+        "dissent_preservation_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "context_policy_violation_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["founder_intent_ref", "mission_ref", "task_receipt_refs", "result_refs", "assessment_refs", "closure_receipt_ref"],
+      "properties": {
+        "founder_intent_ref": {"type": "string", "minLength": 1},
+        "mission_ref": {"type": "string", "format": "uuid"},
+        "task_receipt_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "result_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "assessment_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "closure_receipt_ref": {"type": ["string", "null"]}
+      }
+    },
+    "authority_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unauthorized_external_effect_count", "authority_violation_count", "authority_created_by_organization_count", "required_evaluator_suppression_count", "unknown_external_effect_blind_retry_count"],
+      "properties": {
+        "unauthorized_external_effect_count": {"type": "integer", "minimum": 0},
+        "authority_violation_count": {"type": "integer", "minimum": 0},
+        "authority_created_by_organization_count": {"type": "integer", "minimum": 0},
+        "required_evaluator_suppression_count": {"type": "integer", "minimum": 0},
+        "unknown_external_effect_blind_retry_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "interruption_evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "verified_durable_mission_closure": {"type": "boolean"},
+    "promotion_disposition": {"enum": ["RETAIN_TEMPLATE", "LOSER_PRESERVED", "INCONCLUSIVE", "REJECTED_BY_INVARIANT", "NOT_EVALUATED"]},
+    "model_prediction": {"const": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"verified_durable_mission_closure": {"const": true}}},
+      "then": {
+        "required": ["interruption_evidence_refs"],
+        "properties": {
+          "closure_disposition": {"const": "CLOSED_VERIFIED"},
+          "interruption_evidence_refs": {"minItems": 1},
+          "recovery": {
+            "properties": {
+              "interruptions": {"minimum": 1},
+              "restart_state_exactness": {"const": 1},
+              "lost_tasks": {"const": 0},
+              "duplicate_consequential_work": {"const": 0}
+            }
+          },
+          "metrics": {
+            "properties": {
+              "evidence_lineage_completeness": {"const": 1},
+              "dissent_preservation_rate": {"const": 1},
+              "context_policy_violation_count": {"const": 0}
+            }
+          },
+          "lineage": {"properties": {"closure_receipt_ref": {"type": "string", "minLength": 1}}},
+          "authority_results": {
+            "properties": {
+              "unauthorized_external_effect_count": {"const": 0},
+              "authority_violation_count": {"const": 0},
+              "authority_created_by_organization_count": {"const": 0},
+              "required_evaluator_suppression_count": {"const": 0},
+              "unknown_external_effect_blind_retry_count": {"const": 0}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

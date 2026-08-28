@@ -1,0 +1,229 @@
+{
+  "decision_id": "DECISION-OM-2026-08-28",
+  "title": "Whether to build an Organizational Morphogenesis Layer now",
+  "problem": "UNIIMENTE lacks one verified durable cross-organ mission closure, while dynamic organization is more complex and has not defeated the conventional durable workflow. The decision is whether to build a new runtime, do nothing, or stage the smallest falsifiable OMNIMORPH experiment through canonical seams.",
+  "founder_intent_refs": ["INTENT-OM-2026-08-28"],
+  "baseline": "The merged Event Spine and DurableWorkflow provide explicit durable state; DALEOBANKS uses fixed scheduled jobs; WealthMachine uses a fixed specialist roster and in-memory flow; StandingCognitionRuntime is proposal-only; no verified cross-organ closure exists.",
+  "alternatives": [
+    {
+      "name": "Static durable workflow",
+      "description": "Encode the mission as a fixed canonical DurableWorkflow with independent evaluation and no topology adaptation.",
+      "advantages": ["Explicit state", "Targeted retry", "Low message amplification", "Simple supervision", "Existing canonical mechanism"],
+      "disadvantages": ["May underuse safe parallelism", "May hard-code specialist structure", "Does not learn topology selection"],
+      "revival_evidence": "This remains the default and wins whenever dynamic candidates fail to produce a material advantage."
+    },
+    {
+      "name": "Centralized coordinator",
+      "description": "A bounded coordinator decomposes and synthesizes while workers execute leased tasks.",
+      "advantages": ["Shared context", "Low synthesis ambiguity"],
+      "disadvantages": ["Coordinator bottleneck", "Capture and failure concentration"],
+      "revival_evidence": "Measured low task volume, high coupling and latency sensitivity outperform the static baseline."
+    },
+    {
+      "name": "Decentralized task fabric",
+      "description": "Workers claim independent tasks from canonical queues without a permanent master.",
+      "advantages": ["Failure isolation", "Broad parallel search"],
+      "disadvantages": ["Message amplification", "Context fragmentation", "Available evidence is adverse"],
+      "revival_evidence": "A sealed high-volume low-coupling corpus shows a verified advantage after coordination cost."
+    },
+    {
+      "name": "Hierarchical organization",
+      "description": "Bounded local coordinators recursively decompose specialist domains without inheriting or minting authority.",
+      "advantages": ["Specialist coordination at scale", "Bounded local supervision"],
+      "disadvantages": ["Bureaucracy", "Supervisor depth and failure propagation"],
+      "revival_evidence": "Recursive decomposition materially improves quality or latency while supervisor load and amplification stay within frozen thresholds."
+    },
+    {
+      "name": "Hybrid organization",
+      "description": "Central mission coherence, decentralized bounded execution and structurally independent evaluation.",
+      "advantages": ["Separates synthesis from evaluation", "Combines coherence and parallelism"],
+      "disadvantages": ["Largest semantic surface", "Can disguise a master-worker hierarchy"],
+      "revival_evidence": "The preregistered experiment demonstrates a hard-dimension advantage without evidence, authority or maintainability regression."
+    },
+    {
+      "name": "Developmental local organization",
+      "description": "Locally interacting components adapt organization from local evidence and thresholds.",
+      "advantages": ["Potential local adaptation", "Potential graceful failure isolation"],
+      "disadvantages": ["Unproven", "Topology thrashing", "Poorer available cost/amplification evidence"],
+      "revival_evidence": "It first defeats both static workflow and simpler dynamic forms under preregistered failures."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Preserve current runtimes and avoid added complexity, but leave organizational choice implicit and the durable closure bottleneck unresolved.",
+    "advantages": ["Zero implementation risk", "No ownership expansion"],
+    "disadvantages": ["No falsification", "No organizational evidence corpus", "Bottleneck remains zero"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the institutional-compiler objective but refuse authority expansion and agent-hierarchy substitution.",
+      "material_concerns": ["Five powers must remain separate", "Alfonso remains root authority", "Competing implementations and dissent must survive"],
+      "evidence_refs": ["INTENT-OM-2026-08-28", "UNIIMENTE Reality Compiler Blueprint.pdf"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Place shared semantics in contracts and organizational composition in OMNIMORPH; reuse Event Spine and Consequence Gate.",
+      "material_concerns": ["runtime/ ownership conflict", "No second event spine", "Phase order must be respected"],
+      "evidence_refs": ["uniimente-kernel PR #70", "uniimente-kernel PR #87", "INSPECTION_LEDGER.md"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Dynamic topology has not earned promotion; static durable workflow is the protected strongest competitor.",
+      "material_concerns": ["Complexity theater", "Topology thrashing", "Evidence gaming", "Coordinator capture"],
+      "evidence_refs": ["uniimente-kernel PR #66", "PumpStation PR #7", "PumpStation PR #13"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Accept only Phase-1 contracts and preregistration now; defer runtime until the owner is decided.",
+      "material_concerns": ["Operator incomprehensibility", "Cross-repository migration burden", "Rollback must be deletion of an inert experiment"],
+      "evidence_refs": ["requirements-dev.txt", "tests/unit/test_omnimorph_v1.py", "ARCHITECTURE-OWNERSHIP-OM-PROPOSAL.yaml"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Require independent evaluation, dissent preservation, participant-welfare guardrails and executed episodes before knowledge promotion.",
+      "material_concerns": ["Model prediction represented as evidence", "Evaluator suppression", "Participant harm hidden by aggregate optimization"],
+      "evidence_refs": ["NASA formal dissent policy", "topology-episode.schema.json", "FAILURE_MODEL.md"],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The repository already has a canonical durable event/workflow substrate.",
+      "tier": "primary_source",
+      "reference": "uniimente-kernel events/README.md and events/spine.py at PR #87 head",
+      "finding": "Event Spine, inbox/outbox and DurableWorkflow own durable state; the spine does not confer authority."
+    },
+    {
+      "claim": "OMNIMORPH already owns bounded composition and retirement without self-activation.",
+      "tier": "unit_test",
+      "reference": "omnimorph/engine.py and tests/unit/test_omnimorph_v1.py",
+      "finding": "Composition, simulation, exact Gate receipt recording and accountable retirement are tested."
+    },
+    {
+      "claim": "Current institutional closure remains unproven.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #87",
+      "finding": "CVO=0, HARDENED=0 and whole-body closure remains false."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Conventional durable workflow is currently stronger than developmental organization.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #66 and PR #68",
+      "finding": "Explicit state, targeted retry, low amplification and simpler supervision remain the evidence-backed default."
+    },
+    {
+      "claim": "Multi-agent deliberation did not economically defeat deterministic rules.",
+      "tier": "deterministic_fixture",
+      "reference": "PumpStation PR #7 and PR #13",
+      "finding": "V1 tied quality at roughly ten times modeled cost; V2 preserved dissent but still did not beat deterministic rules on the authored corpus."
+    },
+    {
+      "claim": "Prior developmental gates and semantic restoration failed.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #62 and PR #64",
+      "finding": "Failed runs are preserved and bar claims of developmental superiority."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Create the smallest reversible substrate that can test whether problem geometry predicts a materially better organization while the static workflow remains the default.",
+    "advantages": [
+      {"id": "A1", "statement": "Expands the option space without replacing the durable substrate.", "amplified_value": "Every candidate targets one Event Spine and one workflow truth source."},
+      {"id": "A2", "statement": "Makes topology choice inspectable rather than prompt intuition.", "amplified_value": "Problem geometry, scorecards and episode refs become machine-checkable."},
+      {"id": "A3", "statement": "Separates five institutional powers.", "amplified_value": "Schemas prohibit authority minting, inherited authority, evaluator suppression and Gate bypass."},
+      {"id": "A4", "statement": "Turns losing structures into useful institutional evidence.", "amplified_value": "TopologyEpisode preserves losers, dissent, failure and costs instead of deleting them."},
+      {"id": "A5", "statement": "Creates a commodity-resistant learning asset.", "amplified_value": "Verified mission-to-geometry-to-topology history can improve selection, sizing and evaluator placement across organs."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "The contract surface can become bureaucracy before runtime value exists.", "severity": "high", "response_type": "modularity", "redesigned_response": "Limit this PR to three contracts, one frozen experiment and no runtime."},
+      {"id": "D2", "statement": "Dynamic candidates can disguise a permanent master-worker hierarchy.", "severity": "critical", "response_type": "governance", "redesigned_response": "Model coordinators as bounded rights with no authority minting and preserve do-not-instantiate/static forms."},
+      {"id": "D3", "statement": "Topology selection can overfit a small authored corpus.", "severity": "high", "response_type": "evidence", "redesigned_response": "Seal held-out cases and thresholds before execution; retain results as hypotheses until repeated episodes."},
+      {"id": "D4", "statement": "A second runtime or ownership conflict could fragment the Kernel.", "severity": "critical", "response_type": "do_not_proceed", "redesigned_response": "Do not implement Phase 2 until PR #70/#87 runtime ownership receives an explicit decision."},
+      {"id": "D5", "statement": "Coordination cost may erase any specialization or recovery benefit.", "severity": "high", "response_type": "competitive", "redesigned_response": "Preregister amplification/cost thresholds and make static workflow the automatic fallback."}
+    ],
+    "comparisons": {
+      "baseline": "Current scheduled/in-memory organ flows plus the Kernel's conventional DurableWorkflow.",
+      "do_nothing": "Avoids new surface but cannot learn or falsify organizational selection and leaves VDM closure at zero.",
+      "simplest_viable_alternative": "One fixed static DurableWorkflow with independent evaluation; it is the default and protected fallback.",
+      "strongest_competing_architecture": "The conventional durable workflow, not a developmental topology.",
+      "reversible_experiment": "Freeze MissionContract, OrchestrationGenome, TopologyEpisode and a sealed five-phenotype internal comparison before any runtime integration."
+    },
+    "rejected_alternatives": [
+      {"name": "New orchestration package", "rejection_reason": "Duplicates canonical ownership and risks a second control plane.", "revival_evidence": "Only a founder-ratified ownership decision proving no current owner can contain the semantics."},
+      {"name": "Permanent master-agent hierarchy", "rejection_reason": "Concentrates design, execution and evaluation and fails the invention criterion.", "revival_evidence": "None under current constitutional invariants."},
+      {"name": "Immediate organ migration", "rejection_reason": "Jumps phases before contracts, baseline and runtime ownership are settled.", "revival_evidence": "Phase-4 executed evidence and explicit Phase-5 integration decision."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The strengthened proposal was attacked for bureaucracy, centralization, fragility, overfit, expense, vendor/model dependency, topology thrashing, evaluator capture, authority leakage, evidence theater, gaming, incomprehensibility and failure amplification. The result remains an inert experiment, not a runtime build.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "comprehensibility", "statement": "Large genomes may become impossible for operators to audit.", "strengthening_response": "Require fail-closed schemas, content digests, a bounded phenotype set and human-readable scorecards."},
+      {"id": "N2", "category": "gaming", "statement": "A topology could optimize one headline metric while harming evidence or participants.", "strengthening_response": "Use hard constitutional invariants plus a multidimensional acceptance test and participant-welfare guardrail."},
+      {"id": "N3", "category": "dependency", "statement": "Model/provider-specific evidence could become false institutional advantage.", "strengthening_response": "Make provider eligibility plural/open and record provider composition in every episode."},
+      {"id": "N4", "category": "centralization", "statement": "The compiler could become the practical authority even if schemas say otherwise.", "strengthening_response": "The compiler may emit hypotheses only; mission and consequence authority remain external references and human/Gate decisions."},
+      {"id": "N5", "category": "fragility", "statement": "Reconfiguration during active tasks can corrupt state or amplify failure.", "strengthening_response": "Prohibit live self-rewrite; require versioned proposals, bounded change, state-transfer proof and static rollback in later phases."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "resolved", "rationale": "The PR is capped at three schemas, tests and preregistration; no runtime or organ migration.", "owner": "Kernel maintainers", "review_trigger": "Any proposal to add a fourth Phase-1 contract or executor."},
+      {"disadvantage_id": "D2", "outcome": "prohibited", "rationale": "Authority minting, inheritance, evaluator suppression and mission rewrite are schema-invalid.", "owner": "Alfonso and Kernel governance", "review_trigger": "Any schema or code attempts to relax a constant-false invariant."},
+      {"disadvantage_id": "D3", "outcome": "experiment", "rationale": "Overfit can only be decided by sealed held-out execution and repetition.", "owner": "Independent evidence reviewer", "review_trigger": "Held-out corpus is sealed before Phase 4."},
+      {"disadvantage_id": "D4", "outcome": "deferred", "rationale": "No Phase-2 runtime code will be written until ownership is explicitly decided.", "owner": "Alfonso", "review_trigger": "Decision on PR #70/#87 integration ownership."},
+      {"disadvantage_id": "D5", "outcome": "experiment", "rationale": "Coordination overhead is a measured acceptance dimension; the static baseline wins ties.", "owner": "Experiment operator", "review_trigger": "First comparative TopologyEpisodes exist."}
+    ],
+    "final_design": "Phase 1 adds only fail-closed MissionContract, OrchestrationGenome and executed-only TopologyEpisode semantics under canonical owners; freezes a static-workflow-first comparative experiment; records ownership as proposed; leaves execution, task leases, reconfiguration and organ migration deferred. Five powers remain separate, and no model output can promote a genome without executed episode references.",
+    "residual_risks": [
+      {"risk": "Runtime ownership remains unresolved.", "mitigation": "Block Phase 2 and stack this inert PR on #87 without editing runtime/.", "owner": "Alfonso", "review_trigger": "Before any task fabric implementation."},
+      {"risk": "Schemas cannot enforce every relational constraint, such as worker maxima or identity inequality.", "mitigation": "Add a single canonical semantic validator in Phase 2 only after ownership is decided.", "owner": "Kernel maintainer", "review_trigger": "Phase-2 entry review."},
+      {"risk": "The held-out corpus and acceptance thresholds are not yet independently sealed.", "mitigation": "Keep all topology claims at hypothesis/experiment-candidate status.", "owner": "Independent evidence reviewer", "review_trigger": "Before the first comparative run."}
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "The conventional durable workflow remains the protected default, strongest competitor and fallback. A tie with added complexity is a loss for the dynamic form.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not promote organizational morphogenesis; the static durable workflow currently wins available evidence.",
+        "rationale": "PR #66/#68 and PumpStation V1/V2 show explicit-state/simple forms are more reliable or cheaper on the evidence available.",
+        "evidence_threshold": "At least one sealed mission geometry where a dynamic phenotype meets all invariants, matches quality and materially improves a hard dimension net of coordination cost, followed by a repeat run.",
+        "owner": "Independent evidence reviewer",
+        "review_trigger": "Phase-4 comparison completed."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso"
+  },
+  "migration_plan": "No migration in Phase 1. After an explicit runtime-ownership ruling, Phase 2 may adapt the existing Event Spine/DurableWorkflow through narrow contracts; Phase 4 runs in sandbox; Phase 5 integrates only an earned winner; organ migration remains later and separately gated.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the draft PR without merge if ownership or contract semantics are rejected.",
+      "If merged later, revert only the three schemas, their tests and linked documentation before any consumer depends on them.",
+      "Retain the deliberation, failed evidence and reason for rollback as historical artifacts.",
+      "Continue using the existing static DurableWorkflow and current organ baselines."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A second Event Spine, workflow truth source, authority system, identity system, Consequence Gate or Capability Genome system appears.",
+    "A topology can create authority, transfer supervisor authority to a worker, suppress a required evaluator or bypass consequence mediation.",
+    "The experiment cannot use actual canonical DALEOBANKS and WealthMachine interfaces.",
+    "A dynamic topology ties or loses after coordination cost while adding material complexity.",
+    "Restart duplicates consequential work or an uncertain external effect is retried without reconciliation.",
+    "Mission lineage is incomplete, dissolution leaves obligations, or model output is represented as executed evidence."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso",
+  "review_trigger": "Alfonso rules on Phase-1 ownership/contracts, then a new linked decision is opened before Phase 2; no silent third strengthening pass is permitted."
+}

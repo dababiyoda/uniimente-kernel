@@ -1,6 +1,8 @@
 # Organizational Morphogenesis Handoff
 
-Status: Phase 0 complete; Phase 1 implemented on a dedicated draft branch.
+Status: Phase 0 complete; Phase 1 implemented on dedicated branch
+`agent/organizational-morphogenesis-experiment-v1`, commit
+`bc885f0ff79ce108e61bf8d431e2407a282af873`, draft PR #88 stacked on PR #87.
 Decision: `EXPERIMENT`. No merge, deployment, activation or external effect.
 
 ## 1. Inspected repositories, branches and PRs
@@ -128,8 +130,10 @@ ownership is resolved would jump the build order.
   `/tmp/omnimorph-contract-deps`; no repository dependency changed.
 - `PYTHONPATH=/tmp/omnimorph-contract-deps python -m pytest -q
   tests/unit/test_organizational_morphogenesis_contracts.py` → **15 passed**.
-- Final JSON/YAML parsing, byte compilation and repository diff checks are
-  required before PR submission and must be appended here.
+- Founder-intent validator → `VALID: 1 Founder Intent record(s)`.
+- Deliberation validator → `VALID: deliberation contains five-role review and
+  exactly two passes`.
+- All JSON/YAML parse; the test module byte-compiles.
 
 ## 12. Failures and negative results
 

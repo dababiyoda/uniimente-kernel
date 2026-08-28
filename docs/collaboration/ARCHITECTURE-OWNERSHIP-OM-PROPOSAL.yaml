@@ -1,0 +1,55 @@
+proposal_id: OWNERSHIP-OM-2026-08-28
+status: PROPOSED
+authority: NEEDS_FOUNDER_DECISION
+decision_owner: Alfonso
+constitutional_change: true
+does_not_amend_current_map: true
+stack_dependency: uniimente-kernel#87
+principle: one_concept_one_canonical_owner
+
+powers:
+  mission_authority:
+    canonical_owner: governance/
+    existing_enforcement: canonical legal-principal, charter, integrity, and Consequence Gate mechanisms
+    organizational_morphogenesis_access: reference_only
+  organization_design:
+    proposed_canonical_owner: omnimorph/
+    scope: compile capability requirements and non-authorizing organizational hypotheses
+    prohibited: [activate, mint_authority, change_mission, change_budget, select_consequence]
+  organization_execution:
+    canonical_owner: events/
+    substrate: EventSpine plus DurableWorkflow
+    unresolved_composition_owner:
+      - pull_request: 70
+        path: runtime/
+        mechanism: inert Track-A runtime spine and linker-controlled Route B
+      - pull_request: 87
+        path: runtime/
+        mechanism: durable Session composition root
+    disposition: BLOCK_PHASE_2_UNTIL_EXPLICIT_DECISION
+  independent_evaluation:
+    canonical_owner: governance/ and provenance/ through existing assessment/evidence seams
+    constraint: evaluator cannot be controlled or suppressed by the coordinator it evaluates
+  consequence_authority:
+    canonical_owner: existing Consequence Gate plus accountable legal principal
+    organizational_morphogenesis_access: proposal_submission_only
+
+semantic_owners:
+  MissionContract: contracts/
+  OrchestrationGenome: contracts/ schema; omnimorph/ future compiler
+  TopologyEpisode: contracts/ schema; provenance/ future record owner
+  ProblemGeometry: MissionContract semantic in Phase 1; extraction logic deferred to omnimorph/
+  TaskEnvelope: DEFERRED_TO_PHASE_2_EXISTING_EVENT_SEAM
+  TaskReceipt: DEFERRED_TO_PHASE_2_PROVENANCE_SEAM
+  ReconfigurationProposal: DEFERRED_TO_PHASE_3_GOVERNED_PROPOSAL_SEAM
+
+explicit_non_owners:
+  - runtime/ does not own authority, identity, contracts, evidence, or consequence policy
+  - egregore/ does not become an execution authority
+  - routing/ recommends and never authorizes
+  - omnimorph/ designs and never authorizes or executes consequences
+  - organ repositories do not copy Kernel constitutional contracts
+
+compatibility_shims: []
+review_trigger: founder decision on this proposal before Phase 2
+rollback: close or revert the inert Phase-1 draft; preserve this proposal as historical evidence

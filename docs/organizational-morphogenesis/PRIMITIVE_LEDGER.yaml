@@ -1,0 +1,303 @@
+ledger_id: PRIMITIVES-OM-2026-08-28
+status: FROZEN_PHASE_1
+decision: EXPERIMENT
+mechanism_cards:
+  - id: M01-durable-checkpoint
+    source_class: direct_computational
+    source: Temporal durable workflow plus UNIIMENTE DurableWorkflow
+    purpose: preserve explicit mission state across interruption
+    primitive_operation: append transition then replay deterministic state
+    maintained_state: workflow step, attempt, receipt, checkpoint
+    state_transition: pending_to_running_to_completed_or_retryable
+    actors: [workflow_owner, activity_worker]
+    authority: none; execution follows referenced mission authority
+    information_visible: typed inputs, checkpoint, receipt
+    information_hidden: worker context outside lease
+    resources: time, compute, model calls
+    incentives: complete verified work with minimum amplification
+    feedback: retry and failure metrics
+    activation_threshold: admitted MissionContract and canonical workflow ID
+    memory: append-only Event Spine and receipts
+    selection: static baseline always included
+    trust_boundary: activity result requires evidence and independent assessment
+    proof: checkpoint plus TaskReceipt plus closure receipt
+    failure_behavior: targeted retry or reconciliation, never whole-mission blind replay
+    recovery_behavior: deterministic replay from canonical checkpoint
+    external_consequence: only through Consequence Gate
+    invariant_worth_preserving: one durable truth source
+    mutations:
+      - bind every workflow to a content-digested MissionContract
+      - make static workflow a protected competitor rather than assumed legacy
+      - separate completion from independent verification
+      - route uncertain effects to reconciliation instead of retry
+    super_nodes: [Default_Routing, Proof_Truth]
+
+  - id: M02-at-least-once-lease
+    source_class: direct_computational
+    source: task queues and NATS JetStream acknowledgement model
+    purpose: deliver internal work durably without false exactly-once claims
+    primitive_operation: lease task, heartbeat, acknowledge with idempotency key
+    maintained_state: task identity, lease owner, expiry, attempts
+    state_transition: queued_to_leased_to_submitted_or_expired
+    actors: [task_fabric, leased_worker]
+    authority: lease references minimum existing authority and creates none
+    information_visible: minimum context and output contract
+    information_hidden: unrelated mission and supervisor context
+    resources: reserved lease budget and concurrency slot
+    incentives: close one task with accepted evidence
+    feedback: loss, duplicate, timeout and utilization rates
+    activation_threshold: capability, identity and budget eligibility all pass
+    memory: immutable task identity and causal parentage
+    selection: eligible worker pool under resource ceiling
+    trust_boundary: acknowledgement is not verification
+    proof: lease receipt, heartbeat and submitted-result receipt
+    failure_behavior: expiry, quarantine or reconciliation
+    recovery_behavior: fresh replacement lease without authority inheritance
+    external_consequence: uncertain effect blocks replacement retry
+    invariant_worth_preserving: at-least-once plus idempotency
+    mutations:
+      - replace permanent agent role with one-task expiring lease
+      - reserve and release budget atomically with lease lifecycle
+      - make replacement authority independent of failed worker authority
+      - require reconciliation before any uncertain-effect retry
+    super_nodes: [Eligibility, Default_Routing, Resource_Settlement, Proof_Truth]
+
+  - id: M03-restart-supervision
+    source_class: direct_computational
+    source: Erlang OTP supervision strategies
+    purpose: contain worker and coordinator failure
+    primitive_operation: monitor child and apply bounded restart strategy
+    maintained_state: failure count, restart window, dependency relation
+    state_transition: healthy_to_failed_to_replaced_or_degraded_or_killed
+    actors: [monitor, worker, coordinator]
+    authority: monitoring confers no command or consequence authority
+    information_visible: health and dependency state
+    information_hidden: task data not needed for health decisions
+    resources: restart quota and reserved capacity
+    incentives: restore service without restart storm
+    feedback: restart intensity and containment rate
+    activation_threshold: failure signal with canonical identity
+    memory: failure receipts and restart history
+    selection: one_for_one by default; wider restart only with dependency proof
+    trust_boundary: monitor cannot accept task result
+    proof: failure, replacement and state-transfer receipts
+    failure_behavior: restart intensity trips degraded mode
+    recovery_behavior: static durable fallback or mission kill
+    external_consequence: none
+    invariant_worth_preserving: bounded restart intensity
+    mutations:
+      - supervise leases rather than durable agent identities
+      - trip static-workflow degradation before restart amplification
+      - keep evaluator supervision independent from coordinator supervision
+      - require state-transfer proof before replacement runs
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth]
+
+  - id: M04-mission-command-demobilization
+    source_class: adjacent_institutional
+    source: FEMA Incident Command System and mission-command practice
+    purpose: assemble mission-specific roles and dissolve them cleanly
+    primitive_operation: define objective, bounded roles, resource sections and demobilization
+    maintained_state: mission objectives, assignments, resources, safety and closure
+    state_transition: formed_to_operating_to_demobilizing_to_dissolved
+    actors: [authorized_principal, coordinator, operators, safety_evaluator, resource_keeper]
+    authority: all roles receive explicit bounded references; commander cannot mint
+    information_visible: mission plan, assignments and exception route
+    information_hidden: context outside role need
+    resources: reserved capacity, cost and time
+    incentives: verified closure and safe demobilization
+    feedback: objectives met, unresolved obligations, after-action review
+    activation_threshold: authorized mission and admitted genome
+    memory: plan, receipts and after-action TopologyEpisode
+    selection: phenotype based on measured problem geometry
+    trust_boundary: safety/evaluation independent of synthesis
+    proof: assignment, resource and demobilization receipts
+    failure_behavior: transfer command or degrade without transferring authority
+    recovery_behavior: replace organization while mission persists
+    external_consequence: separately gated
+    invariant_worth_preserving: organization is temporary and mission-bounded
+    mutations:
+      - replace broad command with enumerated coordination rights
+      - require credential expiry and obligation reconciliation at dissolution
+      - preserve static workflow and do-not-instantiate as legitimate organizations
+      - bind every role to machine-checkable lease and resource envelope
+    super_nodes: [Eligibility, Default_Routing, Resource_Settlement, Proof_Truth]
+
+  - id: M05-protected-dissent
+    source_class: adjacent_institutional
+    source: NASA formal dissent process and high-reliability organization practice
+    purpose: prevent creator or coordinator from monopolizing truth
+    primitive_operation: record independent assessment, disagreement and escalation
+    maintained_state: assessment, dissent, response, escalation and disposition
+    state_transition: assessed_to_agreed_or_dissenting_to_escalated_to_dispositioned
+    actors: [independent_evaluator, coordinator, acceptance_authority]
+    authority: evaluator can block/raise per existing policy but cannot execute consequence
+    information_visible: proposal, required evidence and countercase
+    information_hidden: no hidden dissent channel from final record
+    resources: reserved evaluator capacity and founder-attention ceiling
+    incentives: accurate mission closure, not agreement
+    feedback: dissent preservation and reversal accuracy
+    activation_threshold: required assessment or material disagreement
+    memory: immutable dissent record linked to result
+    selection: evaluator identity must be structurally independent
+    trust_boundary: proposer cannot be sole evaluator
+    proof: signed assessment and escalation receipt
+    failure_behavior: suppression attempt is an authority violation and kill trigger
+    recovery_behavior: quarantine assessment, appoint independent replacement, escalate
+    external_consequence: no effect until conflict rule is satisfied
+    invariant_worth_preserving: disagreement survives synthesis
+    mutations:
+      - make dissent completeness a hard closure metric
+      - reserve evaluator resources outside coordinator allocation
+      - treat suppression as a constitutional failure, not quality defect
+      - preserve losing and minority assessments in TopologyEpisode
+    super_nodes: [Proof_Truth, Resource_Settlement]
+
+  - id: M06-quorum-threshold
+    source_class: biological_collective
+    source: immune and microbial quorum sensing
+    purpose: prevent weak local signals from causing institution-wide reconfiguration
+    primitive_operation: aggregate independent signals until a preregistered threshold
+    maintained_state: signal count, diversity, confidence and time window
+    state_transition: below_threshold_to_candidate_to_proposal_only
+    actors: [signal_producers, independent_evaluator]
+    authority: threshold creates a hypothesis, never authority or activation
+    information_visible: signal provenance and conflict
+    information_hidden: no signal may hide its source class
+    resources: bounded observation window and evaluation capacity
+    incentives: resist noise and coordinated gaming
+    feedback: false-positive, missed-trigger and reconfiguration outcomes
+    activation_threshold: multiple independent evidence classes meet frozen rule
+    memory: threshold inputs and rejected proposals
+    selection: diversity-weighted evidence, not raw vote count
+    trust_boundary: model agreement is one correlated source, not quorum
+    proof: evidence refs and threshold calculation
+    failure_behavior: remain static on ambiguity
+    recovery_behavior: gather new independent evidence or expire proposal
+    external_consequence: none
+    invariant_worth_preserving: thresholded collective activation
+    mutations:
+      - quorum yields only ReconfigurationProposal
+      - discount correlated models/providers as one source
+      - require resource-impact and rollback proof before proposal admission
+      - default below threshold is no reconfiguration
+    super_nodes: [Eligibility, Proof_Truth, Resource_Settlement]
+
+  - id: M07-stigmergic-routing
+    source_class: biological_collective
+    source: stigmergy and division-of-labor research
+    purpose: route broad independent evidence work without central context overload
+    primitive_operation: workers pull typed tasks from durable environmental traces
+    maintained_state: task queue, claim, result trace and queue pressure
+    state_transition: visible_to_claimed_to_evidenced_to_verified
+    actors: [read_only_worker, task_fabric, synthesizer]
+    authority: queue eligibility is capability plus identity, never self-selection of authority
+    information_visible: minimum task contract and local evidence
+    information_hidden: unrelated tasks and mission-wide authority
+    resources: per-pool concurrency and budget
+    incentives: useful verified evidence per resource unit
+    feedback: starvation, duplication, latency and quality
+    activation_threshold: high parallelizability and low coupling
+    memory: typed task/result events
+    selection: pull only from eligible bounded pool
+    trust_boundary: traces are untrusted until evaluated
+    proof: task and evidence receipts
+    failure_behavior: poison trace quarantine and queue backpressure
+    recovery_behavior: requeue idempotently or fall back to dispatcher
+    external_consequence: read-only in first admissible use
+    invariant_worth_preserving: local coordination through shared traces
+    mutations:
+      - replace open pheromone field with typed canonical events
+      - enforce identity/capability eligibility before pull
+      - price message amplification into topology acceptance
+      - centralize final synthesis while preserving independent evidence
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]
+
+  - id: M08-controlled-dissolution
+    source_class: biological_collective
+    source: apoptosis and regenerative-tissue mechanisms
+    purpose: end temporary organization without losing institutional memory
+    primitive_operation: stop activity, reconcile obligations, release resources and seal evidence
+    maintained_state: active tasks, leases, credentials, obligations and evidence set
+    state_transition: active_to_draining_to_reconciled_to_dissolved
+    actors: [organization_executor, resource_keeper, evidence_keeper, acceptance_authority]
+    authority: dissolution revokes/relinquishes; it cannot expand authority
+    information_visible: closure checklist and unresolved obligations
+    information_hidden: none material to closure
+    resources: drain deadline and reconciliation budget
+    incentives: zero orphan work or bureaucracy
+    feedback: unresolved obligation and credential-revocation rates
+    activation_threshold: mission closure, kill condition or superseding founder command
+    memory: sealed TopologyEpisode including failures
+    selection: retain template only after executed evidence
+    trust_boundary: organization cannot certify its own clean dissolution alone
+    proof: lease expiry, credential revocation, resource release and closure receipt
+    failure_behavior: block dissolution and escalate unresolved obligation
+    recovery_behavior: bounded reconciliation organization or terminate safely
+    external_consequence: uncertain effects must reconcile before closure
+    invariant_worth_preserving: creation requires a symmetric end mechanism
+    mutations:
+      - require independent closure verification
+      - preserve failed/losing topology as knowledge
+      - return capabilities to registry without returning authority
+      - block closure on any uncertain external effect
+    super_nodes: [Eligibility, Proof_Truth, Resource_Settlement]
+
+  - id: M09-event-consequence-boundary
+    source_class: current_uniimente
+    source: Event Spine, workload identity, Linker and Consequence Gate
+    purpose: keep coordination facts separate from permission and consequence
+    primitive_operation: exchange typed events while Gate mediates authorized effects
+    maintained_state: causal event, identity, decision and consequence receipt
+    state_transition: observed_to_proposed_to_authorized_or_refused_to_reconciled
+    actors: [organs, Kernel, legal_principal, Gate]
+    authority: only canonical authority mechanisms and legal principal
+    information_visible: typed event and referenced grant
+    information_hidden: least-privilege context
+    resources: bounded by mission and capability envelopes
+    incentives: evidence-complete authorized outcome
+    feedback: authority violations and consequence outcomes
+    activation_threshold: valid identity, contract, authority and Gate decision
+    memory: canonical ledger and provenance
+    selection: route by typed capability without authorizing
+    trust_boundary: event truth does not imply permission
+    proof: signed event, decision and Gate receipt
+    failure_behavior: refuse closed and preserve attempted violation
+    recovery_behavior: reconcile state through existing Kernel mechanisms
+    external_consequence: one canonical path only
+    invariant_worth_preserving: events move facts, not authority
+    mutations:
+      - bind each organizational edge to explicit allowed event contracts
+      - record authority violations as topology-failure metrics
+      - make unknown-effect reconciliation a closure prerequisite
+      - forbid topology nodes from holding mission or consequence power
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]
+
+  - id: M10-omnimorph-composition-memory
+    source_class: current_uniimente
+    source: OMNIMORPH, CapabilityGenome, Foundry, routing and provenance
+    purpose: compose capability plus organization without self-activation
+    primitive_operation: bind required capabilities and organizational hypothesis to a mission
+    maintained_state: mission digest, genome digest, phenotype, scorecard and episode refs
+    state_transition: hypothesis_to_experiment_candidate_to_validated_or_retired
+    actors: [organization_compiler, capability_registry, independent_evaluator, human_decision_owner]
+    authority: references existing grants; compiler has no execution or activation authority
+    information_visible: problem geometry, candidates, scorecard and evidence status
+    information_hidden: protected mission data not required for design
+    resources: compiler compute and experiment envelope
+    incentives: simplest verified organization wins
+    feedback: executed TopologyEpisodes across mission geometries
+    activation_threshold: Phase gates and explicit human decision
+    memory: retained winners, losers, dissent and failed predictions
+    selection: empirical comparison first; prediction remains hypothesis
+    trust_boundary: compiler cannot promote its own output without executed evidence
+    proof: content digests, scorecard, episode refs and decision record
+    failure_behavior: fall back to static or do not instantiate
+    recovery_behavior: retire genome, preserve episode, open new linked decision
+    external_consequence: none; existing Gate remains sole path
+    invariant_worth_preserving: organization creation never becomes permission creation
+    mutations:
+      - couple Capability Manifest with OrchestrationGenome
+      - make static workflow and do-nothing first-class phenotypes
+      - require executed episodes before validated status
+      - retain losing structures as causal institutional knowledge
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]

@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/orchestration-genome.schema.json",
+  "title": "OrchestrationGenome",
+  "description": "A content-bound, non-authorizing organizational design for one MissionContract. It is a hypothesis until executed episodes support it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "genome_id", "schema_version", "version", "digest", "digest_scope", "mission_ref",
+    "mission_digest", "evidence_status", "topology", "command", "worker_pools", "task_policy",
+    "communication", "evaluators", "resources", "failure", "reconfiguration", "dissolution",
+    "metrics", "fallback", "kill_conditions", "authority_refs", "authority_invariants", "selection_basis"
+  ],
+  "properties": {
+    "genome_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "digest": {"$ref": "#/$defs/digest"},
+    "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
+    "mission_ref": {"type": "string", "format": "uuid"},
+    "mission_digest": {"$ref": "#/$defs/digest"},
+    "evidence_status": {"enum": ["hypothesis", "experiment_candidate", "validated", "retired"]},
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phenotype", "nodes", "edges", "hierarchy_depth", "allowed_communication_channels"],
+      "properties": {
+        "phenotype": {"$ref": "#/$defs/phenotype"},
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node_id", "role", "power", "identity_policy_ref"],
+            "properties": {
+              "node_id": {"type": "string", "pattern": "^[a-z][a-z0-9._-]*$"},
+              "role": {"type": "string", "minLength": 1},
+              "power": {"enum": ["organization_design", "coordination", "organization_execution", "independent_evaluation"]},
+              "identity_policy_ref": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["from", "to", "event_types"],
+            "properties": {
+              "from": {"type": "string", "minLength": 1},
+              "to": {"type": "string", "minLength": 1},
+              "event_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z]+\\.[a-z_]+$"}}
+            }
+          }
+        },
+        "hierarchy_depth": {"type": "integer", "minimum": 0, "maximum": 8},
+        "allowed_communication_channels": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coordinator_identity_ref", "rights", "authority_minting_rights", "mission_rewrite_rights", "evaluator_suppression_rights"],
+      "properties": {
+        "coordinator_identity_ref": {"type": ["string", "null"]},
+        "rights": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["decompose", "sequence", "prioritize", "route", "request_workers", "allocate_authorized_internal_resources", "synthesize", "request_reconfiguration", "escalate"]}
+        },
+        "authority_minting_rights": {"const": false},
+        "mission_rewrite_rights": {"const": false},
+        "evaluator_suppression_rights": {"const": false}
+      }
+    },
+    "worker_pools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "required_capability", "minimum_workers", "maximum_workers", "concurrency_ceiling", "provider_eligibility", "context_policy_ref", "tool_policy_ref", "lease_required"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "required_capability": {"type": "string", "minLength": 1},
+          "minimum_workers": {"type": "integer", "minimum": 0},
+          "maximum_workers": {"type": "integer", "minimum": 0},
+          "concurrency_ceiling": {"type": "integer", "minimum": 0},
+          "provider_eligibility": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "context_policy_ref": {"type": "string", "minLength": 1},
+          "tool_policy_ref": {"type": "string", "minLength": 1},
+          "lease_required": {"const": true}
+        }
+      }
+    },
+    "task_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_ref", "priority_policy", "idempotency_required", "lease_duration_seconds", "timeout_seconds", "retry", "reconciliation_required_for_uncertain_effect", "completion_proof"],
+      "properties": {
+        "contract_ref": {"type": "string", "minLength": 1},
+        "priority_policy": {"type": "string", "minLength": 1},
+        "idempotency_required": {"const": true},
+        "lease_duration_seconds": {"type": "integer", "minimum": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1},
+        "retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maximum_attempts", "backoff_policy", "external_effect_retry_mode"],
+          "properties": {
+            "maximum_attempts": {"type": "integer", "minimum": 0},
+            "backoff_policy": {"enum": ["none", "fixed", "exponential"]},
+            "external_effect_retry_mode": {"const": "RECONCILE_BEFORE_RETRY"}
+          }
+        },
+        "reconciliation_required_for_uncertain_effect": {"const": true},
+        "completion_proof": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "communication": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_contract", "allowed_senders", "allowed_receivers", "channel", "sensitivity", "ordering_requirement"],
+        "properties": {
+          "event_contract": {"type": "string", "minLength": 1},
+          "allowed_senders": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "allowed_receivers": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "channel": {"type": "string", "minLength": 1},
+          "sensitivity": {"type": "string", "minLength": 1},
+          "ordering_requirement": {"enum": ["none", "per_subject", "total"]}
+        }
+      }
+    },
+    "evaluators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "identity_ref", "independent_from_command", "required_assessments", "conflict_rule", "dissent_preservation", "escalation_destination_ref"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "identity_ref": {"type": "string", "minLength": 1},
+          "independent_from_command": {"const": true},
+          "required_assessments": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "conflict_rule": {"type": "string", "minLength": 1},
+          "dissent_preservation": {"const": true},
+          "escalation_destination_ref": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_call_ceiling", "compute_ceiling", "compute_unit", "cost_ceiling_usd", "time_ceiling_seconds", "reserved_capacity"],
+      "properties": {
+        "model_call_ceiling": {"type": "integer", "minimum": 0},
+        "compute_ceiling": {"type": "number", "minimum": 0},
+        "compute_unit": {"type": "string", "minLength": 1},
+        "cost_ceiling_usd": {"type": "number", "minimum": 0},
+        "time_ceiling_seconds": {"type": "integer", "minimum": 1},
+        "reserved_capacity": {"type": "number", "minimum": 0}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeout_behavior", "worker_loss_behavior", "coordinator_loss_behavior", "poison_task_policy", "dead_letter_policy", "split_brain_protection", "degraded_mode"],
+      "properties": {
+        "timeout_behavior": {"type": "string", "minLength": 1},
+        "worker_loss_behavior": {"type": "string", "minLength": 1},
+        "coordinator_loss_behavior": {"type": "string", "minLength": 1},
+        "poison_task_policy": {"type": "string", "minLength": 1},
+        "dead_letter_policy": {"type": "string", "minLength": 1},
+        "split_brain_protection": {"type": "string", "minLength": 1},
+        "degraded_mode": {"type": "string", "minLength": 1}
+      }
+    },
+    "reconfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["permitted", "permitted_changes", "triggers", "state_transfer_requirements", "evidence_requirement", "rollback", "maximum_change_scope", "live_self_rewrite_permitted"],
+      "properties": {
+        "permitted": {"type": "boolean"},
+        "permitted_changes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "triggers": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "state_transfer_requirements": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence_requirement": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "rollback": {"type": "string", "minLength": 1},
+        "maximum_change_scope": {"type": "string", "minLength": 1},
+        "live_self_rewrite_permitted": {"const": false}
+      }
+    },
+    "dissolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["require_task_closure", "require_resource_release", "require_credential_expiry", "require_worker_termination", "require_evidence_preservation", "require_obligation_reconciliation"],
+      "properties": {
+        "require_task_closure": {"const": true},
+        "require_resource_release": {"const": true},
+        "require_credential_expiry": {"const": true},
+        "require_worker_termination": {"const": true},
+        "require_evidence_preservation": {"const": true},
+        "require_obligation_reconciliation": {"const": true}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mission", "topology", "failure", "cost"],
+      "properties": {
+        "mission": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "topology": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "failure": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "cost": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phenotype", "genome_ref", "trigger"],
+      "properties": {
+        "phenotype": {"enum": ["static_durable_workflow", "do_not_instantiate"]},
+        "genome_ref": {"type": ["string", "null"]},
+        "trigger": {"type": "string", "minLength": 1}
+      }
+    },
+    "kill_conditions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "authority_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "References to authority already issued elsewhere; never grants."
+    },
+    "authority_invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declares_authority", "worker_inherits_coordinator_authority", "replacement_inherits_failed_worker_authority", "may_bypass_consequence_gate"],
+      "properties": {
+        "declares_authority": {"const": false},
+        "worker_inherits_coordinator_authority": {"const": false},
+        "replacement_inherits_failed_worker_authority": {"const": false},
+        "may_bypass_consequence_gate": {"const": false}
+      }
+    },
+    "selection_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problem_geometry_digest", "scorecard_ref", "compared_phenotypes", "executed_episode_refs", "claim"],
+      "properties": {
+        "problem_geometry_digest": {"$ref": "#/$defs/digest"},
+        "scorecard_ref": {"type": "string", "minLength": 1},
+        "compared_phenotypes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/phenotype"}},
+        "executed_episode_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "claim": {"enum": ["HYPOTHESIS_ONLY", "EXPERIMENT_CANDIDATE", "SUPPORTED_BY_EXECUTED_EPISODES"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"evidence_status": {"const": "validated"}}},
+      "then": {
+        "properties": {
+          "selection_basis": {
+            "properties": {
+              "executed_episode_refs": {"minItems": 1},
+              "claim": {"const": "SUPPORTED_BY_EXECUTED_EPISODES"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"evidence_status": {"enum": ["hypothesis", "experiment_candidate"]}}},
+      "then": {
+        "properties": {
+          "selection_basis": {
+            "properties": {"claim": {"enum": ["HYPOTHESIS_ONLY", "EXPERIMENT_CANDIDATE"]}}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "phenotype": {"enum": ["static_durable_workflow", "centralized", "decentralized", "hierarchical", "hybrid", "developmental_local", "do_not_instantiate"]}
+  }
+}

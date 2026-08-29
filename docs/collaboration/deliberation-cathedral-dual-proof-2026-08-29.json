@@ -1,0 +1,217 @@
+{
+  "decision_id": "DECISION-CATHEDRAL-DUAL-PROOF-2026-08-29",
+  "title": "Whether to install a dual-proof cathedral reality spine",
+  "problem": "The master cathedral source expands the persistent destination, but the repository still reports VDM=0, CVO=0, HARDENED=0 and unresolved runtime ownership. The decision is whether to copy the source into a monolithic runtime prompt, defer it entirely, or preserve it through classified intent, one canonical capability crosswalk, and distinct internal and external proof gates.",
+  "founder_intent_refs": [
+    "INTENT-CATHEDRAL-DUAL-PROOF-2026-08-29"
+  ],
+  "baseline": "PR #87 proposes a durable InstitutionalRuntime but reports no clean verified external outcome; PR #88 adds inert organizational contracts and a falsification plan while protecting static DurableWorkflow and retaining VDM=0. The canonical capability registry remains blueprint/registry.py.",
+  "alternatives": [
+    {
+      "name": "Monolithic cathedral prompt",
+      "description": "Inject the entire founder architecture into every model call and treat it as the operational control plane.",
+      "advantages": ["Fast to author", "High apparent coverage"],
+      "disadvantages": ["Conflates source with authority", "Encourages context overload", "Cannot prove closure", "Duplicates existing mechanisms conceptually"],
+      "revival_evidence": "Only as a source archive or unusually justified long-context input, never as a replacement for machine policy and proof."
+    },
+    {
+      "name": "Documentation-only preservation",
+      "description": "Store the master architecture and take no machine-checkable action.",
+      "advantages": ["Minimal implementation risk", "Preserves prose"],
+      "disadvantages": ["No fail-closed promotion boundary", "No source-section coverage check", "No reality-pressure mechanism"],
+      "revival_evidence": "Suitable only if the repository cannot safely accept additive governance artifacts."
+    },
+    {
+      "name": "Single proof gate",
+      "description": "Use one success label for internal execution and external outcomes.",
+      "advantages": ["Simpler vocabulary", "Fewer artifacts"],
+      "disadvantages": ["Internal success can masquerade as market or settlement truth", "External effects can skip restart proof"],
+      "revival_evidence": "None while internal durability and external consequence remain materially different risk domains."
+    },
+    {
+      "name": "Dual-proof additive spine",
+      "description": "Classify the source, map it to canonical owners, and require VDM before separately authorized CVO while leaving runtime and live execution untouched.",
+      "advantages": ["Preserves the cathedral", "Separates internal and external truth", "Reuses canonical owners", "Machine-checkable and reversible"],
+      "disadvantages": ["Adds governance surface", "Cannot itself close VDM or CVO", "Depends on later runtime-owner decision"],
+      "revival_evidence": "This is the selected design and remains valid while it blocks overclaiming without duplicating runtime semantics."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave the master source in the conversation and keep existing code unchanged; no new duplication occurs, but source coverage, proof semantics, and authority scope remain implicit.",
+    "advantages": ["Zero repository change", "No migration burden"],
+    "disadvantages": ["Founder destination may fragment", "VDM and CVO can be conflated", "The approval-state ambiguity remains"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve all 31 cathedral sections as classified destinations and make explicit that source text does not create executable authority.",
+      "material_concerns": ["No silent aspiration shrinkage", "No false verbatim transcript", "Alfonso remains root authority"],
+      "evidence_refs": ["CATHEDRAL-MASTER-SOURCE-MANIFEST-2026-08-29.md", "DOCTRINE.txt"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Add policy and crosswalk artifacts only; reuse blueprint/registry.py and defer runtime implementation until PR #70/#87 ownership is decided.",
+      "material_concerns": ["No second runtime", "No competing capability registry", "Static workflow wins ties"],
+      "evidence_refs": ["blueprint/registry.py", "PR #87", "PR #88"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Dual-gate vocabulary can become new theater unless current counters remain zero and substitutes are explicitly forbidden.",
+      "material_concerns": ["Documentation laundering", "Self-attestation", "Correlated-verifier claims", "Evidence bureaucracy"],
+      "evidence_refs": ["PR #87 CVO=0 and HARDENED=0", "PR #88 VDM=0"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Accept a small additive package with standard-library tests, explicit rollback, no runtime code, and no edit to the completed PR #88 deliberation.",
+      "material_concerns": ["Stacked-PR review order", "Operator comprehension", "Unresolved runtime ownership"],
+      "evidence_refs": ["AUTHORITY-STATE-CLARIFICATION-2026-08-29.md", "tests/unit/test_cathedral_dual_proof_gates.py"],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Require independent evidence roots, lawful operators, consent and anti-manipulation controls before CVO; VDM must remain consequence-free.",
+      "material_concerns": ["External harm", "Participant manipulation", "Unreconciled retries", "Builder judging itself"],
+      "evidence_refs": ["Proof to Settlement Egregore.pdf", "UNIIMENTE Reality Compiler Blueprint.pdf", "dual-proof-gates.json"],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The repository has a canonical evidence-backed capability registry.",
+      "tier": "primary_source",
+      "reference": "blueprint/registry.py at PR #88 head",
+      "finding": "The registry already separates awarded rung, current reality, gaps, owners, and evidence; a new registry would be duplication."
+    },
+    {
+      "claim": "A durable runtime line exists as a proposal but whole-body closure is not proven.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #87",
+      "finding": "InstitutionalRuntime and restart recovery are proposed while CVO=0, HARDENED=0 and whole-body closure remains false."
+    },
+    {
+      "claim": "Organizational Morphogenesis Phase 1 is inert and keeps static DurableWorkflow as the protected baseline.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #88",
+      "finding": "Three schemas and tests exist; no runtime code or VDM is added."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "A new evidence policy can increase documents without increasing capability.",
+      "tier": "historical_artifact",
+      "reference": "Master source anti-theater rule and current VDM=0/CVO=0",
+      "finding": "This change must keep all proof counters at zero and be judged only as a guardrail and traceability substrate."
+    },
+    {
+      "claim": "Runtime ownership remains contested.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #70, PR #87, and PR #88 ownership proposal",
+      "finding": "No execution composition root can be added in this decision."
+    },
+    {
+      "claim": "Some attached pseudo-digital-life mechanisms imply self-preservation or sovereign authority.",
+      "tier": "primary_source",
+      "reference": "Be accumulative...pdf and Https_youtu...pdf",
+      "finding": "They remain mechanism sources only; self-sovereignty, hidden persistence, and authority creation conflict with founder-governed doctrine."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Install the smallest machine-checkable layer that preserves the complete source, distinguishes internal durability from external outcome truth, and maps every source section to an existing or explicitly missing canonical owner.",
+    "advantages": [
+      {"id": "A1", "statement": "Preserves the cathedral without runtime context overload.", "amplified_value": "All 31 sections stay retrievable while mission calls can use compiled relevant context."},
+      {"id": "A2", "statement": "Separates durable mission truth from real external outcome truth.", "amplified_value": "Internal progress can compound without laundering sandbox success into settlement claims."},
+      {"id": "A3", "statement": "Turns proof history into reusable institutional substrate.", "amplified_value": "Verified episodes can improve routing, topology choice, recovery, autonomy calibration, and capital allocation."},
+      {"id": "A4", "statement": "Protects canonical ownership.", "amplified_value": "The crosswalk points to blueprint/registry.py and existing owners instead of creating a duplicate registry or runtime."},
+      {"id": "A5", "statement": "Keeps authority explicit.", "amplified_value": "Capability promotion, merge, live graduation, and ownership decisions stay separately human-gated."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "A new evidence vocabulary can become documentation theater.", "severity": "high", "response_type": "evidence", "redesigned_response": "Keep VDM, CVO and HARDENED counters at zero; add tests that forbid automatic promotion and common substitutes."},
+      {"id": "D2", "statement": "The crosswalk could become a second capability registry.", "severity": "critical", "response_type": "modularity", "redesigned_response": "Declare blueprint/registry.py canonical in machine-readable fields and test that the crosswalk does not replace it."},
+      {"id": "D3", "statement": "Approval language could silently ratify runtime ownership or live action.", "severity": "critical", "response_type": "governance", "redesigned_response": "Add a scope clarification that approves only this inert stacked change and preserves separate founder decisions."},
+      {"id": "D4", "statement": "A single success ladder may imply CVO automatically follows VDM.", "severity": "critical", "response_type": "protective", "redesigned_response": "Encode distinct gate assertions, separate live graduation, and an explicit no-implication rule."},
+      {"id": "D5", "statement": "The source manifest is a normalization rather than an exact exported transcript.", "severity": "medium", "response_type": "learning", "redesigned_response": "State the boundary prominently, retain conversation provenance, and require a future exact export to be added rather than overwrite history."}
+    ],
+    "comparisons": {
+      "baseline": "Current PR #88 head: inert OM contracts, canonical capability registry, VDM=0, CVO=0, no whole-body closure.",
+      "do_nothing": "Avoids new files but leaves the cathedral source, gate semantics, and approval scope implicit.",
+      "simplest_viable_alternative": "One prose document describing VDM and CVO; cheaper but not machine-checkable and cannot verify source-section coverage.",
+      "strongest_competing_architecture": "Existing blueprint/registry.py plus PR #87 evidence language without a new policy artifact.",
+      "reversible_experiment": "Add only source, intent, policy, crosswalk, deliberation, clarification, and standard-library tests on a dedicated stacked draft PR."
+    },
+    "rejected_alternatives": [
+      {"name": "New cathedral runtime", "rejection_reason": "Runtime ownership is unresolved and a second composition root would fragment the Kernel.", "revival_evidence": "Explicit founder selection of the canonical runtime owner and a linked Phase-2 decision."},
+      {"name": "New capability-matrix service", "rejection_reason": "Duplicates blueprint/registry.py.", "revival_evidence": "Only evidence that the canonical registry cannot represent the required semantics after a migration decision."},
+      {"name": "Immediate Kimi swarm integration", "rejection_reason": "Provider labor is not the current bottleneck and would not close VDM or CVO.", "revival_evidence": "A sealed parallel-search benchmark showing material lift under an approved adapter charter."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The design was attacked as evidence bureaucracy, source laundering, a parallel registry, an implied runtime choice, correlated self-verification, live-action authorization, provider capture, and a semantic ladder that could automatically inflate claims. The strengthened design remains an inert, additive policy layer with zero proof counters.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "bureaucracy", "statement": "Maintainers may update prose while forgetting machine policy or tests.", "strengthening_response": "Make the JSON artifacts authoritative for checks and test all 31 section mappings, gate counters, and promotion invariants."},
+      {"id": "N2", "category": "gaming", "statement": "A verifier could be named but remain economically or evidentially correlated with the builder.", "strengthening_response": "Require independence from builder and operator plus a separate evidence root; correlated agents never count as independent confirmation."},
+      {"id": "N3", "category": "centralization", "statement": "The proof gate could become practical authority over missions.", "strengthening_response": "The policy only constrains claims; it cannot authorize a mission, action, budget, operator, merge, or live graduation."},
+      {"id": "N4", "category": "dependency", "statement": "Provider-specific swarm results could contaminate institutional continuity.", "strengthening_response": "Keep provider adapters outside constitutional identity and require portable receipts and deterministic fallbacks."},
+      {"id": "N5", "category": "reversibility", "statement": "Later consumers may depend on the new labels before the policy is ratified.", "strengthening_response": "Keep the change on a draft stacked PR; no runtime consumer or migration is included."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "Policy artifacts do not create capability; counters remain zero and success is limited to traceability and fail-closed semantics.", "owner": "Kernel maintainers", "review_trigger": "Any claim that this PR closes VDM, CVO, HARDENED, or whole-body capability."},
+      {"disadvantage_id": "D2", "outcome": "prohibited", "rationale": "Machine fields and tests keep blueprint/registry.py canonical.", "owner": "Systems Architect", "review_trigger": "Any crosswalk consumer attempts to write capability truth independently."},
+      {"disadvantage_id": "D3", "outcome": "resolved", "rationale": "The authority clarification explicitly excludes merge, runtime selection, ownership ratification, and external action.", "owner": "Alfonso", "review_trigger": "Any later proposal requests one of the excluded actions."},
+      {"disadvantage_id": "D4", "outcome": "prohibited", "rationale": "CVO requires VDM but does not follow automatically; it has separate assertions and live-graduation authority.", "owner": "Evidence and Welfare Guardian", "review_trigger": "Any promotion tooling or report infers CVO from VDM."},
+      {"disadvantage_id": "D5", "outcome": "accepted", "rationale": "The manifest is explicitly labeled as a generated normalization and cannot masquerade as verbatim source.", "owner": "Founder-Intent Steward", "review_trigger": "An exact exported master source becomes available."}
+    ],
+    "final_design": "Add a provenance-explicit source manifest, one constitutional intent, an exactly-two-pass linked decision, a noncanonical crosswalk covering all 31 sections, machine-readable dual proof policy, scope clarification, explanatory architecture note, and standard-library tests. Keep VDM=0, CVO=0, HARDENED=0; add no runtime, shared contract schema, external action, authority, merge, or ownership ratification.",
+    "residual_risks": [
+      {"risk": "The source manifest is normalized rather than verbatim.", "mitigation": "Preserve its provenance warning and add any future exact export as a new immutable artifact with digest.", "owner": "Founder-Intent Steward", "review_trigger": "Exact source export is supplied."},
+      {"risk": "The stacked PR depends on unresolved PR #87 and PR #88 review order.", "mitigation": "Target the PR #88 branch, keep the delta additive, and do not merge automatically.", "owner": "Kernel maintainer", "review_trigger": "Either base PR changes or closes."},
+      {"risk": "No real VDM or CVO is produced by this change.", "mitigation": "Keep counters zero and make runtime-owner selection plus one protected VDM the next separate decision.", "owner": "Alfonso", "review_trigger": "Before any whole-body or external outcome claim."}
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "The Adversarial Reviewer preserves the claim that this is governance substrate, not a capability milestone. Any report counting it as gap closure must be rejected.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not count this change as VDM, CVO, hardening, or whole-body progress.",
+        "rationale": "It adds source normalization, policy, and tests but performs no complete interrupted mission and no external state change.",
+        "evidence_threshold": "A separately authorized run satisfies every frozen VDM assertion under an independent verifier; CVO additionally requires a named lawful external actor and independent changed-state proof.",
+        "owner": "Independent evidence reviewer",
+        "review_trigger": "Any promotion or milestone report references this change."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso, authenticated founder instruction 'Build it' on 2026-08-29"
+  },
+  "migration_plan": "No runtime or data migration. Review the stacked draft after PR #88; if retained, future capability reporting may read the dual-proof policy while blueprint/registry.py remains canonical. Runtime selection, VDM execution, live graduation, CVO, and organ migration each require later linked decisions.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the stacked draft pull request without merge.",
+      "If merged later, revert only this source manifest, intent, policy, crosswalk, clarification, deliberation, architecture note, and tests.",
+      "Retain the reverted deliberation and reason as historical evidence.",
+      "Continue using blueprint/registry.py, the current static DurableWorkflow baseline, and existing proof claims."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "The crosswalk becomes a second capability registry or writes independent capability truth.",
+    "VDM, CVO, HARDENED, or whole-body closure is incremented by documentation, schema validation, tests, model output, or self-attestation.",
+    "A model, agent, swarm, organ, verifier, or proof gate creates authority.",
+    "A live external effect occurs without a named legal operator, applicable charter, reconciliation, and independent verifier.",
+    "The change selects a runtime owner, edits runtime code, or rewrites the completed PR #88 two-pass record.",
+    "An attached self-preservation or sovereign-agent mechanism is promoted into constitutional doctrine."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso",
+  "review_trigger": "Review this stacked draft; open a new linked decision before merge if constitutional scope changes, and before runtime selection, VDM execution, live graduation, CVO, or any third strengthening pass."
+}

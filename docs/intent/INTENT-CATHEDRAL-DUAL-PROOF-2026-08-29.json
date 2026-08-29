@@ -1,0 +1,51 @@
+{
+  "intent_id": "INTENT-CATHEDRAL-DUAL-PROOF-2026-08-29",
+  "title": "Preserve the cathedral through dual proof gates and traceable capability mapping",
+  "statement": "Preserve Alfonso's complete UNIIMENTE destination as classified founder intent while requiring distinct evidence for implemented capability, verified durable mission closure, clean verified external outcomes, and hardening; no capability claim or machine improvement may create authority.",
+  "source": "Alfonso master prompt: UNIIMENTE Golden Kernel Infinite Cathedral Chase, followed by the authenticated instruction 'Build it'",
+  "source_location": "ChatGPT project conversation, 2026-08-29; docs/founder-sources/CATHEDRAL-MASTER-SOURCE-MANIFEST-2026-08-29.md",
+  "source_date_or_version": "2026-08-29",
+  "status": "active",
+  "authority_level": "constitutional_invariant",
+  "consequence_class": "constitutional",
+  "intended_outcome": "One machine-checkable reality spine that maps all 31 founder-source sections to canonical owners and blocks promotion until the correct internal or external proof gate is satisfied.",
+  "affected_systems": [
+    "governance/",
+    "blueprint/",
+    "runtime/",
+    "events/",
+    "verifier/",
+    "docs/architecture/",
+    "docs/collaboration/",
+    "docs/founder-sources/"
+  ],
+  "rationale": "The repository contains substantial constitutional and component capability, but current evidence remains VDM=0, CVO=0, HARDENED=0. A source-to-capability map plus dual proof gates preserves ambition while preventing documents, schemas, model consensus, or internal execution from being mislabeled as real closure.",
+  "conflicts": [
+    "PR #70 and PR #87 propose overlapping runtime ownership and remain unresolved",
+    "The PR #88 Phase-1 experiment approval does not by itself ratify the proposed architecture ownership map",
+    "Older live-pilot language cannot override the later founder-guided developmental-period rule or authorize external effects"
+  ],
+  "evidence_refs": [
+    "uniimente-kernel PR #87 reports CVO=0, HARDENED=0, whole-body closure false",
+    "uniimente-kernel PR #88 preserves VDM=0 and static DurableWorkflow as the protected baseline",
+    "Proof to Settlement Egregore.pdf",
+    "UNIIMENTE Reality Compiler Blueprint.pdf",
+    "docs/organizational-morphogenesis/INSPECTION_LEDGER.md"
+  ],
+  "implementation_refs": [
+    "docs/architecture/dual-proof-gates.json",
+    "docs/architecture/DUAL-PROOF-GATES-AND-REALITY-SPINE.md",
+    "docs/architecture/cathedral-source-capability-crosswalk.json",
+    "tests/unit/test_cathedral_dual_proof_gates.py"
+  ],
+  "owner": "Alfonso",
+  "next_review_trigger": "A candidate requests VDM, CVO, HARDENED, runtime-owner selection, merge, live graduation, or any authority-expanding promotion.",
+  "unresolved_questions": [
+    "Which runtime line becomes the canonical execution composition root?",
+    "Who will serve as the first independent VDM verifier?",
+    "Which named external legal operator and verifier will be authorized for the first CVO attempt?"
+  ],
+  "created_at": "2026-08-29T00:00:00Z",
+  "updated_at": "2026-08-29T00:00:00Z"
+}
+

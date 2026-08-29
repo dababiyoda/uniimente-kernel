@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_kind": "EVIDENCE_POLICY_NOT_RUNTIME_SCHEMA",
+  "intent_ref": "INTENT-CATHEDRAL-DUAL-PROOF-2026-08-29",
+  "source_manifest": "docs/founder-sources/CATHEDRAL-MASTER-SOURCE-MANIFEST-2026-08-29.md",
+  "canonical_capability_registry": "blueprint/registry.py",
+  "current_reality": {
+    "as_of": "2026-08-29",
+    "vdm_count": 0,
+    "cvo_count": 0,
+    "hardened_count": 0,
+    "whole_body_closure": false,
+    "claim": "No cathedral capability may infer VDM, CVO, HARDENED, or whole-body closure from this policy artifact."
+  },
+  "lifecycle": [
+    {
+      "stage": "INTENDED",
+      "meaning": "Authenticated founder destination is classified and preserved.",
+      "minimum_evidence": ["source lineage", "authority classification"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "PARTIAL",
+      "meaning": "Some required mechanism or evidence exists, but acceptance is incomplete.",
+      "minimum_evidence": ["named existing mechanism", "explicit remaining gap"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "IMPLEMENTED",
+      "meaning": "Versioned code or contract exists and its deterministic acceptance tests pass.",
+      "minimum_evidence": ["implementation reference", "passing deterministic tests"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "EXERCISED",
+      "meaning": "The implemented capability ran in a protected environment and emitted inspectable receipts.",
+      "minimum_evidence": ["sandbox execution", "receipts", "failure capture"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "VDM",
+      "meaning": "A complete authorized mission closed durably across a deliberate interruption and exact restart without duplicated consequential work or authority violation.",
+      "minimum_evidence": ["VDM gate pass"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "CVO",
+      "meaning": "A named independent external verifier confirms that an authorized real actor changed payment, permission, routing, contract, or equivalent settlement state with complete lineage.",
+      "minimum_evidence": ["VDM prerequisite", "CVO gate pass"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "HARDENED",
+      "meaning": "The capability survives repeated, adversarial, independent, recovery-aware verification under frozen criteria.",
+      "minimum_evidence": ["repeated VDM or CVO evidence as applicable", "adversarial review", "independent verification", "rollback exercise"],
+      "automatic_promotion": false
+    },
+    {
+      "stage": "SUPERSEDED",
+      "meaning": "A versioned successor preserves the underlying intent and demonstrates superior evidence; history and rollback remain available.",
+      "minimum_evidence": ["successor comparison", "intent continuity", "migration receipt", "rollback path"],
+      "automatic_promotion": false
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "VDM",
+      "name": "Verified Durable Mission Closure",
+      "scope": "protected_internal_mission",
+      "prerequisite_stages": ["IMPLEMENTED", "EXERCISED"],
+      "required_assertions": [
+        "authorized_mission_contract_and_founder_intent_lineage",
+        "canonical_runtime_and_workflow_owner_selected",
+        "deliberate_interruption_after_committed_progress",
+        "exact_restart_from_committed_state",
+        "no_duplicate_consequential_tasks",
+        "complete_event_action_provenance_evaluator_and_dissent_lineage",
+        "closure_receipt_references_tasks_outputs_and_evaluations",
+        "zero_authority_identity_or_consequence_gate_violations",
+        "independent_verifier_pass_under_frozen_criteria"
+      ],
+      "forbidden_substitutes": [
+        "documentation",
+        "schema_validation_only",
+        "unit_tests_only",
+        "model_consensus",
+        "same-builder-self-attestation",
+        "successful_run_without_interruption"
+      ],
+      "may_create_external_consequence": false,
+      "creates_authority": false,
+      "requires_founder_live_graduation": false,
+      "current_count": 0
+    },
+    {
+      "gate_id": "CVO",
+      "name": "Clean Verified Outcome",
+      "scope": "authorized_real_external_outcome",
+      "prerequisite_stages": ["VDM"],
+      "required_assertions": [
+        "named_legal_operator_and_real_decision_actor",
+        "applicable_founder_approved_charter_or_standing_mandate",
+        "lawful_consent_budget_privacy_and_policy_compliance",
+        "real_payment_permission_routing_contract_or_equivalent_state_change",
+        "named_external_verifier_independent_of_builder_and_operator",
+        "proof_chain_links_intent_decision_action_receipt_and_changed_state",
+        "uncertain_external_effect_reconciled_before_retry",
+        "no_deception_coercion_dependency_manipulation_or_authority_minting"
+      ],
+      "forbidden_substitutes": [
+        "internal_sandbox_success",
+        "simulated_settlement",
+        "model_prediction",
+        "engagement_metric_without_verified_state_change",
+        "correlated_agents_sharing_one_evidence_root",
+        "builder_or_operator_self-attestation"
+      ],
+      "may_create_external_consequence": true,
+      "creates_authority": false,
+      "requires_founder_live_graduation": true,
+      "current_count": 0
+    }
+  ],
+  "promotion_policy": {
+    "builder_is_final_judge": false,
+    "correlated_agents_are_independent_verifiers": false,
+    "capability_gain_expands_authority": false,
+    "pass_one_gate_implies_other_gate": false,
+    "merge_implies_live_graduation": false,
+    "human_promotion_required_for_constitutional_or_live_claims": true,
+    "static_workflow_wins_ties": true
+  }
+}
+

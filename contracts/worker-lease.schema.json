@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/worker-lease.schema.json",
+  "title": "WorkerLease",
+  "description": "One-task, time/resource/context-bounded worker eligibility. A lease references and narrows existing authority; it is not an authority grant.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "lease_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "worker_identity": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/"
+    },
+    "issued_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/"
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1
+    },
+    "capability_grant_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authority_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "permitted_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "permitted_data_classes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "context_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "budget_ceiling_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compute_ceiling": {
+          "type": "number",
+          "minimum": 0
+        },
+        "model_call_ceiling": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "budget_ceiling_usd",
+        "compute_ceiling",
+        "model_call_ceiling"
+      ]
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "consequence_ceiling": {
+      "type": "string",
+      "enum": [
+        "internal_read",
+        "internal_write",
+        "external"
+      ]
+    },
+    "output_contract_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "heartbeat_interval_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "termination_condition": {
+      "type": "string",
+      "minLength": 1
+    },
+    "replaces_lease_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "one_task_only": {
+      "const": true
+    },
+    "authority_inheritance": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "lease_id",
+    "task_id",
+    "mission_id",
+    "worker_identity",
+    "issued_by",
+    "capability",
+    "capability_grant_ref",
+    "authority_refs",
+    "permitted_tools",
+    "permitted_data_classes",
+    "context_refs",
+    "resource_budget",
+    "issued_at",
+    "expires_at",
+    "consequence_ceiling",
+    "output_contract_ref",
+    "heartbeat_interval_seconds",
+    "termination_condition",
+    "replaces_lease_id",
+    "one_task_only",
+    "authority_inheritance"
+  ]
+}

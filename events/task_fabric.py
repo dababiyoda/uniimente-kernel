@@ -636,6 +636,7 @@ class TaskFabric:
         dissent_preserved: bool = False,
         resource_usage: dict[str, float | int] | None = None,
         consequence_status: str = "none",
+        observed_at: str | None = None,
     ) -> TaskReceipt:
         tasks = self._project()
         try:
@@ -659,6 +660,7 @@ class TaskFabric:
             "dissent_preserved": dissent_preserved,
             "resource_usage": resource_usage or dict(_ZERO_USAGE),
             "consequence_status": consequence_status,
+            "observed_at": observed_at,
         }
         fingerprint = _hash(command)
         prior = self._prior_by_key(view, transition_key, fingerprint)
@@ -693,7 +695,11 @@ class TaskFabric:
             if worker_identity != active["worker_identity"] or lease_id != active["lease_id"]:
                 raise AuthorityViolation("worker identity/lease mismatch")
         if state == "RUNNING":
-            observed = _timestamp(next(iter(evidence_refs), active["issued_at"]))
+            if observed_at is None:
+                raise TaskFabricError("RUNNING requires explicit observed_at")
+            observed = _timestamp(observed_at)
+            if observed < _timestamp(active["issued_at"]):
+                raise TaskFabricError("work cannot start before lease issuance")
             if observed >= _timestamp(active["expires_at"]):
                 raise TaskFabricError("expired lease cannot start work")
         if state == "SUBMITTED":

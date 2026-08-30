@@ -59,7 +59,7 @@ interruption evidence, exact restart, zero lost/duplicate consequential tasks,
 complete lineage/dissent, a closure receipt and zero authority/external-effect
 invariant violations. A simulation or model prediction cannot use the record.
 
-## Task lifecycle target (deferred to Phase 2)
+## Phase-2 addendum: durable task-fabric seam\n\nThe linked decision `DECISION-OM-TASK-FABRIC-2026-08-30` resolves the Phase-2\nsemantic-owner dependency without choosing between PR #70 and PR #87.\n\n- `contracts/` owns `TaskEnvelope`, `WorkerLease` and `TaskReceipt` semantics.\n- `events/` owns canonical transition truth through the existing Event Spine.\n- `events/task_fabric.py` is a replay-derived reducer, not a scheduler or a\n  second workflow engine.\n- `provenance/` remains the owner of evidence views; no duplicate receipt store\n  is introduced.\n- `runtime/` remains unchanged and its composition owner unresolved.\n\nThe reducer implements the target state lifecycle, fresh one-task lease\nnarrowing, cumulative resource ceilings, independent verification, poison\nquarantine, reconciliation-before-retry, restart reconstruction and dissolution\nreadiness. `DurableWorkflow` remains the default and protected baseline. Unit\nand restart evidence does not change Verified Durable Mission Closures from 0.\n\n## Task lifecycle target (deferred to Phase 2)
 
 `CREATED → ADMITTED → QUEUED → LEASED → RUNNING → SUBMITTED → VERIFIED → CLOSED`
 

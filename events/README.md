@@ -20,7 +20,7 @@ Layer 4 — the durable institutional nervous system.
   trigger reverse-order, best-effort compensation; every failure and
   every compensation is ledgered (negative evidence is never deleted).
 
-## Recorded proof
+- `task_fabric.py` — Phase-2 consequence-inert task reducer. It accepts explicit\n  commands, appends one transition to the existing `EventSpine`, and rebuilds\n  task state, lease history and `TaskReceipt` views from replay. `WorkerLease`\n  narrows one immutable task; it never grants authority. Unknown external-effect\n  state requires reconciliation before retry. It is not a scheduler, queue,\n  worker loop, topology selector or replacement workflow engine.\n\n## Recorded proof
 
 `tests/unit/test_events.py` (11 tests): schema refusals, emit→replay
 round-trip, ingest idempotency, outbox refusal staging, kill-and-resume

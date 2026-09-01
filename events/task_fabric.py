@@ -310,6 +310,8 @@ def _validate_lease(lease: dict[str, Any], envelope: dict[str, Any],
     _uuid(lease["mission_id"], "mission_id")
     _identity(lease["worker_identity"], "worker_identity")
     _identity(lease["issued_by"], "issued_by")
+    if lease["issued_by"] != envelope["created_by"]:
+        raise AuthorityViolation("only the task's bounded coordinator may issue its lease")
     if lease["lease_id"] in prior_leases:
         raise TaskFabricError("replacement requires a fresh lease_id")
     if lease["task_id"] != envelope["task_id"] or lease["mission_id"] != envelope["mission_id"]:
@@ -668,6 +670,11 @@ class TaskFabric:
             return prior
         if state not in _ALLOWED_TRANSITIONS[view.state]:
             raise InvalidTransition(f"{view.state} -> {state} is not permitted")
+        coordinator_states = {"ADMITTED", "QUEUED", "CLOSED", "TERMINATED"}
+        if state in coordinator_states and actor != view.envelope["created_by"]:
+            raise AuthorityViolation(
+                f"{state} requires the task's bounded coordinator identity"
+            )
         if consequence_status not in {
             "none", "not_attempted", "confirmed", "reconciled", "uncertain"
         }:
@@ -692,8 +699,12 @@ class TaskFabric:
         if state in {"RUNNING", "SUBMITTED"}:
             if active is None:
                 raise TaskFabricError(f"{state} requires an active WorkerLease")
-            if worker_identity != active["worker_identity"] or lease_id != active["lease_id"]:
-                raise AuthorityViolation("worker identity/lease mismatch")
+            if (
+                actor != active["worker_identity"]
+                or worker_identity != active["worker_identity"]
+                or lease_id != active["lease_id"]
+            ):
+                raise AuthorityViolation("worker actor/identity/lease mismatch")
         if state == "RUNNING":
             if observed_at is None:
                 raise TaskFabricError("RUNNING requires explicit observed_at")
@@ -708,8 +719,10 @@ class TaskFabric:
             _digest(result_digest, "result_digest")
         if state == "VERIFIED":
             result_worker = view.last_worker_identity
-            if actor == result_worker:
-                raise AuthorityViolation("worker cannot verify its own result")
+            if actor in {result_worker, view.envelope["created_by"]}:
+                raise AuthorityViolation(
+                    "verification must be independent from worker and coordinator"
+                )
             if not assessment_refs:
                 raise TaskFabricError("VERIFIED requires an independent assessment")
             if not dissent_preserved:
@@ -720,8 +733,16 @@ class TaskFabric:
             if not view.receipts[-1].assessment_refs:
                 raise TaskFabricError("CLOSED requires prior verification evidence")
             worker_identity = view.last_worker_identity
-        if state == "QUARANTINED" and not evidence_refs:
-            raise TaskFabricError("QUARANTINED requires poison/failure evidence")
+        if state == "QUARANTINED":
+            if actor == view.last_worker_identity:
+                raise AuthorityViolation("worker cannot quarantine its own output")
+            if not evidence_refs:
+                raise TaskFabricError("QUARANTINED requires poison/failure evidence")
+        if state == "RETRY_ELIGIBLE" and view.state == "RECONCILIATION_REQUIRED":
+            if actor in {view.last_worker_identity, view.envelope["created_by"]}:
+                raise AuthorityViolation(
+                    "reconciled retry requires an identity independent from worker and coordinator"
+                )
         if state == "RETRY_ELIGIBLE" and view.state != "RECONCILIATION_REQUIRED":
             if consequence_status == "uncertain":
                 raise ReconciliationRequired("blind retry of uncertain effect is prohibited")

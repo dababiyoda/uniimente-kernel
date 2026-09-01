@@ -59,7 +59,26 @@ interruption evidence, exact restart, zero lost/duplicate consequential tasks,
 complete lineage/dissent, a closure receipt and zero authority/external-effect
 invariant violations. A simulation or model prediction cannot use the record.
 
-## Phase-2 addendum: durable task-fabric seam\n\nThe linked decision `DECISION-OM-TASK-FABRIC-2026-08-30` resolves the Phase-2\nsemantic-owner dependency without choosing between PR #70 and PR #87.\n\n- `contracts/` owns `TaskEnvelope`, `WorkerLease` and `TaskReceipt` semantics.\n- `events/` owns canonical transition truth through the existing Event Spine.\n- `events/task_fabric.py` is a replay-derived reducer, not a scheduler or a\n  second workflow engine.\n- `provenance/` remains the owner of evidence views; no duplicate receipt store\n  is introduced.\n- `runtime/` remains unchanged and its composition owner unresolved.\n\nThe reducer implements the target state lifecycle, fresh one-task lease\nnarrowing, cumulative resource ceilings, independent verification, poison\nquarantine, reconciliation-before-retry, restart reconstruction and dissolution\nreadiness. `DurableWorkflow` remains the default and protected baseline. Unit\nand restart evidence does not change Verified Durable Mission Closures from 0.\n\n## Task lifecycle target (deferred to Phase 2)
+## Phase-2 addendum: durable task-fabric seam
+
+The linked decision `DECISION-OM-TASK-FABRIC-2026-08-30` resolves the Phase-2
+semantic-owner dependency without choosing between PR #70 and PR #87.
+
+- `contracts/` owns `TaskEnvelope`, `WorkerLease` and `TaskReceipt` semantics.
+- `events/` owns canonical transition truth through the existing Event Spine.
+- `events/task_fabric.py` is a replay-derived reducer, not a scheduler or a
+  second workflow engine.
+- `provenance/` remains the owner of evidence views; no duplicate receipt store
+  is introduced.
+- `runtime/` remains unchanged and its composition owner unresolved.
+
+The reducer implements the target state lifecycle, fresh one-task lease
+narrowing, cumulative resource ceilings, independent verification, poison
+quarantine, reconciliation-before-retry, restart reconstruction and dissolution
+readiness. `DurableWorkflow` remains the default and protected baseline. Unit
+and restart evidence does not change Verified Durable Mission Closures from 0.
+
+## Task lifecycle target (implemented by Phase-2 experiment)
 
 `CREATED → ADMITTED → QUEUED → LEASED → RUNNING → SUBMITTED → VERIFIED → CLOSED`
 
@@ -68,8 +87,9 @@ and `TERMINATED`. At-least-once delivery plus idempotency is permitted.
 Exactly-once delivery is not claimed. Unknown external-effect state always
 routes to reconciliation before retry.
 
-No TaskEnvelope, TaskReceipt or WorkerLease contract is added in Phase 1,
-because their canonical integration depends on the unresolved runtime seam.
+Phase 1 intentionally deferred these contracts. The linked Phase-2 experiment
+now adds them beneath both runtime candidates; this resolves semantic ownership
+only and does not select a runtime composition owner.
 
 ## Power invariants
 

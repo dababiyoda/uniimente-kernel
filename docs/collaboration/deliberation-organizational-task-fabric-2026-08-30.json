@@ -86,19 +86,19 @@
   "evidence": [
     {
       "claim": "The Event Spine already reconstructs its inbox, outbox and stream from the evidence ledger.",
-      "tier": "source_and_unit_test",
+      "tier": "unit_test",
       "reference": "events/spine.py; tests/unit/test_events.py; tests/unit/test_restart_resume.py",
       "finding": "Task state can be a derived replay view without a second persistence source."
     },
     {
       "claim": "DurableWorkflow remains an explicit, checkpointed, restartable baseline.",
-      "tier": "source_and_unit_test",
+      "tier": "unit_test",
       "reference": "events/spine.py and tests/unit/test_events.py",
       "finding": "The task reducer must not schedule steps or replace the workflow engine."
     },
     {
       "claim": "PR #70 and PR #87 are composition experiments rather than canonical task-semantic owners.",
-      "tier": "repository_artifact",
+      "tier": "historical_artifact",
       "reference": "PR #70 runtime/ADR-P3-ROUTE-B.md; PR #87 runtime/session.py",
       "finding": "Shared task semantics can sit beneath both without resolving their competition."
     }
@@ -106,13 +106,13 @@
   "counterevidence": [
     {
       "claim": "A new task lifecycle duplicates behavior already expressible as a fixed DurableWorkflow.",
-      "tier": "architectural_counterexample",
+      "tier": "primary_source",
       "reference": "DurableWorkflow",
       "finding": "The new code is justified only as a replay-derived contract boundary for comparing organizational forms; static workflow remains default and fallback."
     },
     {
       "claim": "No executed cross-organ episode proves that leased tasks improve outcomes.",
-      "tier": "reality_status",
+      "tier": "historical_artifact",
       "reference": "HANDOFF.md",
       "finding": "Phase 2 can prove restart and authority invariants only; VDM remains 0."
     }
@@ -127,10 +127,10 @@
       {"id": "A5", "statement": "Creates comparable receipts without claiming topology superiority.", "amplified_value": "All phenotypes can later consume the same task contracts and metrics."}
     ],
     "disadvantages": [
-      {"id": "D1", "statement": "The runtime ownership conflict could be hidden rather than resolved.", "severity": "critical", "response_type": "ownership", "redesigned_response": "Explicitly assign only contracts/events/provenance semantics; prohibit runtime edits and preserve both runtime branches."},
-      {"id": "D2", "statement": "The task reducer could grow into a second workflow engine.", "severity": "critical", "response_type": "scope", "redesigned_response": "No scheduler, queue loop, worker spawning, retries or background execution; accept explicit transitions only."},
+      {"id": "D1", "statement": "The runtime ownership conflict could be hidden rather than resolved.", "severity": "critical", "response_type": "governance", "redesigned_response": "Explicitly assign only contracts/events/provenance semantics; prohibit runtime edits and preserve both runtime branches."},
+      {"id": "D2", "statement": "The task reducer could grow into a second workflow engine.", "severity": "critical", "response_type": "modularity", "redesigned_response": "No scheduler, queue loop, worker spawning, retries or background execution; accept explicit transitions only."},
       {"id": "D3", "statement": "Three more schemas increase bureaucracy.", "severity": "medium", "response_type": "modularity", "redesigned_response": "Add exactly TaskEnvelope, WorkerLease and TaskReceipt; fail closed and add no speculative contracts."},
-      {"id": "D4", "statement": "Replay can amplify messages or accept duplicates.", "severity": "high", "response_type": "reliability", "redesigned_response": "One event per transition, caller-supplied idempotency key, payload fingerprint conflict detection and no re-dispatch during state rebuild."},
+      {"id": "D4", "statement": "Replay can amplify messages or accept duplicates.", "severity": "high", "response_type": "protective", "redesigned_response": "One event per transition, caller-supplied idempotency key, payload fingerprint conflict detection and no re-dispatch during state rebuild."},
       {"id": "D5", "statement": "A lease could become an authority grant or transfer failed-worker power.", "severity": "critical", "response_type": "governance", "redesigned_response": "Leases may reference only authority already present on the TaskEnvelope; replacements require a fresh lease and never inherit refs implicitly."}
     ],
     "comparisons": {
@@ -149,11 +149,11 @@
   "pass_2": {
     "attack_summary": "The reducer was attacked for bureaucracy, hidden centralization, replay fragility, clock nondeterminism, cost, complexity, provider dependence, evaluator capture, authority leakage, evidence theater, gaming, operator opacity and failure amplification. The final design remains a consequence-inert reducer, not an organizational runtime.",
     "new_weaknesses": [
-      {"id": "N1", "category": "ordering", "statement": "Out-of-order or stale transitions could corrupt the projection.", "strengthening_response": "Require a monotonic transition index and reject transitions whose current state does not match replay."},
-      {"id": "N2", "category": "time", "statement": "Implicit wall-clock expiry makes replay nondeterministic.", "strengthening_response": "Record issued/expires timestamps in the lease and pass observation time explicitly for expiry decisions."},
-      {"id": "N3", "category": "evaluator_capture", "statement": "The submitting worker could verify its own output.", "strengthening_response": "VERIFIED requires an evaluator identity distinct from the leased worker plus assessment and dissent-preservation fields."},
-      {"id": "N4", "category": "evidence_theater", "statement": "A schema-valid receipt could be mistaken for outcome proof.", "strengthening_response": "Receipts are transition evidence only; TopologyEpisode and VDM promotion remain separately gated."},
-      {"id": "N5", "category": "failure_amplification", "statement": "Poison output could cycle through retries.", "strengthening_response": "QUARANTINED is terminal except explicit termination; retry count remains outside this reducer and bounded by the existing workflow policy."}
+      {"id": "N1", "category": "fragility", "statement": "Out-of-order or stale transitions could corrupt the projection.", "strengthening_response": "Require a monotonic transition index and reject transitions whose current state does not match replay."},
+      {"id": "N2", "category": "fragility", "statement": "Implicit wall-clock expiry makes replay nondeterministic.", "strengthening_response": "Record issued/expires timestamps in the lease and pass observation time explicitly for expiry decisions."},
+      {"id": "N3", "category": "centralization", "statement": "The submitting worker could verify its own output.", "strengthening_response": "VERIFIED requires an evaluator identity distinct from the leased worker plus assessment and dissent-preservation fields."},
+      {"id": "N4", "category": "gaming", "statement": "A schema-valid receipt could be mistaken for outcome proof.", "strengthening_response": "Receipts are transition evidence only; TopologyEpisode and VDM promotion remain separately gated."},
+      {"id": "N5", "category": "fragility", "statement": "Poison output could cycle through retries.", "strengthening_response": "QUARANTINED is terminal except explicit termination; retry count remains outside this reducer and bounded by the existing workflow policy."}
     ],
     "pass_1_disadvantage_dispositions": [
       {"disadvantage_id": "D1", "outcome": "resolved", "rationale": "The ownership record explicitly leaves runtime/ unmodified and both runtime proposals competing.", "owner": "Kernel maintainers", "review_trigger": "Any runtime/ edit or ownership claim in this branch."},

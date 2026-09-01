@@ -1,0 +1,149 @@
+{
+  "record_id": "DELIB-CODEX-2026-09-01-001",
+  "classification": "standard",
+  "contributor": "codex",
+  "decision_owner": "alfonso_lopez",
+  "title": "Install evidence-gated weekly provider-change intake without changing the canonical runtime or production authority",
+  "roles": {
+    "founder_intent_steward": "INTENT-0029 requires weekly official-source review, material-only briefing, execution of bounded next steps, and a GitHub protocol update. It is interpreted upward toward reversible branch work, not as permission to merge, alter production, use credentials, or change constitutional authority.",
+    "systems_architect": "Provider changes belong at narrow adapters and compatibility contracts. Canonical workflows, task identities, leases, receipts, authority, event history, and evidence stay singular and provider-neutral. OpenAI-compatible or Anthropic-compatible transport must not create a provider-native parallel runtime.",
+    "adversarial_reviewer": "The strongest failure is governance automation that normalizes model-authored policy changes or silently turns provider compatibility into semantic equivalence. The design therefore requires direct exposure evidence, an independent evaluator, exactly two passes, a dedicated branch, a draft PR, and human review before merge or live change.",
+    "operator_maintainer": "The recurring burden is bounded by a materiality gate: no material change means a short brief and no PR. Material findings carry effective dates, owners, tests, migration, rollback, and kill criteria. Provider incidents use circuit breaking and receipt-gated retry instead of blind failover.",
+    "evidence_welfare_guardian": "Only official provider claims and inspectable repository state support the review. Provider claims do not prove integration success. No credentials, live requests, personal data, or production state were accessed. Preserving ambiguous and failed runs prevents invisible duplication and protects affected participants from unreviewed effects."
+  },
+  "alternatives": [
+    {
+      "kind": "proposed_design",
+      "name": "Weekly material-only review plus protocol section, intent record, evidence review, and draft-PR execution boundary",
+      "benefits": "Finds lifecycle and incident risk early; turns safe next steps into durable work; preserves canonical authority and runtime",
+      "liabilities": "Adds recurring review and governance text; automation could overreach if its boundary is ignored",
+      "evidence": "Official provider pages and deterministic default-branch searches",
+      "rollback": "Close the draft PR; if merged, revert the documentation commit and disable the weekly automation",
+      "kill_criteria": "Any default-branch write, merge, live routing or credential change, parallel runtime, or materially noisy briefing"
+    },
+    {
+      "kind": "current_baseline",
+      "name": "Generic collaboration protocol with ad hoc provider review",
+      "benefits": "No new ceremony",
+      "liabilities": "No materiality rule, lifecycle packet, incident retry discipline, or automation boundary",
+      "evidence": "Current docs/RECURSIVE_COLLABORATION_PROTOCOL.md",
+      "rollback": "n/a",
+      "kill_criteria": "n/a"
+    },
+    {
+      "kind": "do_nothing",
+      "name": "Do nothing",
+      "benefits": "Zero review cost",
+      "liabilities": "Hard shutdowns, SDK shape changes, status incidents, and pricing or policy shifts can be discovered after failure",
+      "evidence": "OpenAI Assistants shutdown and Kimi model-family shutdown occurred during this review window",
+      "rollback": "n/a",
+      "kill_criteria": "n/a"
+    },
+    {
+      "kind": "simplest_viable",
+      "name": "Weekly brief only, with no repository protocol or execution",
+      "benefits": "Low effort and low mutation risk",
+      "liabilities": "Findings remain conversational; repeated agents can reinterpret retry, authority, and compatibility differently",
+      "evidence": "Model output",
+      "rollback": "Disable the scheduled brief",
+      "kill_criteria": "If briefs do not produce durable review-ready action"
+    },
+    {
+      "kind": "strongest_competitor",
+      "name": "Adopt each provider's native agent runtime and failover between them",
+      "benefits": "Fast access to provider-native features",
+      "liabilities": "Creates multiple schedulers, memories, receipts, and authority interpretations; breaks replay and risks duplicate effects",
+      "evidence": "Provider documentation describes native agents, sessions, tools, and protocol-compatible endpoints",
+      "rollback": "Dismantle provider runtimes and remap history into the kernel, with high migration risk",
+      "kill_criteria": "Any second source of truth or external effect without a canonical receipt"
+    },
+    {
+      "kind": "reversible_experiment",
+      "name": "Run two weekly cycles with docs-only or fixture-only draft PRs and measure signal quality",
+      "benefits": "Tests the materiality gate and handoff quality without live changes",
+      "liabilities": "Requires founder review attention during the trial",
+      "evidence": "Scheduled automation and this draft PR",
+      "rollback": "Disable the automation and close or revert its draft PRs",
+      "kill_criteria": "More than one immaterial PR, any missed material deadline, or any boundary violation"
+    }
+  ],
+  "passes": [
+    {
+      "pass": 1,
+      "summary": "Advantages compound when one source-backed change packet can be reused by every model and adapter. The benefit reverses if monitoring becomes noise or if automation is treated as authority, so no-change runs make no PR and all mutations remain draft-only.",
+      "disadvantages": [
+        {"id": "D1", "text": "Weekly monitoring can create alert fatigue", "handling": "bounded by the materiality gate and material-only brief"},
+        {"id": "D2", "text": "Executing next steps can expand model authority", "handling": "bounded to reversible branch work; merge, production, credentials, and authority are prohibited"},
+        {"id": "D3", "text": "Compatible protocols can be mistaken for semantic parity", "handling": "converted into an explicit transport-only rule and provider-specific contract tests"},
+        {"id": "D4", "text": "Outage retries or failover can duplicate tasks or effects", "handling": "made observable through dispatch states, canonical receipts, idempotency records, and provider lineage"},
+        {"id": "D5", "text": "A longer protocol can slow ordinary collaboration", "handling": "applies only to material provider changes; the required packet is compact and reuses existing decision states"},
+        {"id": "D6", "text": "Provider pages can change in place", "handling": "record observation and effective dates, exact surfaces, last-known-good baselines, and captured fixtures"}
+      ]
+    },
+    {
+      "pass": 2,
+      "summary": "Re-attacked as deployed. Gaming the materiality threshold is countered by enumerated surfaces and direct exposure evidence. Bureaucratic drift is countered by no-change/no-PR. Runtime duplication is countered by canonical workflow identities, leases, and receipts. Automation overreach is countered by draft-only writes and explicit founder escalation.",
+      "dispositions": [
+        {"id": "D1", "disposition": "accepted", "owner": "alfonso_lopez", "threshold": "kill or narrow the automation after one immaterial PR or repeated low-signal briefs"},
+        {"id": "D2", "disposition": "resolved", "note": "the execution allowlist and denylist are explicit; founder remains decision owner"},
+        {"id": "D3", "disposition": "resolved", "note": "transport compatibility cannot establish capability or authority; fixtures and independent evaluation are required"},
+        {"id": "D4", "disposition": "resolved", "note": "effectful retries require canonical absence or safe-resume proof"},
+        {"id": "D5", "disposition": "accepted", "owner": "protocol maintainer", "threshold": "revise if measured cycle time worsens without a prevented defect or clearer handoff"},
+        {"id": "D6", "disposition": "accepted", "owner": "weekly reviewer", "threshold": "do not make a load-bearing claim without a dated official source and repository evidence"}
+      ],
+      "residual_risk": "Live deployments or unmerged branches can differ from inspected default branches. Production inventory requires separate authorization and must not be inferred from repository searches."
+    }
+  ],
+  "dissent": {
+    "material": true,
+    "strongest_objection": "A recurring model that edits a governance protocol, even by draft PR, may accumulate de facto policy power and consume founder attention.",
+    "resolution_threshold": "Founder reviews this draft and future runs stay inside the explicit allowlist; any out-of-bound change stops at NEEDS_FOUNDER_DECISION.",
+    "review_trigger": "After two weekly cycles, or immediately after an immaterial PR or authority-boundary violation"
+  },
+  "evidence": [
+    {"id": "E1", "description": "OpenAI API changelog and deprecations: mTLS/X.509 WIF GA; Assistants API shutdown; transcription deprecations", "source_type": "prose_claim", "claimed_tier": "prose_claim"},
+    {"id": "E2", "description": "Claude Platform release notes: Files/Skills stable shapes, new key types, Admin and Compliance API changes", "source_type": "prose_claim", "claimed_tier": "prose_claim"},
+    {"id": "E3", "description": "Claude official status: August 28 and August 31 degraded collaboration surfaces and disconnected sessions", "source_type": "prose_claim", "claimed_tier": "prose_claim"},
+    {"id": "E4", "description": "Kimi platform changelog and model list: K2.5/moonshot-v1 shutdown and Files API changes", "source_type": "prose_claim", "claimed_tier": "prose_claim"},
+    {"id": "E5", "description": "Kimi API overview and compatibility notes: OpenAI Responses and Anthropic Messages transport compatibility with provider-specific semantics", "source_type": "prose_claim", "claimed_tier": "prose_claim"},
+    {"id": "E6", "description": "Exact GitHub code searches and file reads at four default-branch SHAs, including DALEOBANKS OpenAI adapter and embeddings", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E7", "description": "Existing recursive collaboration protocol, PR template, CLAUDE.md, Founder Intent Ledger, and INTENT-0028", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"}
+  ],
+  "negative_evidence": {
+    "deleted": "",
+    "preserved": [
+      "No direct use of retired OpenAI Assistants, transcription, or Kimi model surfaces was found on inspected default branches",
+      "No Anthropic or Kimi runtime adapter was found on inspected default branches",
+      "OpenAI status history and a dedicated Kimi status-history surface were not available through the official documentation routes used",
+      "Live environment, credentials, provider calls, and non-default branches were not inspected"
+    ]
+  },
+  "rollback": "Close the draft PR and delete its unmerged branch. If merged and later rejected, revert the docs-only merge commit and disable the weekly automation. No runtime migration is part of this change.",
+  "authority": {
+    "introduces_new_authority_source": false,
+    "creates_parallel_canon": false,
+    "founder_authorization": true,
+    "founder_authorization_ref": "Founder directive in ChatGPT Work, 2026-09-01"
+  },
+  "implementation": {
+    "performed": true,
+    "note": "Weekly review automation created; protocol, intent, review, and deliberation prepared on a dedicated branch. No merge, runtime, routing, model, credential, or production change."
+  },
+  "github_ops": [
+    {"op": "create_branch", "target_branch": "codex/provider-change-intake-2026-09-01", "protected": false, "explicit_authorization": true},
+    {"op": "update_protocol_and_add_records", "target_branch": "codex/provider-change-intake-2026-09-01", "protected": false, "explicit_authorization": true},
+    {"op": "create_pull_request (draft)", "target_branch": "main", "protected": false, "explicit_authorization": true}
+  ],
+  "inspected_sources": [
+    {"source": "Official OpenAI API changelog, deprecations, and pricing", "inspected": true},
+    {"source": "Official Claude Platform release notes, model deprecations, pricing, and status", "inspected": true},
+    {"source": "Official Kimi changelog, model list, API overview, and compatibility notes", "inspected": true},
+    {"source": "Four UNIIMENTE default branches and relevant OpenAI adapter files", "inspected": true}
+  ],
+  "not_inspected": [
+    "Production credentials, environment state, billing accounts, and live API behavior",
+    "Non-default branches and unmerged provider integrations",
+    "OpenAI status incident history and a dedicated Kimi status-history surface"
+  ],
+  "decision": "RETAIN"
+}

@@ -6,7 +6,6 @@ superiority.
 """
 from __future__ import annotations
 
-import copy
 import json
 from pathlib import Path
 
@@ -370,7 +369,7 @@ def test_worker_cannot_verify_own_result_and_dissent_must_be_preserved():
         result_digest=DIGEST,
         transition_key="submit",
     )
-    with pytest.raises(AuthorityViolation, match="verify its own"):
+    with pytest.raises(AuthorityViolation, match="independent"):
         fabric.transition(
             TASK_ID,
             "VERIFIED",
@@ -387,6 +386,54 @@ def test_worker_cannot_verify_own_result_and_dissent_must_be_preserved():
             assessment_refs=("assessment:independent",),
             dissent_preserved=False,
             transition_key="hide-dissent",
+        )
+
+
+def test_coordinator_cannot_pose_as_worker_or_independent_evaluator():
+    fabric = _fabric()
+    _to_queue(fabric)
+    with pytest.raises(AuthorityViolation, match="bounded coordinator"):
+        fabric.issue_lease(
+            _lease(issued_by=EVALUATOR),
+            transition_key="rogue-issuer",
+        )
+    fabric.issue_lease(_lease(), transition_key="lease")
+    with pytest.raises(AuthorityViolation, match="actor/identity/lease"):
+        fabric.transition(
+            TASK_ID,
+            "RUNNING",
+            actor=COORDINATOR,
+            worker_identity=WORKER,
+            lease_id=_lease()["lease_id"],
+            observed_at="2026-08-30T10:02:00Z",
+            transition_key="coordinator-as-worker",
+        )
+    fabric.transition(
+        TASK_ID,
+        "RUNNING",
+        actor=WORKER,
+        worker_identity=WORKER,
+        lease_id=_lease()["lease_id"],
+        observed_at="2026-08-30T10:02:00Z",
+        transition_key="run",
+    )
+    fabric.transition(
+        TASK_ID,
+        "SUBMITTED",
+        actor=WORKER,
+        worker_identity=WORKER,
+        lease_id=_lease()["lease_id"],
+        result_digest=DIGEST,
+        transition_key="submit",
+    )
+    with pytest.raises(AuthorityViolation, match="independent"):
+        fabric.transition(
+            TASK_ID,
+            "VERIFIED",
+            actor=COORDINATOR,
+            assessment_refs=("assessment:coordinator",),
+            dissent_preserved=True,
+            transition_key="coordinator-as-evaluator",
         )
 
 

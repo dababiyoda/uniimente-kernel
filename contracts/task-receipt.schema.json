@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/task-receipt.schema.json",
+  "title": "TaskReceipt",
+  "description": "Replay-derived proof of one canonical task transition. Receipt validity is not mission outcome proof.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "record_kind": {
+      "const": "TASK_TRANSITION_RECEIPT"
+    },
+    "receipt_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "founder_intent_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "transition_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "previous_state": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "CREATED",
+        "ADMITTED",
+        "QUEUED",
+        "LEASED",
+        "RUNNING",
+        "SUBMITTED",
+        "VERIFIED",
+        "CLOSED",
+        "FAILED",
+        "RETRY_ELIGIBLE",
+        "RECONCILIATION_REQUIRED",
+        "QUARANTINED",
+        "TERMINATED"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "ADMITTED",
+        "QUEUED",
+        "LEASED",
+        "RUNNING",
+        "SUBMITTED",
+        "VERIFIED",
+        "CLOSED",
+        "FAILED",
+        "RETRY_ELIGIBLE",
+        "RECONCILIATION_REQUIRED",
+        "QUARANTINED",
+        "TERMINATED"
+      ]
+    },
+    "transition_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,200}$"
+    },
+    "request_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^task\\.[a-z_]+$"
+    },
+    "actor": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/"
+    },
+    "legal_principal": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "UNIIMENTE"
+      }
+    },
+    "worker_identity": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^spiffe://uniimente\\.internal/"
+    },
+    "lease_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "authority_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "tool_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "result_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "assessment_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "dissent_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "dissent_preserved": {
+      "type": "boolean"
+    },
+    "resource_usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cost_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compute_used": {
+          "type": "number",
+          "minimum": 0
+        },
+        "model_calls": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "cost_usd",
+        "compute_used",
+        "model_calls"
+      ]
+    },
+    "consequence_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "not_attempted",
+        "confirmed",
+        "reconciled",
+        "uncertain"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "causal_parent_event_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "model_prediction": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "record_kind",
+    "receipt_id",
+    "task_id",
+    "mission_id",
+    "founder_intent_ref",
+    "transition_index",
+    "previous_state",
+    "state",
+    "transition_key",
+    "request_fingerprint",
+    "event_id",
+    "event_type",
+    "actor",
+    "legal_principal",
+    "worker_identity",
+    "lease_id",
+    "authority_refs",
+    "evidence_refs",
+    "tool_refs",
+    "result_digest",
+    "assessment_refs",
+    "dissent_refs",
+    "dissent_preserved",
+    "resource_usage",
+    "consequence_status",
+    "occurred_at",
+    "causal_parent_event_id",
+    "model_prediction"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "SUBMITTED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "VERIFIED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "assessment_refs": {
+            "minItems": 1
+          },
+          "dissent_preserved": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "RECONCILIATION_REQUIRED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "consequence_status": {
+            "const": "uncertain"
+          }
+        }
+      }
+    }
+  ]
+}

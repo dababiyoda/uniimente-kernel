@@ -1,0 +1,217 @@
+{
+  "decision_id": "DECISION-OM-TASK-FABRIC-2026-08-30",
+  "title": "Whether Phase 2 may add a durable organizational task-fabric seam",
+  "problem": "Linked to DECISION-OM-2026-08-28. Phase 1 deferred TaskEnvelope, WorkerLease and TaskReceipt because PR #70 and PR #87 propose competing runtime composition roots. The decision is whether to choose a runtime owner, add a new runtime, do nothing, or place the minimum task semantics beneath both proposals while preserving the Event Spine and DurableWorkflow as canonical truth and protected baseline.",
+  "founder_intent_refs": ["INTENT-OM-2026-08-28"],
+  "baseline": "EventSpine already owns append-only event truth, durable replay, idempotent inbox and mediated outbox. DurableWorkflow already owns checkpointed sequential execution and remains the strongest conventional baseline. PR #70 and PR #87 remain unmerged competing runtime-composition experiments. Verified Durable Mission Closures remain 0.",
+  "alternatives": [
+    {
+      "name": "Do nothing",
+      "description": "Retain Phase-1 semantics and defer all task-fabric implementation.",
+      "advantages": ["No new code", "No ownership risk"],
+      "disadvantages": ["Cannot test durable leased task transitions", "Phase-2 bottleneck remains"],
+      "revival_evidence": "Use if the narrow seam creates a second truth source or cannot be removed cleanly."
+    },
+    {
+      "name": "Choose PR #70 as semantic owner",
+      "description": "Put task semantics in the ContractEventRouter developmental runtime.",
+      "advantages": ["Existing typed delivery seam", "Explicit consequence-inert experiment"],
+      "disadvantages": ["Couples general mission semantics to a developmental repair episode", "Silently adjudicates the runtime conflict"],
+      "revival_evidence": "A separate founder-ratified runtime ownership decision."
+    },
+    {
+      "name": "Choose PR #87 as semantic owner",
+      "description": "Put task semantics in the Session composition root.",
+      "advantages": ["Existing durable composition work", "Broad Kernel integration"],
+      "disadvantages": ["Makes a composition root the semantic authority", "Silently adjudicates the runtime conflict"],
+      "revival_evidence": "A separate founder-ratified runtime ownership decision."
+    },
+    {
+      "name": "New task runtime",
+      "description": "Create a scheduler or workflow package specialized for organizational execution.",
+      "advantages": ["Dedicated API"],
+      "disadvantages": ["Second workflow truth", "Parallel control plane", "Violates the Phase-1 decision"],
+      "revival_evidence": "None while EventSpine and DurableWorkflow satisfy the required substrate."
+    },
+    {
+      "name": "Replay-derived task reducer beneath both runtimes",
+      "description": "Put fail-closed contracts in contracts/, append task transitions to the existing EventSpine, derive current state and receipts by replay, and leave runtime/ unchanged.",
+      "advantages": ["One event truth", "Runtime-neutral", "Restart testable", "Narrow rollback", "Preserves static baseline"],
+      "disadvantages": ["Adds a domain state machine", "Schema and replay cost", "Cannot prove cross-organ closure alone"],
+      "revival_evidence": "Proceed only as a consequence-inert Phase-2 experiment with negative controls."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "No ownership conflict is introduced, but leased task durability remains untested and Verified Durable Mission Closures stay at zero.",
+    "advantages": ["Zero implementation risk", "Static workflow remains available"],
+    "disadvantages": ["No Phase-2 evidence", "No executable worker-lease invariant"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Permit only a bounded internal experiment that creates no authority and does not choose between the runtime branches.",
+      "material_concerns": ["Five powers remain separate", "Continue is not authority expansion", "Alfonso remains root authority"],
+      "evidence_refs": ["INTENT-OM-2026-08-28", "DECISION-OM-2026-08-28"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Contracts own semantics, events own durable transition truth, provenance owns evidence views, and runtime remains a replaceable composition consumer.",
+      "material_concerns": ["No second Event Spine", "No scheduler", "No runtime ownership ruling"],
+      "evidence_refs": ["events/spine.py", "PR #70 ADR-P3-ROUTE-B", "PR #87 runtime/session.py"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "A task state machine can become a disguised workflow engine; its scope must be reducer-only and the static DurableWorkflow must win ties.",
+      "material_concerns": ["Semantic duplication", "Message amplification", "Exactly-once theater", "Blind external retry"],
+      "evidence_refs": ["events/README.md", "DECISION-OM-2026-08-28 dissent"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Require deterministic replay, explicit transitions, bounded contracts, no background loop and deletion-only rollback.",
+      "material_concerns": ["Clock-dependent replay", "Operator comprehensibility", "Unbounded retry", "Poison tasks"],
+      "evidence_refs": ["tests/unit/test_restart_resume.py", "DurableWorkflow"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Require independent verification, dissent references, full lineage and preserved failure; unit evidence cannot be relabeled as mission closure.",
+      "material_concerns": ["Evaluator capture", "Model output as evidence", "Hidden context/resource excess", "False VDM claim"],
+      "evidence_refs": ["topology-episode.schema.json", "FAILURE_MODEL.md"],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The Event Spine already reconstructs its inbox, outbox and stream from the evidence ledger.",
+      "tier": "unit_test",
+      "reference": "events/spine.py; tests/unit/test_events.py; tests/unit/test_restart_resume.py",
+      "finding": "Task state can be a derived replay view without a second persistence source."
+    },
+    {
+      "claim": "DurableWorkflow remains an explicit, checkpointed, restartable baseline.",
+      "tier": "unit_test",
+      "reference": "events/spine.py and tests/unit/test_events.py",
+      "finding": "The task reducer must not schedule steps or replace the workflow engine."
+    },
+    {
+      "claim": "PR #70 and PR #87 are composition experiments rather than canonical task-semantic owners.",
+      "tier": "historical_artifact",
+      "reference": "PR #70 runtime/ADR-P3-ROUTE-B.md; PR #87 runtime/session.py",
+      "finding": "Shared task semantics can sit beneath both without resolving their competition."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "A new task lifecycle duplicates behavior already expressible as a fixed DurableWorkflow.",
+      "tier": "primary_source",
+      "reference": "DurableWorkflow",
+      "finding": "The new code is justified only as a replay-derived contract boundary for comparing organizational forms; static workflow remains default and fallback."
+    },
+    {
+      "claim": "No executed cross-organ episode proves that leased tasks improve outcomes.",
+      "tier": "historical_artifact",
+      "reference": "HANDOFF.md",
+      "finding": "Phase 2 can prove restart and authority invariants only; VDM remains 0."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Establish the smallest durable, runtime-neutral task seam that can later carry identical work through competing organizational phenotypes.",
+    "advantages": [
+      {"id": "A1", "statement": "Preserves a single durable truth source.", "amplified_value": "Every state is reconstructed from canonical EventSpine replay."},
+      {"id": "A2", "statement": "Makes worker power temporary and executable.", "amplified_value": "One-task leases bind identity, capability, context, tools, resources and expiry."},
+      {"id": "A3", "statement": "Prevents blind retries after uncertain effects.", "amplified_value": "Uncertainty forces reconciliation before retry eligibility."},
+      {"id": "A4", "statement": "Leaves runtime competitors intact.", "amplified_value": "Neither PR #70 nor #87 gains semantic ownership."},
+      {"id": "A5", "statement": "Creates comparable receipts without claiming topology superiority.", "amplified_value": "All phenotypes can later consume the same task contracts and metrics."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "The runtime ownership conflict could be hidden rather than resolved.", "severity": "critical", "response_type": "governance", "redesigned_response": "Explicitly assign only contracts/events/provenance semantics; prohibit runtime edits and preserve both runtime branches."},
+      {"id": "D2", "statement": "The task reducer could grow into a second workflow engine.", "severity": "critical", "response_type": "modularity", "redesigned_response": "No scheduler, queue loop, worker spawning, retries or background execution; accept explicit transitions only."},
+      {"id": "D3", "statement": "Three more schemas increase bureaucracy.", "severity": "medium", "response_type": "modularity", "redesigned_response": "Add exactly TaskEnvelope, WorkerLease and TaskReceipt; fail closed and add no speculative contracts."},
+      {"id": "D4", "statement": "Replay can amplify messages or accept duplicates.", "severity": "high", "response_type": "protective", "redesigned_response": "One event per transition, caller-supplied idempotency key, payload fingerprint conflict detection and no re-dispatch during state rebuild."},
+      {"id": "D5", "statement": "A lease could become an authority grant or transfer failed-worker power.", "severity": "critical", "response_type": "governance", "redesigned_response": "Leases may reference only authority already present on the TaskEnvelope; replacements require a fresh lease and never inherit refs implicitly."}
+    ],
+    "comparisons": {
+      "baseline": "Existing EventSpine plus fixed DurableWorkflow.",
+      "do_nothing": "Safe but leaves Phase 2 untested.",
+      "simplest_viable_alternative": "Encode the first mission entirely as one static DurableWorkflow; this remains the protected baseline.",
+      "strongest_competing_architecture": "The conventional static DurableWorkflow.",
+      "reversible_experiment": "Three contracts, one replay-derived reducer and unit/restart/adversarial tests on a stacked draft branch."
+    },
+    "rejected_alternatives": [
+      {"name": "Runtime owner selection", "rejection_reason": "The task seam does not require adjudicating PR #70 versus #87.", "revival_evidence": "A separate linked founder decision for the composition root."},
+      {"name": "Queue service or scheduler", "rejection_reason": "Would create a second execution truth and exceed Phase 2.", "revival_evidence": "Evidence that the current EventSpine/DurableWorkflow cannot carry the preregistered experiment."},
+      {"name": "Automatic worker replacement", "rejection_reason": "Would turn a reducer into an executor and risk authority inheritance.", "revival_evidence": "A later separately governed runtime decision after Phase-2 receipts."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The reducer was attacked for bureaucracy, hidden centralization, replay fragility, clock nondeterminism, cost, complexity, provider dependence, evaluator capture, authority leakage, evidence theater, gaming, operator opacity and failure amplification. The final design remains a consequence-inert reducer, not an organizational runtime.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "fragility", "statement": "Out-of-order or stale transitions could corrupt the projection.", "strengthening_response": "Require a monotonic transition index and reject transitions whose current state does not match replay."},
+      {"id": "N2", "category": "fragility", "statement": "Implicit wall-clock expiry makes replay nondeterministic.", "strengthening_response": "Record issued/expires timestamps in the lease and pass observation time explicitly for expiry decisions."},
+      {"id": "N3", "category": "centralization", "statement": "The submitting worker could verify its own output.", "strengthening_response": "VERIFIED requires an evaluator identity distinct from the leased worker plus assessment and dissent-preservation fields."},
+      {"id": "N4", "category": "gaming", "statement": "A schema-valid receipt could be mistaken for outcome proof.", "strengthening_response": "Receipts are transition evidence only; TopologyEpisode and VDM promotion remain separately gated."},
+      {"id": "N5", "category": "fragility", "statement": "Poison output could cycle through retries.", "strengthening_response": "QUARANTINED is terminal except explicit termination; retry count remains outside this reducer and bounded by the existing workflow policy."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "resolved", "rationale": "The ownership record explicitly leaves runtime/ unmodified and both runtime proposals competing.", "owner": "Kernel maintainers", "review_trigger": "Any runtime/ edit or ownership claim in this branch."},
+      {"disadvantage_id": "D2", "outcome": "prohibited", "rationale": "The reducer exposes explicit commands only and contains no execution loop, scheduler, worker creation or automatic retry.", "owner": "Kernel events maintainers", "review_trigger": "Any background or autonomous execution proposal."},
+      {"disadvantage_id": "D3", "outcome": "accepted", "rationale": "Three narrow schemas are the minimum machine-checkable contract surface for the Phase-2 invariant.", "owner": "Kernel contracts maintainers", "review_trigger": "Any fourth Phase-2 contract."},
+      {"disadvantage_id": "D4", "outcome": "experiment", "rationale": "Restart, duplicate, stale replay and exact state reconstruction require executable tests and CI.", "owner": "Experiment operator", "review_trigger": "Phase-2 CI evidence."},
+      {"disadvantage_id": "D5", "outcome": "prohibited", "rationale": "Lease authority refs must be a subset of the immutable task refs and replacements must be freshly issued.", "owner": "Kernel governance", "review_trigger": "Any implicit or expanded lease authority."}
+    ],
+    "final_design": "Add exactly three fail-closed contracts and an events/task_fabric.py replay-derived state reducer. Task transitions append to the existing EventSpine; current state and TaskReceipt views rebuild from replay. The reducer performs no scheduling or autonomous work. It enforces one-task fresh leases, resource ceilings, evaluator separation, reconciliation-before-retry and dissolution readiness. DurableWorkflow remains the default, fallback and strongest competitor; runtime/ remains unchanged.",
+    "residual_risks": [
+      {"risk": "The reducer still adds semantics that static workflow may not need.", "mitigation": "Treat Phase 2 as an experiment and delete it if it cannot enable the preregistered comparison with lower total complexity.", "owner": "Alfonso", "review_trigger": "Before Phase 3."},
+      {"risk": "Authority references are caller-supplied strings, not independently resolved grants.", "mitigation": "The reducer proves non-expansion by subset only; canonical grant resolution remains governance-owned and is required before any consequential runtime.", "owner": "Kernel governance", "review_trigger": "Before any consequence ceiling above internal_write."},
+      {"risk": "Unit/restart evidence is not a cross-organ mission closure.", "mitigation": "Keep VDM at 0 and prohibit promotion language.", "owner": "Evidence reviewer", "review_trigger": "First real canonical cross-organ episode."}
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "The static DurableWorkflow remains the protected default and wins any tie. The reducer must be killed if it becomes a scheduler, creates parallel truth, or cannot justify its contract burden.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "The fixed DurableWorkflow may be sufficient; a task fabric has not earned permanence.",
+        "rationale": "Available evidence favors explicit fixed state, low amplification and simple supervision.",
+        "evidence_threshold": "Phase 2 must prove exact restart, duplicate suppression, authority non-expansion, evaluator independence and reconciliation-before-retry; Phase 4 must later show a net hard-dimension benefit.",
+        "owner": "Independent evidence reviewer",
+        "review_trigger": "Phase-2 CI and again before Phase 3."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso"
+  },
+  "migration_plan": "No organ or runtime migration. The task reducer is a lower-level consumer of the existing EventSpine and can later be driven by either runtime proposal or the static DurableWorkflow. Any composition-root selection requires a new linked decision.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the stacked draft PR or revert the three schemas, reducer, tests and linked documents.",
+      "Retain this decision, failed tests and negative evidence.",
+      "Continue using EventSpine and the existing DurableWorkflow with no adapter.",
+      "Do not alter PR #70, PR #87 or organ repositories."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A second event log, workflow engine, scheduler, queue truth, authority system or identity system appears.",
+    "A lease can add authority absent from its task or a replacement inherits authority implicitly.",
+    "An uncertain external effect can become retry eligible without reconciliation evidence.",
+    "A worker can verify its own submitted result or required dissent can be omitted.",
+    "Restart or duplicate delivery changes task state or duplicates consequential work.",
+    "The reducer edits runtime/, chooses between PR #70/#87, or is represented as Verified Durable Mission Closure.",
+    "Complexity exceeds the executable invariant value or the static baseline cannot remain the fallback."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso",
+  "review_trigger": "Phase-2 CI evidence; then open a new linked decision before Phase 3. Do not amend these two passes or perform a silent third pass."
+}

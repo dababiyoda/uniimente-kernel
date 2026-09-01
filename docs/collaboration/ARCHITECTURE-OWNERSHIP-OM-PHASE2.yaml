@@ -1,0 +1,54 @@
+decision_id: DECISION-OM-TASK-FABRIC-2026-08-30
+status: EXPERIMENT_APPROVED
+authority: Alfonso
+constitutional_change: true
+changes_authority: false
+extends_proposal: OWNERSHIP-OM-2026-08-28
+stack_dependency: uniimente-kernel#88
+principle: one_concept_one_canonical_owner
+
+decision:
+  runtime_composition_winner_selected: false
+  pull_request_70_preserved: true
+  pull_request_87_preserved: true
+  rationale: task semantics sit below both runtime composition experiments
+
+semantic_owners:
+  TaskEnvelope:
+    owner: contracts/
+    meaning: immutable mission-bounded work and existing authority references
+  WorkerLease:
+    owner: contracts/
+    meaning: one-task eligibility that narrows identity, capability, tools, data, context, resources and time
+  TaskReceipt:
+    owner: contracts/
+    meaning: portable schema for a replay-derived transition proof
+  durable_task_transition_truth:
+    owner: events/
+    mechanism: existing EventSpine and EvidenceLedger
+  task_state_projection:
+    owner: events/task_fabric.py
+    mechanism: deterministic replay-derived reducer
+  task_evidence_views:
+    owner: provenance/
+    mechanism: future materialized views; EventSpine remains truth
+  runtime_composition:
+    owner: UNRESOLVED
+    candidates:
+      - uniimente-kernel#70
+      - uniimente-kernel#87
+
+explicit_non_owners:
+  - runtime/ does not own task semantics, authority, identity, evidence or consequence policy
+  - TaskFabric does not schedule, spawn, retry automatically or select topology
+  - WorkerLease does not issue a CapabilityGrant or manufacture authority
+  - TaskReceipt does not prove mission outcome or Verified Durable Mission Closure
+  - omnimorph/ does not execute tasks or authorize consequences
+
+compatibility_shims: []
+rollback:
+  - close stacked draft PR
+  - or revert three contracts, reducer, tests and linked documents
+  - retain the decision and negative evidence
+  - continue using EventSpine and DurableWorkflow unchanged
+review_trigger: Phase-2 CI evidence, then a new linked decision before Phase 3

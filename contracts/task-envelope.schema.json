@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/task-envelope.schema.json",
+  "title": "TaskEnvelope",
+  "description": "Immutable mission-bounded work declaration. It references existing authority; it never creates authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mission_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "founder_intent_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subgoal_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_task_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,200}$"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "required_capability": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/"
+    },
+    "legal_principal": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "UNIIMENTE"
+      }
+    },
+    "authority_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "consequence_class": {
+      "type": "string",
+      "enum": [
+        "internal_read",
+        "internal_write",
+        "external"
+      ]
+    },
+    "external_effect_policy": {
+      "type": "string",
+      "enum": [
+        "none",
+        "gate_required"
+      ]
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "budget_ceiling_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "compute_ceiling": {
+          "type": "number",
+          "minimum": 0
+        },
+        "model_call_ceiling": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "budget_ceiling_usd",
+        "compute_ceiling",
+        "model_call_ceiling"
+      ]
+    },
+    "context_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "permitted_data_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "context_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "prohibited_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "permitted_data_classes",
+        "context_refs",
+        "prohibited_context"
+      ]
+    },
+    "tool_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "permitted_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "prohibited_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "permitted_tools",
+        "prohibited_tools"
+      ]
+    },
+    "evidence_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "prohibited_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "acceptance_authority_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "independent_evaluation_required": {
+      "type": "boolean"
+    },
+    "authority_invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "organization_may_create_authority": {
+          "const": false
+        },
+        "worker_may_inherit_authority": {
+          "const": false
+        },
+        "consequence_gate_bypass_permitted": {
+          "const": false
+        }
+      },
+      "required": [
+        "organization_may_create_authority",
+        "worker_may_inherit_authority",
+        "consequence_gate_bypass_permitted"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "mission_id",
+    "founder_intent_ref",
+    "subgoal_ref",
+    "parent_task_id",
+    "idempotency_key",
+    "objective",
+    "required_capability",
+    "created_by",
+    "legal_principal",
+    "authority_refs",
+    "consequence_class",
+    "external_effect_policy",
+    "resource_budget",
+    "context_policy",
+    "tool_policy",
+    "evidence_requirements",
+    "prohibited_actions",
+    "sensitivity",
+    "created_at",
+    "acceptance_authority_ref",
+    "independent_evaluation_required",
+    "authority_invariants"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "consequence_class": {
+            "const": "external"
+          }
+        },
+        "required": [
+          "consequence_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "external_effect_policy": {
+            "const": "gate_required"
+          }
+        }
+      }
+    }
+  ]
+}

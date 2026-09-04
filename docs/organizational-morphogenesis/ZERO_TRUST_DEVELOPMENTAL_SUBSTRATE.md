@@ -56,7 +56,7 @@ timing. No loop expands authority automatically.
 
 | Claim | Current evidence |
 |---|---|
-| Deterministic content binding | Phase-3 unit target; not yet CI-tested |
+| Deterministic content binding | 39 focused local contract/compiler tests; canonical CI pending |
 | Append-only internal transition truth | Existing Event Spine tests |
 | Merkle inclusion/checkpoint mechanism | Existing provenance unit tests |
 | Workload PKI and in-process mutual TLS | Existing stacked-line unit tests |

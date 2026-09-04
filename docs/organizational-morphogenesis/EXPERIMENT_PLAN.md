@@ -164,12 +164,20 @@ scores cannot hide a hard-invariant failure.
 - Static wins: retain static; the experiment is still successful.
 - No new capability: kill the organizational layer and preserve evidence.
 
-## Entry blockers
+## Entry blockers and resolved prerequisites
 
-1. Alfonso has not ratified the proposed organization-design ownership.
-2. PR #70/#87 runtime composition ownership is unresolved.
-3. Corpus hashes and independent reviewer are unsealed.
-4. Phase-2 TaskEnvelope/TaskReceipt/WorkerLease semantics do not yet exist.
+1. **Resolved for design only:** Alfonso repeatedly directed OMNIMORPH to own
+   mission-bounded organization compilation; the Phase-3 ownership record does
+   not authorize execution.
+2. **Blocking:** PR #70/#87 runtime composition ownership is unresolved.
+3. **Blocking:** corpus hashes and independent reviewer are unsealed.
+4. **Satisfied only on the draft stack:** Phase-2
+   TaskEnvelope/TaskReceipt/WorkerLease semantics and replay reducer exist in
+   draft PR #90 but are not merged/adopted canonical main.
+5. **Blocking:** the Phase-3 zero-trust profile is `DESIGN_ONLY`; identity,
+   attenuation, freshness and independent-verifier obligations are not composed
+   into one executing runtime.
 
-No experiment run is authorized until all four are resolved in a new linked
-deliberation. This document itself is not authorization.
+No experiment run is authorized until every blocking item is resolved in a new
+linked deliberation. This document, a compiler score or a green Phase-3 CI run
+is not execution authorization.

@@ -2,7 +2,7 @@ pyyaml>=6.0
 pytest>=8.0
 jsonschema>=4.20
 # Asymmetric workload identity (identity/pki/): X.509 issuance, rotation and
-# revocation for the mutual-TLS handshake ratified by FOUNDER-RULING-2026-08-22.
+# revocation for the mutual-TLS handshake ratified under FOUNDER-RULING-2026-08-22.
 cryptography>=42.0
 # Exact JCS implementation used to bind Phase-3 organization hypotheses.
 # Pinned so the digest algorithm cannot drift silently; digest never authorizes.

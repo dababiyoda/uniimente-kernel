@@ -1,0 +1,164 @@
+{
+  "mission_id": "7dc60a38-e7d2-4f27-bb51-dd6fa1d7c404",
+  "schema_version": "1.0",
+  "founder_intent_ref": "INTENT-CMC-2026-09-04",
+  "objective": "Verify the Kernel-declared DALEOBANKS to WealthMachine wire-opportunity-packet route, report revision-pin drift, and preserve current-main compatibility as unverified.",
+  "beneficiaries": [
+    "Alfonso Lopez",
+    "UNIIMENTE maintainers"
+  ],
+  "legal_principal": "alfonso_lopez",
+  "authority_refs": [
+    "founder-ruling:cathedral-metabolism-phase4-2026-09-04"
+  ],
+  "issued_at": "2026-09-04T18:00:00Z",
+  "deadline": "2026-09-30T23:59:59Z",
+  "resource_envelope": {
+    "budget_ceiling_usd": 1,
+    "compute_ceiling": 10,
+    "compute_unit": "bounded_audit_operation",
+    "model_call_ceiling": 5,
+    "founder_attention_ceiling_minutes": 10,
+    "time_ceiling_seconds": 120
+  },
+  "consequence_ceiling": "internal_write",
+  "required_capabilities": [
+    {
+      "capability": "linker.typed_route_audit",
+      "version_constraint": "kernel-c137e863",
+      "purpose": "Inspect one declared route without executing either organ"
+    }
+  ],
+  "success_conditions": [
+    {
+      "condition_id": "audit",
+      "metric": "independently_verified_route_audit",
+      "operator": "eq",
+      "target": true,
+      "hard": true
+    },
+    {
+      "condition_id": "direction",
+      "metric": "founder_exception_direction_recorded",
+      "operator": "eq",
+      "target": true,
+      "hard": true
+    }
+  ],
+  "evidence_requirements": [
+    {
+      "requirement_id": "lineage",
+      "artifact_type": "spine_and_task_receipts",
+      "verifier_role": "independent_evaluator",
+      "minimum_count": 1,
+      "source_policy": "Frozen canonical manifests/schema only; hashes never authenticate humans"
+    }
+  ],
+  "risk_class": "low",
+  "data_constraints": {
+    "allowed_classifications": [
+      "public"
+    ],
+    "prohibited_data": [
+      "credentials",
+      "personal_sensitive_data"
+    ],
+    "retention_ceiling_seconds": 2592000
+  },
+  "prohibited_actions": [
+    "publish",
+    "contact_external_party",
+    "move_money",
+    "merge",
+    "deploy",
+    "instantiate_organization",
+    "create_authority",
+    "self_modify",
+    "change_pins"
+  ],
+  "reversibility": {
+    "required": true,
+    "maximum_irreversible_scope": "none",
+    "rollback_authority_ref": "founder-ruling:cathedral-metabolism-phase4-2026-09-04"
+  },
+  "kill_conditions": [
+    "external effect attempt",
+    "authority creation",
+    "evaluator bypass",
+    "missing lineage",
+    "budget exhausted",
+    "source or code drift"
+  ],
+  "escalation_rules": [
+    {
+      "trigger": "manifest revision differs from observed main",
+      "destination_identity_ref": "human:alfonso",
+      "required_evidence": [
+        "route audit",
+        "source digests",
+        "independent evaluation"
+      ]
+    }
+  ],
+  "external_effect_policy": "none",
+  "acceptance_authority": {
+    "identity_ref": "human:alfonso",
+    "authority_ref": "founder-ruling:cathedral-metabolism-phase4-2026-09-04"
+  },
+  "closure_condition": {
+    "required_success_condition_ids": [
+      "audit",
+      "direction"
+    ],
+    "require_no_active_tasks": true,
+    "require_no_open_obligations": true,
+    "require_closure_receipt": true
+  },
+  "organization_policy": {
+    "allowed_phenotypes": [
+      "static_durable_workflow",
+      "centralized",
+      "hierarchical",
+      "hybrid",
+      "do_not_instantiate"
+    ],
+    "maximum_hierarchy_depth": 2,
+    "independent_evaluation_required": true,
+    "static_baseline_required": true
+  },
+  "authority_invariants": {
+    "organization_may_create_authority": false,
+    "worker_inherits_supervisor_authority": false,
+    "consequence_gate_bypass_permitted": false,
+    "organization_may_rewrite_mission": false
+  },
+  "problem_geometry": {
+    "decomposability": 0.1,
+    "task_coupling": 0.1,
+    "parallelizability": 0.1,
+    "sequential_dependency": 0.1,
+    "information_sharing_requirement": 0.1,
+    "uncertainty": 0.1,
+    "search_space_size": 0.1,
+    "specialist_diversity": 0.1,
+    "latency_sensitivity": 0.1,
+    "failure_severity": 0.1,
+    "failure_correlation": 0.1,
+    "coordination_cost": 0.1,
+    "context_sharing_burden": 0.1,
+    "verification_burden": 0.1,
+    "consequence_severity": 0.1,
+    "resource_scarcity": 0.1,
+    "deadline_pressure": 0.1,
+    "reversibility": 1,
+    "independent_dissent_need": 1,
+    "expected_task_volume": 1,
+    "basis": "estimated",
+    "assumptions": [
+      "One public read-only typed-route audit; no actual organ business execution."
+    ],
+    "evidence_refs": [
+      "CMC-EXP-001"
+    ]
+  }
+}

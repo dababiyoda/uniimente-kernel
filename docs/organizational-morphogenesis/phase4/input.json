@@ -1,0 +1,20 @@
+{
+  "experiment_id": "CMC-EXP-001",
+  "observed_at": "2026-09-04",
+  "kernel_revision": "c137e863851f0f7d8dce7bcb060b4e1d5066ea80",
+  "source_hashes": {
+    "organs/daleobanks.manifest.yaml": "sha256:2e092c8c9c115c81699899a6f8a613ef96e4e4be909b7d62cf04413975056c52",
+    "organs/wealthmachine.manifest.yaml": "sha256:899376e1ff13d9579d3036b39192aa27e72cb199809938bc1a3bc171d1e7dfe6",
+    "contracts/wire-opportunity-packet.schema.json": "sha256:e35e9afe02190d1192d6b389ddae8b4b6b2bd544be946ab71177e0c79d6ce7b6"
+  },
+  "observed_main_revisions": {
+    "dababiyoda/DALEOBANKS": "ed5e95d7f48e006d180b972efe138179325c31d2",
+    "dababiyoda/WealthMachineIntelligence": "ec84b6a2eec4efbc07bed7f167da81f5e25d890c"
+  },
+  "provenance": "Read-only GitHub metadata and fetched origin/main observations recorded in PHASE4_INSPECTION_LEDGER.md; not a live-refresh instruction.",
+  "expected_route": {
+    "producer": "spiffe://uniimente.internal/organ/daleobanks",
+    "consumer": "spiffe://uniimente.internal/organ/wealthmachine",
+    "contract": "wire-opportunity-packet"
+  }
+}

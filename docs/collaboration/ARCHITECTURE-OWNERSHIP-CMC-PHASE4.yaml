@@ -1,0 +1,30 @@
+version: '1.0'
+decision: DEC-CMC-001
+status: experimental_addendum_not_global_migration
+founder_intent_ref: INTENT-CMC-2026-09-04
+ownership:
+  mission_semantics: contracts/mission-contract.schema.json
+  mission_composition: egregore/
+  mechanism_family_recommendation: routing/
+  organization_design_only: omnimorph/
+  durable_transition_truth: events/spine.py
+  task_lifecycle_and_leases: events/task_fabric.py
+  typed_route_capability: linker/
+  independent_appraisal: verifier/
+  evidence_chain: provenance/ledger.py
+  authority: authority/
+  consequence: policy/consequence_gate.py
+runtime_implementations:
+  - {source: 'PR #70', role: competing_evidence, sovereign: false}
+  - {source: 'PR #87', role: experimental_boot_adapter, sovereign: false}
+constraints:
+  new_top_level_package: false
+  second_governance_engine: false
+  second_event_spine: false
+  organization_instantiation: false
+  authority_created: false
+  external_effects: false
+  founder_surface: manually_relayed_internal_command_no_authentication_claim
+compatibility_shims: []
+migration: No organ migration; later adoption requires a new founder ruling.
+rollback: Stop explicit invocation; retain branch and evidence; do not merge.

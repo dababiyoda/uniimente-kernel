@@ -1,0 +1,404 @@
+{
+  "decision_id": "DEC-CMC-001",
+  "title": "Protocol-first, direct-capability mission metabolism experiment",
+  "problem": "Can one persistent founder obligation be reasoned about, routed, verified and reconciled across process loss without activating an organizational runtime or treating a supplied name as permission?",
+  "founder_intent_refs": [
+    "INTENT-CMC-2026-09-04",
+    "INTENT-OM-2026-08-28",
+    "INTENT-EGREGORE-JARVIS-HORIZON-2026-09-04"
+  ],
+  "baseline": "PR #87 composes durable state; #70 supplies competing runtime/real-route and containment evidence; #90 supplies replay-derived task semantics; #92 only compiles design hypotheses. Conventional DurableWorkflow remains the protected reliability competitor.",
+  "alternatives": [
+    {
+      "name": "Do nothing / wait",
+      "description": "Keep the obligation open without work.",
+      "advantages": [
+        "No new machinery"
+      ],
+      "disadvantages": [
+        "No verified route audit"
+      ],
+      "revival_evidence": "Missing founder scope, integrity failure or unavailable evaluator."
+    },
+    {
+      "name": "Direct existing capability",
+      "description": "Use InstitutionalLinker for the one route audit inside a persistent mission envelope.",
+      "advantages": [
+        "Actual canonical code",
+        "Fewest execution components"
+      ],
+      "disadvantages": [
+        "Does not prove organ execution"
+      ],
+      "revival_evidence": "Selected if a single read-only capability covers the task."
+    },
+    {
+      "name": "Static DurableWorkflow",
+      "description": "Checkpoint the same fixed audit and verification steps.",
+      "advantages": [
+        "Explicit state",
+        "Targeted retries",
+        "Strongest conventional competitor"
+      ],
+      "disadvantages": [
+        "Extra orchestration when one capability suffices"
+      ],
+      "revival_evidence": "Wins if multiple recoverable steps or measured reliability justify it."
+    },
+    {
+      "name": "Fixed specialists / organization",
+      "description": "Generate a design competitor but do not instantiate workers or organizations.",
+      "advantages": [
+        "Preserves future specialization option"
+      ],
+      "disadvantages": [
+        "No evidence it helps this audit",
+        "Activation outside scope"
+      ],
+      "revival_evidence": "A new authorized experiment with a demonstrable specialist or structure deficit."
+    },
+    {
+      "name": "Human escalation",
+      "description": "Return the specific unresolved integration-pin question.",
+      "advantages": [
+        "Preserves founder decision",
+        "No silent upgrade"
+      ],
+      "disadvantages": [
+        "Manual relay burden"
+      ],
+      "revival_evidence": "A valid evaluated exception exists."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "No activation, pin change or closure claim; the obligation stays open.",
+    "advantages": [
+      "No added authority"
+    ],
+    "disadvantages": [
+      "No new internal closure evidence"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the cathedral but honor the small experimental boundary.",
+      "material_concerns": [
+        "No activation",
+        "No invented founder answer"
+      ],
+      "evidence_refs": [
+        "INTENT-CMC-2026-09-04"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Canonicalize a spine-consuming protocol, not PR ownership.",
+      "material_concerns": [
+        "No second state engine",
+        "Existing owners"
+      ],
+      "evidence_refs": [
+        "events/spine.py",
+        "events/task_fabric.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Direct and static may win; hashes are not authentication.",
+      "material_concerns": [
+        "Fake independence",
+        "Decorative routing",
+        "Overclaim"
+      ],
+      "evidence_refs": [
+        "PR #70",
+        "GAP-FOUNDER-AUTHENTICATION-2026-08-24"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Use one explicit local CLI with no daemon or auto-start.",
+      "material_concerns": [
+        "Replay",
+        "Single writer",
+        "Small handoff"
+      ],
+      "evidence_refs": [
+        "runtime/__init__.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep actual founder evidence separate from simulated commands.",
+      "material_concerns": [
+        "Suppressed dissent",
+        "False closure",
+        "Manual burden"
+      ],
+      "evidence_refs": [
+        "PR #66 conventional-workflow dissent"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The existing task reducer uses EventSpine rather than a second store.",
+      "tier": "primary_source",
+      "reference": "PR #90 events/task_fabric.py",
+      "finding": "Replay-derived lifecycle, idempotency, bounded leases and independent verification guards exist."
+    },
+    {
+      "claim": "Standing Cognition is proposal-only.",
+      "tier": "primary_source",
+      "reference": "egregore/runtime.py",
+      "finding": "Candidates and assessments persist; no execution authority is emitted."
+    },
+    {
+      "claim": "Manifest source pins differ from observed organ main heads.",
+      "tier": "primary_source",
+      "reference": "PHASE4_INSPECTION_LEDGER.md",
+      "finding": "A real audit exception exists; older pins are not automatically defects."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "A conventional workflow remains the stronger reliability baseline.",
+      "tier": "historical_artifact",
+      "reference": "PR #66/#68; prior OM dossier",
+      "finding": "No measured dynamic organizational superiority."
+    },
+    {
+      "claim": "Human authority is not cryptographically authenticated.",
+      "tier": "primary_source",
+      "reference": "docs/deliberations/GAP-FOUNDER-AUTHENTICATION-2026-08-24.md",
+      "finding": "Manual operator relay is an explicit experimental trust boundary; no automated authorization endpoint."
+    },
+    {
+      "claim": "The uploaded doctrine is not evidence of technical implementation.",
+      "tier": "other",
+      "reference": "DOCTRINE.txt, supplied file, 510 bytes",
+      "finding": "Preserve the commercial horizon without fabricating a market transaction here."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A small, restartable, evidence-producing internal audit with a genuine exception and a protected evaluator.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Persistent mission survives process loss.",
+        "amplified_value": "Bind restart to the same mission, input and code digests."
+      },
+      {
+        "id": "A2",
+        "statement": "The simplest mechanism can win.",
+        "amplified_value": "Compare eight families and execute one actual existing capability."
+      },
+      {
+        "id": "A3",
+        "statement": "Exceptions remain actionable.",
+        "amplified_value": "Return one concise question tied to exact mission state."
+      },
+      {
+        "id": "A4",
+        "statement": "Evaluation cannot be supplied by the worker.",
+        "amplified_value": "Fixed separate verifier rechecks raw evidence and preserves dissent."
+      },
+      {
+        "id": "A5",
+        "statement": "Existing institutional memory compounds.",
+        "amplified_value": "Retain the full causal trace, losers and bounded learning without score updates."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Mission state could become another workflow engine.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Use EventSpine transitions and the existing TaskFabric/DurableWorkflow; no second durable store."
+      },
+      {
+        "id": "D2",
+        "statement": "Founder name strings could become authorization.",
+        "severity": "critical",
+        "response_type": "governance",
+        "redesigned_response": "Only manual operator relay of actual chat direction; no unauthenticated network command, no grants, no self-approval."
+      },
+      {
+        "id": "D3",
+        "statement": "Evaluator independence could be theatrical.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Fixed separately owned verifier, separate input copy, poisoned-result negative control; explicitly exclude hostile host compromise."
+      },
+      {
+        "id": "D4",
+        "statement": "A tiny audit may be mistaken for cathedral closure.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Separate actual awaiting-founder evidence from simulated closure and prohibit VDM/LIVE/HARDENED claims."
+      },
+      {
+        "id": "D5",
+        "statement": "Routing may be biased and coordination may cost more.",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Freeze eligibility rules, command-count comparator and overhead before execution; retain static and all rejected families."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Manual audit across canonical manifests/linker and separate evidence steps.",
+      "do_nothing": "Preserve the open obligation.",
+      "simplest_viable_alternative": "Direct Linker capability with a persistent mission envelope.",
+      "strongest_competing_architecture": "Static DurableWorkflow with the identical task and verifier.",
+      "reversible_experiment": "One dedicated branch; explicit local invocation only; no organ changes."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Blockchain, swarm, framework or cockpit",
+        "rejection_reason": "No causal necessity and explicitly outside this ruling.",
+        "revival_evidence": "New linked founder decision; not this experiment."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack bureaucracy, centralization, fragility, overfit, cost, vendor/model dependence, thrashing, capture, authority leakage, evidence theater, gaming, incomprehensibility and amplification. The final design remains a bounded internal audit, not an activated institution.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "fragility",
+        "statement": "A process can die after a task result but before mission checkpoint.",
+        "strengthening_response": "Use durable task receipts as reconciliation evidence; do not redispatch an already submitted read."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Simulated founder commands could be reported as actual acceptance.",
+        "strengthening_response": "Persist evidence mode on admission; forbid synthetic-to-actual promotion."
+      },
+      {
+        "id": "N3",
+        "category": "centralization",
+        "statement": "One host can rewrite its own verifier or replay store.",
+        "strengthening_response": "Pin implementation digests and verify chain on every open; do not claim protection against privileged host control."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "experiment",
+        "rationale": "Spine-only composition must pass replay and restart tests.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any new persistent state source"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Only for the local, manually mediated internal experiment; cryptographic authentication stays unresolved.",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Before unattended use or external consequence"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "Require poisoned-result rejection and no evaluator injection; host-compromise isolation is not claimed.",
+        "owner": "Evidence guardian",
+        "review_trigger": "Before executing untrusted or generated code"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "prohibited",
+        "rationale": "The claim boundary is frozen and checked in evidence output.",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Any broader closure or maturity claim"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "experiment",
+        "rationale": "Measure command count and raw overhead, not fictional human time saved.",
+        "owner": "Experiment operator",
+        "review_trigger": "Comparative evidence complete"
+      }
+    ],
+    "final_design": "Canonical mission-envelope semantics composed with EventSpine, Standing Cognition, a pure eight-family Mission Resolution Router, existing Linker, #90 task receipts, one fixed verifier and a manual founder relay. A subprocess interruption precedes reconciliation. No organization instantiation. Preserve all results. Actual mission may remain awaiting direction while tests demonstrate continuation.",
+    "residual_risks": [
+      {
+        "risk": "Manual relay trusts the operator and chat context.",
+        "mitigation": "No cryptographic authentication claim or automated approval path; limit to this internal audit.",
+        "owner": "Alfonso",
+        "review_trigger": "Any expanded authority or unattended command"
+      },
+      {
+        "risk": "One case cannot establish general route intelligence or human effort savings.",
+        "mitigation": "Publish raw command counts and declare generalization unmeasured.",
+        "owner": "Evidence guardian",
+        "review_trigger": "Additional missions proposed"
+      },
+      {
+        "risk": "Power loss, distributed storage and hostile host compromise are not tested.",
+        "mitigation": "Scope to process interruption; retain evidence and stop on corruption.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Before deployment"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve conventional-workflow dissent and the real-closure shortfall; five roles are structured review perspectives from one assistant, not five independent people or models.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Direct/static mechanisms may make organizational compilation unnecessary here.",
+        "rationale": "One read-only task does not justify an organization.",
+        "evidence_threshold": "A harder authorized mission shows a measurable structure-specific benefit.",
+        "owner": "Alfonso",
+        "review_trigger": "Any topology activation proposal"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "A simulated continue does not close a real founder obligation.",
+        "rationale": "Only actual relayed direction can settle the actual exception.",
+        "evidence_threshold": "Content-bound actual founder reply and independent closure receipt.",
+        "owner": "Alfonso",
+        "review_trigger": "Actual exception is answered"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez; bounded Phase-4 ruling in this conversation"
+  },
+  "migration_plan": "No organ migration. Add only the experimental module/protocol seam and tests on the dedicated branch. Keep #70/#87 implementations unchanged.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Stop the explicit process.",
+      "Retain the evidence directory and failed records.",
+      "Do not merge the branch or activate the experiment."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any authority/grant creation",
+    "Second durable transition truth",
+    "Evaluator bypass",
+    "External effect or blind retry",
+    "Unbound or stale founder command",
+    "Missing lineage",
+    "Corrupt evidence",
+    "Scope or resource expansion"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Draft evidence complete; any new architecture decision opens a linked deliberation, not a third pass."
+}

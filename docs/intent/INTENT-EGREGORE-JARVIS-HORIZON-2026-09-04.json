@@ -1,0 +1,43 @@
+{
+  "intent_id": "INTENT-EGREGORE-JARVIS-HORIZON-2026-09-04",
+  "title": "Preserve the secure Jarvis capability horizon",
+  "statement": "Preserve a long-term product horizon in which the Egregore becomes an exceptionally capable, elegant, secure institutional assistant and can propose recursively stronger capabilities and organizations. This aspiration does not authorize unbounded recursion, live self-modification, self-preservation, self-ratification, authority expansion, deployment, or external effects.",
+  "source": "Alfonso's Jarvis and recursive-improvement aspiration",
+  "source_location": "ChatGPT GitHub implementation session, 2026-09-04",
+  "source_date_or_version": "2026-09-04",
+  "status": "exploratory",
+  "authority_level": "aspiration",
+  "consequence_class": "constitutional",
+  "intended_outcome": "A compounding library of verified Capability and Organizational Genomes may improve future design proposals while every change remains bounded by founder intent, independent evidence, versioned review, rollback, and the existing consequence authority.",
+  "affected_systems": [
+    "egregore/",
+    "omnimorph/",
+    "capabilities/",
+    "provenance/",
+    "governance/"
+  ],
+  "rationale": "The horizon is valuable as direction, but security science cannot justify claims of infinite improvement, zero rogue behavior, or nearly problem-free infrastructure. Separating aspiration from executable authority prevents ambitious language from silently widening the system's powers.",
+  "conflicts": [
+    "No finite security architecture eliminates compromise, implementation bugs, insider threats, key theft, or harmful authorized objectives.",
+    "Recursive improvement can amplify defects and evaluator capture if proposals activate themselves.",
+    "The repository currently reports no Verified Durable Mission Closure and no morphogenetic superiority."
+  ],
+  "evidence_refs": [
+    "uniimente-kernel PR #87 reality status",
+    "NIST SP 800-207 security assumptions",
+    "RFC 9943 transparency limitation",
+    "docs/organizational-morphogenesis/PHASE3_INSPECTION_LEDGER.md"
+  ],
+  "implementation_refs": [
+    "contracts/orchestration-genome.schema.json",
+    "omnimorph/organization_compiler.py"
+  ],
+  "owner": "Alfonso",
+  "next_review_trigger": "At least three consequential organizational decisions improve across repeated independently verified episodes without authority, evidence, welfare, or complexity regression.",
+  "unresolved_questions": [
+    "Which capability improvements are safe to propose automatically but never activate automatically?",
+    "What independent evidence would justify expanding from design-time compilation to controlled canary reconfiguration?"
+  ],
+  "created_at": "2026-09-04T00:00:00Z",
+  "updated_at": "2026-09-04T00:00:00Z"
+}

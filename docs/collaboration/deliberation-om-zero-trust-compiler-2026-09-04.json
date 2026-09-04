@@ -1,0 +1,250 @@
+{
+  "decision_id": "DECISION-OM-ZERO-TRUST-COMPILER-2026-09-04",
+  "title": "Whether Phase 3 should compile zero-trust organizational genomes",
+  "problem": "UNIIMENTE needs a deterministic ProblemGeometry-to-organization compiler, while the founder also requires blockchain and zero-trust mechanisms to constrain agents. The decision is whether to add a chain or new security control plane, retain only existing primitives, or compile a bounded security profile into organization hypotheses without granting execution or authority.",
+  "founder_intent_refs": [
+    "INTENT-OM-2026-08-28",
+    "INTENT-OM-ZERO-TRUST-2026-09-04",
+    "INTENT-EGREGORE-JARVIS-HORIZON-2026-09-04"
+  ],
+  "baseline": "Draft PR #90 provides fail-closed mission/genome/task contracts and a replay-derived task reducer on the existing Event Spine. The static DurableWorkflow remains the strongest competitor. OMNIMORPH composes capabilities but has no organization compiler. Security primitives exist across identity, authority, events and provenance, but no single organizational design binds them and several production controls remain unimplemented.",
+  "alternatives": [
+    {
+      "name": "Retain existing primitives without Phase-3 compilation",
+      "description": "Use current Event Spine, authority, identity and provenance mechanisms manually and stop before an organization compiler.",
+      "advantages": ["No new dependency", "No scoring-policy risk", "Minimum code surface"],
+      "disadvantages": ["Problem-to-organization choice remains implicit", "Security obligations can vary silently by topology", "No falsifiable Phase-3 artifact"],
+      "revival_evidence": "Use this if the compiler cannot produce materially different, schema-valid candidates with a simpler and auditable implementation."
+    },
+    {
+      "name": "Public or permissioned blockchain control plane",
+      "description": "Write organizational decisions and agent permissions to a new blockchain or consensus ledger.",
+      "advantages": ["Potential independent timestamping", "Potential multi-party anti-equivocation"],
+      "disadvantages": ["Creates a second truth/control plane", "Consensus does not make claims true", "Adds key, availability, privacy and governance risk", "Conflicts with the existing Event Spine and authority owners"],
+      "revival_evidence": "Only an independently demonstrated cross-organization adversary model that the canonical ledger plus external witness cannot satisfy, followed by a founder-ratified ownership decision."
+    },
+    {
+      "name": "Deterministic zero-trust organization compiler",
+      "description": "Extend OMNIMORPH to generate content-bound static, centralized, hierarchical, hybrid and do-not-instantiate hypotheses with transparent scoring and a shared design-only security profile.",
+      "advantages": ["Makes selection inspectable", "Reuses canonical owners", "Preserves static and refusal", "Binds every topology to the same authority/resource/security constraints", "Produces a falsifiable Phase-3 seam"],
+      "disadvantages": ["Scoring may encode designer bias", "Contracts may become bureaucratic", "Design obligations may be mistaken for enforcement", "Adds one pinned canonicalization dependency"],
+      "revival_evidence": "Retain only if unit/CI evidence shows deterministic content binding, strict authority copying, material topology variation, fail-closed schema behavior and explicit non-admission."
+    },
+    {
+      "name": "LLM-selected adaptive topology",
+      "description": "Ask a model to choose or rewrite the organizational structure from mission text and runtime observations.",
+      "advantages": ["Flexible interpretation", "Low initial rule-authoring cost"],
+      "disadvantages": ["Opaque and nondeterministic", "Prompt/model dependence", "Can launder intuition into evidence", "Risks topology thrashing and authority leakage"],
+      "revival_evidence": "Only as a bounded hypothesis generator compared against the deterministic compiler after executed evidence exists; never as sole selector or authority."
+    },
+    {
+      "name": "Automatic recursive self-improvement",
+      "description": "Permit the Egregore or compiler to alter its own controls and activate improved organizations without a new human decision.",
+      "advantages": ["Potential speed", "Potential adaptation"],
+      "disadvantages": ["Amplifies defects", "Concentrates design, evaluation and authority", "Breaks rollback and founder sovereignty", "No evidence supports safe unbounded recursion"],
+      "revival_evidence": "None under the current constitution; future improvement remains proposal-first, versioned, independently evaluated and human-authorized."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave PR #90 unchanged, preserve the conventional workflow, and avoid new risk; Phase 3 and the organizational-learning thesis remain untested.",
+    "advantages": ["Zero implementation and dependency risk", "No ownership movement"],
+    "disadvantages": ["No deterministic organization design", "No shared security posture across candidates", "Verified Durable Mission Closures and compiler evidence remain zero"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve both the ambitious secure-assistant horizon and the constitutional rule that aspiration never becomes executable authority.",
+      "material_concerns": ["Alfonso remains root human authority", "Recursive improvement must remain proposal-first", "No blockchain, topology or identity may mint authority"],
+      "evidence_refs": ["INTENT-OM-ZERO-TRUST-2026-09-04", "INTENT-EGREGORE-JARVIS-HORIZON-2026-09-04"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Place deterministic design in OMNIMORPH, shared semantics in contracts, and all enforcement references in their existing owners.",
+      "material_concerns": ["No second Event Spine or ledger", "PR #70/#87 runtime ownership remains unresolved", "v1.0 genome compatibility must survive"],
+      "evidence_refs": ["PHASE3_INSPECTION_LEDGER.md", "ARCHITECTURE-OWNERSHIP-OM-PHASE3.yaml", "uniimente-kernel PR #90"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "A security profile can become ceremony, and deterministic weights can hide opinion behind arithmetic; static workflow must win ties and all outputs must remain non-admitted hypotheses.",
+      "material_concerns": ["Security theater", "Scoring overfit", "Dependency compromise", "False anti-equivocation and rogue-proof claims"],
+      "evidence_refs": ["NIST SP 800-207", "RFC 9943", "PR #66 conventional-workflow dissent"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Accept one pure deterministic module, one new decision schema, one compatible genome extension and negative-control tests; reject a new service or runtime.",
+      "material_concerns": ["Auditability", "Pinned dependency maintenance", "Clear rollback", "No migration or deployment"],
+      "evidence_refs": ["requirements-dev.txt", "omnimorph/engine.py", "SYSTEM_SPEC.md"],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Content integrity, identity and attestation must never be described as truth, outcome quality or permission; dissent and unavailable-verifier states must survive.",
+      "material_concerns": ["Evaluator capture", "Model output represented as evidence", "Participant harm hidden by a topology score", "UNKNOWN transformed into PASS"],
+      "evidence_refs": ["RFC 9334", "RFC 9943 transparency limitation", "topology-episode.schema.json"],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The Kernel already has canonical content, event, identity, attenuation and proof primitives that can be referenced rather than duplicated.",
+      "tier": "primary_source",
+      "reference": "PR #90 tree: events/, identity/, authority/, provenance/ and contracts/",
+      "finding": "EventSpine, Merkle proofs, workload PKI, nonce freshness, strict-subset grants and commit-time revalidation exist at different evidence/adoption levels."
+    },
+    {
+      "claim": "Canonical JSON can make content hashes reproducible across implementations.",
+      "tier": "primary_source",
+      "reference": "RFC 8785",
+      "finding": "JCS defines deterministic I-JSON serialization for hashing/signing and requires aborting when parsing, domain validation or signature checks fail."
+    },
+    {
+      "claim": "Zero trust requires resource-focused, per-request authentication and authorization without implicit network trust.",
+      "tier": "primary_source",
+      "reference": "NIST SP 800-207",
+      "finding": "The architecture supports least privilege and continuous decisions but does not eliminate uncertainty or compromise."
+    },
+    {
+      "claim": "Attestation should separate evidence production, appraisal and reliance.",
+      "tier": "primary_source",
+      "reference": "RFC 9334",
+      "finding": "Attester, Verifier and Relying Party are distinct roles; nonce/time/epoch provide freshness, and an appraisal result is not itself action authority."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Transparency does not stop a dishonest or compromised issuer.",
+      "tier": "primary_source",
+      "reference": "RFC 9943 sections 4 and 9",
+      "finding": "A receipt can prove registration and inclusion while the underlying statement remains false; key management and ordering remain material."
+    },
+    {
+      "claim": "The current workload identity implementation is not a production zero-trust fabric.",
+      "tier": "unit_test",
+      "reference": "identity/mesh.py and identity/pki/ at PR #90 stack",
+      "finding": "Mutual TLS is in-process; key custody, actual network transport and distributed revocation propagation remain unresolved."
+    },
+    {
+      "claim": "Dynamic and developmental organizations have not defeated the static workflow.",
+      "tier": "historical_artifact",
+      "reference": "uniimente-kernel PR #66/#68 and PumpStation PR #7/#13",
+      "finding": "The conventional workflow retains stronger evidence for explicit state, targeted retry, low amplification, simple supervision and cost."
+    },
+    {
+      "claim": "The selected RFC-8785 Python package adds supply-chain and maintainer concentration risk.",
+      "tier": "primary_source",
+      "reference": "PyPI rfc8785 0.1.4 and trailofbits/rfc8785.py",
+      "finding": "The package is small, pure Python, Apache-2.0 and dependency-free, but beta-classified and maintained by one listed PyPI maintainer."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Produce the smallest deterministic Phase-3 compiler that expands organizational options while every candidate remains authority-neutral, content-bound, security-constrained, comparable to static, and unable to execute.",
+    "advantages": [
+      {"id": "A1", "statement": "Security constraints become invariant across materially different topologies.", "amplified_value": "Every candidate copies one mission/resource/authority envelope and one zero-trust profile instead of improvising controls."},
+      {"id": "A2", "statement": "Topology selection becomes inspectable and reproducible.", "amplified_value": "Integer score components, penalties, tie priorities and digests expose the complete design hypothesis."},
+      {"id": "A3", "statement": "Blockchain mechanisms add tamper evidence without a blockchain dependency.", "amplified_value": "RFC-8785 content binding, existing append-only events and Merkle receipts preserve auditability while avoiding a second ledger/token/consensus authority."},
+      {"id": "A4", "statement": "Recursive improvement is constrained structurally.", "amplified_value": "A proposed change creates a new genome and linked decision; live self-rewrite and automatic instantiation remain false."},
+      {"id": "A5", "statement": "The strongest conventional competitor is built into the decision.", "amplified_value": "Static and do-not-instantiate are mandatory, static wins ties, and evidence-gated phenotypes remain explicitly deferred."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "A large security profile can become bureaucracy or give an illusion of enforcement.", "severity": "high", "response_type": "modularity", "redesigned_response": "Keep one bounded profile in the existing genome, mark enforcement DESIGN_ONLY, and expose implementation gaps in every decision."},
+      {"id": "D2", "statement": "Hand-authored scoring weights can encode overfit or founder/model preference as mathematics.", "severity": "critical", "response_type": "evidence", "redesigned_response": "Version/content-bind the policy, expose every contribution, call the result HYPOTHESIS_ONLY, preserve losers, and let static win ties."},
+      {"id": "D3", "statement": "A canonicalization dependency adds supply-chain and availability risk.", "severity": "medium", "response_type": "protective", "redesigned_response": "Pin the small no-dependency implementation, fail closed if unavailable, test RFC examples/determinism, and retain digest recomputation as verification rather than authorization."},
+      {"id": "D4", "statement": "Identity, ledger and attestation language may overstate current security maturity.", "severity": "critical", "response_type": "governance", "redesigned_response": "Encode identity-is-not-authority, transparency-is-not-truth, hardware attestation NOT_IMPLEMENTED, no external witness, and no execution admission."},
+      {"id": "D5", "statement": "Dynamic forms can cost more, amplify messages, or concentrate coordinator failure.", "severity": "high", "response_type": "competitive", "redesigned_response": "Charge explicit complexity, coordination and unenforced-security penalties; keep static fallback and do-not-instantiate mandatory."}
+    ],
+    "comparisons": {
+      "baseline": "PR #90 plus the current static DurableWorkflow and fixed organ structures; no organization compiler.",
+      "do_nothing": "Avoids all new surface but leaves organizational and security-profile selection implicit and Phase 3 untested.",
+      "simplest_viable_alternative": "A fixed static DurableWorkflow with the existing identity/authority/evidence controls applied manually.",
+      "strongest_competing_architecture": "The conventional static DurableWorkflow with explicit checkpoints, targeted retry, low amplification and simple supervision.",
+      "reversible_experiment": "Add a pure proposal-only compiler and schemas/tests on a stacked draft branch; no events, runtime edits, organ migration, deployment or external effect."
+    },
+    "rejected_alternatives": [
+      {"name": "New blockchain or transparency service", "rejection_reason": "Duplicates the canonical Event Spine/provenance truth and introduces consensus, key, privacy and availability risks without a demonstrated threat-model need.", "revival_evidence": "An independently verified anti-equivocation requirement that an external witness over the existing checkpoints cannot satisfy."},
+      {"name": "New zero-trust policy engine", "rejection_reason": "Would become a parallel authority system beside current identity, authority, policy and Gate owners.", "revival_evidence": "Founder-ratified ownership rationalization proving no canonical owner can enforce the required transition."},
+      {"name": "Autonomous topology/self-code rewrite", "rejection_reason": "Conflates design, execution, evaluation and authority; rollback and founder sovereignty fail.", "revival_evidence": "None under current constitutional invariants."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The strengthened design was attacked for bureaucracy, centralization, fragility, overfit, cost, dependency, model/vendor capture, topology thrashing, evaluator capture, authority leakage, evidence theater, gaming, operator incomprehensibility and failure amplification. The frozen result is a pure, deterministic, design-only compiler with explicit gaps and refusal semantics—not a security service or runtime.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "centralization", "statement": "A deterministic compiler could become de facto authority because operators follow its ranking automatically.", "strengthening_response": "TopologyDecision sets automatic_instantiation=false, authority_delta=0 and execution_admission=REFUSED; the compiler exposes only a recommendation hypothesis."},
+      {"id": "N2", "category": "gaming", "statement": "Mission authors could tune ProblemGeometry inputs to obtain a preferred topology.", "strengthening_response": "Bind the full mission/geometry, record basis/evidence refs, treat estimated geometry as a score penalty, and require Phase-4 held-out comparisons before any promotion."},
+      {"id": "N3", "category": "dependency", "statement": "A compromised canonicalizer could produce inconsistent or malicious digests.", "strengthening_response": "Pin the version, compare deterministic vectors in CI, retain independently recomputable SHA-256 values and never let a digest authorize action."},
+      {"id": "N4", "category": "fragility", "statement": "Failing a verifier or identity service could halt useful low-risk internal work.", "strengthening_response": "Separate design ranking from execution admission; future degraded execution may use the already-authorized static workflow only when its existing controls independently pass, otherwise do not instantiate."},
+      {"id": "N5", "category": "comprehensibility", "statement": "Operators may not understand score vectors and nested controls.", "strengthening_response": "Use a small fixed candidate set, integer basis points, named components, one profile digest, explicit penalties, stable tie order and a human-readable ADR/handoff."},
+      {"id": "N6", "category": "other", "statement": "Near-perfect-security language can hide residual harm from validly authorized but mistaken objectives.", "strengthening_response": "Preserve beneficiary, prohibited-action, welfare, dissent and acceptance constraints; state explicitly that zero trust constrains power but cannot make goals correct."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "resolved", "rationale": "The profile is embedded in the existing genome, marked DESIGN_ONLY and produces no enforcement service.", "owner": "Kernel maintainers", "review_trigger": "Any second security profile or executable enforcement point is proposed."},
+      {"disadvantage_id": "D2", "outcome": "experiment", "rationale": "Transparent weights reduce opacity but only sealed comparative episodes can determine predictive value.", "owner": "Independent experiment evaluator", "review_trigger": "Phase-4 corpus and thresholds are independently sealed."},
+      {"disadvantage_id": "D3", "outcome": "accepted", "rationale": "The pinned library is smaller and less error-prone than hand-rolling ECMAScript number canonicalization; its residual supply-chain risk is documented and bounded to proposal digests.", "owner": "Kernel maintainers", "review_trigger": "Dependency advisory, ownership change, unavailable package or incompatible RFC vector."},
+      {"disadvantage_id": "D4", "outcome": "prohibited", "rationale": "Schemas/docs prohibit claims that identity grants authority, receipts prove truth, hardware attestation exists, or the compiler is execution-admitted.", "owner": "Alfonso and evidence guardian", "review_trigger": "Any LIVE, PROVEN, HARDENED, anti-equivocation or rogue-proof claim."},
+      {"disadvantage_id": "D5", "outcome": "experiment", "rationale": "Penalties and static tie priority are implemented, but only Phase-4 episodes can measure actual coordination and failure cost.", "owner": "Experiment operator", "review_trigger": "First topology comparison produces preserved episodes."}
+    ],
+    "final_design": "Extend OrchestrationGenome compatibly to v1.1 with one design-only zero-trust profile; add a fail-closed TopologyDecision; implement a pure deterministic OMNIMORPH compiler that validates MissionContract, content-binds policy/geometry/genomes/decision with pinned RFC 8785 plus SHA-256, generates static/centralized/hierarchical/hybrid/do-not candidates allowed by the mission, defers decentralized/developmental forms without executed evidence, copies authority and resource ceilings exactly, exposes all score components and penalties, preserves static as baseline/tie winner, and refuses execution admission. It imports no runtime, event, Gate, identity issuer, network, model or worker executor.",
+    "residual_risks": [
+      {"risk": "Scoring policy may not predict real performance.", "mitigation": "Keep HYPOTHESIS_ONLY and freeze weights before Phase 4; static wins ties and losers remain preserved.", "owner": "Independent experiment evaluator", "review_trigger": "Executed TopologyEpisodes exist."},
+      {"risk": "Compiled obligations are not runtime enforcement.", "mitigation": "Every output says DESIGN_ONLY/REFUSED; require a new linked integration decision after a runtime owner is resolved.", "owner": "Alfonso", "review_trigger": "Before Phase-4 execution or any control changes implementation status."},
+      {"risk": "Production key custody, distributed revocation, hardware attestation and external anti-equivocation remain absent.", "mitigation": "Expose the gaps, keep external effects off, and require threat-model-specific experiments rather than claims.", "owner": "Security maintainer", "review_trigger": "Before networked, financial or external consequence use."},
+      {"risk": "Mission authors can submit biased geometry/evidence references.", "mitigation": "Content-bind inputs, penalize estimated geometry and require independent corpus sealing/outcome evaluation.", "owner": "Evidence guardian", "review_trigger": "Phase-4 experiment freeze."}
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "The conventional static workflow is preserved as the strongest competitor and tie winner. Security mechanism names do not establish that the profile is enforced or that a dynamic organization is safer.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not build a blockchain, and do not promote any dynamic topology from the compiler score.",
+        "rationale": "The existing canonical ledger already provides internal append-only evidence, while consensus cannot prove truth. Current evidence still favors the static durable workflow on reliability, cost and amplification.",
+        "evidence_threshold": "A sealed Phase-4 experiment must show a dynamic candidate meets every hard invariant, matches quality and materially improves a difficult dimension net of coordination/security cost, then repeats on held-out geometry.",
+        "owner": "Independent experiment evaluator",
+        "review_trigger": "Phase-4 comparative evidence exists."
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "Do not claim the architecture prevents rogue behavior or can improve infinitely without security failure.",
+        "rationale": "Zero trust, cryptographic integrity and attestation bound claims and reduce privilege; they do not guarantee objective correctness, honest issuers, uncompromised keys, safe code or participant welfare.",
+        "evidence_threshold": "No evidence can justify an absolute guarantee; future claims must name a bounded threat model, measured failure rates and residual risk.",
+        "owner": "Alfonso and security maintainer",
+        "review_trigger": "Any security or autonomy claim is drafted."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso"
+  },
+  "migration_plan": "No runtime or organ migration. Stack a draft Phase-3 branch on PR #90; add design-only contracts/compiler/tests. Phase 4 remains separately gated by a sealed corpus, runtime-owner decision, actual canonical interfaces and an independent evaluator. Any later enforcement is a new linked decision, not an amendment to this two-pass record.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close the stacked draft pull request without merge.",
+      "Or revert the v1.1 schema extension, TopologyDecision schema, compiler, dependency, tests and Phase-3 documents.",
+      "Retain the inspection ledger, deliberation, primitive ledger, dissent and failed evidence.",
+      "Continue using PR #90 and the static DurableWorkflow unchanged."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "The compiler emits an event, invokes a runtime/model/network/Gate, spawns a worker, or automatically instantiates a candidate.",
+    "A blockchain, token, consensus authority, second ledger, second identity issuer, second policy authority or second consequence path appears.",
+    "Any candidate authority refs or resource ceilings differ from the MissionContract.",
+    "Static workflow or do-not-instantiate is absent, or static does not win an exact tie.",
+    "A content digest, identity, attestation, receipt or topology score is treated as truth or authority.",
+    "Unknown fields pass, unavailable verification becomes PASS, or an estimated/model geometry becomes executed knowledge.",
+    "Decentralized or developmental topology is admitted without executed supporting evidence.",
+    "The design claims LIVE, PROVEN, HARDENED, rogue-proof, autonomous regeneration or morphogenetic superiority."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso",
+  "review_trigger": "After canonical Phase-3 CI and review, open a new linked deliberation before Phase-4 execution; never add a silent third strengthening pass to this record."
+}

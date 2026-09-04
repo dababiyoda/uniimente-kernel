@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/topology-decision.schema.json",
+  "title": "TopologyDecision",
+  "description": "A deterministic, hypothesis-only organizational comparison. It never authorizes execution or consequence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id", "schema_version", "compiler_version", "decision_status", "digest", "digest_scope",
+    "mission_ref", "mission_digest", "problem_geometry_digest", "compiler_policy_digest",
+    "protected_competitors", "candidates", "deferred_phenotypes", "excluded_phenotypes",
+    "comparison_invariants", "recommendation", "losers_preserved", "executed_episode_refs",
+    "knowledge_claim", "authority_created", "external_effects", "implementation_gaps"
+  ],
+  "properties": {
+    "decision_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "compiler_version": {"const": "0.1.0"},
+    "decision_status": {"const": "HYPOTHESIS_ONLY"},
+    "digest": {"$ref": "#/$defs/digest"},
+    "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
+    "mission_ref": {"type": "string", "format": "uuid"},
+    "mission_digest": {"$ref": "#/$defs/digest"},
+    "problem_geometry_digest": {"$ref": "#/$defs/digest"},
+    "compiler_policy_digest": {"$ref": "#/$defs/digest"},
+    "protected_competitors": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "allOf": [
+        {"contains": {"const": "static_durable_workflow"}},
+        {"contains": {"const": "current_wmi_fixed_roster"}},
+        {"contains": {"const": "do_not_instantiate"}}
+      ],
+      "items": {"enum": ["static_durable_workflow", "current_wmi_fixed_roster", "do_not_instantiate"]}
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rank", "phenotype", "genome_id", "genome_digest", "design_eligible",
+          "execution_eligible", "raw_score_basis_points", "complexity_penalty_basis_points",
+          "coordination_penalty_basis_points", "security_gap_penalty_basis_points",
+          "final_score_basis_points", "components", "hard_gates", "reason"
+        ],
+        "properties": {
+          "rank": {"type": "integer", "minimum": 1},
+          "phenotype": {"$ref": "#/$defs/phenotype"},
+          "genome_id": {"type": "string", "format": "uuid"},
+          "genome_digest": {"$ref": "#/$defs/digest"},
+          "design_eligible": {"type": "boolean"},
+          "execution_eligible": {"const": false},
+          "raw_score_basis_points": {"type": "integer"},
+          "complexity_penalty_basis_points": {"type": "integer", "minimum": 0},
+          "coordination_penalty_basis_points": {"type": "integer", "minimum": 0},
+          "security_gap_penalty_basis_points": {"type": "integer", "minimum": 0},
+          "final_score_basis_points": {"type": "integer"},
+          "components": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["signal", "input_basis_points", "weight_basis_points", "contribution_basis_points"],
+              "properties": {
+                "signal": {"type": "string", "minLength": 1},
+                "input_basis_points": {"type": "integer", "minimum": 0, "maximum": 10000},
+                "weight_basis_points": {"type": "integer"},
+                "contribution_basis_points": {"type": "integer"}
+              }
+            }
+          },
+          "hard_gates": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["gate", "passed", "evidence"],
+              "properties": {
+                "gate": {"type": "string", "minLength": 1},
+                "passed": {"type": "boolean"},
+                "evidence": {"type": "string", "minLength": 1}
+              }
+            }
+          },
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "deferred_phenotypes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phenotype", "reason", "revival_evidence"],
+        "properties": {
+          "phenotype": {"enum": ["decentralized", "developmental_local"]},
+          "reason": {"type": "string", "minLength": 1},
+          "revival_evidence": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "excluded_phenotypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/phenotype"}
+    },
+    "comparison_invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "same_mission_digest", "same_resource_envelope", "same_authority_refs",
+        "same_external_effect_policy", "static_baseline_present", "do_not_instantiate_present",
+        "independent_evaluator_required", "zero_trust_profile_digest"
+      ],
+      "properties": {
+        "same_mission_digest": {"const": true},
+        "same_resource_envelope": {"const": true},
+        "same_authority_refs": {"const": true},
+        "same_external_effect_policy": {"const": true},
+        "static_baseline_present": {"const": true},
+        "do_not_instantiate_present": {"const": true},
+        "independent_evaluator_required": {"const": true},
+        "zero_trust_profile_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phenotype", "genome_digest", "tie_breaker", "automatic_instantiation",
+        "execution_admission", "authority_delta", "rationale"
+      ],
+      "properties": {
+        "phenotype": {"$ref": "#/$defs/phenotype"},
+        "genome_digest": {"$ref": "#/$defs/digest"},
+        "tie_breaker": {"const": "STATIC_THEN_SIMPLER"},
+        "automatic_instantiation": {"const": false},
+        "execution_admission": {"const": "REFUSED_PENDING_SEPARATE_PHASE_DECISION"},
+        "authority_delta": {"const": 0},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    },
+    "losers_preserved": {"const": true},
+    "executed_episode_refs": {"type": "array", "maxItems": 0},
+    "knowledge_claim": {"const": "MODEL_AND_RULE_OUTPUT_IS_HYPOTHESIS_NOT_ORGANIZATIONAL_KNOWLEDGE"},
+    "authority_created": {"const": 0},
+    "external_effects": {"const": 0},
+    "implementation_gaps": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "phenotype": {"enum": ["static_durable_workflow", "centralized", "decentralized", "hierarchical", "hybrid", "developmental_local", "do_not_instantiate"]}
+  }
+}

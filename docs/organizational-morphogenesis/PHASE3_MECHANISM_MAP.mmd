@@ -1,0 +1,18 @@
+flowchart TD
+  M["MissionContract + ProblemGeometry"] --> C["OMNIMORPH design compiler"]
+  C --> G["Candidate Organizational Genomes"]
+  C --> D["TopologyDecision hypothesis"]
+  G --> Z["Zero-trust control profile"]
+  Z --> E["Eligibility: identity + attenuated grant + freshness"]
+  Z --> R["Routing: typed Event Spine + one-task lease"]
+  Z --> P["Proof: content digest + receipt + independent appraisal"]
+  Z --> S["Resource/consequence: reservation + Gate-only effect"]
+  E --> F["Static fallback or refuse closed"]
+  R --> F
+  P --> F
+  S --> F
+
+  classDef canonical fill:#d9edf7,stroke:#31708f,color:#102a3a
+  classDef proposed fill:#fcf8e3,stroke:#8a6d3b,color:#3d321c
+  class E,R,P,S canonical
+  class C,G,D,Z,F proposed

@@ -1,0 +1,216 @@
+ledger_id: PRIMITIVES-OM-ZT-2026-09-04
+status: FROZEN_PHASE_3
+decision: EXPERIMENT
+governing_transaction: authorized_mission_to_verified_mission_closure
+rule: every imported mechanism has at least three material mutations and maps to a control super-node
+
+mechanism_cards:
+  - id: M11-content-bound-genome
+    source_class: blockchain_and_transparency
+    source: RFC 8785 plus content-addressed ledgers
+    purpose: make a candidate organization's exact content identifiable and tamper-evident
+    primitive_operation: canonicalize then hash
+    maintained_state: mission, policy, geometry, genome and decision digests
+    state_transition: mutable_document_to_content_bound_hypothesis
+    actors: [organization_compiler, independent_verifier]
+    authority: none; digest conveys no permission
+    information_visible: digest scope, algorithm and bound references
+    information_hidden: sensitive payload may remain off-record behind a digest
+    resources: deterministic local compute
+    incentives: expose silent mutation and make comparisons reproducible
+    feedback: digest mismatch and replay rejection counts
+    activation_threshold: schema-valid input
+    memory: existing provenance and later TopologyEpisode refs
+    selection: SHA-256 over RFC-8785 bytes, excluding only the declared digest field
+    trust_boundary: independently recompute before use
+    proof: reproducible digest
+    failure_behavior: refuse compilation or admission on canonicalization/mismatch
+    recovery_behavior: repair source content and issue a new version/digest
+    external_consequence: none
+    invariant_worth_preserving: content identity is not truth or authority
+    mutations:
+      - replace block identity with a mission-bounded organizational genome identity
+      - replace chain consensus with independent local recomputation
+      - bind policy and problem geometry as well as artifact content
+      - make mismatch a fail-closed design/admission failure rather than a fork choice
+    super_nodes: [Proof_Truth, Eligibility]
+
+  - id: M12-transparent-receipt-without-chain
+    source_class: blockchain_and_transparency
+    source: RFC 9162 certificate transparency, RFC 9943 SCITT and UNIIMENTE Merkle proofs
+    purpose: preserve append-only, auditable organizational evidence
+    primitive_operation: register a statement under policy and return an inclusion receipt
+    maintained_state: ordered Event Spine facts, Merkle checkpoints and receipts
+    state_transition: submitted_claim_to_registered_evidence_or_refusal
+    actors: [event_spine, evidence_issuer, independent_auditor]
+    authority: registration records a claim and never approves it
+    information_visible: issuer, subject, policy version, content digest and receipt
+    information_hidden: sensitive content may be referenced by digest
+    resources: storage, checkpoint and audit compute
+    incentives: make equivocation or mutation detectable within the implemented trust boundary
+    feedback: inclusion failures, receipt mismatches and audit findings
+    activation_threshold: valid identity, schema and registration policy
+    memory: existing append-only EvidenceLedger/EventSpine
+    selection: canonical internal ledger; no token or public chain
+    trust_boundary: current implementation lacks an independent external witness
+    proof: inclusion proof and checkpoint
+    failure_behavior: quarantine evidence; do not close mission
+    recovery_behavior: reconcile against canonical records and preserve conflict
+    external_consequence: only later through the existing Gate
+    invariant_worth_preserving: transparency gives accountability, not truth
+    mutations:
+      - remove cryptocurrency, token economics and public consensus
+      - make each registered statement mission/task/genome scoped
+      - preserve dissent and losing topologies as first-class statements
+      - refuse to claim anti-equivocation until an independent witness exists
+    super_nodes: [Proof_Truth, Resource_Settlement]
+
+  - id: M13-per-transition-zero-trust
+    source_class: zero_trust
+    source: NIST SP 800-207
+    purpose: prevent organizational position or network location from implying trust
+    primitive_operation: authenticate and authorize the subject/resource/action at each protected transition
+    maintained_state: identity, grant, policy version, resource envelope and revocation status
+    state_transition: requested_to_admitted_or_refused
+    actors: [policy_decision_owner, enforcement_point, workload, resource]
+    authority: only an existing canonical grant can authorize
+    information_visible: minimum attributes needed for the decision
+    information_hidden: unrelated mission/context data
+    resources: decision latency and evidence budget
+    incentives: minimize implicit trust and blast radius
+    feedback: refusals, stale decisions and authority violations
+    activation_threshold: every task/lease/result/reconfiguration/closure transition
+    memory: decision receipt linked to policy version
+    selection: default deny on unavailable identity, policy or proof
+    trust_boundary: compromise remains possible after a valid decision
+    proof: identity plus grant plus freshness plus policy decision receipt
+    failure_behavior: deny, preserve attempt and degrade to static or do-not-instantiate
+    recovery_behavior: restore verifier/policy state and re-evaluate from canonical facts
+    external_consequence: never bypasses the Gate
+    invariant_worth_preserving: no implicit trust
+    mutations:
+      - move enforcement from network sessions to organizational state transitions
+      - combine identity with one-task capability attenuation and resource reservation
+      - require commit-time revalidation rather than trusting an earlier admission
+      - make unavailable verification an explicit topology failure metric
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]
+
+  - id: M14-fresh-workload-capability
+    source_class: zero_trust_and_object_capability
+    source: SPIFFE SVIDs, nonces, epochs and attenuated capability systems
+    purpose: bind one worker to one task with a fresh, narrower power set
+    primitive_operation: verify isolated workload identity then intersect existing grant with lease constraints
+    maintained_state: SPIFFE identity, credential lifetime, nonce, lease, grant subset and revocation
+    state_transition: untrusted_worker_to_fresh_bounded_claimant_or_refusal
+    actors: [identity_verifier, authority_owner, worker, lease_enforcer]
+    authority: strict intersection only; no inheritance or minting
+    information_visible: task-scoped identity and required claims
+    information_hidden: supervisor power and unrelated context
+    resources: credential/lease TTL and task budget
+    incentives: compromise affects at most one bounded lease
+    feedback: replay, identity mismatch, excessive capability and expiry counts
+    activation_threshold: task claim and every renewed heartbeat
+    memory: immutable lease and refusal receipts
+    selection: declared workload identity plus capability eligibility
+    trust_boundary: current key custody and distributed revocation are incomplete
+    proof: SVID verification, nonce/time check and subset proof
+    failure_behavior: refuse; replacement gets a fresh identity/lease intersection
+    recovery_behavior: revoke credential, expire lease and reconcile task state
+    external_consequence: consequence ceiling remains bounded by mission and Gate
+    invariant_worth_preserving: identity is not authority
+    mutations:
+      - convert a reusable agent credential into a one-task expiring workload lease
+      - intersect rather than copy supervisor capability
+      - combine nonce, credential TTL and lease TTL as one freshness envelope
+      - make replacement re-derive eligibility instead of inheriting power
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]
+
+  - id: M15-three-party-attestation
+    source_class: zero_trust_attestation
+    source: RFC 9334 RATS
+    purpose: prevent a producer from being the sole judge of its own state/result
+    primitive_operation: separate evidence production, appraisal and relying decision
+    maintained_state: evidence, appraisal policy, result, freshness and dissent
+    state_transition: claim_to_evidence_to_appraisal_to_relying_decision
+    actors: [worker_attester, independent_evaluator, acceptance_authority]
+    authority: appraisal informs; only the existing relying authority decides
+    information_visible: scoped evidence and appraisal result
+    information_hidden: unnecessary worker/private context
+    resources: independent evaluator capacity
+    incentives: make self-certification insufficient
+    feedback: disagreement, capture and unverifiable evidence rates
+    activation_threshold: submitted result, reconfiguration and closure
+    memory: evidence and dissent receipts
+    selection: evaluator must be independent from command and production
+    trust_boundary: hardware attestation is not implemented or claimed
+    proof: fresh evidence plus separately identified appraisal
+    failure_behavior: no verifier means no verified closure
+    recovery_behavior: replace evaluator independently or escalate to Alfonso
+    external_consequence: appraisal cannot trigger consequence directly
+    invariant_worth_preserving: evidence is not authorization
+    mutations:
+      - apply attester/verifier/relying-party separation to agent work rather than device boot
+      - require dissent preservation alongside appraisal
+      - make verifier loss block closure instead of degrading to self-certification
+      - prohibit the appraisal result from granting tools, budget or external authority
+    super_nodes: [Eligibility, Proof_Truth]
+
+  - id: M16-thresholded-improvement-proposal
+    source_class: blockchain_governance_and_supply_chain
+    source: multisignature/quorum governance and in-toto threshold layouts
+    purpose: allow recursive improvement proposals without live self-rewrite
+    primitive_operation: require distinct evidence roles and a versioned threshold before proposal admission
+    maintained_state: current genome, proposed genome, evidence roles, dissent, rollback and approval
+    state_transition: observation_to_proposal_to_sandbox_candidate_or_refused
+    actors: [compiler, independent_evaluators, maintainer, Alfonso]
+    authority: threshold can admit an experiment only; it cannot activate or expand authority
+    information_visible: proposed diff, evidence, affected tasks, resource impact and rollback
+    information_hidden: no material dissent may be hidden
+    resources: experiment budget and founder-attention ceiling
+    incentives: improvement must beat baseline net of security/coordination cost
+    feedback: wrong prediction, rollback and regression records
+    activation_threshold: new linked deliberation plus independent evidence and human ruling
+    memory: all accepted/rejected proposals and topology episodes
+    selection: diversity-weighted roles; correlated models count as one source
+    trust_boundary: evaluators and human authority may still be captured or mistaken
+    proof: signed/versioned proposal and dispositions
+    failure_behavior: retain current genome/static fallback
+    recovery_behavior: rollback and seal failed episode
+    external_consequence: none without the canonical Gate
+    invariant_worth_preserving: recursive improvement remains proposal-first
+    mutations:
+      - replace token-weighted voting with role-separated evidence thresholds
+      - replace protocol auto-upgrade with simulation/sandbox/shadow/canary gates
+      - count correlated model families as one evidence source
+      - make every approved change authority-neutral and reversibility-bounded
+    super_nodes: [Eligibility, Proof_Truth, Resource_Settlement]
+
+  - id: M17-static-security-fallback
+    source_class: current_uniimente
+    source: DurableWorkflow, Consequence Gate and Phase-2 task fabric
+    purpose: keep security infrastructure from becoming a complexity amplifier
+    primitive_operation: choose the simpler static organization on ties, verifier loss or uncertain state
+    maintained_state: candidate scores, hard gates, security implementation status and fallback ref
+    state_transition: dynamic_candidate_to_static_or_do_not_instantiate
+    actors: [compiler, experiment_operator, independent_evaluator]
+    authority: fallback never widens authority
+    information_visible: full score trace and refusal reason
+    information_hidden: none material to the decision
+    resources: lower coordination and supervision surface
+    incentives: safest simplest verified outcome wins
+    feedback: static wins, dynamic losses and amplification metrics
+    activation_threshold: tie, hard-gate failure, missing verifier, critical risk or unproven mechanism
+    memory: losing candidate and decision record
+    selection: deterministic tie priority static then simpler forms
+    trust_boundary: static workflows still contain code/model/operator risks
+    proof: transparent scorecard and invariant checks
+    failure_behavior: do not instantiate if static cannot satisfy the mission
+    recovery_behavior: open a new linked decision after new evidence
+    external_consequence: unchanged Gate-only path
+    invariant_worth_preserving: complexity must earn admission
+    mutations:
+      - treat the conventional baseline as a security control, not legacy debt
+      - price coordination and unenforced security obligations into topology choice
+      - preserve the losing dynamic genome for later falsification
+      - route UNKNOWN to refusal rather than optimistic execution
+    super_nodes: [Eligibility, Default_Routing, Proof_Truth, Resource_Settlement]

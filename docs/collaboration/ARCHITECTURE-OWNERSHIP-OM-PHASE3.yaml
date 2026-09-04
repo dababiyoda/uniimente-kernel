@@ -1,0 +1,58 @@
+decision_id: DECISION-OM-ZERO-TRUST-COMPILER-2026-09-04
+status: EXPERIMENT_APPROVED
+authority: Alfonso
+constitutional_change: true
+changes_authority: false
+extends:
+  - OWNERSHIP-OM-2026-08-28
+  - DECISION-OM-TASK-FABRIC-2026-08-30
+stack_dependency: uniimente-kernel#90
+principle: one_concept_one_canonical_owner
+
+semantic_owners:
+  deterministic_organization_design:
+    owner: omnimorph/organization_compiler.py
+    meaning: ProblemGeometry to non-authorizing candidate OrchestrationGenomes and transparent score traces
+  organizational_design_contract:
+    owner: contracts/orchestration-genome.schema.json
+    meaning: compatible v1.1 zero-trust design obligations; v1.0 remains valid
+  topology_decision_contract:
+    owner: contracts/topology-decision.schema.json
+    meaning: hypothesis-only comparison, protected competitors, deferred forms and no automatic instantiation
+  canonical_json_content_binding:
+    owner: RFC 8785 dependency plus omnimorph compiler helper
+    meaning: deterministic digest only; never truth, permission or execution proof
+  workload_identity:
+    owner: identity/
+    meaning: authentication only; compiler emits policy references and no credentials
+  authorization:
+    owner: authority/ plus canonical capability/governance mechanisms
+    meaning: strict attenuation and commit-time revalidation; compiler copies refs exactly
+  durable_transition_truth:
+    owner: events/EventSpine
+    meaning: unchanged; compiler emits no event and creates no ledger
+  integrity_and_episode_evidence:
+    owner: provenance/
+    meaning: existing hashes, Merkle proofs, receipts and later executed TopologyEpisodes
+  runtime_composition:
+    owner: UNRESOLVED
+    candidates: [uniimente-kernel#70, uniimente-kernel#87]
+  consequence_authority:
+    owner: existing Consequence Gate and accountable legal principal
+    meaning: sole external-effect path; compiler has none
+
+explicit_non_owners:
+  - blockchain or transparency primitives do not become a second ledger or authority system
+  - a content digest does not prove correctness, truth, authorization or execution
+  - workload identity and attestation do not grant capability or consequence authority
+  - OMNIMORPH does not schedule, execute, spawn, ratify, deploy or activate candidate organizations
+  - a TopologyDecision is not a Gate decision and cannot admit execution
+  - morphogenesis/ remains the target-and-setpoint evaluator and is not repurposed
+
+compatibility_shims: []
+rollback:
+  - close the stacked draft pull request
+  - or revert the v1.1 contract extension, TopologyDecision schema, compiler, tests and linked records
+  - retain the inspection ledger, deliberation, negative evidence and rejected blockchain alternative
+  - continue with DurableWorkflow and PR #90 unchanged
+review_trigger: canonical Phase-3 CI, then a new linked decision before comparative execution

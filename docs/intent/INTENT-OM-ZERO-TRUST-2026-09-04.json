@@ -1,0 +1,54 @@
+{
+  "intent_id": "INTENT-OM-ZERO-TRUST-2026-09-04",
+  "title": "Harden organizational morphogenesis with zero-trust and ledger primitives",
+  "statement": "Use the Mechanism Recombination Foundry to extract, materially mutate, and recombine useful primitives from blockchain, transparency-ledger, zero-trust, workload-identity, capability-security, and remote-attestation systems into OMNIMORPH's bounded organizational designs. Reuse canonical Kernel owners; do not add a token, public chain, parallel ledger, identity authority, permission system, workflow truth source, or consequence path.",
+  "source": "Alfonso's Phase-3 security hardening directive",
+  "source_location": "ChatGPT GitHub implementation session, 2026-09-04",
+  "source_date_or_version": "2026-09-04",
+  "status": "needs_evidence",
+  "authority_level": "active_requirement",
+  "consequence_class": "constitutional",
+  "intended_outcome": "Every proposed OrchestrationGenome carries inspectable identity, authority attenuation, freshness, integrity, independent-verification, resource, failure, improvement, and consequence constraints; the deterministic compiler can only recommend a hypothesis and cannot instantiate, authorize, or execute it.",
+  "affected_systems": [
+    "contracts/",
+    "omnimorph/",
+    "identity/",
+    "authority/",
+    "events/",
+    "provenance/",
+    "governance/",
+    "docs/collaboration/"
+  ],
+  "rationale": "The security value of blockchains and zero-trust systems lies in mechanisms such as content binding, append-only evidence, freshness, non-inherited capabilities, independent appraisal, and fail-closed mediation—not in copying a cryptocurrency or creating a second control plane. Current Kernel mechanisms already own most primitives but are not yet compiled as one organizational security posture.",
+  "conflicts": [
+    "Transparency proves registration and accountability, not truth or honest behavior.",
+    "The current workload PKI does not solve production key custody, distributed revocation, or hardware attestation.",
+    "Dynamic organization still has weaker reliability, cost, and message-amplification evidence than DurableWorkflow.",
+    "PR #35 and PR #56 contain useful experimental security semantics but remain open competing implementations rather than canonical authority."
+  ],
+  "evidence_refs": [
+    "NIST SP 800-207 Zero Trust Architecture",
+    "RFC 8785 JSON Canonicalization Scheme",
+    "RFC 9334 Remote ATtestation procedureS Architecture",
+    "RFC 9943 SCITT Architecture",
+    "SPIFFE Identity and Verifiable Identity Document specification",
+    "uniimente-kernel PR #90 Phase-2 handoff",
+    "docs/organizational-morphogenesis/PHASE3_INSPECTION_LEDGER.md"
+  ],
+  "implementation_refs": [
+    "contracts/orchestration-genome.schema.json",
+    "contracts/topology-decision.schema.json",
+    "omnimorph/organization_compiler.py",
+    "tests/unit/test_organization_compiler.py",
+    "docs/organizational-morphogenesis/PHASE3_PRIMITIVE_LEDGER.yaml"
+  ],
+  "owner": "Alfonso",
+  "next_review_trigger": "Phase-3 canonical CI completes, or any proposal attempts to move a control from design-only to execution enforcement.",
+  "unresolved_questions": [
+    "Which canonical runtime line will enforce the compiled profile after Phase 4 earns integration?",
+    "What production key-custody and distributed-revocation mechanism will be independently verified?",
+    "Does UNIIMENTE need an external transparency witness, or are existing internal Merkle checkpoints sufficient for the bounded threat model?"
+  ],
+  "created_at": "2026-09-04T00:00:00Z",
+  "updated_at": "2026-09-04T00:00:00Z"
+}

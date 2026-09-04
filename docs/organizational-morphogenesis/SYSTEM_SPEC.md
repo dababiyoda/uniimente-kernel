@@ -138,3 +138,34 @@ The branch is inert. Before consumers exist, rollback is a scoped revert of the
 three schemas, test and documentation while retaining the deliberation and
 negative evidence. The existing DurableWorkflow and current organ flows remain
 unchanged throughout.
+
+## Phase-3 addendum — deterministic organization design
+
+Phase 3 adds `omnimorph/organization_compiler.py`, not a runtime. It maps a
+schema-valid `MissionContract.problem_geometry` to static, centralized,
+hierarchical, hybrid and do-not-instantiate genome hypotheses allowed by the
+mission. Decentralized and developmental/local remain evidence-gated. The
+current WMI fixed roster remains an external experimental baseline.
+
+Every candidate receives the identical mission digest, authority references,
+resource ceilings, external-effect policy and design-only zero-trust profile.
+The compiler exposes integer score contributions and explicit complexity,
+coordination and unenforced-security penalties. Static wins exact ties. Any
+critical or external-effect mission is recommended for non-instantiation while
+the security profile lacks runtime enforcement.
+
+`TopologyDecision` is fail-closed and always `HYPOTHESIS_ONLY`. It preserves
+losers, contains no episode evidence, creates zero authority, records zero
+external effects and refuses execution admission. RFC-8785/SHA-256 digests bind
+content only; they do not confer truth or permission.
+
+The M11–M17 profile recombines blockchain/transparency, zero-trust, workload
+identity, attestation and threshold-layout primitives through existing owners.
+It expressly requires no blockchain or token and adds no second Event Spine,
+identity issuer, policy authority or Gate. Actual transition enforcement,
+production key custody, distributed revocation, hardware attestation and an
+external transparency witness remain not implemented.
+
+Phase-3 exit is deterministic schema-valid output plus negative controls and
+canonical CI. It does not satisfy Phase-4 entry and leaves Verified Durable
+Mission Closures at zero.

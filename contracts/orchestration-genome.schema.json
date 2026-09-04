@@ -13,13 +13,14 @@
   ],
   "properties": {
     "genome_id": {"type": "string", "format": "uuid"},
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"enum": ["1.0", "1.1"]},
     "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "digest": {"$ref": "#/$defs/digest"},
     "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
     "mission_ref": {"type": "string", "format": "uuid"},
     "mission_digest": {"$ref": "#/$defs/digest"},
     "evidence_status": {"enum": ["hypothesis", "experiment_candidate", "validated", "retired"]},
+    "zero_trust_profile": {"$ref": "#/$defs/zeroTrustProfile"},
     "topology": {
       "type": "object",
       "additionalProperties": false,
@@ -260,6 +261,14 @@
   },
   "allOf": [
     {
+      "if": {"properties": {"schema_version": {"const": "1.1"}}},
+      "then": {"required": ["zero_trust_profile"]}
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": "1.0"}}},
+      "then": {"not": {"required": ["zero_trust_profile"]}}
+    },
+    {
       "if": {"properties": {"evidence_status": {"const": "validated"}}},
       "then": {
         "properties": {
@@ -285,6 +294,150 @@
   ],
   "$defs": {
     "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "phenotype": {"enum": ["static_durable_workflow", "centralized", "decentralized", "hierarchical", "hybrid", "developmental_local", "do_not_instantiate"]}
+    "phenotype": {"enum": ["static_durable_workflow", "centralized", "decentralized", "hierarchical", "hybrid", "developmental_local", "do_not_instantiate"]},
+    "zeroTrustProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id", "version", "digest", "digest_scope", "enforcement_status",
+        "mechanism_refs", "identity", "authorization", "freshness", "integrity",
+        "attestation", "enforcement", "improvement", "consequence"
+      ],
+      "properties": {
+        "profile_id": {"const": "zero-trust-organizational-v1"},
+        "version": {"const": "1.0.0"},
+        "digest": {"$ref": "#/$defs/digest"},
+        "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
+        "enforcement_status": {"const": "DESIGN_ONLY"},
+        "mechanism_refs": {
+          "type": "array",
+          "minItems": 7,
+          "uniqueItems": true,
+          "items": {"pattern": "^M1[1-7]-[a-z0-9-]+$"}
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_ref", "workload_identity_required", "identity_is_authority",
+            "short_lived_credentials_required", "revocation_check_required",
+            "replacement_reverification_required"
+          ],
+          "properties": {
+            "policy_ref": {"type": "string", "minLength": 1},
+            "workload_identity_required": {"const": true},
+            "identity_is_authority": {"const": false},
+            "short_lived_credentials_required": {"const": true},
+            "revocation_check_required": {"const": true},
+            "replacement_reverification_required": {"const": true}
+          }
+        },
+        "authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_ref", "capability_grant_required", "strict_attenuation_required",
+            "commit_time_revalidation_required", "topology_may_authorize",
+            "coordinator_may_mint_authority"
+          ],
+          "properties": {
+            "policy_ref": {"type": "string", "minLength": 1},
+            "capability_grant_required": {"const": true},
+            "strict_attenuation_required": {"const": true},
+            "commit_time_revalidation_required": {"const": true},
+            "topology_may_authorize": {"const": false},
+            "coordinator_may_mint_authority": {"const": false}
+          }
+        },
+        "freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nonce_required", "timestamp_or_epoch_required", "replay_rejection_required",
+            "stale_decision_reuse_permitted"
+          ],
+          "properties": {
+            "nonce_required": {"const": true},
+            "timestamp_or_epoch_required": {"const": true},
+            "replay_rejection_required": {"const": true},
+            "stale_decision_reuse_permitted": {"const": false}
+          }
+        },
+        "integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canonicalization", "digest_algorithm", "canonical_event_spine_only",
+            "append_only_receipts_required", "merkle_checkpoint_required",
+            "blockchain_required", "token_required", "independent_external_witness"
+          ],
+          "properties": {
+            "canonicalization": {"const": "RFC8785"},
+            "digest_algorithm": {"const": "SHA-256"},
+            "canonical_event_spine_only": {"const": true},
+            "append_only_receipts_required": {"const": true},
+            "merkle_checkpoint_required": {"const": true},
+            "blockchain_required": {"const": false},
+            "token_required": {"const": false},
+            "independent_external_witness": {"const": "NOT_IMPLEMENTED"}
+          }
+        },
+        "attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "producer_verifier_relying_party_separated", "attestation_is_authorization",
+            "hardware_attestation_status", "verifier_independent_from_command"
+          ],
+          "properties": {
+            "producer_verifier_relying_party_separated": {"const": true},
+            "attestation_is_authorization": {"const": false},
+            "hardware_attestation_status": {"const": "NOT_IMPLEMENTED"},
+            "verifier_independent_from_command": {"const": true}
+          }
+        },
+        "enforcement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default_deny", "missing_identity", "missing_authority",
+            "missing_integrity", "missing_verifier"
+          ],
+          "properties": {
+            "default_deny": {"const": true},
+            "missing_identity": {"const": "DO_NOT_INSTANTIATE"},
+            "missing_authority": {"const": "DO_NOT_INSTANTIATE"},
+            "missing_integrity": {"const": "STATIC_OR_DO_NOT_INSTANTIATE"},
+            "missing_verifier": {"const": "NO_VERIFIED_CLOSURE"}
+          }
+        },
+        "improvement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "live_self_rewrite_permitted", "versioned_proposal_required",
+            "independent_evidence_required", "human_ratification_required",
+            "authority_expansion_permitted"
+          ],
+          "properties": {
+            "live_self_rewrite_permitted": {"const": false},
+            "versioned_proposal_required": {"const": true},
+            "independent_evidence_required": {"const": true},
+            "human_ratification_required": {"const": true},
+            "authority_expansion_permitted": {"const": false}
+          }
+        },
+        "consequence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gate_only", "blind_retry_permitted", "reconciliation_before_retry"],
+          "properties": {
+            "gate_only": {"const": true},
+            "blind_retry_permitted": {"const": false},
+            "reconciliation_before_retry": {"const": true}
+          }
+        }
+      }
+    }
   }
 }

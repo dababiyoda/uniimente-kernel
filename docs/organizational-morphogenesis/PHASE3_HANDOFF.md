@@ -98,7 +98,12 @@ corrected and a regression assertion added. Two test-fixture failures used
 invalid MissionContract combinations; they were corrected to schema-valid
 high-consequence cases. Neither was represented as a product capability.
 
-Canonical CI status must be appended to the draft PR after it runs.
+Canonical CI run 242 failed during collection because the new test imported a
+sibling test module as a top-level module, which local focused invocation had
+made importable but the repository-wide Python invocation did not. No product
+test executed. The import was changed to the repository-qualified
+`tests.unit...` path and the same 39 tests passed locally again. Run 242 remains
+the preserved failed CI evidence; the replacement run must pass before exit.
 
 ## 13. Evidence tiers
 

@@ -19,7 +19,7 @@ from omnimorph.organization_compiler import (
     OrganizationCompiler,
     content_digest,
 )
-from test_organizational_morphogenesis_contracts import (
+from tests.unit.test_organizational_morphogenesis_contracts import (
     valid_genome,
     valid_mission,
     validator,

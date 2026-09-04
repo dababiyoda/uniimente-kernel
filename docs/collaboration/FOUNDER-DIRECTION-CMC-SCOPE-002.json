@@ -1,0 +1,17 @@
+{
+  "record_id": "CMC-MANUAL-DIRECTION-002",
+  "source_text": "Yes. I authorize this narrowly scoped exception for the Phase 4 experiment only.\n\nReplies authored by me in this chat may serve as manual founder direction and may be relayed verbatim into content-bound decision records. Those records must preserve the exact source text, timestamp, conversation reference, scope, and decision status.\n\nThis is manual founder direction—not cryptographic founder authentication.\n\nTherefore:\n\n* The runtime must refuse every unauthenticated command.\n* No chat message may be treated as proof of cryptographic identity.\n* Content hashes, signatures, or record integrity must not be represented as founder authentication.\n* Manual relay may authorize experimental design and development artifacts only; it may not directly authorize runtime execution.\n* No authority, credential, policy, constitutional rule, budget, identity, legal principal, external effect, financial action, publication, outreach, deployment, or recursive self-modification may be created or changed through this exception.\n* The experiment remains consequence-inert, proposal-only, and limited to the authorized Phase 4 draft branch.\n* The inability to run pytest must remain recorded as an evidence gap. No test success may be claimed until the required environment is available and the tests actually pass.\n* Any ambiguity, scope expansion, or conflict must pause and return NEEDS_FOUNDER_DECISION.\n\nThis exception does not resolve the founder-authentication gap, waive the requirement for real cryptographic authentication, or authorize production use. It is valid only for manually relaying my explicit founder direction into the content-bound records of this experiment.\n\nProceed within these limits. Stop and return for a new founder ruling before merge, deployment, activation, external consequence, live credentials, or any expansion beyond this Phase 4 experiment.",
+  "claimed_author": "Alfonso Lopez",
+  "source_timestamp": null,
+  "source_timestamp_status": "not_exposed_by_chat",
+  "recorded_at": "2026-09-04T22:33:38Z",
+  "conversation_reference": "Current ChatGPT UNIIMENTE Phase 4 implementation conversation; user turn beginning 'Yes. I authorize this narrowly scoped exception for the Phase 4 experiment only.'",
+  "platform_message_id": null,
+  "scope": "experimental_design_and_development_artifacts_only",
+  "decision_status": "AUTHORIZED_ARTIFACTS_ONLY",
+  "branch": "agent/cathedral-metabolism-closure-phase4",
+  "runtime_execution_authorized": false,
+  "cryptographic_founder_authentication": false,
+  "authority_created": 0,
+  "implementation_note": "Record-only evidence. The source authoring timestamp and opaque conversation/message IDs are not exposed by this interface; null is not replaced with a guessed timestamp or ID. recorded_at is the observed relay time, not the authored time."
+}

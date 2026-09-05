@@ -1,5 +1,6 @@
 version: '1.0'
-decision: DEC-CMC-001
+decision: DEC-CMC-002
+supersedes: DEC-CMC-001
 status: experimental_addendum_not_global_migration
 founder_intent_ref: INTENT-CMC-2026-09-04
 ownership:
@@ -16,7 +17,7 @@ ownership:
   consequence: policy/consequence_gate.py
 runtime_implementations:
   - {source: 'PR #70', role: competing_evidence, sovereign: false}
-  - {source: 'PR #87', role: experimental_boot_adapter, sovereign: false}
+  - {source: 'PR #87', role: competing_evidence_not_booted, sovereign: false}
 constraints:
   new_top_level_package: false
   second_governance_engine: false
@@ -24,7 +25,13 @@ constraints:
   organization_instantiation: false
   authority_created: false
   external_effects: false
-  founder_surface: manually_relayed_internal_command_no_authentication_claim
-compatibility_shims: []
+  founder_surface: record_only_no_runtime_command_path
+compatibility_shims:
+  - canonical_source: foundry.pipeline
+    owner: foundry
+    surface: foundry.__getattr__
+    purpose: preserve_existing_facade_without_circular_import
+    expiry_trigger: upstream_package_import_cycle_removed
+    removal_condition: both_cold_import_orders_pass_without_lazy_facade
 migration: No organ migration; later adoption requires a new founder ruling.
 rollback: Stop explicit invocation; retain branch and evidence; do not merge.

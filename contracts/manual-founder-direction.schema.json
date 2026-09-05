@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/manual-founder-direction.schema.json",
+  "title": "Manual founder direction — record-only CMC-002 evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "source_text",
+    "claimed_author",
+    "source_timestamp",
+    "source_timestamp_status",
+    "recorded_at",
+    "conversation_reference",
+    "platform_message_id",
+    "scope",
+    "decision_status",
+    "branch",
+    "runtime_execution_authorized",
+    "cryptographic_founder_authentication",
+    "authority_created",
+    "implementation_note",
+    "digest"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claimed_author": {
+      "const": "Alfonso Lopez"
+    },
+    "source_timestamp": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "source_timestamp_status": {
+      "enum": [
+        "not_exposed_by_chat",
+        "provided_in_source"
+      ]
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "conversation_reference": {
+      "type": "string",
+      "minLength": 1
+    },
+    "platform_message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "scope": {
+      "const": "experimental_design_and_development_artifacts_only"
+    },
+    "decision_status": {
+      "const": "AUTHORIZED_ARTIFACTS_ONLY"
+    },
+    "branch": {
+      "const": "agent/cathedral-metabolism-closure-phase4"
+    },
+    "runtime_execution_authorized": {
+      "const": false
+    },
+    "cryptographic_founder_authentication": {
+      "const": false
+    },
+    "authority_created": {
+      "const": 0
+    },
+    "implementation_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_timestamp_status": {
+            "const": "not_exposed_by_chat"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source_timestamp": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "source_timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  ]
+}

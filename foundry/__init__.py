@@ -47,7 +47,18 @@ from .tribunal import (
 )
 from .intake import FoundryIntakeSupplement, opportunity_from_canonical
 from .outcome_bridge import ReconciliationPacket, external_outcome_from_case
-from .pipeline import FoundryPipeline, PipelineRun, PipelineStatus
+# The pipeline depends on OMNIMORPH, whose engine consumes Foundry primitives.
+# Resolve only these facade exports on demand so a fresh import of the pure
+# organization compiler does not enter a partially initialized package cycle.
+# Canonical source/owner: foundry.pipeline. Remove this lazy facade only if that
+# dependency cycle is removed while the public exports remain compatible.
+def __getattr__(name):
+    if name in {"FoundryPipeline", "PipelineRun", "PipelineStatus"}:
+        from . import pipeline
+        value = getattr(pipeline, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "CompanyFoundry", "FoundryError", "MediaCompany", "MediaCompanyCharter",

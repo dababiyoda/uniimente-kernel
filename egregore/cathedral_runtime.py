@@ -427,6 +427,7 @@ class CathedralMetabolismRuntime:
                 "resolution_id": resolution.resolution_id,
                 "resolution_digest": resolution.digest,
                 "resolution": resolution.to_dict(),
+                "unresolved_reasons": list(unresolved_reasons),
                 "capability_manifest_digest": compilation.capability_manifest["digest"],
                 "organization_decision_digest": compilation.organization.decision["digest"],
                 "evidence_mode": self.evidence_mode,
@@ -450,7 +451,7 @@ class CathedralMetabolismRuntime:
             self._mission(mission_id),
             candidates=tuple(raw["candidates"]),
             static_baseline_available=False,
-            unresolved_reasons=(),
+            unresolved_reasons=tuple(raw.get("unresolved_reasons", ())),
             compiled_organization=None,
         )
         if reconstructed.digest != raw["digest"]:
@@ -462,7 +463,7 @@ class CathedralMetabolismRuntime:
                 self._mission(mission_id),
                 candidates=tuple(raw["candidates"]),
                 static_baseline_available=False,
-                unresolved_reasons=(),
+                unresolved_reasons=tuple(raw.get("unresolved_reasons", ())),
                 compiled_organization=compilation,
             )
         if reconstructed.digest != raw["digest"]:

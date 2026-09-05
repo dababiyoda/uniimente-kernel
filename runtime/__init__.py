@@ -202,6 +202,33 @@ class InstitutionalRuntime:
                    ledger=ledger, signer=signer, gate=gate, spine=spine,
                    memory=memory, report=boot_report)
 
+    def compose_cathedral_metabolism(
+        self,
+        *,
+        cognition=None,
+        router=None,
+        compiler=None,
+        source_identity=None,
+    ):
+        """Bind mission metabolism to this runtime's canonical EventSpine.
+
+        Composition is explicit and dependency-injected. It does not select a
+        permanent runtime implementation, start a scheduler, restore identity,
+        issue a grant, or authorize a consequence.
+        """
+        from egregore.cathedral_runtime import (
+            CathedralMetabolismRuntime,
+            SOURCE_IDENTITY,
+        )
+
+        return CathedralMetabolismRuntime.from_institutional_runtime(
+            self,
+            cognition=cognition,
+            router=router,
+            compiler=compiler,
+            source_identity=source_identity or SOURCE_IDENTITY,
+        )
+
     # -------------------------------------------------------------- lifecycle
     @property
     def outstanding_deliveries(self):

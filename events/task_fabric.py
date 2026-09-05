@@ -647,6 +647,18 @@ class TaskFabric:
             raise TaskFabricError(f"unknown task: {task_id}") from exc
         if state not in TASK_STATES or state in {"CREATED", "LEASED"}:
             raise InvalidTransition("use create_task/issue_lease for CREATED or LEASED")
+        if state in {"VERIFIED", "CLOSED"}:
+            # CMC mission admission imposes retained appraisal at the canonical
+            # reducer, including idempotent replays. Other historical experiments
+            # retain their pre-existing contracts; this is not a new event store.
+            from verifier.retained_appraisal import require_task_appraisal, AppraisalRefused
+            try:
+                require_task_appraisal(self.spine, view.envelope, view.receipts,
+                    actor=actor if state == "VERIFIED" else None,
+                    assessment_refs=assessment_refs if state == "VERIFIED" else None,
+                    dissent_refs=dissent_refs if state == "VERIFIED" else None)
+            except (AppraisalRefused, KeyError, TypeError) as exc:
+                raise TaskFabricError("protected appraisal required: " + str(exc)) from exc
         command = {
             "command": "transition",
             "task_id": task_id,

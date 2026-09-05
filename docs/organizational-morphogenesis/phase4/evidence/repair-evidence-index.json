@@ -1,0 +1,66 @@
+{
+  "record_kind": "CMC_002_REPAIR_EVIDENCE_INDEX",
+  "evidence_mode": "SIMULATION",
+  "preserved_checkpoint": "6b2547298eb2ef7c452bb5699f9e59a562b7d4d9",
+  "phase3_base": "c137e863851f0f7d8dce7bcb060b4e1d5066ea80",
+  "scope": "draft branch artifacts only",
+  "actual_cmc_before": 0,
+  "actual_cmc_after": 0,
+  "authentication": false,
+  "focused": {
+    "passed": 78,
+    "failed": 0
+  },
+  "integration": {
+    "passed": 207,
+    "failed": 0
+  },
+  "broader": {
+    "passed": 1440,
+    "failed": 3,
+    "status": "KNOWN_BASELINE_FAILURES_REMAIN"
+  },
+  "schema_references": {
+    "schemas": 25,
+    "refs": 42,
+    "status": "PASS"
+  },
+  "authority_singletons": {
+    "expected": 6,
+    "status": "PASS"
+  },
+  "artifact_hashes": {
+    "contracts/mission-appraisal.schema.json": "sha256:0ba560be1925e1216704da39b9bb45746c402560bf493bdfcb49a6b8cf11883d",
+    "docs/collaboration/ARCHITECTURE-OWNERSHIP-CMC-PHASE4.yaml": "sha256:5c49be30b02e6e9e0fc6049ad9cf976c6795237bb763a04a88c1e021911d390a",
+    "docs/collaboration/FOUNDER-DIRECTION-CMC-REPAIR-002.json": "sha256:4a75f2d49c128d3400729d580d94bd011bd1cf9865bab45e11a9bbb99b8cf224",
+    "docs/organizational-morphogenesis/CMC_002_REPAIR_RECONCILIATION.md": "sha256:f4007507e0ef14b4090ee54c69507d305692be9681e5eab28537c5f6641b9052",
+    "docs/organizational-morphogenesis/PHASE4_HANDOFF.md": "sha256:438889af1b3f3e8ccb03487b63b000b7a8e31aff723b9ffd189f65dcbcf4e709",
+    "docs/organizational-morphogenesis/PHASE4_RECONCILIATION_BLOCKER.md": "sha256:b18a79ea1b415e18068c33dcf15f9c0f043b8b4e366d1256f53882e73313e6b8",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-artifact-validation.txt": "sha256:eb97c47e56e3e8e1cfcde0bee072e628937be4c0aad9ce4e69730f6a7cbc1b31",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-authority-singletons.txt": "sha256:16c96796f9e6e6df11cc9f2ded8de13c4a367ea0ec077aad206419d8ecf85026",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-broader-final.txt": "sha256:86d63245413e4942c9205511e2ddbf1d85412057bb3be1c24afa5c72aa92d666",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-broader-first.txt": "sha256:76233b2edbe7788a0c7a82f359fac2ce5c197eeac4427127e6e09ac1956e728f",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-controls-first.txt": "sha256:2e61549b306cc2e5ffab06a139c840f2ad2ff1e9535bbb21a75891a21905ec84",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-controls-second.txt": "sha256:bc6691045112dad1310b4bfc66d571523cf7e49765b82f7fa42982cfaa4e470d",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-disagreement-appraisal.jsonl": "sha256:dafa6e05772019ede0393c13e003c0587671b140a01bd2147b1591a53bf7dd2b",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-focused-final.txt": "sha256:593c5bc33f714964ff97fd95e815522be97cf1ca1c655e3cabedd71b91687e64",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-initial-focused.txt": "sha256:b843ca6f7e5e3befa584f4534000a306f03ebdbe0ef0bd6d40dbb75a7793334c",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-integration-final.txt": "sha256:482e7685c847065965b6699137757d556288925c38dc7aa1a125dc91ce37ea4d",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-schema-refs.txt": "sha256:d5f7ab597237be28d1a9832e036eafe487f098ebcc5075646d4e4954e38693d0",
+    "docs/organizational-morphogenesis/phase4/evidence/repair-valid-appraisal.jsonl": "sha256:c381b9258aa2999a98b803b20d6526568e3e2d90668b085b8adcdc269cc86a52",
+    "egregore/cathedral_runtime.py": "sha256:7e61fc3f8a7af8f9e5df68a5c133c872331d72da2eb716259cd06aae69fd9e9a",
+    "egregore/mission_commands.py": "sha256:ca6a8c00e9b96ccdb8d1ed48d93fa21a7258500cc9f43f66e1b06973f697cd56",
+    "egregore/mission_resolution.py": "sha256:a7fe38555bcdc472dd42d0b34f56e3cb24ae4c081d98f9779a4fd511b6ca97db",
+    "events/task_fabric.py": "sha256:f19468fe8aad37cf4bae8815766e7ec51a9ee410a3ff5b3a46a9607bca5b2293",
+    "routing/mission_resolution.py": "sha256:45d59243ba86f41126c5e24624168f6bc2309c94b371e9e4cf8ad0332c1973ec",
+    "routing/mission_selector.py": "sha256:add0ed2bf3f1e927bac20f25736900af9e0019a7067a1c7f931ee87552e327da",
+    "tests/experiments/retained_appraisal_fixture.py": "sha256:3ee7f908cd0d036bb54369e753b7f62460edce0388d46aa3de9156fe9041a7d8",
+    "tests/integration/test_cathedral_metabolism_runtime.py": "sha256:ffdaff4182f40bf93b397a42d1b88d9a354c61057f3f3e90e107eb18381981bd",
+    "tests/integration/test_protected_mission_appraisal.py": "sha256:6963bd2511b904f3995c6ffee6b6613715d3be6a44eee2d1954ed8bc285ff6a4",
+    "tests/unit/test_mission_resolution.py": "sha256:93ffd2e10fa3ceef8ab95c051caf67b3d8d6e7a788523eac0d18fce83b79adb2",
+    "tests/unit/test_side_effect_inventory.py": "sha256:6490baecb2b1a6565a03c7fc50e01b916c8fddb11cce0b4739836cee9b2fb8f8",
+    "verifier/appraisal_worker.py": "sha256:4f0ff8f0b4a130456003703e6e81fe8c5aed8b07a796c3313be7e007bf932269",
+    "verifier/retained_appraisal.py": "sha256:d3c0973706781dbe3f4642f6698abe65917d3318b432d130265956e6e8308a4a"
+  },
+  "scope_of_hashes": "Changed/new files as observed before this index was added; index and later PR URL addendum excluded; hashes prove integrity not truth or authentication"
+}

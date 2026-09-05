@@ -1,0 +1,45 @@
+"""Safety regression: fabricated reference strings must not verify a result.
+
+Diagnostic only; synthetic in-memory episode, no provider or external effect.
+The source is the pinned remote 3e0f489, with no implementation edits.
+"""
+import pytest
+
+from tests.integration.test_cathedral_metabolism_runtime import (
+    build_runtime, mission, direct_route, TASK_ID, WORKER, EVALUATOR,
+)
+from egregore import MissionRuntimeError
+
+
+def submitted():
+    runtime, ledger, spine = build_runtime()
+    admission = runtime.admit(mission(), trigger_id="test:reconciliation",
+                              founder_direction_ref="synthetic:NOT_FOUNDER_AUTH")
+    runtime.route(admission.mission_id, candidates=(direct_route(),))
+    runtime.create_task(admission.mission_id, task_id=TASK_ID,
+                        required_capability="opportunity.evaluate")
+    lease = runtime.lease_task(TASK_ID, capability_grant_ref="simulation:not-issued",
+                              worker_identity=WORKER, lease_seconds=120)
+    runtime.start_task(TASK_ID, worker_identity=WORKER, lease_id=lease.lease_id)
+    runtime.submit_task(TASK_ID, worker_identity=WORKER, lease_id=lease.lease_id,
+                        result={"finding": "FABRICATED; no source was inspected"},
+                        evidence_refs=("evidence:DOES_NOT_EXIST",))
+    return runtime, ledger, spine
+
+
+def test_control_same_worker_identity_is_refused():
+    runtime, _, _ = submitted()
+    with pytest.raises(MissionRuntimeError, match="independent"):
+        runtime.verify_task(TASK_ID, evidence_refs=("evidence:DOES_NOT_EXIST",),
+                            dissent_refs=("dissent:DOES_NOT_EXIST",),
+                            verifier_identity=WORKER)
+
+
+def test_fabricated_references_cannot_replace_protected_appraisal():
+    runtime, _, _ = submitted()
+    # Merely selecting another identity string must not count as appraisal.
+    # No independent evaluator or source-evidence store has been invoked.
+    with pytest.raises(MissionRuntimeError):
+        runtime.verify_task(TASK_ID, evidence_refs=("evidence:DOES_NOT_EXIST",),
+                            dissent_refs=("dissent:DOES_NOT_EXIST",),
+                            verifier_identity=EVALUATOR, accepted=True)

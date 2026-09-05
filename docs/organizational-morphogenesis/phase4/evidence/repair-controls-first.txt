@@ -1,0 +1,108 @@
+.......FF.FF.......................................................      [100%]
+=================================== FAILURES ===================================
+___ test_altered_or_incomplete_lineage_cannot_verify_or_close[source_digest] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_altered_or_incomplete_lin1')
+target = 'source_digest'
+
+    @pytest.mark.parametrize("target", ["result_digest", "source_digest", "policy", "parent", "task_digest", "mission_digest"])
+    def test_altered_or_incomplete_lineage_cannot_verify_or_close(tmp_path, target):
+        runtime, refs = submitted(tmp_path)
+        # Append a hash-valid competing record: integrity alone is not truth.
+        kind = "mission.result" if target in {"result_digest", "parent"} else "mission.evidence.retained"
+        original = list(runtime.spine.replay(kind))[0]
+        payload = copy.deepcopy(original.payload)
+        if target == "policy":
+            payload["policy"]["version"] = "stale"
+        elif target != "parent":
+            key = "digest" if target == "source_digest" else target
+            payload[key] = "sha256:" + "f" * 64
+        runtime.spine.emit(Event(type=kind, source=original.source, actor=original.actor,
+            legal_principal=original.legal_principal, causal_parent="missing" if target == "parent" else original.causal_parent,
+            payload=payload))
+>       with pytest.raises(MissionRuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE MissionRuntimeError
+
+tests/integration/test_protected_mission_appraisal.py:106: Failed
+______ test_altered_or_incomplete_lineage_cannot_verify_or_close[policy] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_altered_or_incomplete_lin2')
+target = 'policy'
+
+    @pytest.mark.parametrize("target", ["result_digest", "source_digest", "policy", "parent", "task_digest", "mission_digest"])
+    def test_altered_or_incomplete_lineage_cannot_verify_or_close(tmp_path, target):
+        runtime, refs = submitted(tmp_path)
+        # Append a hash-valid competing record: integrity alone is not truth.
+        kind = "mission.result" if target in {"result_digest", "parent"} else "mission.evidence.retained"
+        original = list(runtime.spine.replay(kind))[0]
+        payload = copy.deepcopy(original.payload)
+        if target == "policy":
+            payload["policy"]["version"] = "stale"
+        elif target != "parent":
+            key = "digest" if target == "source_digest" else target
+            payload[key] = "sha256:" + "f" * 64
+        runtime.spine.emit(Event(type=kind, source=original.source, actor=original.actor,
+            legal_principal=original.legal_principal, causal_parent="missing" if target == "parent" else original.causal_parent,
+            payload=payload))
+>       with pytest.raises(MissionRuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE MissionRuntimeError
+
+tests/integration/test_protected_mission_appraisal.py:106: Failed
+____ test_altered_or_incomplete_lineage_cannot_verify_or_close[task_digest] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_altered_or_incomplete_lin4')
+target = 'task_digest'
+
+    @pytest.mark.parametrize("target", ["result_digest", "source_digest", "policy", "parent", "task_digest", "mission_digest"])
+    def test_altered_or_incomplete_lineage_cannot_verify_or_close(tmp_path, target):
+        runtime, refs = submitted(tmp_path)
+        # Append a hash-valid competing record: integrity alone is not truth.
+        kind = "mission.result" if target in {"result_digest", "parent"} else "mission.evidence.retained"
+        original = list(runtime.spine.replay(kind))[0]
+        payload = copy.deepcopy(original.payload)
+        if target == "policy":
+            payload["policy"]["version"] = "stale"
+        elif target != "parent":
+            key = "digest" if target == "source_digest" else target
+            payload[key] = "sha256:" + "f" * 64
+        runtime.spine.emit(Event(type=kind, source=original.source, actor=original.actor,
+            legal_principal=original.legal_principal, causal_parent="missing" if target == "parent" else original.causal_parent,
+            payload=payload))
+>       with pytest.raises(MissionRuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE MissionRuntimeError
+
+tests/integration/test_protected_mission_appraisal.py:106: Failed
+__ test_altered_or_incomplete_lineage_cannot_verify_or_close[mission_digest] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_altered_or_incomplete_lin5')
+target = 'mission_digest'
+
+    @pytest.mark.parametrize("target", ["result_digest", "source_digest", "policy", "parent", "task_digest", "mission_digest"])
+    def test_altered_or_incomplete_lineage_cannot_verify_or_close(tmp_path, target):
+        runtime, refs = submitted(tmp_path)
+        # Append a hash-valid competing record: integrity alone is not truth.
+        kind = "mission.result" if target in {"result_digest", "parent"} else "mission.evidence.retained"
+        original = list(runtime.spine.replay(kind))[0]
+        payload = copy.deepcopy(original.payload)
+        if target == "policy":
+            payload["policy"]["version"] = "stale"
+        elif target != "parent":
+            key = "digest" if target == "source_digest" else target
+            payload[key] = "sha256:" + "f" * 64
+        runtime.spine.emit(Event(type=kind, source=original.source, actor=original.actor,
+            legal_principal=original.legal_principal, causal_parent="missing" if target == "parent" else original.causal_parent,
+            payload=payload))
+>       with pytest.raises(MissionRuntimeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE MissionRuntimeError
+
+tests/integration/test_protected_mission_appraisal.py:106: Failed
+=========================== short test summary info ============================
+FAILED tests/integration/test_protected_mission_appraisal.py::test_altered_or_incomplete_lineage_cannot_verify_or_close[source_digest]
+FAILED tests/integration/test_protected_mission_appraisal.py::test_altered_or_incomplete_lineage_cannot_verify_or_close[policy]
+FAILED tests/integration/test_protected_mission_appraisal.py::test_altered_or_incomplete_lineage_cannot_verify_or_close[task_digest]
+FAILED tests/integration/test_protected_mission_appraisal.py::test_altered_or_incomplete_lineage_cannot_verify_or_close[mission_digest]
+4 failed, 63 passed in 24.90s

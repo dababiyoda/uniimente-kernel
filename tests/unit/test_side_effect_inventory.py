@@ -117,19 +117,34 @@ def test_the_institution_holds_no_network_capability_at_all():
 
 
 def test_process_spawn_sites_are_known_and_confined_to_read_only_tooling():
-    """Seven sites in three modules, none of them mediated. Named, not hidden.
+    """Four named modules, none certified as mediated by static inspection.
 
     A subprocess can do anything, so these are the real review candidates. All
-    three modules shell out to `git` for read-only history, and two of the three
-    are instrumentation this branch added — the inventory indicts its author's
-    own work, which is the only reason to trust it about anyone else's.
+    Existing tooling reads Git history or runs verifier tests. CMC-002 adds a
+    fixed read-only appraisal subprocess. It remains visible and UNMEDIATED
+    here: a fixed script and an audit hook are not a Consequence Gate proof.
     """
     process = [s for s in inventory() if s.family is Family.PROCESS]
     modules = {s.module for s in process}
     assert modules == {"blueprint.peer_evidence", "handoff.conform",
-                       "verifier.v2.verify"}, modules
+                       "verifier.v2.verify", "verifier.retained_appraisal"}, modules
     assert all(s.mediation is Mediation.UNMEDIATED_BY_STATIC_READING
                for s in process)
+
+
+def test_cmc_appraiser_has_one_fixed_bounded_spawn_not_a_worker_command():
+    from pathlib import Path
+    tree = ast.parse((Path(ROOT) / "verifier/retained_appraisal.py").read_text())
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and ast.unparse(n.func) == "subprocess.run"]
+    assert len(calls) == 1
+    call = calls[0]
+    assert ast.unparse(call.args[0]) == (
+        "[sys.executable, '-B', '-s', str(ROOT / 'verifier/appraisal_worker.py')]")
+    keywords = {k.arg: k.value for k in call.keywords}
+    assert ast.literal_eval(keywords["timeout"]) == 15
+    assert "shell" not in keywords
+    assert ast.unparse(keywords["env"]) == "env"
 
 
 def test_tests_and_scripts_are_excluded_and_the_reason_is_recorded():

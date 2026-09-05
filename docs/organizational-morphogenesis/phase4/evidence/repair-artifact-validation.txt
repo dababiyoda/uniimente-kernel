@@ -1,0 +1,4 @@
+metaschemas valid: 25
+manual repair source record: content-bound; NOT authenticated
+repair-disagreement-appraisal.jsonl (True, 'chain intact: 15 records')
+repair-valid-appraisal.jsonl (True, 'chain intact: 16 records')

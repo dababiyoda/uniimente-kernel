@@ -1,0 +1,253 @@
+Command: PYTHONPATH=<existing Python-3.12 site-packages> python -m pytest tests/unit/test_cathedral_metabolism.py -q
+Evidence tier: actual local test attempt; no successful mission claimed.
+FFFFF.F.F.F..                                     [100%]
+=================================== FAILURES ===================================
+_ test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close[direct] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_abrupt_process_exit_resta0')
+scenario = 'direct'
+
+    @pytest.mark.parametrize("scenario", ["direct", "static"])
+    def test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close(tmp_path, scenario):
+>       process(tmp_path, "--scenario", scenario, "--interrupt-after-submit", expected=75)
+
+tests/unit/test_cathedral_metabolism.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pytest-of-root/pytest-0/test_abrupt_process_exit_resta0')
+expected = 75, args = ('--scenario', 'direct', '--interrupt-after-submit')
+
+    def process(directory, *args, expected=0):
+        result = subprocess.run([sys.executable, "-m", "tests.experiments.cathedral_metabolism_probe",
+            "--simulation-only", "--state-dir", str(directory), *args], cwd=ROOT,
+            capture_output=True, text=True, timeout=30)
+>       assert result.returncode == expected, result.stdout + result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 379, in <module>
+E             main()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 369, in main
+E             simulation.advance(interrupt=args.interrupt_after_submit)
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 297, in advance
+E             operations[self.phase]()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 160, in cognize
+E             runtime = StandingCognitionRuntime(self.spine.ledger,
+E                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+E         
+E       assert 1 == 75
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-m', 'tests.experi...Runtime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given\n').returncode
+
+tests/unit/test_cathedral_metabolism.py:40: AssertionError
+_ test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close[static] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_abrupt_process_exit_resta1')
+scenario = 'static'
+
+    @pytest.mark.parametrize("scenario", ["direct", "static"])
+    def test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close(tmp_path, scenario):
+>       process(tmp_path, "--scenario", scenario, "--interrupt-after-submit", expected=75)
+
+tests/unit/test_cathedral_metabolism.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pytest-of-root/pytest-0/test_abrupt_process_exit_resta1')
+expected = 75, args = ('--scenario', 'static', '--interrupt-after-submit')
+
+    def process(directory, *args, expected=0):
+        result = subprocess.run([sys.executable, "-m", "tests.experiments.cathedral_metabolism_probe",
+            "--simulation-only", "--state-dir", str(directory), *args], cwd=ROOT,
+            capture_output=True, text=True, timeout=30)
+>       assert result.returncode == expected, result.stdout + result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 379, in <module>
+E             main()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 369, in main
+E             simulation.advance(interrupt=args.interrupt_after_submit)
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 297, in advance
+E             operations[self.phase]()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 160, in cognize
+E             runtime = StandingCognitionRuntime(self.spine.ledger,
+E                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+E         
+E       assert 1 == 75
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-m', 'tests.experi...Runtime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given\n').returncode
+
+tests/unit/test_cathedral_metabolism.py:40: AssertionError
+_______________ test_hypotheses_dissent_lineage_and_dissolution ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_hypotheses_dissent_lineag0')
+
+    def test_hypotheses_dissent_lineage_and_dissolution(tmp_path):
+        with open_simulation(tmp_path) as sim:
+            sim.admit()
+>           sim.advance()
+
+tests/unit/test_cathedral_metabolism.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experiments/cathedral_metabolism_probe.py:297: in advance
+    operations[self.phase]()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.experiments.cathedral_metabolism_probe.Simulation object at 0x7f17ae5808c0>
+
+    def cognize(self):
+>       runtime = StandingCognitionRuntime(self.spine.ledger,
+            proposers={"audit_reasoner": hypotheses}, evaluators={"independent_audit": assess_hypothesis},
+            required_evaluators=("independent_audit",))
+E       TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+
+tests/experiments/cathedral_metabolism_probe.py:160: TypeError
+________ test_manual_direction_and_stale_synthetic_command_cannot_close ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_manual_direction_and_stal0')
+
+    def test_manual_direction_and_stale_synthetic_command_cannot_close(tmp_path):
+        with open_simulation(tmp_path) as sim:
+            sim.admit()
+>           sim.advance()
+
+tests/unit/test_cathedral_metabolism.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experiments/cathedral_metabolism_probe.py:297: in advance
+    operations[self.phase]()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.experiments.cathedral_metabolism_probe.Simulation object at 0x7f17ae0c13a0>
+
+    def cognize(self):
+>       runtime = StandingCognitionRuntime(self.spine.ledger,
+            proposers={"audit_reasoner": hypotheses}, evaluators={"independent_audit": assess_hypothesis},
+            required_evaluators=("independent_audit",))
+E       TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+
+tests/experiments/cathedral_metabolism_probe.py:160: TypeError
+__________________ test_poison_output_is_not_self_certifying ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_poison_output_is_not_self0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f17ada1c860>
+
+    def test_poison_output_is_not_self_certifying(tmp_path, monkeypatch):
+        with open_simulation(tmp_path) as sim:
+            sim.admit()
+            good = sim.audit()
+            assert appraise(snapshot_sources(), good)["accepted"]
+            poisoned = {**good, "actual_organ_execution": True}
+            monkeypatch.setattr(sim, "audit", lambda: poisoned)
+            with pytest.raises(ValueError, match="independent evaluation failed"):
+>               sim.advance()
+
+tests/unit/test_cathedral_metabolism.py:177: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experiments/cathedral_metabolism_probe.py:297: in advance
+    operations[self.phase]()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.experiments.cathedral_metabolism_probe.Simulation object at 0x7f17ada1f3e0>
+
+    def cognize(self):
+>       runtime = StandingCognitionRuntime(self.spine.ledger,
+            proposers={"audit_reasoner": hypotheses}, evaluators={"independent_audit": assess_hypothesis},
+            required_evaluators=("independent_audit",))
+E       TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+
+tests/experiments/cathedral_metabolism_probe.py:160: TypeError
+________________ test_evaluator_cannot_be_injected_or_bypassed _________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_evaluator_cannot_be_injec0')
+
+    def test_evaluator_cannot_be_injected_or_bypassed(tmp_path):
+        with open_simulation(tmp_path) as sim:
+            with pytest.raises(TypeError):
+                Simulation(sim.spine, evaluator=lambda: True)
+            sim.admit()
+>           sim.cognize()
+
+tests/unit/test_cathedral_metabolism.py:197: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.experiments.cathedral_metabolism_probe.Simulation object at 0x7f17ada37b60>
+
+    def cognize(self):
+>       runtime = StandingCognitionRuntime(self.spine.ledger,
+            proposers={"audit_reasoner": hypotheses}, evaluators={"independent_audit": assess_hypothesis},
+            required_evaluators=("independent_audit",))
+E       TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+
+tests/experiments/cathedral_metabolism_probe.py:160: TypeError
+_______________________ test_corrupt_ledger_fails_closed _______________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_corrupt_ledger_fails_clos0')
+
+    def test_corrupt_ledger_fails_closed(tmp_path):
+>       process(tmp_path)
+
+tests/unit/test_cathedral_metabolism.py:224: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pytest-of-root/pytest-0/test_corrupt_ledger_fails_clos0')
+expected = 0, args = ()
+
+    def process(directory, *args, expected=0):
+        result = subprocess.run([sys.executable, "-m", "tests.experiments.cathedral_metabolism_probe",
+            "--simulation-only", "--state-dir", str(directory), *args], cwd=ROOT,
+            capture_output=True, text=True, timeout=30)
+>       assert result.returncode == expected, result.stdout + result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 379, in <module>
+E             main()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 369, in main
+E             simulation.advance(interrupt=args.interrupt_after_submit)
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 297, in advance
+E             operations[self.phase]()
+E           File "/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/tests/experiments/cathedral_metabolism_probe.py", line 160, in cognize
+E             runtime = StandingCognitionRuntime(self.spine.ledger,
+E                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-m', 'tests.experi...Runtime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given\n').returncode
+
+tests/unit/test_cathedral_metabolism.py:40: AssertionError
+____________ test_manual_composition_requires_more_harness_actions _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_manual_composition_requir0')
+
+    def test_manual_composition_requires_more_harness_actions(tmp_path):
+        with open_simulation(tmp_path / "manual") as sim:
+            sim.admit()
+            calls = 0
+            while sim.phase != "AWAITING_DIRECTION":
+>               sim.advance(one_step=True)
+
+tests/unit/test_cathedral_metabolism.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experiments/cathedral_metabolism_probe.py:297: in advance
+    operations[self.phase]()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.experiments.cathedral_metabolism_probe.Simulation object at 0x7f17ada41af0>
+
+    def cognize(self):
+>       runtime = StandingCognitionRuntime(self.spine.ledger,
+            proposers={"audit_reasoner": hypotheses}, evaluators={"independent_audit": assess_hypothesis},
+            required_evaluators=("independent_audit",))
+E       TypeError: StandingCognitionRuntime.__init__() takes 1 positional argument but 2 positional arguments (and 3 keyword-only arguments) were given
+
+tests/experiments/cathedral_metabolism_probe.py:160: TypeError
+=========================== short test summary info ============================
+FAILED tests/unit/test_cathedral_metabolism.py::test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close[direct]
+FAILED tests/unit/test_cathedral_metabolism.py::test_abrupt_process_exit_restart_no_redispatch_pause_and_synthetic_close[static]
+FAILED tests/unit/test_cathedral_metabolism.py::test_hypotheses_dissent_lineage_and_dissolution
+FAILED tests/unit/test_cathedral_metabolism.py::test_manual_direction_and_stale_synthetic_command_cannot_close
+FAILED tests/unit/test_cathedral_metabolism.py::test_poison_output_is_not_self_certifying
+FAILED tests/unit/test_cathedral_metabolism.py::test_evaluator_cannot_be_injected_or_bypassed
+FAILED tests/unit/test_cathedral_metabolism.py::test_corrupt_ledger_fails_closed
+FAILED tests/unit/test_cathedral_metabolism.py::test_manual_composition_requires_more_harness_actions
+8 failed, 28 passed in 2.87s

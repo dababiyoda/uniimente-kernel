@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/mission-resolution.schema.json",
+  "title": "MissionResolution",
+  "description": "A content-bound, non-authorizing comparison of the smallest sufficient mechanisms for one mission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "resolution_id",
+    "schema_version",
+    "record_kind",
+    "mission_ref",
+    "mission_digest",
+    "problem_geometry_digest",
+    "candidates",
+    "ranking",
+    "selected_candidate_id",
+    "decision_status",
+    "execution_admission",
+    "authority_created",
+    "external_effects",
+    "losers_preserved",
+    "digest_scope",
+    "digest"
+  ],
+  "properties": {
+    "resolution_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "record_kind": {"const": "MISSION_RESOLUTION"},
+    "mission_ref": {"type": "string", "format": "uuid"},
+    "mission_digest": {"$ref": "#/$defs/digest"},
+    "problem_geometry_digest": {"$ref": "#/$defs/digest"},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "ranking": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "resolution_class",
+          "rank",
+          "eligible",
+          "score_basis_points",
+          "score_components",
+          "reason"
+        ],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "resolution_class": {"$ref": "#/$defs/resolution_class"},
+          "rank": {"type": "integer", "minimum": 1},
+          "eligible": {"type": "boolean"},
+          "score_basis_points": {"type": "integer"},
+          "score_components": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["quality", "evidence", "simplicity", "coordination_penalty", "cost_penalty", "attention_penalty"],
+            "properties": {
+              "quality": {"type": "integer"},
+              "evidence": {"type": "integer"},
+              "simplicity": {"type": "integer"},
+              "coordination_penalty": {"type": "integer", "minimum": 0},
+              "cost_penalty": {"type": "integer", "minimum": 0},
+              "attention_penalty": {"type": "integer", "minimum": 0}
+            }
+          },
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "selected_candidate_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "decision_status": {"const": "HYPOTHESIS_ONLY"},
+    "execution_admission": {
+      "const": "REFUSED_PENDING_SEPARATE_PHASE_DECISION"
+    },
+    "authority_created": {"const": 0},
+    "external_effects": {"const": 0},
+    "losers_preserved": {"const": true},
+    "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
+    "digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "resolution_class": {
+      "enum": [
+        "no_action",
+        "direct_capability",
+        "single_model_or_tool",
+        "existing_workflow",
+        "static_durable_workflow",
+        "fixed_specialist_configuration",
+        "compiled_temporary_organization",
+        "human_escalation"
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "resolution_class",
+        "description",
+        "available",
+        "execution_eligible",
+        "evidence_maturity",
+        "expected_quality",
+        "estimated_cost_usd",
+        "coordination_units",
+        "founder_attention_minutes",
+        "reversible",
+        "authority_delta",
+        "external_effects",
+        "reason",
+        "evidence_refs"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "resolution_class": {"$ref": "#/$defs/resolution_class"},
+        "description": {"type": "string", "minLength": 1},
+        "available": {"type": "boolean"},
+        "execution_eligible": {"type": "boolean"},
+        "evidence_maturity": {"enum": ["NONE", "DECLARED", "TESTED", "VERIFIED"]},
+        "expected_quality": {"type": "number", "minimum": 0, "maximum": 1},
+        "estimated_cost_usd": {"type": "number", "minimum": 0},
+        "coordination_units": {"type": "number", "minimum": 0},
+        "founder_attention_minutes": {"type": "number", "minimum": 0},
+        "reversible": {"type": "boolean"},
+        "authority_delta": {"const": 0},
+        "external_effects": {"const": 0},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,81 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 19%]
+........................................................................ [ 24%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 39%]
+........................................................................ [ 44%]
+........................................................................ [ 49%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+........................................................................ [ 64%]
+........................................................................ [ 69%]
+........................................................................ [ 74%]
+........................................................................ [ 79%]
+........................................................................ [ 84%]
+........................................................................ [ 89%]
+........FFF............................................................. [ 94%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_every_seam_is_satisfied_by_a_real_kernel_class[CapabilityAdvertisementLike] _
+
+protocol = <class 'seams.CapabilityAdvertisementLike'>
+implementation = <class 'discovery.service.CapabilityAdvertisement'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: CapabilityAdvertisement is missing 'capability_id' required by CapabilityAdvertisementLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'discovery.service.CapabilityAdvertisement'>, 'capability_id')
+
+tests/unit/test_seams.py:65: AssertionError
+___ test_every_seam_is_satisfied_by_a_real_kernel_class[RoutingDecisionLike] ___
+
+protocol = <class 'seams.RoutingDecisionLike'>
+implementation = <class 'routing.decision_router.RoutingDecision'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: RoutingDecision is missing 'selected' required by RoutingDecisionLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'routing.decision_router.RoutingDecision'>, 'selected')
+
+tests/unit/test_seams.py:65: AssertionError
+___ test_every_seam_is_satisfied_by_a_real_kernel_class[ProvenanceNodeLike] ____
+
+protocol = <class 'seams.ProvenanceNodeLike'>
+implementation = <class 'knowledge.graph.Node'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: Node is missing 'label' required by ProvenanceNodeLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'knowledge.graph.Node'>, 'label')
+
+tests/unit/test_seams.py:65: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[CapabilityAdvertisementLike]
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[RoutingDecisionLike]
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[ProvenanceNodeLike]
+3 failed, 1440 passed in 163.55s (0:02:43)

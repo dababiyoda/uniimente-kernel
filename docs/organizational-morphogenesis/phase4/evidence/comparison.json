@@ -1,0 +1,72 @@
+{
+  "evidence_mode": "SIMULATION",
+  "actual_cathedral_metabolism_closures": {
+    "before": 0,
+    "after": 0
+  },
+  "authenticated_founder_commands": 0,
+  "founder_accepted": false,
+  "runs": [
+    {
+      "chunk_id": "2138cd",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/direct --scenario direct --interrupt-after-submit",
+      "exit_code": 75,
+      "original_token_count": 0,
+      "output": "",
+      "scenario": "direct",
+      "wall_time_seconds": 0.260950635
+    },
+    {
+      "chunk_id": "1b78cc",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/static --scenario static --interrupt-after-submit",
+      "exit_code": 75,
+      "original_token_count": 0,
+      "output": "",
+      "scenario": "static",
+      "wall_time_seconds": 0.318626347
+    },
+    {
+      "chunk_id": "04c400",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/direct --scenario direct",
+      "exit_code": 0,
+      "original_token_count": 130,
+      "output": "{\"actual_mission_closures\": 0, \"audit_invocations\": 1, \"authenticated_founder_commands\": 0, \"evidence_mode\": \"SIMULATION\", \"exception\": \"SIMULATION: declared route exists; both manifest pins differ from observed main. Keep the pins and record current-main compatibility as unverified?\", \"ledger_records\": 18, \"mission_events\": 6, \"model_calls\": 0, \"phase\": \"AWAITING_DIRECTION\", \"required_runtime_authentication\": \"NOT_IMPLEMENTED_COMMANDS_REFUSED\", \"task_states\": {\"3d96d99e-fb77-49a5-a213-d5505e404444\": \"CLOSED\"}}\n",
+      "scenario": "direct",
+      "wall_time_seconds": 0.12945531
+    },
+    {
+      "chunk_id": "e202ab",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/static --scenario static",
+      "exit_code": 0,
+      "original_token_count": 130,
+      "output": "{\"actual_mission_closures\": 0, \"audit_invocations\": 1, \"authenticated_founder_commands\": 0, \"evidence_mode\": \"SIMULATION\", \"exception\": \"SIMULATION: declared route exists; both manifest pins differ from observed main. Keep the pins and record current-main compatibility as unverified?\", \"ledger_records\": 23, \"mission_events\": 6, \"model_calls\": 0, \"phase\": \"AWAITING_DIRECTION\", \"required_runtime_authentication\": \"NOT_IMPLEMENTED_COMMANDS_REFUSED\", \"task_states\": {\"3d96d99e-fb77-49a5-a213-d5505e404444\": \"CLOSED\"}}\n",
+      "scenario": "static",
+      "wall_time_seconds": 0.149317177
+    },
+    {
+      "chunk_id": "700c6c",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/direct --scenario direct --synthetic-continue",
+      "exit_code": 0,
+      "original_token_count": 127,
+      "output": "{\"actual_mission_closures\": 0, \"audit_invocations\": 1, \"authenticated_founder_commands\": 0, \"evidence_mode\": \"SIMULATION\", \"exception\": \"SIMULATION: declared route exists; both manifest pins differ from observed main. Keep the pins and record current-main compatibility as unverified?\", \"ledger_records\": 21, \"mission_events\": 8, \"model_calls\": 0, \"phase\": \"CLOSED\", \"required_runtime_authentication\": \"NOT_IMPLEMENTED_COMMANDS_REFUSED\", \"task_states\": {\"3d96d99e-fb77-49a5-a213-d5505e404444\": \"CLOSED\"}}\n",
+      "scenario": "direct",
+      "wall_time_seconds": 0.093649232
+    },
+    {
+      "chunk_id": "3794d7",
+      "cmd": "PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages python -m tests.experiments.cathedral_metabolism_probe --simulation-only --state-dir /workspace/scratch/c1c408c41c36/tmp/cmc-evidence.pxNKVf/static --scenario static --synthetic-continue",
+      "exit_code": 0,
+      "original_token_count": 127,
+      "output": "{\"actual_mission_closures\": 0, \"audit_invocations\": 1, \"authenticated_founder_commands\": 0, \"evidence_mode\": \"SIMULATION\", \"exception\": \"SIMULATION: declared route exists; both manifest pins differ from observed main. Keep the pins and record current-main compatibility as unverified?\", \"ledger_records\": 26, \"mission_events\": 8, \"model_calls\": 0, \"phase\": \"CLOSED\", \"required_runtime_authentication\": \"NOT_IMPLEMENTED_COMMANDS_REFUSED\", \"task_states\": {\"3d96d99e-fb77-49a5-a213-d5505e404444\": \"CLOSED\"}}\n",
+      "scenario": "static",
+      "wall_time_seconds": 0.097951089
+    }
+  ],
+  "limitations": [
+    "One frozen audit case; not a held-out topology efficacy experiment.",
+    "Shell elapsed times include interpreter startup and are not p50/p95 estimates.",
+    "Other mechanism families were compared for eligibility only, not executed.",
+    "Synthetic direction is a test fixture and never founder acceptance.",
+    "No organ runtime, actual model provider, networked consequence, or external effect was executed."
+  ]
+}

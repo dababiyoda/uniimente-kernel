@@ -1,0 +1,79 @@
+F.................................................                       [100%]
+=================================== FAILURES ===================================
+_____ test_one_simulated_mission_crosses_the_canonical_seams_and_restarts ______
+
+    def test_one_simulated_mission_crosses_the_canonical_seams_and_restarts():
+        runtime, ledger, spine = build_runtime()
+        current_mission = mission()
+    
+        admission = runtime.admit(
+            current_mission,
+            trigger_id="founder-trigger:phase4-test",
+            founder_direction_ref="CMC-MANUAL-DIRECTION-002",
+        )
+        signal = SignalEnvelope.build(
+            source="daleobanks:test",
+            source_event_id="signal-001",
+            observed_at="2026-09-05T00:00:00Z",
+            payload={"kind": "opportunity", "instruction_status": "data_only"},
+            evidence_refs=("evidence:source",),
+            sensitivity="internal",
+            trust_level="untrusted",
+        )
+        cycle = runtime.run_cognition(
+            admission.mission_id,
+            signal,
+            trigger_id="cognition-trigger:phase4-test",
+            resources=ResourceGovernor(
+                max_model_calls=3,
+                max_estimated_cost_usd=1.0,
+            ),
+            context={"mission": admission.mission_id},
+        )
+        assert cycle.execution_authority == "none"
+    
+        resolution = runtime.route(
+            admission.mission_id,
+            candidates=(direct_route(),),
+            unresolved_reasons=(),
+        )
+        assert resolution.selected_candidate_id == "capability:internal-audit"
+    
+        task_id, created_receipts = runtime.create_task(
+            admission.mission_id,
+            task_id=TASK_ID,
+            required_capability="opportunity.evaluate",
+            objective="read and assess the frozen internal fixture",
+        )
+        assert task_id == TASK_ID
+        assert [receipt.state for receipt in created_receipts] == [
+            "CREATED",
+            "ADMITTED",
+            "QUEUED",
+        ]
+    
+        lease = runtime.lease_task(
+            task_id,
+            capability_grant_ref="simulation:grant-not-issued",
+            worker_identity=WORKER,
+            lease_seconds=120,
+        )
+        runtime.start_task(
+            task_id,
+            worker_identity=WORKER,
+            lease_id=lease.lease_id,
+        )
+>       from tests.experiments.retained_appraisal_fixture import worker_result
+
+tests/integration/test_cathedral_metabolism_runtime.py:177: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Worker-side Linker result for the frozen CMC fixture; no evaluator calls."""
+    from pathlib import Path
+>   from linker import InstitutionalLinker, load_manifest
+E   ImportError: cannot import name 'InstitutionalLinker' from 'linker' (/workspace/scratch/c1c408c41c36/tmp/repos/uniimente-kernel-phase4/linker/__init__.py)
+
+tests/experiments/retained_appraisal_fixture.py:3: ImportError
+=========================== short test summary info ============================
+FAILED tests/integration/test_cathedral_metabolism_runtime.py::test_one_simulated_mission_crosses_the_canonical_seams_and_restarts
+1 failed, 49 passed in 15.48s

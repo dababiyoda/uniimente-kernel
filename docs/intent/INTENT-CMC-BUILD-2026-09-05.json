@@ -1,0 +1,33 @@
+{
+  "intent_id": "INTENT-CMC-BUILD-2026-09-05",
+  "claimed_author": "Alfonso Lopez",
+  "source_timestamp": null,
+  "source_timestamp_status": "not_exposed_by_chat",
+  "recorded_at": "2026-09-05T00:00:00Z",
+  "conversation_reference": "Current ChatGPT UNIIMENTE implementation conversation; founder turn beginning 'More context, you keep experimenting and playing around when we need to be prompting as if you were me and ordering to build the entire machine'.",
+  "source_text": "More context, you keep experimenting and playing around when we need to be prompting as if you were me and ordering to build the entire machine. Continue using GitHub, mechanism-recombination-foundry, spider-web-hegemony, and the recursive founder-intent collaboration protocol to build the entire machine from the cumulative project substrate. Keep OMNIMORPH subordinate to a higher-order mission resolver; use blockchain and zero-trust mechanisms only as extracted, mutated, recombined substrate primitives; preserve the static durable-workflow counterexample; keep Alfonso as root authority; and do not merge, deploy, activate external effects, create authority, or claim evidence that does not exist.",
+  "decision_status": "BUILD_ARTIFACTS_STAGE_GATED",
+  "scope": "Implement the canonical Phase 4 mission-level seam and its testable contracts on the dedicated cathedral-metabolism branch. This is a build of inert/proposal/simulation artifacts, not an activation or production deployment.",
+  "supersedes_only": [
+    "The prior documentation-only implementation posture for this branch"
+  ],
+  "preserves": [
+    "No merge",
+    "No deployment",
+    "No external effect",
+    "No financial action",
+    "No self-issued authority",
+    "No automatic recursive self-modification",
+    "No cryptographic-founder-authentication claim",
+    "Static DurableWorkflow as protected comparator and tie winner",
+    "EventSpine as the only durable transition truth",
+    "Consequence Gate as the only external-effect path",
+    "Exactly two formal strengthening passes already frozen in DEC-CMC-001 and its linked scope record"
+  ],
+  "authority_created": 0,
+  "runtime_execution_authorized": false,
+  "cryptographic_founder_authentication": false,
+  "external_effects": 0,
+  "branch": "agent/cathedral-metabolism-closure-phase4",
+  "review_trigger": "Before any merge, deployment, activation, live credential, actual founder command, external consequence, or expansion beyond this Phase 4 build seam."
+}

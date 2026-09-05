@@ -174,17 +174,19 @@ def test_one_simulated_mission_crosses_the_canonical_seams_and_restarts():
         worker_identity=WORKER,
         lease_id=lease.lease_id,
     )
-    result = {"finding": "manifest pins require reconciliation", "verified": True}
+    from tests.experiments.retained_appraisal_fixture import worker_result
+    source = runtime.retain_task_sources(task_id)
+    result = worker_result()
     submitted = runtime.submit_task(
         task_id,
         worker_identity=WORKER,
         lease_id=lease.lease_id,
         result=result,
-        evidence_refs=("evidence:manifest-audit",),
+        evidence_refs=(source.event_id,),
         tool_refs=("tool:read-only-inspection",),
     )
 
-    # Deliberate process-boundary reconstruction after durable submission.
+    # Object reconstruction only. Fresh-process durable restart has a separate test.
     restarted_fabric = TaskFabric(spine, source_identity=SOURCE)
     restarted = CathedralMetabolismRuntime(
         spine=spine,
@@ -200,7 +202,7 @@ def test_one_simulated_mission_crosses_the_canonical_seams_and_restarts():
         worker_identity=WORKER,
         lease_id=lease.lease_id,
         result=result,
-        evidence_refs=("evidence:manifest-audit",),
+        evidence_refs=(source.event_id,),
         tool_refs=("tool:read-only-inspection",),
     )
     assert duplicate.receipt_id == submitted.receipt_id
@@ -212,9 +214,7 @@ def test_one_simulated_mission_crosses_the_canonical_seams_and_restarts():
 
     verified = restarted.verify_task(
         task_id,
-        evidence_refs=("evidence:manifest-audit",),
-        dissent_refs=("dissent:static-baseline",),
-        verifier_identity=EVALUATOR,
+        evidence_refs=(source.event_id,),
     )
     assert verified is not None
     closed = restarted.close_task(task_id)
@@ -222,14 +222,14 @@ def test_one_simulated_mission_crosses_the_canonical_seams_and_restarts():
 
     closure = restarted.finalize(
         admission.mission_id,
-        evidence_refs=("evidence:simulated-closure",),
+        evidence_refs=(verified.assessment_refs[0],),
     )
     assert closure.payload["closure_status"] == "SIMULATED_UNVERIFIED"
     assert closure.payload["verified_durable_mission_closure"] is False
 
     dissolved = restarted.dissolve(
         admission.mission_id,
-        evidence_refs=("evidence:simulated-dissolution",),
+        evidence_refs=(verified.assessment_refs[0],),
     )
     assert dissolved.payload["resource_release_required"] is True
     assert restarted.snapshot(admission.mission_id).status == "DISSOLVED"

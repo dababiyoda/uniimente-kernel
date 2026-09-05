@@ -27,6 +27,24 @@ constraints:
   external_effects: false
   founder_surface: record_only_no_runtime_command_path
 compatibility_shims:
+  - canonical_source: routing.mission_selector
+    owner: routing
+    surface: egregore.mission_resolution
+    purpose: preserve_remote_imports_after_canonical_owner_relocation
+    expiry_trigger: consumers_adopt_routing_imports
+    removal_condition: no_egregore_mission_resolution_imports_remain
+  - canonical_source: routing.mission_selector
+    owner: routing
+    surface: routing.mission_resolution
+    purpose: legacy_CMC_facts_to_candidates_adapter_without_separate_ranking
+    expiry_trigger: historical_CMC_probe_adopts_canonical_candidates
+    removal_condition: no_legacy_ResolutionFacts_callers_remain
+  - canonical_source: egregore.cathedral_runtime.FounderCommandSurface
+    owner: egregore
+    surface: egregore.mission_commands.refuse_runtime_command
+    purpose: preserve_legacy_exception_type_not_another_authority_decision
+    expiry_trigger: historical_CMC_probe_adopts_canonical_refusal_surface
+    removal_condition: no_legacy_refuse_runtime_command_callers_remain
   - canonical_source: foundry.pipeline
     owner: foundry
     surface: foundry.__getattr__
@@ -35,3 +53,15 @@ compatibility_shims:
     removal_condition: both_cold_import_orders_pass_without_lazy_facade
 migration: No organ migration; later adoption requires a new founder ruling.
 rollback: Stop explicit invocation; retain branch and evidence; do not merge.
+repair:
+  decision: CMC-002-narrow-appraisal-repair
+  third_strengthening_pass: false
+  preserved_checkpoint: 6b2547298eb2ef7c452bb5699f9e59a562b7d4d9
+  canonical_appraisal: verifier/retained_appraisal.py
+  canonical_appraisal_contract: contracts/mission-appraisal.schema.json
+  historical_comparator:
+    source: tests/experiments/cathedral_metabolism_probe.py
+    owner: tests/experiments
+    status: experimental_fixture_not_canonical_runtime
+    expiry_trigger: equivalent_canonical_seam_comparative_episode_exists
+    removal_condition: preserve_original_source_and_all_episode_evidence_in_history_before_retiring_test_entrypoint

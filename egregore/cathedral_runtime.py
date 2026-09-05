@@ -40,6 +40,7 @@ from events.spine import Event, EventSpine, SPIFFE_PREFIX
 from events.task_fabric import TaskFabric, TaskReceipt
 from omnimorph.mission_compiler import MissionCompilationResult, MissionCompiler
 from omnimorph.organization_compiler import content_digest
+from verifier import retained_appraisal as protected
 
 from .contracts import SignalEnvelope
 from .mission_resolution import (
@@ -52,9 +53,7 @@ from .runtime import CognitionCycle, StandingCognitionRuntime
 
 
 SOURCE_IDENTITY = "spiffe://uniimente.internal/egregore/cathedral-metabolism"
-DEFAULT_EVALUATOR_IDENTITY = (
-    "spiffe://uniimente.internal/evaluator/phase4-independent"
-)
+DEFAULT_EVALUATOR_IDENTITY = protected.IDENTITY
 SIMULATION_WORKER_PREFIX = "spiffe://uniimente.internal/worker/phase4-simulation"
 
 
@@ -451,7 +450,7 @@ class CathedralMetabolismRuntime:
             self._mission(mission_id),
             candidates=tuple(raw["candidates"]),
             static_baseline_available=False,
-            unresolved_reasons=tuple(raw.get("unresolved_reasons", ())),
+            unresolved_reasons=tuple(events[-1].payload.get("unresolved_reasons", ())),
             compiled_organization=None,
         )
         if reconstructed.digest != raw["digest"]:
@@ -463,7 +462,7 @@ class CathedralMetabolismRuntime:
                 self._mission(mission_id),
                 candidates=tuple(raw["candidates"]),
                 static_baseline_available=False,
-                unresolved_reasons=tuple(raw.get("unresolved_reasons", ())),
+                unresolved_reasons=tuple(events[-1].payload.get("unresolved_reasons", ())),
                 compiled_organization=compilation,
             )
         if reconstructed.digest != raw["digest"]:
@@ -655,130 +654,94 @@ class CathedralMetabolismRuntime:
             observed_at=observed_at or _now(),
         )
 
+    @protected.serialized
+    def retain_task_sources(self, task_id: str) -> Event:
+        """Retain the pre-registered source bytes, never caller-selected files."""
+        envelope = self.task_fabric.envelope(task_id)
+        mission = self._mission(envelope["mission_id"])
+        return protected.retain_snapshot(self.spine, mission, envelope,
+                                         self._admission_event(mission["mission_id"]).event_id)
+
+    @protected.serialized
     def submit_task(
-        self,
-        task_id: str,
-        *,
-        worker_identity: str,
-        lease_id: str,
-        result: Mapping[str, Any],
-        evidence_refs: Sequence[str],
-        tool_refs: Sequence[str] = (),
-        transition_key: str | None = None,
+        self, task_id: str, *, worker_identity: str, lease_id: str,
+        result: Mapping[str, Any], evidence_refs: Sequence[str],
+        tool_refs: Sequence[str] = (), transition_key: str | None = None,
     ) -> TaskReceipt:
-        if not isinstance(result, Mapping):
-            raise MissionRuntimeError("result must be a mapping")
-        if not evidence_refs:
-            raise MissionRuntimeError("a submitted result needs evidence_refs")
+        if not isinstance(result, Mapping) or not evidence_refs:
+            raise MissionRuntimeError("submission needs a result mapping and evidence references")
+        envelope = self.task_fabric.envelope(task_id)
+        # TaskFabric checks the active worker/lease before retention. A crash
+        # between submission and retention leaves incomplete evidence, not PASS.
         receipt = self.task_fabric.transition(
-            task_id,
-            "SUBMITTED",
-            actor=worker_identity,
+            task_id, "SUBMITTED", actor=worker_identity,
             transition_key=transition_key or "task:submit:" + task_id + ":" + lease_id,
-            worker_identity=worker_identity,
-            lease_id=lease_id,
-            evidence_refs=tuple(evidence_refs),
-            tool_refs=tuple(tool_refs),
-            result_digest=content_digest(
-                {"task_id": task_id, "result": copy.deepcopy(dict(result))}
-            ),
-        )
-        mission_id = self.task_fabric.envelope(task_id)["mission_id"]
-        already_recorded = any(
-            event.payload.get("task_id") == task_id
-            and event.payload.get("result_digest") == receipt.result_digest
-            for event in self._mission_events(mission_id, "mission.result")
-        )
-        if not already_recorded:
-            self._emit(
-                "mission.result",
-                {
-                    "mission_id": mission_id,
-                    "task_id": task_id,
-                    "result_digest": receipt.result_digest,
-                    "evidence_refs": list(evidence_refs),
-                    "evidence_mode": self.evidence_mode,
-                    "authority_created": 0,
-                    "external_effects": 0,
-                },
-                legal_principal=self._mission(mission_id)["legal_principal"],
-            )
+            worker_identity=worker_identity, lease_id=lease_id,
+            evidence_refs=tuple(evidence_refs), tool_refs=tuple(tool_refs),
+            result_digest=content_digest({"task_id": task_id, "result": dict(result)}))
+        protected.retain_result(self.spine, self._mission(envelope["mission_id"]),
+            envelope, result, evidence_refs, evidence_refs[0], receipt)
         return receipt
 
+    @protected.serialized
     def verify_task(
-        self,
-        task_id: str,
-        *,
-        evidence_refs: Sequence[str],
-        dissent_refs: Sequence[str],
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
         verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
-        accepted: bool = True,
-        transition_key: str | None = None,
-    ) -> TaskReceipt | None:
-        """Appraise raw references independently of the worker's claim."""
-        if not evidence_refs:
-            raise MissionRuntimeError("verification needs evidence_refs")
-        if not dissent_refs:
-            raise MissionRuntimeError("verification needs preserved dissent_refs")
-        _identity(verifier_identity, "verifier_identity")
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
         envelope = self.task_fabric.envelope(task_id)
         receipts = self.task_fabric.receipts(task_id)
-        if not receipts or receipts[-1].state != "SUBMITTED":
-            raise MissionRuntimeError("verification requires a submitted task")
-        worker_identity = receipts[-1].worker_identity
-        if verifier_identity in {worker_identity, envelope["created_by"]}:
-            raise MissionRuntimeError(
-                "verifier must be independent from worker and coordinator"
-            )
-        mission_id = envelope["mission_id"]
-        assessment = {
-            "task_id": task_id,
-            "result_digest": receipts[-1].result_digest,
-            "evidence_refs": sorted(set(evidence_refs)),
-            "dissent_refs": sorted(set(dissent_refs)),
-            "verifier_identity": verifier_identity,
-            "accepted": bool(accepted),
-            "model_prediction": False,
-        }
-        assessment_ref = content_digest(assessment)
-        if not accepted:
-            self.record_exception(
-                mission_id,
-                kind="evaluator_disagreement",
-                details={
-                    "task_id": task_id,
-                    "assessment_ref": assessment_ref,
-                    "dissent_refs": sorted(set(dissent_refs)),
-                    "status": "NEEDS_FOUNDER_DECISION",
-                },
-                evidence_refs=tuple(evidence_refs),
-            )
-            return None
-        return self.task_fabric.transition(
-            task_id,
-            "VERIFIED",
-            actor=verifier_identity,
-            transition_key=transition_key or "task:verify:" + task_id + ":" + assessment_ref,
-            evidence_refs=tuple(evidence_refs),
-            assessment_refs=(assessment_ref,),
-            dissent_refs=tuple(dissent_refs),
-            dissent_preserved=True,
-        )
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+            event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+            report = event.payload["receipt"]["report"]
+            if report["accepted"] is not True:
+                raise protected.AppraisalRefused("evaluator disagreement: " + "; ".join(report["errors"]))
+            if receipts[-1].state in {"VERIFIED", "CLOSED"}:
+                protected.require_task_appraisal(self.spine, envelope, receipts)
+                return next(r for r in receipts if r.state == "VERIFIED")
+            return self.task_fabric.transition(
+                task_id, "VERIFIED", actor=protected.IDENTITY,
+                transition_key=transition_key or "task:verify:" + task_id,
+                evidence_refs=tuple(evidence_refs) + (event.event_id,),
+                assessment_refs=(event.event_id,), dissent_refs=tuple(report["dissent"]),
+                dissent_preserved=True)
+        except (protected.AppraisalRefused, KeyError, TypeError) as exc:
+            if receipts and receipts[-1].state == "SUBMITTED" and self.spine.ledger.verify_chain()[0]:
+                failure = self.record_exception(envelope["mission_id"], kind="appraisal_refused",
+                    details={"task_id": task_id, "reason": str(exc),
+                             "caller_dissent": list(dissent_refs),
+                             "status": "NEEDS_FOUNDER_DECISION"},
+                    evidence_refs=tuple(evidence_refs))
+                self.task_fabric.transition(task_id, "QUARANTINED", actor=self.source_identity,
+                    transition_key="task:appraisal-refused:" + task_id,
+                    evidence_refs=(failure.event_id,))
+            raise MissionRuntimeError(str(exc)) from exc
 
-    def close_task(
-        self,
-        task_id: str,
-        *,
-        transition_key: str | None = None,
-    ) -> TaskReceipt:
+    @protected.serialized
+    def close_task(self, task_id: str, *, transition_key: str | None = None) -> TaskReceipt:
         envelope = self.task_fabric.envelope(task_id)
-        return self.task_fabric.transition(
-            task_id,
-            "CLOSED",
-            actor=self.source_identity,
+        event = protected.require_task_appraisal(self.spine, envelope, self.task_fabric.receipts(task_id))
+        if event is None:
+            raise MissionRuntimeError("mission has no protected appraisal")
+        return self.task_fabric.transition(task_id, "CLOSED", actor=self.source_identity,
             transition_key=transition_key or "task:close:" + task_id,
-            evidence_refs=("task:" + task_id + ":verified",),
-        )
+            evidence_refs=(event.event_id,))
 
     # -------------------------------------------------------- exceptions/end
     def record_exception(
@@ -835,6 +798,12 @@ class CathedralMetabolismRuntime:
             raise MissionRuntimeError("all mission tasks must be CLOSED before finalization")
         if not evidence_refs:
             raise MissionRuntimeError("finalization needs durable evidence_refs")
+        for task_id in tasks:
+            protected.require_task_appraisal(self.spine, self.task_fabric.envelope(task_id),
+                                            self.task_fabric.receipts(task_id))
+        for ref in evidence_refs:
+            if not any(e.event_id == ref for e in self.spine.replay()):
+                raise MissionRuntimeError("closure reference does not resolve to retained evidence")
         exceptions = self._mission_events(mission_id, "mission.exception")
         closure_status = "INCOMPLETE" if exceptions else "SIMULATED_UNVERIFIED"
         payload = {
@@ -881,7 +850,8 @@ class CathedralMetabolismRuntime:
             actor=self.source_identity,
             transition_key=transition_key,
             evidence_refs=tuple(evidence_refs),
-            open_obligation_refs=tuple(open_obligation_refs),
+            open_obligation_refs=tuple(sorted(set(open_obligation_refs) | {
+                e.payload["exception_id"] for e in self._mission_events(mission_id, "mission.exception")})),
         )
 
     # --------------------------------------------------------------- operator

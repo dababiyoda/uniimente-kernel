@@ -1,5 +1,11 @@
 # Bounded reconciliation inspection — evaluator hard stop
 
+Continuation: Alfonso subsequently authorized the narrow repair. The original
+counterexample below is preserved unchanged as negative evidence; it is not
+an outstanding request for the same authorization. See
+`CMC_002_REPAIR_RECONCILIATION.md` and the latest `PHASE4_HANDOFF.md` section
+for the repaired, simulation-only combined tree and current test results.
+
 Status: **NEEDS_FOUNDER_DECISION**. Recorded observation: 2026-09-05T13:45:29Z.
 No branch update, reconciled implementation commit, draft PR, merge, deployment,
 activation, credential or external effect occurred in this continuation.

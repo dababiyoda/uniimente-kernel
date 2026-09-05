@@ -1,0 +1,104 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 19%]
+........................................................................ [ 24%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 39%]
+........................................................................ [ 44%]
+........................................................................ [ 49%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+........................................................................ [ 64%]
+........................................................................ [ 69%]
+........................................................................ [ 74%]
+........................................................................ [ 79%]
+........................................................................ [ 84%]
+........................................................................ [ 89%]
+........FFF............................................F................ [ 94%]
+........................................................................ [ 99%]
+..                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_every_seam_is_satisfied_by_a_real_kernel_class[CapabilityAdvertisementLike] _
+
+protocol = <class 'seams.CapabilityAdvertisementLike'>
+implementation = <class 'discovery.service.CapabilityAdvertisement'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: CapabilityAdvertisement is missing 'produces' required by CapabilityAdvertisementLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'discovery.service.CapabilityAdvertisement'>, 'produces')
+
+tests/unit/test_seams.py:65: AssertionError
+___ test_every_seam_is_satisfied_by_a_real_kernel_class[RoutingDecisionLike] ___
+
+protocol = <class 'seams.RoutingDecisionLike'>
+implementation = <class 'routing.decision_router.RoutingDecision'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: RoutingDecision is missing 'contract' required by RoutingDecisionLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'routing.decision_router.RoutingDecision'>, 'contract')
+
+tests/unit/test_seams.py:65: AssertionError
+___ test_every_seam_is_satisfied_by_a_real_kernel_class[ProvenanceNodeLike] ____
+
+protocol = <class 'seams.ProvenanceNodeLike'>
+implementation = <class 'knowledge.graph.Node'>
+
+    @pytest.mark.parametrize("protocol,implementation",
+                             PAIRS, ids=[p.__name__ for p, _ in PAIRS])
+    def test_every_seam_is_satisfied_by_a_real_kernel_class(protocol, implementation):
+        for name in getattr(protocol, "__protocol_attrs__", ()):
+>           assert hasattr(implementation, name), (
+                f"{implementation.__name__} is missing {name!r} required by "
+                f"{protocol.__name__}; the seam has drifted from the implementation"
+            )
+E           AssertionError: Node is missing 'node_id' required by ProvenanceNodeLike; the seam has drifted from the implementation
+E           assert False
+E            +  where False = hasattr(<class 'knowledge.graph.Node'>, 'node_id')
+
+tests/unit/test_seams.py:65: AssertionError
+_____ test_process_spawn_sites_are_known_and_confined_to_read_only_tooling _____
+
+    def test_process_spawn_sites_are_known_and_confined_to_read_only_tooling():
+        """Seven sites in three modules, none of them mediated. Named, not hidden.
+    
+        A subprocess can do anything, so these are the real review candidates. All
+        three modules shell out to `git` for read-only history, and two of the three
+        are instrumentation this branch added — the inventory indicts its author's
+        own work, which is the only reason to trust it about anyone else's.
+        """
+        process = [s for s in inventory() if s.family is Family.PROCESS]
+        modules = {s.module for s in process}
+>       assert modules == {"blueprint.peer_evidence", "handoff.conform",
+                           "verifier.v2.verify"}, modules
+E       AssertionError: {'blueprint.peer_evidence', 'handoff.conform', 'verifier.retained_appraisal', 'verifier.v2.verify'}
+E       assert {'blueprint.p...er.v2.verify'} == {'blueprint.p...er.v2.verify'}
+E         
+E         Extra items in the left set:
+E         'verifier.retained_appraisal'
+E         Use -v to get more diff
+
+tests/unit/test_side_effect_inventory.py:129: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[CapabilityAdvertisementLike]
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[RoutingDecisionLike]
+FAILED tests/unit/test_seams.py::test_every_seam_is_satisfied_by_a_real_kernel_class[ProvenanceNodeLike]
+FAILED tests/unit/test_side_effect_inventory.py::test_process_spawn_sites_are_known_and_confined_to_read_only_tooling
+4 failed, 1438 passed in 166.15s (0:02:46)

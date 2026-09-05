@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
 
 import pytest
 
@@ -65,11 +66,13 @@ def test_static_workflow_wins_an_exact_score_tie():
     mission["consequence_ceiling"] = "read_only"
     result = MissionResolutionRouter().route(
         mission,
-        candidates=(direct_candidate(quality=0.75, coordination=1.0),),
+        candidates=(replace(direct_candidate(quality=0.75, coordination=1.0), estimated_cost_usd=0),),
     )
 
     assert result.selected is not None
     assert result.selected.resolution_class == "static_durable_workflow"
+    scores = {r["resolution_class"]: r["score_basis_points"] for r in result.ranking}
+    assert scores["static_durable_workflow"] == scores["direct_capability"]
 
 
 def test_external_or_high_consequence_mission_escalates_or_refuses():
@@ -134,3 +137,15 @@ def test_unknown_candidate_fields_are_refused():
     bad["authority"] = "A9"
     with pytest.raises(MissionResolutionError):
         MissionResolutionRouter().route(mission, candidates=(bad,))
+
+
+@pytest.mark.parametrize("field,value", [
+    ("available", "false"), ("execution_eligible", 1), ("reversible", None),
+    ("expected_quality", float("nan")), ("estimated_cost_usd", float("inf")),
+    ("authority_delta", .1), ("external_effects", True),
+])
+def test_candidate_semantics_do_not_coerce_unknown_values(field, value):
+    bad = direct_candidate().to_dict()
+    bad[field] = value
+    with pytest.raises(MissionResolutionError):
+        MissionResolutionRouter().route(valid_mission(), candidates=(bad,))

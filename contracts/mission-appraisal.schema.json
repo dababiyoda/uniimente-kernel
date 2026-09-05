@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:uniimente:mission-appraisal:1",
+  "type": "object",
+  "properties": {
+    "report": {
+      "type": "object",
+      "properties": {
+        "verifier": {
+          "const": "verifier.mission_audit.appraise"
+        },
+        "accepted": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "result_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "snapshot_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "dissent": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2
+        },
+        "execution_authority": {
+          "const": "none"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "verifier",
+        "accepted",
+        "errors",
+        "result_digest",
+        "snapshot_digest",
+        "dissent",
+        "execution_authority",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "mission_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "task_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "submission_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submission_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "result_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "worker_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lease_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "mission_digest",
+        "task_digest",
+        "submission_id",
+        "submission_event_id",
+        "source_event_id",
+        "source_digest",
+        "result_event_id",
+        "result_digest",
+        "worker_identity",
+        "lease_id"
+      ],
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "CMC-002-repair-1"
+        },
+        "purpose": {
+          "const": "frozen-declared-route-audit"
+        },
+        "source_code": {
+          "type": "object",
+          "properties": {
+            "verifier/appraisal_worker.py": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "verifier/mission_audit.py": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "verifier/retained_appraisal.py": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "docs/organizational-morphogenesis/phase4/input.json": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "contracts/mission-appraisal.schema.json": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "verifier/appraisal_worker.py",
+            "verifier/mission_audit.py",
+            "verifier/retained_appraisal.py",
+            "docs/organizational-morphogenesis/phase4/input.json",
+            "contracts/mission-appraisal.schema.json"
+          ],
+          "additionalProperties": false
+        },
+        "authority": {
+          "const": "none"
+        },
+        "evidence_mode": {
+          "const": "SIMULATION"
+        }
+      },
+      "required": [
+        "version",
+        "purpose",
+        "source_code",
+        "authority",
+        "evidence_mode"
+      ],
+      "additionalProperties": false
+    },
+    "evidence_mode": {
+      "const": "SIMULATION"
+    },
+    "execution_authority": {
+      "const": "none"
+    },
+    "appraisal_performed": {
+      "const": true
+    },
+    "process_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "report",
+    "binding",
+    "policy",
+    "evidence_mode",
+    "execution_authority",
+    "appraisal_performed",
+    "process_id",
+    "digest"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,2 @@
+schemas scanned: 25, local refs checked: 42
+all document-local schema references resolve

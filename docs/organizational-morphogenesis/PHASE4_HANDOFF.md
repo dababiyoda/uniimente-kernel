@@ -1,5 +1,84 @@
 # Phase 4 handoff — Cathedral Metabolism, CMC-002
 
+## Latest repair continuation — 2026-09-05
+
+**This section supersedes the historical stop notices below.** Alfonso authorized
+the repair. Both lines are preserved at checkpoint
+`6b2547298eb2ef7c452bb5699f9e59a562b7d4d9`, descended from remote `3e0f489`.
+Read `CMC_002_REPAIR_RECONCILIATION.md`, the exact source ruling and updated
+ownership ledger. This is a narrow CMC-002 repair, not a third formal pass.
+
+Caller acceptance and evaluator-name claims are refused. CMC VERIFIED/CLOSED
+requires a retained fixed-process appraisal binding source/result/mission/task/
+worker/lease/policy. Missing or conflicting evidence quarantines intact submitted
+tasks; corrupted ledger history is refused without appending to it. Uncertain
+appraisal completion cannot trigger blind retry. This is a trusted-host
+simulation boundary, not cryptographic provenance or privileged-host isolation.
+
+Canonical selector: `routing/mission_selector.py`; egregore path is an import
+shim, local fact API an adapter. Remote OMNIMORPH compiler is subordinate.
+Earlier direct/static probe remains a test-only comparator. No source history,
+failures or dissent were deleted or force-pushed.
+
+Observed results, with raw logs under `phase4/evidence/repair-*`:
+
+- Final focused: **78 passed**, 11.85s.
+- Integration + task fabric + founder-command boundary + inventory:
+  **207 passed**, 12.12s.
+- Schema references: **25 schemas / 42 local refs passed**; all metaschemas valid.
+- Exact manual repair source validates; it is NOT authenticated.
+- Authority singleton check: **one each of six governed artifacts**.
+- Retained appraisal ledgers: **16 records** accepted simulation, **15 records**
+  disagreement/quarantine; both chains intact.
+- Initial repair failures retained: **1 failed/49 passed**, then **4 failed/63
+  passed**, followed by **67 passed** before the expanded controls.
+- First broader run: **4 failed/1,438 passed**, 166.15s. Three are preserved
+  baseline seam failures. The fourth identified the new process site; the
+  inventory now explicitly names it and keeps UNMEDIATED_BY_STATIC_READING.
+  A fixed-entrypoint/timeout/no-shell check was added.
+- Final broader rerun: **3 failed / 1,440 passed**, 163.55s. The remaining three
+  failures are the preserved CapabilityAdvertisementLike, RoutingDecisionLike
+  and ProvenanceNodeLike seam checks. The combined tree is not globally green.
+  Remote CI remains unobserved; no CI success is inferred from local results.
+
+Commands ran from the Phase-4 checkout with system Python 3.12 and existing
+`PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/phase3-venv/lib/python3.12/site-packages`.
+No dependency or credential installation was performed:
+
+```sh
+python -m pytest tests/integration/test_protected_mission_appraisal.py tests/integration/test_cathedral_metabolism_runtime.py tests/unit/test_mission_resolution.py tests/unit/test_mission_compiler.py tests/unit/test_cathedral_metabolism.py -q
+python -m pytest tests/integration tests/unit/test_side_effect_inventory.py tests/unit/test_organizational_task_fabric.py tests/unit/test_founder_authentication_gap.py -q
+python -m pytest -q
+python scripts/ci/check_schema_refs.py
+python scripts/ci/check_authority_singleton.py
+git diff --check
+```
+
+Also executed: schema metaschema validation, manual direction content-digest
+validation and both new EvidenceLedger chain checks. Earlier pytest
+unavailability, lost/UNKNOWN run, import failure and baseline failures remain
+in the historical evidence below.
+
+Reality: **actual CMC 0 → 0**. Founder interventions per verified outcome and
+authenticated-intention-to-closure time remain NOT_MEASURED. No VDM, LIVE,
+HARDENED, autonomy, authentication or organizational superiority claim.
+The complete institutional metabolism and cross-organ economic closure remain
+the destination; this repair does not complete or redefine UNIIMENTE.
+
+Intentionally untouched: main/Phase-3 branch, organ repositories, source
+manifests/pins, EventSpine, EvidenceLedger, DurableWorkflow, StandingCognition
+internals, authority/policy/identity registries, Consequence Gate, model
+frameworks, CI definitions and frozen thresholds. TaskFabric changed only at
+the CMC appraisal guard. Previous inspection tables are historical; no claim
+that every repository was re-audited in this narrow repair.
+
+Rollback: retain inactive branch, checkpoint and evidence; no service to
+deactivate. Never restore caller-asserted verification as an active fallback.
+Stop before merge, deployment, activation, external effects, money, credentials
+or scope expansion. Review/new founder ruling remains required for those acts.
+
+## Historical handoff and blockers — preserved, superseded by repair above
+
 Latest continuation: bounded reconciliation was authorized, but inspection of
 the further-advanced remote 3e0f489 reproduced the founder-specified missing
 protected-evaluator hard stop. See PHASE4_RECONCILIATION_BLOCKER.md and its

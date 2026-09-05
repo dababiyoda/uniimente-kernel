@@ -1,0 +1,232 @@
+{
+  "reality_status": "SIMULATED / SANDBOX",
+  "snapshot": {
+    "sandbox:GOAL-001": {
+      "bottleneck": {
+        "action_id": "sandbox:prototype",
+        "alternatives": [
+          "Defer with retained evidence",
+          "Use a smaller simulated experiment"
+        ],
+        "bottleneck": "Founder boundary for a simulated capability experiment",
+        "discrepancy": "Research and authorized sandbox prototype reconciled remains unmet",
+        "evidence_refs": [
+          "sha256:a88d524ec888c429773720f0b001b4013b2c9dcb4073923e6fa475f270d47a64",
+          "sha256:c5bd02aac0969d2c07867f61c8c90efd54be3c922b8c109261f71aa157f333c9"
+        ],
+        "rationale": "Use the smallest reversible fixture experiment after comparing source records"
+      },
+      "current_state": [
+        "sandbox:research",
+        "sandbox:prototype"
+      ],
+      "deficits": [],
+      "denied_actions": [],
+      "founder_intent_lineage": [
+        "sandbox:founder-intent",
+        "IGC-SANDBOX-V0",
+        "INTENT-IGC-2026-09-05"
+      ],
+      "next_action": null,
+      "profile": "sha256:55347b3e4b4c0c9136ab6e08ee82c5f125540f52297350dc5d7aa899eeac5b56",
+      "reality_status": "SIMULATED",
+      "reconciled": {
+        "sandbox:prototype": {
+          "action_id": "sandbox:prototype",
+          "artifact": {
+            "cap_cents": 43000,
+            "simulated_count": 1,
+            "target": "sandbox:prototype"
+          },
+          "goal_state": "ACHIEVED",
+          "learning": "Retain synthetic result and rejected sources; no external success inferred",
+          "next_action": null,
+          "outcome_hash": "sha256:33498839a127d1d8330c7c46965b3fbbbbbd5a57bda5db802132a6c1d71c1a9b",
+          "reality_status": "SIMULATED",
+          "receipt_hash": "sha256:4cf89d93804e2d9e403cfb04dc0d21ff4add83e767c59bee658d606b8011c50e",
+          "verification": "frozen deterministic evaluator"
+        },
+        "sandbox:research": {
+          "action_id": "sandbox:research",
+          "artifact": {
+            "lowest_cost_cents": 43000,
+            "rejected_source_ids": [
+              "sandbox:stale-source"
+            ],
+            "source_ids": [
+              "sandbox:source-A",
+              "sandbox:source-B"
+            ]
+          },
+          "goal_state": "ACTIVE",
+          "learning": "Retain synthetic result and rejected sources; no external success inferred",
+          "next_action": "sandbox:prototype",
+          "outcome_hash": "sha256:4341786401e4e2010c0c0b1f2f831ff710c2b6a5161ce5ad725d2d0d4974fe0a",
+          "reality_status": "SIMULATED",
+          "receipt_hash": "sha256:a0c821659ba34d9a69b327b48f7accad10aeee940e35c4b162f6d63f89947bf5",
+          "verification": "frozen deterministic evaluator"
+        }
+      },
+      "state": "ACHIEVED",
+      "statement": "Build the first persistent Infinite Goal Chase closure: compare synthetic capability-development routes, obtain a bounded founder decision, and reconcile a simulated prototype that supports harder future aspirations"
+    },
+    "sandbox:GOAL-002": {
+      "bottleneck": {
+        "action_id": "sandbox:research",
+        "alternatives": [
+          "Defer with retained evidence",
+          "Use a smaller simulated experiment"
+        ],
+        "bottleneck": "Source qualification",
+        "discrepancy": "Research and authorized sandbox prototype reconciled remains unmet",
+        "evidence_refs": [
+          "sha256:3c475de08511596c553214876d721f56eda87bf2e0cd8f6d85d142cd9b722f37",
+          "sha256:e2364d424d348ed1079613138a28587c63f2b5f792d9185f22ec82473bfb8787"
+        ],
+        "rationale": "Use the smallest reversible fixture experiment after comparing source records"
+      },
+      "current_state": [],
+      "deficits": [
+        {
+          "action_id": "sandbox:research",
+          "candidate_maturity": "DISCOVERED",
+          "evidence_refs": [
+            "sha256:3c475de08511596c553214876d721f56eda87bf2e0cd8f6d85d142cd9b722f37"
+          ],
+          "execution_authority": "none",
+          "goal_id": "sandbox:GOAL-002",
+          "reason": "no genome missing.function@1.0.0 registered",
+          "required_function": "missing.function",
+          "route": "developmental/research proposal boundary",
+          "search_order": [
+            "FIND",
+            "RECOMPOSE",
+            "SPECIALIZE",
+            "MUTATE",
+            "INVENT"
+          ],
+          "state": "NEEDED"
+        }
+      ],
+      "denied_actions": [],
+      "founder_intent_lineage": [
+        "sandbox:founder-intent",
+        "IGC-SANDBOX-V0"
+      ],
+      "next_action": {
+        "action_class": "research.compare",
+        "action_id": "sandbox:research",
+        "alternatives": [
+          "Defer with retained evidence",
+          "Use a smaller simulated experiment"
+        ],
+        "bottleneck": "Source qualification",
+        "capability": "missing.function",
+        "consequence_class": "internal_write",
+        "cost_cents": 0,
+        "expected_outcome": "SIMULATED: research compared",
+        "observation_key": "sources",
+        "rationale": "Use the smallest reversible fixture experiment after comparing source records",
+        "reversibility": "reversible",
+        "target": "sandbox:brief",
+        "version": "1.0.0"
+      },
+      "profile": "sha256:55347b3e4b4c0c9136ab6e08ee82c5f125540f52297350dc5d7aa899eeac5b56",
+      "reality_status": "SIMULATED",
+      "reconciled": {},
+      "state": "BLOCKED",
+      "statement": "Find the missing competency needed for the next Infinite Goal Chase generation"
+    },
+    "sandbox:GOAL-003": {
+      "bottleneck": null,
+      "current_state": [],
+      "deficits": [],
+      "denied_actions": [],
+      "founder_intent_lineage": [
+        "sandbox:founder-intent",
+        "IGC-SANDBOX-V0"
+      ],
+      "next_action": {
+        "action_class": "research.compare",
+        "action_id": "sandbox:research",
+        "alternatives": [
+          "Defer with retained evidence",
+          "Use a smaller simulated experiment"
+        ],
+        "bottleneck": "Source qualification",
+        "capability": "research.compare",
+        "consequence_class": "internal_write",
+        "cost_cents": 0,
+        "expected_outcome": "SIMULATED: research compared",
+        "observation_key": "sources",
+        "rationale": "Use the smallest reversible fixture experiment after comparing source records",
+        "reversibility": "reversible",
+        "target": "sandbox:brief",
+        "version": "1.0.0"
+      },
+      "profile": "sha256:55347b3e4b4c0c9136ab6e08ee82c5f125540f52297350dc5d7aa899eeac5b56",
+      "reality_status": "SIMULATED",
+      "reconciled": {},
+      "state": "NEEDS_EVIDENCE",
+      "statement": "Await evidence that a developmental mechanism works beyond this sandbox"
+    },
+    "sandbox:GOAL-004": {
+      "bottleneck": null,
+      "current_state": [],
+      "deficits": [],
+      "denied_actions": [],
+      "founder_intent_lineage": [
+        "sandbox:founder-intent",
+        "IGC-SANDBOX-V0"
+      ],
+      "next_action": {
+        "action_class": "research.compare",
+        "action_id": "sandbox:research",
+        "alternatives": [
+          "Defer with retained evidence",
+          "Use a smaller simulated experiment"
+        ],
+        "bottleneck": "Source qualification",
+        "capability": "research.compare",
+        "consequence_class": "internal_write",
+        "cost_cents": 0,
+        "expected_outcome": "SIMULATED: research compared",
+        "observation_key": "sources",
+        "rationale": "Use the smallest reversible fixture experiment after comparing source records",
+        "reversibility": "reversible",
+        "target": "sandbox:brief",
+        "version": "1.0.0"
+      },
+      "profile": "sha256:55347b3e4b4c0c9136ab6e08ee82c5f125540f52297350dc5d7aa899eeac5b56",
+      "reality_status": "SIMULATED",
+      "reconciled": {},
+      "state": "DEFERRED",
+      "statement": "Preserve the far-future Infinite Goal Chase horizon: advanced scientific capabilities, robotics, automated laboratories, manufacturing, distributed physical embodiments, and future facilities"
+    }
+  },
+  "snapshot_hash": "sha256:e96e2c77ce3e38228b6f3703d79fe721cf344c28308e5d2fa2942e7a9a199a0c",
+  "pending_messages": [],
+  "metrics": {
+    "reality_status": "SIMULATED",
+    "founder_interruptions": 1,
+    "decision_requests": 1,
+    "duplicate_suppressed": 1,
+    "sandbox_intervention_minutes": 2.0,
+    "sandbox_verified_outcomes": 1,
+    "sandbox_intervention_minutes_per_verified_outcome": 2.0,
+    "founder_intervention_minutes_per_verified_outcome": null,
+    "real_verified_outcomes": 0,
+    "unauthorized_external_effects": 0,
+    "time_waiting_on_founder_seconds": 300.0,
+    "time_to_resume_after_decision_seconds": [
+      0
+    ],
+    "work_started_under_standing_authority_fraction": 0.5,
+    "avoidable_escalations": null,
+    "unreconciled_actions": 0,
+    "persistent_closure_requires": "all acceptance gates plus separate fresh-process proof"
+  },
+  "ledger_head": "sha256:924d2b348858217f0bce5b05dd85dda1229cd3733e0eee5caea058c57917c9c4",
+  "real_world_closures": 0,
+  "closure_claim": "Requires acceptance-suite and independent fresh-process evidence"
+}

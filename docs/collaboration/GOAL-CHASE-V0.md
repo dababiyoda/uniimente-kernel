@@ -166,9 +166,68 @@ and rehashing the entire file. Real key custody/anti-rollback remains FUTURE.
 
 ## Experiment, evidence and handoff
 
-Implementation and command/result evidence will be appended here after execution.
-Baseline dependency attempt: default Python lacked pytest. Installed the declared
-`requirements-dev.txt`; the failed attempt is retained in the final evidence.
+IMPLEMENTED and EXERCISED: the founder CLI composes the existing Kernel owners
+through autonomous research, one reserved decision, durable waiting, validated
+synthetic approval, bounded simulated execution and outcome reconciliation.
+The first executable goal explicitly builds the Infinite Goal Chase foundation.
+A deferred goal preserves advanced science, robotics, automated laboratories,
+manufacturing, distributed embodiment and future facilities with prerequisite
+goals and a founder review trigger. These remain FUTURE, not achieved capabilities.
+
+The complete required final report, 23-gate mapping, environment, command results,
+limitations and artifact hashes are in
+[`goal-chase-v0-evidence/report.json`](goal-chase-v0-evidence/report.json).
+The preserved [begin](goal-chase-v0-evidence/begin.txt) and
+[approval/resume](goal-chase-v0-evidence/approve.txt) outputs are founder-readable.
+The [canonical sandbox ledger](goal-chase-v0-evidence/sandbox.jsonl) retains
+synthetic intent, observations, rejected sources, exact decisions and the
+witness/receipt/outcome joins. It contains a PUBLIC synthetic test signature,
+not a production credential or real Alfonso authorization.
+
+Results: canonical baseline **495 passed**; final suite **569 passed**, including
+**74 new tests**, zero failures/skips. Institutional verifier V1–V5 and schema,
+authority-singleton and sealed-development checks passed. Five-role deliberation
+with exactly two strengthening passes validates. All roles were analytical
+perspectives of one coding agent, not independent human/agent reviews.
+
+Negative results remain: the initial environment lacked pytest; an initial test
+fixture used incorrect nested payload access (55 passed / 1 failed). The fixture
+setup was corrected, and the original failure is retained. The frozen evaluator
+and success contract were not changed. After environment continuation required
+reinstalling the declared development dependencies, the final full suite passed
+again in 7.31 seconds.
+
+Replay proof uses separate begin/inspect/approve processes and identical pre-exit
+snapshot/head checks. Abrupt process-exit tests additionally cover pending
+approval, completed receipt before workflow checkpoint, and ambiguous dispatch.
+The last case safely blocks for reconciliation and does not claim closure.
+
+**VERIFIED_PERSISTENT_GOAL_CHASE_CLOSURES: 0 → 1 (SIMULATED / SANDBOX).**
+Unauthorized external effects, duplicate consequences and untraceable transitions
+are zero in the saved proof. One founder interruption; the fixture's 2 minutes
+per sandbox outcome is synthetic. Real founder intervention minutes per verified
+outcome remains null; real-world verified outcomes remain zero.
+
+Reproduce in separate processes using a new ledger path:
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m egregore.goal_chase_demo /tmp/igc-demo.jsonl --phase begin --output /tmp/igc-before.json
+python -m egregore.goal_chase_demo /tmp/igc-demo.jsonl --phase inspect
+python -m egregore.goal_chase_demo /tmp/igc-demo.jsonl --phase approve
+python -m pytest -q
+```
+
+Use `--phase reject` instead of approve in a separate fresh episode to exercise
+denial. `--expected-snapshot-hash` accepts the begin output's `snapshot_hash` for
+an explicit restart equality assertion. The acceptance suite performs this check
+automatically. No daemon, real notification provider or model is necessary.
+
+Evidence maturity: mechanics are EXERCISED in the declared sandbox; later
+generations and application integration remain PROPOSED/FUTURE. Nothing here is
+HARDENED for production. Strongest counterevidence is the trusted-process,
+fixed-function nature of the experiment and unresolved competing runtime drafts.
+Final decision: **EXPERIMENT**. Independent review remains the next review gate.
 
 Rollback: close the draft or revert this branch's additions; retain its evidence
 and history. No production migration or runtime activation exists to undo.

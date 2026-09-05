@@ -1,0 +1,22 @@
+........................................F...............                 [100%]
+=================================== FAILURES ===================================
+________________ test_corrupted_history_refuses_replay[payload] ________________
+
+host = (<function host.<locals>.opened at 0x7f782e6a82c0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f782e4fac90>, [datetime.datetime(2026, 9, 5, 12, 0, tzinfo=datetime.timezone.utc)])
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_corrupted_history_refuses0')
+damage = 'payload'
+
+    @pytest.mark.parametrize("damage", ["payload", "genesis", "duplicate_event", "partial_json"])
+    def test_corrupted_history_refuses_replay(host, tmp_path, damage):
+        opened, founder, _ = host
+        with opened() as chase: start(chase, founder)
+        path = tmp_path / "events.jsonl"
+        rows = [json.loads(l) for l in path.read_text().splitlines()]
+>       if damage == "payload": rows[-1]["payload"]["data"]["active_goals"] = 999
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'data'
+
+tests/integration/test_goal_chase.py:364: KeyError
+=========================== short test summary info ============================
+FAILED tests/integration/test_goal_chase.py::test_corrupted_history_refuses_replay[payload]
+1 failed, 55 passed in 5.18s

@@ -1,0 +1,200 @@
+{
+  "inspection_date": "2026-09-05",
+  "source": "Live GitHub connector GETs and local git/source reads",
+  "base": "bcbb1ab4a0c42cda4a97aec42a11125753962762",
+  "repositories": [
+    {
+      "name": "dababiyoda/uniimente-kernel",
+      "default_branch": "main",
+      "head": "bcbb1ab4a0c42cda4a97aec42a11125753962762",
+      "status": "INSPECTED",
+      "scope": "All branch and PR metadata; relevant source, governance, contracts, tests and draft lineage reads"
+    },
+    {
+      "name": "dababiyoda/DALEOBANKS",
+      "default_branch": "main",
+      "head": "ed5e95d7f48e006d180b972efe138179325c31d2",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    },
+    {
+      "name": "dababiyoda/WealthMachineIntelligence",
+      "default_branch": "main",
+      "head": "ec84b6a2eec4efbc07bed7f167da81f5e25d890c",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    },
+    {
+      "name": "dababiyoda/PumpStation",
+      "default_branch": "main",
+      "head": "df6a732f44412c626098ee9591b9d19f420d02dd",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    },
+    {
+      "name": "dababiyoda/RAILSCOUT",
+      "default_branch": "main",
+      "head": "c255ff323aa889ec198962a7bac47d21b6074422",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    },
+    {
+      "name": "dababiyoda/RESEARCH-IN",
+      "default_branch": "main",
+      "head": "576913809432fc1dd47a245a14184988607e27eb",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    },
+    {
+      "name": "dababiyoda/build-your-own-x",
+      "default_branch": "master",
+      "head": "aa17439b62f384511a5561ce308e9598b94d8989",
+      "status": "INSPECTED",
+      "scope": "Default tree, relevant source/readme, branch and open PR/issue inventory; no organ test execution"
+    }
+  ],
+  "draft_lineages": [
+    {
+      "number": 92,
+      "title": "Phase 3: compile zero-trust organization hypotheses",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "agent/omnimorph-zero-trust-compiler-phase3",
+      "sha": "c137e863851f0f7d8dce7bcb060b4e1d5066ea80",
+      "base": "agent/organizational-task-fabric-phase2"
+    },
+    {
+      "number": 90,
+      "title": "Phase 2: add replay-derived organizational task fabric",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "agent/organizational-task-fabric-phase2",
+      "sha": "8c01c800978ca1dde8352359607546b3638e2cf6",
+      "base": "agent/organizational-morphogenesis-experiment-v1"
+    },
+    {
+      "number": 88,
+      "title": "Phase 1: organizational morphogenesis contracts and falsification plan",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "agent/organizational-morphogenesis-experiment-v1",
+      "sha": "3dfe6fd90fcacd11032398327e6fd184ba15a01a",
+      "base": "claude/uniimente-infinite-goal-chase-rjxvzo"
+    },
+    {
+      "number": 87,
+      "title": "FOUNDER-RULING-2026-08-23: 0002, 0003, Witness v2 live, identity adopted, goal chase recomputed",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/uniimente-infinite-goal-chase-rjxvzo",
+      "sha": "dfd491d8b34fa963e4902008b5d8dc7690fdde63",
+      "base": "claude/opus-maximus-audit-eay0ek"
+    },
+    {
+      "number": 71,
+      "title": "Opus Maximus: blueprint, bridges, and the 2026-08-22 founder rulings",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/opus-maximus-audit-eay0ek",
+      "sha": "2221705421eed655e5edcb0608593cdf9d3cd72b",
+      "base": "main"
+    },
+    {
+      "number": 86,
+      "title": "Codify Infinite Goal Chase living goal graph",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "chatgpt/infinite-goal-chase-protocol-2026-08-22",
+      "sha": "06024204910a0cae1f35937106fef83f94a5e64b",
+      "base": "main"
+    },
+    {
+      "number": 82,
+      "title": "docs/collaboration: durable cross-model reconciliation trail + ownership map (records only; convergence NEEDS_FOUNDER_DECISION)",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-08-21T20:46:14Z",
+      "head": "kimi/collaboration-reconciliation-2026-08-22",
+      "sha": "b65c0a364d67dfc2b6e8b9ad3fecbc1d0519e04f",
+      "base": "main"
+    },
+    {
+      "number": 70,
+      "title": "Track A: INERT runtime spine and P3 linker-controlled Route B",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/track-a-runtime-spine",
+      "sha": "4f8d5199a53d35a497c8351c7089c04c67342785",
+      "base": "main"
+    },
+    {
+      "number": 68,
+      "title": "Super-planning round: whole-system reconciliation and the developmental-machine decision (PLANNING ONLY)",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/super-planning-prompt-h8l0oj",
+      "sha": "ffd9df9d5bfc2d18dab495fcbe6c3b0b95c6ae0d",
+      "base": "main"
+    },
+    {
+      "number": 66,
+      "title": "Phase 3G: author-direction classification + canonical decision authority (Gates F/G UNMEASURED, R8 NOT RUN)",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/uniimente-repo-audit-jpytcy",
+      "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "base": "main"
+    },
+    {
+      "number": 57,
+      "title": "Gate E: governed functional regeneration (function identity that outlives organs)",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "agent/governed-functional-regeneration-v1",
+      "sha": "977fd1f08542a65602a1c4df48e095bffb37c88e",
+      "base": "main"
+    },
+    {
+      "number": 56,
+      "title": "RC1: Reality Aperture — proof-carrying authorization supersedes Strategy C",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "agent/canonical-authority-rc1",
+      "sha": "dae5578f1b88021bea4a430cece524437c289919",
+      "base": "main"
+    },
+    {
+      "number": 44,
+      "title": "feat: two-track architecture + morphogenetic runtime — Stage 2 run, does not pass",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "claude/disruptive-design-configs-hi1ab0",
+      "sha": "1b4ffbc5df11d0e9246a3ee607ef67610e2e9326",
+      "base": "main"
+    }
+  ],
+  "unavailable": [
+    "UNIIMENTE_SUPER_PLANNING_ROUND_FINAL_CANONICAL.txt: not retrieved after exact and shorter Library title searches",
+    "UNIIMENTE_Replit_Mature_Build_Master_Prompt.md: not retrieved after exact and shorter Library title searches"
+  ],
+  "inference": "Canonical main can host a sandbox composition over its existing workflow/gate without choosing between draft runtime owners.",
+  "first_goal_chase_branch": {
+    "head": "95744790d915645d0976393c0ef49d343106af82",
+    "status": "USEFUL_UNMERGED_DOCTRINE",
+    "files_changed": 4,
+    "runtime_code_changes": 0,
+    "founder_clarification": "First goal chase is related to the infinite goal chase and far far sci-fi level goals"
+  }
+}

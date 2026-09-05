@@ -1,0 +1,22 @@
+SIMULATED / SANDBOX — UNIIMENTE HEARTBEAT
+Phase: inspect
+Goals preserved: 4
+sandbox:GOAL-001: AWAITING_FOUNDER / completed: sandbox:research
+  Goal: Build the first persistent Infinite Goal Chase closure: compare synthetic capability-development routes, obtain a bounded founder decision, and reconcile a simulated prototype that supports harder future aspirations
+sandbox:GOAL-002: BLOCKED / completed: none
+  Goal: Find the missing competency needed for the next Infinite Goal Chase generation
+sandbox:GOAL-003: NEEDS_EVIDENCE / completed: none
+  Goal: Await evidence that a developmental mechanism works beyond this sandbox
+sandbox:GOAL-004: DEFERRED / completed: none
+  Goal: Preserve the far-future Infinite Goal Chase horizon: advanced scientific capabilities, robotics, automated laboratories, manufacturing, distributed physical embodiments, and future facilities
+Needs Alfonso (synthetic demo):
+  RESERVED_AUTHORITY_REQUIRED: spending_above_predefined_thresholds is reserved; requires alfonso
+  Completed: sandbox:research
+  Recommendation: simulate a $430.00 cap
+  Alternative: Defer with retained evidence
+  Deadline: 2026-09-05T13:00:00Z
+  No external action has occurred
+Founder interruptions: 1
+Duplicate escalations suppressed: 1
+Unauthorized external effects: 0
+Unreconciled actions: 0

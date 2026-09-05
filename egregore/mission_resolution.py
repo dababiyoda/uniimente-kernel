@@ -94,7 +94,7 @@ class ResolutionCandidate:
     evidence_refs: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        if not self.candidate_id.strip():
+        if not isinstance(self.candidate_id, str) or not self.candidate_id.strip():
             raise MissionResolutionError("candidate_id must be non-empty")
         if self.resolution_class not in RESOLUTION_CLASSES:
             raise MissionResolutionError(
@@ -222,7 +222,6 @@ class MissionResolution:
             "losers_preserved": self.losers_preserved,
             "digest_scope": self.digest_scope,
             "digest": self.digest,
-            "execution_authority": self.execution_authority,
         }
 
 
@@ -278,13 +277,7 @@ def _score(candidate: ResolutionCandidate, *, forced_refusal: bool) -> tuple[int
         "TESTED": 1400,
         "VERIFIED": 2100,
     }[candidate.evidence_maturity]
-    simplicity = max(
-        0,
-        1500
-        - round(candidate.coordination_units * 300)
-        - round(candidate.estimated_cost_usd * 100)
-        - round(candidate.founder_attention_minutes * 50),
-    )
+    simplicity = 1500
     coordination_penalty = round(candidate.coordination_units * 300)
     cost_penalty = round(candidate.estimated_cost_usd * 100)
     attention_penalty = round(candidate.founder_attention_minutes * 50)
@@ -399,7 +392,7 @@ class MissionResolutionRouter:
                     "an unresolved authority, evidence or consequence question "
                     "requires Alfonso's reserved decision"
                 ) if unresolved_reasons else "no unresolved founder question",
-                evidence_refs=tuple(unresolved_reasons),
+                evidence_refs=tuple(sorted(set(unresolved_reasons))),
             ),
         }
         if compiled_organization is not None:

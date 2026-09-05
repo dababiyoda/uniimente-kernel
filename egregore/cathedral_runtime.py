@@ -684,19 +684,25 @@ class CathedralMetabolismRuntime:
             ),
         )
         mission_id = self.task_fabric.envelope(task_id)["mission_id"]
-        self._emit(
-            "mission.result",
-            {
-                "mission_id": mission_id,
-                "task_id": task_id,
-                "result_digest": receipt.result_digest,
-                "evidence_refs": list(evidence_refs),
-                "evidence_mode": self.evidence_mode,
-                "authority_created": 0,
-                "external_effects": 0,
-            },
-            legal_principal=self._mission(mission_id)["legal_principal"],
+        already_recorded = any(
+            event.payload.get("task_id") == task_id
+            and event.payload.get("result_digest") == receipt.result_digest
+            for event in self._mission_events(mission_id, "mission.result")
         )
+        if not already_recorded:
+            self._emit(
+                "mission.result",
+                {
+                    "mission_id": mission_id,
+                    "task_id": task_id,
+                    "result_digest": receipt.result_digest,
+                    "evidence_refs": list(evidence_refs),
+                    "evidence_mode": self.evidence_mode,
+                    "authority_created": 0,
+                    "external_effects": 0,
+                },
+                legal_principal=self._mission(mission_id)["legal_principal"],
+            )
         return receipt
 
     def verify_task(

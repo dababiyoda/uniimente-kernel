@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/capability-manifest.schema.json",
+  "title": "MissionCapabilityManifest",
+  "description": "Mission-scoped capability requirements coupled to an organizational hypothesis. It declares needs and references authority; it creates neither.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_id",
+    "schema_version",
+    "record_kind",
+    "mission_ref",
+    "mission_digest",
+    "capabilities",
+    "authority_refs",
+    "resource_envelope",
+    "evidence_requirement_refs",
+    "prohibited_actions",
+    "external_effect_policy",
+    "execution_admission",
+    "authority_created",
+    "digest_scope",
+    "digest"
+  ],
+  "properties": {
+    "manifest_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "record_kind": {"const": "MISSION_CAPABILITY_MANIFEST"},
+    "mission_ref": {"type": "string", "format": "uuid"},
+    "mission_digest": {"$ref": "#/$defs/digest"},
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "version_constraint", "purpose"],
+        "properties": {
+          "capability": {"type": "string", "minLength": 1},
+          "version_constraint": {"type": "string", "minLength": 1},
+          "purpose": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "authority_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "resource_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "budget_ceiling_usd",
+        "compute_ceiling",
+        "compute_unit",
+        "model_call_ceiling",
+        "founder_attention_ceiling_minutes",
+        "time_ceiling_seconds"
+      ],
+      "properties": {
+        "budget_ceiling_usd": {"type": "number", "minimum": 0},
+        "compute_ceiling": {"type": "number", "minimum": 0},
+        "compute_unit": {"type": "string", "minLength": 1},
+        "model_call_ceiling": {"type": "integer", "minimum": 0},
+        "founder_attention_ceiling_minutes": {"type": "integer", "minimum": 0},
+        "time_ceiling_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "evidence_requirement_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "prohibited_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "external_effect_policy": {
+      "enum": ["none", "proposal_only", "gate_required"]
+    },
+    "execution_admission": {
+      "const": "REFUSED_PENDING_SEPARATE_PHASE_DECISION"
+    },
+    "authority_created": {"const": 0},
+    "digest_scope": {"const": "RFC8785_CANONICAL_JSON_EXCLUDING_DIGEST"},
+    "digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

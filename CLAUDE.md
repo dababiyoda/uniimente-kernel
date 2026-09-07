@@ -1,7 +1,8 @@
 # UNIIMENTE Permanent Operating Order
 
-Read and obey:
+Start with `AGENTS.md`, then read and obey:
 
+- @docs/collaboration/START_HERE.md
 - @docs/UNIIMENTE_FINAL_BUILD_ORDER.md
 - @docs/CANONICAL_EXECUTION_ORDER.md
 
@@ -22,6 +23,7 @@ Read and obey:
 - Alfonso retains ultimate lawful authority.
 - Intelligence never creates authority.
 - No component may authorize its own promotion or expand its own sovereignty.
+- For new or resumed material work, follow the shared collaboration guide and preserve its bounded receipt/handoff requirements. Its metadata check never substitutes for authority, evidence or independent review.
 
 ## Working facts
 

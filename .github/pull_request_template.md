@@ -74,3 +74,34 @@ Do not manufacture consensus. Record the strongest remaining objection and the e
 - [ ] Experiment
 
 Decision owner and rationale:
+
+---
+
+## Collaboration receipt
+
+Required by `AGENTS.md` / `docs/collaboration/START_HERE.md` for work governed by the shared collaboration protocol. Replace every placeholder and update `base_sha` / `head_sha` after revision changes. This is a self-declaration checked for shape and revision consistency; it is not proof of reading, truth, authority or independent review.
+
+<!-- uniimente:receipt -->
+```json
+{
+  "version": 1,
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_sha": "<full PR base commit>",
+  "head_sha": "<full PR head commit>",
+  "protocol_ref": "https://github.com/dababiyoda/uniimente-kernel/blob/<full guide commit>/docs/collaboration/START_HERE.md",
+  "intent_refs": ["<scoped intent record>"],
+  "read_set": [
+    {"path": "AGENTS.md", "revision": "<commit actually read>"},
+    {"path": "<same protocol_ref URL>", "revision": "<full guide commit>"}
+  ],
+  "scope": "<one bounded outcome and exclusions>",
+  "classification": "lightweight",
+  "deliberation_ref": null,
+  "validation": [{"command": "<actual command>", "result": "not_run", "evidence": "<why or result location>"}],
+  "limitations": ["<unexecuted checks, negative results or unresolved risks>"],
+  "rollback": "<safe rollback preserving evidence>",
+  "handoff": {"owner": "<next owner>", "next_action": "<specific action>", "stop_condition": "<boundary>"},
+  "review": {"status": "pending", "reference": null}
+}
+```
+<!-- /uniimente:receipt -->

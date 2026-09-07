@@ -1,0 +1,345 @@
+{
+  "decision_id": "DELIB-COLLAB-BOOTSTRAP-20260907",
+  "title": "Stage a shared contributor bootstrap without a parallel authority system",
+  "problem": "The founder authorized preparing GitHub updates. Five inspected default branches lack a root AGENTS.md although the kernel already contains a recursive protocol and collaboration records. This constitutional decision proposes contributor obligations; adoption and merge remain pending. Five roles below are one model's explicitly labeled analytical lenses, not independent agents or reviews.",
+  "founder_intent_refs": [
+    "INTENT-COLLAB-20260907-001",
+    "INTENT-COLLAB-20260907-002",
+    "INTENT-COLLAB-20260907-003",
+    "INTENT-COLLAB-20260907-004",
+    "INTENT-COLLAB-20260907-005"
+  ],
+  "baseline": "Kernel main bcbb1ab4 contains the merged records-only #82 package. No new runtime is needed to make that record discoverable. See BOOTSTRAP_EVIDENCE.md for the exact inspected refs.",
+  "alternatives": [
+    {
+      "name": "Baseline",
+      "description": "Existing scattered instructions and collaboration records",
+      "advantages": [
+        "No migration"
+      ],
+      "disadvantages": [
+        "No common root AGENTS entry point in five inspected main trees"
+      ],
+      "revival_evidence": "Retain if additional receipt burden harms handoff quality"
+    },
+    {
+      "name": "Simplest viable alternative",
+      "description": "Only add root pointers to existing protocol",
+      "advantages": [
+        "Small diff"
+      ],
+      "disadvantages": [
+        "No inspectable read-set or revision mismatch check"
+      ],
+      "revival_evidence": "Use if pilot metadata check costs more than it prevents"
+    },
+    {
+      "name": "Strongest competing architecture",
+      "description": "Central authenticated work service with automatic context loading and leases",
+      "advantages": [
+        "Could enforce startup at configured execution boundary"
+      ],
+      "disadvantages": [
+        "New service, credentials and authority integration; much larger blast radius"
+      ],
+      "revival_evidence": "A separately authorized requirement and working threat model justify a service"
+    },
+    {
+      "name": "Discussion-only",
+      "description": "Put instructions in a pinned discussion",
+      "advantages": [
+        "Easy for people to browse"
+      ],
+      "disadvantages": [
+        "No universal tool discovery or versioned context binding"
+      ],
+      "revival_evidence": "Use as intake surface after founder enables and pins it"
+    },
+    {
+      "name": "Reversible experiment",
+      "description": "One canonical guide, thin tool pointers and central reusable metadata checker across five draft PRs",
+      "advantages": [
+        "Bounded and revertible; no production runtime dependencies"
+      ],
+      "disadvantages": [
+        "Declared reading and review can be false; requires adoption/settings"
+      ],
+      "revival_evidence": "Pilot supports retention only if handoff quality improves"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Existing records remain but each worker must rediscover how to start.",
+    "advantages": [
+      "No new process burden"
+    ],
+    "disadvantages": [
+      "The observed discovery gap remains"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the directive and capability horizon without treating metaphor or a source pointer as authority.",
+      "material_concerns": [
+        "Potential silent retirement of old intent"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Add navigation and reusable checking around the existing protocol, not another runtime or canonical rulebook.",
+      "material_concerns": [
+        "Central source dependency"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Treat every receipt as untrusted self-report; a passing check must not imply understanding or authorization.",
+      "material_concerns": [
+        "Fabricated declarations and review links"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Use stdlib metadata checks with no checkout or secrets; keep consumers pinned and rollback sequenced.",
+      "material_concerns": [
+        "Settings adoption and pin upkeep"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Preserve negative results and privacy; do not upload unrelated chats or fake independent review.",
+      "material_concerns": [
+        "Process theater and inaccessible evidence"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Existing kernel collaboration protocol is present; root AGENTS is absent in the five inspected main trees.",
+      "tier": "primary_source",
+      "reference": "docs/collaboration/BOOTSTRAP_EVIDENCE.md",
+      "finding": "Use additive entry points and preserve existing rules."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "A file and a self-reported receipt cannot force all agents to read or act correctly.",
+      "tier": "model_output",
+      "reference": "docs/collaboration/START_HERE.md#mechanism-rationale-and-limits",
+      "finding": "Do not claim runtime enforcement; require configured clients and independent review."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Any authorized new worker finds existing intent, ownership, evidence and handoff with minimal reconstruction.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Existing protocol already preserves alternatives and dissent",
+        "amplified_value": "Route all workers to it rather than fork it"
+      },
+      {
+        "id": "A2",
+        "statement": "Versioned Git artifacts are inspectable",
+        "amplified_value": "Bind declared read-set and PR scope to full source/base/head revisions"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Workers may fabricate a read receipt",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "State self-report limits; match base/head and guide pin; retain independent human review."
+      },
+      {
+        "id": "D2",
+        "statement": "New process may overburden tiny changes",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Lightweight lane omits two-pass ceremony; test five pilot completions before expanding."
+      },
+      {
+        "id": "D3",
+        "statement": "A central guide can become stale or inaccessible",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Pin source version; refresh current authorized rulings; record access failure and keep safe work bounded."
+      },
+      {
+        "id": "D4",
+        "statement": "New SOPs could silently ratify unresolved ownership or activate automation",
+        "severity": "critical",
+        "response_type": "governance",
+        "redesigned_response": "Keep existing protocol and ownership map intact; draft-only adoption; no runtime/settings writes."
+      },
+      {
+        "id": "D5",
+        "statement": "Workers may collide or overwrite experimental branches",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Bounded claims, explicit base SHA, recheck overlaps, dedicated branches; no force push or deletion."
+      }
+    ],
+    "comparisons": {
+      "baseline": "No common entry point despite existing records",
+      "do_nothing": "Zero churn but repeated discovery work",
+      "simplest_viable_alternative": "Pointers only; preferred fallback if receipt harms throughput",
+      "strongest_competing_architecture": "Authenticated orchestration service deferred because it exceeds this task",
+      "reversible_experiment": "Five draft PRs, metadata-only check and a five-completion adoption review"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Discussion-only",
+        "rejection_reason": "Not reliably discovered by coding tools or bound to revisions",
+        "revival_evidence": "Use it as a pinned intake link alongside the versioned file"
+      },
+      {
+        "name": "Central authenticated work service",
+        "rejection_reason": "Unnecessary runtime, credential and authority expansion",
+        "revival_evidence": "A later authorized experiment proves simpler pointers are insufficient"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the candidate as deployed: declaration fraud, procedural overhead, stale pins, false ratification and collision claims.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "PR authors can forge evidence/review references",
+        "strengthening_response": "Checker describes itself as metadata-only; required human review remains separate"
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "Squash/deletion can make pinned unmerged workflow commits difficult to retain",
+        "strengthening_response": "Prefer merge-preserved commit or reviewed repin; keep source commit reachable"
+      },
+      {
+        "id": "N3",
+        "category": "reversibility",
+        "statement": "Deleting a required check can freeze merges",
+        "strengthening_response": "Remove only the new ruleset requirement before reverting its workflow"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "State self-report limits; match base/head and guide pin; retain independent human review.",
+        "owner": "Assigned maintainer; Alfonso for adoption",
+        "review_trigger": "Pilot handoff failure, stale source, collision or authority drift"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Lightweight lane omits two-pass ceremony; test five pilot completions before expanding.",
+        "owner": "Assigned maintainer; Alfonso for adoption",
+        "review_trigger": "Pilot handoff failure, stale source, collision or authority drift"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Pin source version; refresh current authorized rulings; record access failure and keep safe work bounded.",
+        "owner": "Assigned maintainer; Alfonso for adoption",
+        "review_trigger": "Pilot handoff failure, stale source, collision or authority drift"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "prohibited",
+        "rationale": "Keep existing protocol and ownership map intact; draft-only adoption; no runtime/settings writes.",
+        "owner": "Assigned maintainer; Alfonso for adoption",
+        "review_trigger": "Pilot handoff failure, stale source, collision or authority drift"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Bounded claims, explicit base SHA, recheck overlaps, dedicated branches; no force push or deletion.",
+        "owner": "Assigned maintainer; Alfonso for adoption",
+        "review_trigger": "Pilot handoff failure, stale source, collision or authority drift"
+      }
+    ],
+    "final_design": "Single kernel START_HERE index consuming existing protocol; root/tool pointers in five repos; one pinned reusable metadata validator; exact local tests; no runtime or settings modifications.",
+    "residual_risks": [
+      {
+        "risk": "Honest-looking false declarations",
+        "mitigation": "Independent review and explicit evidence limits, not automatic trust",
+        "owner": "Reviewing maintainer",
+        "review_trigger": "Receipt disagrees with inspected evidence"
+      },
+      {
+        "risk": "Startup not configured in every agent client",
+        "mitigation": "New-session test and saved instruction for unsupported clients",
+        "owner": "Alfonso or delegated tool administrator",
+        "review_trigger": "Agent starts without source revision"
+      },
+      {
+        "risk": "Pilot creates more ceremony than value",
+        "mitigation": "Five-completion comparison and simplify to pointer-only if necessary",
+        "owner": "Maintaining reviewer",
+        "review_trigger": "Rework increases or correct first-action time worsens"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved as limits and explicit adoption conditions; no independent reviewer consensus is claimed.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call the metadata check enforcement of reading or authority.",
+        "rationale": "An author controls the receipt content and can provide a plausible false account.",
+        "evidence_threshold": "Any claim that a passing check attests comprehension or authorization triggers correction and blocks promotion.",
+        "owner": "Maintaining reviewer",
+        "review_trigger": "PR or documentation overclaims the check"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": null
+  },
+  "migration_plan": "Current chat permits draft preparation only. Review kernel package, preserve exact source commit on merge, then review/merge four pinned consumer PRs. Configure required checks and client startup separately. Existing experiments and rules are untouched.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Before adoption, leave drafts unmerged and retain evidence.",
+      "After adoption, remove only the newly required status requirement before reverting its workflow.",
+      "Revert scoped pointers/checks, preserve intent, dissent and negative pilot evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A change creates or claims new runtime authority.",
+    "A workflow reads secrets, checks out untrusted code or executes PR text.",
+    "Existing history, unrelated work or failed evidence is destroyed.",
+    "Staged adoption is represented as completed rollout."
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Human review of the coordinated draft PRs; then five completed pilot PRs"
+}

@@ -1,0 +1,199 @@
+{
+  "intents": [
+    {
+      "intent_id": "INTENT-COLLAB-20260907-001",
+      "title": "One shared collaboration entry point",
+      "statement": "Give every authorized AI contributor access to the organized founder-intent collaboration work through an accessible GitHub file or discussion surface.",
+      "source": "Founder chat directive, NetworkMyNetworth, 2026-09-07: use the recursive founder-intent collaboration protocol to update appropriate GitHub repositories with organized, shared startup access and SOPs; discussion board or accessible file accepted.",
+      "source_location": "Current user message; transcribed scope record, not cryptographic founder authentication",
+      "source_date_or_version": "2026-09-07",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "A discoverable versioned guide points to existing authoritative records.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "DALEOBANKS",
+        "WealthMachineIntelligence",
+        "RAILSCOUT",
+        "PumpStation"
+      ],
+      "rationale": "Cross-repository work needs one discoverable record while preserving existing ownership, evidence and review.",
+      "conflicts": [
+        "Adoption/merge is not authorized by permission to prepare repository updates; unresolved prior ownership decisions remain open."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "implementation_refs": [
+        "AGENTS.md",
+        "docs/collaboration/START_HERE.md",
+        ".github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez (adoption); assigned contributor (bounded implementation)",
+      "next_review_trigger": "Five completed pilot PRs, changed authority, or failed startup/handoff",
+      "unresolved_questions": [
+        "Which non-discovering AI clients require a saved startup hook?",
+        "Will the pilot reduce stale-context rework?"
+      ],
+      "created_at": "2026-09-07T20:52:22.400157+00:00",
+      "updated_at": "2026-09-07T20:52:22.400157+00:00"
+    },
+    {
+      "intent_id": "INTENT-COLLAB-20260907-002",
+      "title": "Read before each task",
+      "statement": "Ensure workers know to read the shared instructions every time they begin or resume work.",
+      "source": "Founder chat directive, NetworkMyNetworth, 2026-09-07: use the recursive founder-intent collaboration protocol to update appropriate GitHub repositories with organized, shared startup access and SOPs; discussion board or accessible file accepted.",
+      "source_location": "Current user message; transcribed scope record, not cryptographic founder authentication",
+      "source_date_or_version": "2026-09-07",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Root/tool entry pointers, configured clients and a declared read-set make startup auditable; automatic compliance is not claimed.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "DALEOBANKS",
+        "WealthMachineIntelligence",
+        "RAILSCOUT",
+        "PumpStation"
+      ],
+      "rationale": "Cross-repository work needs one discoverable record while preserving existing ownership, evidence and review.",
+      "conflicts": [
+        "Adoption/merge is not authorized by permission to prepare repository updates; unresolved prior ownership decisions remain open."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "implementation_refs": [
+        "AGENTS.md",
+        "docs/collaboration/START_HERE.md",
+        ".github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez (adoption); assigned contributor (bounded implementation)",
+      "next_review_trigger": "Five completed pilot PRs, changed authority, or failed startup/handoff",
+      "unresolved_questions": [
+        "Which non-discovering AI clients require a saved startup hook?",
+        "Will the pilot reduce stale-context rework?"
+      ],
+      "created_at": "2026-09-07T20:52:22.400157+00:00",
+      "updated_at": "2026-09-07T20:52:22.400157+00:00"
+    },
+    {
+      "intent_id": "INTENT-COLLAB-20260907-003",
+      "title": "Operationally usable SOPs",
+      "statement": "Organize work into clear responsibilities, repeatable procedures, evidence, handoffs and improvement loops rather than additional architectural sprawl.",
+      "source": "Founder chat directive, NetworkMyNetworth, 2026-09-07: use the recursive founder-intent collaboration protocol to update appropriate GitHub repositories with organized, shared startup access and SOPs; discussion board or accessible file accepted.",
+      "source_location": "Current user message; transcribed scope record, not cryptographic founder authentication",
+      "source_date_or_version": "2026-09-07",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "A small process can be executed and reviewed without founder reconstruction of each session.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "DALEOBANKS",
+        "WealthMachineIntelligence",
+        "RAILSCOUT",
+        "PumpStation"
+      ],
+      "rationale": "Cross-repository work needs one discoverable record while preserving existing ownership, evidence and review.",
+      "conflicts": [
+        "Adoption/merge is not authorized by permission to prepare repository updates; unresolved prior ownership decisions remain open."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "implementation_refs": [
+        "AGENTS.md",
+        "docs/collaboration/START_HERE.md",
+        ".github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez (adoption); assigned contributor (bounded implementation)",
+      "next_review_trigger": "Five completed pilot PRs, changed authority, or failed startup/handoff",
+      "unresolved_questions": [
+        "Which non-discovering AI clients require a saved startup hook?",
+        "Will the pilot reduce stale-context rework?"
+      ],
+      "created_at": "2026-09-07T20:52:22.400157+00:00",
+      "updated_at": "2026-09-07T20:52:22.400157+00:00"
+    },
+    {
+      "intent_id": "INTENT-COLLAB-20260907-004",
+      "title": "Preserve capability and authority boundaries",
+      "statement": "Retain the discussed persistent institutional capability horizon while preserving the founder-governed execution and evidence boundaries.",
+      "source": "Founder chat directive, NetworkMyNetworth, 2026-09-07: use the recursive founder-intent collaboration protocol to update appropriate GitHub repositories with organized, shared startup access and SOPs; discussion board or accessible file accepted.",
+      "source_location": "Current user message; transcribed scope record, not cryptographic founder authentication",
+      "source_date_or_version": "2026-09-07",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "No new runtime, authority escalation, schedule, social account or deployment is activated by SOP installation.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "DALEOBANKS",
+        "WealthMachineIntelligence",
+        "RAILSCOUT",
+        "PumpStation"
+      ],
+      "rationale": "Cross-repository work needs one discoverable record while preserving existing ownership, evidence and review.",
+      "conflicts": [
+        "Adoption/merge is not authorized by permission to prepare repository updates; unresolved prior ownership decisions remain open."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "implementation_refs": [
+        "AGENTS.md",
+        "docs/collaboration/START_HERE.md",
+        ".github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez (adoption); assigned contributor (bounded implementation)",
+      "next_review_trigger": "Five completed pilot PRs, changed authority, or failed startup/handoff",
+      "unresolved_questions": [
+        "Which non-discovering AI clients require a saved startup hook?",
+        "Will the pilot reduce stale-context rework?"
+      ],
+      "created_at": "2026-09-07T20:52:22.400157+00:00",
+      "updated_at": "2026-09-07T20:52:22.400157+00:00"
+    },
+    {
+      "intent_id": "INTENT-COLLAB-20260907-005",
+      "title": "State additional GitHub setup honestly",
+      "statement": "Identify any extra actions Alfonso must take inside GitHub or connected AI tools to make this organization effective.",
+      "source": "Founder chat directive, NetworkMyNetworth, 2026-09-07: use the recursive founder-intent collaboration protocol to update appropriate GitHub repositories with organized, shared startup access and SOPs; discussion board or accessible file accepted.",
+      "source_location": "Current user message; transcribed scope record, not cryptographic founder authentication",
+      "source_date_or_version": "2026-09-07",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Draft adoption, required checks, review settings and optional Discussion pinning are explicit rather than falsely claimed as configured.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "DALEOBANKS",
+        "WealthMachineIntelligence",
+        "RAILSCOUT",
+        "PumpStation"
+      ],
+      "rationale": "Cross-repository work needs one discoverable record while preserving existing ownership, evidence and review.",
+      "conflicts": [
+        "Adoption/merge is not authorized by permission to prepare repository updates; unresolved prior ownership decisions remain open."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/BOOTSTRAP_EVIDENCE.md"
+      ],
+      "implementation_refs": [
+        "AGENTS.md",
+        "docs/collaboration/START_HERE.md",
+        ".github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez (adoption); assigned contributor (bounded implementation)",
+      "next_review_trigger": "Five completed pilot PRs, changed authority, or failed startup/handoff",
+      "unresolved_questions": [
+        "Which non-discovering AI clients require a saved startup hook?",
+        "Will the pilot reduce stale-context rework?"
+      ],
+      "created_at": "2026-09-07T20:52:22.400157+00:00",
+      "updated_at": "2026-09-07T20:52:22.400157+00:00"
+    }
+  ]
+}

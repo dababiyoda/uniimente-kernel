@@ -1,0 +1,134 @@
+name: Collaboration receipt
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review, converted_to_draft]
+  workflow_call:
+permissions: {}
+jobs:
+  collaboration-receipt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate declared handoff against PR revisions
+        shell: python
+        run: |
+          """Validate a self-reported collaboration receipt; never execute PR content.
+          
+          This is a metadata/completeness check, not proof of reading, testing, consent,
+          review independence or runtime authorization. No checkout, secrets or network.
+          """
+          import json
+          import os
+          import re
+          import sys
+          from pathlib import Path
+          
+          START = '<!-- uniimente:receipt -->'
+          END = '<!-- /uniimente:receipt -->'
+          SHA = re.compile(r'[0-9a-f]{40}')
+          PROTOCOL = re.compile(
+              r'https://github\.com/dababiyoda/uniimente-kernel/blob/'
+              r'([0-9a-f]{40})/docs/collaboration/START_HERE\.md'
+          )
+          
+          class ReceiptError(ValueError):
+              pass
+          
+          def require(condition, message):
+              if not condition:
+                  raise ReceiptError(message)
+          
+          def text(value):
+              return isinstance(value, str) and bool(value.strip())
+          
+          def strings(value, minimum=0):
+              return isinstance(value, list) and len(value) >= minimum and all(text(x) for x in value)
+          
+          def keys(value, names, label):
+              require(isinstance(value, dict) and set(value) == set(names.split()),
+                      label + ': missing or unexpected fields')
+          
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  require(key not in result, 'duplicate JSON key')
+                  result[key] = value
+              return result
+          
+          def reject_constant(value):
+              raise ReceiptError('non-finite JSON number')
+          
+          def validate(event):
+              require(isinstance(event, dict), 'invalid event')
+              pr = event.get('pull_request')
+              require(isinstance(pr, dict), 'pull_request event required')
+              body = pr.get('body') or ''
+              require(isinstance(body, str) and len(body) <= 65536, 'invalid or oversized PR body')
+              require(body.count(START) == 1 and body.count(END) == 1, 'exactly one receipt required')
+              start, end = body.index(START) + len(START), body.index(END)
+              require(start < end, 'receipt markers out of order')
+              block = re.fullmatch(r'\s*```json\s*\n(.*?)\n```\s*', body[start:end], re.S)
+              require(block is not None, 'receipt must be one fenced JSON object')
+              try:
+                  data = json.loads(block.group(1), object_pairs_hook=unique_object,
+                                    parse_constant=reject_constant)
+              except (json.JSONDecodeError, RecursionError) as exc:
+                  raise ReceiptError('invalid receipt JSON') from exc
+              keys(data, 'version repository base_sha head_sha protocol_ref intent_refs read_set '
+                   'scope classification deliberation_ref validation limitations rollback handoff review', 'receipt')
+              require(type(data['version']) is int and data['version'] == 1, 'unsupported receipt version')
+              repo = event.get('repository', {}).get('full_name')
+              require(text(repo) and data['repository'] == repo, 'repository mismatch')
+              for label, pr_key in [('base_sha', 'base'), ('head_sha', 'head')]:
+                  value = data[label]
+                  require(isinstance(value, str) and SHA.fullmatch(value) is not None, label + ': full SHA required')
+                  require(value == pr.get(pr_key, {}).get('sha'), label + ': stale or mismatched revision')
+              require(isinstance(data['protocol_ref'], str), 'protocol_ref must be text')
+              protocol = PROTOCOL.fullmatch(data['protocol_ref'])
+              require(protocol is not None, 'protocol_ref must name the pinned canonical START_HERE file')
+              require(strings(data['intent_refs'], 1), 'intent lineage required')
+              require(text(data['scope']) and text(data['rollback']), 'scope and rollback required')
+              require(strings(data['limitations']), 'limitations must be a text array; retain negative evidence')
+              require(data['classification'] in ('lightweight', 'standard', 'constitutional'), 'invalid classification')
+              if data['classification'] != 'lightweight':
+                  require(text(data['deliberation_ref']), 'material changes require a two-pass deliberation reference')
+              else:
+                  require(data['deliberation_ref'] is None or text(data['deliberation_ref']), 'invalid deliberation reference')
+              reads = data['read_set']
+              require(isinstance(reads, list) and len(reads) >= 2, 'read_set must include AGENTS and canonical guide')
+              paths = set()
+              for read in reads:
+                  keys(read, 'path revision', 'read_set entry')
+                  require(text(read['path']) and isinstance(read['revision'], str)
+                          and SHA.fullmatch(read['revision']) is not None, 'read_set requires full revisions')
+                  require(read['path'] not in paths, 'duplicate read_set path')
+                  paths.add(read['path'])
+              require('AGENTS.md' in paths and data['protocol_ref'] in paths, 'missing required startup sources')
+              guide = next(r for r in reads if r['path'] == data['protocol_ref'])
+              require(guide['revision'] == protocol.group(1), 'canonical read revision mismatch')
+              checks = data['validation']
+              require(isinstance(checks, list) and len(checks) >= 1, 'validation result required, including not_run')
+              for check in checks:
+                  keys(check, 'command result evidence', 'validation entry')
+                  require(text(check['command']) and text(check['evidence']), 'validation command and evidence required')
+                  require(check['result'] in ('pass', 'fail', 'not_run'), 'invalid validation result')
+              keys(data['handoff'], 'owner next_action stop_condition', 'handoff')
+              require(all(text(v) for v in data['handoff'].values()), 'handoff fields required')
+              keys(data['review'], 'status reference', 'review')
+              review = data['review']
+              require(review['status'] in ('pending', 'complete'), 'invalid review status')
+              require(review['reference'] is None or text(review['reference']), 'invalid review reference')
+              if review['status'] == 'complete':
+                  require(text(review['reference']), 'completed review needs a reference; human must verify it')
+              if pr.get('draft') is not True and data['classification'] != 'lightweight':
+                  require(review['status'] == 'complete', 'material changes remain draft until review is recorded')
+              return data
+          
+          if __name__ == '__main__':
+              try:
+                  event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text(encoding='utf-8'))
+                  validate(event)
+              except (ReceiptError, OSError, KeyError, TypeError, AttributeError, json.JSONDecodeError) as exc:
+                  print('Collaboration receipt refused: ' + str(exc), file=sys.stderr)
+                  sys.exit(1)
+              print('Receipt shape and event revisions checked. Reading, truth, authorization and review are NOT attested.')

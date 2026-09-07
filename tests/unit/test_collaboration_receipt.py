@@ -4,7 +4,7 @@ from pathlib import Path
 import textwrap
 import unittest
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / '.github/workflows/collaboration-receipt.yml'
 source = textwrap.dedent(WORKFLOW.read_text().split('        run: |\n', 1)[1])
 namespace = {'__name__': 'receipt_validator_under_test'}

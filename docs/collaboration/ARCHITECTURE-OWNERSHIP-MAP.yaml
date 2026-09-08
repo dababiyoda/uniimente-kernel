@@ -20,7 +20,7 @@ architecture_ownership_records:
       persistent_missions: egregore/ (not activated)
       mechanism_selection: mission-resolution routing above omnimorph/
       organization_design: omnimorph/ (subordinate, not activated)
-    distribution: uniimente-kernel-boundaries 0.1.0, exact source revision required
+    distribution: uniimente-kernel-boundaries 0.1.1, exact source revision required; 0.1.0 retained as pre-format-repair evidence
     consumers:
       - name: WealthMachineIntelligence
         integration: pinned_dependency

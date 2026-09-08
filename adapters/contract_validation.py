@@ -34,7 +34,22 @@ def validator(name):
         raise ValueError('unregistered contract')
     schema = strict_json(files('contracts').joinpath(name + '.schema.json').read_bytes())
     Draft202012Validator.check_schema(schema)
-    return Draft202012Validator(schema, format_checker=FormatChecker())
+    checker = FormatChecker()
+    def formats(node):
+        if isinstance(node, dict):
+            if 'format' in node:
+                yield node['format']
+            for value in node.values():
+                yield from formats(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from formats(value)
+    missing = set(formats(schema)) - checker.checkers.keys()
+    if missing:
+        # jsonschema otherwise treats unavailable format implementations as
+        # successful checks. A smaller environment must not weaken admission.
+        raise ValueError('required schema format implementation unavailable: ' + ', '.join(sorted(missing)))
+    return Draft202012Validator(schema, format_checker=checker)
 
 
 def validate_contract(payload, name):

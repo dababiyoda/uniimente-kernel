@@ -331,3 +331,26 @@ Stop or regress a consolidation when it:
 - generated or archived bytes in authored source: trending to 0;
 - time for a new contributor to identify canonical owners and run tests: under 30 minutes;
 - founder intentions silently dropped: 0.
+# SR-001 format-check correction (implementation check, 2026-09-08)
+
+After initial draft PR #98 commit a84f408494bec219a397b67c9b831e80150f1c27,
+two additional controls showed that jsonschema silently accepted a malformed
+date-time when its optional checker was unavailable. This corrects the earlier
+claim of complete runtime format validation; the earlier green checks did not
+establish that property. The initial failures remain in evidence file 18.
+
+Boundary package 0.1.1 requires rfc3339-validator 0.1.4 (installed MIT license
+inspected). The canonical validator now refuses to load any registered schema
+whose declared formats have no implementation. No cryptographic primitive,
+authority, schema meaning, old evidence or frozen experiment threshold changed.
+The existing wire contracts remain peripheral contracts; their compatibility is
+not a claim that optional peripheral fields satisfy canonical mission lineage.
+Canonical translation still requires the original observation/assessment time.
+
+Executed checks after repair: 138 focused passes; broader suite 522 passes and
+17 failures. These 17 are regressions against historical frozen migration/repair
+experiments, not PR #94's three reported baseline failures. They remain an
+adoption blocker; frozen hashes and old unsafe retry assumptions were not retuned.
+Main baseline previously passed 495 tests. See evidence 18-20 and the final
+subject binding. Documentation review perspectives remain one assistant's work,
+not independent review or a third strengthening pass.

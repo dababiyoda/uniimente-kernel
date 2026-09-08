@@ -1,0 +1,21 @@
+Discovered after initial draft #98: jsonschema's optional date-time checker was absent in this environment. Full format enforcement was NOT proven by prior green conformance checks. SR10 requires fail-closed full validation; this is a newly reproduced defect, not a retuned threshold.
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python -m pytest -q tests/unit/test_required_schema_formats.py --tb=short
+Exit: 1
+
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_invalid_grant_timestamp_is_not_accepted_by_schema ____________
+tests/unit/test_required_schema_formats.py:13: in test_invalid_grant_timestamp_is_not_accepted_by_schema
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+__________________ test_missing_format_implementation_refuses __________________
+tests/unit/test_required_schema_formats.py:21: in test_missing_format_implementation_refuses
+    with pytest.raises(ValueError, match='format'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=========================== short test summary info ============================
+FAILED tests/unit/test_required_schema_formats.py::test_invalid_grant_timestamp_is_not_accepted_by_schema
+FAILED tests/unit/test_required_schema_formats.py::test_missing_format_implementation_refuses
+2 failed in 0.21s
+

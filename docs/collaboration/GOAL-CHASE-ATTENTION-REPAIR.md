@@ -120,7 +120,51 @@ session and durable replay, followed by new authorized intake when needed.
 
 ## Verification and handoff
 
-Record execution evidence alongside this document before claiming repair success.
+Implementation and verification completed on 2026-09-08. Code commit:
+`be7df4a8a922f323d68f73e1c90e57781f0ca074`. Contract and initial regressions were
+committed first at `4eae52e`; the original v0 evaluator and seal did not change.
+
+- Baseline at PR #93 head: **569 passed**.
+- Initial regression run: **8 failed / 4 passed**. One failure was a fixture using
+  an invalid source name; the schema fixes that field to `sandbox:fixtures`.
+  Changing the source record's ID instead preserves the intended materiality test.
+- Corrected pre-repair run: **7 failed / 5 passed**. Both failed logs are retained.
+- First focused post-repair run: **86 passed**. Two additional replay cases then
+  exercised cross-variant duplicate identity and older intake.
+- Final full repository suite: **583 passed in 12.79s**, no failures or skips.
+- Institutional V1–V5 verifier passed, including false-closure rejection. Schema
+  references (14 schemas / 20 refs), authority singleton (six owners), and sealed
+  developmental declarations passed. The latter is a declaration check, not a
+  production containment proof.
+- Five-role/two-pass deliberation validator passed. Roles remain analyses by one
+  coding agent; independent review remains pending.
+
+The pre-existing `test_fresh_material_observation_invalidates_old_approval` had
+only changed a timestamp/ID despite its name. Its quote now changes from 43000 to
+42000 cents: it still verifies that changed decision evidence invalidates the old
+approval. This corrects the fixture's meaning; it does not weaken the approval
+test or alter the frozen outcome evaluator.
+
+The retained [report](goal-chase-attention-evidence/report.json) contains every
+required final-report field, source hashes, environment, negative controls and
+gate mapping. The [replay result](goal-chase-attention-evidence/replay-result.json)
+records a new four-process episode: begin, unchanged intake, inspect, approve.
+The pending snapshot and exact original question survive restart; the original
+synthetic approval resumes once; canonical receipts and causal ancestry reconcile.
+The saved trace includes the new reconfirmation event and its original basis.
+
+**Verified Persistent Goal Chase Closures: 1, SIMULATED / SANDBOX.** This re-verifies
+the same v0 target, not an additional production outcome. One synthetic request
+and interruption, two unique dispatches (research and approved prototype), zero
+unreconciled actions, duplicate consequences, untraceable transitions or
+unauthorized external effects. Fixture attention is two minutes per sandbox
+outcome; actual founder intervention minutes per verified outcome is unmeasured.
+
+The first dependency download stopped at a network-approval boundary. No alternate
+network route was used. After the user directed continuation, the normal install
+confirmed all declared dependencies available. Python 3.12.13, pytest 9.1.1,
+PyYAML 6.0.3 and jsonschema 4.26.0 were used locally.
+
 No production migration is necessary. Rollback: leave the draft unmerged or revert
 the repair commits while retaining tests, failed runs and this decision. Historical
 reconfirmation events require this reader; older code is not an approved reader

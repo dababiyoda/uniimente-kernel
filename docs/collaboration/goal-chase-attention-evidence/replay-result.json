@@ -1,0 +1,83 @@
+{
+  "scope": "SIMULATED / SANDBOX",
+  "fresh_child_processes": 4,
+  "pending_state_equal_after_restart": true,
+  "original_question_preserved": true,
+  "authenticated_synthetic_decision": true,
+  "exact_action_count": 2,
+  "complete_trace_assertion": "tests.integration.test_goal_chase.assert_trace",
+  "ledger_chain_valid": true,
+  "metrics": {
+    "reality_status": "SIMULATED",
+    "founder_interruptions": 1,
+    "decision_requests": 1,
+    "duplicate_suppressed": 2,
+    "sandbox_intervention_minutes": 2.0,
+    "sandbox_verified_outcomes": 1,
+    "sandbox_intervention_minutes_per_verified_outcome": 2.0,
+    "founder_intervention_minutes_per_verified_outcome": null,
+    "real_verified_outcomes": 0,
+    "unauthorized_external_effects": 0,
+    "time_waiting_on_founder_seconds": 300.0,
+    "time_to_resume_after_decision_seconds": [
+      0
+    ],
+    "work_started_under_standing_authority_fraction": 0.5,
+    "avoidable_escalations": null,
+    "unreconciled_actions": 0,
+    "persistent_closure_requires": "all acceptance gates plus separate fresh-process proof"
+  },
+  "verified_persistent_goal_chase_closures": 1,
+  "duplicate_consequences": 0,
+  "untraceable_transitions": 0,
+  "commands": [
+    {
+      "command": [
+        "python",
+        "-m",
+        "egregore.goal_chase_demo",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/sandbox.jsonl",
+        "--phase",
+        "begin",
+        "--output",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/begin.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": "fresh child process: observe unchanged source records, tick, report",
+      "script": "\nimport json, sys\nfrom datetime import timedelta\nfrom pathlib import Path\nfrom egregore.goal_chase_demo import T0, DEMO_KEY, report, render\nfrom egregore.goal_chase_sandbox import SyntheticFounder, open_sandbox, observation\nnow = T0 + timedelta(minutes=5)\nwith open_sandbox(sys.argv[1], founder=SyntheticFounder(DEMO_KEY), clock=lambda: now) as chase:\n    chase.observe(observation(now=now, oid=\"sandbox:OBS-RECONFIRMED\"))\n    chase.tick(\"sandbox:unchanged-intake\")\n    result = report(chase)\nPath(sys.argv[2]).write_text(json.dumps(result, indent=2) + \"\\n\")\nprint(render(result, \"unchanged-intake\"))\n",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "egregore.goal_chase_demo",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/sandbox.jsonl",
+        "--phase",
+        "inspect",
+        "--output",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/inspect.json",
+        "--expected-snapshot-hash",
+        "sha256:f055986927ce632f2e07f4c7ab0fe5ea781be39c35288f54ab629e1de9003b21"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "egregore.goal_chase_demo",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/sandbox.jsonl",
+        "--phase",
+        "approve",
+        "--output",
+        "/workspace/scratch/42f5246d2f45/uniimente-kernel/docs/collaboration/goal-chase-attention-evidence/approve.json",
+        "--expected-snapshot-hash",
+        "sha256:f055986927ce632f2e07f4c7ab0fe5ea781be39c35288f54ab629e1de9003b21"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

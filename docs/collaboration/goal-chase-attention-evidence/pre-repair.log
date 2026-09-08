@@ -1,0 +1,632 @@
+FFF..F.FF.FF                                                             [100%]
+=================================== FAILURES ===================================
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[id_only] _
+
+host = (<function host.<locals>.opened at 0x7f027e1956c0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e191b50>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'id_only'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:c345d53acb3c0d2e6e4b51b6b00479845cb303a54edbb3b13492644f32125015'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:c345d53acb3c0d2e6e4b51b6b00479845cb303a54edbb3b13492644f32125015'}} = <egregore.goal_chase.GoalChase object at 0x7f027e193cb0>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[timestamp] _
+
+host = (<function host.<locals>.opened at 0x7f027e204b80>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e1b2f60>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'timestamp'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:793ac85fb8e7e339e3f448963086396eb94cdb7269e1baf02f976acdac20814a'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:793ac85fb8e7e339e3f448963086396eb94cdb7269e1baf02f976acdac20814a'}} = <egregore.goal_chase.GoalChase object at 0x7f027e1b18b0>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[record_order] _
+
+host = (<function host.<locals>.opened at 0x7f027e204fe0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e21de50>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'record_order'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:993eca25d69caeda388c4d77d01bcbefc632551e04602866cb8fcc5e6c40163a'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:993eca25d69caeda388c4d77d01bcbefc632551e04602866cb8fcc5e6c40163a'}} = <egregore.goal_chase.GoalChase object at 0x7f027e229f40>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+________ test_changed_facts_still_require_a_new_exact_decision[source] _________
+
+host = (<function host.<locals>.opened at 0x7f027e2058a0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e1b34a0>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'source'
+
+    @pytest.mark.parametrize("change", ["quote", "eligibility", "source", "negative_evidence"])
+    def test_changed_facts_still_require_a_new_exact_decision(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            old = chase.pending_messages()[0]
+            time[0] += timedelta(seconds=10)
+            obs = observation(now=time[0], oid="sandbox:material-change")
+            if change == "quote": obs["payload"]["records"][0]["cost_cents"] += 1
+            if change == "eligibility": obs["payload"]["records"][0]["usable"] = False
+            if change == "source": obs["source"] = "sandbox:different-source"
+            if change == "negative_evidence": obs["payload"]["records"][-1]["cost_cents"] += 1
+>           chase.observe(obs)
+
+tests/integration/test_goal_chase_attention.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+egregore/goal_chase.py:251: in observe
+    obs = validate("observation", value)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+egregore/goal_chase.py:51: in validate
+    format_checker=FormatChecker()).validate(value)
+                                    ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Draft202012Validator(schema={'$defs': {'action': {'additionalProperties': False, 'properties': {'action_class': {'minL... ...}, format_checker=<FormatChecker checkers=['date', 'email', 'idn-email', 'ipv4', 'ipv6', 'regex', 'time', 'uuid']>)
+args = ({'goal_id': 'sandbox:GOAL-001', 'key': 'sources', 'kind': 'SIMULATION', 'observation_id': 'sandbox:material-change', ...},)
+kwargs = {}
+
+    def validate(self, *args, **kwargs):
+        for error in self.iter_errors(*args, **kwargs):
+>           raise error
+E           jsonschema.exceptions.ValidationError: {'goal_id': 'sandbox:GOAL-001', 'key': 'sources', 'kind': 'SIMULATION', 'observation_id': 'sandbox:material-change', 'observed_at': '2026-09-05T12:00:10Z', 'payload': {'records': [{'cost_cents': 43000, 'source_id': 'sandbox:source-A', 'usable': True}, {'cost_cents': 52000, 'source_id': 'sandbox:source-B', 'usable': True}, {'cost_cents': 9000, 'source_id': 'sandbox:stale-source', 'usable': False}]}, 'source': 'sandbox:different-source'} is not valid under any of the given schemas
+E           
+E           Failed validating 'oneOf' in schema:
+E               {'$schema': 'https://json-schema.org/draft/2020-12/schema',
+E                '$id': 'https://uniimente.internal/contracts/goal-chase.schema.json',
+E                'title': 'Sandbox Infinite Goal Chase boundary v0',
+E                'description': 'Strict sandbox-only contracts. Signed input '
+E                               'authenticates a synthetic interaction, never a '
+E                               'production founder. Scope narrows the canonical Gate.',
+E                'oneOf': [{'$ref': '#/$defs/observation'}],
+E                '$defs': {'action': {'type': 'object',
+E                                     'additionalProperties': False,
+E                                     'properties': {'action_id': {'type': 'string',
+E                                                                  'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                    'capability': {'type': 'string',
+E                                                                   'minLength': 1},
+E                                                    'version': {'const': '1.0.0'},
+E                                                    'bottleneck': {'type': 'string',
+E                                                                   'minLength': 1},
+E                                                    'rationale': {'type': 'string',
+E                                                                  'minLength': 1},
+E                                                    'alternatives': {'type': 'array',
+E                                                                     'items': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                                     'uniqueItems': True,
+E                                                                     'minItems': 1},
+E                                                    'observation_key': {'type': 'string',
+E                                                                        'minLength': 1},
+E                                                    'action_class': {'type': 'string',
+E                                                                     'minLength': 1},
+E                                                    'consequence_class': {'enum': ['read_only',
+E                                                                                   'internal_write',
+E                                                                                   'external_contact',
+E                                                                                   'financial',
+E                                                                                   'irreversible']},
+E                                                    'cost_cents': {'type': 'integer',
+E                                                                   'minimum': 0,
+E                                                                   'maximum': 100000000},
+E                                                    'target': {'type': 'string',
+E                                                               'pattern': '^sandbox:'},
+E                                                    'expected_outcome': {'type': 'string',
+E                                                                         'pattern': '^SIMULATED:'},
+E                                                    'reversibility': {'enum': ['reversible',
+E                                                                               'costly_to_reverse',
+E                                                                               'irreversible']}},
+E                                     'required': ['action_id',
+E                                                  'capability',
+E                                                  'version',
+E                                                  'bottleneck',
+E                                                  'rationale',
+E                                                  'alternatives',
+E                                                  'observation_key',
+E                                                  'action_class',
+E                                                  'consequence_class',
+E                                                  'cost_cents',
+E                                                  'target',
+E                                                  'expected_outcome',
+E                                                  'reversibility']},
+E                          'goal': {'type': 'object',
+E                                   'additionalProperties': False,
+E                                   'properties': {'goal_id': {'type': 'string',
+E                                                              'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                  'founder_intent_lineage': {'type': 'array',
+E                                                                             'items': {'type': 'string',
+E                                                                                       'minLength': 1},
+E                                                                             'uniqueItems': True,
+E                                                                             'minItems': 1},
+E                                                  'statement': {'type': 'string',
+E                                                                'minLength': 1},
+E                                                  'observable_success_state': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                  'current_state': {'type': 'string',
+E                                                                    'minLength': 1},
+E                                                  'reality_status': {'const': 'SIMULATED'},
+E                                                  'priority': {'type': 'integer',
+E                                                               'minimum': 0,
+E                                                               'maximum': 100},
+E                                                  'portfolio_role': {'enum': ['primary',
+E                                                                              'supporting',
+E                                                                              'horizon']},
+E                                                  'lifecycle_state': {'enum': ['ACTIVE',
+E                                                                               'WAITING',
+E                                                                               'DEFERRED']},
+E                                                  'dependencies': {'type': 'array',
+E                                                                   'items': {'type': 'string',
+E                                                                             'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                                   'uniqueItems': True},
+E                                                  'assumptions': {'type': 'array',
+E                                                                  'items': {'type': 'string',
+E                                                                            'minLength': 1},
+E                                                                  'uniqueItems': True},
+E                                                  'known_facts': {'type': 'array',
+E                                                                  'items': {'type': 'string',
+E                                                                            'minLength': 1},
+E                                                                  'uniqueItems': True},
+E                                                  'unknowns': {'type': 'array',
+E                                                               'items': {'type': 'string',
+E                                                                         'minLength': 1},
+E                                                               'uniqueItems': True},
+E                                                  'constraints': {'type': 'array',
+E                                                                  'items': {'type': 'string',
+E                                                                            'minLength': 1},
+E                                                                  'uniqueItems': True,
+E                                                                  'minItems': 1},
+E                                                  'prohibited_actions': {'type': 'array',
+E                                                                         'items': {'type': 'string',
+E                                                                                   'minLength': 1},
+E                                                                         'uniqueItems': True},
+E                                                  'legal_or_policy_boundaries': {'type': 'array',
+E                                                                                 'items': {'type': 'string',
+E                                                                                           'minLength': 1},
+E                                                                                 'uniqueItems': True,
+E                                                                                 'minItems': 1},
+E                                                  'budget_boundary': {'type': 'object',
+E                                                                      'additionalProperties': False,
+E                                                                      'properties': {'ceiling_cents': {'type': 'integer',
+E                                                                                                       'minimum': 0,
+E                                                                                                       'maximum': 100000000},
+E                                                                                     'standing_cents': {'const': 0}},
+E                                                                      'required': ['ceiling_cents',
+E                                                                                   'standing_cents']},
+E                                                  'authority_refs': {'type': 'array',
+E                                                                     'items': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                                     'uniqueItems': True,
+E                                                                     'minItems': 1},
+E                                                  'evidence_requirements': {'type': 'object',
+E                                                                            'additionalProperties': False,
+E                                                                            'properties': {'kind': {'const': 'SIMULATION'},
+E                                                                                           'max_age_seconds': {'type': 'integer',
+E                                                                                                               'minimum': 1,
+E                                                                                                               'maximum': 86400}},
+E                                                                            'required': ['kind',
+E                                                                                         'max_age_seconds']},
+E                                                  'success_metrics': {'type': 'array',
+E                                                                      'items': {'type': 'string',
+E                                                                                'minLength': 1},
+E                                                                      'uniqueItems': True,
+E                                                                      'minItems': 1},
+E                                                  'failure_conditions': {'type': 'array',
+E                                                                         'items': {'type': 'string',
+E                                                                                   'minLength': 1},
+E                                                                         'uniqueItems': True,
+E                                                                         'minItems': 1},
+E                                                  'kill_conditions': {'type': 'array',
+E                                                                      'items': {'type': 'string',
+E                                                                                'minLength': 1},
+E                                                                      'uniqueItems': True,
+E                                                                      'minItems': 1},
+E                                                  'review_trigger': {'type': 'string',
+E                                                                     'minLength': 1},
+E                                                  'active_bottleneck': {'type': 'null'},
+E                                                  'next_decision': {'type': 'null'},
+E                                                  'next_action': {'type': 'null'},
+E                                                  'owner': {'const': 'alfonso'},
+E                                                  'created_at': {'type': 'string',
+E                                                                 'format': 'date-time'},
+E                                                  'updated_at': {'type': 'string',
+E                                                                 'format': 'date-time'},
+E                                                  'actions': {'type': 'array',
+E                                                              'minItems': 1,
+E                                                              'maxItems': 16,
+E                                                              'items': {'$ref': '#/$defs/action'}}},
+E                                   'required': ['goal_id',
+E                                                'founder_intent_lineage',
+E                                                'statement',
+E                                                'observable_success_state',
+E                                                'current_state',
+E                                                'reality_status',
+E                                                'priority',
+E                                                'portfolio_role',
+E                                                'lifecycle_state',
+E                                                'dependencies',
+E                                                'assumptions',
+E                                                'known_facts',
+E                                                'unknowns',
+E                                                'constraints',
+E                                                'prohibited_actions',
+E                                                'legal_or_policy_boundaries',
+E                                                'budget_boundary',
+E                                                'authority_refs',
+E                                                'evidence_requirements',
+E                                                'success_metrics',
+E                                                'failure_conditions',
+E                                                'kill_conditions',
+E                                                'review_trigger',
+E                                                'active_bottleneck',
+E                                                'next_decision',
+E                                                'next_action',
+E                                                'owner',
+E                                                'created_at',
+E                                                'updated_at',
+E                                                'actions']},
+E                          'observation': {'type': 'object',
+E                                          'additionalProperties': False,
+E                                          'properties': {'observation_id': {'type': 'string',
+E                                                                            'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                         'goal_id': {'type': 'string',
+E                                                                     'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                         'key': {'type': 'string',
+E                                                                 'minLength': 1},
+E                                                         'kind': {'enum': ['OBSERVATION',
+E                                                                           'EXTERNAL_EVIDENCE',
+E                                                                           'INFERENCE',
+E                                                                           'MODEL_OUTPUT',
+E                                                                           'ASSUMPTION',
+E                                                                           'PREDICTION',
+E                                                                           'SIMULATION',
+E                                                                           'FOUNDER_STATEMENT',
+E                                                                           'DERIVED_STATE',
+E                                                                           'VERIFIED_OUTCOME']},
+E                                                         'observed_at': {'type': 'string',
+E                                                                         'format': 'date-time'},
+E                                                         'source': {'const': 'sandbox:fixtures'},
+E                                                         'payload': {'type': 'object',
+E                                                                     'additionalProperties': False,
+E                                                                     'properties': {'records': {'type': 'array',
+E                                                                                                'maxItems': 100,
+E                                                                                                'items': {'type': 'object',
+E                                                                                                          'additionalProperties': False,
+E                                                                                                          'properties': {'source_id': {'type': 'string',
+E                                                                                                                                       'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                                                                                         'cost_cents': {'type': 'integer',
+E                                                                                                                                        'minimum': 0,
+E                                                                                                                                        'maximum': 100000000},
+E                                                                                                                         'usable': {'type': 'boolean'}},
+E                                                                                                          'required': ['source_id',
+E                                                                                                                       'cost_cents',
+E                                                                                                                       'usable']}}},
+E                                                                     'required': ['records']}},
+E                                          'required': ['observation_id',
+E                                                       'goal_id',
+E                                                       'key',
+E                                                       'kind',
+E                                                       'observed_at',
+E                                                       'source',
+E                                                       'payload']},
+E                          'scope': {'type': 'object',
+E                                    'additionalProperties': False,
+E                                    'properties': {'goal_id': {'type': 'string',
+E                                                               'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                   'goal_digest': {'type': 'string',
+E                                                                   'minLength': 1},
+E                                                   'action': {'$ref': '#/$defs/action'},
+E                                                   'observation_digest': {'type': 'string',
+E                                                                          'minLength': 1},
+E                                                   'policy_digest': {'type': 'string',
+E                                                                     'minLength': 1},
+E                                                   'qualification_digest': {'type': 'string',
+E                                                                            'minLength': 1},
+E                                                   'worker_role': {'const': 'sandbox:goal-chase'},
+E                                                   'max_uses': {'const': 1},
+E                                                   'deadline': {'type': 'string',
+E                                                                'format': 'date-time'}},
+E                                    'required': ['goal_id',
+E                                                 'goal_digest',
+E                                                 'action',
+E                                                 'observation_digest',
+E                                                 'policy_digest',
+E                                                 'qualification_digest',
+E                                                 'worker_role',
+E                                                 'max_uses',
+E                                                 'deadline']},
+E                          'decision': {'type': 'object',
+E                                       'additionalProperties': False,
+E                                       'properties': {'request_id': {'type': 'string',
+E                                                                     'minLength': 1},
+E                                                      'goal_id': {'type': 'string',
+E                                                                  'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                      'scope': {'$ref': '#/$defs/scope'},
+E                                                      'answer': {'enum': ['APPROVE',
+E                                                                          'REJECT']},
+E                                                      'reason': {'type': 'string',
+E                                                                 'minLength': 1},
+E                                                      'conditions': {'type': 'array',
+E                                                                     'items': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                                     'uniqueItems': True},
+E                                                      'requested_modification': {'type': ['string',
+E                                                                                          'null']},
+E                                                      'intervention_minutes': {'type': ['number',
+E                                                                                        'null'],
+E                                                                               'minimum': 0,
+E                                                                               'maximum': 1440}},
+E                                       'required': ['request_id',
+E                                                    'goal_id',
+E                                                    'scope',
+E                                                    'answer',
+E                                                    'reason',
+E                                                    'conditions',
+E                                                    'requested_modification',
+E                                                    'intervention_minutes']},
+E                          'envelope': {'type': 'object',
+E                                       'additionalProperties': False,
+E                                       'properties': {'kind': {'enum': ['GOAL',
+E                                                                        'DECISION',
+E                                                                        'LIFECYCLE']},
+E                                                      'founder_identity': {'const': 'sandbox:alfonso'},
+E                                                      'reality_status': {'const': 'SIMULATED'},
+E                                                      'source_interaction': {'type': 'string',
+E                                                                             'pattern': '^sandbox:'},
+E                                                      'issued_at': {'type': 'string',
+E                                                                    'format': 'date-time'},
+E                                                      'expires_at': {'type': 'string',
+E                                                                     'format': 'date-time'},
+E                                                      'body': {'type': 'object'},
+E                                                      'signature': {'type': 'string',
+E                                                                    'pattern': '^[0-9a-f]{64}$'}},
+E                                       'required': ['kind',
+E                                                    'founder_identity',
+E                                                    'reality_status',
+E                                                    'source_interaction',
+E                                                    'issued_at',
+E                                                    'expires_at',
+E                                                    'body',
+E                                                    'signature']},
+E                          'lifecycle': {'type': 'object',
+E                                        'additionalProperties': False,
+E                                        'properties': {'goal_id': {'type': 'string',
+E                                                                   'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                       'state': {'enum': ['ACTIVE',
+E                                                                          'DEFERRED',
+E                                                                          'SUPERSEDED',
+E                                                                          'PROHIBITED',
+E                                                                          'ABANDONED_BY_FOUNDER']},
+E                                                       'reason': {'type': 'string',
+E                                                                  'minLength': 1}},
+E                                        'required': ['goal_id', 'state', 'reason']},
+E                          'message': {'type': 'object',
+E                                      'additionalProperties': False,
+E                                      'properties': {'message_id': {'type': 'string',
+E                                                                    'minLength': 1},
+E                                                     'goal_id': {'type': 'string',
+E                                                                 'pattern': '^sandbox:[A-Za-z0-9_-]+$'},
+E                                                     'kind': {'const': 'APPROVAL_REQUEST'},
+E                                                     'urgency': {'const': 'normal'},
+E                                                     'why_now': {'type': 'string',
+E                                                                 'minLength': 1},
+E                                                     'situation': {'type': 'string',
+E                                                                   'minLength': 1},
+E                                                     'what_has_already_been_done': {'type': 'array',
+E                                                                                    'items': {'type': 'string',
+E                                                                                              'minLength': 1},
+E                                                                                    'uniqueItems': True},
+E                                                     'current_bottleneck': {'type': 'string',
+E                                                                            'minLength': 1},
+E                                                     'recommendation': {'type': 'string',
+E                                                                        'minLength': 1},
+E                                                     'alternatives': {'type': 'array',
+E                                                                      'items': {'type': 'string',
+E                                                                                'minLength': 1},
+E                                                                      'uniqueItems': True,
+E                                                                      'minItems': 1},
+E                                                     'evidence_refs': {'type': 'array',
+E                                                                       'items': {'type': 'string',
+E                                                                                 'minLength': 1},
+E                                                                       'uniqueItems': True,
+E                                                                       'minItems': 1},
+E                                                     'uncertainty': {'type': 'string',
+E                                                                     'minLength': 1},
+E                                                     'requested_founder_action': {'type': 'string',
+E                                                                                  'minLength': 1},
+E                                                     'authority_requested': {'$ref': '#/$defs/scope'},
+E                                                     'budget_requested_cents': {'type': 'integer',
+E                                                                                'minimum': 0,
+E                                                                                'maximum': 100000000},
+E                                                     'deadline': {'type': 'string',
+E                                                                  'format': 'date-time'},
+E                                                     'consequence_of_approval': {'type': 'string',
+E                                                                                 'minLength': 1},
+E                                                     'consequence_of_rejection': {'type': 'string',
+E                                                                                  'minLength': 1},
+E                                                     'consequence_of_no_response': {'type': 'string',
+E                                                                                    'minLength': 1},
+E                                                     'reversibility': {'type': 'string',
+E                                                                       'minLength': 1},
+E                                                     'next_step_if_approved': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                     'next_step_if_rejected': {'type': 'string',
+E                                                                               'minLength': 1},
+E                                                     'dedupe_key': {'type': 'string',
+E                                                                    'minLength': 1},
+E                                                     'created_at': {'type': 'string',
+E                                                                    'format': 'date-time'},
+E                                                     'expires_at': {'type': 'string',
+E                                                                    'format': 'date-time'},
+E                                                     'reality_status': {'const': 'SIMULATED'}},
+E                                      'required': ['message_id',
+E                                                   'goal_id',
+E                                                   'kind',
+E                                                   'urgency',
+E                                                   'why_now',
+E                                                   'situation',
+E                                                   'what_has_already_been_done',
+E                                                   'current_bottleneck',
+E                                                   'recommendation',
+E                                                   'alternatives',
+E                                                   'evidence_refs',
+E                                                   'uncertainty',
+E                                                   'requested_founder_action',
+E                                                   'authority_requested',
+E                                                   'budget_requested_cents',
+E                                                   'deadline',
+E                                                   'consequence_of_approval',
+E                                                   'consequence_of_rejection',
+E                                                   'consequence_of_no_response',
+E                                                   'reversibility',
+E                                                   'next_step_if_approved',
+E                                                   'next_step_if_rejected',
+E                                                   'dedupe_key',
+E                                                   'created_at',
+E                                                   'expires_at',
+E                                                   'reality_status']}}}
+E           
+E           On instance:
+E               {'goal_id': 'sandbox:GOAL-001',
+E                'key': 'sources',
+E                'kind': 'SIMULATION',
+E                'observation_id': 'sandbox:material-change',
+E                'observed_at': '2026-09-05T12:00:10Z',
+E                'payload': {'records': [{'cost_cents': 43000,
+E                                         'source_id': 'sandbox:source-A',
+E                                         'usable': True},
+E                                        {'cost_cents': 52000,
+E                                         'source_id': 'sandbox:source-B',
+E                                         'usable': True},
+E                                        {'cost_cents': 9000,
+E                                         'source_id': 'sandbox:stale-source',
+E                                         'usable': False}]},
+E                'source': 'sandbox:different-source'}
+
+../igc-verify-venv/lib/python3.12/site-packages/jsonschema/validators.py:450: ValidationError
+___________ test_reconfirmation_cannot_extend_freshness_or_authority ___________
+
+host = (<function host.<locals>.opened at 0x7f027e2071a0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e662750>, [datetime.datetime(2026, 9, 5, 12, 0, 30, tzinfo=datetime.timezone.utc)])
+
+    def test_reconfirmation_cannot_extend_freshness_or_authority(host):
+        opened, founder, time = host
+        with opened() as chase:
+            spec = goal(now=T0)
+            spec["evidence_requirements"]["max_age_seconds"] = 60
+            start(chase, founder, spec=spec)
+            old = chase.pending_messages()[0]
+            time[0] += timedelta(seconds=30)
+            chase.observe(observation(now=time[0], oid="sandbox:repeat-before-expiry"))
+            chase.tick("still-the-same-question")
+>           assert chase.pending_messages() == [old]
+E           AssertionError: assert [{'alternativ...ontact', ...}] == [{'alternativ...ontact', ...}]
+E             
+E             At index 0 diff: {'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'action': {'action_class': 'spending_above_predefined_thresholds', 'action_id': 'sandbox:prototype', 'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'bottleneck': 'Bounded prototype decision', 'capability': 'prototype.simulate', 'consequence_class': 'financial', 'cost_cents': 43000, 'expected_outcome': 'SIMULATED: prototype completed', 'observation_key': 'sources', 'rationale': 'Use the smallest reversi...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/integration/test_goal_chase_attention.py:75: AssertionError
+_______ test_restart_preserves_question_and_observation_high_water_mark ________
+
+host = (<function host.<locals>.opened at 0x7f027e205da0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e1da2a0>, [datetime.datetime(2026, 9, 5, 12, 0, 20, tzinfo=datetime.timezone.utc)])
+
+    def test_restart_preserves_question_and_observation_high_water_mark(host):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            original = chase.pending_messages()[0]
+            time[0] += timedelta(seconds=20)
+            chase.observe(observation(now=time[0], oid="sandbox:repeat-newer"))
+            chase.tick("reconfirmed")
+            before = chase.snapshot()
+        with opened() as chase:
+            assert chase.snapshot() == before
+            chase.tick("restart-quiet")
+>           assert chase.pending_messages() == [original]
+E           AssertionError: assert [{'alternativ...ontact', ...}] == [{'alternativ...ontact', ...}]
+E             
+E             At index 0 diff: {'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'action': {'action_class': 'spending_above_predefined_thresholds', 'action_id': 'sandbox:prototype', 'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'bottleneck': 'Bounded prototype decision', 'capability': 'prototype.simulate', 'consequence_class': 'financial', 'cost_cents': 43000, 'expected_outcome': 'SIMULATED: prototype completed', 'observation_key': 'sources', 'rationale': 'Use the smallest reversi...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/integration/test_goal_chase_attention.py:106: AssertionError
+_______________ test_replayed_false_reconfirmation_fails_closed ________________
+
+host = (<function host.<locals>.opened at 0x7f027e12c360>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e0bb170>, [datetime.datetime(2026, 9, 5, 12, 0, tzinfo=datetime.timezone.utc)])
+
+    def test_replayed_false_reconfirmation_fails_closed(host):
+        opened, founder, _ = host
+        with opened() as chase:
+            start(chase, founder)
+            false = observation(now=T0, oid="sandbox:false-confirmation")
+            false["payload"]["records"][0]["cost_cents"] = 1
+>           with pytest.raises(IntegrityConflict):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE IntegrityConflict
+
+tests/integration/test_goal_chase_attention.py:139: Failed
+________ test_expired_question_is_not_delivered_when_transport_recovers ________
+
+host = (<function host.<locals>.opened at 0x7f027e207060>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7f027e21ddc0>, [datetime.datetime(2026, 9, 5, 13, 0, 1, tzinfo=datetime.timezone.utc)])
+
+    def test_expired_question_is_not_delivered_when_transport_recovers(host):
+        opened, founder, time = host
+        channel = CommunicationRouter()
+        channel.available = False
+        with opened(router=channel) as chase:
+            spec = goal(now=T0)
+            spec["evidence_requirements"]["max_age_seconds"] = 7200
+            start(chase, founder, spec=spec)
+            assert len(chase.requests) == 1 and not chase.deliveries
+            time[0] += timedelta(hours=1, seconds=1)  # goal/request expired; evidence still fresh
+            channel.available = True
+            chase.tick("transport-restored-after-expiry")
+>           assert not chase.pending_messages()
+E           AssertionError: assert not [{'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'act..._requested_cents': 43000, 'consequence_of_approval': 'One bounded simulated action; no real spending or contact', ...}]
+E            +  where [{'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'act..._requested_cents': 43000, 'consequence_of_approval': 'One bounded simulated action; no real spending or contact', ...}] = pending_messages()
+E            +    where pending_messages = <egregore.goal_chase.GoalChase object at 0x7f027e49c7d0>.pending_messages
+
+tests/integration/test_goal_chase_attention.py:158: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[id_only]
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[timestamp]
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[record_order]
+FAILED tests/integration/test_goal_chase_attention.py::test_changed_facts_still_require_a_new_exact_decision[source]
+FAILED tests/integration/test_goal_chase_attention.py::test_reconfirmation_cannot_extend_freshness_or_authority
+FAILED tests/integration/test_goal_chase_attention.py::test_restart_preserves_question_and_observation_high_water_mark
+FAILED tests/integration/test_goal_chase_attention.py::test_replayed_false_reconfirmation_fails_closed
+FAILED tests/integration/test_goal_chase_attention.py::test_expired_question_is_not_delivered_when_transport_recovers
+8 failed, 4 passed in 1.18s

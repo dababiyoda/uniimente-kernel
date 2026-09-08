@@ -1,0 +1,308 @@
+{
+  "decision_id": "IGC-ATTENTION-2026-09-08",
+  "title": "Preserve exact pending decisions during non-material observation intake",
+  "problem": "PR #93 renews questions for metadata churn and may deliver expired requests after transport recovery.",
+  "founder_intent_refs": [
+    "INTENT-IGC-2026-09-05",
+    "IGC-SANDBOX-V0",
+    "Alfonso current chat 2026-09-08: continue with implementation and verification; original master prompt sections 11, 27, 28, 38, 49"
+  ],
+  "baseline": "PR #93 at 21fb21ed803f43e47acb8e6420f6cdc4f74925cd: 569 tests pass on canonical main components.",
+  "alternatives": [
+    {
+      "name": "Preserve fresh basis and retain reconfirmation",
+      "description": "Small additive GoalChase event variant; canonical observation schema, signed requests and Gate unchanged.",
+      "advantages": [
+        "Stable question",
+        "Full source history"
+      ],
+      "disadvantages": [
+        "Conservative freshness",
+        "One additional event projection"
+      ],
+      "revival_evidence": "Regression and original acceptance suites pass."
+    },
+    {
+      "name": "Discard repeated intake",
+      "description": "Simplest code-only filter.",
+      "advantages": [
+        "Few lines"
+      ],
+      "disadvantages": [
+        "Lost input provenance"
+      ],
+      "revival_evidence": "Show complete source retention without a new store."
+    },
+    {
+      "name": "Rebind pending authority to equivalent fresh observations",
+      "description": "Strongest competing continuously fresh request design.",
+      "advantages": [
+        "Fewer stale waits"
+      ],
+      "disadvantages": [
+        "Authority interpretation changes",
+        "Larger signed scope semantics"
+      ],
+      "revival_evidence": "Separate approved contract and evidence that rebinding cannot expand authorization."
+    },
+    {
+      "name": "Rebuild on draft runtime/Task Fabric",
+      "description": "Original proposed #90 stack remains preserved.",
+      "advantages": [
+        "More detailed task machinery"
+      ],
+      "disadvantages": [
+        "Duplicates existing #93 loop",
+        "Unresolved runtime ownership"
+      ],
+      "revival_evidence": "Founder-ratified runtime owner and concrete integration requirement."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Keep original passing fixture suite and known attention/expiry gaps.",
+    "advantages": [
+      "No maintenance"
+    ],
+    "disadvantages": [
+      "Unnecessary interruptions and stale questions"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Repair redundant interruptions within the existing complete loop.",
+      "material_concerns": [
+        "Preserve actionable exact approvals."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-ATTENTION-REPAIR.md",
+        "tests/integration/test_goal_chase_attention.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Retain PR #93 and canonical main component owners.",
+      "material_concerns": [
+        "No duplicate event, authority or scheduler."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-ATTENTION-REPAIR.md",
+        "tests/integration/test_goal_chase_attention.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Keep authority bound to original exact evidence and expiration.",
+      "material_concerns": [
+        "Never use similarity to grant permission."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-ATTENTION-REPAIR.md",
+        "tests/integration/test_goal_chase_attention.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Derive intake ordering and dedupe from one replayable history.",
+      "material_concerns": [
+        "Avoid a persistent dedupe cache."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-ATTENTION-REPAIR.md",
+        "tests/integration/test_goal_chase_attention.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Retain confirmations and all adverse source data.",
+      "material_concerns": [
+        "Fixture savings cannot prove actual founder benefit."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-ATTENTION-REPAIR.md",
+        "tests/integration/test_goal_chase_attention.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Existing candidate loop passes its full baseline suite.",
+      "tier": "unit_test",
+      "reference": "PR #93 head / python -m pytest -q / 2026-09-08",
+      "finding": "569 passed in 11.73s."
+    },
+    {
+      "claim": "New controls expose attention defects.",
+      "tier": "unit_test",
+      "reference": "goal-chase-attention-evidence/pre-repair.log",
+      "finding": "8 failed / 4 passed; one failure was a source-constant fixture mismatch, retained and corrected to change source_id."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Synthetic fixtures do not establish production security or efficacy.",
+      "tier": "primary_source",
+      "reference": "egregore/goal_chase_sandbox.py",
+      "finding": "Public test signer and trusted fixed functions; no real founder or external outcome."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Keep one actionable request for unchanged facts without extending exact authority.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Keep evidence and reduce needless messages.",
+        "amplified_value": "Founder attention follows changed decisions while persistent source lineage survives."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Old basis can expire despite a more recent confirmation.",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Keep original expiry; await new intake after expiry instead of silently extending permission."
+      },
+      {
+        "id": "D2",
+        "statement": "Materiality filtering could hide changed evidence.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Compare every typed source record including negative data and origin; ignore only ID/time/list ordering."
+      },
+      {
+        "id": "D3",
+        "statement": "Additional event type could create duplicate truth.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Use existing observation schema and EventSpine; all basis and ordering state is disposable replay projection."
+      }
+    ],
+    "comparisons": {
+      "baseline": "#93 is retained; only intake/message eligibility changes.",
+      "do_nothing": "Lowest effort but documented interruption gap remains.",
+      "simplest_viable_alternative": "Discarding intake fails evidence retention.",
+      "strongest_competing_architecture": "Authority rebinding reduces stale waits but changes signed scope and needs separate proof.",
+      "reversible_experiment": "Stack a bounded draft on #93 with fixed evaluator and original acceptance suite."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Discard repeated intake",
+        "rejection_reason": "Erases evidence.",
+        "revival_evidence": "Full provenance retention."
+      },
+      {
+        "name": "Authority rebinding",
+        "rejection_reason": "Unnecessary authority semantics for this narrow repair.",
+        "revival_evidence": "Separately authorized exact-scope model and security proof."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack late-data rollback, cross-variant identity reuse, false reconfirmation and expired delivery.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "Late contradictory data can overwrite newer intake.",
+        "strengthening_response": "Replay-derived high-water mark; reject and retain older intake."
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "An observation ID can cross event variants or disguise changed facts.",
+        "strengthening_response": "Shared observation identity check and replay validation of exact material equivalence and basis digest."
+      },
+      {
+        "id": "W3",
+        "category": "other",
+        "statement": "Transport recovery may surface a question after its deadline.",
+        "strengthening_response": "Refuse expired pending-message delivery."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Conservative waiting protects exact authorization.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Separately reviewed continuous observation policy"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "experiment",
+        "rationale": "Negative, source, eligibility and quote changes have explicit controls.",
+        "owner": "Evidence reviewer",
+        "review_trigger": "Observation schema change"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "One spine owns both variants; replay checks and high-water test required.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any replay divergence"
+      }
+    ],
+    "final_design": "Retain original fresh decision basis with exact expiry; preserve all repeated intake in one basis-bound event; reject late/contradictory events and expired delivery. Keep all execution and qualification owners unchanged.",
+    "residual_risks": [
+      {
+        "risk": "Trusted host and public synthetic identity do not secure live operations.",
+        "mitigation": "Sandbox only; independent review before broader integration.",
+        "owner": "Alfonso and security reviewer",
+        "review_trigger": "Any real channel/capability proposal"
+      },
+      {
+        "risk": "Confirmation does not refresh the decision basis.",
+        "mitigation": "Explicitly await new intake after basis expiry; expose NEEDS_EVIDENCE.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "A reviewed need for continuous freshness"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Five analytical perspectives from one coding agent. No independent reviewer or manufactured consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not promote the retained basis rule beyond the stated sandbox.",
+        "rationale": "Freshness is policy-bound and fixtures cannot establish external truth.",
+        "evidence_threshold": "Independent evidence and production threat-model review.",
+        "owner": "Alfonso and security reviewer",
+        "review_trigger": "Broader integration or live effect"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso current chat 2026-09-08; code/tests/sandbox/draft only, not runtime authority or promotion"
+  },
+  "migration_plan": "No production migration; use a dedicated branch based on unmerged #93. Old recorded evidence remains unchanged. This reader is required for new reconfirmation events.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Keep draft inactive or revert repair commits.",
+      "Preserve branch, original evaluator, failed tests and pre-repair ledger; do not open new histories with an older reader."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Authority expands or expired approval executes",
+    "Changed evidence is hidden",
+    "Duplicate simulated action",
+    "Unchanged fresh facts cause repeat interruption",
+    "Evidence lost or a second control plane appears"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso / reviewing Kernel maintainer",
+  "review_trigger": "Regression suite, four-path replay and full repository verification, then independent draft review."
+}

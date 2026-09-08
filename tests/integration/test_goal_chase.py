@@ -230,7 +230,11 @@ def test_fresh_material_observation_invalidates_old_approval(host):
         start(chase, founder)
         old = chase.pending_messages()[0]
         time[0] += timedelta(seconds=1)
-        chase.observe(observation(now=time[0], oid="sandbox:new"))
+        # A different timestamp/ID is intake churn, not a changed decision fact.
+        # Change the quote so this remains a material-evidence authority test.
+        updated = observation(now=time[0], oid="sandbox:new")
+        updated["payload"]["records"][0]["cost_cents"] = 42000
+        chase.observe(updated)
         with pytest.raises(ContractError):
             chase.decide(founder.sign("DECISION", decision(old), now=time[0]))
         chase.tick("material-change")

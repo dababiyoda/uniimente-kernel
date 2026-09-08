@@ -1,5 +1,10 @@
 # Infinite Goal Chase — first founder-facing sandbox closure
 
+Continuation: [2026-09-08 attention repair](GOAL-CHASE-ATTENTION-REPAIR.md) preserves
+the original experiment below and adds verified controls for unchanged intake,
+replay ordering and expired-message suppression. Its complete report and failed
+pre-repair controls are retained separately; the frozen evaluator is unchanged.
+
 Decision: **EXPERIMENT**. Scope: **CONSTITUTIONAL / SANDBOX ONLY**.
 Source: Alfonso's current 2026-09-05 master coding directive, sections 0–53,
 and clarification: “First goal chase is related to the infinite goal chase and

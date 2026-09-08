@@ -72,3 +72,4 @@ The canonical ledger should ultimately become machine-readable. Until that imple
 - `supersedes`: none; the first-goal-chase branch and all useful doctrine remain preserved.
 - `superseded_by`: none.
 - `implementation_refs`: `egregore/goal_chase.py`, `egregore/goal_chase_sandbox.py`, `egregore/goal_chase_demo.py`, `contracts/goal-chase.schema.json`.
+- `continuation_refs`: Alfonso's 2026-09-08 instruction to continue implementation and verification; [IGC-ATTENTION-2026-09-08](collaboration/GOAL-CHASE-ATTENTION-REPAIR.md). Advances minimum necessary interruption with retained evidence and exact authority; depends on unmerged PR #93. Supersedes no founder intention or canonical runtime owner.

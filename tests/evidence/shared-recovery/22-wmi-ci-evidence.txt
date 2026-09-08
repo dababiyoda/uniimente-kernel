@@ -1,0 +1,53 @@
+CI evidence inspected 2026-09-08 UTC.
+WMI PR35 implementation fa11e133500c07cc87f12257ec6993f1b1e77a49.
+Run https://github.com/dababiyoda/WealthMachineIntelligence/actions/runs/34292000142
+Job 102280355312. GitHub reports success; inspected log confirms 127 passed,
+6 warnings in 8.66s (Python 3.11). This CI command targets tests/, unlike local
+root collection (129), which also includes src/test_workflow.py and the preserved
+WealthMachineIntelligenceEnhanced generation. Counts must remain distinct.
+The lint step uses --exit-zero and reports 2100 findings across the working tree,
+including the pinned producer checkout. CI success is not a clean lint result.
+Pip reports the intentionally excluded optional stack as unmet; full enterprise
+installation is not proven. Docker image build/run remains unverified.
+Below: selected dependency/warning/test/lint summary lines, not the full 2.3 MB
+CI log. Complete log is referenced by run/job above and was inspected, not
+copied wholesale into authored source. No independent reviewer is implied.
+
+2026-09-08T23:44:52.5602533Z   python-version: 3.11
+2026-09-08T23:44:52.7058298Z (node:2357) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-08T23:44:55.6827146Z Successfully installed wealthmachine-enterprise-1.0.0
+2026-09-08T23:45:02.1231503Z ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+2026-09-08T23:45:02.1232434Z wealthmachine-enterprise 1.0.0 requires alembic>=1.16.4, which is not installed.
+2026-09-08T23:45:02.1232985Z wealthmachine-enterprise 1.0.0 requires celery>=5.5.3, which is not installed.
+2026-09-08T23:45:02.1233499Z wealthmachine-enterprise 1.0.0 requires numpy>=2.2.2, which is not installed.
+2026-09-08T23:45:02.1234039Z wealthmachine-enterprise 1.0.0 requires pandas>=2.2.3, which is not installed.
+2026-09-08T23:45:02.1234581Z wealthmachine-enterprise 1.0.0 requires passlib[bcrypt]>=1.7.4, which is not installed.
+2026-09-08T23:45:02.1235180Z wealthmachine-enterprise 1.0.0 requires psycopg2-binary>=2.9.10, which is not installed.
+2026-09-08T23:45:02.1235764Z wealthmachine-enterprise 1.0.0 requires python-multipart>=0.0.20, which is not installed.
+2026-09-08T23:45:02.1236302Z wealthmachine-enterprise 1.0.0 requires redis>=6.2.0, which is not installed.
+2026-09-08T23:45:02.1236818Z wealthmachine-enterprise 1.0.0 requires scikit-learn>=1.6.1, which is not installed.
+2026-09-08T23:45:02.1237352Z wealthmachine-enterprise 1.0.0 requires tensorflow>=2.14.0, which is not installed.
+2026-09-08T23:45:02.1237889Z wealthmachine-enterprise 1.0.0 requires transformers>=4.48.1, which is not installed.
+2026-09-08T23:45:02.1238895Z wealthmachine-enterprise 1.0.0 requires uniimente-kernel-boundaries @ https://github.com/dababiyoda/uniimente-kernel/archive/3e059c20331d96e05a44daac1b097896aaabde93.tar.gz, which is not installed.
+2026-09-08T23:45:02.1245840Z Successfully installed annotated-doc-0.0.5 annotated-types-0.8.0 anyio-4.15.1 certifi-2026.7.22 cffi-2.1.1 click-8.5.0 cryptography-50.0.1 ecdsa-0.19.2 fastapi-0.141.1 greenlet-3.5.5 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.19 prometheus-client-0.26.0 pyasn1-0.6.4 pycparser-3.0 pydantic-2.13.5 pydantic-core-2.46.5 python-dotenv-1.2.3 python-jose-3.5.0 rsa-4.9.1 six-1.17.0 sqlalchemy-2.0.52 starlette-1.6.0 structlog-26.1.0 typing-extensions-4.16.0 typing-inspection-0.4.4 uvicorn-0.52.4
+2026-09-08T23:45:04.7287594Z Successfully installed iniconfig-2.3.0 packaging-26.3 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1 pytest-asyncio-1.4.0 ruff-0.16.6
+2026-09-08T23:45:08.4056920Z ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+2026-09-08T23:45:08.4057866Z wealthmachine-enterprise 1.0.0 requires alembic>=1.16.4, which is not installed.
+2026-09-08T23:45:08.4058414Z wealthmachine-enterprise 1.0.0 requires celery>=5.5.3, which is not installed.
+2026-09-08T23:45:08.4058926Z wealthmachine-enterprise 1.0.0 requires numpy>=2.2.2, which is not installed.
+2026-09-08T23:45:08.4059683Z wealthmachine-enterprise 1.0.0 requires pandas>=2.2.3, which is not installed.
+2026-09-08T23:45:08.4060280Z wealthmachine-enterprise 1.0.0 requires passlib[bcrypt]>=1.7.4, which is not installed.
+2026-09-08T23:45:08.4060876Z wealthmachine-enterprise 1.0.0 requires psycopg2-binary>=2.9.10, which is not installed.
+2026-09-08T23:45:08.4061457Z wealthmachine-enterprise 1.0.0 requires python-multipart>=0.0.20, which is not installed.
+2026-09-08T23:45:08.4061993Z wealthmachine-enterprise 1.0.0 requires redis>=6.2.0, which is not installed.
+2026-09-08T23:45:08.4062790Z wealthmachine-enterprise 1.0.0 requires scikit-learn>=1.6.1, which is not installed.
+2026-09-08T23:45:08.4063330Z wealthmachine-enterprise 1.0.0 requires tensorflow>=2.14.0, which is not installed.
+2026-09-08T23:45:08.4063867Z wealthmachine-enterprise 1.0.0 requires transformers>=4.48.1, which is not installed.
+2026-09-08T23:45:08.4073221Z Successfully installed attrs-26.1.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 referencing-0.37.0 rfc3339-validator-0.1.4 rpds-py-2026.6.3 uniimente-kernel-boundaries-0.1.1
+2026-09-08T23:45:09.0156332Z Found 2100 errors.
+2026-09-08T23:45:18.1856088Z =============================== warnings summary ===============================
+2026-09-08T23:45:18.1863160Z   /opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+2026-09-08T23:45:18.1867205Z   /opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+2026-09-08T23:45:18.1875167Z   /home/runner/work/WealthMachineIntelligence/WealthMachineIntelligence/src/api/routes/analytics.py:249: FastAPIDeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+2026-09-08T23:45:18.1882569Z 127 passed, 6 warnings in 8.66s
+2026-09-08T23:45:18.4578844Z (node:2621) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.

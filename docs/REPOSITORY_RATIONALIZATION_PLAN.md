@@ -1,5 +1,109 @@
 # Repository Rationalization Plan
 
+## SR-001 adoption handoff — draft submissions, 2026-09-08
+
+This package repairs shared admission/history/recovery mechanisms and connects
+the real producer and consumer at exact revisions. It is a submitted integration
+candidate, not an all-green adoption gate or complete founder workflow.
+
+| Review order | Draft and implementation commit | Base / owner |
+| --- | --- | --- |
+| 1 | [Kernel #98](https://github.com/dababiyoda/uniimente-kernel/pull/98), `3e059c20331d96e05a44daac1b097896aaabde93` | main `bcbb1ab4a0c42cda4a97aec42a11125753962762`; contracts/adapters/events/provenance, existing Consequence Gate |
+| 2 | Preserved [WMI #33](https://github.com/dababiyoda/WealthMachineIntelligence/pull/33), `fbc959936610d529bcb89d2782ec5158791aaadb` | main `ec84b6a2eec4efbc07bed7f167da81f5e25d890c`; WMI authentication and packaged startup |
+| 3, jointly | [DALEOBANKS #77](https://github.com/dababiyoda/DALEOBANKS/pull/77), `b3c8722eaf1c8118567eea363204622e21b93412` | main `ed5e95d7f48e006d180b972efe138179325c31d2`; producer composition |
+| 3, jointly | [WMI #35](https://github.com/dababiyoda/WealthMachineIntelligence/pull/35), `fa11e133500c07cc87f12257ec6993f1b1e77a49` | #33 branch `agent/wmi-auth-packaged-startup-recovery`; consumer composition |
+
+Both consumers pin Kernel boundary package 0.1.1 at the same exact commit. WMI CI
+checks out the exact producer commit. The source-binding record 21 captures clean
+implementation worktrees, tree hashes, dependency versions, project-source hashes
+and 28 installed package files matching the Kernel source byte-for-byte. Later
+handoff/evidence commits change documentation only; the implementation pins above
+remain the tested subjects. This content binding is not founder authentication.
+
+| Executed evidence | Result and limits |
+| --- | --- |
+| Kernel focused controls | 138 passed; files/command in evidence 20 |
+| Kernel broader suite | 522 passed, 17 failed; all failures retained in 19; main baseline 495 passed before repair |
+| Shared-schema static checks | 14 declared dialects checked; 12 local references resolved; runtime missing-format defect separately reproduced (2 failed) then repaired |
+| Authority singleton check | Six named authority artifacts, one source each; static evidence only |
+| PR94 retained-evidence controls | Preserved #94: 21 passed; disposable shared-primitive compatibility overlay: initial 6 failed/34 passed, then 40 passed after writer-lifecycle fixes; patch retained, not a new runtime branch |
+| DALEOBANKS focused controls | 33 passed; broader suite BLOCKED/INCOMPLETE after two safety-review rejections over api.twitter.com access |
+| WMI local broader collection | 129 passed, 430 warnings; raw log in WMI evidence 06 |
+| WMI pinned cross-consumer rerun | 1 passed, 3 warnings, 2.39s after all three implementation commits existed; actual localhost packaged subprocess, producer replacement, consumer kill/restart, retained result/dissent and negative controls |
+| WMI implementation CI | Run 34292000142 at fa11e133: 127 passed, 6 warnings (Python 3.11, tests/ only); separate from local root collection |
+| CI lint | 2100 findings, non-blocking --exit-zero, includes preserved generations and producer checkout; CI success is not lint success |
+| Docker and local lint | Docker image build/run UNVERIFIED; local ruff unavailable (exit 127) |
+
+Initial failures, intermediate failures, missing dependencies, warnings and
+incomplete runs remain in each repository's tests/evidence/shared-recovery.
+CI log summary and unmet optional-dependency warnings are in evidence 22, with
+the complete upstream run/job reference. No scores/counts are combined into
+institutional readiness. PR33's reported 69/126/9 checks and PR94's reported
+78/207/1440 plus three baseline failures remain distinct historical evidence.
+
+### Concrete remaining review gates and replacement path
+
+1. Review Kernel #98's strict history, pre-existing grants, replay/append ordering
+   and durable claims against the frozen SR01-SR12 controls below. Its 17 broader
+   failures assert historical implementation hashes, old checkpoint contracts or
+   experiments derived from those subjects. Keep those frozen subjects as
+   historical benchmarks; do not rewrite their receipts/hashes or call those
+   experiments restored. A separately subject-bound migration/repair evaluation
+   of this implementation is still required before those claims can be renewed.
+2. Review WMI #33 then the #35/#77 pair at the table's pins. Missing JWT/body
+   signature, wrong principal/recipient, altered bytes, duplicate nonces and
+   conflicting logical payloads must remain refusals. Legitimate retries return
+   retained results. Kernel remains the sole shared semantic owner; no mirror
+   is retained as an active fallback.
+3. Provide an independently OS/container-isolated offline runner and inspect
+   DALEOBANKS network fixtures before retrying its broad suite. The Python guard
+   did not establish safe isolation. This is an unavailable test-facility gate,
+   not a request for external-network or customer-operation authority. Preserve
+   the Docker image build/startup gate separately; localhost evidence cannot fill it.
+4. After these gates and independent review, compose the founder loop using #93
+   as the inbox candidate and #94 as the appraisal candidate. Delegate #93's
+   duplicate writer lock to the shared ledger; retain its distinct subject/head
+   checks. Apply the retained #94 lifecycle compatibility patch to a bounded
+   composition candidate and rerun its protected appraisal controls. Compare
+   #70/#87 implementations without importing either whole branch as sovereign.
+   Live routing remains refused: the governed HTTP adapter still needs canonical
+   Kernel mediation. Existing ownership settles the direction; no direct-organ
+   bypass or alternate authority system is implied.
+
+No default branch was changed: the inspected default implementations still have
+the boundary defects this package addresses until separately authorized adoption.
+#33 and #94 were rechecked draft/unmerged and at their original heads. No code in
+OMNIMORPH, standing cognition, founder enrollment, provider/tool ecosystems,
+PumpStation or RailScout was activated or expanded. CMC and VDM remain zero.
+
+Rollback now means retaining the drafts and leaving defaults untouched. Any later
+authorized sandbox rollback must stop the exclusive writer, preserve ledger
+bytes/head, pending claims and obligations, and refuse unsupported history.
+Never truncate evidence, transfer authority by replacement, restore unsigned
+admission or blindly retry an uncertain dispatch. Kill/refuse on an invalid
+anchor/grant, concurrent writer, corrupt history, identity conflict, fabricated
+appraisal, uncertain completion or lost lineage.
+
+The larger dependency remains visible: durable identity and obligations allow
+the Egregore to retain a founder goal while execution machinery is replaced;
+Standing Cognition and the higher Mission Resolution Router can then choose the
+smallest sufficient capability/workflow or justified temporary organization.
+OMNIMORPH stays subordinate; static DurableWorkflow wins exact ties. The Golden
+Kernel retains authority, protected appraisal retains independent judgment, and
+the Developmental Engine must earn each capability through bounded evaluation.
+Broad computer use, tools/models, ventures and eventual approved infrastructure
+remain future exercised-capability dependencies, not outcomes of this repair.
+Founder attention per verified outcome and time to closure remain unmeasured here;
+the local security-overhead sample is retained separately and proves no economic
+surplus or participant improvement. No new formal strengthening pass occurred.
+
+Contributor handoff for Claude, Kimi, ChatGPT and future maintainers: use this
+table, the existing owner map, frozen controls, evidence 18-22 and consumer
+Instructions/README. Independent review has not occurred. Continue authorized
+ordinary repairs on these branches; reserve merge/deploy/credentials/external
+effects for a new ruling. The immediate unblock is the isolated test facility
+and subject-bound compatibility review, not another whole-machine architecture.
+
 ## Shared recovery package SR-001 — frozen acceptance, 2026-09-08
 
 Scope: the current chat's founder-authorized shared repair after WMI #33.

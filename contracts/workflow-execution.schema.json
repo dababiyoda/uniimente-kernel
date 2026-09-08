@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/workflow-execution.schema.json",
+  "title": "DurableWorkflow recovery checkpoint v2",
+  "description": "Canonical events owner. Legacy experimental W0/W2 records remain unchanged and require an explicit migration review; retry eligibility is not authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2"
+    },
+    "workflow_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cursor": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "enum": [
+        "running",
+        "completed",
+        "interrupted",
+        "failed",
+        "compensated",
+        "reconciliation_required"
+      ]
+    },
+    "state": {
+      "type": "object"
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "legal_principal": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "UNIIMENTE"
+      }
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "step_contract": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "max_retries": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "approval_wait": {
+            "type": "boolean"
+          },
+          "retry_safe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "max_retries",
+          "approval_wait",
+          "retry_safe"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "cursor",
+    "status",
+    "state",
+    "note",
+    "actor",
+    "legal_principal",
+    "at",
+    "step_contract"
+  ]
+}

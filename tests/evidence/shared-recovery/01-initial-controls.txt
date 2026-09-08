@@ -1,0 +1,92 @@
+FFFF.FFFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+_______________________ test_genesis_hash_is_recomputed ________________________
+tests/unit/test_shared_recovery.py:29: in test_genesis_hash_is_recomputed
+    assert not ledger.verify_chain()[0]
+E   assert not True
+______________________ test_foreign_constitution_refused _______________________
+tests/unit/test_shared_recovery.py:35: in test_foreign_constitution_refused
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+__________________ test_empty_or_truncated_history_refused[] ___________________
+tests/unit/test_shared_recovery.py:43: in test_empty_or_truncated_history_refused
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_________________ test_empty_or_truncated_history_refused[\n] __________________
+tests/unit/test_shared_recovery.py:43: in test_empty_or_truncated_history_refused
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+________________ test_empty_or_truncated_history_refused[{}\n] _________________
+tests/unit/test_shared_recovery.py:44: in test_empty_or_truncated_history_refused
+    EvidenceLedger(ANCHOR, str(path))
+provenance/ledger.py:54: in __init__
+    self._load(path)
+provenance/ledger.py:115: in _load
+    loaded.append(LedgerRecord(**d))
+                  ^^^^^^^^^^^^^^^^^
+E   TypeError: LedgerRecord.__init__() missing 6 required positional arguments: 'seq', 'ts_utc', 'record_type', 'payload', 'prev_hash', and 'hash'
+_____________________ test_restart_recovers_deduplication ______________________
+tests/unit/test_shared_recovery.py:54: in test_restart_recovers_deduplication
+    assert EventSpine(restored).ingest(e) is None
+E   AssertionError: assert Event(type='signal.received', source='external:synthetic', actor='synthetic', payload={}, legal_principal='alfonso_lop...nal', event_id='synthetic-event-1', occurred_at='2026-09-08T02:13:59.942237Z', causal_parent=None, policy_version=None) is None
+E    +  where Event(type='signal.received', source='external:synthetic', actor='synthetic', payload={}, legal_principal='alfonso_lop...nal', event_id='synthetic-event-1', occurred_at='2026-09-08T02:13:59.942237Z', causal_parent=None, policy_version=None) = ingest(Event(type='signal.received', source='external:synthetic', actor='synthetic', payload={}, legal_principal='alfonso_lop...nal', event_id='synthetic-event-1', occurred_at='2026-09-08T02:13:59.942237Z', causal_parent=None, policy_version=None))
+E    +    where ingest = <events.spine.EventSpine object at 0x7fef9d7281a0>.ingest
+E    +      where <events.spine.EventSpine object at 0x7fef9d7281a0> = EventSpine(<provenance.ledger.EvidenceLedger object at 0x7fef9d7a1f70>)
+___________________ test_conflicting_event_identity_refuses ____________________
+tests/unit/test_shared_recovery.py:65: in test_conflicting_event_identity_refuses
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_____________ test_definite_append_failure_does_not_consume_event ______________
+tests/unit/test_shared_recovery.py:80: in test_definite_append_failure_does_not_consume_event
+    assert spine.ingest(e) is not None
+E   AssertionError: assert None is not None
+E    +  where None = ingest(Event(type='signal.received', source='external:synthetic', actor='synthetic', payload={}, legal_principal='alfonso_lop...nal', event_id='synthetic-event-1', occurred_at='2026-09-08T02:13:59.947014Z', causal_parent=None, policy_version=None))
+E    +    where ingest = <events.spine.EventSpine object at 0x7fef9d71d580>.ingest
+______________ test_failed_ledger_append_does_not_advance_memory _______________
+tests/unit/test_shared_recovery.py:94: in test_failed_ledger_append_does_not_advance_memory
+    assert asdict(ledger.records[-1]) == before
+E   AssertionError: assert {'seq': 1, 't...{'x': 1}, ...} == {'seq': 0, 't...aaaaaa'}, ...}
+E     
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'hash': 'sha256:472dcc3c64f6d2a00f19bd27082024e48eadb010181dd255815358c3ad4400a7'} != {'hash': 'sha256:0dd72f78b19de18589d1e4c326634deff81b6b961de4e60d8461f5317015151c'}
+E     {'payload': {'x': 1}} != {'payload': {'kind': 'genesis', 'constitution_hash': 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}}
+E     {'ts_utc': '2026-09-08T02:13:59.949552Z'} != {'ts_utc': '2026-09-08T02:13:59.949460Z'}
+E     {'prev_hash': 'sha256:0dd72f78b19de18589d1e4c326634deff81b6b961de4e60d8461f5317015151c'} != {'prev_hash': 's...
+E     
+E     ...Full output truncated (4 lines hidden), use '-vv' to show
+_________________ test_transport_missing_key_is_never_unsigned _________________
+tests/unit/test_shared_recovery.py:101: in test_transport_missing_key_is_never_unsigned
+    with pytest.raises(transport.BridgeSecurityError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE BridgeSecurityError
+____________________ test_unknown_contract_version_refused _____________________
+tests/unit/test_shared_recovery.py:108: in test_unknown_contract_version_refused
+    with pytest.raises(transport.BridgeSecurityError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE BridgeSecurityError
+__________________ test_invalid_signature_cannot_poison_nonce __________________
+tests/unit/test_shared_recovery.py:120: in test_invalid_signature_cannot_poison_nonce
+    assert transport.verify_headers(h, b'{}', nonce_cache=cache)['signed'] == 'true'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+adapters/bridge_transport.py:165: in verify_headers
+    raise BridgeSecurityError("nonce missing or already used — replay rejected")
+E   adapters.bridge_transport.BridgeSecurityError: nonce missing or already used — replay rejected
+=========================== short test summary info ============================
+FAILED tests/unit/test_shared_recovery.py::test_genesis_hash_is_recomputed - ...
+FAILED tests/unit/test_shared_recovery.py::test_foreign_constitution_refused
+FAILED tests/unit/test_shared_recovery.py::test_empty_or_truncated_history_refused[]
+FAILED tests/unit/test_shared_recovery.py::test_empty_or_truncated_history_refused[\n]
+FAILED tests/unit/test_shared_recovery.py::test_empty_or_truncated_history_refused[{}\n]
+FAILED tests/unit/test_shared_recovery.py::test_restart_recovers_deduplication
+FAILED tests/unit/test_shared_recovery.py::test_conflicting_event_identity_refuses
+FAILED tests/unit/test_shared_recovery.py::test_definite_append_failure_does_not_consume_event
+FAILED tests/unit/test_shared_recovery.py::test_failed_ledger_append_does_not_advance_memory
+FAILED tests/unit/test_shared_recovery.py::test_transport_missing_key_is_never_unsigned
+FAILED tests/unit/test_shared_recovery.py::test_unknown_contract_version_refused
+FAILED tests/unit/test_shared_recovery.py::test_invalid_signature_cannot_poison_nonce
+12 failed, 1 passed in 0.07s

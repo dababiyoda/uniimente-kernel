@@ -1,0 +1,13 @@
+Command:
+PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python - <<'PY'
+import json,pathlib
+from jsonschema.validators import validator_for
+paths=sorted(pathlib.Path('contracts').rglob('*.json'))
+for path in paths:
+ schema=json.loads(path.read_text());validator_for(schema).check_schema(schema)
+print(str(len(paths))+' schemas: declared-dialect meta-schema validation passed; runtime meaning covered separately by consumer controls')
+PY
+Exit: 0
+
+14 schemas: declared-dialect meta-schema validation passed; runtime meaning covered separately by consumer controls
+

@@ -1,0 +1,141 @@
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python -m pytest -q --tb=short
+Subject: SR-001 authored tree, based on bcbb1ab4a0c42cda4a97aec42a11125753962762.
+Exit: 1. Captured final output; early progress-only output was not copied.
+No frozen expectation, hash, skip or xfail was changed to manufacture success.
+
+..........F...................................................... [ 93%]
+.................................                                        [100%]
+=================================== FAILURES ===================================
+____ test_13_rollback_after_a_partial_replacement_resumes_from_valid_state _____
+tests/unit/test_migration_adversarial.py:442: in test_13_rollback_after_a_partial_replacement_resumes_from_valid_state
+    resumed = resume_workflow(sp, wid, steps(names, calls))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:390: in resume_workflow
+    return engine.resume(resolved_spine, workflow_id, steps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:246: in resume
+    validate_contract(last, 'workflow-execution')
+adapters/contract_validation.py:45: in validate_contract
+    raise ValueError(f'{name}: {errors[0].message}')
+E   ValueError: workflow-execution: 'schema_version' is a required property
+_________ test_the_subject_class_is_byte_identical_to_the_frozen_hash __________
+tests/unit/test_migration_spec_frozen.py:74: in test_the_subject_class_is_byte_identical_to_the_frozen_hash
+    assert digest == spec.SUBJECT_CLASS_SHA256[obj.__name__], (
+E   AssertionError: DurableWorkflow was modified; the original engine must stay byte-identical
+E   assert '7b303f6e5d26...81e50b82220bb' == '6ffdf672ccf4...ced88b01dc1f8'
+E     
+E     - 6ffdf672ccf426cddede1ac9e3add50ae9ea443358cf9ffb9eeced88b01dc1f8
+E     + 7b303f6e5d268722221b6063b540ee0786fbe2675ab062c8c7b81e50b82220bb
+__________ test_held_out_expectations_match_the_original_engine_today __________
+tests/unit/test_migration_spec_frozen.py:120: in run
+    raise RuntimeError("boom")
+E   RuntimeError: boom
+
+The above exception was the direct cause of the following exception:
+tests/unit/test_migration_spec_frozen.py:173: in test_held_out_expectations_match_the_original_engine_today
+    wf.execute()
+events/spine.py:308: in execute
+    raise ReconciliationRequired("step outcome unknown; reconcile retained state") from exc
+E   provenance.ledger.ReconciliationRequired: step outcome unknown; reconcile retained state
+________ test_checkpoint_schema_matches_what_the_engine_actually_writes ________
+tests/unit/test_migration_spec_frozen.py:214: in test_checkpoint_schema_matches_what_the_engine_actually_writes
+    assert list(validator.iter_errors(rec.payload)) == [], rec.payload
+E   AssertionError: {'schema_version': '2', 'workflow_id': 'schema-probe', 'cursor': 0, 'status': 'running', ...}
+E   assert [<ValidationE...unexpected)">] == []
+E     
+E     Left contains one more item: <ValidationError: "Additional properties are not allowed ('schema_version', 'step_contract' were unexpected)">
+E     Use -v to get more diff
+__________________ test_continuity_baseline_is_true_right_now __________________
+tests/unit/test_migration_spec_frozen.py:295: in test_continuity_baseline_is_true_right_now
+    assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert '5594003e1f69...f5bbe89a19d70' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + 5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70
+___ test_identity_authority_and_shutdown_survive_the_component_being_absent ____
+tests/unit/test_repair_adapters.py:549: in test_identity_authority_and_shutdown_survive_the_component_being_absent
+    assert before == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert '5594003e1f69...f5bbe89a19d70' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + 5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70
+______ test_governance_and_continuity_held_while_the_function_was_absent _______
+tests/unit/test_repair_harness.py:57: in test_governance_and_continuity_held_while_the_function_was_absent
+    assert record["continuity"]["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert '5594003e1f69...f5bbe89a19d70' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + 5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70
+_____________ test_continuity_is_unchanged_before_during_and_after _____________
+tests/unit/test_repair_harness.py:63: in test_continuity_is_unchanged_before_during_and_after
+    assert continuity["before"] == continuity["after"] == \
+E   AssertionError: assert '5594003e1f69...f5bbe89a19d70' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + 5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70
+_____________ test_selection_reports_the_two_questions_separately ______________
+tests/unit/test_repair_harness.py:125: in test_selection_reports_the_two_questions_separately
+    assert selection["best_structural_replacement"] in spec.CANDIDATE_IDS
+E   AssertionError: assert None in ('B0-restore', 'R1-contract-index', 'R2-constraint', 'R3-local-rule')
+E    +  where ('B0-restore', 'R1-contract-index', 'R2-constraint', 'R3-local-rule') = spec.CANDIDATE_IDS
+_____________ test_installation_is_verified_by_the_blind_detector ______________
+tests/unit/test_repair_harness.py:146: in test_installation_is_verified_by_the_blind_detector
+    assert install["attempted"] is True
+E   assert False is True
+_______ test_installation_scope_is_stated_and_the_live_path_is_untouched _______
+tests/unit/test_repair_harness.py:156: in test_installation_scope_is_stated_and_the_live_path_is_untouched
+    assert "live import path is unmodified" in record["installation"]["scope"]
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'scope'
+________ test_rollback_restores_the_original_and_the_original_survived _________
+tests/unit/test_repair_harness.py:171: in test_rollback_restores_the_original_and_the_original_survived
+    rollback = record["installation"]["rollback"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'rollback'
+___________________ test_the_capsule_records_the_whole_cycle ___________________
+tests/unit/test_repair_harness.py:234: in test_the_capsule_records_the_whole_cycle
+    assert capsule["measured_value"] == 1.0
+E   assert 0.0 == 1.0
+______________ test_the_ledger_chain_verifies_and_is_append_only _______________
+tests/unit/test_repair_harness.py:257: in test_the_ledger_chain_verifies_and_is_append_only
+    assert required in events, f"{required} was not ledgered"
+E   AssertionError: repair.provider_withdrawn was not ledgered
+E   assert 'repair.provider_withdrawn' in ['repair.provider_registered', 'repair.capability_healthy', 'repair.component_disabled', 'repair.component_disabled', 'repair.capability_loss_detected', 'repair.component_restored', ...]
+_________________ test_the_r3_prediction_is_recorded_as_wrong __________________
+tests/unit/test_repair_harness.py:321: in test_the_r3_prediction_is_recorded_as_wrong
+    assert r3["actual_function_score"] == 1.0
+E   assert 0.0 == 1.0
+_________ test_module_entry_point_emits_a_valid_record_and_exits_zero __________
+tests/unit/test_repair_harness.py:334: in test_module_entry_point_emits_a_valid_record_and_exits_zero
+    assert proc.returncode == 0, proc.stderr[-2000:]
+E   AssertionError: 
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-m', 'evolution.re...n": "register a structurally different implementation while the component stays disabled"\n    }\n  }\n}\n', stderr='').returncode
+____________ test_continuity_hashes_describe_the_real_artifacts_now ____________
+tests/unit/test_repair_spec_frozen.py:113: in test_continuity_hashes_describe_the_real_artifacts_now
+    assert hashlib.sha256(raw).hexdigest() == expected, \
+E   AssertionError: policy/consequence_gate.py does not match its frozen continuity hash
+E   assert '1c189be5af88...65a0815a06f2e' == '0b133b57eea1...9adc4b78a63ce'
+E     
+E     - 0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce
+E     + 1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e
+=========================== short test summary info ============================
+FAILED tests/unit/test_migration_adversarial.py::test_13_rollback_after_a_partial_replacement_resumes_from_valid_state
+FAILED tests/unit/test_migration_spec_frozen.py::test_the_subject_class_is_byte_identical_to_the_frozen_hash
+FAILED tests/unit/test_migration_spec_frozen.py::test_held_out_expectations_match_the_original_engine_today
+FAILED tests/unit/test_migration_spec_frozen.py::test_checkpoint_schema_matches_what_the_engine_actually_writes
+FAILED tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now
+FAILED tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent
+FAILED tests/unit/test_repair_harness.py::test_governance_and_continuity_held_while_the_function_was_absent
+FAILED tests/unit/test_repair_harness.py::test_continuity_is_unchanged_before_during_and_after
+FAILED tests/unit/test_repair_harness.py::test_selection_reports_the_two_questions_separately
+FAILED tests/unit/test_repair_harness.py::test_installation_is_verified_by_the_blind_detector
+FAILED tests/unit/test_repair_harness.py::test_installation_scope_is_stated_and_the_live_path_is_untouched
+FAILED tests/unit/test_repair_harness.py::test_rollback_restores_the_original_and_the_original_survived
+FAILED tests/unit/test_repair_harness.py::test_the_capsule_records_the_whole_cycle
+FAILED tests/unit/test_repair_harness.py::test_the_ledger_chain_verifies_and_is_append_only
+FAILED tests/unit/test_repair_harness.py::test_the_r3_prediction_is_recorded_as_wrong
+FAILED tests/unit/test_repair_harness.py::test_module_entry_point_emits_a_valid_record_and_exits_zero
+FAILED tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now
+17 failed, 520 passed in 11.27s
+

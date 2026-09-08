@@ -1,34 +1,22 @@
-"""Kernel-side transport verification for organ bridge messages.
+"""Canonical bridge transport v2. Consumers import this pinned implementation.
 
-Third mirror of the DALEOBANKS/WealthMachineIntelligence bridge security
-module (services/bridge_security.py and src/services/bridge_security.py at
-the commits recorded in organs/*.manifest.yaml) — keep the canonical form,
-header names, and verification semantics field-for-field compatible.
-
-Kernel extension: "kernel" joins the known-identity set so the kernel can
-witness and later participate in bridge traffic. The peer repositories
-still list only {daleobanks, wealthmachine}; until they add "kernel",
-messages SIGNED BY the kernel are not verifiable by the organs. That gap
-is recorded as an unresolved field in both peer manifests — it is a
-cross-repository change, not something this module may paper over.
-
-A valid signature proves sender authenticity ONLY. It never carries
-authorization: a perfectly signed payload still has no execution authority
-and still routes through the consequence gate and human approval.
+HMAC proves shared-key possession, not isolated identity, authority or founder
+authentication. Version 1 transport is intentionally refused: its context and
+serialization ambiguities cannot be silently preserved. Wire schemas 1.0/1.1
+remain supported. No network, token issuance or effect is performed here.
 """
 from __future__ import annotations
-
 import hashlib
 import hmac
+import json
 import os
 import secrets
 import time
-from typing import Dict, Optional, Tuple
 
 SIGNING_KEY_ENV = "WEALTHMACHINE_SIGNING_KEY"
 MAX_SKEW_SECONDS = 300
 MIN_SCHEMA_VERSION = "1.0"
-
+PROTOCOL_VERSION = "2"
 H_IDENTITY = "X-Service-Identity"
 H_TIMESTAMP = "X-Timestamp"
 H_NONCE = "X-Nonce"
@@ -36,150 +24,130 @@ H_IDEMPOTENCY = "X-Idempotency-Key"
 H_SCHEMA = "X-Schema-Version"
 H_SIGNATURE = "X-Signature"
 H_TRACE = "X-Trace-Id"
-
+H_PROTOCOL = "X-Uniimente-Protocol"
+H_RECIPIENT = "X-Recipient"
+H_OPERATION = "X-Operation"
+H_REQUEST = "X-Request-Digest"
+H_DIRECTION = "X-Direction"
+H_STATUS = "X-Response-Status"
 KNOWN_IDENTITIES = frozenset({"daleobanks", "wealthmachine", "kernel"})
+SCHEMA_VERSIONS = frozenset({"1.0", "1.1"})
 
 
 class BridgeSecurityError(PermissionError):
-    """Transport verification failed. The payload must not be processed."""
+    pass
 
 
-def signing_key() -> str:
-    return os.getenv(SIGNING_KEY_ENV, "")
+def signing_key():
+    return os.getenv(SIGNING_KEY_ENV, "").strip()
 
 
-def _canonical(identity: str, timestamp: str, nonce: str, idempotency: str,
-               schema_version: str, body: bytes) -> bytes:
-    body_hash = hashlib.sha256(body or b"").hexdigest()
-    return f"{identity}|{timestamp}|{nonce}|{idempotency}|{schema_version}|{body_hash}".encode()
+def body_digest(body):
+    return hashlib.sha256(body).hexdigest()
 
 
-def sign(key: str, identity: str, timestamp: str, nonce: str, idempotency: str,
-         schema_version: str, body: bytes) -> str:
-    return hmac.new(
-        key.encode(), _canonical(identity, timestamp, nonce, idempotency,
-                                 schema_version, body),
-        hashlib.sha256,
-    ).hexdigest()
+def _recipient(identity):
+    return "wealthmachine" if identity in ("daleobanks", "kernel") else "daleobanks"
 
 
-def build_headers(
-    body: bytes,
-    *,
-    identity: str,
-    schema_version: str,
-    idempotency_key: Optional[str] = None,
-    trace_id: str = "",
-) -> Dict[str, str]:
-    """Signed transport headers for an outbound request/response. With no
-    key configured, identity headers still travel (debuggability) but no
-    signature is attached."""
-    timestamp = str(int(time.time()))
-    nonce = secrets.token_hex(16)
-    idempotency = idempotency_key or secrets.token_hex(16)
-    headers = {
-        H_IDENTITY: identity,
-        H_TIMESTAMP: timestamp,
-        H_NONCE: nonce,
-        H_IDEMPOTENCY: idempotency,
-        H_SCHEMA: schema_version,
-    }
-    if trace_id:
-        headers[H_TRACE] = trace_id
+def sign(key, identity, timestamp, nonce, idempotency, schema_version, body,
+         *, recipient=None, operation="opportunity.evaluate", request_digest="",
+         direction="request", status="", trace_id="", protocol=PROTOCOL_VERSION):
+    # A structured domain separator, not a new cryptographic algorithm.
+    context = [protocol, direction, identity, recipient or _recipient(identity),
+               operation, timestamp, nonce, idempotency, schema_version,
+               request_digest, str(status), trace_id, body_digest(body)]
+    message = json.dumps(context, ensure_ascii=True, separators=(",", ":")).encode()
+    return hmac.new(key.encode(), message, hashlib.sha256).hexdigest()
+
+
+def build_headers(body, *, identity, schema_version, idempotency_key=None,
+                  trace_id="", recipient=None, operation="opportunity.evaluate",
+                  request_digest="", direction="request", status=""):
     key = signing_key()
-    if key:
-        headers[H_SIGNATURE] = sign(key, identity, timestamp, nonce,
-                                    idempotency, schema_version, body)
-    return headers
+    if not key:
+        raise BridgeSecurityError("signing configuration required")
+    if identity not in KNOWN_IDENTITIES or schema_version not in SCHEMA_VERSIONS:
+        raise BridgeSecurityError("unsupported identity or schema version")
+    recipient = recipient or _recipient(identity)
+    if recipient not in KNOWN_IDENTITIES:
+        raise BridgeSecurityError("unknown recipient")
+    timestamp, nonce = str(int(time.time())), secrets.token_hex(16)
+    idem = idempotency_key or secrets.token_hex(16)
+    values = dict(recipient=recipient, operation=operation, request_digest=request_digest,
+                  direction=direction, status=str(status), trace_id=trace_id)
+    return {H_PROTOCOL: PROTOCOL_VERSION, H_IDENTITY: identity, H_RECIPIENT: recipient,
+            H_TIMESTAMP: timestamp, H_NONCE: nonce, H_IDEMPOTENCY: idem,
+            H_SCHEMA: schema_version, H_TRACE: trace_id, H_OPERATION: operation,
+            H_REQUEST: request_digest, H_DIRECTION: direction, H_STATUS: str(status),
+            H_SIGNATURE: sign(key, identity, timestamp, nonce, idem, schema_version, body, **values)}
 
 
 class NonceCache:
-    """In-memory replay guard. A nonce is accepted exactly once inside the
-    skew window; reuse fails closed."""
+    """Legacy in-memory fixture helper; durable consumers use BridgeState.
 
-    def __init__(self, ttl_seconds: int = MAX_SKEW_SECONDS * 2) -> None:
-        self.ttl = ttl_seconds
-        self._seen: Dict[str, float] = {}
+    Not a supported production replay store. No automatic fallback to this type.
+    """
+    def __init__(self, ttl_seconds=MAX_SKEW_SECONDS * 2):
+        self.ttl, self._seen = ttl_seconds, {}
 
-    def check_and_store(self, nonce: str) -> bool:
+    def check_and_store(self, nonce):
         now = time.time()
-        for old, ts in list(self._seen.items()):
-            if now - ts > self.ttl:
-                del self._seen[old]
+        self._seen = {n: t for n, t in self._seen.items() if now - t <= self.ttl}
         if nonce in self._seen:
             return False
         self._seen[nonce] = now
         return True
 
 
-def _version_tuple(version: str) -> Tuple[int, ...]:
-    try:
-        return tuple(int(p) for p in version.split("."))
-    except ValueError:
-        return (0,)
-
-
-def verify_headers(
-    headers: Dict[str, str],
-    body: bytes,
-    *,
-    nonce_cache: NonceCache,
-    require_signature: Optional[bool] = None,
-) -> Dict[str, str]:
-    """Verify inbound transport headers. Raises BridgeSecurityError on any
-    failure — fail closed, never degrade. Returns the normalized header
-    set for provenance recording."""
-    getter = {k.lower(): v for k, v in headers.items()}
-
-    def get(name: str) -> str:
-        return getter.get(name.lower(), "")
-
+def verify_headers(headers, body, *, nonce_cache, require_signature=None,
+                   expected_recipient=None, expected_sender=None,
+                   expected_operation=None, request_digest=None,
+                   direction="request", status="", principal=None):
     key = signing_key()
-    must_sign = require_signature if require_signature is not None else bool(key)
-
-    identity = get(H_IDENTITY)
-    schema_version = get(H_SCHEMA) or MIN_SCHEMA_VERSION
-    if _version_tuple(schema_version) < _version_tuple(MIN_SCHEMA_VERSION):
-        raise BridgeSecurityError(
-            f"schema version {schema_version} below minimum {MIN_SCHEMA_VERSION} — "
-            "downgrade rejected"
-        )
-
-    if not must_sign:
-        return {"identity": identity or "unsigned-local", "schema_version": schema_version,
-                "signed": "false", "trace_id": get(H_TRACE)}
-
-    if identity not in KNOWN_IDENTITIES:
-        raise BridgeSecurityError(f"unknown service identity '{identity}'")
-
-    timestamp = get(H_TIMESTAMP)
+    if not key:
+        raise BridgeSecurityError("signing configuration required; unsigned admission prohibited")
+    lower = {k.lower(): v for k, v in headers.items()}
+    def get(name):
+        return lower.get(name.lower(), "")
+    if get(H_PROTOCOL) != PROTOCOL_VERSION:
+        raise BridgeSecurityError("unsupported transport protocol")
+    identity, recipient = get(H_IDENTITY), get(H_RECIPIENT)
+    if identity not in KNOWN_IDENTITIES or recipient not in KNOWN_IDENTITIES:
+        raise BridgeSecurityError("unknown sender or recipient")
+    if (expected_sender is not None and identity != expected_sender or
+            expected_recipient is not None and recipient != expected_recipient or
+            principal is not None and principal != identity):
+        raise BridgeSecurityError("principal/sender/recipient mismatch")
+    version, operation = get(H_SCHEMA), get(H_OPERATION)
+    if version not in SCHEMA_VERSIONS:
+        raise BridgeSecurityError("unsupported schema version")
+    if not operation or expected_operation is not None and operation != expected_operation:
+        raise BridgeSecurityError("operation mismatch")
+    if (get(H_DIRECTION) != direction or get(H_STATUS) != str(status) or
+            request_digest is not None and get(H_REQUEST) != request_digest):
+        raise BridgeSecurityError("request/response context mismatch")
+    ts, nonce, idem = get(H_TIMESTAMP), get(H_NONCE), get(H_IDEMPOTENCY)
     try:
-        skew = abs(time.time() - int(timestamp))
-    except (TypeError, ValueError):
-        raise BridgeSecurityError("missing or malformed timestamp")
-    if skew > MAX_SKEW_SECONDS:
-        raise BridgeSecurityError("timestamp outside the accepted window")
-
-    nonce = get(H_NONCE)
-    if not nonce or not nonce_cache.check_and_store(nonce):
-        raise BridgeSecurityError("nonce missing or already used — replay rejected")
-
-    idempotency = get(H_IDEMPOTENCY)
+        valid_time = len(ts) <= 20 and ts.isdigit() and abs(time.time() - int(ts)) <= MAX_SKEW_SECONDS
+    except (ValueError, OverflowError):
+        valid_time = False
+    if not valid_time:
+        raise BridgeSecurityError("timestamp outside accepted window")
+    if not nonce or not idem or len(nonce) > 256 or len(idem) > 256:
+        raise BridgeSecurityError("bounded nonce and logical operation key required")
+    expected = sign(key, identity, ts, nonce, idem, version, body, recipient=recipient,
+                    operation=operation, request_digest=get(H_REQUEST),
+                    direction=direction, status=status, trace_id=get(H_TRACE))
     signature = get(H_SIGNATURE)
-    expected = sign(key, identity, timestamp, nonce, idempotency,
-                    schema_version, body)
-    if not signature or not hmac.compare_digest(signature, expected):
+    if (not isinstance(signature, str) or len(signature) != 64
+            or any(c not in '0123456789abcdef' for c in signature)
+            or not hmac.compare_digest(signature, expected)):
         raise BridgeSecurityError("signature verification failed")
-
-    return {"identity": identity, "schema_version": schema_version,
-            "signed": "true", "idempotency_key": idempotency,
-            "trace_id": get(H_TRACE)}
-
-
-__all__ = [
-    "BridgeSecurityError", "NonceCache", "build_headers", "verify_headers",
-    "sign", "signing_key", "SIGNING_KEY_ENV", "MAX_SKEW_SECONDS",
-    "MIN_SCHEMA_VERSION", "KNOWN_IDENTITIES",
-    "H_IDENTITY", "H_TIMESTAMP", "H_NONCE", "H_IDEMPOTENCY",
-    "H_SCHEMA", "H_SIGNATURE", "H_TRACE",
-]
+    # Only authenticated input may consume durable freshness state.
+    if not nonce_cache.check_and_store(identity + ":" + nonce):
+        raise BridgeSecurityError("nonce replay refused")
+    return {"identity": identity, "recipient": recipient, "schema_version": version,
+            "protocol_version": PROTOCOL_VERSION, "operation": operation,
+            "signed": "true", "identity_isolated": "false", "idempotency_key": idem,
+            "trace_id": get(H_TRACE), "body_digest": body_digest(body)}

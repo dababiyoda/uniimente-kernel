@@ -91,9 +91,21 @@ def test_ratified_publish_crosses_gate(stack):
     foundry = CompanyFoundry(ledger)
     h = foundry.submit_charter(make_charter(), make_territory(ledger=ledger))
     foundry.ratifier.decide(h, ratified=True, reason="human review")
+    proposal = foundry.prepare_publish(h, "entry", actor=actor.passport_id, platform="platform:declared")
+    grant = gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
     record = foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                             executor=LIVE, platform="platform:declared")
+                             executor=LIVE, platform="platform:declared", standing_grant=grant)
     assert record.state == "recorded" and record.receipt_hash
+
+
+def test_ratified_charter_is_not_an_external_grant(stack):
+    ledger, gate, actor = stack
+    foundry = CompanyFoundry(ledger)
+    h = foundry.submit_charter(make_charter(), make_territory(ledger=ledger))
+    foundry.ratifier.decide(h, ratified=True, reason="synthetic fixture")
+    record = foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
+        executor=lambda p: pytest.fail("unauthorized effect"), platform="platform:declared")
+    assert record.state == "refused"
 
 
 def test_edited_charter_loses_ratification(stack):

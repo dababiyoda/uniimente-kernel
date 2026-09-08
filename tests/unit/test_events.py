@@ -97,7 +97,7 @@ class TestSpine:
         flushed = spine.outbox_flush(mediator=lambda ev: ev.payload["n"] == "a")
         assert [e.payload["n"] for e in flushed] == ["a"]
         # refused event remains staged and is flushed by a later, permissive flush
-        flushed2 = spine.outbox_flush()
+        flushed2 = spine.outbox_flush(mediator=lambda ev: True)
         assert [e.payload["n"] for e in flushed2] == ["b"]
         kinds = [r.payload["direction"] for r in spine.ledger.by_type("event")]
         assert "outbox_refused" in kinds and "outbox_flushed" in kinds
@@ -114,7 +114,7 @@ def _three_step_workflow(spine, calls, boom_at=None):
         def compensate(state):
             calls.append(f"undo:{name}")
             state.pop(name, None)
-        return WorkflowStep(name=name, run=run, compensate=compensate)
+        return WorkflowStep(name=name, run=run, compensate=compensate, retry_safe=True)
     return DurableWorkflow(spine, "wf-1", [mk("s1"), mk("s2"), mk("s3")],
                            actor="alfonso", legal_principal="alfonso_lopez")
 

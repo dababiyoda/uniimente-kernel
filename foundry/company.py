@@ -117,7 +117,15 @@ class CompanyFoundry:
 
     def publish(self, charter_hash: str, node_id: str, *, gate, actor: str,
                 executor, platform: str, estimated_cost_usd: float = 0.0,
-                approver=None):
+                approver=None, standing_grant=None):
+        proposal = self.prepare_publish(charter_hash, node_id, actor=actor,
+            platform=platform, estimated_cost_usd=estimated_cost_usd)
+        return gate.run(proposal, executor=executor, approver=approver,
+                        standing_grant=standing_grant)
+
+    def prepare_publish(self, charter_hash: str, node_id: str, *, actor: str,
+                        platform: str, estimated_cost_usd: float = 0.0):
+        """Proposal only: a ratified charter never manufactures effect authority."""
         company = self.company(charter_hash)
         if not self.is_operational(charter_hash):
             raise FoundryError(f"charter {charter_hash[:16]}... not ratified; an unratified company does not speak")
@@ -141,4 +149,4 @@ class CompanyFoundry:
             estimated_cost_usd=estimated_cost_usd,
             requested_capability="media.publish",
             expected_outcome="artifact live on declared account")
-        return gate.run(proposal, executor=executor, approver=approver)
+        return proposal

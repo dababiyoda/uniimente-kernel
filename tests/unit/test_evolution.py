@@ -146,7 +146,8 @@ def _replay(thresholds):
                      evidence_confidence=conf, evidence_refs=["sha256:" + "a" * 64],
                      estimated_cost_usd=0.0, requested_capability="draft.publish",
                      expected_outcome="queued")
-        rec = gate.run(p, executor=lambda pr: {"observed_outcome": "queued",
+        g = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+        rec = gate.run(p, standing_grant=g, executor=lambda pr: {"observed_outcome": "queued",
                                                "result_class": "positive"})
         if rec.state == "recorded":
             if conf in WEAK_CONF:

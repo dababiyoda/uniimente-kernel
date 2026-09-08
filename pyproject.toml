@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uniimente-kernel-boundaries"
+version = "0.1.0"
+description = "Canonical Kernel boundary subset; no runtime activation or authority"
+requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.20,<5"]
+license = {file = "LICENSE"}
+
+[tool.setuptools]
+packages = ["adapters", "contracts", "events", "provenance"]
+
+[tool.setuptools.package-data]
+contracts = ["*.schema.json"]

@@ -1,0 +1,49 @@
+Command:
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python - <<'PY'
+import json,os,tempfile,time,statistics
+from pathlib import Path
+from adapters.bridge_transport import build_headers,verify_headers,NonceCache
+from events.bridge_state import BridgeState
+os.environ['WEALTHMACHINE_SIGNING_KEY']='isolated-cost-fixture-not-a-credential'
+body=b'{"synthetic":true}'
+N=30
+results={}
+with tempfile.TemporaryDirectory() as d:
+ for name in ('memory_fixture','durable_history'):
+  cache=NonceCache() if name=='memory_fixture' else BridgeState(str(Path(d)/'chain.jsonl'),'sha256:'+'a'*64,owner='wealthmachine',legal_principal='alfonso_lopez')
+  times=[]; accepted=0
+  for i in range(N):
+   h=build_headers(body,identity='daleobanks',schema_version='1.1',idempotency_key=str(i))
+   start=time.perf_counter()
+   verify_headers(h,body,nonce_cache=cache,expected_recipient='wealthmachine',principal='daleobanks')
+   times.append(1000*(time.perf_counter()-start)); accepted+=1
+  results[name]={'n':N,'accepted':accepted,'false_refusals':N-accepted,'p50_ms':statistics.median(times),'p95_ms':sorted(times)[28]}
+  if name=='durable_history':
+   results[name]['bytes']=Path(d,'chain.jsonl').stat().st_size
+   cache.close()
+print(json.dumps({'scope':'local synthetic admission only; not comparative organizational performance','measurements':results,'limits':'30 samples, single process, no throughput or institutional-readiness inference'},indent=2))
+PY
+Exit: 0
+
+{
+  "scope": "local synthetic admission only; not comparative organizational performance",
+  "measurements": {
+    "memory_fixture": {
+      "n": 30,
+      "accepted": 30,
+      "false_refusals": 0,
+      "p50_ms": 0.015222000001813285,
+      "p95_ms": 0.02891400004045863
+    },
+    "durable_history": {
+      "n": 30,
+      "accepted": 30,
+      "false_refusals": 0,
+      "p50_ms": 1.096953500109521,
+      "p95_ms": 2.2618580001108057,
+      "bytes": 22785
+    }
+  },
+  "limits": "30 samples, single process, no throughput or institutional-readiness inference"
+}
+

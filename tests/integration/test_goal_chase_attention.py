@@ -130,12 +130,16 @@ def test_observation_id_cannot_change_content_across_intake_variants(host):
         assert len(chase.requests) == 1
 
 
-def test_replayed_false_reconfirmation_fails_closed(host):
+@pytest.mark.parametrize("damage", ["changed_facts", "duplicate_identity", "older_intake"])
+def test_replayed_false_reconfirmation_fails_closed(host, damage):
     opened, founder, _ = host
     with opened() as chase:
         start(chase, founder)
         false = observation(now=T0, oid="sandbox:false-confirmation")
-        false["payload"]["records"][0]["cost_cents"] = 1
+        if damage == "changed_facts": false["payload"]["records"][0]["cost_cents"] = 1
+        if damage == "duplicate_identity": false["observation_id"] = observation(now=T0)["observation_id"]
+        if damage == "older_intake":
+            false = observation(now=T0 - timedelta(seconds=1), oid="sandbox:replayed-old")
         with pytest.raises(IntegrityConflict):
             chase._emit("observation_reconfirmed", false["observation_id"], false["goal_id"],
                         {"observation": false, "basis_digest": digest(observation(now=T0))})

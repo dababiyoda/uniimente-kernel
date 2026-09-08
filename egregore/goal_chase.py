@@ -52,6 +52,17 @@ def validate(kind: str, value: dict) -> dict:
     return value
 
 
+def observation_facts(observation: dict) -> dict:
+    """Exact decision-bearing fields; intake identity/time/order are not facts.
+
+    This only compares already validated sandbox observations. Negative records
+    and source identity remain material. It never extends an evidence deadline.
+    """
+    return {"goal_id": observation["goal_id"], "key": observation["key"],
+            "kind": observation["kind"], "source": observation["source"],
+            "records": sorted(observation["payload"]["records"], key=lambda r: r["source_id"])}
+
+
 class CommunicationRouter:
     """Deterministic in-memory channel. Durable messages live only on the spine.
 
@@ -110,6 +121,7 @@ class GoalChase:
             raise IntegrityConflict("canonical history failed verification: " + why)
         self.events = self.spine.replay("goal.")
         self.by_id, self.tails, self.goals = {}, {}, {}
+        self.observation_inputs = {}
         self.requests, self.decisions, self.deliveries, self.ticks = {}, {}, {}, {}
         self.last_fingerprints = {}
         for event in self.events:
@@ -127,6 +139,17 @@ class GoalChase:
                 raise IntegrityConflict("goal event identity mismatch")
             self.by_id[event.event_id] = event
             self.tails[gid] = event.event_id
+            if event.type in ("goal.observed", "goal.observation_reconfirmed"):
+                obs = validate("observation", data if event.type == "goal.observed" else data["observation"])
+                oid = (gid, obs["observation_id"])
+                latest = self.goals[gid]["latest_observations"].get(obs["key"])
+                ids = [r["source_id"] for r in obs["payload"]["records"]]
+                if (oid in self.observation_inputs or obs["goal_id"] != gid or obs["kind"] != "SIMULATION"
+                        or len(ids) != len(set(ids))
+                        or instant(obs["observed_at"]) > instant(event.occurred_at)
+                        or (latest and instant(obs["observed_at"]) < instant(latest["observed_at"]))):
+                    raise IntegrityConflict("invalid, duplicate or older observation in canonical history")
+                self.observation_inputs[oid] = obs
             if event.type == "goal.registered":
                 env = data["input"]
                 self._authenticate(env, "GOAL", at=instant(event.occurred_at))
@@ -135,12 +158,27 @@ class GoalChase:
                     raise IntegrityConflict("goal was registered twice or misbound")
                 self.goals[gid] = {"spec": goal, "input": env, "profile": data["profile"],
                                    "status": goal["lifecycle_state"], "observations": {},
+                                   "latest_observations": {},
                                    "reconciled": {}, "started": {}, "recorded": {},
                                    "denied_actions": [], "conflicted": False,
                                    "deficits": [], "bottleneck": None}
             elif event.type == "goal.observed":
                 obs = validate("observation", data)
                 self.goals[gid]["observations"][obs["key"]] = obs
+                self.goals[gid]["latest_observations"][obs["key"]] = obs
+            elif event.type == "goal.observation_reconfirmed":
+                obs = validate("observation", data["observation"])
+                goal = self.goals[gid]
+                basis = goal["observations"].get(obs["key"])
+                latest = goal["latest_observations"].get(obs["key"])
+                if (not basis or obs["goal_id"] != gid or data["basis_digest"] != digest(basis)
+                        or observation_facts(obs) != observation_facts(basis)
+                        or not self._fresh(goal, basis, at=instant(event.occurred_at))
+                        or not instant(latest["observed_at"]) <= instant(obs["observed_at"]) <= instant(event.occurred_at)):
+                    raise IntegrityConflict("reconfirmation does not preserve its fresh exact evidence basis")
+                # All intake survives, but neither the decision basis nor its
+                # freshness/authorization deadline is revised by confirmation.
+                goal["latest_observations"][obs["key"]] = obs
             elif event.type == "goal.action_selected":
                 self.goals[gid]["bottleneck"] = data
                 self.goals[gid]["status"] = "ACTIVE"
@@ -259,6 +297,19 @@ class GoalChase:
             ids = [r["source_id"] for r in obs["payload"]["records"]]
             if len(ids) != len(set(ids)):
                 raise ContractError("duplicate observation source IDs")
+            saved = self.observation_inputs.get((gid, obs["observation_id"]))
+            if saved:
+                if saved != obs:
+                    raise IntegrityConflict("observation identity reused for changed content")
+                return  # Exact duplicate intake, even across event variants.
+            latest = goal["latest_observations"].get(obs["key"])
+            if latest and instant(obs["observed_at"]) < instant(latest["observed_at"]):
+                raise ContractError("observation is older than the latest accepted intake")
+            basis = goal["observations"].get(obs["key"])
+            if self._fresh(goal, basis) and observation_facts(obs) == observation_facts(basis):
+                self._emit("observation_reconfirmed", obs["observation_id"], gid,
+                           {"observation": obs, "basis_digest": digest(basis)})
+                return
             self._emit("observed", obs["observation_id"], gid, obs)
         except Exception as exc:
             self._rejected(gid, value, exc)
@@ -284,8 +335,8 @@ class GoalChase:
         return next((a for a in goal["spec"]["actions"]
                      if a["action_id"] not in goal["reconciled"]), None)
 
-    def _fresh(self, goal, obs):
-        return bool(obs and timedelta(0) <= self.now - instant(obs["observed_at"])
+    def _fresh(self, goal, obs, *, at=None):
+        return bool(obs and timedelta(0) <= (at or self.now) - instant(obs["observed_at"])
                     < timedelta(seconds=goal["spec"]["evidence_requirements"]["max_age_seconds"]))
 
     def _scope(self, gid, action, observation):
@@ -550,6 +601,7 @@ class GoalChase:
             obs = goal["observations"].get(action["observation_key"]) if action else None
             if (rid not in self.decisions and action and goal["status"] not in STOPPED
                     and not goal["conflicted"] and action["action_id"] not in goal["denied_actions"]
+                    and self.now < instant(message["expires_at"])
                     and self._fresh(goal, obs)
                     and self._request_id(self._scope(message["goal_id"], action, obs)) == rid):
                 result.append(canonical_copy(message))

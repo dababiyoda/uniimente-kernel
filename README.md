@@ -73,3 +73,10 @@ Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIn
 Own the control plane. Adopt or rent commodity mechanics.
 
 Do not build: a custom LLM, a blockchain, an operating system, a general database, a browser engine, a Docker replacement, a front-end framework, a generic social bot, a generic RAG wrapper. Build the layer that decides what may become real.
+
+## External platform reference
+
+- [GitHub](https://github.com/) — repository hosting and collaboration platform.
+  This is a navigational reference, not an authority, capability, evidence, or
+  execution grant. UNIIMENTE's constitutional controls and repository-specific
+  records remain authoritative.

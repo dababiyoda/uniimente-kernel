@@ -1,6 +1,6 @@
 # OMNIMORPH
 
-> **Founder-intent correction (INTENT-0029):** OMNIMORPH is an **optional organization-design and capability-composition mechanism**. It is not the canonical definition of UNIIMENTE morphogenesis.
+> **Founder-intent correction (INTENT-0030):** OMNIMORPH is an **optional organization-design and capability-composition mechanism**. It is not the canonical definition of UNIIMENTE morphogenesis.
 >
 > Canonical morphogenesis means functional capability formation/reconfiguration in response to a verified discrepancy or `CapabilityDeficit`. OMNIMORPH should be invoked only when temporary organization or organ composition is actually the strongest mechanism for closing that deficit. Simpler routes—existing capabilities, ordinary workflows, open source, APIs, computer use, small utilities, or a single coding agent—may correctly win. See `docs/FOUNDER_EFFECT_COMPILER.md`.
 

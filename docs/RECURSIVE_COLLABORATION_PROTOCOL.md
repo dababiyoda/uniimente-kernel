@@ -4,7 +4,7 @@ This protocol turns collaboration, dissent, and founder-intent preservation into
 
 ## 0. Founder-effect compilation gate
 
-Before any material architectural interpretation of a founder statement, read `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0029-effect-not-metaphor.md`.
+Before any material architectural interpretation of a founder statement, read `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0030-effect-not-metaphor.md`.
 
 The governing rule is:
 

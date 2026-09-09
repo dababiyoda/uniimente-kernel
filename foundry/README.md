@@ -1,6 +1,6 @@
 # UNIIMENTE Foundry
 
-> **Founder-effect rule (INTENT-0029):** Foundry work begins from the desired transformation, not from a favored metaphor, repository, technology catalog, or existing subsystem. Preserve the founder's target effect, search reality, extract causal mechanisms, and build only what remains missing. See `docs/FOUNDER_EFFECT_COMPILER.md`.
+> **Founder-effect rule (INTENT-0030):** Foundry work begins from the desired transformation, not from a favored metaphor, repository, technology catalog, or existing subsystem. Preserve the founder's target effect, search reality, extract causal mechanisms, and build only what remains missing. See `docs/FOUNDER_EFFECT_COMPILER.md`.
 
 The package contains bounded institutional foundries with different jobs. These are tools inside UNIIMENTE's broader Capability Genesis process; they do not define the complete process.
 

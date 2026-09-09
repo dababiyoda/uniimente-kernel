@@ -12,6 +12,7 @@ import subprocess
 import pytest
 
 from evolution.repair import spec
+from evolution.repair.subjects import SR001
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -106,14 +107,16 @@ def test_original_linker_is_byte_identical_to_the_frozen_hashes():
 def test_continuity_hashes_describe_the_real_artifacts_now():
     """The continuity baseline must be true at freeze time, or the later
     before/after comparison proves nothing."""
+    # The sealed experiment keeps its original source binding. SR-001's later
+    # authorized gate repair is a distinct subject, never a retroactive pass.
     combined = hashlib.sha256()
     for rel, expected in spec.CONTINUITY_ARTIFACT_SHA256.items():
-        with open(os.path.join(ROOT, rel), "rb") as handle:
-            raw = handle.read()
+        raw = subprocess.check_output(["git", "show", f"{spec.BASELINE_COMMIT}:{rel}"], cwd=ROOT)
         assert hashlib.sha256(raw).hexdigest() == expected, \
             f"{rel} does not match its frozen continuity hash"
         combined.update(raw)
     assert combined.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
+    assert SR001.matches(ROOT), "current source differs from the SR-001 review binding"
 
 
 def test_live_corpus_expectation_matches_the_component_being_replaced():

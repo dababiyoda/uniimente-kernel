@@ -1,8 +1,10 @@
 # adapters — the Universal Compatibility Membrane (first ring)
 
 Contract-version adapters between the preserved DALEOBANKS↔WealthMachine wire
-protocol v1.1 and the kernel's canonical contracts, plus the kernel-side mirror of
-the organs' bridge transport security.
+protocol v1.1 and the kernel's canonical contracts. Kernel is the sole semantic owner of
+bridge transport, schema validation, event identity and durable recovery. The
+organs consume the pinned `uniimente-kernel-boundaries` package (0.1.1); their
+local security modules are compatibility re-exports, not independent engines.
 
 Rules every adapter here follows (Final Build Order §8):
 
@@ -22,10 +24,12 @@ Rules every adapter here follows (Final Build Order §8):
 
 Modules:
 
-- `bridge_transport.py` — third mirror of the organs' `bridge_security.py`
-  (HMAC, nonce replay guard, skew window, idempotency, version floor), adding
-  `kernel` to the known identities. Peers adding `kernel` to their mirrors is a
-  recorded cross-repo dependency, not assumed.
+- `bridge_transport.py` — canonical exact-context HMAC and nonce verification.
+  Transport protocol 2 is distinct from wire schema 1.1. Durable application
+  idempotency belongs to `events/bridge_state.py`, not the transport nonce.
+  Historical mirrors remain in Git; active consumers use thin re-exports.
+- `contract_validation.py` — strict JSON and Draft 2020-12 schema validation,
+  including required date-time format validation.
 - `daleobanks_opportunity.py` — wire OpportunityPacket 1.1 → canonical
   OpportunityPacket, with `AdaptationResult` carrying the unresolved set.
 - `wealthmachine_assessment.py` — wire VentureAssessment 1.1 → canonical

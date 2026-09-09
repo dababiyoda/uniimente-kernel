@@ -48,6 +48,7 @@ from evolution.repair.disable import ComponentDisabled
 from evolution.repair.r1_contract_index import ContractIndexInversion
 from evolution.repair.r2_constraint import ConstraintSatisfaction
 from evolution.repair.r3_local_rule import LocalRulePropagation
+from evolution.repair.subjects import FROZEN, SR001
 from evolution.spider_web import SpiderWebAudit
 
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -130,9 +131,12 @@ class Trial:
 class ReplacementExperiment:
     """Runs the frozen experiment. Decides nothing that the spec did not."""
 
-    def __init__(self, root: str = KERNEL_ROOT, ledger=None):
+    def __init__(self, root: str = KERNEL_ROOT, ledger=None, *, subject=FROZEN):
+        if subject not in (FROZEN, SR001):
+            raise ValueError("unreviewed experimental subject binding")
         self.root = root
         self.ledger = ledger
+        self.subject = subject
         self.contracts_dir = os.path.join(root, "contracts")
         self.events: list[dict] = []
 
@@ -194,8 +198,7 @@ class ReplacementExperiment:
 
         refusals_ok = not any(s.kind in ("refusal_incorrect", "health_check_failed")
                               for s in live.symptoms)
-        continuity_ok = continuity_fingerprint(self.root) == \
-            spec.CONTINUITY_COMBINED_SHA256
+        continuity_ok = self.subject.matches(self.root)
 
         gates = {
             "live_edges_4_of_4": live.function_fraction == 1.0,
@@ -272,6 +275,7 @@ class ReplacementExperiment:
                         "baseline_commit": spec.BASELINE_COMMIT,
                         "environment": {"python": platform.python_version(),
                                         "platform": platform.system()}}
+        record["subject_binding"] = self.subject.to_dict()
 
         # 1. continuity before anything happens
         before = continuity_fingerprint(self.root)
@@ -406,7 +410,8 @@ class ReplacementExperiment:
         after = continuity_fingerprint(self.root)
         record["continuity"].update({
             "after": after,
-            "unchanged": before == after == spec.CONTINUITY_COMBINED_SHA256,
+            "unchanged": before == after == self.subject.continuity_sha256
+                         and self.subject.matches(self.root),
             "artifact_count": len(spec.CONTINUITY_ARTIFACT_SHA256),
         })
 

@@ -1,0 +1,269 @@
+{
+  "decision_id": "SR001-COMPAT-01",
+  "title": "Preserve frozen experiments and bind the repaired subject explicitly",
+  "problem": "The SR-001 authority/recovery correction changes the actual gate and workflow classes. Seventeen old experiment tests still bind the original subject, one rollback emits the old checkpoint shape, and harmless fixtures omit the newly required retry contract.",
+  "founder_intent_refs": [
+    "2026-09-09 bounded adoption directive, sections 1-2 and 8",
+    "SR-001, docs/REPOSITORY_RATIONALIZATION_PLAN.md",
+    "INTENT-0030, Kernel #99 and #98 discussion"
+  ],
+  "baseline": "Original main bcbb1ab4a0c42cda4a97aec42a11125753962762: 495 passed. Draft a50f5ff677312cc78e6d64a603a005143de7edfd: reproduced 522 passed / 17 failed. Original Package 3/4 seals and alternatives remain unchanged.",
+  "alternatives": [
+    {
+      "name": "Explicit current subject plus bounded data migration",
+      "description": "Keep frozen spec and baseline bytes, opt into a fixed SR001 subject binding, and explicitly convert only valid interrupted harmless W0 checkpoints.",
+      "advantages": [
+        "Preserves refusal evidence and useful experiment functionality",
+        "No runtime authority or canonical package changes"
+      ],
+      "disadvantages": [
+        "Two source bindings require maintenance",
+        "Historical assertions require Git history"
+      ],
+      "revival_evidence": "Current experiment and negative controls pass; unreviewed binding still refuses."
+    },
+    {
+      "name": "Freeze all experiments on old main",
+      "description": "Retain original benchmark only; leave successor compatibility blocked.",
+      "advantages": [
+        "No fixture changes"
+      ],
+      "disadvantages": [
+        "Does not close legitimate compatibility seam"
+      ],
+      "revival_evidence": "Revert successor experiment if it cannot preserve invariants."
+    },
+    {
+      "name": "Automatic checkpoint inference or recomputed seals",
+      "description": "Infer missing retry permission or accept a dynamically measured source fingerprint.",
+      "advantages": [
+        "Superficially fewer failures"
+      ],
+      "disadvantages": [
+        "Launders an unknown outcome or drift into acceptance"
+      ],
+      "revival_evidence": "Never revive authority inference; any future general migrator needs a separate bounded decision and external-effect reconciliation."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The 17 incompatibilities continue to block adoption.",
+    "advantages": [
+      "Preserves all original observations"
+    ],
+    "disadvantages": [
+      "Historical status conceals an active incompatibility if adoption proceeds anyway"
+    ]
+  },
+  "roles": [
+    {
+      "role": "founder-intent steward",
+      "position": "Preserve useful developmental competence and the original goal; this is a dependency repair.",
+      "material_concerns": [
+        "A green experiment is not persistent founder-loop closure"
+      ],
+      "evidence_refs": [
+        "kernel-main-baseline.log",
+        "kernel-reproduced.log"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "systems architect",
+      "position": "One canonical runtime and explicit version-bound test subjects; use existing schema validation.",
+      "material_concerns": [
+        "No parallel ledger, authority engine, framework or automatic state adoption"
+      ],
+      "evidence_refs": [
+        "evolution/repair/subjects.py",
+        "evolution/migration/migrate.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "adversarial reviewer",
+      "position": "Historical assertions must still verify original bytes; omitted retry permission must refuse.",
+      "material_concerns": [
+        "Changing expectations can manufacture a pass unless original failures and source binding survive"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_shared_compatibility.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "operator and maintainer",
+      "position": "Explicit opt-in CLI and data-only migration keep rollback concrete.",
+      "material_concerns": [
+        "Default old experiment still fails against changed current source; full Git history is required for baseline tests"
+      ],
+      "evidence_refs": [
+        "evolution/repair/__main__.py",
+        ".github/workflows/canonical-ci.yml"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "evidence and welfare guardian",
+      "position": "Do not turn test results, hashes or synthetic workload credentials into real verified progress or founder authentication.",
+      "material_concerns": [
+        "Single-author review is not independent review; external consequences are not reversible through software rollback"
+      ],
+      "evidence_refs": [
+        "tests/evidence/shared-recovery/",
+        "tests/unit/test_shared_compatibility.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Original experiments are still executable on their baseline",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/adoption-20260909/kernel-main-baseline.log",
+      "finding": "495 passed under the independently enforced no-network launcher."
+    },
+    {
+      "claim": "Explicit compatibility repair preserves current tests and negative controls",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/adoption-20260909/kernel-closed.log",
+      "finding": "551 passed; original 17 failures retained separately."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Original draft was not compatible",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/adoption-20260909/kernel-reproduced.log",
+      "finding": "522 passed, 17 failed."
+    },
+    {
+      "claim": "Runtime grants and unknown effects cannot be reconstructed from legacy checkpoints",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_shared_compatibility.py",
+      "finding": "Malformed, terminal, uncertain, invalid-identity and omitted retry-contract inputs refuse."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Repair only the active compatibility seam while preserving the original experiment and authority boundaries. This is the narrow new subject-version decision, not a third SR-001 architectural strengthening pass.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Keep old and current evidence separately source-bound",
+        "amplified_value": "Future component replacements can be compared without rewriting the past; the value reverses if subject definitions proliferate without owners."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A caller-supplied retry contract does not prove real harmlessness",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Keep conversion data-only and explicit; limit use to reviewed harmless fixtures. No production auto-migration, grant or execution."
+      },
+      {
+        "id": "D2",
+        "statement": "A new subject binding might erase original negative evidence",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Keep original spec seals, old Git source tests, baseline run and red log. Reject arbitrary bindings and retain default frozen behavior."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Old main passes but lacks shared security/durability corrections.",
+      "do_nothing": "Retains 17 unresolved failures.",
+      "simplest_viable_alternative": "Keep experiments pinned to old main only; insufficient for useful successor compatibility.",
+      "strongest_competing_architecture": "A general workflow migration engine adds cost and authority ambiguity without demand.",
+      "reversible_experiment": "Fixed explicit subject and narrow W0-to-v2 data adapter; neither changes active runtime ownership."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Retune seals or silently infer retry safety",
+        "rejection_reason": "Would manufacture compatibility and permit unknown effects.",
+        "revival_evidence": "No revival of missing authority inference; a general migration proposal requires new evidence and a separate decision."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the version binding and adapter as if already adopted: unreviewed source, malformed history, uncertainty, changed step contracts and misleading green counts.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "Fresh CI checkouts may lack the historical Git objects",
+        "strengthening_response": "Fetch complete history in the existing test workflows; source checks fail if history is missing instead of silently re-sealing."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "No runtime caller or automatic dispatch added; meaningful use remains limited to reviewed harmless fixtures.",
+        "owner": "Kernel evolution maintainer",
+        "review_trigger": "Any proposed production migration or consequential retry"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Original frozen specs, source bytes in Git, 495 baseline, red log and explicit opt-in remain.",
+        "owner": "Kernel evidence maintainer",
+        "review_trigger": "Any change to a seal, subject digest, test corpus or threshold"
+      }
+    ],
+    "final_design": "EXPERIMENT: explicit fixed SR001 subject with original sealed spec; narrow validated data-only migration; full-history CI; no package ownership or authority change.",
+    "residual_risks": [
+      {
+        "risk": "Single-author perspectives are not independent review",
+        "mitigation": "Keep adoption held pending independent review; do not claim consensus.",
+        "owner": "Founder/adoption reviewer",
+        "review_trigger": "Before any adoption or merge"
+      },
+      {
+        "risk": "Historical runtime cannot safely consume arbitrary new durable state",
+        "mitigation": "Rollback code only after stopping writers and reconciling retained state; never erase accepted work.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any rollback after v2 history is written"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved. Five perspectives are one assistant's analysis, not five independent reviewers. The bounded implementation is authorized; adoption is not.",
+    "entries": [
+      {
+        "role": "adversarial reviewer",
+        "position": "Keep adoption held despite local green tests.",
+        "rationale": "New binding proves only explicit experiment compatibility; Docker, newest-main composition and independent review remain separate.",
+        "evidence_threshold": "Exact final candidate gates and independent adoption review.",
+        "owner": "Founder/adoption reviewer",
+        "review_trigger": "Adoption decision"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Use --subject sr001 explicitly. Keep W0/W2 adapters and specs unchanged. For reviewed harmless fixtures, validate W0, supply explicit retry-safe step contract, preserve identity/state/time, append the v2 record, close/reopen and resume. Unknown consequential outcomes remain blocked.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this compatibility commit while retaining evidence and original alternative history.",
+      "Stop writers and preserve every accepted record before any executable rollback.",
+      "Do not feed v2 history to old software without a separately validated migration; software restoration cannot undo external effects."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unreviewed source binding passes",
+    "Omitted retry permission becomes executable",
+    "Original negative evidence or thresholds are deleted or silently changed",
+    "Component replacement creates authority or loses mission continuity"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel maintainer within the 2026-09-09 bounded founder direction",
+  "review_trigger": "Any broader migration, subject/seal change, authority change, or adoption"
+}

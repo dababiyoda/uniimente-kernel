@@ -38,7 +38,8 @@ def steps(names, calls, failing=None, approval=None):
 
         out.append(WorkflowStep(name=n, run=run,
                                 compensate=lambda s, _n=n: calls.append("undo:" + _n),
-                                max_retries=0, approval_wait=(n == approval)))
+                                max_retries=0, approval_wait=(n == approval),
+                                retry_safe=True))
     return out
 
 
@@ -437,7 +438,9 @@ def test_13_rollback_after_a_partial_replacement_resumes_from_valid_state():
     assert reverted.payload is not None, reverted.reason
     assert reverted.payload["cursor"] == 1
     assert reverted.payload["state"] == {"r1": 1}
-    sp.ledger.append("workflow", {**reverted.payload, "note": "rolled_back"})
+    current = migrate.to_current_checkpoint(reverted.payload, steps(names, calls))
+    assert current.payload is not None, current.reason
+    sp.ledger.append("workflow", current.payload)
 
     resumed = resume_workflow(sp, wid, steps(names, calls))
     assert isinstance(resumed, DurableWorkflow)

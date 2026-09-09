@@ -2,7 +2,7 @@
 
 Status: **ACTIVE FOUNDER INTENT**  
 Owner: Alfonso Lopez  
-Intent record: `docs/intent/INTENT-0029-effect-not-metaphor.md`  
+Intent record: `docs/intent/INTENT-0030-effect-not-metaphor.md`  
 Applies to: UNIIMENTE Kernel, every organ, every Venture Cell, every coding/research agent, every future repository or tool acting on UNIIMENTE work.
 
 ## Governing correction

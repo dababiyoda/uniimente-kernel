@@ -6,7 +6,7 @@ It is **not the canonical definition of morphogenesis for UNIIMENTE**.
 
 ## Founder correction
 
-See `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0029-effect-not-metaphor.md`.
+See `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0030-effect-not-metaphor.md`.
 
 Canonical rule:
 

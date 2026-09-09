@@ -18,12 +18,12 @@ def _assert_effect_not_metaphor(text: str, source: str) -> None:
 
 def test_canonical_effect_compiler_and_intent_record_exist() -> None:
     doctrine = _text("docs/FOUNDER_EFFECT_COMPILER.md")
-    intent = _text("docs/intent/INTENT-0029-effect-not-metaphor.md")
+    intent = _text("docs/intent/INTENT-0030-effect-not-metaphor.md")
 
     _assert_effect_not_metaphor(doctrine, "FOUNDER_EFFECT_COMPILER")
     assert "CapabilityDeficit" in doctrine
     assert "functional capability formation" in doctrine
-    assert "INTENT-0029" in intent
+    assert "INTENT-0030" in intent
     assert "REGRESS THE LITERAL INTERPRETATION" in intent
 
 
@@ -58,3 +58,11 @@ def test_doctrine_preserves_authority_separation() -> None:
     assert "Installation does not authorize activation" in doctrine
     assert "Activation does not grant consequence authority" in doctrine
     assert "Alfonso remains root human authority" in doctrine
+
+
+def test_effect_intent_id_does_not_collide_with_open_igc_allocation() -> None:
+    doctrine = _text("docs/FOUNDER_EFFECT_COMPILER.md")
+    ledger = _text("docs/FOUNDER_INTENT_LEDGER.md")
+    assert "INTENT-0030-effect-not-metaphor.md" in doctrine
+    assert "`INTENT-0030`" in ledger
+    assert not (ROOT / "docs/intent/INTENT-0029-effect-not-metaphor.md").exists()

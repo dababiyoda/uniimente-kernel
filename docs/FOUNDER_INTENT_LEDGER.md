@@ -39,7 +39,7 @@ When an intention is ambiguous, interpret it toward the strongest lawful, eviden
 
 ### Effect-not-metaphor rule
 
-`INTENT-0029` is the controlling interpretation rule for biological, institutional, mythic, and science-fiction language.
+`INTENT-0030` is the controlling interpretation rule for biological, institutional, mythic, and science-fiction language.
 
 > **Preserve the intended effect. Do not literalize the metaphor.**
 
@@ -61,9 +61,9 @@ A science-fiction aspiration may remain partially or wholly unrealizable with cu
 
 Canonical UNIIMENTE morphogenesis means **functional capability formation or reconfiguration in response to a verified discrepancy or CapabilityDeficit**. Digital cells, tissues, local developmental rules, decentralized topologies, or dynamically generated organizations are optional research mechanisms, not requirements.
 
-Historical literal interpretations remain preserved as evidence and mechanism sources but are superseded as controlling founder intent where they conflict with `INTENT-0029`.
+Historical literal interpretations remain preserved as evidence and mechanism sources but are superseded as controlling founder intent where they conflict with `INTENT-0030`.
 
-See `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0029-effect-not-metaphor.md`.
+See `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0030-effect-not-metaphor.md`.
 
 "Build upward" never means:
 

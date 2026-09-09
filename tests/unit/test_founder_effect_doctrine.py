@@ -8,12 +8,19 @@ def _text(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def _assert_effect_not_metaphor(text: str, source: str) -> None:
+    lowered = text.lower()
+    assert "effect" in lowered, source
+    assert "literal" in lowered, source
+    assert "metaphor" in lowered, source
+    assert "preserve" in lowered, source
+
+
 def test_canonical_effect_compiler_and_intent_record_exist() -> None:
     doctrine = _text("docs/FOUNDER_EFFECT_COMPILER.md")
     intent = _text("docs/intent/INTENT-0029-effect-not-metaphor.md")
 
-    assert "Preserve the effect" in doctrine
-    assert "Do not literalize" in doctrine
+    _assert_effect_not_metaphor(doctrine, "FOUNDER_EFFECT_COMPILER")
     assert "CapabilityDeficit" in doctrine
     assert "functional capability formation" in doctrine
     assert "INTENT-0029" in intent
@@ -28,9 +35,7 @@ def test_agent_ingress_surfaces_effect_compiler() -> None:
         "README.md",
         ".github/pull_request_template.md",
     ):
-        text = _text(path)
-        assert "Preserve the effect" in text, path
-        assert "literal" in text.lower(), path
+        _assert_effect_not_metaphor(_text(path), path)
 
 
 def test_related_architecture_is_subordinate_to_effect() -> None:

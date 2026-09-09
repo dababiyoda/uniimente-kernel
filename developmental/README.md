@@ -1,6 +1,6 @@
 # Developmental Substrate — MICA/CDPE TARGET_FORM_001
 
-> **Founder-intent correction (INTENT-0029):** this directory is a **Developmental Mechanism Research Laboratory**. It tests whether biology-inspired mechanisms such as local competency, field-like signaling, target-state regulation, topology-sensitive recovery, and distributed repair are useful. It does **not** define what UNIIMENTE morphogenesis must look like.
+> **Founder-intent correction (INTENT-0030):** this directory is a **Developmental Mechanism Research Laboratory**. It tests whether biology-inspired mechanisms such as local competency, field-like signaling, target-state regulation, topology-sensitive recovery, and distributed repair are useful. It does **not** define what UNIIMENTE morphogenesis must look like.
 >
 > Canonical project rule: **preserve the effect; do not literalize the metaphor.** Canonical morphogenesis means functional capability formation/reconfiguration in response to a verified discrepancy or CapabilityDeficit. If ordinary software, an open-source project, an API, computer use, a coding agent, or another simpler mechanism produces the desired effect more reliably, use it. See `docs/FOUNDER_EFFECT_COMPILER.md`.
 

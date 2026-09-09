@@ -25,7 +25,7 @@ Required for any founder metaphor, science-fiction aspiration, morphogenesis/dev
 - Why added architecture is required:
 - Evidence that would falsify the claimed underlying effect:
 
-> Governing rule: **Preserve the effect. Do not literalize the metaphor. Search reality before inventing architecture.** See `docs/FOUNDER_EFFECT_COMPILER.md` and `INTENT-0029`.
+> Governing rule: **Preserve the effect. Do not literalize the metaphor. Search reality before inventing architecture.** See `docs/FOUNDER_EFFECT_COMPILER.md` and `INTENT-0030`.
 
 ## Reality status
 

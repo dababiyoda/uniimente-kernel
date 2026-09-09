@@ -4,6 +4,23 @@ A constitutionally governed runtime for AI agents, ventures, media properties, w
 
 **Models reason. Agents propose. Humans and policies authorize. The Kernel determines what may become real. Reality determines what was correct.**
 
+## Agent entry — read this before architecture work
+
+All AI/coding/research agents entering this repository must read:
+
+1. `AGENTS.md`
+2. `docs/FOUNDER_EFFECT_COMPILER.md`
+3. `docs/FOUNDER_INTENT_LEDGER.md`
+4. `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`
+
+The controlling founder correction is:
+
+> **Preserve the intended effect. Do not literalize the metaphor. Search reality before inventing architecture.**
+
+Alfonso's terms such as `egregore`, `morphogenesis`, `cells`, `tissues`, `organs`, `immune system`, `healing`, `regeneration`, `embodiment`, `Jarvis`, `omniscience`, and `immortality` are serious capability destinations and mechanism-discovery prompts unless he explicitly specifies a literal implementation. Their surface metaphors are not architectural mandates.
+
+Canonical UNIIMENTE morphogenesis means **functional capability formation/reconfiguration in response to a verified discrepancy or CapabilityDeficit**. Existing biological/developmental and organizational-morphogenesis work remains valuable research and mechanism substrate, but it does not define the required final geometry.
+
 ## The invariant
 
 No consequential external effect occurs without:
@@ -52,7 +69,9 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
-| `/docs` | Architecture, build order, Backcast GPS plan, UCL language specification |
+| `/developmental` | biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
+| `/omnimorph` | optional temporary-organization/capability-composition mechanism; subordinate to Capability Genesis |
+| `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records |
 
 ## Build status
 
@@ -64,12 +83,16 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`).
+172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`). These are internal evidence for the stated versions, not proof that the full egregore is integrated or operational in the real world.
 
-Next: Phase 6 (first AI influencer company + Rabbit Hole Engine, WealthMachineIntelligence) and organ contract consumption (issue #5; DALEOBANKS #57). See `docs/BUILD_ORDER.md` and `docs/BACKCAST_GPS.md` for the stage-gated plan with kill criteria.
+Next work must follow `docs/CANONICAL_EXECUTION_ORDER.md` and the active repository evidence, not stale phase labels alone.
 
 ## The doctrine
 
 Own the control plane. Adopt or rent commodity mechanics.
 
-Do not build: a custom LLM, a blockchain, an operating system, a general database, a browser engine, a Docker replacement, a front-end framework, a generic social bot, a generic RAG wrapper. Build the layer that decides what may become real.
+**Effect compiler:** founder aspiration → observable effect → existing mechanism search → residual CapabilityDeficit → acquire/compose/adapt/build → sandbox/test → verify → attach under authority → resume original goal → measure reality.
+
+Do not build a custom LLM, blockchain, operating system, general database, browser engine, Docker replacement, front-end framework, generic social bot, generic RAG wrapper, digital cell substrate, or organizational hierarchy merely because a source metaphor suggests one. Build or own the layer only when doing so creates a verified control, proof, continuity, composition, security, economic, or strategic advantage.
+
+The metaphor is allowed to be extraordinary. The mechanism must be real.

@@ -1,0 +1,4 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "scripts/ci/check_schema_refs.py"]
+schemas scanned: 14, local refs checked: 12
+all document-local schema references resolve

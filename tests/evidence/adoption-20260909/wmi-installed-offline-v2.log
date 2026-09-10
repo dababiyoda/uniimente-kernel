@@ -1,0 +1,66 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "-s", "tests/test_installed_offline_composition.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+F
+=================================== FAILURES ===================================
+_______ test_installed_real_composition_retains_result_across_processes ________
+
+packaged_application = (PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-12/test_installed_real_compositio0'), ['uvi...st-12/test_installed_real_compositio0/synthetic.db', 'ENVIRONMENT': 'production', 'JWT_AUDIENCE': 'wmi-test-api', ...})
+
+    def test_installed_real_composition_retains_result_across_processes(packaged_application):
+        source = os.getenv('DALEOBANKS_SOURCE')
+        if not source:
+            pytest.fail('DALEOBANKS_SOURCE required for this installed composition gate')
+        source = Path(source).resolve()
+        directory, _, environment = packaged_application
+        # Keep producer modules outside the packaged consumer; no test stubs on path.
+        environment['PYTHONPATH'] = os.pathsep.join((str(source), environment.get('PYTHONPATH', '')))
+        environment.update(WEALTHMACHINE_URL='http://localhost', WEALTHMACHINE_MODE='http',
+            WEALTHMACHINE_INTAKE_TOKEN=token(), PERSIST_STORE='false',
+            LEDGER_PATH=str(directory / 'producer-decisions.jsonl'))
+        # Both processes need their own writer; never share a ledger file across owners.
+        environment['UNIIMENTE_BRIDGE_STATE_PATH'] = str(directory / 'consumer.jsonl')
+        evidence = []
+        for mode in ('interrupt', 'normal', 'normal'):
+            process = subprocess.run([sys.executable, '-u', '-c', SCRIPT, mode],
+                cwd=directory, env=environment, capture_output=True, text=True, timeout=30)
+>           assert process.returncode == (75 if mode == 'interrupt' else 0), process.stdout + process.stderr
+E           AssertionError: {"database_url": "sqlite:////workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-12/test_installed_real_compositio0/synthetic.db", "pool_strategy": "static", "event": "Database connection initialized", "timestamp": "2026-09-09T22:27:30.852317Z", "level": "info"}
+E             {"event": "Starting WealthMachine Enterprise API", "timestamp": "2026-09-09T22:27:31.077222Z", "level": "info"}
+E             {"event": "Database tables created successfully", "timestamp": "2026-09-09T22:27:31.084828Z", "level": "info"}
+E             {"event": "Database tables initialized", "timestamp": "2026-09-09T22:27:31.084925Z", "level": "info"}
+E             {"request_id": "1ead0a94-3c6e-4b8c-a610-9fb280341876", "method": "POST", "path": "/api/opportunities/intake", "query_params": {}, "client_ip": "testclient", "user_agent": "testclient", "event": "Request started", "timestamp": "2026-09-09T22:27:31.094694Z", "level": "info"}
+E             {"request_id": "1ead0a94-3c6e-4b8c-a610-9fb280341876", "status_code": 503, "duration": 0.005216360092163086, "event": "Request completed", "timestamp": "2026-09-09T22:27:31.099865Z", "level": "info"}
+E             HTTP Request: POST http://localhost/api/opportunities/intake "HTTP/1.1 503 Service Unavailable"
+E             {"event": "Shutting down WealthMachine Enterprise API", "timestamp": "2026-09-09T22:27:31.100654Z", "level": "info"}
+E             Traceback (most recent call last):
+E               File "<string>", line 57, in <module>
+E               File "/workspace/scratch/fa1437d21e0f/repos/dale/services/wealthmachine_client.py", line 101, in evaluate
+E                 assessment = self._evaluate_http(packet)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               File "/workspace/scratch/fa1437d21e0f/repos/dale/services/wealthmachine_client.py", line 149, in _evaluate_http
+E                 with urllib.request.build_opener(_NoRedirect).open(request, timeout=timeout) as response:
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               File "<string>", line 50, in exchange
+E             urllib.error.HTTPError: HTTP Error 503: {"detail":"ledger already has a writer"}
+E             
+E           assert 1 == 75
+E            +  where 1 = CompletedProcess(args=['/workspace/scratch/4c77bffec5be/.venv/bin/python', '-u', '-c', "\nimport hashlib, json, os, sy... "<string>", line 50, in exchange\nurllib.error.HTTPError: HTTP Error 503: {"detail":"ledger already has a writer"}\n').returncode
+
+tests/test_installed_offline_composition.py:111: AssertionError
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_installed_offline_composition.py::test_installed_real_composition_retains_result_across_processes
+1 failed, 2 warnings in 2.13s

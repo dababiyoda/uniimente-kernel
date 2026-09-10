@@ -1,0 +1,135 @@
+{
+  "gate_id": "SR001-FOUNDER-LOOP-ENTRY",
+  "status": "PREPARED_NOT_RUN",
+  "decision": "HOLD_ACTIVATION",
+  "founder_intent": "Continuously retain and pursue Alfonso's authorized goals, including while he is offline; wait economically; preserve unfinished obligations and recover without mistaking process completion for goal completion.",
+  "sources": {
+    "direction": "2026-09-09 bounded adoption directive",
+    "effect_doctrine": "INTENT-0030 / Kernel main 18df515f94fbf859d0d48c09dab3a687a4d18f29",
+    "goal_candidate": "Kernel #93 at 21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
+    "appraisal_candidate": "Kernel #94 at 5e2f221b1911309db10de26246065553c1bdcbfc",
+    "boundary_package": "3e059c20331d96e05a44daac1b097896aaabde93"
+  },
+  "entry_requirements": [
+    {
+      "id": "G1",
+      "requirement": "Exact shared-package adoption, current default composition, required socket/container checks and independent review are accepted under a separate adoption ruling.",
+      "state": "BLOCKED",
+      "owner": "Founder/adoption reviewer"
+    },
+    {
+      "id": "G2",
+      "requirement": "Delegate #93 single-writer ownership to EvidenceLedger; preserve its manifest, source, lineage and appraisal checks. Never acquire the same .lock twice.",
+      "state": "PREPARED_GAP",
+      "owner": "Kernel goal-chase maintainer"
+    },
+    {
+      "id": "G3",
+      "requirement": "Use pre-existing canonical grants. Replace #93 old retry assumptions with explicit step contracts and reconciliation. No blanket retry_safe annotation of consequential work.",
+      "state": "PREPARED_GAP",
+      "owner": "Kernel policy/workflow owners"
+    },
+    {
+      "id": "G4",
+      "requirement": "Compose #94 protected appraisal with the preserved lifecycle patch; do not promote its frozen declared-route fixture into evidence of current organ execution.",
+      "state": "OVERLAY_TESTED_COMPOSITION_GAP",
+      "owner": "Kernel appraisal owner"
+    },
+    {
+      "id": "G5",
+      "requirement": "Select and link a bounded trigger/supervision implementation before building a new component; existing scheduler/workflow/direct capability are first candidates.",
+      "state": "DECISION_REQUIRED_BEFORE_NEW_ARCHITECTURE",
+      "owner": "Kernel mission-resolution owner"
+    },
+    {
+      "id": "G6",
+      "requirement": "Synthetic offline proof may use explicit synthetic founder fixtures only. Real founder commands remain refused until canonical founder authentication, key custody and revocation are separately resolved.",
+      "state": "REAL_FOUNDER_AUTH_BLOCKED",
+      "owner": "Founder and canonical identity owner"
+    }
+  ],
+  "powers": [
+    "Mission authority",
+    "Organization design subordinate to mission resolution",
+    "Execution under pre-existing grants",
+    "Independent evaluation of retained evidence",
+    "Consequence authority in the existing Kernel Gate"
+  ],
+  "proof_requirements": [
+    {
+      "id": "P1",
+      "event": "A due obligation",
+      "required_evidence": "Persist an obligation before its due time; a bounded host-owned trigger discovers it without a human tick or fresh chat instruction; record trigger identity, clock, priority alternatives and budget."
+    },
+    {
+      "id": "P2",
+      "event": "Interruption and autonomous recovery",
+      "required_evidence": "Interrupt after durable acceptance and before acknowledgment/closure; the chosen supervisor restarts the process without a human advancing the harness. Reopen canonical history, retain stable identity, reject transport replay, recover retained result or preserve uncertainty; no duplicate consequence."
+    },
+    {
+      "id": "P3",
+      "event": "Meaningful exception",
+      "required_evidence": "Inject missing authority, invalid retained evidence or exhausted budget; keep mission and blocker durable, record next reconsideration condition, and create one concise pending founder message without contacting a real channel."
+    },
+    {
+      "id": "P4",
+      "event": "Persistent mission update",
+      "required_evidence": "An explicitly synthetic scoped founder decision updates the original mission; a fresh process authenticates only the synthetic fixture and resumes through a durable trigger. No new mission silently replaces the obligation."
+    },
+    {
+      "id": "P5",
+      "event": "Protected outcome reconciliation",
+      "required_evidence": "The appraiser derives acceptance from retained evidence; worker success, signatures and process exits do not determine goal closure. Tool-building completion resumes the original goal instead of closing it."
+    },
+    {
+      "id": "P6",
+      "event": "Deliberate waiting and resource conservation",
+      "required_evidence": "Unchanged blocked state causes no repeated capability invocation or duplicate escalation; retain blocker, next due/observation/decision condition and measured wait resource use across restart."
+    },
+    {
+      "id": "P7",
+      "event": "CapabilityDeficit",
+      "required_evidence": "Persist deficit with original goal lineage; compare existing capability, composition, commodity/OSS/API/plugin/computer-use, narrow code, fixed specialists, organization, escalation and no action as applicable. Verify attachment under explicit bounds, then resume the original mission."
+    }
+  ],
+  "forbidden_shortcuts": [
+    "Human manually calls tick after interruption and calls it autonomous resumption",
+    "A process exit or signed response is labeled verified goal closure",
+    "A synthetic workload identity is labeled authenticated Alfonso",
+    "Restoring Git state is labeled reversal of external effects",
+    "A fixture or generated capability manufactures a grant",
+    "A new ledger, blockchain, identity registry or authority engine replaces canonical ownership"
+  ],
+  "unresolved_obligation": {
+    "id": "SR001-adoption-and-founder-composition",
+    "state": "BLOCKED",
+    "blockers": [
+      "Socket-permitting independently isolated verification facility",
+      "Docker build/run facility and evidence",
+      "Independent adoption review",
+      "Founder-loop composition and real founder authentication remain separate"
+    ],
+    "next_reconsideration_condition": "Required verification facility/evidence becomes available or Alfonso issues a concrete reserved adoption/authentication decision",
+    "owner": "Kernel maintainer with founder reserved decisions",
+    "completion_condition": "Approved shared dependency is composed into the separately verified founder loop; repair-test completion alone does not close the institutional goal"
+  },
+  "metrics": {
+    "CMC": 0,
+    "VDM": 0,
+    "verified_external_outcomes": 0,
+    "founder_interventions_per_verified_outcome": null,
+    "time_to_verified_closure": null,
+    "resource_cost_per_verified_outcome": null,
+    "reliability_of_continuous_pursuit": null,
+    "real_customer_value": null,
+    "economic_surplus": null
+  },
+  "activation": {
+    "service_started": false,
+    "real_founder_authenticated": false,
+    "external_messages_sent": false,
+    "authority_created": false,
+    "merge_authorized": false,
+    "deployment_authorized": false
+  }
+}

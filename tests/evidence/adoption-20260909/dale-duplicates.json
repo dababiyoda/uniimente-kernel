@@ -1,0 +1,49 @@
+{
+  "algorithm": "sha256",
+  "complete": true,
+  "errors": [],
+  "excluded_subtrees": [
+    ".git",
+    ".pytest_cache"
+  ],
+  "generated_at": "2026-09-09T22:27:08.353219+00:00",
+  "groups": [
+    {
+      "copy_count": 2,
+      "paths": [
+        "attached_assets/Pasted-ROLE-You-are-a-principal-engineer-Build-a-production-grade-low-cost-Replit-friendly-repo-that-in-1753848575746_1753848575746.txt",
+        "attached_assets/Pasted-ROLE-You-are-a-principal-engineer-Build-a-production-grade-low-cost-Replit-friendly-repo-that-in-1753849348921_1753849348922.txt"
+      ],
+      "reclaimable_bytes_if_one_retained": 18891,
+      "sha256": "48559eb30501125a0718ecb19d913f9954d400af53d8d335ba5226c2a057f58e",
+      "size_bytes": 18891
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "attached_assets/Pasted-Below-is-a-gap-map-of-what-you-re-missing-or-should-harden-to-turn-the-agent-from-powerful-to-un-1753852171266_1753852171266.txt",
+        "attached_assets/Pasted-Below-is-a-gap-map-of-what-you-re-missing-or-should-harden-to-turn-the-agent-from-powerful-to-un-1753852687738_1753852687738.txt"
+      ],
+      "reclaimable_bytes_if_one_retained": 5814,
+      "sha256": "925f743b75fcacfc8995a149ac4af3bc7e90532958dc55a242702749c1d537be",
+      "size_bytes": 5814
+    }
+  ],
+  "mode": "report_only",
+  "repository": "/workspace/scratch/fa1437d21e0f/repos/dale",
+  "skipped_files": [],
+  "summary": {
+    "candidate_files_hashed": 12,
+    "duplicate_file_count": 4,
+    "duplicate_group_count": 2,
+    "error_count": 0,
+    "excluded_subtree_count": 2,
+    "files_scanned": 254,
+    "potential_reclaimable_bytes": 24705,
+    "skipped_file_count": 0
+  },
+  "tool": "detect_exact_duplicates.py",
+  "truncated": false,
+  "version": 1,
+  "warning": "Byte identity does not prove semantic redundancy or authorize deletion. Confirm authorship, canonical ownership, consumers, evidence value, and provenance before any migration."
+}

@@ -1,0 +1,6 @@
+{
+  "base": "18df515f94fbf859d0d48c09dab3a687a4d18f29",
+  "index_tree": "8233d4fa7b8ac7717cf5ca0fd6013183490bc6dd",
+  "overlay_patch_sha256": "217d44c35844785ab411d9752e8701e08d7a55e616d49be5cac327e4e85abbe2",
+  "kind": "disposable uncommitted composition; no branch merged"
+}

@@ -1,0 +1,53 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "-s", "tests/test_installed_offline_composition.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+F
+=================================== FAILURES ===================================
+_______ test_installed_real_composition_retains_result_across_processes ________
+
+packaged_application = (PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-10/test_installed_real_compositio0'), ['uvi...st-10/test_installed_real_compositio0/synthetic.db', 'ENVIRONMENT': 'production', 'JWT_AUDIENCE': 'wmi-test-api', ...})
+
+    def test_installed_real_composition_retains_result_across_processes(packaged_application):
+        source = os.getenv('DALEOBANKS_SOURCE')
+        if not source:
+            pytest.fail('DALEOBANKS_SOURCE required for this installed composition gate')
+        source = Path(source).resolve()
+        directory, _, environment = packaged_application
+        # Keep producer modules outside the packaged consumer; no test stubs on path.
+        environment['PYTHONPATH'] = os.pathsep.join((str(source), environment.get('PYTHONPATH', '')))
+        environment.update(WEALTHMACHINE_URL='http://localhost', WEALTHMACHINE_MODE='http',
+            WEALTHMACHINE_INTAKE_TOKEN=token(), PERSIST_STORE='false',
+            LEDGER_PATH=str(directory / 'producer-decisions.jsonl'))
+        # Both processes need their own writer; never share a ledger file across owners.
+        environment['UNIIMENTE_BRIDGE_STATE_PATH'] = str(directory / 'consumer.jsonl')
+        script = SCRIPT.replace('producer = WealthMachineClient()',
+            "os.environ['UNIIMENTE_BRIDGE_STATE_PATH'] = str(Path('producer.jsonl').resolve())\n    producer = WealthMachineClient()")
+        evidence = []
+        for mode in ('interrupt', 'normal', 'normal'):
+            process = subprocess.run([sys.executable, '-u', '-c', script, mode],
+                cwd=directory, env=environment, capture_output=True, text=True, timeout=30)
+>           assert process.returncode == (75 if mode == 'interrupt' else 0), process.stdout + process.stderr
+E           AssertionError: Traceback (most recent call last):
+E               File "<string>", line 10, in <module>
+E             ModuleNotFoundError: No module named 'adapters.durable_state'
+E             
+E           assert 1 == 75
+E            +  where 1 = CompletedProcess(args=['/workspace/scratch/4c77bffec5be/.venv/bin/python', '-u', '-c', "\nimport hashlib, json, os, sy...ll last):\n  File "<string>", line 10, in <module>\nModuleNotFoundError: No module named \'adapters.durable_state\'\n').returncode
+
+tests/test_installed_offline_composition.py:112: AssertionError
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_installed_offline_composition.py::test_installed_real_composition_retains_result_across_processes
+1 failed, 2 warnings in 1.07s

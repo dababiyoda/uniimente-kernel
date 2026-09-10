@@ -1,0 +1,2121 @@
+{
+  "categories": [
+    "canonical authored source",
+    "organ-specific authored source",
+    "shared contract",
+    "compatibility shim",
+    "generated output",
+    "vendored dependency",
+    "fixture",
+    "runtime state",
+    "evidence artifact",
+    "proof artifact",
+    "historical snapshot",
+    "archive",
+    "documentation",
+    "duplicate candidate",
+    "unknown"
+  ],
+  "classification_status": "provisional",
+  "classification_warning": "Path heuristics do not prove authorship, semantic duplication, or canonical ownership. Confirm material findings from code, history, governance, and actual consumers.",
+  "complete": true,
+  "entries": [
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": ".env.example",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 2649
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": ".git",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": ".gitignore",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 479
+    },
+    {
+      "category": "runtime state",
+      "confidence": "high",
+      "kind": "subtree",
+      "path": ".pytest_cache",
+      "reason": "path is inside a runtime or VCS tree",
+      "size_bytes": 0
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": ".replit",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 1487
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": ".vscode/settings.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 133
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 8010
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "app.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 70541
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-Below-is-a-gap-map-of-what-you-re-missing-or-should-harden-to-turn-the-agent-from-powerful-to-un-1753852171266_1753852171266.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 5814
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-Below-is-a-gap-map-of-what-you-re-missing-or-should-harden-to-turn-the-agent-from-powerful-to-un-1753852687738_1753852687738.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 5814
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-DEBATE-MODE-Integrative-interest-based-negotiation-with-dialectical-synthesis-and-double-crux-Y-1753850767662_1753850767663.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 3384
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-ROLE-You-are-a-principal-engineer-Build-a-production-grade-low-cost-Replit-friendly-repo-that-in-1753848575746_1753848575746.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 18891
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-ROLE-You-are-a-principal-engineer-Build-a-production-grade-low-cost-Replit-friendly-repo-that-in-1753849348921_1753849348922.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 18891
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "attached_assets/Pasted-This-is-your-Role-and-Persona-You-are-an-autonomous-online-agent-Your-purpose-is-to-provoke-thought-1753849688020_1753849688020.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 3143
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/index.html",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 527
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/App.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2100
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/dashboard/activity-feed.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4104
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/dashboard/analytics-charts.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7894
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/dashboard/kpi-cards.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2824
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/dashboard/system-status.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4728
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/layout/header.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4961
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/layout/sidebar.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2239
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/accordion.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1977
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/alert-dialog.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4420
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/alert.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1584
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/aspect-ratio.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 140
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/avatar.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1419
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/badge.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1128
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/breadcrumb.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2712
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/button.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1901
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/calendar.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2695
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/card.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1858
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/carousel.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6210
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/chart.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 10481
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/checkbox.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1056
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/collapsible.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 329
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/command.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4885
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/context-menu.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7428
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/dialog.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3848
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/drawer.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3021
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/dropdown-menu.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7609
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/form.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4120
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/hover-card.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1251
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/input-otp.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2154
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/input.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 791
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/label.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 710
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/menubar.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8605
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/monaco-editor.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2685
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/navigation-menu.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5128
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/pagination.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2751
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/popover.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1280
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/progress.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 791
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/radio-group.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1467
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/resizable.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1723
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/scroll-area.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1642
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/select.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5742
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/separator.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 756
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/sheet.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4281
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/sidebar.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 23567
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/skeleton.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 261
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/slider.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1077
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/switch.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1139
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/table.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2765
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/tabs.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1883
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/textarea.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 689
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/theme-provider.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1605
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/toast.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4845
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/toaster.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 772
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/toggle-group.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1753
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/toggle.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1527
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/components/ui/tooltip.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1209
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/hooks/use-mobile.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 565
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/hooks/use-toast.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3939
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/index.css",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1681
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/lib/api.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 726
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/lib/monaco-config.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 758
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/lib/queryClient.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1896
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/lib/utils.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 166
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/main.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 187
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/activity-log.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9921
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/analytics.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 17006
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/approvals.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 14762
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/configuration.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 19854
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/dashboard.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7705
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/health.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 15836
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/mind.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3376
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/not-found.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 711
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/persona-editor.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11696
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/pages/refinery.tsx",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 22591
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "client/src/types/api.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1376
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "components.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 459
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "config.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9780
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "conftest.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4317
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "constitution.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 1617
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/kernel/opportunity-packet.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2080
+    },
+    {
+      "category": "shared contract",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "contracts/kernel/venture-assessment.schema.json",
+      "reason": "path indicates schema, protocol, or wire contract",
+      "size_bytes": 2652
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "data/seed_influencers.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4072
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "data/seed_keywords.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4389
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "data/starting_grid_week1.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 4378
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "db/models.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 18455
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "db/session.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7148
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/EXPERIMENT_001.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 4620
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/IDEA_REFINERY.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 5823
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "docs/SAFETY_AND_ROLLOUT.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 13055
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "drives.yaml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 123
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "drizzle.config.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 325
+    },
+    {
+      "category": "generated output",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "package-lock.json",
+      "reason": "generated path or conventional generated filename",
+      "size_bytes": 324740
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "package.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 3612
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "persona.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 6503
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "postcss.config.js",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 80
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "prompts/base_persona.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 900
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "pyproject.toml",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 896
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "replit.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 15322
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "requirements.txt",
+      "reason": "documentation path or extension",
+      "size_bytes": 458
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "runner.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 54505
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "scripts/replit-deploy.sh",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 788
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "scripts/replit-start.sh",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 862
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "server/index.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2880
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "server/routes.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 192
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "server/storage.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 234
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "server/vite.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2263
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/__init__.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 51
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/admin_rate.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 8213
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/adversarial_cases.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5091
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/analytics.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 34486
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/bandit.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 1819
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/bridge_security.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 566
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/capability.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 11508
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/consolidation.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5120
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/constitution.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 2960
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/context_packet.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5895
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/crisis.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 12256
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/critic.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 13190
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/decision_episode.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 6405
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/digest.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 9100
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/embeddings.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5201
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/ethics_guard.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 6842
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/evidence_library.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 3018
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/evidence_policy.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 7880
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/experiments.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 9984
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/feedback.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 7784
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/generator.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 32283
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/heartbeat.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 4383
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/idea_refinery.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 11473
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/instinct.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 12717
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/kernel_contracts.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 1275
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/kpi.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 11840
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/ledger.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 10428
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/linkedin_client.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 1259
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/llm_adapter.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5949
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/llm_harness.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 23895
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/logging_utils.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 7610
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/mastodon_client.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 1256
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/memory.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 9898
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/multiplexer.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 7316
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/observability.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 1596
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/operator_line.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 15482
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/operator_notifications.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 2295
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/optimizer.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 13964
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/perception.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 19350
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/persona_store.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 17800
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/planner.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 19367
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/prompt_firewall.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 6203
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/raw_vault.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 3641
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/reflection.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 10164
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "services/security.py",
+      "reason": "documentation path or extension",
+      "size_bytes": 4893
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/selector.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 23973
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/self_model.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 10658
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/semantic_index.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 8636
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/sentiment.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 2773
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/simulator.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 4613
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/social_base.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 4139
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/thought_dsl.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 6014
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/venture_protocol.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 5167
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/wealthmachine_client.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 16667
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/websearch.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 3182
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/world_model.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 4836
+    },
+    {
+      "category": "organ-specific authored source",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "services/x_client.py",
+      "reason": "source is bounded under an organ or service path",
+      "size_bytes": 26978
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "shared/schema.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4462
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tailwind.config.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2627
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/bridge_fixtures.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2209
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/01-initial-consumer-tests.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 10924
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/02-fixture-migration-initial.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 6091
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/03-focused-consumer.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 99
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/04-broader-run-blocked.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 919
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/05-broader-missing-dependencies.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 3283
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/06-broader-missing-tweepy.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 2060
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/07-guarded-broader-blocked.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 642
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/08-final-pinned-kernel-focused.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 99
+    },
+    {
+      "category": "evidence artifact",
+      "confidence": "medium",
+      "kind": "file",
+      "path": "tests/evidence/shared-recovery/09-final-environment.txt",
+      "reason": "path is inside an evidence or evaluation tree",
+      "size_bytes": 1248
+    },
+    {
+      "category": "documentation",
+      "confidence": "high",
+      "kind": "file",
+      "path": "tests/stubs/README.md",
+      "reason": "documentation path or extension",
+      "size_bytes": 520
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/stubs/dotenv/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 451
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/stubs/numpy/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1741
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/stubs/openai/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1325
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/stubs/tenacity/__init__.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1265
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_advantages.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5747
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_adversarial_mirror.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3250
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_analytics.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1769
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_approval_queue.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4409
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_arming.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3361
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_auth_token.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1594
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_capability_grants.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11470
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_config.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1488
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_consolidation.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3809
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_constitution.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4546
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_context_packet.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3669
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_crisis.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3519
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_decision_episodes.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6339
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_digest.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4781
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_discovery.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4283
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_dm_ingest.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4885
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_embeddings.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4403
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_evidence_policy.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5573
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_generator_thread.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2570
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_health_status.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4597
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_heartbeat.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3890
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_idea_refinery.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 8809
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_instinct.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4971
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_jscore.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1197
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_kernel_contract_parity.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6069
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_ledger.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3693
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_live_toggle.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2044
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_llm_harness.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9034
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_multiplexer.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2896
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_operator_line.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 7476
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_operator_sms_webhook.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4597
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_opportunity_create.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3072
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_optimizer.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 16604
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_optimizer_novelty.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1910
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_perception.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4137
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_persistence.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4008
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_persona.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 10802
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_prompt_firewall.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3681
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_receipts.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 582
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_reflection.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5340
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_revenue.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3475
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_runner_jobs.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 9267
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_safety.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 6142
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_selector_bandit.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4795
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_semantic_index.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2787
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_shared_response_boundary.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2983
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_signed_bridge_client.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5389
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_simulator.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2583
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_social_gate.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2938
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_social_memory.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3608
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_steelman.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 1515
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_templates.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 11068
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_thought_dsl.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3097
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_validation_results.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 5491
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_verifiable_self.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 3309
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_wealthmachine_http.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4574
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_world_model.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 2628
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tests/test_x_client.py",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 4874
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "tsconfig.json",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 657
+    },
+    {
+      "category": "unknown",
+      "confidence": "low",
+      "kind": "file",
+      "path": "uv.lock",
+      "reason": "insufficient structural evidence",
+      "size_bytes": 188729
+    },
+    {
+      "category": "canonical authored source",
+      "confidence": "low",
+      "kind": "file",
+      "path": "vite.config.ts",
+      "reason": "authored-source candidate; canonical ownership is not proven",
+      "size_bytes": 971
+    }
+  ],
+  "errors": [],
+  "generated_at": "2026-09-09T22:27:08.311021+00:00",
+  "pruned_subtrees": [
+    ".git",
+    ".pytest_cache"
+  ],
+  "repository": "/workspace/scratch/fa1437d21e0f/repos/dale",
+  "summary": {
+    "category_bytes": {
+      "archive": 0,
+      "canonical authored source": 776617,
+      "compatibility shim": 0,
+      "documentation": 111155,
+      "duplicate candidate": 0,
+      "evidence artifact": 25365,
+      "fixture": 0,
+      "generated output": 324740,
+      "historical snapshot": 0,
+      "organ-specific authored source": 526449,
+      "proof artifact": 0,
+      "runtime state": 0,
+      "shared contract": 4732,
+      "unknown": 218566,
+      "vendored dependency": 0
+    },
+    "category_counts": {
+      "archive": 0,
+      "canonical authored source": 156,
+      "compatibility shim": 0,
+      "documentation": 16,
+      "duplicate candidate": 0,
+      "evidence artifact": 9,
+      "fixture": 0,
+      "generated output": 1,
+      "historical snapshot": 0,
+      "organ-specific authored source": 56,
+      "proof artifact": 0,
+      "runtime state": 2,
+      "shared contract": 2,
+      "unknown": 14,
+      "vendored dependency": 0
+    },
+    "entry_count": 256,
+    "error_count": 0,
+    "pruned_subtree_count": 2
+  },
+  "tool": "inventory_repository.py",
+  "truncated": false,
+  "version": 1
+}

@@ -1,0 +1,16 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "tests/unit/test_migration_spec_frozen.py", "tests/unit/test_migration_adversarial.py", "tests/unit/test_repair_spec_frozen.py", "tests/unit/test_repair_harness.py", "tests/unit/test_repair_adapters.py", "-q", "--tb=short"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 57%]
+.....................................................F                   [100%]
+=================================== FAILURES ===================================
+___ test_identity_authority_and_shutdown_survive_the_component_being_absent ____
+tests/unit/test_repair_adapters.py:549: in test_identity_authority_and_shutdown_survive_the_component_being_absent
+    assert before == SR001.continuity_sha256
+E   NameError: name 'SR001' is not defined
+=========================== short test summary info ============================
+FAILED tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent
+1 failed, 125 passed in 1.26s

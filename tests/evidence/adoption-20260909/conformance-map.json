@@ -1,0 +1,54 @@
+{
+  "valid authenticated traffic and signed responses": [
+    "WMI tests/test_signed_bridge.py::test_valid_signed_request_succeeds_and_response_is_signed",
+    "WMI tests/test_installed_offline_composition.py::test_installed_real_composition_retains_result_across_processes"
+  ],
+  "missing config, unsigned traffic, altered bytes and invalid identities": [
+    "DALE tests/test_shared_response_boundary.py::test_missing_config_prevents_dispatch",
+    "DALE tests/test_shared_response_boundary.py::test_response_mutations_are_not_accepted",
+    "WMI tests/test_auth_boundary.py",
+    "WMI tests/test_signed_bridge.py"
+  ],
+  "stable event identity through translation": [
+    "Kernel tests/integration/test_phase_zero_connection.py",
+    "DALE/WMI tests/test_kernel_contract_parity.py"
+  ],
+  "restart, duplicate delivery, retained results and retry reconciliation": [
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_claim_result_restart_and_conflict",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_interruption_is_reconciliation_not_redispatch",
+    "WMI tests/test_installed_offline_composition.py",
+    "DALE tests/test_shared_response_boundary.py::test_response_replay_survives_consumer_reconstruction"
+  ],
+  "persistence failure before and after acceptance": [
+    "Kernel tests/unit/test_shared_recovery.py::test_definite_append_failure_does_not_consume_event",
+    "Kernel tests/unit/test_shared_recovery.py::test_failed_ledger_append_does_not_advance_memory",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_unknown_append_ack_requires_reopen",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_workflow_checkpoint_failure_cannot_repeat_effect",
+    "WMI tests/test_signed_bridge.py::test_claim_persistence_failure_is_explicit_and_no_work_runs"
+  ],
+  "genesis and subsequent integrity": [
+    "Kernel tests/unit/test_shared_recovery.py::test_genesis_hash_is_recomputed",
+    "Kernel tests/unit/test_shared_recovery.py::test_foreign_constitution_refused",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_prefix_truncation_against_expected_head"
+  ],
+  "required schema formats including date-time": [
+    "Kernel tests/unit/test_required_schema_formats.py::test_invalid_grant_timestamp_is_not_accepted_by_schema",
+    "Kernel tests/unit/test_required_schema_formats.py::test_missing_format_implementation_refuses",
+    "Kernel tests/unit/test_shared_compatibility.py::test_migration_refuses_uncertainty_invalid_state_or_identity"
+  ],
+  "existing grants without authority creation": [
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_invalid_grants_never_invoke_executor",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_valid_preexisting_grant_and_uncertain_retry",
+    "Kernel tests/unit/test_shared_durable_boundary.py::test_consequence_label_cannot_mint_missing_authority"
+  ],
+  "protected appraisal": [
+    "Kernel #94 tests/integration/test_protected_mission_appraisal.py, unchanged original and retained lifecycle overlay"
+  ],
+  "exact CMD local TCP": [
+    "WMI tests/test_packaged_startup.py::test_exact_packaged_command_protected_bridge: BLOCKED EPERM locally",
+    "WMI tests/test_shared_consumer_integration.py::test_real_producer_consumer_restart_and_negative_controls: BLOCKED EPERM locally"
+  ],
+  "container image build/execution": [
+    "NOT RUN: facility unavailable"
+  ]
+}

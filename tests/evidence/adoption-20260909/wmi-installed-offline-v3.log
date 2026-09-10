@@ -1,0 +1,19 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "-s", "tests/test_installed_offline_composition.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+INSTALLED_BINDINGS={"adapters.bridge_transport": {"path": "/workspace/scratch/fa1437d21e0f/boundary-package/adapters/bridge_transport.py", "sha256": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f"}, "adapters.contract_validation": {"path": "/workspace/scratch/fa1437d21e0f/boundary-package/adapters/contract_validation.py", "sha256": "e7e21020e8cced64253ebb22b00e13271639f89b790055121f3b0d51289d6249"}, "events.bridge_state": {"path": "/workspace/scratch/fa1437d21e0f/boundary-package/events/bridge_state.py", "sha256": "24431269da5f9f114882689fff2c6564c42819ecc3e30fb2c06f352d54da5adc"}, "events.spine": {"path": "/workspace/scratch/fa1437d21e0f/boundary-package/events/spine.py", "sha256": "d7d76a948a0b14f8638f33fc5fcb3a4ab02e9bf33d49cd34cd9d75e78eccfbc5"}, "provenance.ledger": {"path": "/workspace/scratch/fa1437d21e0f/boundary-package/provenance/ledger.py", "sha256": "faa905fa7d34296984cafd44b1a3140e9aa94862cfda5ea20f7c5872a6b9cffc"}}
+.
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 3.84s

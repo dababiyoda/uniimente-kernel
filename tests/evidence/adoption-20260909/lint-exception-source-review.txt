@@ -1,0 +1,1972 @@
+dale/app.py:216
+            try:
+                await websocket.send_text("ping")
+            except Exception:
+                # On send failure, remove connection and stop pinging
+                if websocket in websocket_connections:
+                    websocket_connections.remove(websocket)
+                try:
+                    await websocket.close()
+                except Exception:
+
+dale/app.py:222
+                try:
+                    await websocket.close()
+                except Exception:
+                    pass
+                break
+    except WebSocketDisconnect:
+        websocket_connections.remove(websocket)
+        logger.info("WebSocket connection closed")
+    except Exception as e:
+
+dale/app.py:228
+        websocket_connections.remove(websocket)
+        logger.info("WebSocket connection closed")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        if websocket in websocket_connections:
+            websocket_connections.remove(websocket)
+
+
+@app.middleware("http")
+
+dale/app.py:243
+    except HTTPException as exc:
+        response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail, "request_id": request_id})
+    except Exception as exc:
+        logger.error(
+            "Unhandled application error",
+            extra={"extra_data": {"error": str(exc), "path": request.url.path}},
+        )
+        response = JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"detail": "Internal server error", "request_id": request_id})
+
+
+dale/app.py:275
+        try:
+            await websocket.send_json(data)
+        except Exception as e:
+            logger.error(f"Failed to send WebSocket update: {e}")
+            disconnected.append(websocket)
+    
+    # Remove disconnected clients
+    for ws in disconnected:
+        websocket_connections.remove(ws)
+
+dale/app.py:330
+                "goal_mode": config.GOAL_MODE
+            }
+    except Exception as e:
+        logger.error(f"Dashboard error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/crisis")
+async def set_crisis(request: CrisisRequest):
+    """Toggle crisis mode manually from the dashboard."""
+
+dale/app.py:429
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Toggle error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/breaker/reset")
+async def reset_heartbeat_breaker(_: RequestContext = Depends(require_role("admin"))):
+
+dale/app.py:460
+        logger.info(f"Goal mode set to {config.GOAL_MODE}")
+        return {"mode": config.GOAL_MODE}
+    except Exception as e:
+        logger.error(f"Mode change error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/propose")
+async def trigger_proposal():
+    """Trigger immediate proposal generation"""
+
+dale/app.py:484
+        else:
+            return {"success": False, "reason": "Not appropriate time for proposal"}
+    except Exception as e:
+        logger.error(f"Proposal generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/note")
+async def add_note(request: NoteRequest):
+    """Add improvement note"""
+
+dale/app.py:507
+            
+            return {"success": True, "note_id": note.id}
+    except Exception as e:
+        logger.error(f"Note creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/redirect")
+async def create_redirect(request: RedirectRequest):
+    """Create tracked redirect link"""
+
+dale/app.py:529
+                "label": redirect.label
+            }
+    except Exception as e:
+        logger.error(f"Redirect creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/conversions")
+async def record_conversion(
+    request: ConversionRequest,
+
+dale/app.py:559
+        })
+        return {"success": True, "id": conversion.id}
+    except Exception as e:
+        logger.error(f"Conversion recording error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/conversions")
+async def list_conversions(limit: int = 50, _: RequestContext = Depends(get_request_context)):
+
+dale/app.py:589
+                ],
+            }
+    except Exception as e:
+        logger.error(f"Conversion list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/discoveries")
+async def list_discoveries(status_filter: str = "pending", _: RequestContext = Depends(get_request_context)):
+
+dale/app.py:619
+                ],
+            }
+    except Exception as e:
+        logger.error(f"Discovery list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/discoveries/{proposal_id}/decision")
+async def decide_discovery(
+
+dale/app.py:657
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Discovery decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/goals/proposals")
+async def list_goal_proposals(status_filter: str = "pending", _: RequestContext = Depends(get_request_context)):
+
+dale/app.py:686
+                ],
+            }
+    except Exception as e:
+        logger.error(f"Goal proposal list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/goals/proposals/{proposal_id}/decision")
+async def decide_goal_proposal(
+
+dale/app.py:724
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Goal proposal decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/operator/requests")
+async def list_operator_requests(status_filter: str = "pending", _: RequestContext = Depends(get_request_context)):
+
+dale/app.py:780
+                ],
+            }
+    except Exception as e:
+        logger.error(f"Operator request list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/operator/command")
+async def operator_command(
+
+dale/app.py:796
+            result = get_operator_line().handle_command(session, request.command, via="dashboard")
+        return result
+    except Exception as e:
+        logger.error(f"Operator command error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/operator/sms")
+async def operator_sms_webhook(request: Request):
+
+dale/app.py:841
+        with get_db_session() as session:
+            return runner.digest_service.build(session, runner.reception_predictor)
+    except Exception as e:
+        logger.error(f"Digest error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/experiments/proposals")
+async def list_experiment_proposals(status_filter: str = "pending", _: RequestContext = Depends(get_request_context)):
+
+dale/app.py:890
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Experiment decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --------------------------------------------------------------------- #
+# Idea refinery + venture cockpit (drafts only; approvals gate the world)
+
+dale/app.py:914
+                })
+        return result
+    except Exception as e:
+        logger.error(f"Idea intake error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ideas")
+async def list_ideas(_: RequestContext = Depends(get_request_context)):
+
+dale/app.py:946
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Idea refine error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/opportunities")
+async def create_opportunity(
+
+dale/app.py:1034
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Opportunity decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/opportunities/{packet_id}/send-to-wealthmachine")
+async def send_to_wealthmachine(packet_id: str, _: RequestContext = Depends(require_role("admin"))):
+
+dale/app.py:1067
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"WealthMachine send error: {e}")
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/wealthmachine/assessments/receive")
+async def receive_assessment(
+
+dale/app.py:1113
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.error(f"Assessment receive error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/assessments")
+async def list_assessments(_: RequestContext = Depends(get_request_context)):
+
+dale/app.py:1464
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Media draft decision error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/lanes")
+async def list_lanes(_: RequestContext = Depends(get_request_context)):
+
+dale/app.py:1531
+            
+            return RedirectResponse(url=str(redirect.target_url), status_code=302)
+    except Exception as e:
+        logger.error(f"Redirect error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/health")
+async def health_check():
+    """Unauthenticated liveness probe. Deliberately minimal: a public
+
+dale/app.py:1560
+        crisis_paused = bool(runner.crisis_service.is_paused())
+        crisis_reason = runner.crisis_service.reason
+    except Exception as exc:
+        logger.warning(f"health_safety: crisis state unreadable: {exc}")
+        crisis_paused, crisis_reason = None, "unavailable"
+    try:
+        ledger_ok, broken_at = get_ledger().verify_chain()
+    except Exception as exc:
+        logger.warning(f"health_safety: ledger state unreadable: {exc}")
+
+dale/app.py:1565
+    try:
+        ledger_ok, broken_at = get_ledger().verify_chain()
+    except Exception as exc:
+        logger.warning(f"health_safety: ledger state unreadable: {exc}")
+        ledger_ok, broken_at = None, None
+
+    if crisis_paused is None or ledger_ok is None:
+        safe_to_operate = None  # unknown is reported as unknown
+    elif ledger_ok is False:
+
+dale/app.py:1595
+            lessons = reflection_service.get_recent_lessons(session, limit=limit)
+            return {"count": len(lessons), "lessons": lessons}
+    except Exception as e:
+        logger.error(f"Get reflections error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/reflect")
+async def trigger_reflection(_: RequestContext = Depends(require_role("admin"))):
+    """Run a deep reflection now and return the freshly generated lesson."""
+
+dale/app.py:1607
+        await broadcast_update({"type": "reflection", "lesson": lesson})
+        return {"success": True, "lesson": lesson}
+    except Exception as e:
+        logger.error(f"Trigger reflection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Persona management endpoints
+@app.get("/api/persona")
+async def get_persona():
+
+dale/app.py:1617
+    try:
+        return persona_store.get_current_persona()
+    except Exception as e:
+        logger.error(f"Persona get error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/persona/versions")
+async def get_persona_versions():
+    """Get persona version history"""
+
+dale/app.py:1639
+                } for v in versions
+            ]
+    except Exception as e:
+        logger.error(f"Persona versions error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/persona/preview")
+async def preview_persona(request: PersonaUpdateRequest, _: RequestContext = Depends(require_role("admin"))):
+    """Preview persona changes"""
+
+dale/app.py:1656
+    except ValidationError as e:
+        return {"valid": False, "errors": e.errors()}
+    except Exception as e:
+        logger.error(f"Persona preview error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/persona")
+async def update_persona(request: PersonaUpdateRequest, _: RequestContext = Depends(require_role("admin"))):
+    """Update persona with validation and versioning"""
+
+dale/app.py:1682
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail={"errors": e.errors()})
+    except Exception as e:
+        logger.error(f"Persona update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/persona/rollback/{version}")
+async def rollback_persona(version: int, _: RequestContext = Depends(require_role("admin"))):
+    """Rollback to previous persona version"""
+
+dale/app.py:1702
+        
+        return {"success": True, "version": new_version}
+    except Exception as e:
+        logger.error(f"Persona rollback error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analytics")
+@app.get("/analytics")  # Support both routes
+async def get_analytics(_: RequestContext = Depends(get_request_context)):
+
+dale/app.py:1713
+        with get_db_session() as session:
+            return analytics_service.get_analytics_summary(session)
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Serve static files in production
+if os.getenv("NODE_ENV") == "production":
+    app.mount("/", StaticFiles(directory="dist/public", html=True), name="static")
+
+dale/app.py:1760
+            asyncio.create_task(runner.initial_activity())
+            
+    except Exception as e:
+        logger.error(f"Startup error: {e}")
+        traceback.print_exc()
+        sys.exit(1)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+
+dale/config.py:106
+        alpha, beta, gamma, lam = [float(x) for x in raw.split(",")]
+        return {"alpha": alpha, "beta": beta, "gamma": gamma, "lambda": lam}
+    except Exception:
+        return {"alpha": 0.0, "beta": 0.0, "gamma": 0.0, "lambda": 0.0}
+
+
+def _parse_platform_weights(raw: str) -> Dict[str, float]:
+    weights: Dict[str, float] = {}
+    for chunk in raw.split(","):
+
+dale/config.py:147
+        try:
+            quiet_hours = [int(x) for x in os.getenv("QUIET_HOURS_ET", "").split(",")]
+        except Exception:
+            quiet_hours = None
+
+    weights_impact = _parse_weights("WEIGHTS_IMPACT", "0.40,0.30,0.20,0.10")
+    weights_revenue = _parse_weights("WEIGHTS_REVENUE", "0.30,0.55,0.25,0.25")
+    weights_authority = _parse_weights("WEIGHTS_AUTHORITY", "0.45,0.20,0.25,0.10")
+    weights_fame = _parse_weights("WEIGHTS_FAME", "0.65,0.15,0.25,0.20")
+
+dale/config.py:257
+        try:
+            listener(cfg, changes)
+        except Exception:
+            # Listeners should not break config updates; ignore failures.
+            continue
+
+
+def get_config() -> Config:
+    """Return the shared configuration object."""
+
+dale/runner.py:292
+                    rationale=review["reason"],
+                )
+        except Exception as exc:
+            logger.error(f"Failed to file approval request: {exc}")
+        logger.info("Draft escalated to operator: %s", review["reason"])
+        return None
+    logger.info("Identity gate stopped %s draft: %s", kind, review["reason"])
+    return None
+
+
+dale/runner.py:376
+                **prediction,
+            })
+        except Exception as exc:
+            logger.error(f"Reception prediction failed: {exc}")
+
+        publish_result = await multiplexer.publish(
+            result["content"],
+            kind="post",
+            intensity=intensity,
+
+dale/runner.py:436
+            logger.info("DRY RUN - Proposal would be posted", extra={"topic": topic})
+
+    except Exception as e:
+        logger.error(f"Proposal job failed: {e}")
+        traceback.print_exc()
+
+async def reply_mentions_job():
+    """Reply to recent mentions"""
+    try:
+
+dale/runner.py:630
+                    logger.info(f"DRY RUN - Would reply: {result['content'][:100]}...")
+
+            except Exception as e:
+                logger.error(f"Failed to reply to mention {mention['id']}: {e}")
+        
+    except Exception as e:
+        logger.error(f"Reply mentions job failed: {e}")
+
+async def search_and_engage_job():
+
+dale/runner.py:633
+                logger.error(f"Failed to reply to mention {mention['id']}: {e}")
+        
+    except Exception as e:
+        logger.error(f"Reply mentions job failed: {e}")
+
+async def search_and_engage_job():
+    """Search for relevant content and engage"""
+    try:
+        if not config.LIVE or not x_client:
+
+dale/runner.py:712
+                                    await _log_action("quote_tweeted", meta)
+
+            except Exception as e:
+                logger.error(f"Search engagement failed for term '{term}': {e}")
+
+    except Exception as e:
+        logger.error(f"Search and engage job failed: {e}")
+
+
+
+dale/runner.py:715
+                logger.error(f"Search engagement failed for term '{term}': {e}")
+
+    except Exception as e:
+        logger.error(f"Search and engage job failed: {e}")
+
+
+async def publish_thread_job():
+    """Generate and publish a persona-aligned thread."""
+
+
+dale/runner.py:853
+            logger.info("Thread DM copy prepared for follow-up outreach")
+
+    except Exception as exc:
+        logger.error("Thread job failed: %s", exc)
+
+
+async def dm_ingest_job():
+    """Read incoming DMs so the agent can hear replies in private.
+
+
+dale/runner.py:929
+            logger.info(f"Ingested {new_count} inbound DM events")
+
+    except Exception as e:
+        logger.error(f"DM ingest job failed: {e}")
+
+
+def _find_unanswered_dm(session) -> Optional[Dict[str, Any]]:
+    """Most recent clean inbound DM whose sender we haven't answered since."""
+    received = (
+
+dale/runner.py:1056
+            logger.warning("DM send returned failure for %s", recipient_id)
+
+    except Exception as exc:
+        logger.error("Value DM job failed: %s", exc)
+
+
+async def discovery_job():
+    """Propose new voices/keywords from real engagement, pending human review.
+
+
+dale/runner.py:1135
+            logger.info(f"Filed {filed} discovery proposals for human review")
+
+    except Exception as e:
+        logger.error(f"Discovery job failed: {e}")
+
+
+async def perception_job():
+    """Run the perception ingest loop."""
+    global _perception_state
+
+dale/runner.py:1161
+            if isinstance(payload, dict):
+                get_world_model().observe_perception(payload)
+        except Exception as exc:
+            logger.error(f"World model update failed: {exc}")
+        counts = perception_service.last_counts
+        mentions = payload.get("x", {}).get("mentions", []) if isinstance(payload, dict) else []
+        mention_velocity = counts.get("x_mentions") if isinstance(counts, dict) else None
+        if mentions or mention_velocity:
+            await crisis_service.evaluate_mentions(
+
+dale/runner.py:1177
+        )
+        return total
+    except Exception as e:
+        logger.error(f"Perception job failed: {e}")
+        return 0
+
+
+async def crisis_watch_job():
+    """Monitor crisis status and log current mode."""
+
+dale/runner.py:1209
+            )
+
+    except Exception as e:
+        logger.error(f"Analytics pull job failed: {e}")
+
+async def kpi_rollup_job():
+    """Calculate and store KPIs"""
+    try:
+        with get_db_session() as session:
+
+dale/runner.py:1224
+            logger.info("KPIs calculated and stored")
+            
+    except Exception as e:
+        logger.error(f"KPI rollup job failed: {e}")
+
+async def follower_snapshot_job():
+    """Take daily follower count snapshot"""
+    try:
+        if not x_client:
+
+dale/runner.py:1244
+            logger.info(f"Follower snapshot created: {follower_count}")
+            
+    except Exception as e:
+        logger.error(f"Follower snapshot job failed: {e}")
+
+async def nightly_reflection_job():
+    """Perform nightly reflection and generate improvement note"""
+    try:
+        # Values check: a constitution that changed underneath a running
+
+dale/runner.py:1261
+            if accuracy.get("pairs"):
+                get_ledger().record("prediction_accuracy", accuracy)
+        except Exception as exc:
+            logger.error(f"Prediction accuracy audit failed: {exc}")
+
+        with get_db_session() as session:
+            improvement_note = await reflection_service.generate_reflection_async(session)
+            await _log_action("nightly_reflection", {"note": improvement_note})
+            logger.info(f"Nightly reflection completed: {improvement_note}")
+
+dale/runner.py:1269
+            logger.info(f"Nightly reflection completed: {improvement_note}")
+
+    except Exception as e:
+        logger.error(f"Nightly reflection job failed: {e}")
+
+async def dream_consolidation_job():
+    """Merge near-duplicate lessons into sharper ones during idle hours."""
+    try:
+        with get_db_session() as session:
+
+dale/runner.py:1279
+        if result.get("clusters_merged"):
+            logger.info(f"Dream consolidation: {result}")
+    except Exception as e:
+        logger.error(f"Dream consolidation job failed: {e}")
+
+
+async def weekly_planning_job():
+    """Perform weekly planning and update OKRs"""
+    try:
+
+dale/runner.py:1306
+            await self_model_service.update_self_model()
+
+    except Exception as e:
+        logger.error(f"Weekly planning job failed: {e}")
+
+async def initial_activity():
+    """Perform initial activity when starting in LIVE mode"""
+    try:
+        if not config.LIVE or not x_client:
+
+dale/runner.py:1327
+        logger.info("Initial activity completed")
+        
+    except Exception as e:
+        logger.error(f"Initial activity failed: {e}")
+
+def _calculate_relevance(text: str, term: str) -> int:
+    """Calculate relevance score (1-10) for a tweet"""
+    text_lower = text.lower()
+    term_lower = term.lower()
+
+dale/runner.py:1388
+            session.add(action)
+            session.commit()
+    except Exception as e:
+        logger.error(f"Failed to log action {kind}: {e}")
+
+def get_uptime() -> str:
+    """Get system uptime"""
+    uptime = datetime.now(UTC) - start_time
+    hours = int(uptime.total_seconds() // 3600)
+
+dale/services/analytics.py:139
+            }
+            
+        except Exception as e:
+            logger.error(f"Metrics update failed: {e}")
+            session.rollback()
+            return {"error": str(e)}
+    
+    def calculate_fame_score(self, session: Any, days: int = 1) -> Dict[str, float]:
+        """Calculate Fame Score using engagement proxy and follower growth"""
+
+dale/services/capability.py:190
+            import runner
+            crisis_paused = bool(runner.crisis_service.is_paused())
+        except Exception:
+            crisis_paused = None
+        if crisis_paused is not False:
+            reason = "crisis_paused" if crisis_paused else "crisis_state_unreadable"
+            self._reject(grant_id, reason)
+            raise CapabilityError(
+                "crisis pause active — consequential execution is suspended"
+
+dale/services/consolidation.py:127
+                return ""
+            return merged
+        except Exception as exc:
+            logger.error(f"Lesson merge failed, using fallback: {exc}")
+            return ""
+
+
+__all__ = ["ConsolidationService"]
+
+dale/services/crisis.py:251
+                        },
+                    )
+                except Exception as exc:  # pragma: no cover - logging path
+                    logger.error("crisis_calm_publish_failed", extra={"error": str(exc)})
+            if receipts:
+                self.record_receipts(receipts)
+            else:
+                self._receipts_validated = False
+
+
+dale/services/digest.py:45
+            try:
+                calibration = reception_predictor.prediction_accuracy(session)
+            except Exception as exc:
+                logger.error(f"Digest calibration failed: {exc}")
+
+        tweets = session.query(Tweet).all()
+        recent_tweets = [t for t in tweets if t.created_at >= week_ago]
+        conversions = session.query(Conversion).all()
+        recent_revenue = sum(
+
+dale/services/digest.py:112
+                module = __import__(module_name, fromlist=[func_name])
+                counts[label] = len(getattr(module, func_name)())
+            except Exception as exc:
+                logger.error(f"Digest memory count for {label} failed: {exc}")
+                counts[label] = -1
+        return counts
+
+    def _safety_history(self) -> Dict[str, int]:
+        history = {}
+
+dale/services/digest.py:123
+            try:
+                history[event] = len(self.ledger.replay(event))
+            except Exception:
+                history[event] = -1
+        return history
+
+    @staticmethod
+    def _mean(values: List[float]) -> Optional[float]:
+        clean = [v for v in values if v is not None]
+
+dale/services/digest.py:182
+            if proposals:
+                session.commit()
+        except Exception as exc:
+            logger.error(f"Experiment proposal generation failed: {exc}")
+        return proposals
+
+    def apply_approved_experiments(self, session: Any, experiments_service: Any) -> int:
+        """Fold human-approved proposals into the arm space. Only approvals
+        widen what the optimizer may explore."""
+
+dale/services/digest.py:205
+            if applied:
+                self.ledger.record("experiment_applied", {"count": applied})
+        except Exception as exc:
+            logger.error(f"Applying approved experiments failed: {exc}")
+        return applied
+
+
+_SHARED_DIGEST: Optional[DigestService] = None
+
+
+dale/services/embeddings.py:111
+                return None
+            return {i: v / norm for i, v in enumerate(values)}
+        except Exception as exc:
+            logger.error(f"OpenAI embedding call failed: {exc}")
+            return None
+
+
+_SHARED_SERVICE: Optional[EmbeddingService] = None
+_SHARED_LOCK = threading.Lock()
+
+dale/services/evidence_library.py:51
+            self._seen_urls.add(url)
+            return record_id
+        except Exception as exc:
+            logger.error(f"Failed to record evidence: {exc}")
+            return None
+
+    def recall(self, topic: str, k: int = 3) -> List[Dict[str, Any]]:
+        """Pre-vetted sources relevant to a topic: [{url, text}, ...]."""
+        try:
+
+dale/services/evidence_library.py:63
+                if hit.get("meta", {}).get("url")
+            ]
+        except Exception as exc:
+            logger.error(f"Evidence recall failed: {exc}")
+            return []
+
+    def __len__(self) -> int:
+        return len(self.index)
+
+
+dale/services/experiments.py:87
+            logger.info(f"Logged arm selection for tweet {tweet_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to log arm selection: {e}")
+            session.rollback()
+    
+    def update_arm_rewards(self, session: Any):
+        """Update rewards for arms based on tweet performance"""
+        try:
+
+dale/services/experiments.py:121
+                logger.info(f"Updated rewards for {updated_count} arm logs")
+            
+        except Exception as e:
+            logger.error(f"Failed to update arm rewards: {e}")
+            session.rollback()
+    
+    def get_arm_performance(self, session: Any, days: int = 30) -> Dict[str, Any]:
+        """Get performance statistics for each arm"""
+        cutoff = datetime.now(UTC) - timedelta(days=days)
+
+dale/services/feedback.py:46
+            return note
+            
+        except Exception as e:
+            logger.error(f"Failed to generate improvement note: {e}")
+            return "Daily analysis failed. Review system logs for issues."
+    
+    def _analyze_performance_patterns(self, tweets: List[Tweet]) -> Dict[str, Any]:
+        """Analyze performance patterns in recent tweets"""
+        if not tweets:
+
+dale/services/generator.py:103
+                return await self._validate_and_refine(content, "proposal", topic, session, intensity)
+                
+        except Exception as e:
+            logger.error(f"Proposal generation failed: {e}")
+            return {"error": str(e)}
+    
+    async def make_reply(self, context: Dict[str, Any], intensity: int = 1) -> Dict[str, Any]:
+        """Generate a reply to a mention or tweet"""
+        try:
+
+dale/services/generator.py:132
+                return await self._validate_and_refine(content, "reply", context.get("topic", "general"), session, intensity)
+                
+        except Exception as e:
+            logger.error(f"Reply generation failed: {e}")
+            return {"error": str(e)}
+    
+    async def make_quote(self, context: Dict[str, Any], intensity: int = 1) -> Dict[str, Any]:
+        """Generate a quote tweet"""
+        try:
+
+dale/services/generator.py:161
+                return await self._validate_and_refine(content, "quote", context.get("topic", "general"), session, intensity)
+                
+        except Exception as e:
+            logger.error(f"Quote generation failed: {e}")
+            return {"error": str(e)}
+
+    async def make_thread(
+        self,
+        topic: str = "general",
+
+dale/services/generator.py:261
+                return response
+
+        except Exception as exc:
+            logger.error("Thread generation failed: %s", exc)
+            return {"error": str(exc)}
+
+    async def make_dm_copy(
+        self,
+        seed: Any,
+
+dale/services/generator.py:315
+                }
+
+        except Exception as exc:
+            logger.error("DM generation failed: %s", exc)
+            return {"error": str(exc)}
+    
+    def _build_proposal_prompt(self, topic: str, context: Dict[str, Any], intensity: int) -> str:
+        """Build prompt for proposal generation"""
+        persona = self.persona_store.get_current_persona()
+
+dale/services/generator.py:701
+                        url=url, topic=topic, context=content[:160]
+                    )
+        except Exception as e:
+            logger.error(f"Evidence banking failed: {e}")
+
+        return {
+            "content": content,
+            "content_type": content_type,
+            "topic": topic,
+
+dale/services/generator.py:760
+            )
+            return mutated.strip()
+        except Exception as e:
+            logger.error(f"Content mutation failed: {e}")
+            # Simple word substitution fallback
+            return content.replace("implement", "deploy").replace("mechanism", "system").replace("solution", "approach")
+
+    def _parse_thread_response(self, raw_response: str) -> Dict[str, Any]:
+        posts: List[Dict[str, Any]] = []
+
+dale/services/heartbeat.py:89
+                await stage()
+                self.record_success(name)
+            except Exception as exc:
+                self.record_failure(name, exc)
+                if self._breaker_tripped:
+                    return
+
+    async def loop(
+        self,
+
+dale/services/heartbeat.py:120
+                await fn()
+                self.record_success(stage)
+            except Exception as exc:
+                self.record_failure(stage, exc)
+
+        _supervised.__name__ = f"supervised_{stage}"
+        return _supervised
+
+
+
+dale/services/instinct.py:129
+                    if len(word) > 3:
+                        keywords.add(word)
+        except Exception:
+            pass
+        return keywords
+
+
+class InstinctEngine(_PersonaMixin):
+    """Pre-generation reflex: is this opportunity worth this identity's time?"""
+
+dale/services/instinct.py:201
+                "reason": reason, **scores,
+            })
+        except Exception as exc:
+            logger.error(f"Failed to ledger instinct verdict: {exc}")
+        return result
+
+    def _verdict(self, kind, scores, *, insulting, sentiment, combined, stakes,
+                 injection_risk=0.0):
+        # Instruction-shaped content beats every other consideration: it is
+
+dale/services/instinct.py:296
+                "kind": kind, "outcome": outcome, "reason": reason, **scores,
+            })
+        except Exception as exc:
+            logger.error(f"Failed to ledger identity gate: {exc}")
+        return result
+
+
+_SHARED_ENGINE: Optional[InstinctEngine] = None
+_SHARED_GATE: Optional[IdentityGate] = None
+
+dale/services/kpi.py:51
+            logger.info(f"Calculated and stored KPIs for period {period_start} to {period_end}")
+            
+        except Exception as e:
+            logger.error(f"KPI calculation failed: {e}")
+            session.rollback()
+    
+    def get_latest_kpis(self, session: Session) -> Dict[str, Any]:
+        """Get the latest KPI values"""
+        latest_kpis = {}
+
+dale/services/llm_harness.py:414
+                reply = await llm_adapter.chat(system, [{"role": "user", "content": user_text}])
+                return reply, provider
+            except Exception as exc:  # degraded, never dead
+                logger.warning(f"{provider} generation failed, degrading: {exc}")
+        if template_fn is not None:
+            return template_fn(), "template"
+        raise HarnessViolation("no provider available and no template fallback supplied")
+
+
+
+dale/services/logging_utils.py:80
+        session.commit()
+        
+    except Exception as e:
+        # Don't let logging errors break the application
+        logger = get_logger(__name__)
+        logger.error(f"Failed to log to database: {e}")
+
+class DatabaseLogHandler(logging.Handler):
+    """Custom log handler that writes to database"""
+
+dale/services/logging_utils.py:108
+                        }
+                    )
+        except Exception as e:
+            # Prevent logging loops
+            self.logger.error(f"Database logging failed: {e}")
+
+def setup_database_logging():
+    """Set up database logging for warnings and errors"""
+    root_logger = logging.getLogger()
+
+dale/services/logging_utils.py:163
+                    metadata=metadata
+                )
+        except Exception as e:
+            self.error(f"Failed to log action to database: {e}")
+    
+    def performance(self, operation: str, duration: float, **metadata):
+        """Log performance metrics"""
+        self.info(
+            f"Performance: {operation} took {duration:.2f}s",
+
+dale/services/memory.py:133
+                summary += f": {text[:120]}"
+            self.semantic_index.add(summary, meta={"kind": "social", "user_id": user_id})
+        except Exception as exc:
+            logger.error(f"Failed to index interaction: {exc}")
+
+        return rel
+
+    def get_relationship(self, session: Any, user_id: str) -> Optional[Relationship]:
+        """Fetch the relationship record for a single account, if any."""
+
+dale/services/memory.py:218
+        try:
+            self.semantic_index.add(text, meta={"kind": "improvement_note"})
+        except Exception as exc:
+            logger.error(f"Failed to index improvement note: {exc}")
+
+        logger.info(f"Added improvement note: {text[:100]}...")
+        return note.id
+
+    def search_similar_lessons(self, query: str, k: int = 5) -> List[str]:
+
+dale/services/memory.py:228
+        try:
+            return [r["text"] for r in self.semantic_index.search(query, k=k)]
+        except Exception as exc:
+            logger.error(f"Semantic lesson search failed: {exc}")
+            return []
+    
+    def get_recent_improvement_notes(self, session: Any) -> List[str]:
+        """Get recent improvement notes for prompting"""
+        notes = (
+
+dale/services/memory.py:259
+                    r["text"] for r in get_world_model().recall(topic, k=3)
+                ]
+            except Exception as exc:
+                logger.error(f"World model recall failed: {exc}")
+                context["world_context"] = []
+        return context
+
+dale/services/multiplexer.py:71
+                        media_type=str(media_type),
+                    )
+                except Exception as exc:  # pragma: no cover - defensive log
+                    logger.warning("Failed to upload media %s: %s", path, exc)
+                    media_id = None
+                if media_id:
+                    media_ids.append(media_id)
+
+        if media_ids:
+
+dale/services/multiplexer.py:116
+            try:
+                x_client = XClient()
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.warning("Failed to instantiate XClient: %s", exc)
+                x_client = None
+        self.clients["x"] = _XAdapter(
+            x_client,
+            enabled=True,
+            live=self.config.LIVE,
+
+dale/services/multiplexer.py:212
+            try:
+                unsubscribe()
+            except Exception:
+                pass
+
+
+__all__ = ["SocialMultiplexer"]
+
+dale/services/operator_line.py:350
+        try:
+            self.ledger.record("operator_command", record)
+        except Exception as exc:
+            logger.error(f"Failed to ledger operator command: {exc}")
+        result = {"ok": ok, "reply": reply}
+        if request_id:
+            result["request_id"] = request_id
+        return result
+
+
+dale/services/operator_notifications.py:50
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return 200 <= resp.status < 300
+    except Exception as exc:
+        logger.error(f"Operator SMS send failed: {exc}")
+        return False
+
+
+def validate_twilio_signature(url: str, params: Dict[str, str], signature: str) -> bool:
+    """Validate Twilio's X-Twilio-Signature header (HMAC-SHA1 over the URL
+
+dale/services/optimizer.py:90
+            return selected
+            
+        except Exception as e:
+            logger.error(f"Arm sampling failed: {e}")
+            # Fallback to random selection
+            arms = self.experiments.arms
+            return {
+                "post_type": random.choice(arms["post_type"]),
+                "topic": random.choice(arms["topic"]),
+
+dale/services/optimizer.py:154
+                    try:
+                        sampled_prob = np.random.beta(alpha, beta)
+                    except Exception as e:
+                        logger.warning(f"Beta sampling failed for {arm}: {e}")
+                        sampled_prob = 0.5
+
+                    # Curiosity drive: under-explored arms get a bounded lift
+                    # so the agent keeps exploring instead of ossifying.
+                    arm_probs[arm] = sampled_prob + bonuses.get(arm, 0.0)
+
+dale/services/optimizer.py:261
+            logger.info(f"Updated J-score history with {len(self.j_score_history)} samples")
+            
+        except Exception as e:
+            logger.error(f"Failed to update J-score history: {e}")
+    
+    def get_optimization_status(self, session: Any) -> Dict[str, Any]:
+        """Get current optimization status"""
+        try:
+            experiment_summary = self.experiments.get_experiment_summary(session)
+
+dale/services/optimizer.py:287
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get optimization status: {e}")
+            return {"error": str(e)}
+    
+    def simulate_optimization(self, iterations: int = 1000) -> Dict[str, Any]:
+        """Simulate optimization performance for testing"""
+        # Simulate arm rewards
+
+dale/services/perception.py:318
+            if isinstance(result, Mapping) and "items" in result:
+                return list(result.get("items", []))
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.error("perception_mentions_error", extra={"error": str(exc)})
+        return []
+
+    async def _fetch_timeline(
+        self,
+        client: Any,
+
+dale/services/perception.py:341
+            if isinstance(result, list):
+                return {"items": result}
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.error("perception_timeline_error", extra={"error": str(exc)})
+        return {"items": []}
+
+    async def _fetch_trends(self, client: Any, *, limit: int) -> List[Dict[str, Any]]:
+        try:
+            result = await client.get_trending_topics(limit=limit)
+
+dale/services/perception.py:354
+                if isinstance(topics, list):
+                    return topics
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.error("perception_trends_error", extra={"error": str(exc)})
+        return []
+
+    async def _fetch_voice_activity(
+        self,
+        client: Any,
+
+dale/services/perception.py:391
+                )
+                break
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.error(
+                    "perception_voice_error",
+                    extra={"username": username, "error": str(exc)},
+                )
+                continue
+
+
+dale/services/perception.py:450
+                    result = await result
+                payloads[name] = result
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.error("perception_platform_error", extra={"platform": name, "error": str(exc)})
+        return payloads
+
+    def _count_items(self, data: Any) -> int:
+        if isinstance(data, list):
+            return len(data)
+
+dale/services/persona_store.py:332
+            return "\n".join(prompt_parts)
+            
+        except Exception as e:
+            logger.error(f"System prompt building failed: {e}")
+            # Return minimal fallback prompt
+            return "You are DaLeoBanks, an AI agent focused on deploying mechanisms for coordination and progress."
+    
+    def get_persona_versions(self) -> List[Dict[str, Any]]:
+        """Get all persona versions from database"""
+
+dale/services/persona_store.py:358
+                ]
+                
+        except Exception as e:
+            logger.error(f"Failed to get persona versions: {e}")
+            return []
+    
+    def get_version_diff(self, version1: int, version2: int) -> Dict[str, Any]:
+        """Get diff between two persona versions"""
+        try:
+
+dale/services/persona_store.py:389
+                return diff
+                
+        except Exception as e:
+            logger.error(f"Version diff failed: {e}")
+            return {"error": str(e)}
+    
+    def _has_file_changed(self) -> bool:
+        """Check if persona file has been modified"""
+        try:
+
+dale/services/persona_store.py:408
+            return current_hash != self._last_hash
+
+        except Exception as e:
+            logger.error(f"File change check failed: {e}")
+            return False
+    
+    def _calculate_hash(self, persona: Dict[str, Any]) -> str:
+        """Calculate SHA256 hash of persona"""
+        # Create canonical JSON string for hashing
+
+dale/services/planner.py:73
+            return plan
+            
+        except Exception as e:
+            logger.error(f"Weekly planning failed: {e}")
+            return {"error": str(e), "fallback_plan": self._create_fallback_plan()}
+    
+    async def _analyze_recent_performance(self, session: Session) -> Dict[str, Any]:
+        """Analyze performance over the last week"""
+        try:
+
+dale/services/planner.py:118
+            }
+            
+        except Exception as e:
+            logger.error(f"Performance analysis failed: {e}")
+            return {"error": str(e)}
+    
+    async def _analyze_content_performance(self, session: Session) -> Dict[str, Any]:
+        """Analyze content performance patterns"""
+        from db.models import Tweet
+
+dale/services/planner.py:212
+            try:
+                recent_lessons = self.memory.get_recent_improvement_notes(session)[:5]
+            except Exception:
+                recent_lessons = []
+
+            return {
+                "focus": focus,
+                "priorities": priorities,
+                "time_allocation": time_allocation,
+
+dale/services/planner.py:224
+            }
+            
+        except Exception as e:
+            logger.error(f"Strategic planning failed: {e}")
+            return {"focus": "maintain", "priorities": ["Continue current approach"]}
+    
+    async def _generate_tactical_tasks(self, session: Session, strategic_plan: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate specific tactical tasks for the week"""
+        try:
+
+dale/services/planner.py:318
+            return tasks
+            
+        except Exception as e:
+            logger.error(f"Tactical planning failed: {e}")
+            return self._get_default_tasks()
+    
+    def get_active_okr(self, session: Session) -> Dict[str, Any]:
+        """The OKR in force: the latest human-approved proposal, else default.
+
+
+dale/services/planner.py:362
+                "rationale": rationale,
+            })
+        except Exception as exc:
+            logger.error(f"Failed to ledger OKR proposal: {exc}")
+
+    async def _update_okrs(self, session: Session, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Update OKRs based on recent performance"""
+        try:
+            content_analysis = analysis.get("content_analysis", {})
+
+dale/services/planner.py:413
+            }
+            
+        except Exception as e:
+            logger.error(f"OKR update failed: {e}")
+            return {"current_okr": self.default_okr, "progress": 0}
+    
+    def _get_next_milestone(self, progress: Dict[str, Any]) -> str:
+        """Identify next important milestone"""
+        if progress["proposals_generated"] < 6:
+
+dale/services/raw_vault.py:63
+                    handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+            return record["vault_id"]
+        except Exception as exc:
+            logger.error(f"Raw vault deposit failed: {exc}")
+            return None
+
+    def fetch(self, vault_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve one raw record for audit/replay."""
+        try:
+
+dale/services/raw_vault.py:80
+        except FileNotFoundError:
+            return None
+        except Exception as exc:
+            logger.error(f"Raw vault fetch failed: {exc}")
+        return None
+
+    def all_records(self) -> List[Dict[str, Any]]:
+        try:
+            with self._lock, open(self.path, "r", encoding="utf-8") as handle:
+
+dale/services/raw_vault.py:90
+        except FileNotFoundError:
+            return []
+        except Exception as exc:
+            logger.error(f"Raw vault read failed: {exc}")
+            return []
+
+    def __len__(self) -> int:
+        return len(self.all_records())
+
+
+dale/services/reflection.py:44
+        try:
+            self.ledger.record("reflection_lesson", {"lesson": note, "source": source})
+        except Exception as exc:  # the ledger must never break learning
+            logger.error(f"Failed to chain reflection lesson: {exc}")
+
+    # ------------------------------------------------------------------ #
+    # Public API
+    # ------------------------------------------------------------------ #
+    async def generate_reflection_async(self, session: Any) -> str:
+
+dale/services/reflection.py:54
+        try:
+            signals = self._gather_signals(session)
+        except Exception as exc:  # never let signal gathering crash the loop
+            logger.error(f"Reflection signal gathering failed: {exc}")
+            return self.generate_reflection(session)
+
+        # No activity -> cheap template note, skip the LLM entirely.
+        if not signals["recent_actions"]:
+            note = (
+
+dale/services/reflection.py:70
+        try:
+            note = await self._synthesize_lesson(signals)
+        except Exception as exc:
+            logger.error(f"LLM reflection failed, using template fallback: {exc}")
+            return self.generate_reflection(session)
+
+        if not note:
+            return self.generate_reflection(session)
+
+
+dale/services/reflection.py:105
+            self._chain_lesson(note, source="template")
+            return note
+        except Exception as exc:
+            logger.error(f"Reflection generation failed: {exc}")
+            return "Reflection failed. Review logs for details."
+
+    def get_recent_lessons(self, session: Any, limit: int = 20) -> List[str]:
+        """Expose recent improvement notes (the learned 'mind') for the API/UI."""
+        try:
+
+dale/services/reflection.py:114
+            notes = self.memory.get_recent_improvement_notes(session)
+            return notes[:limit]
+        except Exception as exc:
+            logger.error(f"Failed to fetch lessons: {exc}")
+            return []
+
+    # ------------------------------------------------------------------ #
+    # Signal gathering
+    # ------------------------------------------------------------------ #
+
+dale/services/reflection.py:134
+        try:
+            best_arms = self.optimizer.experiments.get_arm_recommendations(session)
+        except Exception as exc:
+            logger.debug(f"Arm recommendations unavailable: {exc}")
+
+        prior_lessons = self.get_recent_lessons(session, limit=5)
+
+        # Roll up action kinds for a quick behavioural summary.
+        action_counts: Dict[str, int] = {}
+
+dale/services/reflection.py:174
+                return "falling"
+            return "flat"
+        except Exception:
+            return "unknown"
+
+    # ------------------------------------------------------------------ #
+    # LLM synthesis
+    # ------------------------------------------------------------------ #
+    async def _synthesize_lesson(self, signals: Dict[str, Any]) -> str:
+
+dale/services/security.py:97
+            subject = str(claims.get("sub", subject))
+            roles = _parse_roles(claims)
+        except Exception as exc:
+            logger.warning("JWT validation failed", extra={"extra_data": {"error": str(exc)}})
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    context = RequestContext(request_id=req_id, subject=subject, roles=roles, client_ip=client_ip)
+    request.state.request_context = context
+    return context
+
+dale/services/selector.py:100
+                drives_config = yaml.safe_load(f)
+                return drives_config
+        except Exception as e:
+            logger.error(f"Failed to load drives: {e}")
+            return {
+                "curiosity": 0.35,
+                "novelty": 0.25,
+                "impact": 0.30,
+                "stability": 0.10
+
+dale/services/selector.py:154
+            }
+
+        except Exception as e:
+            logger.error(f"Action selection failed: {e}")
+            self._last_arm = "REST"
+            return {
+                "type": "REST",
+                "reason": "error",
+                "error": str(e),
+
+dale/services/selector.py:177
+        try:
+            self.bandit.record_outcome(arm_to_update, reward)
+        except Exception as exc:
+            logger.error(f"Failed to record bandit outcome: {exc}")
+
+        intensity_used = metrics.get("intensity")
+        if intensity_used is None:
+            intensity_used = self._last_intensity_by_action.get(arm_to_update)
+
+
+dale/services/selector.py:486
+                max_count=max_candidates * 2,
+            )
+        except Exception as exc:
+            logger.warning("Failed to fetch priority accounts: %s", exc)
+            return []
+
+        qualified: List[Dict[str, Any]] = []
+        for account in accounts:
+            if not isinstance(account, dict):
+
+dale/services/selector.py:551
+                    self.analytics.calculate_authority_signals(session, days=1)
+                )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.error("Failed to gather analytics signals: %s", exc)
+
+        try:
+            snapshot["crisis_signal"] = float(self.crisis.last_signal)
+        except Exception:  # pragma: no cover - crisis service guarantees float but guard just in case
+            snapshot["crisis_signal"] = 0.0
+
+dale/services/selector.py:556
+        try:
+            snapshot["crisis_signal"] = float(self.crisis.last_signal)
+        except Exception:  # pragma: no cover - crisis service guarantees float but guard just in case
+            snapshot["crisis_signal"] = 0.0
+
+        try:
+            snapshot["crisis_active"] = bool(self.crisis.is_paused())
+        except Exception:  # pragma: no cover
+            snapshot["crisis_active"] = False
+
+dale/services/selector.py:561
+        try:
+            snapshot["crisis_active"] = bool(self.crisis.is_paused())
+        except Exception:  # pragma: no cover
+            snapshot["crisis_active"] = False
+
+        snapshot["crisis_threshold"] = getattr(self.crisis, "signal_threshold", 0.0)
+        snapshot["crisis_resume"] = getattr(self.crisis, "resume_threshold", 0.0)
+
+        return snapshot
+
+dale/services/self_model.py:126
+            return hash_obj.hexdigest()[:16]  # First 16 characters
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate identity hash: {e}")
+            return "unknown"
+    
+    def _generate_model_card(self, persona: Dict[str, Any], identity_hash: str) -> str:
+        """Generate markdown model card"""
+        
+
+dale/services/self_model.py:280
+                    return f.read()
+            return None
+        except Exception as e:
+            logger.error(f"Failed to read model card: {e}")
+            return None
+    
+    def get_identity_status(self) -> Dict[str, Any]:
+        """Get identity verification status"""
+        return {
+
+dale/services/thought_dsl.py:176
+                        "reasons": list(critique.blocking_issues),
+                    }
+            except Exception as exc:  # critic is advisory; never crash a plan
+                logger.error(f"Critic gate failed open: {exc}")
+        return None
+
+
+__all__ = ["StepKind", "ThoughtStep", "ThoughtPlan", "ThoughtInterpreter", "ELEMENT_ORDER"]
+
+dale/services/websearch.py:65
+        try:
+            domain = url.split("//", 1)[-1].split("/", 1)[0]
+        except Exception:
+            return False
+        for trusted in self.whitelist:
+            if domain.endswith(trusted):
+                return True
+        return False
+
+
+dale/services/world_model.py:70
+            text = f"{entity}: {summary}" if entity else summary
+            return self.index.add(text, meta=record_meta)
+        except Exception as exc:
+            logger.error(f"World model observation failed: {exc}")
+            return None
+
+    def observe_perception(self, payload: Dict[str, Any]) -> int:
+        """Fold one perception payload (mentions/timeline/trends) in."""
+        observed = 0
+
+dale/services/world_model.py:112
+        try:
+            return self.index.search(query, k=k)
+        except Exception as exc:
+            logger.error(f"World model recall failed: {exc}")
+            return []
+
+    def __len__(self) -> int:
+        return len(self.index)
+
+
+dale/services/x_client.py:87
+            logger.info("X API client initialized successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize X client: {e}")
+            self.client = None
+
+    def is_healthy(self) -> bool:
+        """Check if client is healthy"""
+        return self.client is not None
+
+dale/services/x_client.py:105
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Credential verification failed: {e}")
+            return False
+
+    async def get_dm_events(
+        self,
+        max_results: int = 50,
+
+dale/services/x_client.py:142
+            self._record_success("get_dm_events")
+            return {"events": events, "next_token": meta.get("next_token")}
+        except Exception as e:
+            logger.error(f"Failed to fetch DM events: {e}")
+            self._record_failure("get_dm_events")
+            return {"events": [], "next_token": None}
+    
+    def _check_circuit_breaker(self, endpoint: str) -> bool:
+        """Check if circuit breaker allows requests"""
+
+dale/services/x_client.py:260
+                )
+                await asyncio.sleep(backoff_seconds)
+            except Exception as e:
+                # Any other failure: log and abort
+                logger.error(f"Failed to perform {endpoint}: {e}")
+                self._record_failure(endpoint)
+                return default_result
+        # Exceeded retries
+        logger.error(f"Exceeded max retries for {endpoint}")
+
+dale/services/x_client.py:477
+            try:
+                unsubscribe()
+            except Exception:
+                pass
+    
+    async def search_recent(self, query: str, max_results: int = 10) -> List[Dict[str, Any]]:
+        """Search recent tweets"""
+        endpoint = "search"
+        
+
+dale/services/x_client.py:515
+            return results
+            
+        except Exception as e:
+            logger.error(f"Failed to search tweets: {e}")
+            self._record_failure(endpoint)
+            return []
+    
+    async def get_mentions(self, since_id: Optional[str] = None, max_results: int = 20) -> List[Dict[str, Any]]:
+        """Get mentions of the authenticated user"""
+
+dale/services/x_client.py:551
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to get mentions: {e}")
+            self._record_failure(endpoint)
+            return []
+
+    async def get_home_timeline(
+        self,
+
+dale/services/x_client.py:616
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to get home timeline: {e}")
+            self._record_failure(endpoint)
+            return {"items": []}
+
+    async def get_trending_topics(
+        self,
+
+dale/services/x_client.py:660
+            return [topic for topic in topics if topic]
+
+        except Exception as e:
+            logger.error(f"Failed to get trending topics: {e}")
+            self._record_failure(endpoint)
+            return []
+
+    def _normalize_trend(self, item: Any) -> Optional[Dict[str, Any]]:
+        if isinstance(item, dict):
+
+dale/services/x_client.py:702
+            return metrics
+            
+        except Exception as e:
+            logger.error(f"Failed to get metrics: {e}")
+            self._record_failure(endpoint)
+            return {}
+
+wmi/src/agents/base.py:63
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self._logger.error(f"Error in agent execution: {str(e)}")
+                self.state = AgentState.ERROR
+
+    async def _handle_event(self, event: Dict[str, Any]) -> None:
+        """Handle specific event types"""
+        event_type = event.get('type')
+
+wmi/src/api/routes/agents.py:68
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error listing agents")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agents"
+        )
+
+
+wmi/src/api/routes/agents.py:100
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error getting agents status")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agent status"
+        )
+
+
+wmi/src/api/routes/agents.py:159
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error activating agent")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to activate agent"
+        )
+
+
+wmi/src/api/routes/agents.py:200
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error deactivating agent")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deactivate agent"
+        )
+
+wmi/src/api/routes/analytics.py:120
+            detail="Database error"
+        )
+    except Exception:
+        logger.exception("Unexpected error getting dashboard metrics")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve dashboard metrics"
+        )
+
+
+wmi/src/api/routes/analytics.py:185
+            detail="Database error"
+        )
+    except Exception:
+        logger.exception("Unexpected error getting portfolio performance")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve portfolio performance"
+        )
+
+
+wmi/src/api/routes/analytics.py:239
+            detail="Database error"
+        )
+    except Exception:
+        logger.exception("Unexpected error getting risk analysis")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve risk analysis"
+        )
+
+
+wmi/src/api/routes/analytics.py:289
+            detail="Database error"
+        )
+    except Exception:
+        logger.exception("Unexpected error getting top performers")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve top performers"
+        )
+
+wmi/src/api/routes/health.py:61
+            response_time_ms=-1
+        )
+    except Exception as e:
+        logger.exception("Unexpected error during database health check")
+        return DatabaseHealth(
+            connected=False,
+            pool_status={},
+            response_time_ms=-1
+        )
+
+wmi/src/api/routes/ventures.py:104
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error creating venture")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create venture"
+        )
+
+
+wmi/src/api/routes/ventures.py:153
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error listing ventures")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve ventures"
+        )
+
+
+wmi/src/api/routes/ventures.py:223
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error updating venture")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update venture"
+        )
+
+
+wmi/src/api/routes/ventures.py:262
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error discontinuing venture")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to discontinue venture"
+        )
+
+
+wmi/src/api/routes/ventures.py:310
+            detail="Database error"
+        )
+    except Exception as e:
+        logger.exception("Unexpected error launching venture")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to launch venture"
+        )
+
+wmi/src/core/knowledge_graph_connector.py:34
+    from ..database.connection import db
+    from ..database.models import DigitalVenture, MarketAnalysis, RiskAssessment
+except Exception as e:  # broad catch to handle missing dependencies
+    db = None  # type: ignore
+    DigitalVenture = None  # type: ignore
+    MarketAnalysis = None  # type: ignore
+    RiskAssessment = None  # type: ignore
+    logging.warning("Database modules not available: %s", e)
+
+
+wmi/src/core/knowledge_graph_connector.py:295
+            from ..utils.notifications import notify_role as real_notify
+            real_notify(role, message)
+        except Exception:
+            logger.info("Notify %s: %s", role, message)
+
+wmi/src/database/connection.py:153
+                session.execute(text("SELECT 1"))
+            return True
+        except Exception as e:
+            logger.error("Database health check failed", error=str(e))
+            return False
+
+# Global database instance
+db = DatabaseConnection()
+
+
+wmi/src/database/init_db.py:20
+        print("✅ Database tables created successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to create tables: {e}")
+        return False
+
+def populate_initial_data():
+    """Populate database with initial AI agents and sample data"""
+    try:
+
+wmi/src/database/init_db.py:150
+            return True
+            
+    except Exception as e:
+        print(f"❌ Failed to populate initial data: {e}")
+        return False
+
+def init_database():
+    """Complete database initialization"""
+    print("🚀 Initializing WealthMachine Enterprise Database...")
+
+wmi/src/services/market_monitor.py:30
+    from ..database.connection import db
+    from ..database.models import DigitalVenture
+except Exception:
+    db = None  # type: ignore
+    DigitalVenture = None  # type: ignore
+
+logger = logging.getLogger(__name__)
+
+
+
+wmi/src/services/risk_management.py:33
+            try:
+                assessment = await self.risk_service.assess_venture_risk(venture_id)
+            except Exception:  # pragma: no cover - defensive guard for optional dependency
+                assessment = self._heuristic_assessment(metrics)
+        else:
+            assessment = self._heuristic_assessment(metrics)
+
+        self.connector.store_risk_assessment(venture_id, assessment)
+        return assessment

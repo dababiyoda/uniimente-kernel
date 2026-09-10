@@ -1,0 +1,68 @@
+{
+  "93": [
+    {
+      "body": "## Founder correction — CapabilityDeficit is now the key seam\n\nThis PR is closer to the founder's intended morphogenesis than the literal biological/organizational lines because it already preserves persistent goals and `capability-deficit` records.\n\nAlfonso's 2026-09-09 clarification makes the intended next seam explicit:\n\n```text\npersistent founder goal\n-> detect discrepancy / blocker\n-> CapabilityDeficit\n-> resourceful Capability Genesis\n   -> existing capability\n   -> composition/reconfiguration\n   -> commodity/open source\n   -> API/plugin/service/model\n   -> authorized computer use\n   -> small generated tool\n   -> coding agent/team\n   -> OMNIMORPH if organization is actually needed\n   -> new architecture only if residual deficit remains\n-> sandbox / adversarial test / independent verification\n-> bounded capability attachment\n-> resume the ORIGINAL goal\n-> real outcome / reconciliation\n```\n\nGoverning rule: **Preserve the effect. Do not literalize the metaphor.** A science-fiction founder request is an outcome specification: preserve the aspiration, compile it into observable effects, and use real mechanisms to approximate/achieve it without fabricating capability.\n\nPlease treat `CapabilityDeficit` as the canonical trigger for this resourceful resolution loop. Tool construction/acquisition is a subtask; it must not falsely close the original mission.\n\nExisting limitations in this PR remain: synthetic founder signer, trusted-process sandbox, explicit ticks, two built-in functions, no real founder auth, no 24/7 service, no arbitrary-code isolation, no real-world outcome. This correction creates no production authority. It clarifies where the Goal Chase should eventually connect once the shared repair/adoption path is ready.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/93#issuecomment-5605569334",
+      "created_at": "2026-09-09T16:54:11Z",
+      "updated_at": "2026-09-09T16:54:11Z",
+      "author": "dababiyoda"
+    },
+    {
+      "body": "### Founder correction — CapabilityDeficit now routes through the Effect Compiler\n\nThis Goal Chase PR is the key future integration seam for `INTENT-0030` / draft #99.\n\nWhen Goal Chase records a `CapabilityDeficit`, the intended response is **not** “instantiate biological/organizational morphogenesis.” It is:\n\n`CapabilityDeficit -> define observable target effect -> inventory existing capabilities -> search conventional/commodity/open-source/API/plugin/service/computer-use routes -> extract/recombine mechanisms if useful -> build only the residual missing capability -> sandbox/test -> verify -> attach under explicit authority -> resume the original durable goal`\n\nThe original goal remains durable while capability formation proceeds. Completing a tool build is not goal completion; the mission resumes and must still reconcile against reality.\n\nThis is the founder's intended functional meaning of morphogenesis: the institution changes its functional form/resource set so it can keep going.\n\nNo current sandbox closure count, synthetic founder identity, external-channel restriction, merge/deploy state, or authority changes. Runtime ownership for Capability Genesis remains a later convergence decision.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/93#issuecomment-5605756027",
+      "created_at": "2026-09-09T17:07:38Z",
+      "updated_at": "2026-09-09T17:07:38Z",
+      "author": "dababiyoda"
+    }
+  ],
+  "94": [
+    {
+      "body": "## Founder correction for CMC / Phase-4 reconciliation\n\nApply `INTENT-0029` before any continuation of this branch.\n\n**Preserve the founder's desired effect; do not literalize the morphogenesis metaphor.** Organizational morphology is a candidate mechanism, not the destination.\n\nThe real higher-order requirement is: when a persistent mission encounters a verified capability deficit, UNIIMENTE should resourcefully discover/acquire/compose/adapt/build the missing function, verify it, attach it under bounded authority, and resume the original mission.\n\nTherefore the existing selector's alternatives should be interpreted broadly. `single model/tool`, `existing workflow`, `static DurableWorkflow`, `fixed specialists`, `human escalation`, and `temporary organization` are not merely organizational baselines; future comparisons should also admit mature commodity/open-source/API/plugin/computer-use/coding-agent routes where applicable.\n\nRetain the protected evidence-appraisal work, CMC verification hardening, dissent, static baseline, and organization-design experiments. Do not treat a winning organization topology as proof of morphogenesis unless it actually closes the named underlying capability/outcome better than simpler routes.\n\nThis clarification changes no authority or deployment state.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/94#issuecomment-5605567541",
+      "created_at": "2026-09-09T16:54:02Z",
+      "updated_at": "2026-09-09T16:54:02Z",
+      "author": "dababiyoda"
+    },
+    {
+      "body": "### Founder correction — inherit INTENT-0030 from the organizational stack\n\nBecause this PR is stacked on #92, it inherits the 2026-09-09 founder correction in draft #99:\n\n> **Preserve the intended effect. Do not literalize the metaphor. Search reality before inventing architecture.**\n\nRetain the protected evidence appraisal, independent verification, static-vs-organizational comparisons, ownership boundaries, and failure records. But OMNIMORPH/organization hypotheses remain **optional mechanisms** inside broader functional Capability Genesis.\n\nA future Phase-4 experiment should not ask only, “which organization should UNIIMENTE instantiate?” It should first ask, “what observable effect/CapabilityDeficit must be closed, and what is the cheapest real mechanism that closes it?” Static workflow, direct capability, external/open-source tools, APIs/plugins/services, computer use, narrow code, and no-instantiation remain legitimate winners.\n\nNo current `CMC`, VDM, LIVE/HARDENED, authority, merge, deployment, or activation state changes.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/94#issuecomment-5605753732",
+      "created_at": "2026-09-09T17:07:28Z",
+      "updated_at": "2026-09-09T17:07:28Z",
+      "author": "dababiyoda"
+    }
+  ],
+  "kernel": [
+    {
+      "body": "## Founder-effect correction — adoption relevance\n\nThe 2026-09-09 `INTENT-0029` correction does **not** change this PR's shared transport/integrity/durable-recovery objective. Those repairs remain dependencies of the founder loop.\n\nIt does clarify what should come immediately after safe adoption:\n\n- do not launch another literal morphogenesis/developmental subsystem;\n- compose the repaired shared substrate with the persistent Goal Chase;\n- treat a durable `CapabilityDeficit` as the trigger for **resourceful capability resolution**;\n- search/acquire/adapt existing capabilities, open source, APIs/plugins/services, authorized computer use and small tools before inventing architecture;\n- use OMNIMORPH only when organization design is demonstrably the residual bottleneck;\n- verify and attach the capability under existing authority, then resume the original goal.\n\nGoverning rule: **Preserve the effect. Do not literalize the metaphor.**\n\nAll existing #98 blockers and evidence remain unchanged. This comment does not waive the 17 broader Kernel failures, DALEOBANKS offline-isolation blocker, Docker verification, lint debt, independent review, or any no-merge/no-deploy/no-activation restriction.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/98#issuecomment-5605570918",
+      "created_at": "2026-09-09T16:54:18Z",
+      "updated_at": "2026-09-09T16:54:18Z",
+      "author": "dababiyoda"
+    },
+    {
+      "body": "### Founder correction — integration repair remains the dependency, not a new morphogenesis build\n\n`INTENT-0030` / draft #99 does **not** replace or defer this shared durability/authentication repair. It changes how future missing-capability work is interpreted.\n\nKeep #98's transport, ledger-integrity, durable-claim, schema, replay, grant and response-authentication work as the current convergence dependency. After adoption, Goal Chase `CapabilityDeficit` handling should route through the Effect Compiler: search existing/commodity/open-source/API/plugin/computer-use mechanisms, build only the residual deficit, verify it, then resume the original goal.\n\nDo not add biological or organizational machinery to #98 merely because the larger project uses morphogenesis language. This PR should stay narrow: repair the shared nervous-system invariants it already owns.\n\nNo merge/deployment/authority state changes.",
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/98#issuecomment-5605829294",
+      "created_at": "2026-09-09T17:12:50Z",
+      "updated_at": "2026-09-09T17:12:50Z",
+      "author": "dababiyoda"
+    }
+  ],
+  "dale": [
+    {
+      "body": "### Founder correction — keep this producer-compatibility repair narrow\n\n`INTENT-0030` / Kernel draft #99 does not alter this PR's current job: make DALEOBANKS consume the canonical Kernel package safely and prove transport/recovery behavior without bypassing authority.\n\nFuture capability formation inherits the new rule—preserve the desired effect, search/adapt real mechanisms first, build only the residual CapabilityDeficit—but #77 should not acquire biology-inspired, swarm, or organization machinery merely because UNIIMENTE uses morphogenesis language.\n\nDALEOBANKS remains one specialist public/media/distribution organ; new tools or generated capabilities do not inherit publishing/contact/spending authority.\n\nNo merge, live-platform, credential, deployment or authority change.",
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/77#issuecomment-5605830652",
+      "created_at": "2026-09-09T17:12:57Z",
+      "updated_at": "2026-09-09T17:12:57Z",
+      "author": "dababiyoda"
+    }
+  ],
+  "wmi": [
+    {
+      "body": "### Founder correction — preserve current integration scope\n\n`INTENT-0030` / Kernel draft #99 does not replace this PR's authenticated-consumer and durable-results work. Keep #35 focused on canonical Kernel mediation, retained results, signed responses, restart/retry behavior and pinned producer integration.\n\nFor later CapabilityDeficit work, WMI should translate the founder's desired result into a measurable effect, search existing/commodity/open-source/API/plugin/computer-use mechanisms, and build only what remains genuinely missing. OMNIMORPH or dynamic organization is optional, not the default meaning of morphogenesis.\n\nNew tools/code/organizations never inherit WMI or founder authority.\n\nNo merge, Docker deployment, production credential, external effect or authority change.",
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/35#issuecomment-5605832093",
+      "created_at": "2026-09-09T17:13:04Z",
+      "updated_at": "2026-09-09T17:13:04Z",
+      "author": "dababiyoda"
+    }
+  ]
+}

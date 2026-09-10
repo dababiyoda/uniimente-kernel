@@ -1,5 +1,13 @@
 # Repository Rationalization Plan
 
+## Bounded adoption continuation — 2026-09-09
+
+The current review packet is [SR001_ADOPTION_DECISION.md](SR001_ADOPTION_DECISION.md), with [17 individual dispositions](../tests/evidence/adoption-20260909/kernel-17-dispositions.md), exact current-default composition evidence and the [persistent founder-loop entry gate](founder-loop-entry-gate.json). This updates the September 8 handoff below without erasing it.
+
+Kernel: 551 repaired-subject passes; original main 495; current-default overlay 556. DALEOBANKS: 324 broad passes under independently enforced seccomp network isolation. WMI: 128 passes and two explicitly retained socket-environment failures; installed ASGI/process replacement evidence passes separately. Protected #94: 21 original / 40 shared-overlay passes. Docker remains unavailable; independent adoption review remains outstanding. HOLD adoption/merge and activation; CMC/VDM remain zero.
+
+INTENT-0030 is now adopted on default branches. A CapabilityDeficit must lead to effect compilation and resourceful existing-mechanism search, verified bounded attachment and resumption of the original goal. It does not mandate a new morphogenesis framework. SR001-COMPAT-01 is a linked narrow subject/migration decision, not a third strengthening pass on SR-001. No service or new authority is activated.
+
 ## SR-001 adoption handoff — draft submissions, 2026-09-08
 
 This package repairs shared admission/history/recovery mechanisms and connects

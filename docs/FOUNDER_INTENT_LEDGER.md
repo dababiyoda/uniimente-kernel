@@ -64,6 +64,34 @@ Each record must contain:
 
 When an intention is ambiguous, interpret it toward the strongest lawful, evidence-preserving, human-sovereign, reversible, and commercially durable form.
 
+### Effect-not-metaphor rule
+
+`INTENT-0030` is the controlling interpretation rule for biological, institutional, mythic, and science-fiction language.
+
+> **Preserve the intended effect. Do not literalize the metaphor.**
+
+Unless Alfonso explicitly specifies an implementation form, terms such as `egregore`, `organism`, `morphogenesis`, `cell`, `tissue`, `organ`, `immune system`, `metabolism`, `healing`, `regeneration`, `nervous system`, `embodiment`, `omniscience`, `Jarvis`, `immortality`, and similar language are **outcome specifications and mechanism-discovery prompts**.
+
+Contributors must:
+
+1. preserve the exact aspiration as a serious target capability;
+2. identify the observable underlying effect;
+3. separate literal requirements from analogy or aspiration;
+4. search existing capabilities, commodity software, open source, APIs, plugins, services, computer-use routes, and small adapters before inventing architecture;
+5. use mechanism extraction/mutation/recombination when existing components are insufficient;
+6. build only the residual CapabilityDeficit;
+7. verify the underlying effect, not resemblance to the metaphor.
+
+`not implemented` must never be silently converted into `not intended`.
+
+A science-fiction aspiration may remain partially or wholly unrealizable with current technology. That changes its evidence state and path; it does not erase the founder's destination.
+
+Canonical UNIIMENTE morphogenesis means **functional capability formation or reconfiguration in response to a verified discrepancy or CapabilityDeficit**. Digital cells, tissues, local developmental rules, decentralized topologies, or dynamically generated organizations are optional research mechanisms, not requirements.
+
+Historical literal interpretations remain preserved as evidence and mechanism sources but are superseded as controlling founder intent where they conflict with `INTENT-0030`.
+
+See `docs/FOUNDER_EFFECT_COMPILER.md` and `docs/intent/INTENT-0030-effect-not-metaphor.md`.
+
 "Build upward" never means:
 
 - inventing evidence;
@@ -72,12 +100,24 @@ When an intention is ambiguous, interpret it toward the strongest lawful, eviden
 - converting aspirations into production claims;
 - concealing downside;
 - deleting rejected branches or negative results;
-- increasing complexity without a measured control advantage.
+- increasing complexity without a measured control advantage;
+- reproducing the surface form of a founder metaphor when a simpler mechanism produces the intended effect;
+- inventing a new framework before checking whether existing real technology already closes the capability gap.
 
-It means improving the architecture until its strongest useful property is retained with lower fragility, clearer authority, stronger proof, easier replacement, and better participant welfare.
+It means improving the architecture until its strongest useful property is retained with lower fragility, clearer authority, stronger proof, easier replacement, better participant welfare, and higher verified effect per unit of complexity.
 
 ## Mandatory Traceability
 
 A material pull request must identify the Intent Records it advances, conflicts with, defers, or supersedes. A change with no traceable intention is either maintenance work or scope drift and must be labeled accordingly.
+
+When the work originates in a metaphorical or science-fiction founder statement, the pull request must also trace:
+
+- founder expression;
+- intended effect;
+- literal requirements versus metaphor;
+- existing mechanisms considered;
+- residual CapabilityDeficit;
+- why the selected mechanism is superior to the simplest viable alternative;
+- evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.

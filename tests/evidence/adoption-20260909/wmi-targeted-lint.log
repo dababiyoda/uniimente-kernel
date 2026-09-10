@@ -1,0 +1,4 @@
+RUFF_VERSION=0.12.11
+COMMAND=["/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3", "-m", "ruff", "check", "--select", "F,E9,B023", "tests/test_installed_offline_composition.py", "tests/test_shared_consumer_integration.py", "tests/test_packaged_startup.py"]
+RETURN_CODE=0
+All checks passed!

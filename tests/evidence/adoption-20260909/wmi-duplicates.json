@@ -1,0 +1,39 @@
+{
+  "algorithm": "sha256",
+  "complete": true,
+  "errors": [],
+  "excluded_subtrees": [
+    ".git",
+    ".pytest_cache"
+  ],
+  "generated_at": "2026-09-09T22:27:08.434382+00:00",
+  "groups": [
+    {
+      "copy_count": 2,
+      "paths": [
+        "attached_assets/Pasted--Great-work-Replit-Agent-Before-introducing-additional-features-let-s-review-the-key-integ-1738208777576.txt",
+        "attached_assets/Pasted--Great-work-Replit-Agent-Before-introducing-additional-features-let-s-review-the-key-integ-1738208914495.txt"
+      ],
+      "reclaimable_bytes_if_one_retained": 2151,
+      "sha256": "97b98d90ad59118b2a078cdc1f57f78a442df32dca7a811c444121509d8a8f10",
+      "size_bytes": 2151
+    }
+  ],
+  "mode": "report_only",
+  "repository": "/workspace/scratch/fa1437d21e0f/repos/wmi",
+  "skipped_files": [],
+  "summary": {
+    "candidate_files_hashed": 4,
+    "duplicate_file_count": 2,
+    "duplicate_group_count": 1,
+    "error_count": 0,
+    "excluded_subtree_count": 2,
+    "files_scanned": 180,
+    "potential_reclaimable_bytes": 2151,
+    "skipped_file_count": 0
+  },
+  "tool": "detect_exact_duplicates.py",
+  "truncated": false,
+  "version": 1,
+  "warning": "Byte identity does not prove semantic redundancy or authorize deletion. Confirm authorship, canonical ownership, consumers, evidence value, and provenance before any migration."
+}

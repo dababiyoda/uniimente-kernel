@@ -1,0 +1,119 @@
+{
+  "pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+  "version": "0.1.2",
+  "files": [
+    {
+      "path": "adapters/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "adapters/bridge_transport.py",
+      "sha256": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f"
+    },
+    {
+      "path": "adapters/contract_validation.py",
+      "sha256": "e7e21020e8cced64253ebb22b00e13271639f89b790055121f3b0d51289d6249"
+    },
+    {
+      "path": "adapters/daleobanks_opportunity.py",
+      "sha256": "d783bdfa0e2a7f4c3d83e01583ecd7c38498de0d270e46e977e18f47dea5fa1b"
+    },
+    {
+      "path": "adapters/wealthmachine_assessment.py",
+      "sha256": "21ce3549b3475d0f0715b839b83b69c8ba56350df6fab86a3e86c221b0c78418"
+    },
+    {
+      "path": "contracts/__init__.py",
+      "sha256": "fbba29b9f8a955096dfa7fb33111afc4f10ea496af5cb89634090dac18e122d0"
+    },
+    {
+      "path": "contracts/capability-grant.schema.json",
+      "sha256": "eb7fb4a01308f016fb1c15f907dfd6f3237eccf4f419ff8c3b633c9bbe179a3d"
+    },
+    {
+      "path": "contracts/context-packet.schema.json",
+      "sha256": "99db31b7a8be6dd76b40673d4c28a9400f9e6fce53423e76697aa6b0451955b3"
+    },
+    {
+      "path": "contracts/decision.schema.json",
+      "sha256": "bd73f3f57ab8ea35975db2792b82021bac007225d97b08008ccacfa14f1dafc5"
+    },
+    {
+      "path": "contracts/egregore-cognition.schema.json",
+      "sha256": "bdc34095cb6176fbaee54438fd6f8b498818970f94c195ae9960221562ba717c"
+    },
+    {
+      "path": "contracts/event.schema.json",
+      "sha256": "2a9041136e48df76d42b2de45d8b25c3a0744031904365cb1fc7f4689bfb4c41"
+    },
+    {
+      "path": "contracts/evidence.schema.json",
+      "sha256": "9fbda9f16482870e2a713b028df9a6cc0f28cb4097b84f3f68f09af1eeed0deb"
+    },
+    {
+      "path": "contracts/opportunity-packet.schema.json",
+      "sha256": "f5c529e8dca65091c4ed7dd04409717ed3f2f8864eb44fb6a2d2242caf5ad6de"
+    },
+    {
+      "path": "contracts/organ-manifest.schema.json",
+      "sha256": "38def15ae2f68b6cbb98e50020c268e6fdd7ee204f3660564eeefc9f0e078b6f"
+    },
+    {
+      "path": "contracts/outcome.schema.json",
+      "sha256": "ba91e056d386fbbd0de9ff505a7c4e342aec49e5c7691ffc3eac088b173aa796"
+    },
+    {
+      "path": "contracts/venture-assessment.schema.json",
+      "sha256": "17398c679d6c10a1b8c07a837746e66ffe36bfbff551373c031d93945e0f1d5a"
+    },
+    {
+      "path": "contracts/venture-cell-charter.schema.json",
+      "sha256": "bab42435afc2a8d000d69468da7eaa1d4106cc0c2336c11fc659f76ed584d2aa"
+    },
+    {
+      "path": "contracts/wire-opportunity-packet.schema.json",
+      "sha256": "71b1cdefa49254479206349888b506d52640094367701b42da1131e56fbd4e75"
+    },
+    {
+      "path": "contracts/wire-venture-assessment.schema.json",
+      "sha256": "963701d069a08a0478d232d29385869d9bb9c7453298bbb68a1ed7022afd8a3f"
+    },
+    {
+      "path": "contracts/workflow-execution.schema.json",
+      "sha256": "a963c4f5f9cc884181bcdcd9230f267e264a9625b4945870709fde9120a0ae6d"
+    },
+    {
+      "path": "events/__init__.py",
+      "sha256": "2d8605cf7a2f54781296d577bf5fc09b8a57c916930933915046ec5558f9c3c0"
+    },
+    {
+      "path": "events/bridge_state.py",
+      "sha256": "24431269da5f9f114882689fff2c6564c42819ecc3e30fb2c06f352d54da5adc"
+    },
+    {
+      "path": "events/engine.py",
+      "sha256": "15811576b3ca50b5991d03bcf43f4cbb9dee144af01c124abf323e44c23c7884"
+    },
+    {
+      "path": "events/spine.py",
+      "sha256": "d7d76a948a0b14f8638f33fc5fcb3a4ab02e9bf33d49cd34cd9d75e78eccfbc5"
+    },
+    {
+      "path": "provenance/__init__.py",
+      "sha256": "5029b4a1fb476e1a0d3ca7683fa77c26f2452f04d8adb32206724ee6c63d13d3"
+    },
+    {
+      "path": "provenance/commit_witness.py",
+      "sha256": "2ad9543ea799fb93ba2b542ce9620e52af535b34754fe5b74dd330b841bcc798"
+    },
+    {
+      "path": "provenance/ledger.py",
+      "sha256": "faa905fa7d34296984cafd44b1a3140e9aa94862cfda5ea20f7c5872a6b9cffc"
+    },
+    {
+      "path": "provenance/proof.py",
+      "sha256": "9225679b8f1d665c121fb186afbb80002519e4f07122c45bdc9c14e53dcc1845"
+    }
+  ],
+  "all_source_bytes_equal": true
+}

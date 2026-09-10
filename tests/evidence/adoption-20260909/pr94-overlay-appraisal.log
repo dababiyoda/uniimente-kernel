@@ -1,0 +1,45 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "tests/integration/test_protected_mission_appraisal.py", "tests/unit/test_organizational_task_fabric.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...............F........................                                 [100%]
+=================================== FAILURES ===================================
+___________ test_successful_appraisal_replay_after_real_process_exit ___________
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-14/test_successful_appraisal_repl0')
+
+    def test_successful_appraisal_replay_after_real_process_exit(tmp_path):
+        runtime, refs = submitted(tmp_path)
+        ledger_path = str(tmp_path / "retained.jsonl")
+        script = """
+    import os, sys
+    from tests.integration.test_protected_mission_appraisal import open_runtime, TASK_ID
+    r = open_runtime(sys.argv[1])
+    r.verify_task(TASK_ID, evidence_refs=(sys.argv[2],))
+    os._exit(75)
+    """
+        runtime.spine.ledger.close()
+        process = subprocess.run([sys.executable, "-c", script, ledger_path, refs[0]],
+                                 capture_output=True, text=True)
+>       assert process.returncode == 75, process.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<string>", line 4, in <module>
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/tests/integration/test_protected_mission_appraisal.py", line 25, in open_runtime
+E             ledger = EvidenceLedger(CONSTITUTION, path=str(path))
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/provenance/ledger.py", line 58, in __init__
+E             self._load(path)
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/provenance/ledger.py", line 183, in _load
+E             loaded.append(LedgerRecord(**d))
+E                           ^^^^^^^^^^^^^^^^^
+E         TypeError: LedgerRecord.__init__() got an unexpected keyword argument 'hash_version'
+E         
+E       assert 1 == 75
+E        +  where 1 = CompletedProcess(args=['/workspace/scratch/4c77bffec5be/.venv/bin/python', '-c', '\nimport os, sys\nfrom tests.integra...          ^^^^^^^^^^^^^^^^^\nTypeError: LedgerRecord.__init__() got an unexpected keyword argument \'hash_version\'\n').returncode
+
+tests/integration/test_protected_mission_appraisal.py:167: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_protected_mission_appraisal.py::test_successful_appraisal_replay_after_real_process_exit
+1 failed, 39 passed in 5.28s

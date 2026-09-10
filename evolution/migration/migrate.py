@@ -167,6 +167,44 @@ def round_trip(payload: dict, step_names) -> MigrationResult:
                            notes=["round trip exact"])
 
 
+def to_current_checkpoint(payload: dict, steps) -> MigrationResult:
+    """Explicit W0 -> v2 conversion for a reviewed, harmless interrupted task.
+
+    The frozen W0/W2 adapters above remain historical contracts. They cannot
+    recover a missing execution contract. The operator must supply that contract
+    explicitly, and every step must declare retry safety. This data-only adapter
+    never appends, resumes, creates authority or changes the original timestamp.
+    Consequential/ambiguous legacy work stays blocked for reconciliation.
+    """
+    from adapters.contract_validation import validate_contract
+    from evolution.migration.spec import W0_STATE_SCHEMA
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    errors = list(Draft202012Validator(W0_STATE_SCHEMA,
+                  format_checker=FormatChecker()).iter_errors(payload))
+    if errors:
+        return MigrationResult(payload=None, reason="invalid frozen W0 checkpoint")
+    names = [s.name for s in steps]
+    cursor = payload["cursor"]
+    if (_duplicate_names(names) or not names or cursor >= len(names)
+            or any(not s.retry_safe for s in steps)):
+        return MigrationResult(payload=None, reason="explicit unique retry-safe task contract required")
+    if (payload["status"] != "interrupted"
+            or payload["note"] not in ("killed_before:" + names[cursor],
+                                       "approval_pending:" + names[cursor])):
+        return MigrationResult(payload=None, reason="legacy outcome uncertain; reconciliation required")
+    migrated = {**payload, "schema_version": "2", "state": dict(payload["state"]),
+        "step_contract": [{"name": s.name, "max_retries": s.max_retries,
+                           "approval_wait": s.approval_wait,
+                           "retry_safe": s.retry_safe} for s in steps]}
+    try:
+        validate_contract(migrated, "workflow-execution")
+    except ValueError as exc:
+        return MigrationResult(payload=None, reason=str(exc))
+    return MigrationResult(payload=migrated, records_migrated=1, steps=1,
+        notes=["explicit v2 contract supplied; source identity/state/time preserved; no authority added"])
+
+
 def prepare_fixture_rollback(spine, workflow_id, steps, *, actor, legal_principal):
     """Retain the v2 contract BEFORE an isolated W2 experiment starts.
 

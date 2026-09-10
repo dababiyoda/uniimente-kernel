@@ -1,0 +1,631 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "tests/integration/test_protected_mission_appraisal.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.....F......FF.F.....                                                    [100%]
+=================================== FAILURES ===================================
+____ test_valid_sources_are_readonly_appraised_and_dissent_survives_closure ____
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f72571fb4a0>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+>           event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+
+egregore/cathedral_runtime.py:710: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+spine = <events.spine.EventSpine object at 0x7f72571fae10>
+mission = {'acceptance_authority': {'authority_ref': 'authority:alfonso', 'identity_ref': 'human:alfonso'}, 'authority_invariant...ority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'beneficiaries': ['UNIIMENTE institution'], ...}
+envelope = {'acceptance_authority_ref': 'human:alfonso', 'authority_invariants': {'consequence_gate_bypass_permitted': False, 'or...t_authority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'consequence_class': 'internal_read', ...}
+submitted = TaskReceipt(schema_version='1.0', record_kind='TASK_TRANSITION_RECEIPT', receipt_id='28a4b8f3-efd3-4165-88ab-1e77b333b...t='2026-09-09T22:25:19.411466Z', causal_parent_event_id='7897e274-1483-41eb-baba-f52c642dfdef', model_prediction=False)
+
+    def appraisal(spine, mission, envelope, submitted, *, retained_only=False):
+        """Return durable appraisal, or execute the fixed child once then retain it.
+    
+        A persisted START with no completed appraisal is uncertain and is refused,
+        never automatically rerun. A new founder repair decision is required.
+        """
+        request = _request(spine, mission, envelope, submitted)
+        existing = [e for e in spine.replay("mission.appraised")
+                    if e.payload.get("task_id") == envelope["task_id"]]
+        if existing:
+            if len(existing) != 1:
+                raise AppraisalRefused("conflicting appraisal records")
+            e = resolve(spine, existing[0].event_id, "mission.appraised")
+            receipt = e.payload["receipt"]
+            if (e.source != IDENTITY or receipt["binding"] != request["binding"]
+                    or receipt["policy"] != request["policy"]
+                    or receipt["digest"] != content_digest(receipt, excluding=("digest",))
+                    or receipt.get("appraisal_performed") is not True):
+                raise AppraisalRefused("appraisal lineage or policy mismatch")
+            start = resolve(spine, e.causal_parent, "mission.appraisal.started")
+            if (start.source != IDENTITY or start.causal_parent != submitted.event_id
+                    or start.payload["binding"] != request["binding"]
+                    or start.payload["policy"] != request["policy"]):
+                raise AppraisalRefused("appraisal start lineage mismatch")
+            validate_receipt(receipt, request)
+            return e
+        if retained_only:
+            raise AppraisalRefused("no protected appraisal has occurred")
+        if any(e.payload.get("task_id") == envelope["task_id"]
+               for e in spine.replay("mission.appraisal.started")):
+            raise AppraisalRefused("interrupted appraisal requires reconciliation, not blind retry")
+        start = spine.emit(Event(type="mission.appraisal.started", source=IDENTITY, actor=IDENTITY,
+            legal_principal=mission["legal_principal"], causal_parent=submitted.event_id,
+            payload=_seal({"mission_id": mission["mission_id"], "task_id": envelope["task_id"],
+                           "binding": request["binding"], "policy": request["policy"]})))
+        sync(spine)  # persist uncertainty marker before the child can run
+        wire = json.dumps(request)
+        if len(wire.encode()) > MAX_BYTES:
+            raise AppraisalRefused("appraisal input ceiling exceeded")
+        env = {"PATH": os.defpath, "PYTHONPATH": os.pathsep.join(
+            p for p in sys.path if p and p.endswith("site-packages"))}
+        try:
+            proc = subprocess.run([sys.executable, "-B", "-s", str(ROOT / "verifier/appraisal_worker.py")],
+                input=wire, text=True, capture_output=True, timeout=15, env=env, cwd=ROOT)
+            if proc.returncode != 0:
+>               raise AppraisalRefused("fixed appraiser failed: " + proc.stderr[-800:])
+E               verifier.retained_appraisal.AppraisalRefused: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E                   from verifier.mission_audit import appraise
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E                   from omnimorph.organization_compiler import content_digest
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E                   from .mission_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E                   from .organization_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E                   import rfc8785
+E               ModuleNotFoundError: No module named 'rfc8785'
+
+verifier/retained_appraisal.py:231: AppraisalRefused
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-9/test_valid_sources_are_readonl0')
+
+    def test_valid_sources_are_readonly_appraised_and_dissent_survives_closure(tmp_path):
+        runtime, refs = submitted(tmp_path)
+        before = protected.frozen_snapshot()
+>       verified = runtime.verify_task(TASK_ID, evidence_refs=refs)
+
+tests/integration/test_protected_mission_appraisal.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+verifier/retained_appraisal.py:39: in call
+    return method(self, *args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f72571fb4a0>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+            event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+            report = event.payload["receipt"]["report"]
+            if report["accepted"] is not True:
+                raise protected.AppraisalRefused("evaluator disagreement: " + "; ".join(report["errors"]))
+            if receipts[-1].state in {"VERIFIED", "CLOSED"}:
+                protected.require_task_appraisal(self.spine, envelope, receipts)
+                return next(r for r in receipts if r.state == "VERIFIED")
+            return self.task_fabric.transition(
+                task_id, "VERIFIED", actor=protected.IDENTITY,
+                transition_key=transition_key or "task:verify:" + task_id,
+                evidence_refs=tuple(evidence_refs) + (event.event_id,),
+                assessment_refs=(event.event_id,), dissent_refs=tuple(report["dissent"]),
+                dissent_preserved=True)
+        except (protected.AppraisalRefused, KeyError, TypeError) as exc:
+            if receipts and receipts[-1].state == "SUBMITTED" and self.spine.ledger.verify_chain()[0]:
+                failure = self.record_exception(envelope["mission_id"], kind="appraisal_refused",
+                    details={"task_id": task_id, "reason": str(exc),
+                             "caller_dissent": list(dissent_refs),
+                             "status": "NEEDS_FOUNDER_DECISION"},
+                    evidence_refs=tuple(evidence_refs))
+                self.task_fabric.transition(task_id, "QUARANTINED", actor=self.source_identity,
+                    transition_key="task:appraisal-refused:" + task_id,
+                    evidence_refs=(failure.event_id,))
+>           raise MissionRuntimeError(str(exc)) from exc
+E           egregore.cathedral_runtime.MissionRuntimeError: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E               from verifier.mission_audit import appraise
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E               from omnimorph.organization_compiler import content_digest
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E               from .mission_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E               from .organization_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E               import rfc8785
+E           ModuleNotFoundError: No module named 'rfc8785'
+
+egregore/cathedral_runtime.py:734: MissionRuntimeError
+___________ test_worker_lie_produces_durable_evaluator_disagreement ____________
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f72572438f0>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+>           event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+
+egregore/cathedral_runtime.py:710: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+spine = <events.spine.EventSpine object at 0x7f72572420c0>
+mission = {'acceptance_authority': {'authority_ref': 'authority:alfonso', 'identity_ref': 'human:alfonso'}, 'authority_invariant...ority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'beneficiaries': ['UNIIMENTE institution'], ...}
+envelope = {'acceptance_authority_ref': 'human:alfonso', 'authority_invariants': {'consequence_gate_bypass_permitted': False, 'or...t_authority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'consequence_class': 'internal_read', ...}
+submitted = TaskReceipt(schema_version='1.0', record_kind='TASK_TRANSITION_RECEIPT', receipt_id='397b5860-03c5-4e0a-8941-1997950a7...t='2026-09-09T22:25:20.745235Z', causal_parent_event_id='9111c037-da8f-4fa1-8a3e-e1a1ef63fd4b', model_prediction=False)
+
+    def appraisal(spine, mission, envelope, submitted, *, retained_only=False):
+        """Return durable appraisal, or execute the fixed child once then retain it.
+    
+        A persisted START with no completed appraisal is uncertain and is refused,
+        never automatically rerun. A new founder repair decision is required.
+        """
+        request = _request(spine, mission, envelope, submitted)
+        existing = [e for e in spine.replay("mission.appraised")
+                    if e.payload.get("task_id") == envelope["task_id"]]
+        if existing:
+            if len(existing) != 1:
+                raise AppraisalRefused("conflicting appraisal records")
+            e = resolve(spine, existing[0].event_id, "mission.appraised")
+            receipt = e.payload["receipt"]
+            if (e.source != IDENTITY or receipt["binding"] != request["binding"]
+                    or receipt["policy"] != request["policy"]
+                    or receipt["digest"] != content_digest(receipt, excluding=("digest",))
+                    or receipt.get("appraisal_performed") is not True):
+                raise AppraisalRefused("appraisal lineage or policy mismatch")
+            start = resolve(spine, e.causal_parent, "mission.appraisal.started")
+            if (start.source != IDENTITY or start.causal_parent != submitted.event_id
+                    or start.payload["binding"] != request["binding"]
+                    or start.payload["policy"] != request["policy"]):
+                raise AppraisalRefused("appraisal start lineage mismatch")
+            validate_receipt(receipt, request)
+            return e
+        if retained_only:
+            raise AppraisalRefused("no protected appraisal has occurred")
+        if any(e.payload.get("task_id") == envelope["task_id"]
+               for e in spine.replay("mission.appraisal.started")):
+            raise AppraisalRefused("interrupted appraisal requires reconciliation, not blind retry")
+        start = spine.emit(Event(type="mission.appraisal.started", source=IDENTITY, actor=IDENTITY,
+            legal_principal=mission["legal_principal"], causal_parent=submitted.event_id,
+            payload=_seal({"mission_id": mission["mission_id"], "task_id": envelope["task_id"],
+                           "binding": request["binding"], "policy": request["policy"]})))
+        sync(spine)  # persist uncertainty marker before the child can run
+        wire = json.dumps(request)
+        if len(wire.encode()) > MAX_BYTES:
+            raise AppraisalRefused("appraisal input ceiling exceeded")
+        env = {"PATH": os.defpath, "PYTHONPATH": os.pathsep.join(
+            p for p in sys.path if p and p.endswith("site-packages"))}
+        try:
+            proc = subprocess.run([sys.executable, "-B", "-s", str(ROOT / "verifier/appraisal_worker.py")],
+                input=wire, text=True, capture_output=True, timeout=15, env=env, cwd=ROOT)
+            if proc.returncode != 0:
+>               raise AppraisalRefused("fixed appraiser failed: " + proc.stderr[-800:])
+E               verifier.retained_appraisal.AppraisalRefused: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E                   from verifier.mission_audit import appraise
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E                   from omnimorph.organization_compiler import content_digest
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E                   from .mission_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E                   from .organization_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E                   import rfc8785
+E               ModuleNotFoundError: No module named 'rfc8785'
+
+verifier/retained_appraisal.py:231: AppraisalRefused
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-9/test_worker_lie_produces_durab0')
+
+    def test_worker_lie_produces_durable_evaluator_disagreement(tmp_path):
+        runtime, refs = submitted(tmp_path, poison=True)
+        with pytest.raises(MissionRuntimeError, match="disagreement"):
+>           runtime.verify_task(TASK_ID, evidence_refs=refs)
+
+tests/integration/test_protected_mission_appraisal.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+verifier/retained_appraisal.py:39: in call
+    return method(self, *args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f72572438f0>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+            event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+            report = event.payload["receipt"]["report"]
+            if report["accepted"] is not True:
+                raise protected.AppraisalRefused("evaluator disagreement: " + "; ".join(report["errors"]))
+            if receipts[-1].state in {"VERIFIED", "CLOSED"}:
+                protected.require_task_appraisal(self.spine, envelope, receipts)
+                return next(r for r in receipts if r.state == "VERIFIED")
+            return self.task_fabric.transition(
+                task_id, "VERIFIED", actor=protected.IDENTITY,
+                transition_key=transition_key or "task:verify:" + task_id,
+                evidence_refs=tuple(evidence_refs) + (event.event_id,),
+                assessment_refs=(event.event_id,), dissent_refs=tuple(report["dissent"]),
+                dissent_preserved=True)
+        except (protected.AppraisalRefused, KeyError, TypeError) as exc:
+            if receipts and receipts[-1].state == "SUBMITTED" and self.spine.ledger.verify_chain()[0]:
+                failure = self.record_exception(envelope["mission_id"], kind="appraisal_refused",
+                    details={"task_id": task_id, "reason": str(exc),
+                             "caller_dissent": list(dissent_refs),
+                             "status": "NEEDS_FOUNDER_DECISION"},
+                    evidence_refs=tuple(evidence_refs))
+                self.task_fabric.transition(task_id, "QUARANTINED", actor=self.source_identity,
+                    transition_key="task:appraisal-refused:" + task_id,
+                    evidence_refs=(failure.event_id,))
+>           raise MissionRuntimeError(str(exc)) from exc
+E           egregore.cathedral_runtime.MissionRuntimeError: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E               from verifier.mission_audit import appraise
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E               from omnimorph.organization_compiler import content_digest
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E               from .mission_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E               from .organization_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E               import rfc8785
+E           ModuleNotFoundError: No module named 'rfc8785'
+
+egregore/cathedral_runtime.py:734: MissionRuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-9/test_worker_lie_produces_durab0')
+
+    def test_worker_lie_produces_durable_evaluator_disagreement(tmp_path):
+        runtime, refs = submitted(tmp_path, poison=True)
+>       with pytest.raises(MissionRuntimeError, match="disagreement"):
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'disagreement'
+E        Input: 'fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>\n    from verifier.mission_audit import appraise\n  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>\n    from omnimorph.organization_compiler import content_digest\n  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>\n    from .mission_compiler import (\n  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>\n    from .organization_compiler import (\n  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>\n    import rfc8785\nModuleNotFoundError: No module named \'rfc8785\'\n'
+
+tests/integration/test_protected_mission_appraisal.py:115: AssertionError
+__________ test_direct_transition_cannot_bypass_or_suppress_appraiser __________
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f725716ac30>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+>           event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+
+egregore/cathedral_runtime.py:710: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+spine = <events.spine.EventSpine object at 0x7f72571686b0>
+mission = {'acceptance_authority': {'authority_ref': 'authority:alfonso', 'identity_ref': 'human:alfonso'}, 'authority_invariant...ority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'beneficiaries': ['UNIIMENTE institution'], ...}
+envelope = {'acceptance_authority_ref': 'human:alfonso', 'authority_invariants': {'consequence_gate_bypass_permitted': False, 'or...t_authority': False}, 'authority_refs': ['authority:internal-sandbox-only'], 'consequence_class': 'internal_read', ...}
+submitted = TaskReceipt(schema_version='1.0', record_kind='TASK_TRANSITION_RECEIPT', receipt_id='cc1e3551-2141-4e7f-a878-7311fb3f1...t='2026-09-09T22:25:21.118009Z', causal_parent_event_id='65f5c8dd-6799-4a6a-a390-98c34aabc9b4', model_prediction=False)
+
+    def appraisal(spine, mission, envelope, submitted, *, retained_only=False):
+        """Return durable appraisal, or execute the fixed child once then retain it.
+    
+        A persisted START with no completed appraisal is uncertain and is refused,
+        never automatically rerun. A new founder repair decision is required.
+        """
+        request = _request(spine, mission, envelope, submitted)
+        existing = [e for e in spine.replay("mission.appraised")
+                    if e.payload.get("task_id") == envelope["task_id"]]
+        if existing:
+            if len(existing) != 1:
+                raise AppraisalRefused("conflicting appraisal records")
+            e = resolve(spine, existing[0].event_id, "mission.appraised")
+            receipt = e.payload["receipt"]
+            if (e.source != IDENTITY or receipt["binding"] != request["binding"]
+                    or receipt["policy"] != request["policy"]
+                    or receipt["digest"] != content_digest(receipt, excluding=("digest",))
+                    or receipt.get("appraisal_performed") is not True):
+                raise AppraisalRefused("appraisal lineage or policy mismatch")
+            start = resolve(spine, e.causal_parent, "mission.appraisal.started")
+            if (start.source != IDENTITY or start.causal_parent != submitted.event_id
+                    or start.payload["binding"] != request["binding"]
+                    or start.payload["policy"] != request["policy"]):
+                raise AppraisalRefused("appraisal start lineage mismatch")
+            validate_receipt(receipt, request)
+            return e
+        if retained_only:
+            raise AppraisalRefused("no protected appraisal has occurred")
+        if any(e.payload.get("task_id") == envelope["task_id"]
+               for e in spine.replay("mission.appraisal.started")):
+            raise AppraisalRefused("interrupted appraisal requires reconciliation, not blind retry")
+        start = spine.emit(Event(type="mission.appraisal.started", source=IDENTITY, actor=IDENTITY,
+            legal_principal=mission["legal_principal"], causal_parent=submitted.event_id,
+            payload=_seal({"mission_id": mission["mission_id"], "task_id": envelope["task_id"],
+                           "binding": request["binding"], "policy": request["policy"]})))
+        sync(spine)  # persist uncertainty marker before the child can run
+        wire = json.dumps(request)
+        if len(wire.encode()) > MAX_BYTES:
+            raise AppraisalRefused("appraisal input ceiling exceeded")
+        env = {"PATH": os.defpath, "PYTHONPATH": os.pathsep.join(
+            p for p in sys.path if p and p.endswith("site-packages"))}
+        try:
+            proc = subprocess.run([sys.executable, "-B", "-s", str(ROOT / "verifier/appraisal_worker.py")],
+                input=wire, text=True, capture_output=True, timeout=15, env=env, cwd=ROOT)
+            if proc.returncode != 0:
+>               raise AppraisalRefused("fixed appraiser failed: " + proc.stderr[-800:])
+E               verifier.retained_appraisal.AppraisalRefused: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E                   from verifier.mission_audit import appraise
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E                   from omnimorph.organization_compiler import content_digest
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E                   from .mission_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E                   from .organization_compiler import (
+E                 File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E                   import rfc8785
+E               ModuleNotFoundError: No module named 'rfc8785'
+
+verifier/retained_appraisal.py:231: AppraisalRefused
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-9/test_direct_transition_cannot_0')
+
+    def test_direct_transition_cannot_bypass_or_suppress_appraiser(tmp_path):
+        runtime, refs = submitted(tmp_path)
+        with pytest.raises(TaskFabricError, match="protected appraisal"):
+            runtime.task_fabric.transition(TASK_ID, "VERIFIED", actor=protected.IDENTITY,
+                transition_key="bypass", assessment_refs=("fake",), dissent_preserved=True)
+>       verified = runtime.verify_task(TASK_ID, evidence_refs=refs)
+
+tests/integration/test_protected_mission_appraisal.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+verifier/retained_appraisal.py:39: in call
+    return method(self, *args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <egregore.cathedral_runtime.CathedralMetabolismRuntime object at 0x7f725716ac30>
+task_id = '0f3d0f77-0e3f-4f08-9a1f-40e6a4c5b7d1'
+
+    @protected.serialized
+    def verify_task(
+        self, task_id: str, *, evidence_refs: Sequence[str],
+        dissent_refs: Sequence[str] = (),
+        verifier_identity: str = DEFAULT_EVALUATOR_IDENTITY,
+        accepted: bool | None = None, transition_key: str | None = None,
+    ) -> TaskReceipt:
+        """Only fixed-code appraisal may decide; legacy acceptance is rejected."""
+        envelope = self.task_fabric.envelope(task_id)
+        receipts = self.task_fabric.receipts(task_id)
+        submitted = [r for r in receipts if r.state == "SUBMITTED"]
+        try:
+            if accepted is not None:
+                raise protected.AppraisalRefused("caller-asserted accepted is not appraisal authority")
+            if len(submitted) != 1 or receipts[-1].state not in {"SUBMITTED", "VERIFIED", "CLOSED"}:
+                raise protected.AppraisalRefused("one immutable submitted result is required")
+            if (verifier_identity != protected.IDENTITY
+                    or verifier_identity in {submitted[0].worker_identity, envelope["created_by"]}):
+                raise protected.AppraisalRefused("evaluator must be the protected appraiser, not an identity claim")
+            if tuple(evidence_refs) != submitted[0].evidence_refs:
+                raise protected.AppraisalRefused("evidence must match the retained submission")
+            # Caller comments cannot replace or suppress evaluator dissent.
+            if dissent_refs:
+                raise protected.AppraisalRefused("caller dissent cannot substitute for retained appraisal dissent")
+            event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+                                       envelope, submitted[0])
+            report = event.payload["receipt"]["report"]
+            if report["accepted"] is not True:
+                raise protected.AppraisalRefused("evaluator disagreement: " + "; ".join(report["errors"]))
+            if receipts[-1].state in {"VERIFIED", "CLOSED"}:
+                protected.require_task_appraisal(self.spine, envelope, receipts)
+                return next(r for r in receipts if r.state == "VERIFIED")
+            return self.task_fabric.transition(
+                task_id, "VERIFIED", actor=protected.IDENTITY,
+                transition_key=transition_key or "task:verify:" + task_id,
+                evidence_refs=tuple(evidence_refs) + (event.event_id,),
+                assessment_refs=(event.event_id,), dissent_refs=tuple(report["dissent"]),
+                dissent_preserved=True)
+        except (protected.AppraisalRefused, KeyError, TypeError) as exc:
+            if receipts and receipts[-1].state == "SUBMITTED" and self.spine.ledger.verify_chain()[0]:
+                failure = self.record_exception(envelope["mission_id"], kind="appraisal_refused",
+                    details={"task_id": task_id, "reason": str(exc),
+                             "caller_dissent": list(dissent_refs),
+                             "status": "NEEDS_FOUNDER_DECISION"},
+                    evidence_refs=tuple(evidence_refs))
+                self.task_fabric.transition(task_id, "QUARANTINED", actor=self.source_identity,
+                    transition_key="task:appraisal-refused:" + task_id,
+                    evidence_refs=(failure.event_id,))
+>           raise MissionRuntimeError(str(exc)) from exc
+E           egregore.cathedral_runtime.MissionRuntimeError: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E               from verifier.mission_audit import appraise
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E               from omnimorph.organization_compiler import content_digest
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E               from .mission_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E               from .organization_compiler import (
+E             File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E               import rfc8785
+E           ModuleNotFoundError: No module named 'rfc8785'
+
+egregore/cathedral_runtime.py:734: MissionRuntimeError
+___________ test_successful_appraisal_replay_after_real_process_exit ___________
+
+tmp_path = PosixPath('/workspace/scratch/fa1437d21e0f/test-tmp/pytest-of-root/pytest-9/test_successful_appraisal_repl0')
+
+    def test_successful_appraisal_replay_after_real_process_exit(tmp_path):
+        runtime, refs = submitted(tmp_path)
+        ledger_path = str(tmp_path / "retained.jsonl")
+        script = """
+    import os, sys
+    from tests.integration.test_protected_mission_appraisal import open_runtime, TASK_ID
+    r = open_runtime(sys.argv[1])
+    r.verify_task(TASK_ID, evidence_refs=(sys.argv[2],))
+    os._exit(75)
+    """
+        process = subprocess.run([sys.executable, "-c", script, ledger_path, refs[0]],
+                                 capture_output=True, text=True)
+>       assert process.returncode == 75, process.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/egregore/cathedral_runtime.py", line 710, in verify_task
+E             event = protected.appraisal(self.spine, self._mission(envelope["mission_id"]),
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/retained_appraisal.py", line 231, in appraisal
+E             raise AppraisalRefused("fixed appraiser failed: " + proc.stderr[-800:])
+E         verifier.retained_appraisal.AppraisalRefused: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E             from verifier.mission_audit import appraise
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E             from omnimorph.organization_compiler import content_digest
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E             from .mission_compiler import (
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E             from .organization_compiler import (
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E             import rfc8785
+E         ModuleNotFoundError: No module named 'rfc8785'
+E         
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "<string>", line 5, in <module>
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/retained_appraisal.py", line 39, in call
+E             return method(self, *args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/egregore/cathedral_runtime.py", line 734, in verify_task
+E             raise MissionRuntimeError(str(exc)) from exc
+E         egregore.cathedral_runtime.MissionRuntimeError: fixed appraiser failed:  File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/appraisal_worker.py", line 21, in <module>
+E             from verifier.mission_audit import appraise
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/verifier/mission_audit.py", line 15, in <module>
+E             from omnimorph.organization_compiler import content_digest
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/__init__.py", line 13, in <module>
+E             from .mission_compiler import (
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/mission_compiler.py", line 25, in <module>
+E             from .organization_compiler import (
+E           File "/workspace/scratch/fa1437d21e0f/repos/kernel-pr94/omnimorph/organization_compiler.py", line 22, in <module>
+E             import rfc8785
+E         ModuleNotFoundError: No module named 'rfc8785'
+E         
+E         
+E       assert 1 == 75
+E        +  where 1 = CompletedProcess(args=['/workspace/scratch/4c77bffec5be/.venv/bin/python', '-c', '\nimport os, sys\nfrom tests.integra...nization_compiler.py", line 22, in <module>\n    import rfc8785\nModuleNotFoundError: No module named \'rfc8785\'\n\n').returncode
+
+tests/integration/test_protected_mission_appraisal.py:164: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_protected_mission_appraisal.py::test_valid_sources_are_readonly_appraised_and_dissent_survives_closure
+FAILED tests/integration/test_protected_mission_appraisal.py::test_worker_lie_produces_durable_evaluator_disagreement
+FAILED tests/integration/test_protected_mission_appraisal.py::test_direct_transition_cannot_bypass_or_suppress_appraiser
+FAILED tests/integration/test_protected_mission_appraisal.py::test_successful_appraisal_replay_after_real_process_exit
+4 failed, 17 passed in 4.96s

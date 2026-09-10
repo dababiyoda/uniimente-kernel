@@ -9,19 +9,14 @@ from the files being evaluated at runtime.
 """
 from evolution.repair import spec as repair_spec
 
+from evolution.repair.subjects import SR001, SR001_WORKFLOW_CLASS_SHA256
+
+# Compatibility exports delegate to one fixed subject owner. No runtime re-seal.
 PROFILE_ID = "sr-001-shared-repair-continuation-2026-09-09"
-SUBJECT_COMMIT = "3e059c20331d96e05a44daac1b097896aaabde93"
-CONTINUITY_ARTIFACT_SHA256 = {
-    **repair_spec.CONTINUITY_ARTIFACT_SHA256,
-    "policy/consequence_gate.py":
-        "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
-}
-CONTINUITY_COMBINED_SHA256 = \
-    "5594003e1f691bb4a20220505c932b69332c83743ece43a3325f5bbe89a19d70"
-WORKFLOW_CLASS_SHA256 = {
-    "DurableWorkflow": "7b303f6e5d268722221b6063b540ee0786fbe2675ab062c8c7b81e50b82220bb",
-    "WorkflowStep": "ed63561261f29e9869f0626ec7fdd7bb505c21f1d8e9231c349753873310bbec",
-}
+SUBJECT_COMMIT = SR001.source_commit
+CONTINUITY_ARTIFACT_SHA256 = dict(SR001.artifacts)
+CONTINUITY_COMBINED_SHA256 = SR001.continuity_sha256
+WORKFLOW_CLASS_SHA256 = SR001_WORKFLOW_CLASS_SHA256
 
 
 def subject_record():

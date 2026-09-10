@@ -1,0 +1,14 @@
+ts_utc: 2026-08-21T18:56:26.066198+00:00
+command: python3 verifier/verify.py
+---
+PASS C1: all 31 canonical files present
+PASS C3: all YAML parse as non-empty mappings
+PASS C4: all .ucl structurally sane
+PASS C5: kernel invariant + sovereignty + non-delegables present
+PASS C6: 6 doctrine test dirs each hold >=1 spec
+PASS C7: README/LICENSE/docs present
+PASS C8: 8 module placeholder READMEs present
+FAIL C2: 13 valid 2020-12 schemas
+run recorded -> verifier/runs/2026-08-21T18-56-26.890956+00-00.json :: FAIL
+---
+exit_code: 1

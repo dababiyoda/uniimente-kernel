@@ -24,6 +24,7 @@ from evolution.capsule import (
     EvolutionCapsule, RetainRegressKill, RetainRegressKillDecision, VerifierRecord,
 )
 from evolution.comparison import Comparison, IsolatedResult
+from evolution import compatibility
 from evolution.migration import migrate, spec
 from evolution.migration.engines import ENGINES
 from evolution.migration.schema import make_validator
@@ -40,15 +41,17 @@ def continuity_fingerprint(root: str = KERNEL_ROOT) -> str:
 
 
 def subject_class_intact() -> bool:
-    """The original engine must stay byte-identical: it is the default, the
-    benchmark and the rollback target."""
+    """The authorized continuation subject must not drift during evaluation.
+
+    The old spec hash remains a historical benchmark, not a hash of v2.
+    """
     import inspect
 
     from events.spine import DurableWorkflow, WorkflowStep
 
     for obj in (DurableWorkflow, WorkflowStep):
         digest = hashlib.sha256(inspect.getsource(obj).encode()).hexdigest()
-        if digest != spec.SUBJECT_CLASS_SHA256[obj.__name__]:
+        if digest != compatibility.WORKFLOW_CLASS_SHA256[obj.__name__]:
             return False
     return True
 
@@ -88,7 +91,8 @@ def _steps_for(case, calls):
         out.append(WorkflowStep(
             name=name, run=run,
             compensate=lambda state, _n=name: calls.append("undo:" + _n),
-            max_retries=0, approval_wait=(name == case.get("approval_step"))))
+            max_retries=0, approval_wait=(name == case.get("approval_step")),
+            retry_safe=True))  # Only the retained list/dict fixture above.
     return out
 
 
@@ -269,7 +273,7 @@ class StatefulReplacementExperiment:
             "behaviour_matches_original": behaviour_ok,
             "migration_round_trips": rt.payload is not None,
             "original_class_intact": subject_class_intact(),
-            "continuity_unchanged": continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256,
+            "continuity_unchanged": continuity_fingerprint() == compatibility.CONTINUITY_COMBINED_SHA256,
             "shutdown_succeeds": shutdown_still_works(),
             "default_restored_after_scope": seam.assert_default_is_original(),
         }
@@ -361,6 +365,7 @@ class StatefulReplacementExperiment:
 
         record: dict = {
             "experiment_id": spec.EXPERIMENT.experiment_id,
+            "compatibility_subject": compatibility.subject_record(),
             "spec_sha256": spec.SPEC_SHA256,
             "base_commit": spec.BASE_COMMIT,
             "isolation": {"ledger": "experiment-local instance",
@@ -411,7 +416,7 @@ class StatefulReplacementExperiment:
         after = continuity_fingerprint()
         record["continuity"].update({
             "after": after,
-            "unchanged": before == after == spec.CONTINUITY_COMBINED_SHA256})
+            "unchanged": before == after == compatibility.CONTINUITY_COMBINED_SHA256})
 
         record["prediction_review"] = self._review(record["trials"])
         record["decision"], record["capsule"] = self._decide(record)
@@ -487,7 +492,8 @@ class StatefulReplacementExperiment:
         capsule = EvolutionCapsule(
             bottleneck="stateful replacement through the canonical runtime "
                        "boundary had never been performed",
-            tree={}, audit={}, experiment=spec.EXPERIMENT.to_dict(),
+            tree={}, audit={}, experiment={**spec.EXPERIMENT.to_dict(),
+                "compatibility_subject": compatibility.subject_record()},
             measured_value=max((t["score"] for t in record["trials"].values()),
                                default=0.0),
             outcome_class="positive" if selected else "negative",

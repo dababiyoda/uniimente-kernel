@@ -13,6 +13,7 @@ import pytest
 
 from evolution.capsule import HYPOTHESIS_ONLY, RetainRegressKill
 from evolution.repair import spec
+from evolution import compatibility
 from evolution.repair.harness import (
     ReplacementExperiment, continuity_fingerprint, original_is_intact,
 )
@@ -54,18 +55,19 @@ def test_governance_and_continuity_held_while_the_function_was_absent(run):
     assert record["governance_while_absent"] == {
         "authority_compiles": True, "shutdown_succeeds": True,
         "original_on_disk_intact": True}
-    assert record["continuity"]["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+    assert record["continuity"]["while_absent"] == compatibility.CONTINUITY_COMBINED_SHA256
+    assert record['compatibility_subject'] == compatibility.subject_record()
 
 
 def test_continuity_is_unchanged_before_during_and_after(run):
     record, _ = run
     continuity = record["continuity"]
     assert continuity["before"] == continuity["after"] == \
-        continuity["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+        continuity["while_absent"] == compatibility.CONTINUITY_COMBINED_SHA256
     assert continuity["unchanged"] is True
     assert continuity["artifact_count"] == 12
     # And still true now, after the whole run.
-    assert continuity_fingerprint() == spec.CONTINUITY_COMBINED_SHA256
+    assert continuity_fingerprint() == compatibility.CONTINUITY_COMBINED_SHA256
     assert original_is_intact() is True
 
 

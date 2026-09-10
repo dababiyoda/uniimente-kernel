@@ -165,3 +165,89 @@ def round_trip(payload: dict, step_names) -> MigrationResult:
             lost_keys=tuple(differences))
     return MigrationResult(payload=back.payload, records_migrated=1, steps=2,
                            notes=["round trip exact"])
+
+
+def prepare_fixture_rollback(spine, workflow_id, steps, *, actor, legal_principal):
+    """Retain the v2 contract BEFORE an isolated W2 experiment starts.
+
+    Owner: evolution/migration; canonical destination: contracts/workflow-execution
+    and events/DurableWorkflow. Supported: W2 killed-before -> v2, in-memory p4x
+    fixtures only. Expire/remove when W2 is retired or writes v2 itself. Refuse
+    unsupported history; never infer retry safety from an old checkpoint.
+    This is no authority grant, callable sandbox, or live-state migration API.
+    """
+    from events.spine import DurableWorkflow
+
+    ledger = spine.ledger
+    with ledger._lock:
+        if ledger.path is not None or not workflow_id.startswith("p4x-"):
+            raise MigrationRefused("only isolated in-memory p4x fixtures are supported")
+        if not steps or not all(s.retry_safe for s in steps):
+            raise MigrationRefused("explicit harmless fixture steps are required")
+        if any(r.payload.get("workflow_id") == workflow_id for r in ledger.records):
+            raise MigrationRefused("rollback contract must precede experiment history")
+        wf = DurableWorkflow(spine, workflow_id, steps, actor=actor,
+                             legal_principal=legal_principal)
+        return ledger.append("fixture_migration_contract", {
+            "workflow_id": workflow_id, "actor": actor,
+            "legal_principal": legal_principal, "step_contract": wf._step_contract(),
+            "source_version": "W2", "destination_version": "2",
+            "scope": "isolated_harmless_fixture", "authority_created": False})
+
+
+def restore_fixture_checkpoint(spine, workflow_id, steps, *, source_hash):
+    """Resolve retained W2 bytes and append one content-bound v2 checkpoint.
+
+    No payload/acceptance argument is trusted. The source, prior fixture contract,
+    identity and step metadata must agree. Uncertain or already-advanced work is
+    refused. The retained source stays in the canonical ledger. A repeated call
+    recovers the same migration while it is the latest checkpoint.
+    """
+    from adapters.contract_validation import validate_contract
+    from events.spine import DurableWorkflow
+    from evolution.migration.schema import validate_checkpoint
+
+    ledger = spine.ledger
+    with ledger._lock:
+        if ledger.path is not None or not workflow_id.startswith("p4x-"):
+            raise MigrationRefused("only isolated in-memory p4x fixtures are supported")
+        ok, reason = ledger.verify_chain()
+        if not ok:
+            raise MigrationRefused(reason)
+        plans = [r for r in ledger.by_type("fixture_migration_contract")
+                 if r.payload.get("workflow_id") == workflow_id]
+        checkpoints = [r for r in ledger.by_type("workflow")
+                       if r.payload.get("workflow_id") == workflow_id]
+        sources = [r for r in checkpoints if r.hash == source_hash]
+        if len(plans) != 1 or len(sources) != 1:
+            raise MigrationRefused("retained source and prior fixture contract required")
+        plan, source = plans[0], sources[0]
+        if plan.seq >= checkpoints[0].seq:
+            raise MigrationRefused("fixture contract was not retained before execution")
+        p = source.payload
+        if (p.get("actor"), p.get("legal_principal")) != (
+                plan.payload["actor"], plan.payload["legal_principal"]):
+            raise MigrationRefused("source identity differs from retained contract")
+        wf = DurableWorkflow(spine, workflow_id, steps, actor=p["actor"],
+                             legal_principal=p["legal_principal"])
+        if wf._step_contract() != plan.payload["step_contract"]:
+            raise MigrationRefused("changed step contract")
+        names = [s.name for s in steps]
+        problems = validate_checkpoint(p, {"provider_id": "W2-token",
+            "workflow_id": workflow_id, "step_names": names})
+        if problems or p.get("status") != "interrupted" or p.get("note") != (
+                "killed_before:" + str(p.get("next_step"))):
+            raise MigrationRefused("only valid quiescent killed-before W2 history is supported")
+        result = reverse(p, names)
+        if result.payload is None or result.lost_keys:
+            raise MigrationRefused(result.reason or "incomplete lineage")
+        payload = {**result.payload, "schema_version": "2",
+                   "step_contract": wf._step_contract(),
+                   "note": "migrated_w2:" + source.hash + ":" + plan.hash}
+        validate_contract(payload, "workflow-execution")
+        latest = checkpoints[-1]
+        if latest.hash != source.hash:
+            if latest.payload == payload:
+                return latest
+            raise MigrationRefused("stale source; work already advanced")
+        return ledger.append("workflow", payload)

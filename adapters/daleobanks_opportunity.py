@@ -18,13 +18,8 @@ Dest contract:    contracts/opportunity-packet.schema.json
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-
-KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPIFFE_BY_TRANSPORT_IDENTITY = {
     "daleobanks": "spiffe://uniimente.internal/organ/daleobanks",
     "wealthmachine": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -109,25 +104,14 @@ def _validate_wire(wire: dict) -> None:
         validate_contract(wire, 'wire-opportunity-packet')
     except ValueError as exc:
         raise AdapterError(str(exc)) from exc
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts",
-                           "wire-opportunity-packet.schema.json")) as f:
-        schema = json.load(f)
-    try:
-        jsonschema.validate(wire, schema)
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"wire packet violates its own contract: {exc.message}") from exc
 
 
 def _validate_canonical(packet: dict) -> None:
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts",
-                           "opportunity-packet.schema.json")) as f:
-        schema = json.load(f)
+    from adapters.contract_validation import validate_contract
     try:
-        jsonschema.validate(packet, schema, format_checker=jsonschema.FormatChecker())
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"adapted packet violates the canonical contract: {exc.message}") from exc
+        validate_contract(packet, 'opportunity-packet')
+    except ValueError as exc:
+        raise AdapterError(f"adapted packet violates the canonical contract: {exc}") from exc
 
 
 def adapt(wire: dict, *, transport_identity: str) -> AdaptationResult:

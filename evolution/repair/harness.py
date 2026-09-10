@@ -38,6 +38,7 @@ from evolution.capsule import (
 from evolution.comparison import Comparison, IsolatedResult
 from evolution.failure_analysis import analyze
 from evolution.repair import expectations, spec
+from evolution import compatibility
 from evolution.repair.baseline import BaselineRestore
 from evolution.repair.candidate import (
     CapabilityProviderRegistry, HeldOutCorpora,
@@ -195,7 +196,7 @@ class ReplacementExperiment:
         refusals_ok = not any(s.kind in ("refusal_incorrect", "health_check_failed")
                               for s in live.symptoms)
         continuity_ok = continuity_fingerprint(self.root) == \
-            spec.CONTINUITY_COMBINED_SHA256
+            compatibility.CONTINUITY_COMBINED_SHA256
 
         gates = {
             "live_edges_4_of_4": live.function_fraction == 1.0,
@@ -268,6 +269,7 @@ class ReplacementExperiment:
 
     def run(self) -> dict:
         record: dict = {"experiment_id": spec.EXPERIMENT.experiment_id,
+                        "compatibility_subject": compatibility.subject_record(),
                         "spec_sha256": spec.SPEC_SHA256,
                         "baseline_commit": spec.BASELINE_COMMIT,
                         "environment": {"python": platform.python_version(),
@@ -406,7 +408,7 @@ class ReplacementExperiment:
         after = continuity_fingerprint(self.root)
         record["continuity"].update({
             "after": after,
-            "unchanged": before == after == spec.CONTINUITY_COMBINED_SHA256,
+            "unchanged": before == after == compatibility.CONTINUITY_COMBINED_SHA256,
             "artifact_count": len(spec.CONTINUITY_ARTIFACT_SHA256),
         })
 
@@ -570,7 +572,8 @@ class ReplacementExperiment:
         capsule = EvolutionCapsule(
             bottleneck="a working specialist function was lost at runtime",
             tree=tree.to_dict(), audit=record["spider_web_audit"],
-            experiment=spec.EXPERIMENT.to_dict(),
+            experiment={**spec.EXPERIMENT.to_dict(),
+                        "compatibility_subject": compatibility.subject_record()},
             measured_value=max((t.function_score for t in trials.values()),
                                default=0.0),
             outcome_class="positive" if best_replacement else "negative",

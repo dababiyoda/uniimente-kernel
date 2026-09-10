@@ -40,8 +40,8 @@
         "required": ["case", "stance", "severity", "argument"]
       }
     },
-    "created_at": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
     "schema_version": {"type": "string", "enum": ["1.0", "1.1"]}
   },
-  "required": ["opportunity_packet_id", "go_no_go", "requires_human_approval"]
+  "required": ["id", "schema_version", "created_at", "opportunity_packet_id", "go_no_go", "requires_human_approval"]
 }

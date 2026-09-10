@@ -30,10 +30,10 @@
     "risk_flags": {"type": "array", "items": {"type": "string"}},
     "smallest_validation_action": {"type": "string"},
     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-    "created_at": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
     "status": {"type": "string"}
   },
-  "required": ["id", "schema_version"],
+  "required": ["id", "schema_version", "created_at"],
   "anyOf": [
     {"properties": {"core_thesis": {"minLength": 1}}, "required": ["core_thesis"]},
     {"properties": {"observed_pain": {"minLength": 1}}, "required": ["observed_pain"]}

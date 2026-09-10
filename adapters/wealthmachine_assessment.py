@@ -16,10 +16,7 @@ Dest contract:    contracts/venture-assessment.schema.json
 """
 from __future__ import annotations
 
-import json
-import os
 import uuid
-from datetime import datetime, timezone
 
 from adapters.daleobanks_opportunity import (
     AdapterError,
@@ -27,7 +24,6 @@ from adapters.daleobanks_opportunity import (
     _uuid_for,
 )
 
-KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CANONICAL_CASE_FIELDS = ("bull", "bear", "fraud_manipulation", "incumbent_response",
                          "adoption_friction", "do_nothing", "opportunity_cost")
@@ -55,13 +51,11 @@ INFORMATION_LOST = (
 
 
 def _validate(payload: dict, schema_file: str, kind: str) -> None:
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts", schema_file)) as f:
-        schema = json.load(f)
+    from adapters.contract_validation import validate_contract
     try:
-        jsonschema.validate(payload, schema, format_checker=jsonschema.FormatChecker())
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"{kind} violates its contract: {exc.message}") from exc
+        validate_contract(payload, schema_file.removesuffix('.schema.json'))
+    except ValueError as exc:
+        raise AdapterError(f"{kind} violates its contract: {exc}") from exc
 
 
 def adapt(wire: dict, *, transport_identity: str,

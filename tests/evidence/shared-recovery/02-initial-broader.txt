@@ -1,0 +1,287 @@
+..........F.......................................................FFF... [ 13%]
+....F.......FFF......................................................... [ 27%]
+....F.............FF................F................................... [ 41%]
+........................................................................ [ 54%]
+.....F.........................................FF....................... [ 68%]
+...........F..........................................FF....F.FFF...FF.. [ 82%]
+...FF...........F....................................................... [ 95%]
+......................                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_forged_identity_replay_and_tamper_all_fail_closed ____________
+tests/integration/test_phase_zero_connection.py:148: in test_forged_identity_replay_and_tamper_all_fail_closed
+    down = bt.build_headers(body, identity="daleobanks", schema_version="0.9")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+adapters/bridge_transport.py:71: in build_headers
+    raise BridgeSecurityError("unsupported identity or schema version")
+E   adapters.bridge_transport.BridgeSecurityError: unsupported identity or schema version
+____________________ test_integrated_modules_close_all_five ____________________
+tests/unit/test_closure.py:45: in test_integrated_modules_close_all_five
+    assert ok, f"open closures: {failed}"
+E   AssertionError: open closures: {'consequence_gate': ['technical', 'authority', 'evidence', 'regenerative'], 'evidence_ledger': ['evidence'], 'foundry': ['technical']}
+E   assert False
+_____________________ test_full_pipeline_reaches_recorded ______________________
+tests/unit/test_consequence_gate.py:54: in test_full_pipeline_reaches_recorded
+    assert rec.state == "recorded"
+E   AssertionError: assert 'refused' == 'recorded'
+E     
+E     - recorded
+E     + refused
+_____________________ test_outcome_record_matches_contract _____________________
+tests/unit/test_consequence_gate.py:72: in test_outcome_record_matches_contract
+    jsonschema.validate(rec.outcome, schema)
+../../wmi-test-deps/jsonschema/validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: None is not of type 'object'
+E   
+E   Failed validating 'type' in schema:
+E       {'$schema': 'https://json-schema.org/draft/2020-12/schema',
+E        '$id': 'https://uniimente.internal/contracts/outcome.schema.json',
+E        'title': 'OutcomeRecord',
+E        'description': 'What actually happened, including negative and zero '
+E                       'responses. An executed action without its outcome '
+E                       'record is incomplete and blocks autonomy promotion. '
+E                       'Zero response is a negative result, never an absence.',
+E        'type': 'object',
+E        'additionalProperties': False,
+E        'properties': {'outcome_id': {'type': 'string', 'format': 'uuid'},
+E                       'action_ref': {'type': 'string',
+E                                      'format': 'uuid',
+E                                      'description': 'The committed action '
+E                                                     'this records'},
+E                       'recorded_at': {'type': 'string',
+E                                       'format': 'date-time',
+E                                       'description': 'RFC 3339 UTC '
+E                                                      'timestamp'},
+E                       'recorded_by': {'type': 'string',
+E                                       'pattern': '^spiffe://uniimente\\.internal/',
+E                                       'description': 'SPIFFE-style '
+E                                                      'institutional '
+E                                                      'identity'},
+E                       'external_observation': {'type': 'string',
+E                                                'description': 'What reality '
+E                                                               'produced, '
+E                                                               'observed '
+E                                                               'externally '
+E                                                               'where '
+E                                                               'possible'},
+E                       'result_class': {'type': 'string',
+E                                        'enum': ['positive',
+E                                                 'negative',
+E                                                 'zero_response',
+E                                                 'inconclusive',
+E                                                 'harm']},
+E                       'expected_vs_actual': {'type': 'string'},
+E                       'metrics': {'type': ['object', 'null']},
+E                       'evidence_refs': {'type': 'array',
+E                                         'items': {'$ref': '#/$defs/hash'}},
+E                       'learning': {'type': ['string', 'null'],
+E                                    'description': 'System update produced: '
+E                                                   'doctrine, workflow, '
+E                                                   'permission, model, '
+E                                                   'procedure, allocation, or '
+E                                                   'architecture change'},
+E                       'validation_status': {'type': 'string',
+E                                             'enum': ['externally_verified',
+E                                                      'internally_observed',
+E                                                      'self_reported']},
+E                       'feeds': {'type': 'array',
+E                                 'items': {'type': 'string',
+E                                           'enum': ['causal_memory',
+E                                                    'portfolio_governor',
+E                                                    'belief_history',
+E                                                    'calibration',
+E                                                    'charter_review']}}},
+E        '$defs': {'hash': {'type': 'string',
+E                           'pattern': '^sha256:[0-9a-f]{64}$'}},
+E        'required': ['outcome_id',
+E                     'action_ref',
+E                     'recorded_at',
+E                     'recorded_by',
+E                     'external_observation',
+E                     'result_class',
+E                     'expected_vs_actual',
+E                     'validation_status']}
+E   
+E   On instance:
+E       None
+_________________ test_reserved_matter_with_approval_proceeds __________________
+tests/unit/test_consequence_gate.py:143: in test_reserved_matter_with_approval_proceeds
+    assert rec.state == "recorded"
+E   AssertionError: assert 'refused' == 'recorded'
+E     
+E     - recorded
+E     + refused
+_________ test_executor_explosion_fails_closed_and_preserves_evidence __________
+tests/unit/test_consequence_gate.py:225: in test_executor_explosion_fails_closed_and_preserves_evidence
+    assert rec.state == "failed"
+E   AssertionError: assert 'refused' == 'failed'
+E     
+E     - failed
+E     + refused
+____________________ test_witness_proves_the_exact_sentence ____________________
+tests/unit/test_consequence_gate.py:235: in test_witness_proves_the_exact_sentence
+    witness = [r for r in ledger.by_type("witness")][0].payload
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range
+_________________________ test_witness_tamper_detected _________________________
+tests/unit/test_consequence_gate.py:250: in test_witness_tamper_detected
+    witness = [r for r in ledger.by_type("witness")][0].payload
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range
+__________________ TestSpine.test_outbox_refused_stays_staged __________________
+tests/unit/test_events.py:100: in test_outbox_refused_stays_staged
+    flushed2 = spine.outbox_flush()
+               ^^^^^^^^^^^^^^^^^^^^
+events/spine.py:153: in outbox_flush
+    raise EventError("explicit consequence mediator required")
+E   events.spine.EventError: explicit consequence mediator required
+___________________ test_baseline_floor_admits_weak_evidence ___________________
+tests/unit/test_evolution.py:161: in test_baseline_floor_admits_weak_evidence
+    assert weak == 2 and good == 4
+E   assert (0 == 2)
+_______________ test_complete_machine_recorded_improvement_cycle _______________
+tests/unit/test_evolution.py:204: in test_complete_machine_recorded_improvement_cycle
+    capsule = loop.run_cycle(
+evolution/loop.py:79: in run_cycle
+    measured, outcome_class = executor(spec)
+                              ^^^^^^^^^^^^^^
+tests/unit/test_evolution.py:201: in executor
+    assert good == 4, "kill condition: a good proposal was newly refused"
+E   AssertionError: kill condition: a good proposal was newly refused
+E   assert 0 == 4
+______________________ test_ratified_publish_crosses_gate ______________________
+tests/unit/test_foundry.py:96: in test_ratified_publish_crosses_gate
+    assert record.state == "recorded" and record.receipt_hash
+E   AssertionError: assert ('refused' == 'recorded'
+E     
+E     - recorded
+E     + refused)
+__________________ test_continuity_baseline_is_true_right_now __________________
+tests/unit/test_migration_spec_frozen.py:295: in test_continuity_baseline_is_true_right_now
+    assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert 'c114351c2054...1938a83175d34' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + c114351c2054c29ee00b5d514c1be5dd4c8880f007cec70b59c1938a83175d34
+__________________________ test_persistence_roundtrip __________________________
+provenance/ledger.py:74: in __init__
+    fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E   BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+The above exception was the direct cause of the following exception:
+tests/unit/test_provenance.py:49: in test_persistence_roundtrip
+    l2 = EvidenceLedger("sha256:" + "0" * 64, path=path)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+provenance/ledger.py:77: in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+E   provenance.ledger.WriterConflict: ledger already has a writer
+__________________ test_corrupted_persistence_refuses_to_load __________________
+provenance/ledger.py:74: in __init__
+    fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E   BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+The above exception was the direct cause of the following exception:
+tests/unit/test_provenance.py:66: in test_corrupted_persistence_refuses_to_load
+    EvidenceLedger("sha256:" + "0" * 64, path=str(path))
+provenance/ledger.py:77: in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+E   provenance.ledger.WriterConflict: ledger already has a writer
+___ test_identity_authority_and_shutdown_survive_the_component_being_absent ____
+tests/unit/test_repair_adapters.py:549: in test_identity_authority_and_shutdown_survive_the_component_being_absent
+    assert before == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert 'c114351c2054...1938a83175d34' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + c114351c2054c29ee00b5d514c1be5dd4c8880f007cec70b59c1938a83175d34
+______ test_governance_and_continuity_held_while_the_function_was_absent _______
+tests/unit/test_repair_harness.py:57: in test_governance_and_continuity_held_while_the_function_was_absent
+    assert record["continuity"]["while_absent"] == spec.CONTINUITY_COMBINED_SHA256
+E   AssertionError: assert 'c114351c2054...1938a83175d34' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + c114351c2054c29ee00b5d514c1be5dd4c8880f007cec70b59c1938a83175d34
+_____________ test_continuity_is_unchanged_before_during_and_after _____________
+tests/unit/test_repair_harness.py:63: in test_continuity_is_unchanged_before_during_and_after
+    assert continuity["before"] == continuity["after"] == \
+E   AssertionError: assert 'c114351c2054...1938a83175d34' == 'c1d621a80671...43546140e63aa'
+E     
+E     - c1d621a80671d1f39f75e3d525561b45795a978d7d15b1eee7d43546140e63aa
+E     + c114351c2054c29ee00b5d514c1be5dd4c8880f007cec70b59c1938a83175d34
+_____________ test_selection_reports_the_two_questions_separately ______________
+tests/unit/test_repair_harness.py:125: in test_selection_reports_the_two_questions_separately
+    assert selection["best_structural_replacement"] in spec.CANDIDATE_IDS
+E   AssertionError: assert None in ('B0-restore', 'R1-contract-index', 'R2-constraint', 'R3-local-rule')
+E    +  where ('B0-restore', 'R1-contract-index', 'R2-constraint', 'R3-local-rule') = spec.CANDIDATE_IDS
+_____________ test_installation_is_verified_by_the_blind_detector ______________
+tests/unit/test_repair_harness.py:146: in test_installation_is_verified_by_the_blind_detector
+    assert install["attempted"] is True
+E   assert False is True
+_______ test_installation_scope_is_stated_and_the_live_path_is_untouched _______
+tests/unit/test_repair_harness.py:156: in test_installation_scope_is_stated_and_the_live_path_is_untouched
+    assert "live import path is unmodified" in record["installation"]["scope"]
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'scope'
+________ test_rollback_restores_the_original_and_the_original_survived _________
+tests/unit/test_repair_harness.py:171: in test_rollback_restores_the_original_and_the_original_survived
+    rollback = record["installation"]["rollback"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'rollback'
+___________________ test_the_capsule_records_the_whole_cycle ___________________
+tests/unit/test_repair_harness.py:234: in test_the_capsule_records_the_whole_cycle
+    assert capsule["measured_value"] == 1.0
+E   assert 0.0 == 1.0
+______________ test_the_ledger_chain_verifies_and_is_append_only _______________
+tests/unit/test_repair_harness.py:257: in test_the_ledger_chain_verifies_and_is_append_only
+    assert required in events, f"{required} was not ledgered"
+E   AssertionError: repair.provider_withdrawn was not ledgered
+E   assert 'repair.provider_withdrawn' in ['repair.provider_registered', 'repair.capability_healthy', 'repair.component_disabled', 'repair.component_disabled', 'repair.capability_loss_detected', 'repair.component_restored', ...]
+_________________ test_the_r3_prediction_is_recorded_as_wrong __________________
+tests/unit/test_repair_harness.py:321: in test_the_r3_prediction_is_recorded_as_wrong
+    assert r3["actual_function_score"] == 1.0
+E   assert 0.0 == 1.0
+_________ test_module_entry_point_emits_a_valid_record_and_exits_zero __________
+tests/unit/test_repair_harness.py:334: in test_module_entry_point_emits_a_valid_record_and_exits_zero
+    assert proc.returncode == 0, proc.stderr[-2000:]
+E   AssertionError: 
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-m', 'evolution.re...n": "register a structurally different implementation while the component stays disabled"\n    }\n  }\n}\n', stderr='').returncode
+____________ test_continuity_hashes_describe_the_real_artifacts_now ____________
+tests/unit/test_repair_spec_frozen.py:113: in test_continuity_hashes_describe_the_real_artifacts_now
+    assert hashlib.sha256(raw).hexdigest() == expected, \
+E   AssertionError: policy/consequence_gate.py does not match its frozen continuity hash
+E   assert 'f29708e65246...b06bfdd85783a' == '0b133b57eea1...9adc4b78a63ce'
+E     
+E     - 0b133b57eea1e349db63c8edf3ad9514d934e7b0b11f67cad0c9adc4b78a63ce
+E     + f29708e652464bc611a34bc3d80bf8de87bdb4d204c7022873bb06bfdd85783a
+=========================== short test summary info ============================
+FAILED tests/integration/test_phase_zero_connection.py::test_forged_identity_replay_and_tamper_all_fail_closed
+FAILED tests/unit/test_closure.py::test_integrated_modules_close_all_five - A...
+FAILED tests/unit/test_consequence_gate.py::test_full_pipeline_reaches_recorded
+FAILED tests/unit/test_consequence_gate.py::test_outcome_record_matches_contract
+FAILED tests/unit/test_consequence_gate.py::test_reserved_matter_with_approval_proceeds
+FAILED tests/unit/test_consequence_gate.py::test_executor_explosion_fails_closed_and_preserves_evidence
+FAILED tests/unit/test_consequence_gate.py::test_witness_proves_the_exact_sentence
+FAILED tests/unit/test_consequence_gate.py::test_witness_tamper_detected - In...
+FAILED tests/unit/test_events.py::TestSpine::test_outbox_refused_stays_staged
+FAILED tests/unit/test_evolution.py::test_baseline_floor_admits_weak_evidence
+FAILED tests/unit/test_evolution.py::test_complete_machine_recorded_improvement_cycle
+FAILED tests/unit/test_foundry.py::test_ratified_publish_crosses_gate - Asser...
+FAILED tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now
+FAILED tests/unit/test_provenance.py::test_persistence_roundtrip - provenance...
+FAILED tests/unit/test_provenance.py::test_corrupted_persistence_refuses_to_load
+FAILED tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent
+FAILED tests/unit/test_repair_harness.py::test_governance_and_continuity_held_while_the_function_was_absent
+FAILED tests/unit/test_repair_harness.py::test_continuity_is_unchanged_before_during_and_after
+FAILED tests/unit/test_repair_harness.py::test_selection_reports_the_two_questions_separately
+FAILED tests/unit/test_repair_harness.py::test_installation_is_verified_by_the_blind_detector
+FAILED tests/unit/test_repair_harness.py::test_installation_scope_is_stated_and_the_live_path_is_untouched
+FAILED tests/unit/test_repair_harness.py::test_rollback_restores_the_original_and_the_original_survived
+FAILED tests/unit/test_repair_harness.py::test_the_capsule_records_the_whole_cycle
+FAILED tests/unit/test_repair_harness.py::test_the_ledger_chain_verifies_and_is_append_only
+FAILED tests/unit/test_repair_harness.py::test_the_r3_prediction_is_recorded_as_wrong
+FAILED tests/unit/test_repair_harness.py::test_module_entry_point_emits_a_valid_record_and_exits_zero
+FAILED tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now
+27 failed, 499 passed in 5.02s
+
+exit_code=1
+

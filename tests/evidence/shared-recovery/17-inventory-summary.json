@@ -1,0 +1,200 @@
+{
+  "scope": "post-implementation non-executing inventory, provisional heuristics; not a repeat of the September 5 audit",
+  "results": [
+    {
+      "repo": "kernel-shared-recovery",
+      "script": "inventory_repository.py",
+      "exit": 0,
+      "summary": {
+        "category_bytes": {
+          "archive": 0,
+          "canonical authored source": 1158593,
+          "compatibility shim": 0,
+          "documentation": 437256,
+          "duplicate candidate": 0,
+          "evidence artifact": 117973,
+          "fixture": 6173,
+          "generated output": 0,
+          "historical snapshot": 0,
+          "organ-specific authored source": 0,
+          "proof artifact": 0,
+          "runtime state": 112,
+          "shared contract": 40687,
+          "unknown": 91735,
+          "vendored dependency": 0
+        },
+        "category_counts": {
+          "archive": 0,
+          "canonical authored source": 163,
+          "compatibility shim": 0,
+          "documentation": 80,
+          "duplicate candidate": 0,
+          "evidence artifact": 17,
+          "fixture": 3,
+          "generated output": 1,
+          "historical snapshot": 0,
+          "organ-specific authored source": 0,
+          "proof artifact": 0,
+          "runtime state": 3,
+          "shared contract": 15,
+          "unknown": 52,
+          "vendored dependency": 0
+        },
+        "entry_count": 334,
+        "error_count": 0,
+        "pruned_subtree_count": 3
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:34.895662+00:00"
+    },
+    {
+      "repo": "kernel-shared-recovery",
+      "script": "detect_exact_duplicates.py",
+      "exit": 0,
+      "summary": {
+        "candidate_files_hashed": 79,
+        "duplicate_file_count": 54,
+        "duplicate_group_count": 27,
+        "error_count": 0,
+        "excluded_subtree_count": 2,
+        "files_scanned": 359,
+        "potential_reclaimable_bytes": 118272,
+        "skipped_file_count": 5
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:35.118484+00:00"
+    },
+    {
+      "repo": "wmi-shared-recovery",
+      "script": "inventory_repository.py",
+      "exit": 0,
+      "summary": {
+        "category_bytes": {
+          "archive": 0,
+          "canonical authored source": 329115,
+          "compatibility shim": 0,
+          "documentation": 193919,
+          "duplicate candidate": 0,
+          "evidence artifact": 125547,
+          "fixture": 2552,
+          "generated output": 0,
+          "historical snapshot": 14091,
+          "organ-specific authored source": 94261,
+          "proof artifact": 0,
+          "runtime state": 110,
+          "shared contract": 4732,
+          "unknown": 1706878,
+          "vendored dependency": 0
+        },
+        "category_counts": {
+          "archive": 0,
+          "canonical authored source": 66,
+          "compatibility shim": 0,
+          "documentation": 51,
+          "duplicate candidate": 0,
+          "evidence artifact": 17,
+          "fixture": 2,
+          "generated output": 0,
+          "historical snapshot": 2,
+          "organ-specific authored source": 17,
+          "proof artifact": 0,
+          "runtime state": 2,
+          "shared contract": 2,
+          "unknown": 20,
+          "vendored dependency": 0
+        },
+        "entry_count": 179,
+        "error_count": 0,
+        "pruned_subtree_count": 1
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:35.269548+00:00"
+    },
+    {
+      "repo": "wmi-shared-recovery",
+      "script": "detect_exact_duplicates.py",
+      "exit": 0,
+      "summary": {
+        "candidate_files_hashed": 4,
+        "duplicate_file_count": 2,
+        "duplicate_group_count": 1,
+        "error_count": 0,
+        "excluded_subtree_count": 1,
+        "files_scanned": 178,
+        "potential_reclaimable_bytes": 2151,
+        "skipped_file_count": 0
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:35.421515+00:00"
+    },
+    {
+      "repo": "daleobanks-shared-recovery",
+      "script": "inventory_repository.py",
+      "exit": 0,
+      "summary": {
+        "category_bytes": {
+          "archive": 0,
+          "canonical authored source": 775321,
+          "compatibility shim": 0,
+          "documentation": 107082,
+          "duplicate candidate": 0,
+          "evidence artifact": 24018,
+          "fixture": 0,
+          "generated output": 324740,
+          "historical snapshot": 0,
+          "organ-specific authored source": 526449,
+          "proof artifact": 0,
+          "runtime state": 0,
+          "shared contract": 4732,
+          "unknown": 218426,
+          "vendored dependency": 0
+        },
+        "category_counts": {
+          "archive": 0,
+          "canonical authored source": 156,
+          "compatibility shim": 0,
+          "documentation": 16,
+          "duplicate candidate": 0,
+          "evidence artifact": 7,
+          "fixture": 0,
+          "generated output": 1,
+          "historical snapshot": 0,
+          "organ-specific authored source": 56,
+          "proof artifact": 0,
+          "runtime state": 2,
+          "shared contract": 2,
+          "unknown": 14,
+          "vendored dependency": 0
+        },
+        "entry_count": 254,
+        "error_count": 0,
+        "pruned_subtree_count": 2
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:35.620528+00:00"
+    },
+    {
+      "repo": "daleobanks-shared-recovery",
+      "script": "detect_exact_duplicates.py",
+      "exit": 0,
+      "summary": {
+        "candidate_files_hashed": 14,
+        "duplicate_file_count": 4,
+        "duplicate_group_count": 2,
+        "error_count": 0,
+        "excluded_subtree_count": 2,
+        "files_scanned": 252,
+        "potential_reclaimable_bytes": 24705,
+        "skipped_file_count": 0
+      },
+      "errors": [],
+      "complete": true,
+      "generated_at": "2026-09-08T16:54:35.828531+00:00"
+    }
+  ]
+}

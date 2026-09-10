@@ -61,89 +61,113 @@ class Event:
 
 
 class EventSpine:
-    """Append-only event log on the evidence ledger + pub/sub + outbox.
+    """Canonical transition truth; one ledger writer, views reconstructed on read.
 
-    The ledger is the durable store; the spine is its event interface.
-    Every emitted/ingested event is ledgered first, then dispatched —
-    a crash between the two is healed by replay (subscribers are
-    re-notified from the log, never from memory).
+    Derived from #87's replay/outbox recovery, without importing its runtime.
+    Dispatch is at least once. A started but unacknowledged external delivery
+    is reconciliation-required, not permission for blind retry.
     """
 
     def __init__(self, ledger):
         self.ledger = ledger
-        self._subscribers: dict[str, list] = {}      # type prefix -> [callables]
-        self._seen_ids: set[str] = set()             # idempotent inbox
-        self._outbox: list[Event] = []               # staged for mediated delivery
+        self._subscribers = {}
+        self._seen_ids = set()
+        self._outbox = []
+        self._refresh()
 
-    # ------------------------------------------------------------ write
-    def emit(self, event: Event) -> Event:
+    @staticmethod
+    def _event_from_payload(p):
+        return Event(**{k: p[k] for k in Event.__dataclass_fields__})
+
+    def _spine_payloads(self):
+        ok, reason = self.ledger.verify_chain()
+        if not ok:
+            raise EventError(reason)
+        return [r.payload for r in self.ledger.by_type("event")
+                if "event_id" in r.payload]
+
+    def _refresh(self):
+        from provenance.ledger import sha256_json
+        self._bindings, pending, self._uncertain_deliveries = {}, {}, set()
+        for p in self._spine_payloads():
+            ev = self._event_from_payload(p).validate()
+            digest = sha256_json(asdict(ev))
+            if ev.event_id in self._bindings and self._bindings[ev.event_id] != digest:
+                raise EventError("conflicting durable event identity")
+            self._bindings[ev.event_id] = digest
+            direction = p.get("direction")
+            if direction == "outbox_staged":
+                pending[ev.event_id] = ev
+            elif direction == "outbox_dispatch_started":
+                self._uncertain_deliveries.add(ev.event_id)
+            elif direction in ("outbox_flushed", "outbox_refused"):
+                self._uncertain_deliveries.discard(ev.event_id)
+                if direction == "outbox_flushed":
+                    pending.pop(ev.event_id, None)
+        self._seen_ids = set(self._bindings)
+        self._outbox = list(pending.values())
+
+    def _accept(self, event, direction):
+        from provenance.ledger import sha256_json
         event.validate()
+        with self.ledger._lock:
+            self._refresh()
+            if event.event_id in self._bindings:
+                if self._bindings[event.event_id] != sha256_json(asdict(event)):
+                    raise EventError("event id reused with different content")
+                return None
+            self.ledger.append("event", {**asdict(event), "direction": direction})
+            self._refresh()
+        # Dispatch failure cannot undo durable acceptance; replay explicitly.
+        if direction != "outbox_staged":
+            self._dispatch(event)
+        return event
+
+    def emit(self, event):
         if not event.source.startswith(SPIFFE_PREFIX):
-            raise EventError("internal emissions require a spiffe source; use ingest() for external facts")
-        self.ledger.append("event", {**asdict(event), "direction": "emitted"})
-        self._seen_ids.add(event.event_id)
-        self._dispatch(event)
-        return event
+            raise EventError("internal emission needs SPIFFE source; use ingest")
+        return self._accept(event, "emitted")
 
-    def ingest(self, event: Event) -> Event | None:
-        """External fact entering the institution. Idempotent by event_id."""
-        event.validate()
-        if event.event_id in self._seen_ids:
-            return None                               # duplicate: dropped, not re-ledgered
-        self._seen_ids.add(event.event_id)
-        self.ledger.append("event", {**asdict(event), "direction": "ingested"})
-        self._dispatch(event)
-        return event
+    def ingest(self, event):
+        return self._accept(event, "ingested")
 
-    # ------------------------------------------------------------ read
-    def subscribe(self, type_prefix: str, handler) -> None:
+    def subscribe(self, type_prefix, handler):
         self._subscribers.setdefault(type_prefix, []).append(handler)
 
-    def _dispatch(self, event: Event) -> None:
+    def _dispatch(self, event):
         for prefix, handlers in self._subscribers.items():
             if event.type.startswith(prefix):
-                for h in handlers:
-                    h(event)
+                for handler in handlers:
+                    handler(event)
 
-    def replay(self, type_prefix: str | None = None) -> list[Event]:
-        """Rebuild the event stream from the ledger. Memory is never truth."""
-        out = []
-        for rec in self.ledger.by_type("event"):
-            p = rec.payload
-            if type_prefix and not p["type"].startswith(type_prefix):
-                continue
-            out.append(Event(type=p["type"], source=p["source"], actor=p["actor"],
-                             payload=p["payload"], legal_principal=p["legal_principal"],
-                             sensitivity=p["sensitivity"], event_id=p["event_id"],
-                             occurred_at=p["occurred_at"],
-                             causal_parent=p.get("causal_parent"),
-                             policy_version=p.get("policy_version")))
-        return out
+    def replay(self, type_prefix=None):
+        return [self._event_from_payload(p) for p in self._spine_payloads()
+                if type_prefix is None or p["type"].startswith(type_prefix)]
 
-    # ------------------------------------------------------------ outbox
-    def outbox_stage(self, event: Event) -> Event:
-        """Stage an external-bound event. Staging is not sending."""
-        event.validate()
-        self._outbox.append(event)
-        self.ledger.append("event", {**asdict(event), "direction": "outbox_staged"})
-        return event
+    def outbox_stage(self, event):
+        return self._accept(event, "outbox_staged")
 
-    def outbox_flush(self, mediator=None) -> list[Event]:
-        """Deliver staged events through the mediator (production: the gate).
-
-        Each event is flushed individually; a refused event stays staged,
-        is ledgered as refused, and does not block the rest of the batch.
-        """
-        flushed, kept = [], []
-        for ev in self._outbox:
-            allowed = True if mediator is None else bool(mediator(ev))
-            if allowed:
-                self.ledger.append("event", {**asdict(ev), "direction": "outbox_flushed"})
-                flushed.append(ev)
-            else:
-                self.ledger.append("event", {**asdict(ev), "direction": "outbox_refused"})
-                kept.append(ev)
-        self._outbox = kept
+    def outbox_flush(self, mediator=None):
+        from provenance.ledger import ReconciliationRequired
+        if mediator is None:
+            raise EventError("explicit consequence mediator required")
+        flushed = []
+        with self.ledger._lock:
+            self._refresh()
+            for ev in list(self._outbox):
+                if ev.event_id in self._uncertain_deliveries:
+                    raise ReconciliationRequired("unacknowledged dispatch; inspect effect before retry")
+                self.ledger.append("event", {**asdict(ev), "direction": "outbox_dispatch_started"})
+                # Any exception leaves the durable pending claim intact.
+                try:
+                    allowed = bool(mediator(ev))
+                except Exception as exc:
+                    raise ReconciliationRequired("dispatch outcome unknown") from exc
+                self.ledger.append("event", {**asdict(ev), "direction":
+                                            "outbox_flushed" if allowed else "outbox_refused"})
+                if allowed:
+                    flushed.append(ev)
+            self._refresh()
         return flushed
 
 
@@ -157,6 +181,7 @@ class WorkflowStep:
     compensate: callable | None = None   # (state) -> None, best-effort
     max_retries: int = 2
     approval_wait: bool = False          # requires approver() -> bool before run
+    retry_safe: bool = False             # explicit declaration: harmless/idempotent computation only
 
 
 class WorkflowKilled(RuntimeError):
@@ -183,19 +208,31 @@ class DurableWorkflow:
         self.spine = spine
         self.workflow_id = workflow_id
         self.steps = steps
+        if len({s.name for s in steps}) != len(steps):
+            raise EventError("duplicate workflow step identity")
         self.actor = actor
         self.legal_principal = legal_principal
         self.cursor = 0                  # next step to execute
         self.state: dict = {}            # accumulated step outputs
         self.status = "running"
+        self._owns_checkpoint = False
+
+    def _step_contract(self):
+        return [{"name": s.name, "max_retries": s.max_retries,
+                 "approval_wait": s.approval_wait, "retry_safe": s.retry_safe}
+                for s in self.steps]
 
     # ------------------------------------------------------------ durability
     def _checkpoint(self, note: str) -> None:
-        self.spine.ledger.append("workflow", {
+        from adapters.contract_validation import validate_contract
+        payload = {"schema_version": "2",
             "workflow_id": self.workflow_id, "cursor": self.cursor,
             "status": self.status, "state": dict(self.state), "note": note,
             "actor": self.actor, "legal_principal": self.legal_principal,
-            "at": _now()})
+            "step_contract": self._step_contract(), "at": _now()}
+        validate_contract(payload, 'workflow-execution')
+        self.spine.ledger.append("workflow", payload)
+        self._owns_checkpoint = True
 
     @staticmethod
     def resume(spine: EventSpine, workflow_id: str, steps: list[WorkflowStep]) -> "DurableWorkflow":
@@ -205,10 +242,21 @@ class DurableWorkflow:
         if not cps:
             raise EventError(f"no checkpoints for workflow {workflow_id!r}")
         last = cps[-1].payload
+        from adapters.contract_validation import validate_contract
+        validate_contract(last, 'workflow-execution')
+        if last['cursor'] > len(steps):
+            raise EventError("checkpoint cursor exceeds task contract")
         if last["status"] in ("completed", "compensated", "failed"):
             raise EventError(f"workflow is {last['status']}; nothing to resume")
         wf = DurableWorkflow(spine, workflow_id, steps,
                              actor=last["actor"], legal_principal=last["legal_principal"])
+        if last.get("step_contract") != wf._step_contract():
+            raise EventError("unsupported or changed workflow step contract; reconcile migration")
+        from provenance.ledger import ReconciliationRequired
+        uncertain = last["note"].startswith(("step_started:", "killed_during:", "uncertain:"))
+        if (last["status"] == "reconciliation_required" or uncertain) and (
+                last["cursor"] >= len(steps) or not steps[last["cursor"]].retry_safe):
+            raise ReconciliationRequired("unfinished step may have completed; no blind retry")
         wf.cursor = last["cursor"]
         wf.state = dict(last["state"])
         wf.status = "running"
@@ -217,7 +265,15 @@ class DurableWorkflow:
 
     # ------------------------------------------------------------ execution
     def execute(self, *, kill_at_step: str | None = None, approver=None) -> "DurableWorkflow":
-        self._checkpoint("execute_enter")
+        from provenance.ledger import ReconciliationRequired
+        if self.status != "running":
+            raise EventError("reconstruct interrupted state before execution")
+        with self.spine.ledger._lock:
+            if not self._owns_checkpoint and any(
+                    r.payload.get("workflow_id") == self.workflow_id
+                    for r in self.spine.ledger.by_type("workflow")):
+                raise EventError("workflow identity already retained; use resume")
+            self._checkpoint("execute_enter")
         while self.cursor < len(self.steps):
             step = self.steps[self.cursor]
             if step.name == kill_at_step:
@@ -236,17 +292,20 @@ class DurableWorkflow:
                     raise WorkflowKilled(f"approval pending at step {step.name!r}")
             attempts = 0
             while True:
+                # Durable intent precedes invocation. An uncertain completion is
+                # not permission to repeat a potentially consequential step.
+                self._checkpoint(f"step_started:{step.name}")
                 try:
                     delta = step.run(self.state) or {}
-                    self.state.update(delta)
-                    self.cursor += 1
-                    self._checkpoint(f"step_completed:{step.name}")
-                    break
                 except WorkflowKilled:
                     self.status = "interrupted"
                     self._checkpoint(f"killed_during:{step.name}")
                     raise
                 except Exception as exc:                       # step failure
+                    if not step.retry_safe:
+                        self.status = "reconciliation_required"
+                        self._checkpoint(f"uncertain:{step.name}")
+                        raise ReconciliationRequired("step outcome unknown; reconcile retained state") from exc
                     attempts += 1
                     self.spine.emit(Event(
                         type="workflow.step_failed", source=SPIFFE_PREFIX + "workflow/" + self.workflow_id,
@@ -261,6 +320,17 @@ class DurableWorkflow:
                         raise WorkflowFailed(
                             f"step {step.name!r} failed after {attempts} attempts; "
                             f"workflow {self.status}") from exc
+                    continue
+                self.state.update(delta)
+                self.cursor += 1
+                # Outside the retry handler: even a definite failed append after
+                # computation must not invoke that computation again blindly.
+                try:
+                    self._checkpoint(f"step_completed:{step.name}")
+                except Exception as exc:
+                    self.status = "reconciliation_required"
+                    raise ReconciliationRequired("completion checkpoint not acknowledged") from exc
+                break
         self.status = "completed"
         self._checkpoint("completed")
         return self
@@ -288,7 +358,7 @@ class DurableWorkflow:
 #
 # The canonical construction sites call these factories instead of the class
 # directly, so a governed replacement can take over at the real boundary. The
-# DurableWorkflow class above is UNCHANGED and remains the default: with no
+# DurableWorkflow class above remains the default: with no
 # replacement active, `resolve` returns it and the untouched spine, so these
 # factories are exactly equivalent to constructing it directly.
 #

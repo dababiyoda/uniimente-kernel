@@ -25,7 +25,7 @@ def spine():
     return EventSpine(EvidenceLedger("sha256:" + "0" * 64))
 
 
-def steps(names, calls, failing=None, approval=None):
+def steps(names, calls, failing=None, approval=None, *, retry_safe=False):
     out = []
     for n in names:
         f = n == failing
@@ -38,7 +38,8 @@ def steps(names, calls, failing=None, approval=None):
 
         out.append(WorkflowStep(name=n, run=run,
                                 compensate=lambda s, _n=n: calls.append("undo:" + _n),
-                                max_retries=0, approval_wait=(n == approval)))
+                                max_retries=0, approval_wait=(n == approval),
+                                retry_safe=retry_safe))
     return out
 
 
@@ -416,10 +417,13 @@ def test_13_rollback_after_a_partial_replacement_resumes_from_valid_state():
     original must pick up from the last valid checkpoint without re-running."""
     sp, wid, calls = spine(), "p4x-partial", []
     names = ["r1", "r2", "r3"]
+    fixture_steps = steps(names, calls, retry_safe=True)
+    migrate.prepare_fixture_rollback(sp, wid, fixture_steps, actor="x",
+                                     legal_principal="alfonso_lopez")
 
     with seam.activate(TokenEngine, provider_id="W2-token", workflow_ids=[wid],
                        activated_by="test", validator=validator_for(names, sp, wid)):
-        wf = durable_workflow(sp, wid, steps(names, calls), actor="x",
+        wf = durable_workflow(sp, wid, fixture_steps, actor="x",
                               legal_principal="alfonso_lopez")
         with pytest.raises(WorkflowKilled):
             wf.execute(kill_at_step="r2")
@@ -427,8 +431,9 @@ def test_13_rollback_after_a_partial_replacement_resumes_from_valid_state():
     # Scope exited: the original is the provider again.
     assert seam.assert_default_is_original()
 
-    last = [r.payload for r in sp.ledger.by_type("workflow")
-            if r.payload["workflow_id"] == wid][-1]
+    source = [r for r in sp.ledger.by_type("workflow")
+              if r.payload["workflow_id"] == wid][-1]
+    last = source.payload
     assert "completed_steps" in last, "the replacement wrote its own schema"
 
     # The original cannot read W2's schema directly, so rollback migrates back —
@@ -437,9 +442,12 @@ def test_13_rollback_after_a_partial_replacement_resumes_from_valid_state():
     assert reverted.payload is not None, reverted.reason
     assert reverted.payload["cursor"] == 1
     assert reverted.payload["state"] == {"r1": 1}
-    sp.ledger.append("workflow", {**reverted.payload, "note": "rolled_back"})
+    restored = migrate.restore_fixture_checkpoint(sp, wid, fixture_steps,
+                                                   source_hash=source.hash)
+    assert source in sp.ledger.records
+    assert source.hash in restored.payload["note"]
 
-    resumed = resume_workflow(sp, wid, steps(names, calls))
+    resumed = resume_workflow(sp, wid, fixture_steps)
     assert isinstance(resumed, DurableWorkflow)
     resumed.execute()
     assert calls == ["r1", "r2", "r3"], f"rollback re-ran completed work: {calls}"

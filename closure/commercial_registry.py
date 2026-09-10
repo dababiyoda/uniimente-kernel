@@ -125,8 +125,10 @@ def register_commercial_closures(registry: ClosureRegistry) -> ClosureRegistry:
     def foundry_technical():
         foundry, h, gate, _, actor = _foundry_stack()
         foundry.ratifier.decide(h, ratified=True, reason="closure check")
+        proposal = foundry.prepare_publish(h, "entry", actor=actor.passport_id, platform="platform:declared")
+        grant = gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
         record = foundry.publish(h, "entry", gate=gate, actor=actor.passport_id,
-                                 executor=LIVE, platform="platform:declared")
+                                 executor=LIVE, platform="platform:declared", standing_grant=grant)
         return record.state == "recorded" and bool(record.receipt_hash), \
             "ratified company publishes through the full Gate pipeline"
 

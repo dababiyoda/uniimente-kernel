@@ -5,6 +5,43 @@
 
 architecture_ownership_records:
 
+  - record_id: OWN-SR-001
+    concern: shared transport admission, integrity and durable recovery
+    canonical_owner: uniimente-kernel
+    canonical_source_ref: agent/shared-integrity-recovery (exact commit in SR-001 evidence)
+    scope: founder-authorized draft integration repair, 2026-09-08
+    semantic_owners:
+      shared_meaning: contracts/
+      translation_and_byte_binding: adapters/
+      transitions_and_claims: events/
+      history_integrity: provenance/
+      appraisal: verifier/ (PR94 preserved)
+      authority_and_effects: policy/consequence_gate.py
+      persistent_missions: egregore/ (not activated)
+      mechanism_selection: mission-resolution routing above omnimorph/
+      organization_design: omnimorph/ (subordinate, not activated)
+    distribution: uniimente-kernel-boundaries 0.1.1, exact source revision required; 0.1.0 retained as pre-format-repair evidence
+    consumers:
+      - name: WealthMachineIntelligence
+        integration: pinned_dependency
+        may_fork_behavior: false
+      - name: DALEOBANKS
+        integration: pinned_dependency
+        may_fork_behavior: false
+    compatibility:
+      transport: "2 only; 1 refused, never unsigned"
+      wire_schemas: ["1.0", "1.1"]
+      ledger_hashes: "legacy 1 retained; new records 2; no amendment migration"
+      workflow_checkpoints: "2; historical experimental W0/W2 require reviewed migration"
+      supported_concurrency: "POSIX local filesystem; one writer enforced by flock"
+    expiry_trigger: "all reviewed consumers import canonical package directly"
+    removal_condition: "no callers of organ compatibility import paths, with conformance tests retained"
+    failure_behavior: "refuse unknown versions/configuration/identity/history; reconcile uncertainty"
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    review_trigger: "adoption review; no merge or activation authorized"
+
   - record_id: OWN-0001
     concern: constitution, institutional authority, consequence policy
     canonical_owner: uniimente-kernel

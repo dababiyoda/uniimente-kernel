@@ -145,7 +145,8 @@ def test_forged_identity_replay_and_tamper_all_fail_closed(monkeypatch):
     with pytest.raises(bt.BridgeSecurityError):          # unknown identity
         bt.verify_headers(forged, body, nonce_cache=bt.NonceCache())
 
-    down = bt.build_headers(body, identity="daleobanks", schema_version="0.9")
+    down = bt.build_headers(body, identity="daleobanks", schema_version="1.1")
+    down[bt.H_SCHEMA] = "0.9"
     with pytest.raises(bt.BridgeSecurityError):          # version downgrade
         bt.verify_headers(down, body, nonce_cache=bt.NonceCache())
 

@@ -1,0 +1,322 @@
+{
+  "algorithm": "sha256",
+  "complete": true,
+  "errors": [],
+  "excluded_subtrees": [
+    ".git",
+    ".pytest_cache",
+    "evolution/__pycache__",
+    "evolution/repair/__pycache__"
+  ],
+  "generated_at": "2026-09-09T22:27:08.266231+00:00",
+  "groups": [
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/events/spine.py",
+        "events/spine.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 18417,
+      "sha256": "d7d76a948a0b14f8638f33fc5fcb3a4ab02e9bf33d49cd34cd9d75e78eccfbc5",
+      "size_bytes": 18417
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "adapters/daleobanks_opportunity.py",
+        "build/lib/adapters/daleobanks_opportunity.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 10526,
+      "sha256": "fc8ca0661dd09d4d76ad86c85c1dcfa519185a25dc2adf3e1f176bf84e5e8182",
+      "size_bytes": 10526
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/provenance/ledger.py",
+        "provenance/ledger.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 9436,
+      "sha256": "faa905fa7d34296984cafd44b1a3140e9aa94862cfda5ea20f7c5872a6b9cffc",
+      "size_bytes": 9436
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/events/engine.py",
+        "events/engine.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 9255,
+      "sha256": "15811576b3ca50b5991d03bcf43f4cbb9dee144af01c124abf323e44c23c7884",
+      "size_bytes": 9255
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "adapters/bridge_transport.py",
+        "build/lib/adapters/bridge_transport.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 7233,
+      "sha256": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f",
+      "size_bytes": 7233
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "adapters/wealthmachine_assessment.py",
+        "build/lib/adapters/wealthmachine_assessment.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 6260,
+      "sha256": "21b634df318bbe487b4950c6aa9e4cca63b042dbb84eecf19969dc83494f80f2",
+      "size_bytes": 6260
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/provenance/proof.py",
+        "provenance/proof.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 5021,
+      "sha256": "9225679b8f1d665c121fb186afbb80002519e4f07122c45bdc9c14e53dcc1845",
+      "size_bytes": 5021
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/events/bridge_state.py",
+        "events/bridge_state.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 4939,
+      "sha256": "24431269da5f9f114882689fff2c6564c42819ecc3e30fb2c06f352d54da5adc",
+      "size_bytes": 4939
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/provenance/commit_witness.py",
+        "provenance/commit_witness.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 4635,
+      "sha256": "2ad9543ea799fb93ba2b542ce9620e52af535b34754fe5b74dd330b841bcc798",
+      "size_bytes": 4635
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/organ-manifest.schema.json",
+        "contracts/organ-manifest.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 4452,
+      "sha256": "38def15ae2f68b6cbb98e50020c268e6fdd7ee204f3660564eeefc9f0e078b6f",
+      "size_bytes": 4452
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/evidence.schema.json",
+        "contracts/evidence.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 4442,
+      "sha256": "9fbda9f16482870e2a713b028df9a6cc0f28cb4097b84f3f68f09af1eeed0deb",
+      "size_bytes": 4442
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/capability-grant.schema.json",
+        "contracts/capability-grant.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 3387,
+      "sha256": "eb7fb4a01308f016fb1c15f907dfd6f3237eccf4f419ff8c3b633c9bbe179a3d",
+      "size_bytes": 3387
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/venture-assessment.schema.json",
+        "contracts/venture-assessment.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 3222,
+      "sha256": "17398c679d6c10a1b8c07a837746e66ffe36bfbff551373c031d93945e0f1d5a",
+      "size_bytes": 3222
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/decision.schema.json",
+        "contracts/decision.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 3033,
+      "sha256": "bd73f3f57ab8ea35975db2792b82021bac007225d97b08008ccacfa14f1dafc5",
+      "size_bytes": 3033
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/venture-cell-charter.schema.json",
+        "contracts/venture-cell-charter.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2970,
+      "sha256": "bab42435afc2a8d000d69468da7eaa1d4106cc0c2336c11fc659f76ed584d2aa",
+      "size_bytes": 2970
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/context-packet.schema.json",
+        "contracts/context-packet.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2742,
+      "sha256": "99db31b7a8be6dd76b40673d4c28a9400f9e6fce53423e76697aa6b0451955b3",
+      "size_bytes": 2742
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/event.schema.json",
+        "contracts/event.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2606,
+      "sha256": "2a9041136e48df76d42b2de45d8b25c3a0744031904365cb1fc7f4689bfb4c41",
+      "size_bytes": 2606
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/outcome.schema.json",
+        "contracts/outcome.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2473,
+      "sha256": "ba91e056d386fbbd0de9ff505a7c4e342aec49e5c7691ffc3eac088b173aa796",
+      "size_bytes": 2473
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/opportunity-packet.schema.json",
+        "contracts/opportunity-packet.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2466,
+      "sha256": "f5c529e8dca65091c4ed7dd04409717ed3f2f8864eb44fb6a2d2242caf5ad6de",
+      "size_bytes": 2466
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/wire-venture-assessment.schema.json",
+        "contracts/wire-venture-assessment.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2400,
+      "sha256": "5d9f8f50754c0737a4db730a76d5c82d0ab7bd9e1ff13d7bd123f7b776cfa222",
+      "size_bytes": 2400
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "adapters/contract_validation.py",
+        "build/lib/adapters/contract_validation.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 2385,
+      "sha256": "e7e21020e8cced64253ebb22b00e13271639f89b790055121f3b0d51289d6249",
+      "size_bytes": 2385
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/wire-opportunity-packet.schema.json",
+        "contracts/wire-opportunity-packet.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2212,
+      "sha256": "e35e9afe02190d1192d6b389ddae8b4b6b2bd544be946ab71177e0c79d6ce7b6",
+      "size_bytes": 2212
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/egregore-cognition.schema.json",
+        "contracts/egregore-cognition.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2194,
+      "sha256": "bdc34095cb6176fbaee54438fd6f8b498818970f94c195ae9960221562ba717c",
+      "size_bytes": 2194
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/workflow-execution.schema.json",
+        "contracts/workflow-execution.schema.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 2009,
+      "sha256": "a963c4f5f9cc884181bcdcd9230f267e264a9625b4945870709fde9120a0ae6d",
+      "size_bytes": 2009
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/provenance/__init__.py",
+        "provenance/__init__.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 92,
+      "sha256": "5029b4a1fb476e1a0d3ca7683fa77c26f2452f04d8adb32206724ee6c63d13d3",
+      "size_bytes": 92
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/contracts/__init__.py",
+        "contracts/__init__.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 79,
+      "sha256": "fbba29b9f8a955096dfa7fb33111afc4f10ea496af5cb89634090dac18e122d0",
+      "size_bytes": 79
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "build/lib/events/__init__.py",
+        "events/__init__.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 68,
+      "sha256": "2d8605cf7a2f54781296d577bf5fc09b8a57c916930933915046ec5558f9c3c0",
+      "size_bytes": 68
+    }
+  ],
+  "mode": "report_only",
+  "repository": "/workspace/scratch/fa1437d21e0f/repos/kernel",
+  "skipped_files": [
+    {
+      "path": "adapters/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "build/lib/adapters/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "linker/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/integration/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/unit/__init__.py",
+      "reason": "below_min_size"
+    }
+  ],
+  "summary": {
+    "candidate_files_hashed": 81,
+    "duplicate_file_count": 54,
+    "duplicate_group_count": 27,
+    "error_count": 0,
+    "excluded_subtree_count": 4,
+    "files_scanned": 368,
+    "potential_reclaimable_bytes": 118954,
+    "skipped_file_count": 5
+  },
+  "tool": "detect_exact_duplicates.py",
+  "truncated": false,
+  "version": 1,
+  "warning": "Byte identity does not prove semantic redundancy or authorize deletion. Confirm authorship, canonical ownership, consumers, evidence value, and provenance before any migration."
+}

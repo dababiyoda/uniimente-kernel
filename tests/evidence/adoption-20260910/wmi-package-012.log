@@ -1,0 +1,118 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 55%]
+............................F.........F...................               [100%]
+=================================== FAILURES ===================================
+_________________ test_exact_packaged_command_protected_bridge _________________
+
+package = (PosixPath('/workspace/scratch/fa1437d21e0f/adoption-test-tmp/pytest-of-root/pytest-6/test_exact_packaged_command_pr0'...est-6/test_exact_packaged_command_pr0/synthetic.db', 'ENVIRONMENT': 'production', 'JWT_AUDIENCE': 'wmi-test-api', ...})
+
+    def test_exact_packaged_command_protected_bridge(package):
+        directory, command, environment = package
+        # Fail visibly if the fixed packaged port is occupied; never kill its owner.
+>       with socket.socket() as probe:
+
+tests/test_packaged_startup.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <socket.socket fd=-1, family=0, type=0, proto=0>
+family = <AddressFamily.AF_INET: 2>, type = <SocketKind.SOCK_STREAM: 1>
+proto = 0, fileno = None
+
+    def __init__(self, family=-1, type=-1, proto=-1, fileno=None):
+        # For user code address family and type values are IntEnum members, but
+        # for the underlying _socket.socket they're just integers. The
+        # constructor of _socket.socket converts the given argument to an
+        # integer automatically.
+        if fileno is None:
+            if family == -1:
+                family = AF_INET
+            if type == -1:
+                type = SOCK_STREAM
+            if proto == -1:
+                proto = 0
+>       _socket.socket.__init__(self, family, type, proto, fileno)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py:233: PermissionError
+__________ test_real_producer_consumer_restart_and_negative_controls ___________
+
+package = (PosixPath('/workspace/scratch/fa1437d21e0f/adoption-test-tmp/pytest-of-root/pytest-6/test_real_producer_consumer_re0'...est-6/test_real_producer_consumer_re0/synthetic.db', 'ENVIRONMENT': 'production', 'JWT_AUDIENCE': 'wmi-test-api', ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0bb3521df0>
+
+    def test_real_producer_consumer_restart_and_negative_controls(package, monkeypatch):
+        source = os.getenv('DALEOBANKS_SOURCE')
+        if not source:
+            pytest.skip('DALEOBANKS_SOURCE unavailable: cross-repository gate NOT RUN')
+        source = Path(source).resolve()
+        assert (source / 'services/wealthmachine_client.py').is_file()
+        directory, command, environment = package
+        monkeypatch.setenv('WEALTHMACHINE_SIGNING_KEY', BRIDGE_KEY)
+>       with socket.socket() as probe:
+
+tests/test_shared_consumer_integration.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <socket.socket fd=-1, family=0, type=0, proto=0>
+family = <AddressFamily.AF_INET: 2>, type = <SocketKind.SOCK_STREAM: 1>
+proto = 0, fileno = None
+
+    def __init__(self, family=-1, type=-1, proto=-1, fileno=None):
+        # For user code address family and type values are IntEnum members, but
+        # for the underlying _socket.socket they're just integers. The
+        # constructor of _socket.socket converts the given argument to an
+        # integer automatically.
+        if fileno is None:
+            if family == -1:
+                family = AF_INET
+            if type == -1:
+                type = SOCK_STREAM
+            if proto == -1:
+                proto = 0
+>       _socket.socket.__init__(self, family, type, proto, fileno)
+E       PermissionError: [Errno 1] Operation not permitted
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py:233: PermissionError
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+src/api/routes/analytics.py:249
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/api/routes/analytics.py:249: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    metric: str = Query("revenue", regex="^(revenue|growth|roi|automation)$"),
+
+tests/test_adversarial_underwriting.py: 24 warnings
+tests/test_network_my_networth.py: 16 warnings
+tests/test_opportunity_intake.py: 104 warnings
+tests/test_orchestrator_loops.py: 16 warnings
+tests/test_signed_bridge.py: 96 warnings
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/services/orchestrator.py:73: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    time_bound=datetime.utcnow() + timedelta(days=90),
+
+tests/test_adversarial_underwriting.py: 24 warnings
+tests/test_network_my_networth.py: 24 warnings
+tests/test_opportunity_intake.py: 80 warnings
+tests/test_orchestrator_loops.py: 16 warnings
+tests/test_signed_bridge.py: 24 warnings
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/core/performance.py:123: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_packaged_startup.py::test_exact_packaged_command_protected_bridge
+FAILED tests/test_shared_consumer_integration.py::test_real_producer_consumer_restart_and_negative_controls
+2 failed, 128 passed, 429 warnings in 8.74s

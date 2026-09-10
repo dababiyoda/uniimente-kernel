@@ -1,0 +1,14 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3", "-m", "pip", "install", "--no-index", "--no-deps", "--no-build-isolation", "--target", "/workspace/scratch/fa1437d21e0f/boundary-package-012", "."]
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: uniimente-kernel-boundaries
+  Building wheel for uniimente-kernel-boundaries (pyproject.toml): started
+  Building wheel for uniimente-kernel-boundaries (pyproject.toml): finished with status 'done'
+  Created wheel for uniimente-kernel-boundaries: filename=uniimente_kernel_boundaries-0.1.2-py3-none-any.whl size=46203 sha256=0aaf44487745370556a0c3275c95319afa03ea190d69eb8df7e91dc724781607
+  Stored in directory: /workspace/scratch/fa1437d21e0f/adoption-test-tmp/pip-ephem-wheel-cache-f4uk20be/wheels/b3/b7/a9/f63c256d6cc6896959cd77be711cbb2a2c760b32143e87c90b
+Successfully built uniimente-kernel-boundaries
+Installing collected packages: uniimente-kernel-boundaries
+Successfully installed uniimente-kernel-boundaries-0.1.2
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.

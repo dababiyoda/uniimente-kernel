@@ -1,0 +1,7 @@
+Command: python scripts/ci/check_schema_refs.py
+Exit: 0
+Evidence tier: static check, not enforcement or institutional readiness.
+
+schemas scanned: 14, local refs checked: 12
+all document-local schema references resolve
+

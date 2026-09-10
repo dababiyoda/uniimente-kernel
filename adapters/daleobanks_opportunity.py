@@ -18,13 +18,8 @@ Dest contract:    contracts/opportunity-packet.schema.json
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-
-KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPIFFE_BY_TRANSPORT_IDENTITY = {
     "daleobanks": "spiffe://uniimente.internal/organ/daleobanks",
     "wealthmachine": "spiffe://uniimente.internal/organ/wealthmachine",
@@ -38,7 +33,7 @@ FIELD_MAPPING = {
     "packet_id": "id (regenerated as UUIDv5 over the wire id when not already a UUID)",
     "schema_version": "schema_version (pass-through)",
     "created_by": "TRANSPORT identity -> spiffe id (never from payload)",
-    "created_at": "created_at (pass-through; adapter timestamp if absent)",
+    "created_at": "created_at (original observation time required; never translation time)",
     "observed_failure": "observed_pain, falling back to core_thesis",
     "affected_actors": "[audience, customer_segment] (non-empty entries)",
     "pain_owner": "audience (ASSUMPTION: the described audience owns the pain)",
@@ -68,6 +63,8 @@ class AdapterError(ValueError):
 
 
 def _uuid_for(wire_id: str) -> str:
+    if not isinstance(wire_id, str) or not wire_id.strip() or len(wire_id) > 256:
+        raise AdapterError('bounded nonempty source identity required')
     try:
         return str(uuid.UUID(wire_id))
     except ValueError:
@@ -102,25 +99,19 @@ class AdaptationResult:
 
 
 def _validate_wire(wire: dict) -> None:
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts",
-                           "wire-opportunity-packet.schema.json")) as f:
-        schema = json.load(f)
+    from adapters.contract_validation import validate_contract
     try:
-        jsonschema.validate(wire, schema)
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"wire packet violates its own contract: {exc.message}") from exc
+        validate_contract(wire, 'wire-opportunity-packet')
+    except ValueError as exc:
+        raise AdapterError(str(exc)) from exc
 
 
 def _validate_canonical(packet: dict) -> None:
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts",
-                           "opportunity-packet.schema.json")) as f:
-        schema = json.load(f)
+    from adapters.contract_validation import validate_contract
     try:
-        jsonschema.validate(packet, schema)
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"adapted packet violates the canonical contract: {exc.message}") from exc
+        validate_contract(packet, 'opportunity-packet')
+    except ValueError as exc:
+        raise AdapterError(f"adapted packet violates the canonical contract: {exc}") from exc
 
 
 def adapt(wire: dict, *, transport_identity: str) -> AdaptationResult:
@@ -136,8 +127,7 @@ def adapt(wire: dict, *, transport_identity: str) -> AdaptationResult:
         "packet_id": _uuid_for(wire["id"]),
         "schema_version": wire["schema_version"],
         "created_by": spiffe,
-        "created_at": wire.get("created_at")
-        or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "created_at": wire.get("created_at"),
         "observed_failure": wire.get("observed_pain") or wire.get("core_thesis", ""),
         "key_risks": list(wire.get("risk_flags", [])),
         "evidence_refs": [_sha256(e) for e in wire.get("evidence", [])],
@@ -188,3 +178,30 @@ def resolve(result: AdaptationResult, answers: dict, *, resolved_by: str) -> dic
     packet = {**result.partial, **answers}
     _validate_canonical(packet)
     return packet
+
+
+def enrich(wire, *, enrichment):
+    """Consumer translation: explicit underwriting answers, never clock-filled observation."""
+    required = ('pain_owner', 'budget_owner', 'governing_bottleneck', 'cheapest_decisive_test')
+    if any(not enrichment.get(k) for k in required):
+        raise AdapterError('mandatory enrichment missing')
+    _validate_wire(wire)
+    if not wire.get('created_at'):
+        raise AdapterError('observation time required; translation time is not evidence')
+    result = adapt(wire, transport_identity='daleobanks')
+    packet = {**result.partial, **{k: enrichment[k] for k in required}}
+    _validate_canonical(packet)
+    return packet
+
+
+def to_wire(packet):
+    _validate_canonical(packet)
+    result = {'id': packet['packet_id'], 'schema_version': packet['schema_version'],
+        'source': packet['created_by'], 'source_ref': 'uniimente-kernel',
+        'created_at': packet['created_at'], 'signal_type': 'product_opportunity',
+        'observed_pain': packet['observed_failure'], 'core_thesis': packet.get('wedge_to_control_path', ''),
+        'audience': packet.get('pain_owner', ''), 'risk_flags': packet['key_risks'],
+        'evidence': packet.get('evidence_refs', []),
+        'smallest_validation_action': packet['cheapest_decisive_test']}
+    _validate_wire(result)
+    return result

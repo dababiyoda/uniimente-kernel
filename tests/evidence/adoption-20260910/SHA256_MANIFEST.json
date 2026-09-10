@@ -1,0 +1,13 @@
+{
+  "kernel-merge-authorized.log": "0e392fc451ca511c53ed0dafa84bbcbaf93b9c40f12fa119aeb494bd16d0dddf",
+  "dale-merge-authorized.log": "fc08d41206f8249b96f7db1f7a46afd56c9a018acf81d78898fba16a21e6366e",
+  "wmi-merge-authorized.log": "14c8413f6ab5c2f072bfb967619e0d9d586f38e671839ed6707e4a31d9e6ee58",
+  "kernel-concurrent-merge.log": "cf22a177184e747c59321065b166dc2fd435c9fa250ee44724a324ec7e2ff4ba",
+  "wmi-installed-merge-retry.log": "65af3cddda4d5f0c283d1a03fcdedcc4970cc6808f08acff1f5ef3e5d62a439d",
+  "package-012-build.log": "22229ba1fe4e9020a3402f8a1bbf0d581823a26ee5bd3896ad90c974f9b584c0",
+  "package-012-build-primary.log": "768532e58019783fdefa7d536976dd588146b20a5b7512c045bbb4dc0f005dad",
+  "dale-package-012.log": "9ae322ef47aaadfb2ac8d6598580ec1b0efea54b8ed8da52cbbfaae314d32517",
+  "wmi-package-012.log": "c3094d9224380892a89234e4fcd1f610231fac161d878aaa7fba87b65bd649be",
+  "package-012-source-manifest.json": "7528fbcd03ab34b883bf05d287f454c3d6c6d53d967986274c685ccd70975bca",
+  "kernel-final-subject.log": "4e0aa24866aa9bf79c5ff878aaaa4bec1d4a34dd1f69dd984b221590ff4a5106"
+}

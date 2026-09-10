@@ -1,0 +1,64 @@
+diff --git a/tests/integration/test_protected_mission_appraisal.py b/tests/integration/test_protected_mission_appraisal.py
+index d2b0131..38053d3 100644
+--- a/tests/integration/test_protected_mission_appraisal.py
++++ b/tests/integration/test_protected_mission_appraisal.py
+@@ -114,6 +114,7 @@ def test_worker_lie_produces_durable_evaluator_disagreement(tmp_path):
+     runtime, refs = submitted(tmp_path, poison=True)
+     with pytest.raises(MissionRuntimeError, match="disagreement"):
+         runtime.verify_task(TASK_ID, evidence_refs=refs)
++    runtime.spine.ledger.close()
+     reopened = open_runtime(tmp_path / "retained.jsonl")
+     event = list(reopened.spine.replay("mission.appraised"))[0]
+     assert event.payload["receipt"]["report"]["accepted"] is False
+@@ -142,6 +143,7 @@ def test_interrupted_appraiser_is_not_blindly_retried(tmp_path, monkeypatch):
+     monkeypatch.setattr(protected.subprocess, "run", interrupted)
+     with pytest.raises(MissionRuntimeError, match="no fallback"):
+         runtime.verify_task(TASK_ID, evidence_refs=refs)
++    runtime.spine.ledger.close()
+     reopened = open_runtime(tmp_path / "retained.jsonl")
+     with pytest.raises(MissionRuntimeError):
+         reopened.verify_task(TASK_ID, evidence_refs=refs)
+@@ -159,6 +161,7 @@ r = open_runtime(sys.argv[1])
+ r.verify_task(TASK_ID, evidence_refs=(sys.argv[2],))
+ os._exit(75)
+ """
++    runtime.spine.ledger.close()
+     process = subprocess.run([sys.executable, "-c", script, ledger_path, refs[0]],
+                              capture_output=True, text=True)
+     assert process.returncode == 75, process.stderr
+@@ -166,6 +169,7 @@ os._exit(75)
+     verified = reopened.verify_task(TASK_ID, evidence_refs=refs)
+     assert reopened.verify_task(TASK_ID, evidence_refs=refs) == verified
+     reopened.close_task(TASK_ID)
++    reopened.spine.ledger.close()
+     again = open_runtime(ledger_path)
+     assert again.verify_task(TASK_ID, evidence_refs=refs) == verified
+     assert len(list(again.spine.replay("mission.appraised"))) == 1
+@@ -199,9 +203,13 @@ def test_in_place_record_tampering_is_not_verified(tmp_path, kind, field):
+     else:
+         pytest.fail("negative-control mutation did not reach a real retained event")
+     assert not runtime.spine.ledger.verify_chain()[0]
+-    with pytest.raises(MissionRuntimeError, match="integrity"):
++    from events.spine import EventError
++    with pytest.raises(EventError, match="hash mismatch"):
+         runtime.verify_task(TASK_ID, evidence_refs=refs)
+-    assert runtime.task_fabric.tasks()[TASK_ID] != "VERIFIED"
++    # Corrupted history cannot even yield a trusted projection; do not append
++    # a fabricated QUARANTINED record into an invalid chain.
++    with pytest.raises(EventError):
++        runtime.task_fabric.tasks()
+ 
+ 
+ def test_missing_appraisal_blocks_close_after_fabric_projection(tmp_path):
+diff --git a/tests/unit/test_organizational_task_fabric.py b/tests/unit/test_organizational_task_fabric.py
+index 5da7c33..872c865 100644
+--- a/tests/unit/test_organizational_task_fabric.py
++++ b/tests/unit/test_organizational_task_fabric.py
+@@ -233,6 +233,7 @@ def test_restart_rebuilds_exact_state_without_redispatch(tmp_path):
+     head = first.spine.ledger.head
+     count = len(first.spine.ledger.records)
+ 
++    first.spine.ledger.close()
+     resumed = _fabric(path)
+ 
+     assert resumed.tasks() == {TASK_ID: "RUNNING"}

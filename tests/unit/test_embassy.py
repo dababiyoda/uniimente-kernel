@@ -71,7 +71,9 @@ class TestRequests:
         embassy, _, ledger = _stack()
         p = embassy.present(foreign_id="mcp://a", origin="mcp",
                             declared_capabilities=["draft.publish"])
-        rec = embassy.request(p.passport_id, _proposal(p.passport_id),
+        proposal = _proposal(p.passport_id)
+        grant = embassy.gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+        rec = embassy.request(p.passport_id, proposal, standing_grant=grant,
                               executor=lambda pr: {"observed_outcome": "queued",
                                                    "result_class": "positive"})
         assert rec.state == "recorded"

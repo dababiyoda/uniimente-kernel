@@ -42,6 +42,12 @@ def make_proposal(actor_id, **kw):
     return Proposal(**defaults)
 
 
+def authorized_run(gate, proposal, *, executor, **kwargs):
+    """Synthetic fixture: authorization exists before entering the Gate."""
+    grant = gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+    return gate.run(proposal, executor=executor, standing_grant=grant, **kwargs)
+
+
 GOOD = lambda p: {"observed_outcome": "draft queued", "result_class": "positive"}
 
 
@@ -49,7 +55,7 @@ GOOD = lambda p: {"observed_outcome": "draft queued", "result_class": "positive"
 
 def test_full_pipeline_reaches_recorded(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD)
     states = [t["state"] for t in rec.trajectory]
     assert rec.state == "recorded"
     assert states[0] == "proposed"
@@ -67,7 +73,7 @@ def test_full_pipeline_reaches_recorded(stack):
 def test_outcome_record_matches_contract(stack):
     import json, jsonschema
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD)
     schema = json.load(open(os.path.join(ROOT, "contracts", "outcome.schema.json")))
     jsonschema.validate(rec.outcome, schema)
 
@@ -139,7 +145,7 @@ def test_reserved_matter_requires_human_and_denial_is_terminal(stack):
 def test_reserved_matter_with_approval_proceeds(stack):
     gate, passports, ledger, actor, _ = stack
     p = make_proposal(actor.passport_id, action_class="material_debt")
-    rec = gate.run(p, executor=GOOD, approver=lambda pr, rs: (True, "alfonso approved"))
+    rec = authorized_run(gate, p, executor=GOOD, approver=lambda pr, rs: (True, "synthetic approval; not founder authentication"))
     assert rec.state == "recorded"
 
 
@@ -221,8 +227,8 @@ def test_executor_explosion_fails_closed_and_preserves_evidence(stack):
     gate, passports, ledger, actor, _ = stack
     def boom(p):
         raise RuntimeError("adapter exploded")
-    rec = gate.run(make_proposal(actor.passport_id), executor=boom)
-    assert rec.state == "failed"
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=boom)
+    assert rec.state == "reconciliation_required"
     assert rec.incident == "executor_exception:RuntimeError"
     ok, _ = ledger.verify_chain()
     assert ok  # failure is on the chain; negative evidence kept
@@ -231,7 +237,7 @@ def test_executor_explosion_fails_closed_and_preserves_evidence(stack):
 def test_witness_proves_the_exact_sentence(stack):
     """This exact machine, entity, permission, law, evidence, result."""
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD)
     witness = [r for r in ledger.by_type("witness")][0].payload
     assert witness["actor"] == actor.passport_id              # this exact machine
     assert witness["legal_principal"] == "alfonso_lopez"      # this exact entity
@@ -246,7 +252,7 @@ def test_witness_proves_the_exact_sentence(stack):
 
 def test_witness_tamper_detected(stack):
     gate, passports, ledger, actor, _ = stack
-    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD)
+    rec = authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD)
     witness = [r for r in ledger.by_type("witness")][0].payload
     witness["expected_outcome"] = "forged outcome"
     from provenance.commit_witness import CommitWitness

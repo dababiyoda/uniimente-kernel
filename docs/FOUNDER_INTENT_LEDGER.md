@@ -1,5 +1,32 @@
 # Founder Intent Ledger
 
+## SR-001 bounded recovery — 2026-09-08
+
+These are faithful summaries of the current founder directive, not verbatim
+messages, cryptographic founder authentication or executable runtime commands.
+The exact chat-message timestamp and stable conversation ID are unavailable.
+Source: current chat, "Accepted. Preserve WMI PR #33" shared-recovery directive;
+related project-memory excerpts are summaries and the supplied architecture
+documents are proposals/aspirations. Repetition creates no additional authority.
+
+| Required field | SR-INTENT-1 | SR-INTENT-2 | SR-INTENT-3 |
+| --- | --- | --- | --- |
+| statement | Repair shared admission, history, replay and consumer compatibility through draft review | Preserve complete persistent founder-governed UNIIMENTE and broad exercised capabilities | Keep merge, deployment, credentials, founder enrollment, external acts and automatic self-modification outside this package |
+| source_refs | Current founder directive; SR-001 source table in rationalization plan | Current directive; supplied architecture texts; project-memory September 3–7 excerpts | Current explicit authorization boundaries override older speculative execution language |
+| owner | Kernel semantic owners, WMI and DALEOBANKS adapter maintainers; Alfonso remains root | Alfonso; Kernel/Developmental Engine/Egregore and organ owners | Alfonso and canonical Kernel consequence authority |
+| state | active | active | prohibited |
+| binding_scope | Constitutional development/test/draft artifacts only | Destination continuity, not runtime activation | Reserved actions in this package, not a permanent retirement of the destination |
+| constitutional_constraints | Five powers separate; no parallel authority, identity, event or consequence plane | Router above OMNIMORPH; simplest sufficient mechanism, static workflow exact-tie winner | Chat text, hashes and shared-key possession never authenticate Alfonso |
+| success_evidence | tests/evidence/shared-recovery/ and linked consumer evidence; distinct checks only | None for whole-body closure, 24/7 operation or accepted external outcomes | No reserved action authorized by this record |
+| failure_evidence | Frozen baseline mismatches, legacy checkpoint incompatibility, blocked DALEOBANKS broad suite, Docker gap | CMC and VDM remain zero; founder attention/outcome metrics unknown | Source 06 automatic policy deployment and source 07 unattended-operation claims cannot override present boundaries |
+| dependencies | One pinned Kernel boundary package, WMI #33, consumer conformance, protected #94 appraisal | Authenticated admission, durable continuity, protected evaluation, routed consequences, real outcomes before compounding claims | Separate future founder ruling for reserved scope |
+| conflicts | Historical experiment formats differ; preserved, not retuned | Speculative perfection/infinite-improvement claims need evidence | Older automatic-activation proposals are superseded for this package |
+| next_review_trigger | Exact draft adoption package and remaining gates reviewed | Qualified founder workflow and subsequent accepted outcomes | Explicit future authorized ruling, not a model inference |
+| supersedes | No accepted implementation/history deleted | None; narrow repair does not redefine UNIIMENTE | Speculative activation in this package only |
+| superseded_by | None | None | None |
+| implementation_refs | Shared events/, provenance/, adapters/, contracts/, policy/consequence_gate.py; linked organ shims | Existing anatomy retained; no new whole-machine runtime | Refusal paths and draft-only handoff |
+
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

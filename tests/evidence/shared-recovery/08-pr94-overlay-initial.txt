@@ -1,0 +1,118 @@
+............F.FF.FF........F............                                 [100%]
+=================================== FAILURES ===================================
+___________ test_worker_lie_produces_durable_evaluator_disagreement ____________
+provenance/ledger.py:74: in __init__
+    fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E   BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_protected_mission_appraisal.py:117: in test_worker_lie_produces_durable_evaluator_disagreement
+    reopened = open_runtime(tmp_path / "retained.jsonl")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/integration/test_protected_mission_appraisal.py:25: in open_runtime
+    ledger = EvidenceLedger(CONSTITUTION, path=str(path))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+provenance/ledger.py:77: in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+E   provenance.ledger.WriterConflict: ledger already has a writer
+______________ test_interrupted_appraiser_is_not_blindly_retried _______________
+provenance/ledger.py:74: in __init__
+    fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E   BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_protected_mission_appraisal.py:145: in test_interrupted_appraiser_is_not_blindly_retried
+    reopened = open_runtime(tmp_path / "retained.jsonl")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/integration/test_protected_mission_appraisal.py:25: in open_runtime
+    ledger = EvidenceLedger(CONSTITUTION, path=str(path))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+provenance/ledger.py:77: in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+E   provenance.ledger.WriterConflict: ledger already has a writer
+___________ test_successful_appraisal_replay_after_real_process_exit ___________
+tests/integration/test_protected_mission_appraisal.py:164: in test_successful_appraisal_replay_after_real_process_exit
+    assert process.returncode == 75, process.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/workspace/scratch/c1c408c41c36/tmp/repos/kernel-appraisal-overlay/provenance/ledger.py", line 74, in __init__
+E         fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E     BlockingIOError: [Errno 11] Resource temporarily unavailable
+E     
+E     The above exception was the direct cause of the following exception:
+E     
+E     Traceback (most recent call last):
+E       File "<string>", line 4, in <module>
+E       File "/workspace/scratch/c1c408c41c36/tmp/repos/kernel-appraisal-overlay/tests/integration/test_protected_mission_appraisal.py", line 25, in open_runtime
+E         ledger = EvidenceLedger(CONSTITUTION, path=str(path))
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/workspace/scratch/c1c408c41c36/tmp/repos/kernel-appraisal-overlay/provenance/ledger.py", line 77, in __init__
+E         raise WriterConflict('ledger already has a writer') from exc
+E     provenance.ledger.WriterConflict: ledger already has a writer
+E     
+E   assert 1 == 75
+E    +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python', '-c', '\nimport os,...erConflict(\'ledger already has a writer\') from exc\nprovenance.ledger.WriterConflict: ledger already has a writer\n').returncode
+_ test_in_place_record_tampering_is_not_verified[mission.result-result_digest] _
+tests/integration/test_protected_mission_appraisal.py:203: in test_in_place_record_tampering_is_not_verified
+    runtime.verify_task(TASK_ID, evidence_refs=refs)
+verifier/retained_appraisal.py:39: in call
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+egregore/cathedral_runtime.py:694: in verify_task
+    envelope = self.task_fabric.envelope(task_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/task_fabric.py:448: in envelope
+    return json.loads(json.dumps(self._project()[task_id].envelope))
+                                 ^^^^^^^^^^^^^^^
+events/task_fabric.py:381: in _project
+    for event in self.spine.replay("task."):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:144: in replay
+    return [self._event_from_payload(p) for p in self._spine_payloads()
+                                                 ^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:85: in _spine_payloads
+    raise EventError(reason)
+E   events.spine.EventError: payload hash mismatch at seq 10
+_ test_in_place_record_tampering_is_not_verified[mission.evidence.retained-digest] _
+tests/integration/test_protected_mission_appraisal.py:203: in test_in_place_record_tampering_is_not_verified
+    runtime.verify_task(TASK_ID, evidence_refs=refs)
+verifier/retained_appraisal.py:39: in call
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+egregore/cathedral_runtime.py:694: in verify_task
+    envelope = self.task_fabric.envelope(task_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/task_fabric.py:448: in envelope
+    return json.loads(json.dumps(self._project()[task_id].envelope))
+                                 ^^^^^^^^^^^^^^^
+events/task_fabric.py:381: in _project
+    for event in self.spine.replay("task."):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:144: in replay
+    return [self._event_from_payload(p) for p in self._spine_payloads()
+                                                 ^^^^^^^^^^^^^^^^^^^^^^
+events/spine.py:85: in _spine_payloads
+    raise EventError(reason)
+E   events.spine.EventError: payload hash mismatch at seq 6
+_____________ test_restart_rebuilds_exact_state_without_redispatch _____________
+provenance/ledger.py:74: in __init__
+    fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+E   BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+The above exception was the direct cause of the following exception:
+tests/unit/test_organizational_task_fabric.py:236: in test_restart_rebuilds_exact_state_without_redispatch
+    resumed = _fabric(path)
+              ^^^^^^^^^^^^^
+tests/unit/test_organizational_task_fabric.py:49: in _fabric
+    EventSpine(EvidenceLedger(GENESIS, path=path)),
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+provenance/ledger.py:77: in __init__
+    raise WriterConflict('ledger already has a writer') from exc
+E   provenance.ledger.WriterConflict: ledger already has a writer
+=========================== short test summary info ============================
+FAILED tests/integration/test_protected_mission_appraisal.py::test_worker_lie_produces_durable_evaluator_disagreement
+FAILED tests/integration/test_protected_mission_appraisal.py::test_interrupted_appraiser_is_not_blindly_retried
+FAILED tests/integration/test_protected_mission_appraisal.py::test_successful_appraisal_replay_after_real_process_exit
+FAILED tests/integration/test_protected_mission_appraisal.py::test_in_place_record_tampering_is_not_verified[mission.result-result_digest]
+FAILED tests/integration/test_protected_mission_appraisal.py::test_in_place_record_tampering_is_not_verified[mission.evidence.retained-digest]
+FAILED tests/unit/test_organizational_task_fabric.py::test_restart_rebuilds_exact_state_without_redispatch
+6 failed, 34 passed in 5.89s

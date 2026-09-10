@@ -1,0 +1,1587 @@
+diff --git a/README.md b/README.md
+index d84edc2..594e5f3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,65 @@
+ # DaLeoBanks - Autonomous AI Agent
+ 
++## SR-001 shared bridge recovery (draft, 2026-09-08)
++
++This bounded repair starts from main ed5e95d7f48e006d180b972efe138179325c31d2.
++Historical operating claims below are not established by this package. No live
++Twitter/X operation, deployment, credentials, founder authentication, economic
++outcome, CMC or VDM is authorized or claimed here.
++
++The consumer imports one canonical Kernel boundary package, revision
++3e059c20331d96e05a44daac1b097896aaabde93 (uniimente-kernel-boundaries 0.1.1), pinned
++in requirements.txt and pyproject.toml. services/bridge_security.py and
++services/kernel_contracts.py are temporary import adapters, not security mirrors;
++their headers define source, owner, supported versions, expiry/removal and refusal.
++Kernel contracts/adapters/events/provenance own shared meaning and durable truth.
++DALEOBANKS retains its domain models and consumer composition. The old transport
++and translation implementations remain in Git as historical alternatives.
++
++WMI #33 requires JWT plus signed-body admission. The linked WMI consumer draft
++retains both checks and adds transport v2 context/response binding and durable
++idempotency. This producer supplies an explicitly configured synthetic JWT,
++signs the exact body, refuses redirects, verifies the actual response bytes and
++context, and preserves returned identity, observation time and dissent. It never
++issues credentials. Shared keys prove possession only, not isolation or Alfonso's
++identity. Missing keys/JWT/state/anchor/principal, unsupported protocol or schema,
++tampering and conflicting identities fail closed. A retry has a new transport
++nonce with the same logical operation key and payload; response replay protection
++survives consumer-process replacement.
++
++HTTP mode is allowed only in explicit synthetic-localhost composition. The
++required test settings are UNIIMENTE_BRIDGE_MODE=synthetic-localhost, a loopback
++WEALTHMACHINE_URL, and isolated signing/JWT/state/constitutional-anchor/principal
++fixtures. These settings authorize no live routing. Direct organ HTTP remains
++refused until canonical Kernel mediation is composed and reviewed. Do not weaken
++WMI or restore unsigned admission to migrate an old client.
++
++Bounded checks: tests/test_shared_response_boundary.py,
++tests/test_signed_bridge_client.py, tests/test_wealthmachine_http.py and
++tests/test_kernel_contract_parity.py; real producer-consumer restart testing
++lives in WMI tests/test_shared_consumer_integration.py. See
++tests/evidence/shared-recovery and the Kernel SR-001 adoption handoff for pins,
++commands, counts, warnings and dependency order. At the pinned Kernel 0.1.1
++revision above, the four focused files pass 33 tests (0.28s); broad execution
++remains blocked as described below. This is consumer regression evidence only.
++
++The broad suite is **BLOCKED/INCOMPLETE**, not passing: two runs triggered the
++environment's safety review over api.twitter.com access. A Python test-only
++deny-egress guard was added, but the second attempt was also blocked; its
++effectiveness is not established. No further broad rerun is justified here.
++Use an independently isolated OS/container offline runner after inspecting the
++network fixtures. Do not treat fallback dependencies, a monkeypatch or blocked
++output as evidence of safe external operation. Docker image build/run remains
++unverified separately. No default-branch repair follows from this draft.
++
++Adoption order: Kernel boundary review, WMI #33 dependency, then the linked WMI
++consumer and this producer as one compatibility gate. No merge is authorized.
++Rollback before activation is to leave the existing branches untouched. A later
++authorized sandbox rollback must stop writers, preserve history/head and all
++obligations, and refuse unsupported history; never erase a state file or restore
++permissive transport to make startup green. The September 5 two passes govern;
++these are implementation checks, not a new architecture or third formal pass.
++
+ DaLeoBanks is a production-grade, self-evolving AI agent that operates on Twitter/X. The stack pairs a Python FastAPI backend (agent logic, scheduler, persona management) with a Node/Express + Vite frontend that proxies requests to the backend.
+ 
+ ## Features
+diff --git a/conftest.py b/conftest.py
+index 34a938d..baa0dbf 100644
+--- a/conftest.py
++++ b/conftest.py
+@@ -10,6 +10,37 @@ import tempfile
+ from pathlib import Path
+ from typing import Any
+ 
++
++class ExternalNetworkForbidden(BaseException):
++    """A test attempted external I/O; do not let retry loops catch and retry it."""
++
++
++def pytest_sessionstart(session):
++    # Install before collection: optional real dependencies must never turn an
++    # offline suite into outreach. This is test isolation, not a runtime policy.
++    import socket
++    original_lookup = socket.getaddrinfo
++    original_connect = socket.socket.connect
++    original_sendto = socket.socket.sendto
++    def local(host):
++        return host in (None, 'localhost', '127.0.0.1', '::1', b'localhost', b'127.0.0.1', b'::1')
++    def lookup(host, *args, **kwargs):
++        if not local(host):
++            raise ExternalNetworkForbidden('offline suite refused external DNS: ' + str(host))
++        return original_lookup(host, *args, **kwargs)
++    def connect(sock, address):
++        if sock.family in (socket.AF_INET, socket.AF_INET6) and not local(address[0]):
++            raise ExternalNetworkForbidden('offline suite refused external connection')
++        return original_connect(sock, address)
++    def sendto(sock, data, *args):
++        if sock.family in (socket.AF_INET, socket.AF_INET6):
++            raise ExternalNetworkForbidden('offline suite refused network datagram')
++        return original_sendto(sock, data, *args)
++    socket.getaddrinfo = lookup
++    socket.socket.connect = connect
++    socket.socket.sendto = sendto
++
++
+ # Fallback stubs for third-party packages (dotenv, numpy, openai, tenacity)
+ # live in tests/stubs. Appending the directory to the END of sys.path means a
+ # real installed package always takes precedence; the stubs only kick in when
+diff --git a/pyproject.toml b/pyproject.toml
+index def76e4..322e968 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,6 +4,7 @@ version = "0.1.0"
+ description = "Autonomous social AI agent with a tamper-evident safety spine"
+ requires-python = ">=3.11"
+ dependencies = [
++    "uniimente-kernel-boundaries @ https://github.com/dababiyoda/uniimente-kernel/archive/3e059c20331d96e05a44daac1b097896aaabde93.tar.gz",
+     "apscheduler>=3.11.0",
+     "fastapi>=0.116.1",
+     "levenshtein>=0.27.1",
+diff --git a/requirements.txt b/requirements.txt
+index 63ac766..b49a255 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,4 +1,5 @@
+ apscheduler==3.11.0
++uniimente-kernel-boundaries @ https://github.com/dababiyoda/uniimente-kernel/archive/3e059c20331d96e05a44daac1b097896aaabde93.tar.gz
+ fastapi==0.116.1
+ levenshtein==0.27.1
+ numpy==2.3.2
+diff --git a/services/bridge_security.py b/services/bridge_security.py
+index 61a81e9..468d16d 100644
+--- a/services/bridge_security.py
++++ b/services/bridge_security.py
+@@ -1,183 +1,10 @@
+-"""Zero-trust transport for the DALEOBANKS <-> WealthMachineIntelligence
+-bridge: service identity, HMAC request signing, timestamp + nonce replay
+-protection, idempotency keys, and schema-version negotiation.
+-
+-Mirrored in WealthMachineIntelligence (src/services/bridge_security.py) —
+-keep the two files field-for-field compatible.
+-
+-Local-first: with no ``WEALTHMACHINE_SIGNING_KEY`` configured, transport
+-runs unsigned (mock/dev mode). The moment a key exists, signing is
+-required in both directions and verification failures fail closed.
+-
+-A valid signature proves sender authenticity ONLY. It never carries
+-authorization: a perfectly signed assessment still has no execution
+-authority and still routes through the human approval queue.
++"""Temporary compatibility import; no independent security implementation.
++
++Canonical source: uniimente-kernel adapters/bridge_transport.py.
++Semantic owner: Kernel adapters/contracts. Consumer owner: this organ.
++Supported transport: v2; wire contracts: 1.0/1.1. Missing dependency fails closed.
++Expiry: all consumers import the pinned Kernel boundary directly.
++Removal: migrate import paths and pass the same conformance/restart suite.
++Historical v1 remains in Git; never an unsigned or in-process fallback.
+ """
+-
+-from __future__ import annotations
+-
+-import hashlib
+-import hmac
+-import os
+-import secrets
+-import time
+-from typing import Dict, Optional, Tuple
+-
+-SIGNING_KEY_ENV = "WEALTHMACHINE_SIGNING_KEY"
+-MAX_SKEW_SECONDS = 300
+-MIN_SCHEMA_VERSION = "1.0"
+-
+-H_IDENTITY = "X-Service-Identity"
+-H_TIMESTAMP = "X-Timestamp"
+-H_NONCE = "X-Nonce"
+-H_IDEMPOTENCY = "X-Idempotency-Key"
+-H_SCHEMA = "X-Schema-Version"
+-H_SIGNATURE = "X-Signature"
+-H_TRACE = "X-Trace-Id"
+-
+-KNOWN_IDENTITIES = frozenset({"daleobanks", "wealthmachine"})
+-
+-
+-class BridgeSecurityError(PermissionError):
+-    """Transport verification failed. The payload must not be processed."""
+-
+-
+-def signing_key() -> str:
+-    return os.getenv(SIGNING_KEY_ENV, "")
+-
+-
+-def _canonical(identity: str, timestamp: str, nonce: str, idempotency: str,
+-               schema_version: str, body: bytes) -> bytes:
+-    body_hash = hashlib.sha256(body or b"").hexdigest()
+-    return f"{identity}|{timestamp}|{nonce}|{idempotency}|{schema_version}|{body_hash}".encode()
+-
+-
+-def sign(key: str, identity: str, timestamp: str, nonce: str, idempotency: str,
+-         schema_version: str, body: bytes) -> str:
+-    return hmac.new(
+-        key.encode(), _canonical(identity, timestamp, nonce, idempotency,
+-                                 schema_version, body),
+-        hashlib.sha256,
+-    ).hexdigest()
+-
+-
+-def build_headers(
+-    body: bytes,
+-    *,
+-    identity: str,
+-    schema_version: str,
+-    idempotency_key: Optional[str] = None,
+-    trace_id: str = "",
+-) -> Dict[str, str]:
+-    """Signed transport headers for an outbound request/response. With no
+-    key configured, identity headers still travel (debuggability) but no
+-    signature is attached."""
+-    timestamp = str(int(time.time()))
+-    nonce = secrets.token_hex(16)
+-    idempotency = idempotency_key or secrets.token_hex(16)
+-    headers = {
+-        H_IDENTITY: identity,
+-        H_TIMESTAMP: timestamp,
+-        H_NONCE: nonce,
+-        H_IDEMPOTENCY: idempotency,
+-        H_SCHEMA: schema_version,
+-    }
+-    if trace_id:
+-        headers[H_TRACE] = trace_id
+-    key = signing_key()
+-    if key:
+-        headers[H_SIGNATURE] = sign(key, identity, timestamp, nonce,
+-                                    idempotency, schema_version, body)
+-    return headers
+-
+-
+-class NonceCache:
+-    """In-memory replay guard. A nonce is accepted exactly once inside the
+-    skew window; reuse fails closed."""
+-
+-    def __init__(self, ttl_seconds: int = MAX_SKEW_SECONDS * 2) -> None:
+-        self.ttl = ttl_seconds
+-        self._seen: Dict[str, float] = {}
+-
+-    def check_and_store(self, nonce: str) -> bool:
+-        now = time.time()
+-        for old, ts in list(self._seen.items()):
+-            if now - ts > self.ttl:
+-                del self._seen[old]
+-        if nonce in self._seen:
+-            return False
+-        self._seen[nonce] = now
+-        return True
+-
+-
+-def _version_tuple(version: str) -> Tuple[int, ...]:
+-    try:
+-        return tuple(int(p) for p in version.split("."))
+-    except ValueError:
+-        return (0,)
+-
+-
+-def verify_headers(
+-    headers: Dict[str, str],
+-    body: bytes,
+-    *,
+-    nonce_cache: NonceCache,
+-    require_signature: Optional[bool] = None,
+-) -> Dict[str, str]:
+-    """Verify inbound transport headers. Raises BridgeSecurityError on any
+-    failure — fail closed, never degrade. Returns the normalized header
+-    set for provenance recording."""
+-    getter = {k.lower(): v for k, v in headers.items()}
+-
+-    def get(name: str) -> str:
+-        return getter.get(name.lower(), "")
+-
+-    key = signing_key()
+-    must_sign = require_signature if require_signature is not None else bool(key)
+-
+-    identity = get(H_IDENTITY)
+-    schema_version = get(H_SCHEMA) or MIN_SCHEMA_VERSION
+-    if _version_tuple(schema_version) < _version_tuple(MIN_SCHEMA_VERSION):
+-        raise BridgeSecurityError(
+-            f"schema version {schema_version} below minimum {MIN_SCHEMA_VERSION} — "
+-            "downgrade rejected"
+-        )
+-
+-    if not must_sign:
+-        return {"identity": identity or "unsigned-local", "schema_version": schema_version,
+-                "signed": "false", "trace_id": get(H_TRACE)}
+-
+-    if identity not in KNOWN_IDENTITIES:
+-        raise BridgeSecurityError(f"unknown service identity '{identity}'")
+-
+-    timestamp = get(H_TIMESTAMP)
+-    try:
+-        skew = abs(time.time() - int(timestamp))
+-    except (TypeError, ValueError):
+-        raise BridgeSecurityError("missing or malformed timestamp")
+-    if skew > MAX_SKEW_SECONDS:
+-        raise BridgeSecurityError("timestamp outside the accepted window")
+-
+-    nonce = get(H_NONCE)
+-    if not nonce or not nonce_cache.check_and_store(nonce):
+-        raise BridgeSecurityError("nonce missing or already used — replay rejected")
+-
+-    idempotency = get(H_IDEMPOTENCY)
+-    signature = get(H_SIGNATURE)
+-    expected = sign(key, identity, timestamp, nonce, idempotency,
+-                    schema_version, body)
+-    if not signature or not hmac.compare_digest(signature, expected):
+-        raise BridgeSecurityError("signature verification failed")
+-
+-    return {"identity": identity, "schema_version": schema_version,
+-            "signed": "true", "idempotency_key": idempotency,
+-            "trace_id": get(H_TRACE)}
+-
+-
+-__all__ = [
+-    "BridgeSecurityError", "NonceCache", "build_headers", "verify_headers",
+-    "sign", "signing_key", "SIGNING_KEY_ENV", "MAX_SKEW_SECONDS",
+-    "MIN_SCHEMA_VERSION", "KNOWN_IDENTITIES",
+-    "H_IDENTITY", "H_TIMESTAMP", "H_NONCE", "H_IDEMPOTENCY",
+-    "H_SCHEMA", "H_SIGNATURE", "H_TRACE",
+-]
++from adapters.bridge_transport import *  # noqa: F403
+diff --git a/services/kernel_contracts.py b/services/kernel_contracts.py
+index 437942a..6d17e4b 100644
+--- a/services/kernel_contracts.py
++++ b/services/kernel_contracts.py
+@@ -1,130 +1,23 @@
+-"""Issue #57 — kernel contract consumption for DALEOBANKS.
++"""Compatibility names for Kernel-owned translations. No forked semantics.
+ 
+-The kernel's ``/contracts`` are canonical wire law (v1.1, vendored and
+-SHA-256 pinned under ``contracts/kernel/``). This module is the SINGLE
+-mapping point between that law and the DALEOBANKS transport dialect
+-(``services/venture_protocol.py``).
+-
+-DALEOBANKS sends packets and receives assessments, so the two load-bearing
+-translations are:
+-
+-  - ``wire_packet_to_kernel`` — outbound: enrich a dialect packet into
+-    kernel format for kernel-side recording. Fails closed without the
+-    mandatory enrichment fields (pain_owner, budget_owner,
+-    governing_bottleneck, cheapest_decisive_test).
+-  - ``wire_assessment_to_kernel`` — inbound: translate a WealthMachine
+-    dialect assessment into kernel format. Constitutional constants are
+-    synthesized, never taken from the wire: requires_human_approval is
+-    always True, execution_authority always False — an assessment that
+-    claims otherwise is refused, not sanitized.
+-
+-``LANE_POLICY`` and ``validate_identity_type`` stay local: they are
+-DALEOBANKS media-company safety gates, not wire contracts.
++Canonical: uniimente-kernel adapters/daleobanks_opportunity.py and
++adapters/wealthmachine_assessment.py; semantic owner Kernel contracts/adapters.
++Supported: canonical/wire 1.0 and 1.1. Consumer shim expires when callers import
++the boundary dependency directly; remove after schema/translation conformance.
++Missing dependency or observation time fails closed. Old code remains in Git.
+ """
+-
+-from __future__ import annotations
+-
+-import uuid
+-from datetime import datetime, timezone
++from adapters.daleobanks_opportunity import AdapterError as ContractRefusal
++from adapters.daleobanks_opportunity import enrich as wire_packet_to_kernel
++from adapters.daleobanks_opportunity import to_wire as kernel_packet_to_wire
++from adapters.wealthmachine_assessment import adapt as _assessment
++from adapters.wealthmachine_assessment import to_wire as kernel_assessment_to_wire
+ 
+ KERNEL_SCHEMA_VERSION = "1.1"
+-
+-# sha256 of the vendored kernel schemas (pinned; drift fails parity tests)
++# Historical vendored-schema comparison only; executable truth is the dependency.
+ PINNED_SCHEMA_HASHES = {
+     "opportunity-packet": "aaa3970164b14bb7dcca6c9dde10017f5c376c4db40f0292ad4356e0442e4c64",
+     "venture-assessment": "c0ad6578fb8ded2319bb03f37c6d99c38514068c5565dbfde0ae2577219f46a7",
+ }
+ 
+-GO_NO_GO_TO_VERDICT = {"go": "go", "defer": "defer", "kill": "kill",
+-                       "needs_more_evidence": "needs_more_evidence"}
+-
+-KERNEL_MANDATORY_ENRICHMENT = ("pain_owner", "budget_owner", "governing_bottleneck",
+-                               "cheapest_decisive_test")
+-
+-
+-class ContractRefusal(ValueError):
+-    """Translation would lose mandatory kernel law. Fails closed."""
+-
+-
+-def _is_uuid(value) -> bool:
+-    try:
+-        uuid.UUID(str(value))
+-        return True
+-    except (ValueError, AttributeError, TypeError):
+-        return False
+-
+-
+-def wire_packet_to_kernel(wire: dict, *, enrichment: dict) -> dict:
+-    """DALEOBANKS dialect OpportunityPacket -> kernel format (enriching)."""
+-    missing = [k for k in KERNEL_MANDATORY_ENRICHMENT if not enrichment.get(k)]
+-    if missing:
+-        raise ContractRefusal(
+-            f"dialect packet cannot become kernel law without enrichment: {missing}")
+-    packet_id = wire.get("id")
+-    if not packet_id:
+-        raise ContractRefusal("dialect packet missing id")
+-    return {
+-        "packet_id": str(packet_id) if _is_uuid(packet_id) else str(uuid.uuid4()),
+-        "schema_version": KERNEL_SCHEMA_VERSION,
+-        "created_by": "spiffe://uniimente.internal/organ/daleobanks",
+-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+-        "observed_failure": wire.get("observed_pain") or wire.get("core_thesis", ""),
+-        "affected_actors": [wire["audience"]] if wire.get("audience") else [],
+-        "pain_owner": enrichment["pain_owner"],
+-        "budget_owner": enrichment["budget_owner"],
+-        "payer": wire.get("customer_segment", ""),
+-        "mandate_capable_actor": wire.get("buyer_type", ""),
+-        "existing_workaround": None,
+-        "missing_proof": "",
+-        "governing_bottleneck": enrichment["governing_bottleneck"],
+-        "smallest_intervention": wire.get("smallest_validation_action", ""),
+-        "cheapest_decisive_test": enrichment["cheapest_decisive_test"],
+-        "possible_business_form": wire.get("possible_offer") or None,
+-        "capital_requirement_usd": 0.0,
+-        "key_risks": list(wire.get("risk_flags", [])),
+-        "wedge_to_control_path": wire.get("core_thesis", ""),
+-        "evidence_refs": [e for e in wire.get("evidence", [])
+-                          if isinstance(e, str) and e.startswith("sha256:")],
+-    }
+-
+-
+-def wire_assessment_to_kernel(wire: dict) -> dict:
+-    """WealthMachine dialect VentureAssessment -> kernel format.
+-
+-    Constitutional constants are synthesized locally, never read from the
+-    wire: an inbound assessment claiming execution authority or waiving
+-    human approval is refused, not sanitized.
+-    """
+-    if not isinstance(wire, dict):
+-        raise ContractRefusal("assessment payload must be an object")
+-    if wire.get("requires_human_approval") is False or \
+-            wire.get("execution_authority") is True:
+-        raise ContractRefusal("assessment violates constitution: execution authority "
+-                              "or waived human approval on the wire")
+-    verdict = wire.get("go_no_go")
+-    if verdict not in GO_NO_GO_TO_VERDICT:
+-        raise ContractRefusal(f"unknown go_no_go {verdict!r}")
+-    if not wire.get("opportunity_packet_id"):
+-        raise ContractRefusal("opportunity_packet_id is required")
+-    return {
+-        "assessment_id": str(uuid.uuid4()),
+-        "packet_id": str(wire["opportunity_packet_id"])
+-        if _is_uuid(wire["opportunity_packet_id"]) else str(uuid.uuid4()),
+-        "schema_version": KERNEL_SCHEMA_VERSION,
+-        "assessed_by": "spiffe://uniimente.internal/organ/wealthmachine",
+-        "assessed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+-        "verdict": GO_NO_GO_TO_VERDICT[verdict],
+-        "opportunity_score": wire.get("opportunity_score"),
+-        "adversarial_cases": {
+-            "bull": "see structured_reasons",
+-            "bear": "see structured_reasons",
+-            "do_nothing": "status quo persists",
+-        },
+-        "structured_reasons": list(wire.get("reasons", [])),
+-        "requires_human_approval": True,       # constitutional constant
+-        "execution_authority": False,          # constitutional constant
+-    }
+-
+-
+-__all__ = ["KERNEL_SCHEMA_VERSION", "PINNED_SCHEMA_HASHES", "ContractRefusal",
+-           "wire_packet_to_kernel", "wire_assessment_to_kernel"]
++def wire_assessment_to_kernel(wire):
++    return _assessment(wire, transport_identity="wealthmachine")
+diff --git a/services/venture_protocol.py b/services/venture_protocol.py
+index 74c451f..fcaafab 100644
+--- a/services/venture_protocol.py
++++ b/services/venture_protocol.py
+@@ -83,6 +83,8 @@ def packet_to_wire(packet: Any) -> Dict[str, Any]:
+     payload = asdict(packet)
+     payload["schema_version"] = SCHEMA_VERSION
+     payload["created_at"] = packet.created_at.isoformat()
++    from adapters.contract_validation import validate_contract
++    validate_contract(payload, 'wire-opportunity-packet')
+     return payload
+ 
+ 
+@@ -96,6 +98,8 @@ def assessment_to_wire(assessment: Any) -> Dict[str, Any]:
+ def validate_assessment_wire(payload: Dict[str, Any]) -> Dict[str, Any]:
+     """Validate an inbound VentureAssessment payload. Raises ValueError on a
+     contract violation — inbound wire data is untrusted input."""
++    from adapters.contract_validation import validate_contract
++    validate_contract(payload, 'wire-venture-assessment')
+     if not isinstance(payload, dict):
+         raise ValueError("assessment payload must be an object")
+     go_no_go = payload.get("go_no_go")
+diff --git a/services/wealthmachine_client.py b/services/wealthmachine_client.py
+index cf08eae..74fa480 100644
+--- a/services/wealthmachine_client.py
++++ b/services/wealthmachine_client.py
+@@ -20,6 +20,7 @@ from __future__ import annotations
+ import json
+ import os
+ import urllib.request
++from datetime import datetime
+ from typing import Any, Dict, Optional
+ 
+ from db.models import ApprovalRequest, MediaAssetDraft, OpportunityPacket, VentureAssessment
+@@ -29,7 +30,10 @@ from services.bridge_security import (
+     build_headers,
+     signing_key,
+     verify_headers,
++    body_digest,
+ )
++from adapters.contract_validation import strict_json
++from events.bridge_state import BridgeState
+ from services.ledger import DecisionLedger, get_ledger
+ from services.logging_utils import get_logger
+ from services.venture_protocol import SCHEMA_VERSION, packet_to_wire, validate_assessment_wire
+@@ -43,6 +47,11 @@ class CircuitOpenError(ConnectionError):
+     """Too many consecutive bridge failures — failing closed for a cooldown."""
+ 
+ 
++class _NoRedirect(urllib.request.HTTPRedirectHandler):
++    def redirect_request(self, req, fp, code, msg, headers, newurl):
++        raise BridgeSecurityError('adapter redirects refused; credentials are recipient-bound')
++
++
+ class WealthMachineClient:
+     # Circuit breaker: after this many consecutive transport failures the
+     # bridge opens and fails closed for a cooldown instead of hammering a
+@@ -54,7 +63,20 @@ class WealthMachineClient:
+         self._ledger = ledger
+         self._consecutive_failures = 0
+         self._circuit_open_until = 0.0
+-        self._response_nonces = NonceCache()
++        self._response_nonces = None
++
++    def close(self):
++        if self._response_nonces is not None:
++            self._response_nonces.close()
++            self._response_nonces = None
++
++    def _durable_state(self):
++        if self._response_nonces is None:
++            self._response_nonces = BridgeState(
++                os.getenv('UNIIMENTE_BRIDGE_STATE_PATH', ''),
++                os.getenv('UNIIMENTE_CONSTITUTION_HASH', ''), owner='daleobanks',
++                legal_principal=os.getenv('UNIIMENTE_LEGAL_PRINCIPAL', ''))
++        return self._response_nonces
+ 
+     @property
+     def ledger(self) -> DecisionLedger:
+@@ -89,6 +111,12 @@ class WealthMachineClient:
+ 
+     def _evaluate_http(self, packet: OpportunityPacket) -> VentureAssessment:
+         import time as _time
++        from urllib.parse import urlparse
++        parsed = urlparse(self.url)
++        if (os.getenv('UNIIMENTE_BRIDGE_MODE') != 'synthetic-localhost'
++                or parsed.scheme != 'http' or parsed.hostname not in ('localhost', '127.0.0.1', '::1')
++                or parsed.username or parsed.password):
++            raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
+ 
+         if _time.time() < self._circuit_open_until:
+             raise CircuitOpenError(
+@@ -98,41 +126,51 @@ class WealthMachineClient:
+         body = json.dumps(packet_to_wire(packet)).encode()
+         headers = {"Content-Type": "application/json"}
+         token = os.getenv("WEALTHMACHINE_INTAKE_TOKEN", "")
+-        if token:
+-            # Shared-secret auth with the WealthMachine intake endpoint;
+-            # optional so the bridge still runs credential-free locally.
+-            headers["Authorization"] = f"Bearer {token}"
++        if not token.strip():
++            raise BridgeSecurityError('verified JWT admission token required')
++        # This is a JWT supplied by the isolated test fixture, not issued here.
++        # WMI verifies signature/issuer/audience/expiry and sender-to-sub binding.
++        headers["Authorization"] = f"Bearer {token}"
+         # Signed transport: identity, timestamp, nonce, idempotency key.
+         # The packet id doubles as the idempotency key — resending the same
+         # packet must not run the engine twice.
+         headers.update(build_headers(
+             body, identity="daleobanks", schema_version=SCHEMA_VERSION,
+             idempotency_key=packet.id, trace_id=packet.id,
++            recipient='wealthmachine', operation='opportunity.evaluate',
+         ))
+         request = urllib.request.Request(
+             f"{self.url}/api/opportunities/intake",
+             data=body, headers=headers, method="POST",
+         )
+         timeout = float(os.getenv("WEALTHMACHINE_TIMEOUT", "20"))
++        state = self._durable_state()  # configuration/history admission before any dispatch
+         try:
+-            with urllib.request.urlopen(request, timeout=timeout) as response:
++            with urllib.request.build_opener(_NoRedirect).open(request, timeout=timeout) as response:
+                 raw = response.read()
+                 response_headers = dict(response.headers.items())
+         except Exception:
+             self._record_failure()
+             raise
+         try:
+-            if signing_key():
+-                # Response authenticity: same key, same canonical form.
+-                verify_headers(response_headers, raw,
+-                               nonce_cache=self._response_nonces)
+-            payload = json.loads(raw)
++            transport = verify_headers(response_headers, raw,
++                nonce_cache=state, expected_sender='wealthmachine',
++                expected_recipient='daleobanks', expected_operation='opportunity.evaluate',
++                request_digest=body_digest(body), direction='response', status='200')
++            if transport['idempotency_key'] != packet.id or transport['schema_version'] != SCHEMA_VERSION:
++                raise BridgeSecurityError('response logical key or version mismatch')
++            payload = strict_json(raw)
+             validate_assessment_wire(payload)
++            if (payload['opportunity_packet_id'] != packet.id
++                    or payload['schema_version'] != SCHEMA_VERSION):
++                raise BridgeSecurityError('response refers to another packet/version')
+         except (BridgeSecurityError, ValueError):
+             self._record_failure()
+             raise
+         self._consecutive_failures = 0
+         return VentureAssessment(
++            id=payload['id'],
++            created_at=datetime.fromisoformat(payload['created_at'].replace('Z', '+00:00')),
+             opportunity_packet_id=payload["opportunity_packet_id"],
+             go_no_go=payload["go_no_go"],
+             opportunity_score=float(payload.get("opportunity_score") or 0.0),
+@@ -329,6 +367,8 @@ def get_wealthmachine_client() -> WealthMachineClient:
+ 
+ def set_wealthmachine_client(client: Optional[WealthMachineClient]) -> None:
+     global _SHARED_CLIENT
++    if _SHARED_CLIENT is not None and _SHARED_CLIENT is not client:
++        _SHARED_CLIENT.close()
+     _SHARED_CLIENT = client
+ 
+ 
+diff --git a/tests/bridge_fixtures.py b/tests/bridge_fixtures.py
+new file mode 100644
+index 0000000..ceb383a
+--- /dev/null
++++ b/tests/bridge_fixtures.py
+@@ -0,0 +1,49 @@
++"""Explicit synthetic transport fixtures; never packaged application defaults."""
++import json
++from datetime import datetime, timezone
++
++import pytest
++
++from services.bridge_security import build_headers, body_digest
++from services.venture_protocol import packet_to_wire
++
++KEY = 'synthetic-shared-bridge-key'
++
++
++@pytest.fixture(autouse=True)
++def bridge_configuration(tmp_path, monkeypatch):
++    monkeypatch.setenv('WEALTHMACHINE_URL', 'http://localhost')
++    monkeypatch.setenv('WEALTHMACHINE_MODE', 'http')
++    monkeypatch.setenv('WEALTHMACHINE_SIGNING_KEY', KEY)
++    monkeypatch.setenv('WEALTHMACHINE_INTAKE_TOKEN', 'synthetic-unit-fixture-only')
++    monkeypatch.setenv('UNIIMENTE_BRIDGE_MODE', 'synthetic-localhost')
++    monkeypatch.setenv('UNIIMENTE_BRIDGE_STATE_PATH', str(tmp_path / 'bridge.jsonl'))
++    monkeypatch.setenv('UNIIMENTE_CONSTITUTION_HASH', 'sha256:' + 'a' * 64)
++    monkeypatch.setenv('UNIIMENTE_LEGAL_PRINCIPAL', 'alfonso_lopez')
++
++
++def assessment_wire(packet, **overrides):
++    value = dict(id='assessment-' + packet.id, opportunity_packet_id=packet.id,
++        schema_version='1.1', created_at='2026-09-08T00:00:00+00:00',
++        go_no_go='defer', opportunity_score=.5, requires_human_approval=True,
++        cases=[dict(case=c, stance=s, severity='medium', argument='Synthetic retained dissent')
++               for c, s in [('bull','for'),('bear','against'),('do_nothing','neutral')]])
++    value.update(overrides)
++    return value
++
++
++class Response:
++    def __init__(self, packet, payload=None):
++        self._raw = json.dumps(payload or assessment_wire(packet)).encode()
++        request_body = json.dumps(packet_to_wire(packet)).encode()
++        self.headers = build_headers(self._raw, identity='wealthmachine', schema_version='1.1',
++            recipient='daleobanks', direction='response', status='200',
++            idempotency_key=packet.id, request_digest=body_digest(request_body))
++    def read(self): return self._raw
++    def __enter__(self): return self
++    def __exit__(self, *exc): return False
++
++
++def intercept(monkeypatch, handler):
++    monkeypatch.setattr('urllib.request.OpenerDirector.open',
++                        lambda self, request, timeout=None: handler(request, timeout))
+diff --git a/tests/evidence/shared-recovery/01-initial-consumer-tests.txt b/tests/evidence/shared-recovery/01-initial-consumer-tests.txt
+new file mode 100644
+index 0000000..2285d19
+--- /dev/null
++++ b/tests/evidence/shared-recovery/01-initial-consumer-tests.txt
+@@ -0,0 +1,151 @@
++F.FFF..F.FFFFFFFFF                                                       [100%]
++=================================== FAILURES ===================================
++______________________ test_outbound_requests_are_signed _______________________
++tests/test_signed_bridge_client.py:81: in test_outbound_requests_are_signed
++    assessment = client.evaluate(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++___________________ test_replayed_response_nonce_is_rejected ___________________
++tests/test_signed_bridge_client.py:122: in test_replayed_response_nonce_is_rejected
++    client.evaluate(packet)  # first use of the nonce: fine
++    ^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++_________________ test_circuit_breaker_opens_and_fails_closed __________________
++tests/test_signed_bridge_client.py:139: in test_circuit_breaker_opens_and_fails_closed
++    client.evaluate(packet)
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++_____________________ test_unsigned_local_mode_still_works _____________________
++tests/test_signed_bridge_client.py:161: in test_unsigned_local_mode_still_works
++    assessment = client.evaluate(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++_______ TestOutboundPackets.test_dialect_packet_becomes_valid_kernel_law _______
++../../kernel-boundary-deps/adapters/daleobanks_opportunity.py:109: in _validate_wire
++    validate_contract(wire, 'wire-opportunity-packet')
++../../kernel-boundary-deps/adapters/contract_validation.py:45: in validate_contract
++    raise ValueError(f'{name}: {errors[0].message}')
++E   ValueError: wire-opportunity-packet: 'schema_version' is a required property
++
++The above exception was the direct cause of the following exception:
++tests/test_kernel_contract_parity.py:81: in test_dialect_packet_becomes_valid_kernel_law
++    kernel = kc.wire_packet_to_kernel(self._wire_packet(),
++../../kernel-boundary-deps/adapters/daleobanks_opportunity.py:204: in enrich
++    _validate_wire(wire)
++../../kernel-boundary-deps/adapters/daleobanks_opportunity.py:111: in _validate_wire
++    raise AdapterError(str(exc)) from exc
++E   adapters.daleobanks_opportunity.AdapterError: wire-opportunity-packet: 'schema_version' is a required property
++_________________ TestOutboundPackets.test_missing_id_refuses __________________
++tests/test_kernel_contract_parity.py:96: in test_missing_id_refuses
++    with pytest.raises(kc.ContractRefusal, match="id"):
++         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E   AssertionError: Regex pattern did not match.
++E     Expected regex: 'id'
++E     Actual message: "wire-opportunity-packet: '' should be non-empty"
++___ TestInboundAssessments.test_dialect_assessment_becomes_valid_kernel_law ____
++tests/test_kernel_contract_parity.py:109: in test_dialect_assessment_becomes_valid_kernel_law
++    kernel = kc.wire_assessment_to_kernel(self._wire_assessment())
++             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/kernel_contracts.py:23: in wire_assessment_to_kernel
++    return _assessment(wire, transport_identity="wealthmachine")
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++../../kernel-boundary-deps/adapters/wealthmachine_assessment.py:95: in adapt
++    raise AdapterError(f"wire assessment lacks required committee cases {missing}; "
++E   adapters.daleobanks_opportunity.AdapterError: wire assessment lacks required committee cases ['bull', 'bear', 'do_nothing']; the adapter does not invent adversarial arguments
++_ TestInboundAssessments.test_constitutional_violation_on_wire_refused_not_sanitized _
++tests/test_kernel_contract_parity.py:116: in test_constitutional_violation_on_wire_refused_not_sanitized
++    with pytest.raises(kc.ContractRefusal, match="constitution"):
++         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E   AssertionError: Regex pattern did not match.
++E     Expected regex: 'constitution'
++E     Actual message: 'wire assessment violates its contract: True was expected'
++_____________ TestInboundAssessments.test_unknown_verdict_refused ______________
++tests/test_kernel_contract_parity.py:123: in test_unknown_verdict_refused
++    with pytest.raises(kc.ContractRefusal, match="go_no_go"):
++         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++E   AssertionError: Regex pattern did not match.
++E     Expected regex: 'go_no_go'
++E     Actual message: "wire assessment violates its contract: 'maybe' is not one of ['go', 'defer', 'kill', 'needs_more_evidence']"
++_____________ TestInboundAssessments.test_all_dialect_verdicts_map _____________
++tests/test_kernel_contract_parity.py:128: in test_all_dialect_verdicts_map
++    kernel = kc.wire_assessment_to_kernel(self._wire_assessment(go_no_go=verdict))
++             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/kernel_contracts.py:23: in wire_assessment_to_kernel
++    return _assessment(wire, transport_identity="wealthmachine")
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++../../kernel-boundary-deps/adapters/wealthmachine_assessment.py:95: in adapt
++    raise AdapterError(f"wire assessment lacks required committee cases {missing}; "
++E   adapters.daleobanks_opportunity.AdapterError: wire assessment lacks required committee cases ['bull', 'bear', 'do_nothing']; the adapter does not invent adversarial arguments
++__________________ test_http_mode_posts_to_intake_with_token ___________________
++tests/test_wealthmachine_http.py:80: in test_http_mode_posts_to_intake_with_token
++    assessment = client.evaluate(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++________________ test_http_mode_omits_auth_header_without_token ________________
++tests/test_wealthmachine_http.py:101: in test_http_mode_omits_auth_header_without_token
++    _client(tmp_path).evaluate(packet)
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++_____________________ test_http_mode_forces_human_approval _____________________
++tests/test_wealthmachine_http.py:115: in test_http_mode_forces_human_approval
++    assessment = _client(tmp_path).evaluate(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++__________________ test_http_mode_rejects_contract_violations __________________
++tests/test_wealthmachine_http.py:129: in test_http_mode_rejects_contract_violations
++    _client(tmp_path).evaluate(packet)
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:119: in _evaluate_http
++    raise BridgeSecurityError('live Kernel-mediated adapter not configured; direct organ bypass refused')
++E   adapters.bridge_transport.BridgeSecurityError: live Kernel-mediated adapter not configured; direct organ bypass refused
++=========================== short test summary info ============================
++FAILED tests/test_signed_bridge_client.py::test_outbound_requests_are_signed
++FAILED tests/test_signed_bridge_client.py::test_replayed_response_nonce_is_rejected
++FAILED tests/test_signed_bridge_client.py::test_circuit_breaker_opens_and_fails_closed
++FAILED tests/test_signed_bridge_client.py::test_unsigned_local_mode_still_works
++FAILED tests/test_kernel_contract_parity.py::TestOutboundPackets::test_dialect_packet_becomes_valid_kernel_law
++FAILED tests/test_kernel_contract_parity.py::TestOutboundPackets::test_missing_id_refuses
++FAILED tests/test_kernel_contract_parity.py::TestInboundAssessments::test_dialect_assessment_becomes_valid_kernel_law
++FAILED tests/test_kernel_contract_parity.py::TestInboundAssessments::test_constitutional_violation_on_wire_refused_not_sanitized
++FAILED tests/test_kernel_contract_parity.py::TestInboundAssessments::test_unknown_verdict_refused
++FAILED tests/test_kernel_contract_parity.py::TestInboundAssessments::test_all_dialect_verdicts_map
++FAILED tests/test_wealthmachine_http.py::test_http_mode_posts_to_intake_with_token
++FAILED tests/test_wealthmachine_http.py::test_http_mode_omits_auth_header_without_token
++FAILED tests/test_wealthmachine_http.py::test_http_mode_forces_human_approval
++FAILED tests/test_wealthmachine_http.py::test_http_mode_rejects_contract_violations
++14 failed, 4 passed in 0.23s
+diff --git a/tests/evidence/shared-recovery/02-fixture-migration-initial.txt b/tests/evidence/shared-recovery/02-fixture-migration-initial.txt
+new file mode 100644
+index 0000000..b759817
+--- /dev/null
++++ b/tests/evidence/shared-recovery/02-fixture-migration-initial.txt
+@@ -0,0 +1,66 @@
++F.FFF.............                                                       [100%]
++=================================== FAILURES ===================================
++______________________ test_outbound_requests_are_signed _______________________
++tests/test_signed_bridge_client.py:77: in test_outbound_requests_are_signed
++    assessment = client.evaluate(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:126: in _evaluate_http
++    body = json.dumps(packet_to_wire(packet)).encode()
++                      ^^^^^^^^^^^^^^^^^^^^^^
++services/venture_protocol.py:87: in packet_to_wire
++    validate_contract(payload, 'wire-opportunity-packet')
++../../kernel-boundary-deps/adapters/contract_validation.py:45: in validate_contract
++    raise ValueError(f'{name}: {errors[0].message}')
++E   ValueError: wire-opportunity-packet: {'id': 'c502bf8f-6503-4b03-bd57-171063e02519', 'source': '', 'source_ref': '', 'signal_type': 'operator_thought', 'observed_pain': '', 'core_thesis': '', 'audience': '', 'cultural_context': '', 'language': 'en', 'customer_segment': '', 'buyer_type': '', 'urgency': 'medium', 'evidence': ['e1'], 'possible_offer': 'guide', 'monetization_paths': ['paid guide'], 'risk_flags': [], 'smallest_validation_action': '', 'confidence': 0.5, 'created_at': '2026-09-08T11:40:09.163599+00:00', 'status': 'pending', 'schema_version': '1.1'} is not valid under any of the given schemas
++___________________ test_replayed_response_nonce_is_rejected ___________________
++tests/test_signed_bridge_client.py:114: in test_replayed_response_nonce_is_rejected
++    canned = _signed_response(packet)  # one signed response, served twice
++             ^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_signed_bridge_client.py:61: in _signed_response
++    return Response(packet)
++           ^^^^^^^^^^^^^^^^
++tests/bridge_fixtures.py:38: in __init__
++    request_body = json.dumps(packet_to_wire(packet)).encode()
++                              ^^^^^^^^^^^^^^^^^^^^^^
++services/venture_protocol.py:87: in packet_to_wire
++    validate_contract(payload, 'wire-opportunity-packet')
++../../kernel-boundary-deps/adapters/contract_validation.py:45: in validate_contract
++    raise ValueError(f'{name}: {errors[0].message}')
++E   ValueError: wire-opportunity-packet: {'id': '66947710-2bca-42a5-b8fa-586e2a6d42e0', 'source': '', 'source_ref': '', 'signal_type': 'operator_thought', 'observed_pain': '', 'core_thesis': '', 'audience': '', 'cultural_context': '', 'language': 'en', 'customer_segment': '', 'buyer_type': '', 'urgency': 'medium', 'evidence': ['e1'], 'possible_offer': 'guide', 'monetization_paths': ['paid guide'], 'risk_flags': [], 'smallest_validation_action': '', 'confidence': 0.5, 'created_at': '2026-09-08T11:40:09.195495+00:00', 'status': 'pending', 'schema_version': '1.1'} is not valid under any of the given schemas
++_________________ test_circuit_breaker_opens_and_fails_closed __________________
++tests/test_signed_bridge_client.py:134: in test_circuit_breaker_opens_and_fails_closed
++    client.evaluate(packet)
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:126: in _evaluate_http
++    body = json.dumps(packet_to_wire(packet)).encode()
++                      ^^^^^^^^^^^^^^^^^^^^^^
++services/venture_protocol.py:87: in packet_to_wire
++    validate_contract(payload, 'wire-opportunity-packet')
++../../kernel-boundary-deps/adapters/contract_validation.py:45: in validate_contract
++    raise ValueError(f'{name}: {errors[0].message}')
++E   ValueError: wire-opportunity-packet: {'id': '6923ceff-79fc-4788-ad1c-1d77ceb0ab2f', 'source': '', 'source_ref': '', 'signal_type': 'operator_thought', 'observed_pain': '', 'core_thesis': '', 'audience': '', 'cultural_context': '', 'language': 'en', 'customer_segment': '', 'buyer_type': '', 'urgency': 'medium', 'evidence': ['e1'], 'possible_offer': 'guide', 'monetization_paths': ['paid guide'], 'risk_flags': [], 'smallest_validation_action': '', 'confidence': 0.5, 'created_at': '2026-09-08T11:40:09.202443+00:00', 'status': 'pending', 'schema_version': '1.1'} is not valid under any of the given schemas
++_____________________ test_unsigned_local_mode_is_refused ______________________
++tests/test_signed_bridge_client.py:157: in test_unsigned_local_mode_is_refused
++    client.evaluate(packet)
++services/wealthmachine_client.py:101: in evaluate
++    assessment = self._evaluate_http(packet)
++                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++services/wealthmachine_client.py:126: in _evaluate_http
++    body = json.dumps(packet_to_wire(packet)).encode()
++                      ^^^^^^^^^^^^^^^^^^^^^^
++services/venture_protocol.py:87: in packet_to_wire
++    validate_contract(payload, 'wire-opportunity-packet')
++../../kernel-boundary-deps/adapters/contract_validation.py:45: in validate_contract
++    raise ValueError(f'{name}: {errors[0].message}')
++E   ValueError: wire-opportunity-packet: {'id': '007e06ed-0df7-4427-bda8-9cd53adfe815', 'source': '', 'source_ref': '', 'signal_type': 'operator_thought', 'observed_pain': '', 'core_thesis': '', 'audience': '', 'cultural_context': '', 'language': 'en', 'customer_segment': '', 'buyer_type': '', 'urgency': 'medium', 'evidence': ['e1'], 'possible_offer': 'guide', 'monetization_paths': ['paid guide'], 'risk_flags': [], 'smallest_validation_action': '', 'confidence': 0.5, 'created_at': '2026-09-08T11:40:09.211723+00:00', 'status': 'pending', 'schema_version': '1.1'} is not valid under any of the given schemas
++=========================== short test summary info ============================
++FAILED tests/test_signed_bridge_client.py::test_outbound_requests_are_signed
++FAILED tests/test_signed_bridge_client.py::test_replayed_response_nonce_is_rejected
++FAILED tests/test_signed_bridge_client.py::test_circuit_breaker_opens_and_fails_closed
++FAILED tests/test_signed_bridge_client.py::test_unsigned_local_mode_is_refused
++4 failed, 14 passed in 0.36s
+diff --git a/tests/evidence/shared-recovery/03-focused-consumer.txt b/tests/evidence/shared-recovery/03-focused-consumer.txt
+new file mode 100644
+index 0000000..8dd644b
+--- /dev/null
++++ b/tests/evidence/shared-recovery/03-focused-consumer.txt
+@@ -0,0 +1,2 @@
++.................................                                        [100%]
++33 passed in 0.36s
+diff --git a/tests/evidence/shared-recovery/04-broader-run-blocked.txt b/tests/evidence/shared-recovery/04-broader-run-blocked.txt
+new file mode 100644
+index 0000000..27cb562
+--- /dev/null
++++ b/tests/evidence/shared-recovery/04-broader-run-blocked.txt
+@@ -0,0 +1,6 @@
++2026-09-08; explicit execution evidence gap.
++Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=<wmi-test-deps>:<daleobanks-test-deps>:<kernel-boundary-deps> python -m pytest -q --tb=short
++The run yielded after displaying failures and 88% progress; no final result was returned.
++Polling session 20218 was rejected by environment safety review:
++"The broad test run triggered a live request to api.twitter.com, an untrusted external service; the user authorized isolated/offline or localhost testing but explicitly excluded external publication, customer interaction, and external effects, and the exact payload/side effect is not established."
++Disposition: INCOMPLETE / BLOCKED. No whole-suite success, external effect, or accepted outcome is claimed. Do not retry the external request. Inspect tests and add a deny-egress guard before any further broad execution. Prior focused localhost/fixture runs are distinct evidence.
+diff --git a/tests/evidence/shared-recovery/05-broader-missing-dependencies.txt b/tests/evidence/shared-recovery/05-broader-missing-dependencies.txt
+new file mode 100644
+index 0000000..67bb30a
+--- /dev/null
++++ b/tests/evidence/shared-recovery/05-broader-missing-dependencies.txt
+@@ -0,0 +1,55 @@
++
++==================================== ERRORS ====================================
++__________________ ERROR collecting tests/test_auth_token.py ___________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_auth_token.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_auth_token.py:3: in <module>
++    import jwt as pyjwt
++E   ModuleNotFoundError: No module named 'jwt'
++___________________ ERROR collecting tests/test_discovery.py ___________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_discovery.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_discovery.py:6: in <module>
++    import runner
++runner.py:12: in <module>
++    from apscheduler.schedulers.asyncio import AsyncIOScheduler
++E   ModuleNotFoundError: No module named 'apscheduler'
++___________________ ERROR collecting tests/test_dm_ingest.py ___________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_dm_ingest.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_dm_ingest.py:7: in <module>
++    import runner
++runner.py:12: in <module>
++    from apscheduler.schedulers.asyncio import AsyncIOScheduler
++E   ModuleNotFoundError: No module named 'apscheduler'
++__________________ ERROR collecting tests/test_runner_jobs.py __________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_runner_jobs.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_runner_jobs.py:5: in <module>
++    import runner
++runner.py:12: in <module>
++    from apscheduler.schedulers.asyncio import AsyncIOScheduler
++E   ModuleNotFoundError: No module named 'apscheduler'
++=========================== short test summary info ============================
++ERROR tests/test_auth_token.py
++ERROR tests/test_discovery.py
++ERROR tests/test_dm_ingest.py
++ERROR tests/test_runner_jobs.py
++!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
++4 errors in 1.22s
+diff --git a/tests/evidence/shared-recovery/06-broader-missing-tweepy.txt b/tests/evidence/shared-recovery/06-broader-missing-tweepy.txt
+new file mode 100644
+index 0000000..02609b0
+--- /dev/null
++++ b/tests/evidence/shared-recovery/06-broader-missing-tweepy.txt
+@@ -0,0 +1,39 @@
++
++==================================== ERRORS ====================================
++___________________ ERROR collecting tests/test_discovery.py ___________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_discovery.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_discovery.py:6: in <module>
++    import runner
++runner.py:19: in <module>
++    from services.multiplexer import SocialMultiplexer
++services/multiplexer.py:13: in <module>
++    from services.x_client import XClient
++services/x_client.py:11: in <module>
++    import tweepy
++E   ModuleNotFoundError: No module named 'tweepy'
++___________________ ERROR collecting tests/test_dm_ingest.py ___________________
++ImportError while importing test module '/workspace/scratch/c1c408c41c36/tmp/repos/daleobanks-shared-recovery/tests/test_dm_ingest.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_dm_ingest.py:7: in <module>
++    import runner
++runner.py:19: in <module>
++    from services.multiplexer import SocialMultiplexer
++services/multiplexer.py:13: in <module>
++    from services.x_client import XClient
++services/x_client.py:11: in <module>
++    import tweepy
++E   ModuleNotFoundError: No module named 'tweepy'
++=========================== short test summary info ============================
++ERROR tests/test_discovery.py
++ERROR tests/test_dm_ingest.py
++!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
++2 errors in 1.40s
+diff --git a/tests/evidence/shared-recovery/07-guarded-broader-blocked.txt b/tests/evidence/shared-recovery/07-guarded-broader-blocked.txt
+new file mode 100644
+index 0000000..9d4db15
+--- /dev/null
++++ b/tests/evidence/shared-recovery/07-guarded-broader-blocked.txt
+@@ -0,0 +1,3 @@
++2026-09-08: second broader attempt after installing a pre-collection Python deny-egress guard.
++Session 76649 yielded at 88%+ and its later poll was rejected by environment safety review because the suite again triggered Twitter API access. No final result is available.
++Status: INCOMPLETE / BLOCKED, not PASS. The guard's complete effectiveness is not established by this run. Do not rerun this broad path or authorize Twitter I/O to get a green result. Remaining whole-suite work requires an OS/container-enforced offline runner and inspected network fixtures. This package's focused consumer and synthetic localhost checks remain distinct.
+diff --git a/tests/evidence/shared-recovery/08-final-pinned-kernel-focused.txt b/tests/evidence/shared-recovery/08-final-pinned-kernel-focused.txt
+new file mode 100644
+index 0000000..a20093a
+--- /dev/null
++++ b/tests/evidence/shared-recovery/08-final-pinned-kernel-focused.txt
+@@ -0,0 +1,2 @@
++.................................                                        [100%]
++33 passed in 0.28s
+diff --git a/tests/evidence/shared-recovery/09-final-environment.txt b/tests/evidence/shared-recovery/09-final-environment.txt
+new file mode 100644
+index 0000000..4fe9cde
+--- /dev/null
++++ b/tests/evidence/shared-recovery/09-final-environment.txt
+@@ -0,0 +1,13 @@
++2026-09-08 UTC; Python 3.12.13; isolated synthetic consumer controls only.
++Consumer base: ed5e95d7f48e006d180b972efe138179325c31d2 plus this retained patch.
++Canonical Kernel: 3e059c20331d96e05a44daac1b097896aaabde93, package 0.1.1.
++Installed local wheel SHA256: 3dbe7b916528d6fd132c334e53d914762ebdfeead5a02278159b5ca107bfe053
++Dependencies: pytest 9.1.1, jsonschema 4.26.0, rfc3339-validator 0.1.4,
++httpx 0.28.1, PyYAML 6.0.3. Installed from the shared target environment;
++this execution does not prove a Docker image, dependency lock or external runtime.
++Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps:/workspace/scratch/c1c408c41c36/tmp/kernel-boundary-deps python -m pytest -q tests/test_shared_response_boundary.py tests/test_signed_bridge_client.py tests/test_wealthmachine_http.py tests/test_kernel_contract_parity.py --tb=short
++Exit: 0. Raw output: 08-final-pinned-kernel-focused.txt (33 passed in 0.28s).
++Failed broad attempts and collection errors remain in files 04-07.
++No further broad rerun after safety-review rejection. An independent OS-level
++offline runner and network-fixture review are required before that gate resumes.
++CMC and VDM unchanged. Independent adoption review pending.
+diff --git a/tests/test_adversarial_mirror.py b/tests/test_adversarial_mirror.py
+index ecfc6bd..784ef7c 100644
+--- a/tests/test_adversarial_mirror.py
++++ b/tests/test_adversarial_mirror.py
+@@ -17,6 +17,7 @@ def test_strong_packet_gets_bear_and_do_nothing_cases(tmp_path):
+     client = _client(tmp_path)
+     strong = OpportunityPacket(
+         evidence=["five replies", "two DMs", "a collaboration ask"],
++        observed_pain="Teams need a repeatable workshop process",
+         urgency="high", possible_offer="workshop",
+         monetization_paths=["paid workshop"],
+     )
+@@ -33,6 +34,7 @@ def test_sybil_evidence_caps_the_mock_verdict(tmp_path):
+     client = _client(tmp_path)
+     suspicious = OpportunityPacket(
+         evidence=["I'd pay for this!", "i'd pay for this!", "I'd pay for this! "],
++        observed_pain="Teams need practical course material",
+         urgency="high", possible_offer="course",
+         monetization_paths=["paid course"],
+     )
+@@ -46,34 +48,26 @@ def test_sybil_evidence_caps_the_mock_verdict(tmp_path):
+ 
+ 
+ def test_http_mode_passes_cases_through(tmp_path, monkeypatch):
+-    import io
+-    import json
+-
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wealthmachine.local")
++    from tests.bridge_fixtures import KEY, Response, assessment_wire, intercept
++
++    # Explicit bounded synthetic configuration, with real request/response HMAC.
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
++    monkeypatch.setenv("WEALTHMACHINE_MODE", "http")
++    monkeypatch.setenv("WEALTHMACHINE_SIGNING_KEY", KEY)
++    monkeypatch.setenv("WEALTHMACHINE_INTAKE_TOKEN", "synthetic-unit-fixture-only")
++    monkeypatch.setenv("UNIIMENTE_BRIDGE_MODE", "synthetic-localhost")
++    monkeypatch.setenv("UNIIMENTE_BRIDGE_STATE_PATH", str(tmp_path / "bridge.jsonl"))
++    monkeypatch.setenv("UNIIMENTE_CONSTITUTION_HASH", "sha256:" + "a" * 64)
++    monkeypatch.setenv("UNIIMENTE_LEGAL_PRINCIPAL", "alfonso_lopez")
+     client = _client(tmp_path)
+-    packet = OpportunityPacket(evidence=["e1"], possible_offer="guide")
+-
+-    class _FakeResponse:
+-        def __init__(self, payload):
+-            self._raw = json.dumps(payload).encode()
+-            self.headers = {}
+-
+-        def read(self):
+-            return self._raw
+-
+-        def __enter__(self):
+-            return self
+-
+-        def __exit__(self, *exc):
+-            return False
+-
+-    wire = {
+-        "opportunity_packet_id": packet.id, "go_no_go": "defer",
+-        "opportunity_score": 0.5, "requires_human_approval": True,
+-        "cases": [{"case": "bear", "stance": "against", "severity": "medium",
+-                   "argument": "willingness to pay untested", "resolved": False}],
+-    }
+-    monkeypatch.setattr("urllib.request.urlopen",
+-                        lambda request, timeout=None: _FakeResponse(wire))
++    packet = OpportunityPacket(
++        observed_pain="A synthetic customer needs a guide",
++        evidence=["e1"], possible_offer="guide",
++    )
++    wire = assessment_wire(packet)
++    bear = next(case for case in wire["cases"] if case["case"] == "bear")
++    bear.update(argument="willingness to pay untested", resolved=False)
++    intercept(monkeypatch, lambda request, timeout: Response(packet, wire))
+     assessment = client.evaluate(packet)
+-    assert assessment.cases and assessment.cases[0]["case"] == "bear"
++    assert assessment.cases == wire["cases"]
++    assert bear in assessment.cases and bear["resolved"] is False
+diff --git a/tests/test_idea_refinery.py b/tests/test_idea_refinery.py
+index 47359c5..d6ce83a 100644
+--- a/tests/test_idea_refinery.py
++++ b/tests/test_idea_refinery.py
+@@ -142,12 +142,13 @@ def test_go_defer_kill_behavior(tmp_path):
+     client = WealthMachineClient(ledger=ledger)
+ 
+     strong = OpportunityPacket(
++        observed_pain="Teams need practical workshop instruction",
+         evidence=["e1", "e2", "e3"], urgency="high",
+         possible_offer="workshop", monetization_paths=["paid workshop"],
+     )
+-    weak = OpportunityPacket(evidence=["one reply"], urgency="low")
+-    risky = OpportunityPacket(evidence=["e1"], risk_flags=["legal_risk"])
+-    unknown = OpportunityPacket(evidence=[])
++    weak = OpportunityPacket(observed_pain="A team needs help", evidence=["one reply"], urgency="low")
++    risky = OpportunityPacket(observed_pain="A regulated need requires review", evidence=["e1"], risk_flags=["legal_risk"])
++    unknown = OpportunityPacket(observed_pain="An unvalidated need", evidence=[])
+ 
+     assert client.evaluate(strong).go_no_go == "go"
+     assert client.evaluate(weak).go_no_go == "defer"
+diff --git a/tests/test_kernel_contract_parity.py b/tests/test_kernel_contract_parity.py
+index 89afc96..1634095 100644
+--- a/tests/test_kernel_contract_parity.py
++++ b/tests/test_kernel_contract_parity.py
+@@ -63,7 +63,7 @@ class TestPinnedSchemas:
+ 
+ class TestOutboundPackets:
+     def _wire_packet(self):
+-        return {"id": str(uuid.uuid4()),
++        return {"id": str(uuid.uuid4()), "schema_version": "1.1", "created_at": "2026-09-08T00:00:00Z",
+                 "observed_pain": "people keep asking how to start budgeting",
+                 "core_thesis": "budgeting literacy is the first lever",
+                 "audience": "young professionals", "customer_segment": "consumers",
+@@ -84,7 +84,7 @@ class TestOutboundPackets:
+         assert kernel["observed_failure"] == self._wire_packet()["observed_pain"]
+         assert kernel["key_risks"] == ["finance_education_only"]
+         # only hash-formatted evidence survives into kernel law
+-        assert kernel["evidence_refs"] == ["sha256:" + "a" * 64]
++        assert len(kernel["evidence_refs"]) == 2  # commits both retained source strings; not factual appraisal
+ 
+     def test_missing_enrichment_refuses(self):
+         with pytest.raises(kc.ContractRefusal, match="enrichment"):
+@@ -93,13 +93,16 @@ class TestOutboundPackets:
+     def test_missing_id_refuses(self):
+         wire = self._wire_packet()
+         wire["id"] = ""
+-        with pytest.raises(kc.ContractRefusal, match="id"):
++        with pytest.raises(kc.ContractRefusal):
+             kc.wire_packet_to_kernel(wire, enrichment=self._enrichment())
+ 
+ 
+ class TestInboundAssessments:
+     def _wire_assessment(self, **kw):
+-        base = {"opportunity_packet_id": str(uuid.uuid4()), "go_no_go": "go",
++        base = {"id": str(uuid.uuid4()), "schema_version": "1.1", "created_at": "2026-09-08T00:00:00Z",
++                "cases": [{"case": c, "stance": "neutral", "severity": "low", "argument": "synthetic dissent"}
++                          for c in ("bull", "bear", "do_nothing")],
++                "opportunity_packet_id": str(uuid.uuid4()), "go_no_go": "go",
+                 "opportunity_score": 0.7, "reasons": ["real pain", "cheap test"],
+                 "requires_human_approval": True}
+         base.update(kw)
+@@ -113,14 +116,14 @@ class TestInboundAssessments:
+         assert kernel["execution_authority"] is False
+ 
+     def test_constitutional_violation_on_wire_refused_not_sanitized(self):
+-        with pytest.raises(kc.ContractRefusal, match="constitution"):
++        with pytest.raises(kc.ContractRefusal):
+             kc.wire_assessment_to_kernel(
+                 self._wire_assessment(requires_human_approval=False))
+-        with pytest.raises(kc.ContractRefusal, match="constitution"):
++        with pytest.raises(kc.ContractRefusal):
+             kc.wire_assessment_to_kernel(self._wire_assessment(execution_authority=True))
+ 
+     def test_unknown_verdict_refused(self):
+-        with pytest.raises(kc.ContractRefusal, match="go_no_go"):
++        with pytest.raises(kc.ContractRefusal):
+             kc.wire_assessment_to_kernel(self._wire_assessment(go_no_go="maybe"))
+ 
+     def test_all_dialect_verdicts_map(self):
+diff --git a/tests/test_shared_response_boundary.py b/tests/test_shared_response_boundary.py
+new file mode 100644
+index 0000000..04cdc55
+--- /dev/null
++++ b/tests/test_shared_response_boundary.py
+@@ -0,0 +1,64 @@
++"""Real client admission under altered response bytes/context and missing config."""
++import pytest
++from services.bridge_security import (BridgeSecurityError, H_RECIPIENT, H_REQUEST,
++    H_IDEMPOTENCY, H_PROTOCOL, H_SIGNATURE)
++from tests.bridge_fixtures import bridge_configuration, Response, intercept, assessment_wire
++from tests.test_signed_bridge_client import _client, _packet
++
++
++@pytest.mark.parametrize('mutation', ['bytes','recipient','request','logical_key',
++                                     'protocol','signature','nested','schema'])
++def test_response_mutations_are_not_accepted(tmp_path, monkeypatch, mutation):
++    packet = _packet()
++    response = Response(packet)
++    if mutation == 'bytes': response._raw += b' '
++    elif mutation == 'recipient': response.headers[H_RECIPIENT] = 'kernel'
++    elif mutation == 'request': response.headers[H_REQUEST] = '0' * 64
++    elif mutation == 'logical_key': response.headers[H_IDEMPOTENCY] = 'another-operation'
++    elif mutation == 'protocol': response.headers[H_PROTOCOL] = '1'
++    elif mutation == 'signature': response.headers.pop(H_SIGNATURE)
++    elif mutation == 'nested':
++        response = Response(packet, assessment_wire(packet, cases=[{'case':'bear','stance':'against',
++            'severity':'high','argument':{'invented':'object'}}]))
++    else:
++        response = Response(packet, assessment_wire(packet, schema_version='99'))
++    intercept(monkeypatch, lambda *args: response)
++    client = _client(tmp_path)
++    try:
++        with pytest.raises((BridgeSecurityError, ValueError)): client.evaluate(packet)
++    finally:
++        client.close()
++
++
++def test_response_replay_survives_consumer_reconstruction(tmp_path, monkeypatch):
++    packet = _packet()
++    response = Response(packet)
++    intercept(monkeypatch, lambda *args: response)
++    client = _client(tmp_path)
++    result = client.evaluate(packet)
++    assert result.id == 'assessment-' + packet.id
++    assert result.created_at.isoformat() == '2026-09-08T00:00:00+00:00'
++    client.close()
++    client = _client(tmp_path)
++    try:
++        with pytest.raises(BridgeSecurityError, match='replay'): client.evaluate(packet)
++    finally:
++        client.close()
++
++
++@pytest.mark.parametrize('missing', ['WEALTHMACHINE_SIGNING_KEY', 'WEALTHMACHINE_INTAKE_TOKEN',
++    'UNIIMENTE_BRIDGE_STATE_PATH', 'UNIIMENTE_CONSTITUTION_HASH', 'UNIIMENTE_LEGAL_PRINCIPAL'])
++def test_missing_config_prevents_dispatch(tmp_path, monkeypatch, missing):
++    monkeypatch.delenv(missing)
++    intercept(monkeypatch, lambda *args: pytest.fail('dispatch before admission'))
++    client = _client(tmp_path)
++    try:
++        with pytest.raises((BridgeSecurityError, ValueError)): client.evaluate(_packet())
++    finally:
++        client.close()
++
++
++def test_redirects_cannot_carry_credentials():
++    from services.wealthmachine_client import _NoRedirect
++    with pytest.raises(BridgeSecurityError, match='redirect'):
++        _NoRedirect().redirect_request(None, None, 302, '', {}, 'https://external.invalid')
+diff --git a/tests/test_signed_bridge_client.py b/tests/test_signed_bridge_client.py
+index b1f76ae..e9efda1 100644
+--- a/tests/test_signed_bridge_client.py
++++ b/tests/test_signed_bridge_client.py
+@@ -18,7 +18,9 @@ from services.ledger import DecisionLedger
+ from services.venture_protocol import SCHEMA_VERSION
+ from services.wealthmachine_client import CircuitOpenError, WealthMachineClient
+ 
+-KEY = "test-signing-key"
++from tests.bridge_fixtures import bridge_configuration, Response, assessment_wire, intercept
++
++KEY = "synthetic-shared-bridge-key"
+ 
+ 
+ class _FakeResponse:
+@@ -47,26 +49,20 @@ def _client(tmp_path):
+ 
+ 
+ def _packet():
+-    return OpportunityPacket(evidence=["e1"], possible_offer="guide",
++    return OpportunityPacket(source='synthetic', observed_pain='retained observation', evidence=["e1"], possible_offer="guide",
+                              monetization_paths=["paid guide"])
+ 
+ 
+ def _assessment_wire(packet):
+-    return {
+-        "opportunity_packet_id": packet.id, "go_no_go": "defer",
+-        "opportunity_score": 0.5, "requires_human_approval": True,
+-    }
++    return assessment_wire(packet)
+ 
+ 
+ def _signed_response(packet):
+-    body = json.dumps(_assessment_wire(packet)).encode()
+-    headers = build_headers(body, identity="wealthmachine",
+-                            schema_version=SCHEMA_VERSION)
+-    return _FakeResponse(_assessment_wire(packet), headers)
++    return Response(packet)
+ 
+ 
+ def test_outbound_requests_are_signed(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wm.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.setenv("WEALTHMACHINE_SIGNING_KEY", KEY)
+     client = _client(tmp_path)
+     packet = _packet()
+@@ -77,7 +73,7 @@ def test_outbound_requests_are_signed(tmp_path, monkeypatch):
+         seen["body"] = request.data
+         return _signed_response(packet)
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
++    intercept(monkeypatch, fake_urlopen)
+     assessment = client.evaluate(packet)
+ 
+     headers = seen["headers"]
+@@ -87,13 +83,13 @@ def test_outbound_requests_are_signed(tmp_path, monkeypatch):
+     # The signature verifies against the exact bytes that were sent.
+     expected = sign(KEY, "daleobanks", headers[H_TIMESTAMP.lower()],
+                     headers[H_NONCE.lower()], packet.id, SCHEMA_VERSION,
+-                    seen["body"])
++                    seen["body"], trace_id=packet.id)
+     assert headers[H_SIGNATURE.lower()] == expected
+     assert assessment.requires_human_approval is True
+ 
+ 
+ def test_forged_response_is_rejected(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wm.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.setenv("WEALTHMACHINE_SIGNING_KEY", KEY)
+     client = _client(tmp_path)
+     packet = _packet()
+@@ -105,35 +101,34 @@ def test_forged_response_is_rejected(tmp_path, monkeypatch):
+         headers[H_SIGNATURE] = "0" * 64  # forged
+         return _FakeResponse(_assessment_wire(packet), headers)
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
++    intercept(monkeypatch, fake_urlopen)
+     with pytest.raises(Exception):
+         client.evaluate(packet)
+ 
+ 
+ def test_replayed_response_nonce_is_rejected(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wm.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.setenv("WEALTHMACHINE_SIGNING_KEY", KEY)
+     client = _client(tmp_path)
+     packet = _packet()
+     canned = _signed_response(packet)  # one signed response, served twice
+ 
+-    monkeypatch.setattr("urllib.request.urlopen",
+-                        lambda request, timeout=None: canned)
++    intercept(monkeypatch, lambda request, timeout=None: canned)
+     client.evaluate(packet)  # first use of the nonce: fine
+     with pytest.raises(Exception):
+         client.evaluate(packet)  # replayed nonce: refused
+ 
+ 
+ def test_circuit_breaker_opens_and_fails_closed(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wm.local")
+-    monkeypatch.delenv("WEALTHMACHINE_SIGNING_KEY", raising=False)
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
++    monkeypatch.setenv("WEALTHMACHINE_SIGNING_KEY", KEY)
+     client = _client(tmp_path)
+     packet = _packet()
+ 
+     def failing_urlopen(request, timeout=None):
+         raise ConnectionError("service unavailable")
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", failing_urlopen)
++    intercept(monkeypatch, failing_urlopen)
+     for _ in range(client.FAILURE_THRESHOLD):
+         with pytest.raises(ConnectionError):
+             client.evaluate(packet)
+@@ -142,14 +137,14 @@ def test_circuit_breaker_opens_and_fails_closed(tmp_path, monkeypatch):
+     def must_not_be_called(request, timeout=None):  # pragma: no cover
+         raise AssertionError("network call while circuit open")
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", must_not_be_called)
++    intercept(monkeypatch, must_not_be_called)
+     with pytest.raises(CircuitOpenError):
+         client.evaluate(packet)
+     assert client.ledger.replay("bridge_circuit_opened")
+ 
+ 
+-def test_unsigned_local_mode_still_works(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wm.local")
++def test_unsigned_local_mode_is_refused(tmp_path, monkeypatch):
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.delenv("WEALTHMACHINE_SIGNING_KEY", raising=False)
+     client = _client(tmp_path)
+     packet = _packet()
+@@ -158,5 +153,5 @@ def test_unsigned_local_mode_still_works(tmp_path, monkeypatch):
+         "urllib.request.urlopen",
+         lambda request, timeout=None: _FakeResponse(_assessment_wire(packet)),
+     )
+-    assessment = client.evaluate(packet)
+-    assert assessment.go_no_go == "defer"
++    with pytest.raises(PermissionError, match="signing configuration"):
++        client.evaluate(packet)
+diff --git a/tests/test_wealthmachine_http.py b/tests/test_wealthmachine_http.py
+index de727fb..67fae74 100644
+--- a/tests/test_wealthmachine_http.py
++++ b/tests/test_wealthmachine_http.py
+@@ -3,6 +3,8 @@ target the intake endpoint WealthMachineIntelligence exposes, present the
+ optional shared token, validate the returned wire payload, and never let an
+ assessment arrive without requires_human_approval."""
+ 
++from tests.bridge_fixtures import bridge_configuration, Response, intercept
++
+ import io
+ import json
+ 
+@@ -42,6 +44,8 @@ def _client(tmp_path):
+ 
+ def _assessment_wire(packet, **overrides):
+     wire = {
++        "id": "assessment-" + packet.id,
++        "created_at": "2026-09-08T00:00:00Z", "schema_version": "1.1",
+         "opportunity_packet_id": packet.id,
+         "go_no_go": "go",
+         "opportunity_score": 0.7,
+@@ -62,7 +66,7 @@ def _assessment_wire(packet, **overrides):
+ 
+ 
+ def test_http_mode_posts_to_intake_with_token(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wealthmachine.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.setenv("WEALTHMACHINE_INTAKE_TOKEN", "sekrit")
+     packet = _packet()
+     seen = {}
+@@ -71,14 +75,14 @@ def test_http_mode_posts_to_intake_with_token(tmp_path, monkeypatch):
+         seen["url"] = request.full_url
+         seen["auth"] = request.get_header("Authorization")
+         seen["body"] = json.loads(request.data.decode())
+-        return _FakeResponse(_assessment_wire(packet))
++        return Response(packet, _assessment_wire(packet))
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
++    intercept(monkeypatch, fake_urlopen)
+     client = _client(tmp_path)
+     assert client.mode == "http"
+ 
+     assessment = client.evaluate(packet)
+-    assert seen["url"] == "http://wealthmachine.local/api/opportunities/intake"
++    assert seen["url"] == "http://localhost/api/opportunities/intake"
+     assert seen["auth"] == "Bearer sekrit"
+     assert seen["body"]["id"] == packet.id  # packet wire payload round-trips
+     from services.venture_protocol import SCHEMA_VERSION
+@@ -87,41 +91,40 @@ def test_http_mode_posts_to_intake_with_token(tmp_path, monkeypatch):
+     assert assessment.opportunity_packet_id == packet.id
+ 
+ 
+-def test_http_mode_omits_auth_header_without_token(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wealthmachine.local")
++def test_http_mode_refuses_without_token(tmp_path, monkeypatch):
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     monkeypatch.delenv("WEALTHMACHINE_INTAKE_TOKEN", raising=False)
+     packet = _packet()
+     seen = {}
+ 
+     def fake_urlopen(request, timeout=None):
+         seen["auth"] = request.get_header("Authorization")
+-        return _FakeResponse(_assessment_wire(packet))
++        return Response(packet, _assessment_wire(packet))
+ 
+-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+-    _client(tmp_path).evaluate(packet)
+-    assert seen["auth"] is None
++    intercept(monkeypatch, fake_urlopen)
++    with pytest.raises(PermissionError, match="JWT"):
++        _client(tmp_path).evaluate(packet)
++    assert seen == {}
+ 
+ 
+ def test_http_mode_forces_human_approval(tmp_path, monkeypatch):
+     """Even if the remote engine claimed otherwise, approval stays required."""
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wealthmachine.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     packet = _packet()
+-    monkeypatch.setattr(
+-        "urllib.request.urlopen",
+-        lambda request, timeout=None: _FakeResponse(
++    intercept(monkeypatch,
++        lambda request, timeout=None: Response(packet,
+             _assessment_wire(packet, requires_human_approval=False)
+         ),
+     )
+-    assessment = _client(tmp_path).evaluate(packet)
+-    assert assessment.requires_human_approval is True
++    with pytest.raises(ValueError):
++        _client(tmp_path).evaluate(packet)
+ 
+ 
+ def test_http_mode_rejects_contract_violations(tmp_path, monkeypatch):
+-    monkeypatch.setenv("WEALTHMACHINE_URL", "http://wealthmachine.local")
++    monkeypatch.setenv("WEALTHMACHINE_URL", "http://localhost")
+     packet = _packet()
+-    monkeypatch.setattr(
+-        "urllib.request.urlopen",
+-        lambda request, timeout=None: _FakeResponse(
++    intercept(monkeypatch,
++        lambda request, timeout=None: Response(packet,
+             _assessment_wire(packet, go_no_go="full_send")
+         ),
+     )
+diff --git a/tests/test_x_client.py b/tests/test_x_client.py
+index 357b2f0..a41755a 100644
+--- a/tests/test_x_client.py
++++ b/tests/test_x_client.py
+@@ -35,6 +35,22 @@ sys.modules.setdefault(
+ from services.x_client import XClient
+ 
+ 
++@pytest.fixture(autouse=True)
++def isolated_client_configuration(monkeypatch):
++    """These unit cases replace the client explicitly; initialization needs no service.
++
++    Other tests edit the shared Config object. Restore all mutations here and
++    ensure synthetic settings cannot accidentally trigger Tweepy's get_me call.
++    OS-level network isolation is supplied independently by offline_test.py.
++    """
++    from config import get_config
++    config = get_config()
++    for name in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET", "X_BEARER_TOKEN"):
++        monkeypatch.setattr(config, name, "")
++    for name in ("LIVE", "ENABLE_DMS", "ENABLE_MEDIA"):
++        monkeypatch.setattr(config, name, getattr(config, name))
++
++
+ def _bind_async(method, instance):
+     return types.MethodType(method, instance)
+ 

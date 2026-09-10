@@ -1,0 +1,156 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "--collect-only", "-q"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+WealthMachineIntelligenceEnhanced/tests/test_health.py::test_health
+src/test_workflow.py::test_workflow
+tests/test_adversarial_underwriting.py::test_strong_opportunity_still_receives_bear_analysis
+tests/test_adversarial_underwriting.py::test_sybil_shaped_evidence_gets_fraud_case_and_caps_verdict
+tests/test_adversarial_underwriting.py::test_severe_unresolved_helper
+tests/test_adversarial_underwriting.py::test_assessment_remains_non_executable_with_cases
+tests/test_api_health.py::test_health_endpoint
+tests/test_auth_boundary.py::test_anonymous_and_literal_identities_rejected[None]
+tests/test_auth_boundary.py::test_anonymous_and_literal_identities_rejected[demo]
+tests/test_auth_boundary.py::test_anonymous_and_literal_identities_rejected[demo_token]
+tests/test_auth_boundary.py::test_anonymous_and_literal_identities_rejected[arbitrary-text]
+tests/test_auth_boundary.py::test_anonymous_and_literal_identities_rejected[stub-token]
+tests/test_auth_boundary.py::test_signed_identity_is_not_a_demo_lookup
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims0]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims1]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims2]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims3]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims4]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims5]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims6]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims7]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims8]
+tests/test_auth_boundary.py::test_bad_claims_rejected[claims9]
+tests/test_auth_boundary.py::test_required_claims[exp]
+tests/test_auth_boundary.py::test_required_claims[sub]
+tests/test_auth_boundary.py::test_required_claims[iss]
+tests/test_auth_boundary.py::test_required_claims[aud]
+tests/test_auth_boundary.py::test_wrong_algorithm_and_key
+tests/test_auth_boundary.py::test_unsigned_algorithm_rejected
+tests/test_auth_boundary.py::test_unsafe_configuration_rejected[]
+tests/test_auth_boundary.py::test_unsafe_configuration_rejected[change-me]
+tests/test_auth_boundary.py::test_unsafe_configuration_rejected[your-secret-key-change-in-production]
+tests/test_auth_boundary.py::test_unsafe_configuration_rejected[                                        ]
+tests/test_auth_boundary.py::test_transport_refuses_missing_key_and_explicit_unsigned
+tests/test_auth_boundary.py::test_missing_configuration_fails_closed[JWT_SECRET_KEY]
+tests/test_auth_boundary.py::test_missing_configuration_fails_closed[JWT_ISSUER]
+tests/test_auth_boundary.py::test_missing_configuration_fails_closed[JWT_AUDIENCE]
+tests/test_auth_boundary.py::test_protected_routes_reject_literals[/api/opportunities/intake]
+tests/test_auth_boundary.py::test_protected_routes_reject_literals[/api/ventures/evaluate]
+tests/test_auth_boundary.py::test_protected_routes_reject_literals[/api/v1/ventures/]
+tests/test_auth_boundary.py::test_root_is_same_application
+tests/test_auth_boundary.py::test_stub_and_demo_issuer_not_importable
+tests/test_auth_boundary.py::test_missing_transport_key_fails_even_with_dev_flags
+tests/test_auth_boundary.py::test_missing_jose_never_loads_demo
+tests/test_auth_boundary.py::test_container_source_allowlist
+tests/test_business_loop.py::TestLoopContract::test_only_go_proceeds
+tests/test_business_loop.py::TestLoopContract::test_irreversible_offer_refused
+tests/test_business_loop.py::TestLoopContract::test_human_gate_blocks_unratified_offers
+tests/test_business_loop.py::TestLoopContract::test_full_loop_settles_and_allocates
+tests/test_business_loop.py::TestLoopContract::test_uniimente_never_operator
+tests/test_business_loop.py::TestLoopContract::test_invalid_policy_refused_at_construction
+tests/test_decision_engine.py::test_operator_evaluation
+tests/test_decision_engine.py::test_condition_node_leaf
+tests/test_decision_engine.py::test_condition_node_nested_and_or
+tests/test_decision_engine.py::test_decision_engine_rule_trigger
+tests/test_influencer_company.py::TestPersonaContract::test_persona_requires_disclosure_and_topics
+tests/test_influencer_company.py::TestPersonaContract::test_uniimente_never_operator
+tests/test_influencer_company.py::TestCompliance::test_missing_disclosure_refused
+tests/test_influencer_company.py::TestCompliance::test_dark_patterns_refused
+tests/test_influencer_company.py::TestCompliance::test_finance_hardened_educational
+tests/test_influencer_company.py::TestCompliance::test_legal_topic_escalates_never_publishes
+tests/test_influencer_company.py::TestCompliance::test_ready_package_never_self_executes
+tests/test_influencer_company.py::TestCompliance::test_offbrand_refusals_accumulate_to_pause
+tests/test_influencer_company.py::TestKillCriteria::test_complaint_rate_pauses_immediately
+tests/test_influencer_company.py::TestKillCriteria::test_low_quality_pauses_for_review
+tests/test_influencer_company.py::TestKillCriteria::test_healthy_engagement_keeps_active
+tests/test_kernel_contract_parity.py::TestPinnedSchemas::test_vendored_schemas_match_pins
+tests/test_kernel_contract_parity.py::TestPinnedSchemas::test_vendored_schemas_are_kernel_v11
+tests/test_kernel_contract_parity.py::TestCanonicalInstancesValidate::test_kernel_packet_validates_against_vendored_schema
+tests/test_kernel_contract_parity.py::TestCanonicalInstancesValidate::test_kernel_assessment_validates_against_vendored_schema
+tests/test_kernel_contract_parity.py::TestCanonicalInstancesValidate::test_constitutional_constants_enforced
+tests/test_kernel_contract_parity.py::TestAdapter::test_kernel_packet_to_wire_passes_dialect_validator
+tests/test_kernel_contract_parity.py::TestAdapter::test_wire_to_kernel_refuses_without_enrichment
+tests/test_kernel_contract_parity.py::TestAdapter::test_wire_to_kernel_roundtrip_preserves_semantics
+tests/test_kernel_contract_parity.py::TestAdapter::test_assessment_translation_preserves_constitution
+tests/test_network_my_networth.py::test_portfolio_run_creates_reports
+tests/test_network_my_networth.py::test_custom_rule_triggers_decision_outcome
+tests/test_opportunity_intake.py::test_packet_validation_normalizes_fire_packet
+tests/test_opportunity_intake.py::test_packet_validation_rejects_contract_violations
+tests/test_opportunity_intake.py::test_injection_shaped_text_is_data_not_instruction
+tests/test_opportunity_intake.py::test_payload_adaptation_maps_packet_fields
+tests/test_opportunity_intake.py::test_fire_packet_returns_full_assessment
+tests/test_opportunity_intake.py::test_strong_packet_goes
+tests/test_opportunity_intake.py::test_weak_packet_defers
+tests/test_opportunity_intake.py::test_legal_risk_packet_is_killed_and_escalated
+tests/test_opportunity_intake.py::test_no_evidence_needs_more_evidence
+tests/test_opportunity_intake.py::test_requires_human_approval_cannot_be_disabled
+tests/test_opportunity_intake.py::test_assessment_wire_rejects_self_executing_assessment
+tests/test_opportunity_intake.py::test_intake_endpoint_round_trip
+tests/test_opportunity_intake.py::test_evaluate_endpoint_alias
+tests/test_opportunity_intake.py::test_intake_endpoint_rejects_bad_packet
+tests/test_opportunity_intake.py::test_intake_endpoint_missing_assessment_404s
+tests/test_opportunity_intake.py::test_static_intake_token_cannot_replace_jwt
+tests/test_orchestrator_loops.py::test_income_stream_cycle_generates_cohesive_plan
+tests/test_orchestrator_loops.py::test_orchestrator_runs_sync_event_loop
+tests/test_packaged_startup.py::test_packaged_startup_refuses_missing_config[JWT_SECRET_KEY]
+tests/test_packaged_startup.py::test_packaged_startup_refuses_missing_config[JWT_ISSUER]
+tests/test_packaged_startup.py::test_packaged_startup_refuses_missing_config[JWT_AUDIENCE]
+tests/test_packaged_startup.py::test_packaged_startup_refuses_missing_config[WEALTHMACHINE_SIGNING_KEY]
+tests/test_packaged_startup.py::test_exact_packaged_command_protected_bridge
+tests/test_phase_management.py::test_phase_manager_promotes_and_regresses_based_on_metrics
+tests/test_phase_management.py::test_custom_phase_gate_can_lower_thresholds
+tests/test_rabbit_hole.py::TestNodeContract::test_undeclared_node_refused
+tests/test_rabbit_hole.py::TestNodeContract::test_dark_pattern_node_refused
+tests/test_rabbit_hole.py::TestProgression::test_entry_recommends_surface
+tests/test_rabbit_hole.py::TestProgression::test_progression_is_earned_by_consumption
+tests/test_rabbit_hole.py::TestProgression::test_every_recommendation_carries_exit_ramp
+tests/test_rabbit_hole.py::TestProgression::test_frontier_exhaustion_recommends_exit
+tests/test_rabbit_hole.py::TestProgression::test_session_ceiling_forces_exit
+tests/test_shared_consumer_integration.py::test_real_producer_consumer_restart_and_negative_controls
+tests/test_signed_bridge.py::test_valid_signed_request_succeeds_and_response_is_signed
+tests/test_signed_bridge.py::test_invalid_signature_fails_closed
+tests/test_signed_bridge.py::test_unknown_service_identity_fails_closed
+tests/test_signed_bridge.py::test_expired_timestamp_fails_closed
+tests/test_signed_bridge.py::test_reused_nonce_is_replay_rejected
+tests/test_signed_bridge.py::test_duplicate_idempotency_key_returns_same_assessment
+tests/test_signed_bridge.py::test_schema_downgrade_is_rejected
+tests/test_signed_bridge.py::test_unsigned_request_rejected_when_key_configured
+tests/test_signed_bridge.py::test_unsigned_rejected_even_in_local_mode
+tests/test_signed_bridge.py::test_malformed_body_is_422_not_500
+tests/test_signed_bridge.py::test_claim_persistence_failure_is_explicit_and_no_work_runs[False]
+tests/test_signed_bridge.py::test_claim_persistence_failure_is_explicit_and_no_work_runs[True]
+tests/test_treasury.py::TestPolicyContract::test_regenerative_floor_enforced
+tests/test_treasury.py::TestPolicyContract::test_shares_above_one_refused
+tests/test_treasury.py::TestPolicyContract::test_negative_revenue_refused
+tests/test_treasury.py::TestWaterfall::test_priority_order_and_full_allocation
+tests/test_treasury.py::TestWaterfall::test_rounding_remainder_goes_to_reserve_never_founder
+tests/test_treasury.py::TestWaterfall::test_tiny_revenue_funds_reserve_first
+tests/test_treasury.py::TestWaterfall::test_plans_never_execute
+
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+src/api/routes/analytics.py:249
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/api/routes/analytics.py:249: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    metric: str = Query("revenue", regex="^(revenue|growth|roi|automation)$"),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+129 tests collected in 1.14s

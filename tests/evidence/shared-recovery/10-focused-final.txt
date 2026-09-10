@@ -1,0 +1,9 @@
+Scope: SR-001 isolated synthetic validation; not deployment or institutional closure.
+Working tree based on bcbb1ab4a0c42cda4a97aec42a11125753962762; implementation content is this commit's authored source (see final subject binding).
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python -m pytest -q tests/unit/test_shared_recovery.py tests/unit/test_shared_durable_boundary.py tests/unit/test_events.py tests/unit/test_provenance.py tests/unit/test_consequence_gate.py tests/unit/test_foundry.py tests/unit/test_embassy.py tests/unit/test_evolution.py tests/integration/test_phase_zero_connection.py --tb=short
+Exit code: 0
+
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed in 2.21s
+

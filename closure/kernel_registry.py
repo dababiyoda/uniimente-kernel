@@ -142,16 +142,21 @@ def build_registry() -> ClosureRegistry:
             evidence_refs=["sha256:" + "a" * 64], estimated_cost_usd=0.0,
             requested_capability="draft.publish", expected_outcome="draft queued")
 
+    def _synthetic_gate_run(gate, proposal, *, executor):
+        # Closure probe only: explicit fixture grant before Gate entry.
+        grant = gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+        return gate.run(proposal, executor=executor, standing_grant=grant)
+
     def gate_technical():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
+        rec = _synthetic_gate_run(gate, _proposal(actor.passport_id),
                        executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
         return rec.state == "recorded" and rec.receipt_hash is not None, \
             f"full pipeline to recorded; receipt {str(rec.receipt_hash)[:24]}..."
 
     def gate_authority():
         gate, passports, ledger, actor = _gate_stack()
-        rec = gate.run(_proposal(actor.passport_id),
+        rec = _synthetic_gate_run(gate, _proposal(actor.passport_id),
                        executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
         # tamper: revoke the grant after issue, replay must fail closed
         from policy.engine import Proposal
@@ -164,7 +169,7 @@ def build_registry() -> ClosureRegistry:
 
     def gate_evidence():
         gate, passports, ledger, actor = _gate_stack()
-        gate.run(_proposal(actor.passport_id),
+        _synthetic_gate_run(gate, _proposal(actor.passport_id),
                  executor=lambda p: {"observed_outcome": "draft queued", "result_class": "positive"})
         ok, msg = ledger.verify_chain()
         witnesses = len(ledger.by_type("witness")) == 1
@@ -186,9 +191,9 @@ def build_registry() -> ClosureRegistry:
         # executor explosion -> failed, budget released, incident recorded, nothing concealed
         def boom(p):
             raise RuntimeError("adapter exploded")
-        rec = gate.run(_proposal(actor.passport_id), executor=boom)
+        rec = _synthetic_gate_run(gate, _proposal(actor.passport_id), executor=boom)
         ok, msg = ledger.verify_chain()
-        return rec.state == "failed" and rec.incident is not None and ok, \
+        return rec.state == "reconciliation_required" and rec.incident is not None and ok, \
             "failure preserved on-chain (negative evidence kept); fails toward silence, not external action"
 
     reg.register(ModuleClosures("consequence_gate", {
@@ -219,6 +224,7 @@ def build_registry() -> ClosureRegistry:
             l1 = EvidenceLedger("sha256:" + "0" * 64, path=path)
             l1.append("event", {"x": 1})
             head = l1.head
+            l1.close()
             l2 = EvidenceLedger("sha256:" + "0" * 64, path=path)  # reload + reverify
             return l2.head == head and l2.verify_chain()[0], "persisted ledger reloads and re-verifies"
 
@@ -367,7 +373,7 @@ def build_registry() -> ClosureRegistry:
             raise RuntimeError("adapter exploded")
         steps = [WorkflowStep(name="s1", run=lambda s: {"s1": 1},
                               compensate=lambda s: undone.append("s1")),
-                 WorkflowStep(name="s2", run=boom, max_retries=0)]
+                 WorkflowStep(name="s2", run=boom, max_retries=0, retry_safe=True)]
         wf = durable_workflow(spine, "wf-fail", steps, actor="alfonso",
                              legal_principal="alfonso_lopez")
         try:
@@ -786,7 +792,9 @@ def build_registry() -> ClosureRegistry:
         embassy, _, _ = _embassy_stack()
         p = embassy.present(foreign_id="mcp://a", origin="mcp",
                             declared_capabilities=["draft.publish"])
-        rec = embassy.request(p.passport_id, _guest_proposal(p.passport_id),
+        proposal = _guest_proposal(p.passport_id)
+        grant = embassy.gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+        rec = embassy.request(p.passport_id, proposal, standing_grant=grant,
                               executor=lambda pr: {"observed_outcome": "queued",
                                                    "result_class": "positive"})
         return rec.state == "recorded", "guest admitted; read-only request flows through the gate"

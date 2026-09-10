@@ -51,7 +51,7 @@ class AgentEmbassy:
                                "ceiling": GUEST_CEILING, "ttl_s": ttl})
         return passport
 
-    def request(self, passport_id: str, proposal, *, executor):
+    def request(self, passport_id: str, proposal, *, executor, standing_grant=None):
         """Route a guest request through the Consequence Gate — or refuse early."""
         ok, _ = self.passports.verify(passport_id)
         if not ok:
@@ -66,7 +66,9 @@ class AgentEmbassy:
             self._log("request_refused", {"passport_id": passport_id,
                                           "reason": "guests carry zero budget"})
             raise EmbassyRefused("guests carry zero budget; cost-bearing requests refused")
-        rec = self.gate.run(proposal, executor=executor)
+        if proposal.actor != passport_id:
+            raise EmbassyRefused("guest/proposal identity mismatch")
+        rec = self.gate.run(proposal, executor=executor, standing_grant=standing_grant)
         self._log("request_routed", {"passport_id": passport_id, "state": rec.state,
                                      "action_id": rec.action_id})
         return rec

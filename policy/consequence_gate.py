@@ -68,7 +68,8 @@ class ActionRecord:
 
 class BudgetOffice:
     """Budget reservations. Bounded authority over money: reservations are
-    explicit, per-grant, and released on any failure path."""
+    explicit and per-grant. Uncertain effects retain their reservation pending
+    reconciliation; definite pre-execution refusals can release it."""
 
     def __init__(self):
         self._reservations: dict[str, dict] = {}
@@ -216,6 +217,23 @@ class ConsequenceGate:
         if not ok:
             return self._refuse(rec, "refused", [f"identity: {why}"])
 
+        # A supplied object is not authority: resolve it against the existing
+        # issuer, validate its contract and bind actor/objective/target. No new
+        # issuer, credentials or founder authentication is introduced here.
+        if standing_grant is not None:
+            from adapters.contract_validation import validate_contract
+            try:
+                validate_contract(standing_grant, 'capability-grant')
+                managed = self.grants.get(standing_grant['grant_id'])
+                if managed is None or managed != standing_grant:
+                    raise ValueError('unregistered or altered grant')
+                if (managed['grantee'] != proposal.actor
+                        or managed['objective'] != proposal.objective
+                        or proposal.target not in managed.get('counterparties', [])):
+                    raise ValueError('grant actor/objective/target mismatch')
+            except (ValueError, KeyError, TypeError) as exc:
+                return self._refuse(rec, 'refused', [f'grant: {exc}'])
+
         # 3-5. legal principal + evidence + policy -----------------------
         eval_grant = self._eval_view(standing_grant) if standing_grant else None
         decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant, thresholds=self.evidence_thresholds)
@@ -236,8 +254,14 @@ class ConsequenceGate:
                 return self._refuse(rec, "refused", decision.reasons)
 
         # 7. capability ----------------------------------------------------
-        grant = standing_grant or self.grants.issue_single_action(
-            proposal=proposal, policy_version=self.policy_version)
+        # Extracted from #87: an external proposal cannot acquire its own
+        # missing authority merely by reaching this line. Unknown classes deny.
+        # A caller-supplied low consequence label cannot make an arbitrary
+        # injected executor harmless. The Gate consumes grants; it never fills
+        # in a missing one. Policy may issue bounded internal grants upstream.
+        if standing_grant is None:
+            return self._refuse(rec, 'refused', ['executor admission requires pre-existing grant'])
+        grant = standing_grant
         rec.grant_id = grant["grant_id"]
         self._transition(rec, "granted", {"grant_id": grant["grant_id"]})
 
@@ -272,13 +296,24 @@ class ConsequenceGate:
             return self._refuse(rec, state, reasons)
 
         # 11. execution --------------------------------------------------------
+        # Reserve a durable dispatch identity BEFORE invoking anything. An
+        # exception can mean an effect occurred: retain reservation and claim.
+        with self.ledger._lock:
+            claims = self.ledger.by_type('grant_dispatch')
+            if any(r.payload['proposal_id'] == proposal.proposal_id or
+                   r.payload['grant_id'] == grant['grant_id'] for r in claims):
+                self.budget.release(reservation['reservation_id'])
+                return self._refuse(rec, 'reconciliation_required', ['dispatch already claimed; no blind retry'])
+            self.ledger.append('grant_dispatch', {'proposal_id': proposal.proposal_id,
+                'grant_id': grant['grant_id'], 'witness_id': witness.witness_id,
+                'effect_digest': sha256_obj({'payload': proposal.payload, 'target': proposal.target,
+                                            'action_class': proposal.action_class})})
         self._transition(rec, "executing", {"witness_id": witness.witness_id})
         try:
             result = executor(proposal)
         except Exception as e:  # fail toward silence + preservation
-            self.budget.release(reservation["reservation_id"])
             rec.incident = f"executor_exception:{type(e).__name__}"
-            return self._refuse(rec, "failed", [f"executor raised {type(e).__name__}: {e}"])
+            return self._refuse(rec, "reconciliation_required", [f"executor raised {type(e).__name__}: {e}; outcome unknown"])
         self.budget.commit(reservation["reservation_id"])
         if self.grants.get_meta(grant["grant_id"]).get("single_use"):
             self.grants.mark_used(grant["grant_id"])
@@ -326,7 +361,9 @@ class ConsequenceGate:
             reasons.append("witness signature invalid")
         # grant must still be valid, fresh, unrevoked, unused, and bound to this effect
         managed = self.grants.get(grant["grant_id"])
-        g = managed or grant
+        if managed is None or managed != grant:
+            return 'refused', ['grant missing or altered at commit']
+        g = managed
         meta = self.grants.get_meta(g["grant_id"])
         if g.get("revoked"):
             reasons.append("revoked grant at commit")

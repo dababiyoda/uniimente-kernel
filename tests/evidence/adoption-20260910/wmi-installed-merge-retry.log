@@ -1,0 +1,18 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "pytest", "-q", "tests/test_installed_offline_composition.py"]
+/workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51
+  /workspace/scratch/4c77bffec5be/.venv/lib/python3.12/site-packages/starlette/testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+src/database/models.py:13
+  /workspace/scratch/fa1437d21e0f/repos/wmi/src/database/models.py:13: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 2 warnings in 4.41s

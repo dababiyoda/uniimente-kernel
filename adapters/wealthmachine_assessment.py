@@ -16,10 +16,7 @@ Dest contract:    contracts/venture-assessment.schema.json
 """
 from __future__ import annotations
 
-import json
-import os
 import uuid
-from datetime import datetime, timezone
 
 from adapters.daleobanks_opportunity import (
     AdapterError,
@@ -27,18 +24,17 @@ from adapters.daleobanks_opportunity import (
     _uuid_for,
 )
 
-KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CANONICAL_CASE_FIELDS = ("bull", "bear", "fraud_manipulation", "incumbent_response",
                          "adoption_friction", "do_nothing", "opportunity_cost")
 SEVERE = "high"
 
 FIELD_MAPPING = {
-    "assessment_id": "id (regenerated as UUIDv5 when not already a UUID; minted if absent)",
+    "assessment_id": "id (required; deterministic namespace UUIDv5 if not already a UUID)",
     "packet_id": "opportunity_packet_id (UUIDv5-normalized with the packet adapter's rule)",
     "schema_version": "schema_version (pass-through; 1.1 default)",
     "assessed_by": "TRANSPORT identity -> spiffe id (never from payload)",
-    "assessed_at": "created_at (adapter timestamp if absent)",
+    "assessed_at": "created_at (original assessment time required; never translation time)",
     "verdict": "go_no_go",
     "opportunity_score": "opportunity_score (pass-through)",
     "adversarial_cases": "cases[] arguments keyed by case name; capping_cases = severe unresolved against-cases",
@@ -55,13 +51,11 @@ INFORMATION_LOST = (
 
 
 def _validate(payload: dict, schema_file: str, kind: str) -> None:
-    import jsonschema
-    with open(os.path.join(KERNEL_ROOT, "contracts", schema_file)) as f:
-        schema = json.load(f)
+    from adapters.contract_validation import validate_contract
     try:
-        jsonschema.validate(payload, schema)
-    except jsonschema.ValidationError as exc:
-        raise AdapterError(f"{kind} violates its contract: {exc.message}") from exc
+        validate_contract(payload, schema_file.removesuffix('.schema.json'))
+    except ValueError as exc:
+        raise AdapterError(f"{kind} violates its contract: {exc}") from exc
 
 
 def adapt(wire: dict, *, transport_identity: str,
@@ -96,6 +90,8 @@ def adapt(wire: dict, *, transport_identity: str,
                            "the adapter does not invent adversarial arguments")
 
     raw_id = wire.get("id") or ""
+    if not raw_id or not wire.get('created_at'):
+        raise AdapterError('source assessment id and observation time required')
     try:
         assessment_id = str(uuid.UUID(raw_id)) if raw_id else str(uuid.uuid4())
     except ValueError:
@@ -107,8 +103,7 @@ def adapt(wire: dict, *, transport_identity: str,
         "packet_id": _uuid_for(wire["opportunity_packet_id"]),
         "schema_version": wire.get("schema_version", "1.1"),
         "assessed_by": spiffe,
-        "assessed_at": wire.get("created_at")
-        or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "assessed_at": wire['created_at'],
         "verdict": wire["go_no_go"],
         "adversarial_cases": adversarial,
         "structured_reasons": list(wire.get("reasons", [])),
@@ -121,3 +116,14 @@ def adapt(wire: dict, *, transport_identity: str,
         canonical["evidence_state"] = evidence_state
     _validate(canonical, "venture-assessment.schema.json", "adapted assessment")
     return canonical
+
+
+def to_wire(assessment):
+    from adapters.contract_validation import validate_contract
+    try:
+        validate_contract(assessment, 'venture-assessment')
+    except ValueError as exc:
+        raise AdapterError('constitutional assessment contract: ' + str(exc)) from exc
+    # Canonical prose has no stance/severity. Do not invent an appraisal from it:
+    # this lossy direction requires the original typed case metadata.
+    raise AdapterError('canonical-to-wire assessment lacks original stance/severity metadata')

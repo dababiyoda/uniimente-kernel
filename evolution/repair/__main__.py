@@ -9,14 +9,20 @@ from __future__ import annotations
 
 import json
 import sys
+import argparse
 
 from evolution.repair.harness import ReplacementExperiment
 from provenance.ledger import EvidenceLedger
+from evolution.repair.subjects import FROZEN, SR001
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--subject", choices=("frozen", "sr001"), default="frozen")
+    args = parser.parse_args()
     ledger = EvidenceLedger("sha256:package3-governed-functional-replacement")
-    record = ReplacementExperiment(ledger=ledger).run()
+    record = ReplacementExperiment(ledger=ledger,
+        subject=SR001 if args.subject == "sr001" else FROZEN).run()
 
     chain_ok, chain_msg = ledger.verify_chain()
     record["ledger"] = {"chain_verifies": chain_ok, "detail": chain_msg,

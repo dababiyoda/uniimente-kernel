@@ -46,6 +46,7 @@ def test_persistence_roundtrip(tmp_path):
     for i in range(3):
         l1.append("event", {"i": i})
     head = l1.head
+    l1.close()
     l2 = EvidenceLedger("sha256:" + "0" * 64, path=path)
     assert l2.head == head
     ok, _ = l2.verify_chain()
@@ -62,6 +63,7 @@ def test_corrupted_persistence_refuses_to_load(tmp_path):
     d["payload"]["x"] = 999
     lines[1] = json.dumps(d)
     path.write_text("\n".join(lines) + "\n")
+    l1.close()
     with pytest.raises(ValueError):
         EvidenceLedger("sha256:" + "0" * 64, path=str(path))
 

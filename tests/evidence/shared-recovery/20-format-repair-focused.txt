@@ -1,0 +1,12 @@
+Date: 2026-09-08 UTC. Synthetic isolated tests. Python 3.12.13.
+Subject: a84f408494bec219a397b67c9b831e80150f1c27 plus retained format repair diff.
+Dependency addition: rfc3339-validator 0.1.4, MIT license inspected locally.
+Command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/scratch/c1c408c41c36/tmp/wmi-test-deps python -m pytest -q tests/unit/test_required_schema_formats.py tests/unit/test_shared_recovery.py tests/unit/test_shared_durable_boundary.py tests/unit/test_events.py tests/unit/test_provenance.py tests/unit/test_consequence_gate.py tests/unit/test_foundry.py tests/unit/test_embassy.py tests/unit/test_evolution.py tests/integration/test_phase_zero_connection.py --tb=short
+Exit: 0
+138 passed in 1.47s
+
+Evidence 19 command: same PYTHONPATH and PYTHONDONTWRITEBYTECODE, python -m pytest -q --tb=short
+Exit: 1
+17 failed, 522 passed in 5.54s
+Raw failure details retained in 19-broader-format-repair.txt.
+No combined readiness score, CMC, VDM, authentication or production claim.

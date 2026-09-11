@@ -1,0 +1,16 @@
+{
+  "verifier": "v2",
+  "ts_utc": "2026-09-11T05:10:55.882349+00:00",
+  "command": "python3 verifier/v2/verify.py",
+  "exit_code": 1,
+  "passes": [
+    "V1: all v1 canonical artifacts present (45/45)",
+    "V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED",
+    "V5: 18 module READMEs declare the buildability standard"
+  ],
+  "skips": [],
+  "failures": [
+    "V2: pytest tests/unit: 47 failed, 544 passed in 11.31s",
+    "V3: open closures: {'business': ['technical'], 'consequence_gate': ['technical', 'authority', 'evidence', 'regenerative'], 'embassy': ['technical'], 'events': ['evidence', 'regenerative'], 'foundry': ['technical'], 'loom': ['technical', 'evidence', 'economic']}"
+  ]
+}

@@ -1,5 +1,14 @@
 # Founder Intent Ledger
 
+## Embodied GREG and developmental trajectory — 2026-09-11
+
+[INTENT-GREG-EMBODIED-2026-09-11](intent/INTENT-GREG-EMBODIED-2026-09-11.md)
+is the current product correction, subordinate to no older metaphorical framing.
+It preserves INTENT-0030 and the full business, human-workforce and economic/
+compute horizon. GREG-001 is partial proof, not that destination. Exact selected
+source, conflicts, scope and two-pass OPUS-2026-09-11 decision are linked there.
+No new runtime authority or activation is created.
+
 ## GREG bounded real mission — 2026-09-10
 
 The current chat directs one bounded real mission that continues after the

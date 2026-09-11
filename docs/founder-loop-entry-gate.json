@@ -9,7 +9,9 @@
     "goal_candidate": "Kernel #93 at 21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
     "appraisal_candidate": "Kernel #94 at 5e2f221b1911309db10de26246065553c1bdcbfc",
     "boundary_package": "4999acff1a69502c05af455fbccfca380cad18ee",
-    "greg_fixed_mission_decision": "docs/collaboration/GREG-ONE-MISSION-PROOF.md"
+    "greg_fixed_mission_decision": "docs/collaboration/GREG-ONE-MISSION-PROOF.md",
+    "embodied_product_decision": "docs/collaboration/OPUS-RECONCILIATION.md",
+    "founder_intent": "INTENT-GREG-EMBODIED-2026-09-11"
   },
   "entry_requirements": [
     {
@@ -125,7 +127,8 @@
     "resource_cost_per_verified_outcome": null,
     "reliability_of_continuous_pursuit": null,
     "real_customer_value": null,
-    "economic_surplus": null
+    "economic_surplus": null,
+    "verified_embodied_persistent_mission_closures": 0
   },
   "activation": {
     "service_started": false,
@@ -159,5 +162,16 @@
       "CMC or VDM closure"
     ],
     "main_loop_candidates": "#93/#97 and #94 remain unmerged experimental candidates with their existing migration gates; their frozen simulation contracts are not altered"
+  },
+  "morning_review": {
+    "state": "IMPLEMENTED_LOCAL_REPLAY_AND_INERT_NOTES",
+    "owner": "egregore/morning_review.py",
+    "evidence": "tests/unit/test_morning_review.py",
+    "authority": "unverified local review data; no approval or founder authentication semantics",
+    "does_not_satisfy": [
+      "P4 authenticated scoped mission update",
+      "P7 missing-capability attachment",
+      "native hardware mission closure"
+    ]
   }
 }

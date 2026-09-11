@@ -7,6 +7,13 @@ Applies to: UNIIMENTE Kernel, every organ, every Venture Cell, every coding/rese
 
 ## Governing correction
 
+Product effects are now clarified by
+`intent/INTENT-GREG-EMBODIED-2026-09-11.md`: owned computer as first practical
+body, GREG as primary interface, persistent work beyond UI closure, authorized
+computer use, morning review, functional capability genesis, eventual human/AI
+business teams and justified compute growth. macOS remains underneath. This
+extends the destination without changing the effect-not-metaphor rule below.
+
 Founder language describes the **desired effect, invariant, or capability** unless Alfonso explicitly says the implementation itself must be literal.
 
 Metaphors such as **egregore, organism, morphogenesis, organ, cell, tissue, immune system, metabolism, healing, regeneration, nervous system, embodiment, omniscience, Jarvis, self-improvement, or immortality are mechanism-discovery prompts and outcome specifications. They are not instructions to imitate biology, mythology, or science fiction in software.**

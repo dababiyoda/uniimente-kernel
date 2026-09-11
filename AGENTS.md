@@ -2,6 +2,13 @@
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
+Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
+GREG's interface belongs to a persistent operating layer above the founder's
+computer OS. Background mission continuity and authorized computer use are core
+requirements. Human collaborators and replaceable cloud mechanics remain valid.
+Advance one verified embodied mission before expanding infrastructure. Preserve
+history while choosing one active semantic owner; autonomy never creates authority.
+
 Before substantive work, read:
 
 1. `docs/FOUNDER_EFFECT_COMPILER.md`

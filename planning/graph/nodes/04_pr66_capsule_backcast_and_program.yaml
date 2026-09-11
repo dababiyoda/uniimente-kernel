@@ -1,0 +1,352 @@
+# PR #66 shadow state · SP-6 backcast · SP-7 implementation program.
+#
+# PR #66 receives ZERO writes. Its truth is reconstructed here from commits,
+# source, tests, CI and evidence artifacts, so that the PR description stops
+# being the place where the truth about PR #66 has to live. The description
+# becomes a human-readable projection that can be regenerated from this capsule.
+#
+# The proposed replacement body and disposition comment are stored INERT.
+# Applying either is a later, explicit founder action.
+
+nodes:
+  # -------------------------------------------------------- PR66 state capsule
+  - id: pr66.state_capsule
+    kind: pr_capsule
+    title: "PR #66 state capsule — SHA-bound reconstruction"
+    evidence_status: verified_by_execution
+    subject_head: a6f14d344f2ca073fd334a885e5c2bdb921d082e
+    subject_base: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+    branch: claude/uniimente-repo-audit-jpytcy
+    captured_at: "2026-08-08"
+    state: {open: true, draft: true, merged: false, mergeable_state: clean}
+    scale: {commits: 133, changed_files: 240, additions: 145317, deletions: 2, comments: 9}
+    ci: {checks: 5, conclusion: all success, run: 31244720948}
+    suite_local: "924 passed · 1 skipped · 24 xfailed · 0 failed"
+    suite_ci_merge_ref: "922 passed · 3 skipped · 24 xfailed · 0 failed"
+    gates: {F: UNMEASURED, G: UNMEASURED, R8: NOT_RUN, r8_eligibility: NOT_ELIGIBLE}
+    body_claims_classified:
+      - claim: "Head 15623a9"
+        status: STALE
+        actual: "a6f14d3 — one commit further (RA-2)"
+      - claim: "next active bottleneck is truthful and exclusive authority over root-generation retirement"
+        status: SUPERSEDED_BY_OWN_TIP
+        actual: >-
+          RA-2 corrected the framing: the coupling is broader than retirement
+          authority. Canonical and legacy repair share load-bearing state.
+      - claim: "924 passed · 1 skipped · 24 xfailed"
+        status: SUPPORTED
+      - claim: "CI merge-ref 922 passed · 3 skipped · 24 xfailed"
+        status: SUPPORTED
+      - claim: "Gate F/G UNMEASURED, R8 NOT ELIGIBLE"
+        status: SUPPORTED
+      - claim: "the conventional durable workflow engine still wins on the evidence available"
+        status: SUPPORTED_AND_LOAD_BEARING
+      - claim: "Design A removes the legacy authority cleanly"
+        status: FALSIFIED
+        actual: "21 regressions, 0 strict XPASS; A, E and H all eliminated"
+      - claim: "DUAL_REPAIR_SEARCHES detector ordering is correct"
+        status: UNRESOLVED
+        actual: "correct but uncommitted; arrived inside a falsified candidate and still needs its own negative control"
+    mechanisms_validated:
+      - 2D sender-owned ingress (ENFORCED)
+      - pre-arrival control (IMPLEMENTED AND ADVERSARIALLY VERIFIED, PA-1..PA-5)
+      - causal need closure (NC-3, the only runtime change in the series)
+      - author-direction classification (probe-bound, fails closed, no kind fallback)
+      - "one source of truth (0 runtime reads; hostile-projection twin identical)"
+    mechanisms_falsified:
+      - "Design A — remove the legacy ledger (21 regressions, 0 XPASS)"
+      - "Design E — remove the legacy repair path entirely (strictly larger than A)"
+      - "Design H — supervisor ownership (rejected on authority grounds)"
+      - "LC-2b — recommended design was wrong; implementing it proved it"
+      - "LC-2b' — second design falsified, actual mechanism located"
+    mechanisms_surviving_unadopted: [B, C, D, F]
+    leading_hypothesis: "B + D — separate the ledger's bookkeeping from its authority; centralise retirement. NOT ADOPTED."
+    self_reported_defects: >-
+      The branch documents its own errors at unusual length: edge-id collision
+      between roots, settlement driven from the wrong place, eight vacuous specs
+      across four commits, two audits withdrawn in full, a stale integrity
+      manifest, a hostile-projection instrument that could not fail, a PA-0
+      artifact that did not reproduce its own experiment, reading $? after a pipe
+      (which hid a failing verifier three times), and a wrong overwrite
+      attribution later withdrawn. One mechanism runs through most of them: an
+      instrument without execution proof silently converts UNKNOWN into PASS.
+    write_policy: ZERO_WRITES
+    refs: [pr.kernel.66, pr.kernel.66.latest_finding, pr.kernel.66.dissent, discrepancy.pr66_body_stale]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: a6f14d344f2ca073fd334a885e5c2bdb921d082e
+        command: "pull_request_read(get|get_check_runs); git log main..origin/claude/uniimente-repo-audit-jpytcy"
+
+  - id: pr66.disposition_dossier
+    kind: pr_disposition
+    title: "PR #66 disposition — FREEZE AS TRACK B RESEARCH"
+    evidence_status: derived
+    disposition: FREEZE_AS_TRACK_B_RESEARCH
+    what_it_proves: >-
+      That pre-arrival control, sender-owned ingress, causal need closure and
+      author-direction classification can be built and adversarially verified;
+      and — more valuable — that five plausible designs for decoupling canonical
+      from legacy repair are wrong, each falsified by measurement rather than by
+      argument.
+    what_it_does_not_prove: >-
+      Anything about the comparison it exists to settle. Its own body says so:
+      the work establishes correctness prerequisites and measurement integrity,
+      not evidence that the morphogenetic substrate beats a conventional durable
+      workflow engine. Only R8 decides that, and R8 is prohibited until a freeze
+      that has receded repeatedly.
+    mechanisms_to_promote_to_capability_candidates:
+      - pre-arrival control (bounded pending-control mechanism with fail-closed authentication)
+      - causal need closure (NC-3 obligation-generation predicate)
+      - the instrument-liveness discipline itself — arguably the most transferable output
+    tests_to_promote_to_protected_evaluators:
+      - the 24 strict xfail specifications as a regression corpus
+      - adopted_edge_return_negative_control.py
+      - prearrival_adversarial_twin.py
+    artifacts_historical_only:
+      - the five falsified design comparisons (retain as counterfactual evidence)
+      - two withdrawn audits (retain — a withdrawn audit is evidence about auditing)
+    needs_bounded_completion_milestone: false
+    milestone_rationale: >-
+      A bounded milestone was considered and rejected. The natural candidate is
+      "land the DUAL_REPAIR_SEARCHES detector reordering with its negative
+      control", which is small and correct. But it does not change the branch's
+      standing, does not move Gate F or G, and reopens a runtime workstream this
+      round has just decided to freeze. Record it as the first task if the branch
+      is ever resumed, not as a reason to keep it warm.
+    evidence_that_would_justify_resuming: >-
+      A measured result showing the morphogenetic substrate beating the
+      conventional baseline on an equivalent task, or a decision to run R8.
+    evidence_that_would_kill_the_mechanism_as_default: >-
+      A sixth falsified design in the B/C/D/F family, which would make it likely
+      that the underlying lifecycle model — not the individual designs — is wrong.
+    preservation: >-
+      Nothing deleted. Branch retained, PR left open and draft, all 133 commits
+      and 240 files preserved with lineage. Freezing is a routing decision, not a
+      removal.
+    refs: [pr66.state_capsule, pr.kernel.66.dissent, route.01_pr66_first, decision.final]
+
+  - id: pr66.proposed_sync
+    kind: pr_proposed_sync
+    title: "PR #66 proposed body refresh and disposition comment — INERT, NOT POSTED"
+    evidence_status: derived
+    status: NOT_APPLIED
+    application_requires: explicit founder action
+    historical_body_preserved: "the existing PR #66 body is preserved verbatim in GitHub history; this proposes an addition, not a replacement of the record"
+    proposed_body_delta: >-
+      Update the head reference from 15623a9 to a6f14d3. Add an RA-2 section
+      recording that Design A was implemented, measured (904 passed / 21 failed,
+      0 strict XPASS) and reverted, that A/E/H are eliminated and B/C/D/F survive,
+      and that the corrected finding is that canonical and legacy repair share
+      load-bearing state rather than that a disabled subsystem retains authority.
+      Replace the "next active bottleneck" section, which its own tip supersedes.
+    proposed_comment: >-
+      A whole-system planning round (issue #69, draft PR #68) has classified this
+      branch as FREEZE_AS_TRACK_B_RESEARCH. Nothing here is merged, deleted or
+      modified. The reasoning: this branch's own recorded dissent — that the
+      conventional durable workflow engine still wins on available evidence — is
+      the reason it must not gate Track A, and its five falsified designs are
+      preserved as institutional evidence rather than treated as failure. Its
+      pre-arrival control, causal need closure and instrument-liveness discipline
+      are promoted to capability candidates. Resume conditions and kill conditions
+      are recorded in the disposition dossier.
+    head_change_detection: >-
+      If origin/claude/uniimente-repo-audit-jpytcy moves beyond a6f14d3, this
+      capsule and disposition are marked STALE and only the conclusions the new
+      evidence invalidates are recomputed. The round must not finish an analysis
+      of a6f14d3 after another writer has moved the branch.
+    refs: [pr66.state_capsule, pr66.disposition_dossier, round.pr66_zero_writes]
+
+  # ----------------------------------------------------------- SP-6 backcast
+  - id: backcast.destination
+    kind: backcast_node
+    title: "Long-range destination — falsifiable form"
+    evidence_status: derived
+    destination: >-
+      A founder-governed institution that finances its own development from lawful
+      regenerative ventures, constructs missing capabilities from its preserved
+      substrate under protected evaluation, closes those capabilities against
+      external reality, and increases the capability of the participants and
+      institutions it touches — without ever acquiring sovereignty of its own.
+    falsifiable_because: >-
+      Each clause names a countable: verified developmental closures, clean
+      verified outcomes, contribution margin, participant capability deltas, and
+      zero unauthorized external effects. A destination that cannot be counted
+      cannot be backcast to.
+    not_promised: "This is a destination, not a forecast. No probability is claimed."
+    refs: [intent.regenerative_civilization, intent.infinite_goal_chase, intent.closure_ladder]
+
+  - id: backcast.node_1_computational_closure
+    kind: backcast_node
+    title: "Node 1 — first verified developmental closure (ACTIVE)"
+    evidence_status: derived
+    status: ACTIVE
+    outcome: "one capability deliberately disabled and restored by generated candidates under a protected evaluator"
+    gate: "builder/evaluator process isolation and held-out confinement do not yet exist"
+    sbm: {name: VERIFIED_DEVELOPMENTAL_CLOSURES, baseline: 0, target: 1}
+    entry_condition: "evolution/repair/ laboratory present and frozen — SATISFIED"
+    exit_evidence: "4/4 edge triples restored; linker/ byte-identical to pinned hashes; lineage and rollback recorded; negative control fires"
+    durable_assets: "a working developmental engine; first Capability Genome; reusable evaluator firewall"
+    dependencies: none_external
+    time_range: "days to weeks"
+    capital_range: zero
+    founder_attention_range: "under 1 hour — review of the closure record only"
+    accelerators: "the frozen spec, hashed subject files and 4/4 threshold already exist"
+    delays: "process isolation is real engineering, not configuration"
+    pivot_condition: "if isolation proves impractical in-process, move candidates to containers before running the experiment — never relax the evaluator"
+    kill_condition: "if a candidate can read or alter the evaluator, stop; the result would be worthless"
+    refs: [decision.final, capability.evolution_laboratory, capability.evaluator_firewall_partially_exists]
+
+  - id: backcast.node_2_generalization
+    kind: backcast_node
+    title: "Node 2 — second closure on an unrelated capability"
+    evidence_status: derived
+    status: NEXT
+    outcome: "the same engine closes a function it was not tuned for"
+    gate: "Node 1 complete"
+    sbm: {name: VERIFIED_DEVELOPMENTAL_CLOSURES, baseline: 1, target: 2}
+    why_it_matters: >-
+      This node, not Node 1, is what distinguishes a developmental engine from a
+      bespoke repair script. It is also the falsification test for Track A's
+      premise, which is why it is a node rather than a nice-to-have.
+    kill_condition: "if the second closure requires re-tuning the engine, the engine is overfit; report that plainly and re-run the route tournament"
+    refs: [backcast.node_1_computational_closure, decision.final]
+
+  - id: backcast.node_3_institutional_closure
+    kind: backcast_node
+    title: "Node 3 — first institutional closure (cross-organ workflow)"
+    evidence_status: derived
+    status: BLOCKED
+    outcome: "a generated or existing capability participates in a complete cross-organ workflow, end to end"
+    gate: >-
+      Two of six organs have no manifest, adapters/ is unwired, and no organ
+      consumes a kernel-issued grant. All three are engineering, none is blocked
+      externally.
+    sbm: {name: CLOSED_CROSS_ORGAN_BRIDGES, baseline: 0, target: 1}
+    exit_evidence: "one recorded causal episode spanning at least three organs with typed contracts and a reconciled outcome"
+    dependencies: [backcast.node_1_computational_closure, bridge.two_organs_invisible, capability.adapters_membrane_orphaned]
+    refs: [bridge.status_a_through_h, intent.closure_ladder]
+
+  - id: backcast.node_4_economic_closure
+    kind: backcast_node
+    title: "Node 4 — first economic closure (externally accepted, paid, reconciled)"
+    evidence_status: derived
+    status: BLOCKED_ON_FOUNDER
+    outcome: "a named buyer accepts a delivered artifact, pays, and the outcome reconciles"
+    gate: "FD-1 — DALEOBANKS publication authority; or an alternative wedge the founder names"
+    sbm: {name: CLEAN_VERIFIED_OUTCOME_COUNT, baseline: 0, target: 1}
+    required_definition:
+      - named buyer or stakeholder
+      - accepted artifact
+      - precommitted acceptance criteria
+      - external evidence
+      - payment or enforceable commitment
+      - delivery, acceptance, reconciliation
+      - contribution margin
+      - zero unauthorized effects
+      - zero unresolved critical harm
+    why_it_cannot_be_engineered_around: >-
+      Every remaining blocker is a founder-supplied input: legal operator, payment
+      account, customer consent, public identity, live credentials. No build
+      session creates any of them.
+    refs: [route.05_daleobanks_cash_engine, decision.founder_decisions_required, intent.daleobanks_role]
+
+  - id: backcast.node_5_flywheel
+    kind: backcast_node
+    title: "Node 5 — DALEOBANKS free cash flow funds UNIIMENTE development"
+    evidence_status: derived
+    status: BLOCKED
+    outcome: "recurring revenue exceeds obligations and reserves; surplus funds compute, tools and experiments"
+    sbm: {name: DALEOBANKS_FREE_CASH_FLOW_AVAILABLE_TO_FUND_UNIIMENTE, baseline: 0, target: "> 0"}
+    gate: Node 4
+    note: >-
+      Nodes 6 and beyond — multiple profitable Venture Cells, self-financed
+      research, first physical embodiment — are real destinations preserved in the
+      aspiration registry. They are not expanded here because every one of them is
+      gated on Node 5, and expanding them now would produce roadmap fiction rather
+      than a plan. Override §2 preserves the aspiration; honesty defers the node.
+    refs: [intent.economic_research_flywheel, intent.embodiments_long_range, backcast.node_4_economic_closure]
+
+  # ------------------------------------------------------- SP-7 PR stack
+  - id: program.pr_stack
+    kind: implementation_program
+    title: "Dependency-aware PR stack — against current main, never an archived base"
+    evidence_status: derived
+    ordering_rule: >-
+      Every PR bases on current main. No stacking onto another feature branch.
+      The 69-PR backlog exists precisely because that rule was not held, and four
+      kernel PRs are now unmergeable against an archived base.
+    cap: "no more than 3 open planning-derived PRs at once; land before opening the next"
+    stack:
+      - id: P1
+        title: "Evaluator firewall: process isolation and held-out confinement"
+        repo: uniimente-kernel
+        depends_on: []
+        acceptance:
+          - builder and evaluator run in separate OS processes
+          - candidate write paths confined and enforced by test
+          - held-out cases exist and are unreadable from the builder process
+          - a negative control forces evaluator failure and is asserted
+          - evaluator mutation is detected and fails the run
+        why_first: "Without it the closure experiment is worthless, so it is a gate rather than a follow-up."
+      - id: P2
+        title: "First developmental closure run: institutional.cross_organ_edge_resolution"
+        repo: uniimente-kernel
+        depends_on: [P1]
+        acceptance:
+          - "at least five materially different candidate implementations"
+          - "4/4 edge triples restored — 3/4 is a failure, not a 75% pass"
+          - "linker/ byte-identical to ORIGINAL_LINKER_PACKAGE_SHA256"
+          - champion attached in a consequence-inert registry
+          - specialists, fallbacks and failures all preserved with lineage
+          - rollback demonstrated, not merely described
+          - "closure record states its ladder tier: COMPUTATIONAL"
+      - id: P3
+        title: "Organ manifests for PumpStation and RESEARCH-IN"
+        repo: uniimente-kernel
+        depends_on: []
+        parallel_with: [P1, P2]
+        acceptance:
+          - both manifests validate against contracts/organ-manifest.schema.json
+          - "linker reports 6 organs, not 4"
+          - "RESEARCH-IN's role is derived from inspected evidence, with unresolved fields left unresolved rather than invented"
+      - id: P4
+        title: "Wire the compatibility membrane into one executing path"
+        repo: uniimente-kernel
+        depends_on: [P3]
+        acceptance:
+          - "adapters/ imported by at least one non-test module"
+          - one recorded cross-organ episode using the adapters
+          - information lost and added declared per adapter, as the membrane rule requires
+      - id: P5
+        title: "Second developmental closure on an unrelated capability"
+        repo: uniimente-kernel
+        depends_on: [P2]
+        acceptance:
+          - "engine closes a function it was not tuned for, with no re-tuning"
+          - "if re-tuning is required, report overfit plainly rather than adjusting and retrying"
+    explicitly_not_in_the_stack:
+      - "any PR #66 runtime work — frozen"
+      - "any external effect, credential, publication or payment — founder-gated"
+      - "Golden Kernel v2 — authority is not the measured bottleneck"
+      - "new WMI or PumpStation capacity — triage the existing backlog first"
+    refs: [decision.final, backcast.node_1_computational_closure, discrepancy.stacked_pr_backlog, bridge.two_organs_invisible]
+
+  - id: program.anti_ruin_boundaries
+    kind: implementation_program
+    title: Anti-ruin boundaries for the primary track
+    evidence_status: derived
+    boundaries:
+      maximum_money_at_risk: "zero — the primary track spends nothing"
+      maximum_founder_hours: "under 2 hours per node, for review only"
+      maximum_time_without_new_proof: "one cycle; if Node 1 does not close, re-run the route tournament rather than iterating quietly"
+      maximum_vendor_concentration: "no new provider, platform or model dependency introduced"
+      maximum_external_consequence: "zero — every artifact is consequence-inert"
+      isolation_requirement: "candidates never share a process with the evaluator"
+      escalation_threshold: "any candidate that reads or writes the evaluator halts the experiment immediately"
+      stop_loss: "two consecutive failed closure attempts ends Track A's primary status"
+      minimum_viable_survival_state: "main at 8cb3074 with 495 passing tests; every branch preserved; every proof record intact"
+    provisional: >-
+      These are conservative defaults, not the founder's stated risk appetite.
+      Alfonso has not set limits; these are marked provisional for his decision
+      rather than presented as policy.
+    refs: [decision.final, intent.round_authority]

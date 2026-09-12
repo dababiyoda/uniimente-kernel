@@ -68,13 +68,23 @@ One governed institution does not need trustless consensus. Use content-addresse
 
 | Organ | Role | Consumes from Kernel |
 |---|---|---|
-| RailScout | perception and evidence refinery | event spine, evidence contracts |
+| RailScout | multi-agent research refinery and strategy organ; recursively develops, challenges, combines, refines, stress-tests, and synthesizes ideas toward their strongest achievable state | event spine, evidence contracts |
 | DALEOBANKS | public voice and distribution | shared governance services, action gateway |
 | WealthMachine | venture evaluation and Venture Cell management | opportunity/assessment contracts, charters, autonomy levels |
 | IVIO-NEMT | first closed-loop proving ground | full pipeline |
 | Personal Command | founder development and capacity | daily brief, decision training |
 | Constitutional Control Layer | policy, budgets, kill authority | is the Kernel |
 | Adversarial Intelligence | attacks the institution's own reasoning | laboratory tests, dissent records |
+
+### RailScout cognitive refinery
+
+RailScout's defining function is evolutionary cognition on ideas and knowledge. It is not primarily an operating-review, SOP-capture, follow-up, or project-management system. Those supporting loops may feed evidence into RailScout, but they do not define the organ.
+
+Canonical refinement flow:
+
+`raw signal -> competing interpretations -> primitives -> mutations -> candidate architectures -> adversarial elimination -> synthesis -> stronger synthesis -> highest-state idea`
+
+RailScout is designed as a governed multitude of specialized agents that recursively build ideas upward. The Kernel supplies identity, evidence, authority, isolation, provenance, and bounded execution; RailScout supplies the cognitive search, recombination, adversarial refinement, and synthesis process.
 
 ## Hidden capabilities (scheduled, not built)
 

@@ -8,17 +8,53 @@ from morphogenesis.contracts import (
     AuthorityEnvelope,
     CandidateAction,
     DescendantProposal,
+    Direction,
+    MetricTarget,
+    MorphogeneticSetPoint,
     StateObservation,
 )
 from morphogenesis.engine import MorphogeneticEngine, MorphogeneticError
-from ventures.ivio_nemt.first_cell import build_ivio_first_setpoint
 
 
 NOW = datetime(2026, 7, 20, 16, 0, tzinfo=timezone.utc)
 
 
 def _setpoint():
-    return build_ivio_first_setpoint(deadline=NOW + timedelta(days=60))
+    """Neutral proving-cell setpoint (IVIO-NEMT retired by founder directive 2026-09-13).
+
+    Replaces the deleted ventures.ivio_nemt.first_cell.build_ivio_first_setpoint
+    fixture with an equivalent generic setpoint so the engine mechanics remain
+    tested without treating a retired venture as active.
+    """
+    metrics = (
+        MetricTarget(name="payment_usd", direction=Direction.GTE, target=1000.0, unit="usd"),
+        MetricTarget(name="paid_pilot_commitments", direction=Direction.GTE, target=1.0),
+        MetricTarget(name="delivery_accepted", direction=Direction.EQ, target=True),
+        MetricTarget(name="external_outcome_verified", direction=Direction.EQ, target=True),
+        MetricTarget(name="contribution_margin_usd", direction=Direction.GTE, target=250.0, unit="usd"),
+        MetricTarget(name="clean_completion_rate", direction=Direction.GTE, target=0.95),
+        MetricTarget(name="unresolved_obligations", direction=Direction.LTE, target=0.0),
+        MetricTarget(name="critical_authority_incidents", direction=Direction.LTE, target=0.0),
+        MetricTarget(name="participant_harm_incidents", direction=Direction.LTE, target=0.0),
+        MetricTarget(name="founder_hours", direction=Direction.LTE, target=20.0, unit="hours"),
+        MetricTarget(name="spend_usd", direction=Direction.LTE, target=750.0, unit="usd"),
+    )
+    return MorphogeneticSetPoint(
+        setpoint_id="generic-proving-cell-setpoint-v1",
+        venture_cell="GENERIC-CELL-001",
+        legal_principal="alfonso_lopez",
+        buyer="generic_buyer_001",
+        beneficiary="generic_beneficiary",
+        accepted_artifact="verified recurring service evidence packet",
+        external_consequence="buyer accepts and pays for the bounded service",
+        metrics=metrics,
+        budget_ceiling_usd=1000.0,
+        founder_attention_ceiling_hours=40.0,
+        deadline=NOW + timedelta(days=60),
+        prohibited_actions=("unapproved_external_contact",),
+        kill_conditions=("critical_authority_incidents > 0",),
+        requires_human_activation=True,
+    )
 
 
 def _closed_observations():
@@ -50,13 +86,13 @@ def _closed_observations():
 def _proposal(**kw):
     base = dict(
         proposal_id="desc-001",
-        parent_venture_cell="IVIO-NEMT",
-        target_venture_cell="IVIO-Dialysis",
+        parent_venture_cell="GENERIC-CELL-001",
+        target_venture_cell="GENERIC-CELL-002",
         legal_principal="alfonso_lopez",
-        buyer="dialysis_facility_001",
-        market_failure="recurring missed or weakly evidenced dialysis transportation",
-        accepted_artifact="verified recurring transport evidence packet",
-        external_consequence="facility accepts and pays for the bounded service",
+        buyer="generic_buyer_002",
+        market_failure="recurring missed or weakly evidenced service delivery",
+        accepted_artifact="verified recurring service evidence packet",
+        external_consequence="buyer accepts and pays for the bounded service",
         required_genomes=("request-accept-evidence@1.0.0",),
         requested_budget_usd=500.0,
         parent_validation_ref="sha256:parent",
@@ -67,7 +103,7 @@ def _proposal(**kw):
     return DescendantProposal(**base)
 
 
-def test_ivio_target_is_complete_and_human_bound():
+def test_setpoint_is_complete_and_human_bound():
     target = _setpoint()
     assert target.validate() == []
     assert target.requires_human_activation
@@ -121,7 +157,7 @@ def test_action_ranking_filters_unauthorized_and_over_budget_actions():
         ),
         CandidateAction(
             action_id="send_unapproved_outreach",
-            description="contact the facility without human approval",
+            description="contact the buyer without human approval",
             consequence_class="external_contact",
             estimated_cost_usd=0.0,
             projected_values={"paid_pilot_commitments": 1.0},

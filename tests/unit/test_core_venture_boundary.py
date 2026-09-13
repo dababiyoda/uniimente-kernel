@@ -201,10 +201,34 @@ def test_rule7_ventures_define_no_authority_artifacts():
 
 
 def test_rule7_ventures_are_inactive_and_unattached_by_default():
-    from ventures.ivio_nemt import ACTIVE, ATTACHED
+    """Venture Cells, if any exist, must be inactive and unattached by default.
 
-    assert ACTIVE is False, "Venture Cell must be inactive by default"
-    assert ATTACHED is False, "Venture Cell must be unattached by default"
+    IVIO-NEMT was retired by founder directive (2026-09-13); no active cells
+    remain. Any future cell under ventures/ must declare ACTIVE=False and
+    ATTACHED=False in its __init__.py.
+    """
+    base = os.path.join(ROOT, VENTURES_DIR)
+    if not os.path.isdir(base):
+        return
+    offenders = []
+    for name in sorted(os.listdir(base)):
+        cell_dir = os.path.join(base, name)
+        if not os.path.isdir(cell_dir) or name.startswith((".", "__")):
+            continue
+        init_path = os.path.join(cell_dir, "__init__.py")
+        if not os.path.isfile(init_path):
+            continue
+        values = {}
+        with open(init_path) as handle:
+            for line in handle:
+                stripped = line.strip()
+                for var in ("ACTIVE", "ATTACHED"):
+                    if stripped.startswith(var + " ="):
+                        values[var] = stripped.split("=", 1)[1].strip()
+        for var in ("ACTIVE", "ATTACHED"):
+            if values.get(var, "False") != "False":
+                offenders.append(f"{name}/{var}={values.get(var)}")
+    assert not offenders, f"Venture Cells not inactive/unattached by default: {offenders}"
 
 
 # --------------------------------------------------------------------------
@@ -217,9 +241,14 @@ def test_rule5_legal_principal_registry_may_name_real_entities():
     principals = yaml.safe_load(
         open(os.path.join(ROOT, "authority", "legal-principals.yaml"))
     )["principals"]
-    assert "IVIO_NEMT_LLC" in principals, (
+    assert "alfonso_lopez" in principals, (
         "the legal-principal registry must be able to name real entities; "
         "removing them would break the gate"
+    )
+    # IVIO_NEMT_LLC was retired by founder directive (2026-09-13) and must
+    # have zero registry presence.
+    assert "IVIO_NEMT_LLC" not in principals, (
+        "retired venture IVIO_NEMT_LLC must not remain a legal principal"
     )
     assert principals["UNIIMENTE"]["status"] == "prohibited"
 

@@ -49,7 +49,7 @@ from evolution.repair.disable import ComponentDisabled
 from evolution.repair.r1_contract_index import ContractIndexInversion
 from evolution.repair.r2_constraint import ConstraintSatisfaction
 from evolution.repair.r3_local_rule import LocalRulePropagation
-from evolution.repair.subjects import FROZEN, SR001
+from evolution.repair.subjects import FROZEN, SR001, SR002
 from evolution.spider_web import SpiderWebAudit
 
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -132,8 +132,8 @@ class Trial:
 class ReplacementExperiment:
     """Runs the frozen experiment. Decides nothing that the spec did not."""
 
-    def __init__(self, root: str = KERNEL_ROOT, ledger=None, *, subject=FROZEN):
-        if subject not in (FROZEN, SR001):
+    def __init__(self, root: str = KERNEL_ROOT, ledger=None, *, subject=SR002):
+        if subject not in (FROZEN, SR001, SR002):
             raise ValueError("unreviewed experimental subject binding")
         self.root = root
         self.ledger = ledger
@@ -271,9 +271,14 @@ class ReplacementExperiment:
     # -- the run -----------------------------------------------------------
 
     def run(self) -> dict:
+        if self.subject == SR001:
+            compatibility_subject = compatibility.subject_record()
+        elif self.subject == SR002:
+            compatibility_subject = compatibility.sr002_subject_record()
+        else:
+            compatibility_subject = self.subject.to_dict()
         record: dict = {"experiment_id": spec.EXPERIMENT.experiment_id,
-                        "compatibility_subject": (compatibility.subject_record()
-                            if self.subject == SR001 else self.subject.to_dict()),
+                        "compatibility_subject": compatibility_subject,
                         "spec_sha256": spec.SPEC_SHA256,
                         "baseline_commit": spec.BASELINE_COMMIT,
                         "environment": {"python": platform.python_version(),
@@ -579,7 +584,10 @@ class ReplacementExperiment:
             bottleneck="a working specialist function was lost at runtime",
             tree=tree.to_dict(), audit=record["spider_web_audit"],
             experiment={**spec.EXPERIMENT.to_dict(),
-                        "compatibility_subject": compatibility.subject_record()},
+                        "compatibility_subject": (
+                            compatibility.sr002_subject_record()
+                            if self.subject == SR002
+                            else compatibility.subject_record())},
             measured_value=max((t.function_score for t in trials.values()),
                                default=0.0),
             outcome_class="positive" if best_replacement else "negative",

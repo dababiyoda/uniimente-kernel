@@ -49,7 +49,7 @@ The project is an embryonic, governed, morphogenetic software institution. Biolo
 | Typed cross-organ linkage | Institutional Linker and organ manifests | Adapters must disclose loss, assumptions, and unresolved fields |
 | Public sensing and communication | DALEOBANKS organ | Proposal-only; engagement is not commercial proof |
 | Opportunity underwriting and strategic branching | WealthMachineIntelligence organ | Proposal-only; cannot launch or spend |
-| First transactional vertical | IVIO/OBVIO NEMT | Request → Accept → Evidence → verified consequence |
+| First transactional vertical | First designated venture cell (TBD by founder) | Request → Accept → Evidence → verified consequence |
 | Operator interface | TGH Control Rail | Human-facing surface; not a separate authority system |
 | Opportunity-to-capability formation | Advantage Foundry | Preserves eleven routes, eight-sided tribunal, external closure |
 | Temporary organ composition | OMNIMORPH | Produces `PROPOSED_NOT_EXECUTED` manifests only |
@@ -117,7 +117,7 @@ Retain:
 
 ADE-1 may sense, deliberate, draft, and request. It may not authorize external action.
 
-### Wave 3 — Morphogenetic control and first IVIO cell
+### Wave 3 — Morphogenetic control and first venture cell
 
 Source: PR #30.  
 Status: PENDING STACK ON CANONICAL INTEGRATION.
@@ -128,7 +128,7 @@ Retain:
 - provenance-backed observations;
 - bounded action recommendations;
 - authority and budget filtering;
-- IVIO-NEMT first target;
+- first venture cell as first target;
 - descendant proposals that cannot self-activate.
 
 Target reached means `TARGET_REACHED_NOT_AUTHORIZED`, never automatic execution.
@@ -171,7 +171,7 @@ No promotion into operational authority unless it materially outperforms the sim
 
 ### Wave 6 — Proof-to-Settlement vertical
 
-Target: one real IVIO/OBVIO NEMT verified outcome.
+Target: one real first-venture verified outcome.
 
 Required closure:
 
@@ -249,6 +249,6 @@ The Egregore v1 integration PR must contain:
 - proof capsule;
 - unresolved assumptions and countercases;
 - founder-ratification checklist;
-- IVIO first-outcome operating packet.
+- first-venture first-outcome operating packet.
 
 No claim of completion is valid until executable evidence supports it.

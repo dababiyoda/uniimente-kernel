@@ -86,7 +86,7 @@ def test_legacy_omitted_execution_contract_cannot_gain_retry_permission():
 
 def test_existing_workflow_still_refuses_contract_change_after_restart():
     calls = []
-    steps = harmless([])
+    steps = harmless(calls)
     spine = EventSpine(EvidenceLedger("sha256:" + "a" * 64))
     workflow = DurableWorkflow(spine, "original", steps, actor="fixture", legal_principal="alfonso_lopez")
     with pytest.raises(WorkflowKilled):

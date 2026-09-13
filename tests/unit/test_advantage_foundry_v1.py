@@ -270,7 +270,7 @@ def test_false_and_partial_closure_are_not_genomes():
     assert foundry.closure_state(clean_outcome(authority_incidents=1)) is ClosureState.PARTIALLY_CLOSED
     with pytest.raises(AdvantageRefused, match="clean closed"):
         foundry.seal_advantage_genome(
-            "ivio-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+            "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
             clean_outcome(authority_incidents=1),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",
@@ -281,15 +281,15 @@ def test_clean_external_outcome_seals_once_as_immutable_genome():
     foundry = AdvantageFoundry()
     arch = architecture(foundry)
     genome = foundry.seal_advantage_genome(
-        "ivio-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+        "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
         clean_outcome(),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
-    assert genome.key == "ivio-proof@1.0.0"
+    assert genome.key == "generic-proof@1.0.0"
     with pytest.raises(AdvantageRefused, match="already exists"):
         foundry.seal_advantage_genome(
-            "ivio-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+            "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
             clean_outcome(),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",

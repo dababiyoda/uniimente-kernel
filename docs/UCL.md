@@ -47,9 +47,9 @@ Primitive types: string, number, boolean, duration (`15 minutes`, `72 hours`, `3
 
 ```
 action send_facility_followup {
-    actor           = venture.ivio.sales_agent
-    legal_principal = IVIO_NEMT_LLC
-    objective       = ivio.buyer_commitment_proof
+    actor           = venture.example.sales_agent
+    legal_principal = alfonso_lopez
+    objective       = venture.buyer_commitment_proof
 
     permit when {
         lead.opted_in == true
@@ -74,24 +74,3 @@ action send_facility_followup {
     outcome      = record(reply | meeting | rejection | no_response)
 }
 ```
-
-Semantics:
-
-- `permit when`: every expression must evaluate true against current evidence state. Evaluation happens at proposal time and again at commit time.
-- `require`: hard prerequisites. Missing capability, expired freshness, or budget overflow is a refusal.
-- `prohibit`: reserved effect classes. Naming one anywhere in a payload is a refusal and an incident.
-- `on_commit = reauthorize()`: mandatory commit-time revalidation. The grant must still be valid, fresh, applicable, unrevoked, within budget, bound to the same intended effect, and attached to the same legal principal at the moment the effect becomes real.
-- `outcome`: the recording obligation. An executed action without its outcome record is an incomplete action and blocks autonomy promotion.
-
-## Compilation targets
-
-1. **Policy decisions**: OPA-style allow/deny with reasons.
-2. **Relationship authorization**: Zanzibar/OpenFGA-style tuples (grantee, relation, object, context).
-3. **Workflow constraints**: states an executor may enter, with evidence gates.
-4. **Invariants**: model-checkable properties for the governance laboratory (`/tests`).
-5. **Runtime grants**: capability tokens bound to identity, expiry, budget, and effect hash.
-6. **Audit schemas**: the record shapes in `/contracts`.
-
-## Non-goals
-
-UCL is not a general programming language, not a smart-contract language, not a prompt format, and not a configuration dump. If a construct cannot change an authorization decision, it does not belong in UCL.

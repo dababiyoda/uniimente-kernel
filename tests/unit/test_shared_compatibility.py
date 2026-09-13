@@ -8,7 +8,7 @@ import pytest
 from events.spine import EventSpine, WorkflowStep, DurableWorkflow, WorkflowKilled, EventError
 from evolution.migration.migrate import to_current_checkpoint
 from evolution.repair.harness import ReplacementExperiment
-from evolution.repair.subjects import FROZEN, SR001
+from evolution.repair.subjects import FROZEN, SR001, SR002
 from provenance.ledger import EvidenceLedger
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,21 +26,22 @@ def harmless(calls):
 
 
 def test_current_binding_does_not_revalidate_the_old_subject():
-    assert SR001.matches(ROOT)
+    assert SR002.matches(ROOT)
+    assert not SR001.matches(ROOT)
     assert not FROZEN.matches(ROOT)
     with pytest.raises(ValueError, match="unreviewed"):
-        ReplacementExperiment(subject=replace(SR001, source_commit="invented"))
+        ReplacementExperiment(subject=replace(SR002, source_commit="invented"))
 
 
 def test_changed_source_fails_instead_of_learning_a_new_fingerprint(tmp_path):
-    for relative, _ in SR001.artifacts:
+    for relative, _ in SR002.artifacts:
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((ROOT / relative).read_bytes())
-    assert SR001.matches(tmp_path)
+    assert SR002.matches(tmp_path)
     with (tmp_path / "policy/consequence_gate.py").open("a") as handle:
         handle.write("\n# source changed after review\n")
-    assert not SR001.matches(tmp_path)
+    assert not SR002.matches(tmp_path)
 
 
 def test_migration_preserves_identity_time_state_and_append_before_resume(tmp_path):
@@ -85,7 +86,7 @@ def test_legacy_omitted_execution_contract_cannot_gain_retry_permission():
 
 def test_existing_workflow_still_refuses_contract_change_after_restart():
     calls = []
-    steps = harmless(calls)
+    steps = harmless([])
     spine = EventSpine(EvidenceLedger("sha256:" + "a" * 64))
     workflow = DurableWorkflow(spine, "original", steps, actor="fixture", legal_principal="alfonso_lopez")
     with pytest.raises(WorkflowKilled):

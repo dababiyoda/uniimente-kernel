@@ -22,3 +22,12 @@ proving-ground organ in `identity/organ-registry.yaml`.
 Regeneration: clone both repos at the commits above and re-run the capture snippet
 recorded in the Phase Zero PR description. Changing these files by hand breaks the
 "executable evidence" rule in `docs/CANONICAL_EXECUTION_ORDER.md`.
+
+## 2026-09-13 — IVIO-NEMT retired (HISTORICAL, not current canon)
+
+The `ivio_nemt` proving-ground organ referenced above was retired by founder
+directive on 2026-09-13 and removed from `identity/organ-registry.yaml`,
+`identity/agent-registry.yaml`, `authority/legal-principals.yaml`, and `ventures/`.
+These fixtures are preserved unchanged as frozen executable evidence of the
+2026-07-20 capture; their NEMT scenario content is HISTORICAL and does not imply
+an active venture.

@@ -116,4 +116,4 @@ Each run emits:
 - checks and failures;
 - non-authorizing verdict.
 
-The first real institutional birth threshold remains one paid, accepted, externally verified, economically reconciled IVIO/OBVIO outcome.
+The first real institutional birth threshold remains one paid, accepted, externally verified, economically reconciled first-venture outcome.

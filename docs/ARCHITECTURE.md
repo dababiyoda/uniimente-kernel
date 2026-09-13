@@ -71,7 +71,6 @@ One governed institution does not need trustless consensus. Use content-addresse
 | RailScout | perception and evidence refinery | event spine, evidence contracts |
 | DALEOBANKS | public voice and distribution | shared governance services, action gateway |
 | WealthMachine | venture evaluation and Venture Cell management | opportunity/assessment contracts, charters, autonomy levels |
-| IVIO-NEMT | first closed-loop proving ground | full pipeline |
 | Personal Command | founder development and capacity | daily brief, decision training |
 | Constitutional Control Layer | policy, budgets, kill authority | is the Kernel |
 | Adversarial Intelligence | attacks the institution's own reasoning | laboratory tests, dissent records |

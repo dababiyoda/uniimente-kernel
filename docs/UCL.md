@@ -47,9 +47,9 @@ Primitive types: string, number, boolean, duration (`15 minutes`, `72 hours`, `3
 
 ```
 action send_facility_followup {
-    actor           = venture.ivio.sales_agent
-    legal_principal = IVIO_NEMT_LLC
-    objective       = ivio.buyer_commitment_proof
+    actor           = venture.example.sales_agent
+    legal_principal = alfonso_lopez
+    objective       = venture.buyer_commitment_proof
 
     permit when {
         lead.opted_in == true

@@ -59,9 +59,6 @@ def build_opportunity(
     `legal_operator` is REQUIRED and has no default. A fixture must never
     silently select an accountable party — the caller states who is
     accountable, deliberately.
-
-    The IVIO-NEMT healthcare instance this replaced is preserved verbatim at
-    ventures/ivio_nemt/fixtures.py.
     """
     return OpportunitySpec(
         opportunity_id=opportunity_id, buyer=buyer,

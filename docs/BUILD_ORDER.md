@@ -32,7 +32,7 @@ All external actions pass through: `propose()` -> `evaluate_policy()` -> `reques
 
 Exit evidence: no repository can communicate directly with production accounts; expired or revoked grants fail closed at commit time in adversarial tests.
 
-## Phase 6: IVIO Closed Loop
+## Phase 6: First Venture Closed Loop
 
 Run one complete signal-to-buyer-response workflow for 30 consecutive days: signal -> evidence -> assessment -> approval -> action -> external response -> learning.
 

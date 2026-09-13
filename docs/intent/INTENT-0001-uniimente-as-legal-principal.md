@@ -37,6 +37,8 @@ The rejection is additionally **structural**: the compiler will not compile a
 constitution that omits the prohibition. That is a refusal the system cannot
 forget.
 
+> **SUPERSEDED 2026-09-13** — IVIO-NEMT retired by founder directive; `IVIO_NEMT_LLC` removed from `authority/legal-principals.yaml` and is no longer a registered principal in any status. The section below is preserved verbatim as the historical record of its prior status; it is not current direction.
+
 ## Related, and deliberately NOT recorded as prohibited
 
 `IVIO_NEMT_LLC` is recorded as `status: proving_ground`, `jurisdiction:

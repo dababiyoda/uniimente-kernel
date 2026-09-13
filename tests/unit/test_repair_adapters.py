@@ -18,7 +18,7 @@ import os
 import pytest
 
 from evolution.repair import expectations, spec
-from evolution.repair.subjects import SR001
+from evolution.repair.subjects import SR001, SR002
 from evolution.repair.baseline import BaselineRestore, factory as baseline_factory
 from evolution.repair.candidate import (
     CandidateError, CapabilityProviderRegistry, FunctionOutput, HeldOutCorpora,
@@ -548,10 +548,10 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
         return digest.hexdigest()
 
     before = fingerprint()
-    assert before == SR001.continuity_sha256
+    assert before == SR002.continuity_sha256
 
     with ComponentDisabled(spec.SUBJECT_PACKAGE):
-        assert fingerprint() == SR001.continuity_sha256
+        assert fingerprint() == SR002.continuity_sha256
 
         # Authority still compiles and still refuses what it always refused.
         from compiler.ucl_compiler import compile_constitution
@@ -565,4 +565,4 @@ def test_identity_authority_and_shutdown_survive_the_component_being_absent():
         controller.trigger("degraded", intensity=0.9, trigger_event_id="p3-disable")
         assert controller.shutdown() == "shutdown_complete"
 
-    assert fingerprint() == SR001.continuity_sha256
+    assert fingerprint() == SR002.continuity_sha256

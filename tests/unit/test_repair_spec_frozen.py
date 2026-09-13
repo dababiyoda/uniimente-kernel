@@ -116,7 +116,17 @@ def test_continuity_hashes_describe_the_real_artifacts_now():
             f"{rel} does not match its frozen continuity hash"
         combined.update(raw)
     assert combined.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
-    assert SR001.matches(ROOT), "current source differs from the SR-001 review binding"
+    # SR-001 is historical provenance: prove it remains immutable and
+    # reconstructable from its recorded source commit — never that today's
+    # worktree still matches it.
+    historical = hashlib.sha256()
+    for rel, expected in SR001.artifacts:
+        raw = subprocess.check_output(
+            ["git", "show", f"{SR001.source_commit}:{rel}"], cwd=ROOT)
+        assert hashlib.sha256(raw).hexdigest() == expected, \
+            f"{rel} does not match its frozen SR-001 hash"
+        historical.update(raw)
+    assert historical.hexdigest() == SR001.continuity_sha256
 
 
 def test_live_corpus_expectation_matches_the_component_being_replaced():

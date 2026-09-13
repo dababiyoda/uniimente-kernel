@@ -249,7 +249,7 @@ A new business remains `PROPOSED_NOT_EXECUTED` until human ratification and a ca
 5. Keep all external adapters behind the Consequence Gate.
 6. Add health-state conservation and quarantine policies.
 7. Test backup restoration and shutdown compliance.
-8. Run the IVIO-NEMT paid validation loop before adding autonomous media, blockchain, or decentralized-compute complexity.
+8. Run the first venture's paid validation loop before adding autonomous media, blockchain, or decentralized-compute complexity.
 
 ## Acceptance threshold
 

@@ -39,7 +39,7 @@ Anything that cannot satisfy all nine does not execute. It fails toward silence,
 
 ## What this repository is
 
-The single source of institutional truth for UNIIMENTE, Alfonso Lopez's constitutionally governed, human-sovereign artificial egregore. Every organ (DALEOBANKS, WealthMachineIntelligence, RailScout, IVIO-NEMT, future Venture Cells) consumes governance from here. No organ owns governance locally.
+The single source of institutional truth for UNIIMENTE, Alfonso Lopez's constitutionally governed, human-sovereign artificial egregore. Every organ (DALEOBANKS, WealthMachineIntelligence, RailScout, future Venture Cells) consumes governance from here. No organ owns governance locally.
 
 This repository contains no production secrets. It contains law, contracts, and registries.
 

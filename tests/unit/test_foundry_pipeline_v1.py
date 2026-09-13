@@ -40,7 +40,7 @@ def future():
 
 def opportunity():
     return OpportunitySpec(
-        opportunity_id="ivio-pilot-1",
+        opportunity_id="generic-pilot-1",
         buyer="facility CFO", beneficiary="patient",
         pain_owner="case management", budget_owner="facility CFO",
         mandate_actor="compliance executive",
@@ -159,7 +159,7 @@ def build_stack():
 
 def design(pipeline, *, reconfigure=False):
     return pipeline.design(
-        opportunity_id="ivio-pilot-1",
+        opportunity_id="generic-pilot-1",
         branches=branches(), capability_needs=(capability_need(),),
         control_surfaces=("proof",),
         success_metrics=("clean_verified_outcome_count",),
@@ -237,7 +237,7 @@ def test_modify_preserves_result_but_cannot_seal():
     assert run.status is PipelineStatus.MODIFY_REQUIRED
     with pytest.raises(AdvantageRefused, match="RETAIN"):
         pipeline.finalize_retained_genome(
-            run.run_id, genome_name="ivio-proof", genome_version="1.0.0",
+            run.run_id, genome_name="generic-proof", genome_version="1.0.0",
             capability_versions=("proof.audit@1.0.0",),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",
@@ -253,14 +253,14 @@ def test_clean_retain_seals_reusable_genome():
         human_approval_ref=HUMAN_APPROVAL,
     )
     genome = pipeline.finalize_retained_genome(
-        run.run_id, genome_name="ivio-proof", genome_version="1.0.0",
+        run.run_id, genome_name="generic-proof", genome_version="1.0.0",
         capability_versions=("proof.audit@1.0.0",),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
     assert run.status is PipelineStatus.RETAINED_GENOME
-    assert genome.key == "ivio-proof@1.0.0"
-    assert foundry.get_genome("ivio-proof", "1.0.0") == genome
+    assert genome.key == "generic-proof@1.0.0"
+    assert foundry.get_genome("generic-proof", "1.0.0") == genome
 
 
 def test_pipeline_rebuilds_outcome_and_terminal_state_from_ledger():
@@ -277,9 +277,9 @@ def test_pipeline_rebuilds_outcome_and_terminal_state_from_ledger():
     )
     assert rebuilt.get(run.run_id).status is PipelineStatus.READY_TO_SEAL
     genome = rebuilt.finalize_retained_genome(
-        run.run_id, genome_name="ivio-proof", genome_version="1.0.0",
+        run.run_id, genome_name="generic-proof", genome_version="1.0.0",
         capability_versions=("proof.audit@1.0.0",),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
-    assert genome.key == "ivio-proof@1.0.0"
+    assert genome.key == "generic-proof@1.0.0"

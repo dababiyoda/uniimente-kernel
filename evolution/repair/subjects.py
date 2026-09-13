@@ -51,3 +51,83 @@ SR001_WORKFLOW_CLASS_SHA256 = {
     "DurableWorkflow": "7b303f6e5d268722221b6063b540ee0786fbe2675ab062c8c7b81e50b82220bb",
     "WorkflowStep": "ed63561261f29e9869f0626ec7fdd7bb505c21f1d8e9231c349753873310bbec",
 }
+
+# ---------------------------------------------------------------------------
+# SR-002 — versioned successor baseline (founder-authorized IVIO-NEMT retirement)
+# ---------------------------------------------------------------------------
+# Lineage: SR-001 -> founder-authorized IVIO retirement -> SR-002/current.
+# SR-001 above is historical provenance and is NOT rewritten: its subject ID,
+# source commit, per-artifact hashes and continuity hash remain byte-for-byte.
+# SR-002 binds the exact reviewed post-retirement source state (commit
+# 07af5758197501662df81ff05e2b34ce8224a322). Per-artifact hashes were measured
+# as sha256(`git show 07af575:<rel>`) in the same artifact order as SR-001;
+# the combined hash is sha256 over the concatenated artifact bytes in that
+# order, exactly as SubjectBinding.matches() recomputes it.
+SR002 = SubjectBinding("sr002-post-ivio-retirement-0.1.0",
+    "07af5758197501662df81ff05e2b34ce8224a322",
+    (
+        ("constitution/constitution.ucl",
+         "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0"),
+        ("constitution/sovereignty.ucl",
+         "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"),
+        ("constitution/shutdown-policy.ucl",
+         "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54"),
+        ("constitution/amendment-policy.ucl",
+         "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f"),
+        ("constitution/participant-rights.ucl",
+         "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687"),
+        ("authority/authority-matrix.yaml",
+         "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45"),
+        ("authority/legal-principals.yaml",
+         "bff91ae68dcf54aed7e4021c30d5230a25b35a2167928ddd70842702a2bd732b"),
+        ("authority/reserved-matters.yaml",
+         "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924"),
+        ("identity/organ-registry.yaml",
+         "995810a39c21f7e8da811598fdd83e2fe07127c51656c9652d2283d98c3f1085"),
+        ("identity/agent-registry.yaml",
+         "533e919e6c1cb918cfd249765f35ab24efc24729d79af804d09d96d65d45d20e"),
+        ("identity/service-identities.yaml",
+         "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"),
+        ("policy/consequence_gate.py",
+         "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"),
+    ),
+    "7755bdc6759a153f113cf4af98815f899b9a047aaf679fd38faff16b44f4aab8")
+
+
+@dataclass(frozen=True)
+class SubjectSuccession:
+    """Explicit lineage record for a successor subject binding.
+
+    Recorded on the successor, never by rewriting the predecessor.
+    """
+    subject_id: str
+    predecessor_id: str
+    founder_authority: str
+    source_commit: str
+    governed_artifacts: tuple
+    artifact_sha256: tuple
+    continuity_sha256: str
+    reason: str
+    date: str
+    authority_note: str
+
+
+SR002_SUCCESSION = SubjectSuccession(
+    subject_id=SR002.subject_id,
+    predecessor_id=SR001.subject_id,
+    founder_authority="IVIO-NEMT retirement directive, founder ruling 2026-09-13",
+    source_commit=SR002.source_commit,
+    governed_artifacts=tuple(rel for rel, _ in SR002.artifacts),
+    artifact_sha256=SR002.artifacts,
+    continuity_sha256=SR002.continuity_sha256,
+    reason=("founder-authorized retirement of IVIO-NEMT changed previously "
+            "protected current-state artifacts in authority/, identity/, "
+            "ventures/ (authority/legal-principals.yaml, "
+            "identity/organ-registry.yaml, identity/agent-registry.yaml); "
+            "the SR-001 review binding therefore no longer matches the "
+            "authorized current source"),
+    date="2026-09-13",
+    authority_note=("This changes the continuity reference, not constitutional "
+                    "authority. No capability grant is issued, nothing is "
+                    "promoted, and no authority is created by this succession."),
+)

@@ -23,12 +23,6 @@ agents:
     current_level: 1
     grants: []
     notes: Produces VentureAssessments. requires_human_approval hardcoded true; zero execution authority.
-  ivio_sales_agent:
-    identity: spiffe://uniimente.internal/venture/ivio/agent/sales-03
-    organ: ivio_nemt
-    current_level: 0
-    grants: []
-    notes: "Created at Phase 6 only. First grants: draft_outreach, send_preapproved_followup; spend 0 USD."
   railscout_monitor:
     identity: spiffe://uniimente.internal/organ/railscout/regulatory-monitor
     organ: railscout

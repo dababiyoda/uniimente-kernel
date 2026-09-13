@@ -1,0 +1,61 @@
+# TEMPORARY — SR-002 baseline measurement. Deleted before merge.
+#
+# Measures sha256(`git show 07af575:<rel>`) for each governed continuity
+# artifact plus the combined hash, so the SR-002 successor binding can be
+# recorded from the exact reviewed post-retirement source state. Prints the
+# hashes to the job log; a human copies them into evolution/repair/subjects.py.
+# This workflow is removed in the same PR before merge.
+name: SR-002 baseline measurement (temporary)
+
+on:
+  push:
+    branches: [cleanup/remove-ivio-nemt-active-refs]
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Measure governed artifact hashes at 07af575
+        run: |
+          python3 - <<'EOF'
+          import hashlib, subprocess
+          COMMIT = "07af5758197501662df81ff05e2b34ce8224a322"
+          # Same order as evolution.repair.spec.CONTINUITY_ARTIFACT_SHA256.
+          ARTIFACTS = [
+              "constitution/constitution.ucl",
+              "constitution/sovereignty.ucl",
+              "constitution/shutdown-policy.ucl",
+              "constitution/amendment-policy.ucl",
+              "constitution/participant-rights.ucl",
+              "authority/authority-matrix.yaml",
+              "authority/legal-principals.yaml",
+              "authority/reserved-matters.yaml",
+              "identity/organ-registry.yaml",
+              "identity/agent-registry.yaml",
+              "identity/service-identities.yaml",
+              "policy/consequence_gate.py",
+          ]
+          combined = hashlib.sha256()
+          for rel in ARTIFACTS:
+              raw = subprocess.check_output(["git", "show", f"{COMMIT}:{rel}"])
+              h = hashlib.sha256(raw).hexdigest()
+              print(f"ARTIFACT {h}  {rel}", flush=True)
+              combined.update(raw)
+          print(f"COMBINED {combined.hexdigest()}", flush=True)
+          # Confirm this measurement commit did not itself alter governed artifacts.
+          diff = subprocess.run(
+              ["git", "diff", COMMIT, "HEAD", "--", *ARTIFACTS],
+              capture_output=True, text=True)
+          if diff.stdout.strip():
+              print("GOVERNED_ARTIFACT_DIFF_NONEMPTY")
+              print(diff.stdout[:2000])
+          else:
+              print("GOVERNED_ARTIFACT_DIFF_EMPTY")
+          EOF

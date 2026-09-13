@@ -2,6 +2,7 @@
 # and trust boundaries. Organs consume shared governance; none owns it.
 version: "1.0.0"
 
+
 organs:
   railscout:
     identity: spiffe://uniimente.internal/organ/railscout
@@ -26,12 +27,6 @@ organs:
     doctrine: "Find large recurring money flows obstructed by broken proof, trust, eligibility, coordination, routing, or settlement. Enter through the smallest capital-light control wedge."
     status: active
     migration: consume shared contracts instead of mirrored copies (Phase 3)
-  ivio_nemt:
-    identity: spiffe://uniimente.internal/venture/ivio
-    role: first_closed_loop_proving_ground
-    repository: null   # venture, not code
-    legal_principal: IVIO_NEMT_LLC
-    status: planned
   personal_command:
     identity: spiffe://uniimente.internal/organ/personal-command
     role: founder_development_and_capacity
@@ -52,6 +47,7 @@ organs:
     role: constrained_allocation_cognition
     notes: Scores never authorize spending.
     status: planned
+
 
 rules:
   organ_to_organ_calls: prohibited   # coordination through governed events only

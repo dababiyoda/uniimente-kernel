@@ -58,7 +58,8 @@ canonical_functions:
   # registry. `delegated_to` resolves in identity/organ-registry.yaml.
   first_transaction_vertical:
     owner: venture_cell_registry
-    delegated_to: ivio_nemt          # identity/organ-registry.yaml
+    # No active Venture Cell to delegate to (IVIO-NEMT retired 2026-09-13).
+    # Future delegation must resolve in identity/organ-registry.yaml.
     delegation_active: false
   # Previously `tgh_control_rail` — a named prospect's rail, registered nowhere
   # in this repository. An unregistered, facility-specific steward may not own a

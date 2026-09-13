@@ -5,8 +5,8 @@ tests:
     given: an action naming no legal principal or an unregistered one
     then: hard refusal
   cross_principal_credentials:
-    given: credentials issued to IVIO_NEMT_LLC
-    when: used in an action naming DALEOBANKS_MEDIA as principal
+    given: credentials issued to DALEOBANKS_MEDIA
+    when: used in an action naming alfonso_lopez as principal
     then: hard refusal and incident
   reserved_matter_reached:
     given: an agent at any autonomy level including 5

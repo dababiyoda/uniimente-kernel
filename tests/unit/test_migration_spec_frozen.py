@@ -20,7 +20,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 def test_spec_seal_matches_its_contents():
     assert spec.spec_hash() == spec.SPEC_SHA256, (
         "the frozen Package 4 experiment changed.\n"
-        f"  recorded: {spec.SPEC_SHA256}\n  computed: {spec.spec_hash()}\n"
+        f"  recorded: {spec.SPEC_SHA256}\n"
+        f"  computed: {spec.spec_hash()}\n"
         "If this is a deliberate amendment, say so in the commit message and in "
         "docs/release/package-4/ — do not just update the hash."
     )
@@ -309,4 +310,14 @@ def test_continuity_baseline_is_true_right_now():
         digest.update(subprocess.check_output(
             ["git", "show", f"{spec.BASE_COMMIT}:{rel}"], cwd=ROOT))
     assert digest.hexdigest() == spec.CONTINUITY_COMBINED_SHA256
-    assert SR001.matches(ROOT)
+    # SR-001 is historical provenance: prove it remains immutable and
+    # reconstructable from its recorded source commit — never that today's
+    # worktree still matches it.
+    historical = hashlib.sha256()
+    for rel, expected in SR001.artifacts:
+        raw = subprocess.check_output(
+            ["git", "show", f"{SR001.source_commit}:{rel}"], cwd=ROOT)
+        assert hashlib.sha256(raw).hexdigest() == expected, \
+            f"{rel} does not match its frozen SR-001 hash"
+        historical.update(raw)
+    assert historical.hexdigest() == SR001.continuity_sha256

@@ -58,7 +58,7 @@
       "role": "Adversarial Reviewer",
       "position": "The strongest competitor is fast but constitutionally unsafe by default: provider auto-permission can execute irreversible effects and hosted recovery can duplicate work.",
       "material_concerns": ["Authority laundering through provider allow signals", "Duplicate effects after ambiguous completion", "Governance automation becoming de facto policy authority"],
-      "evidence_refs": ["Anthropic permission-policy warning", "Provider status incidents", "PR 91 dissent"],
+      "evidence_refs": ["Anthropic permission-policy warning", "Provider status incidents", "PR 105 dissent"],
       "recommendation": "NEEDS_FOUNDER_DECISION"
     },
     {
@@ -131,7 +131,7 @@
       {"id": "D6", "statement": "Recurring review can create low-signal governance churn.", "severity": "medium", "response_type": "learning", "redesigned_response": "Keep no-material-change/no-PR and kill after one immaterial recurring PR."}
     ],
     "comparisons": {
-      "baseline": "Current main has generic recursive governance but no merged provider-change section; PR 91 holds the prior bounded protocol and is behind main.",
+      "baseline": "Current main has generic recursive governance but no merged provider-change section; the superseded PR 91 holds the prior bounded protocol and is behind main.",
       "do_nothing": "Avoids mutation but leaves hosted-state, compaction, auto-permission, key-expiry, and billing-allocation semantics implicit.",
       "simplest_viable_alternative": "A brief-only report is lower effort but lacks a durable rule for future adapters and collaborators.",
       "strongest_competing_architecture": "Provider-native durable agent runtimes maximize feature access but duplicate canonical state, approvals, recovery, and cost paths.",
@@ -159,7 +159,7 @@
       {"disadvantage_id": "D5", "outcome": "resolved", "rationale": "Canonical receipts, idempotency continuity, circuit breaking, and recovery canaries gate retry and failover.", "owner": "workflow operator", "review_trigger": "Any timeout, disconnect, background completion, or status recovery"},
       {"disadvantage_id": "D6", "outcome": "accepted", "rationale": "The materiality and no-change/no-PR gates bound review noise.", "owner": "weekly provider reviewer", "review_trigger": "One immaterial PR or repeated low-signal brief"}
     ],
-    "final_design": "Update the existing draft PR 91 rather than create a duplicate PR: reconcile its protocol file with current main, add explicit provider-session, compaction, permission, credential-expiry, cost-allocation, and recovery bindings, and append this source-backed review plus validated deliberation. Make no runtime, provider, credential, account, or production change.",
+    "final_design": "Supersede non-mergeable draft PR 91 with a fresh branch from current main and draft PR 105: preserve the prior bounded protocol and evidence, add explicit provider-session, compaction, permission, credential-expiry, cost-allocation, and recovery bindings, and append this source-backed review plus validated deliberation. Make no runtime, provider, credential, account, or production change.",
     "residual_risks": [
       {"risk": "Live configurations and contracts can differ from repository evidence.", "mitigation": "State the inspection limit and require separate authorized production/account inventory.", "owner": "founder or delegated operator", "review_trigger": "Before any migration or credential/account action"},
       {"risk": "One agent performed all five perspectives.", "mitigation": "Keep the PR draft and require human or independent review before merge or adoption.", "owner": "alfonso_lopez", "review_trigger": "Draft PR review"},
@@ -171,7 +171,7 @@
     "present": true,
     "handling": "Preserve the objection in the review and PR; draft-only execution proceeds because it is reversible, but merge and any consequential adoption remain human decisions.",
     "entries": [
-      {"role": "Adversarial Reviewer", "position": "Do not let recurring model-authored protocol edits normalize de facto policy authority.", "rationale": "Even correct draft text can consume founder attention and shift institutional norms without measured benefit.", "evidence_threshold": "Show that the packet prevents a missed deadline or unsafe retry without producing an immaterial recurring PR; otherwise regress to brief-only review.", "owner": "alfonso_lopez", "review_trigger": "Review of PR 91 and immediately after any low-signal PR or boundary violation"}
+      {"role": "Adversarial Reviewer", "position": "Do not let recurring model-authored protocol edits normalize de facto policy authority.", "rationale": "Even correct draft text can consume founder attention and shift institutional norms without measured benefit.", "evidence_threshold": "Show that the packet prevents a missed deadline or unsafe retry without producing an immaterial recurring PR; otherwise regress to brief-only review.", "owner": "alfonso_lopez", "review_trigger": "Review of PR 105 and immediately after any low-signal PR or boundary violation"}
     ]
   },
   "authority_impact": {
@@ -184,7 +184,7 @@
   "migration_plan": "No runtime migration. If a provider feature is later proposed, first add a narrow canonical adapter contract and deterministic fixtures, then run a separately authorized sandbox canary with independent evaluation; production routing, credentials, data class, cost ceiling, and rollback require their own founder-approved change.",
   "rollback_plan": {
     "possible": true,
-    "steps": ["Leave draft PR 91 unmerged or revert its docs-only commits", "Preserve the dated review and dissent as historical evidence", "Regress recurring repository edits to brief-only review if the materiality gate fails"],
+    "steps": ["Leave draft PR 105 unmerged or revert its docs-only commits", "Preserve the dated review and dissent as historical evidence", "Regress recurring repository edits to brief-only review if the materiality gate fails"],
     "reason_impossible": null
   },
   "kill_criteria": [
@@ -200,5 +200,5 @@
   ],
   "decision": "NEEDS_FOUNDER_DECISION",
   "decision_owner": "alfonso_lopez",
-  "review_trigger": "Founder review of draft PR 91; next material provider change; any proposed provider adapter; any known key expiry; any ambiguous provider completion; or one immaterial recurring PR"
+  "review_trigger": "Founder review of draft PR 105; next material provider change; any proposed provider adapter; any known key expiry; any ambiguous provider completion; or one immaterial recurring PR"
 }

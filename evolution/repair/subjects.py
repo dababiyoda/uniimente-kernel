@@ -53,9 +53,9 @@ SR001_WORKFLOW_CLASS_SHA256 = {
 }
 
 # ---------------------------------------------------------------------------
-# SR-002 — versioned successor baseline (founder-authorized IVIO-NEMT retirement)
+# SR-002 — versioned successor baseline (founder-authorized venture retirement)
 # ---------------------------------------------------------------------------
-# Lineage: SR-001 -> founder-authorized IVIO retirement -> SR-002/current.
+# Lineage: SR-001 -> founder-authorized venture retirement -> SR-002/current.
 # SR-001 above is historical provenance and is NOT rewritten: its subject ID,
 # source commit, per-artifact hashes and continuity hash remain byte-for-byte.
 # SR-002 binds the exact reviewed post-retirement source state (commit
@@ -63,7 +63,7 @@ SR001_WORKFLOW_CLASS_SHA256 = {
 # as sha256(`git show 07af575:<rel>`) in the same artifact order as SR-001;
 # the combined hash is sha256 over the concatenated artifact bytes in that
 # order, exactly as SubjectBinding.matches() recomputes it.
-SR002 = SubjectBinding("sr002-post-ivio-retirement-0.1.0",
+SR002 = SubjectBinding("sr002-post-retirement-0.1.0",
     "07af5758197501662df81ff05e2b34ce8224a322",
     (
         ("constitution/constitution.ucl",
@@ -115,12 +115,12 @@ class SubjectSuccession:
 SR002_SUCCESSION = SubjectSuccession(
     subject_id=SR002.subject_id,
     predecessor_id=SR001.subject_id,
-    founder_authority="IVIO-NEMT retirement directive, founder ruling 2026-09-13",
+    founder_authority="venture retirement directive, founder ruling 2026-09-13",
     source_commit=SR002.source_commit,
     governed_artifacts=tuple(rel for rel, _ in SR002.artifacts),
     artifact_sha256=SR002.artifacts,
     continuity_sha256=SR002.continuity_sha256,
-    reason=("founder-authorized retirement of IVIO-NEMT changed previously "
+    reason=("founder-authorized venture retirement changed previously "
             "protected current-state artifacts in authority/, identity/, "
             "ventures/ (authority/legal-principals.yaml, "
             "identity/organ-registry.yaml, identity/agent-registry.yaml); "

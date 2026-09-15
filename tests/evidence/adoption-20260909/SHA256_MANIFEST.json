@@ -91,10 +91,6 @@
     "sha256": "c26fb3301ed083944208c161596980a1d76f5ca6b1ebb68017d21f9e88261fe0",
     "bytes": 7746
   },
-  "kernel-candidate.patch": {
-    "sha256": "73b06f17a7c40523c33c76e9907c43b847ff8475748addf1f1482a8d1a5b5976",
-    "bytes": 387265
-  },
   "kernel-check_authority_singleton.log": {
     "sha256": "eb927c68b9d03fbf460b333b67bd938c076fbde9e32a3b453f40e5889a92ad56",
     "bytes": 729
@@ -111,10 +107,6 @@
     "sha256": "60003710af3b6df90924f577c1a04ba126faa342fc7a0255719693e208a4f55d",
     "bytes": 1735
   },
-  "kernel-closed.xml": {
-    "sha256": "f723f90d8030e89f95be3e35764333729a0a539712fdcab14da7b1cd14784196",
-    "bytes": 71306
-  },
   "kernel-compat-final.log": {
     "sha256": "e4f51ffdd63525170d80cebef829a33d20398217f5bfdc140cca47099195c633",
     "bytes": 1593
@@ -126,10 +118,6 @@
   "kernel-current-main-composition.log": {
     "sha256": "2e09df10cd9de3a58662e9065863b56255e8288be0d7d03d71ef4527ab124d27",
     "bytes": 1579
-  },
-  "kernel-current-main-composition.patch": {
-    "sha256": "217d44c35844785ab411d9752e8701e08d7a55e616d49be5cac327e4e85abbe2",
-    "bytes": 387171
   },
   "kernel-current-main-doctrine-final.log": {
     "sha256": "8538be634031fa57abccc289d9cbb1f63ccbc987649d86dfc040d26baf428976",
@@ -154,10 +142,6 @@
   "kernel-institutional-verifier.log": {
     "sha256": "1f5a62a685968e0e07e2adbadcbca78fa2e6e04f2c7dc4896e34e216b0cdcb94",
     "bytes": 828
-  },
-  "kernel-inventory.json": {
-    "sha256": "695b5d6ee98dcd9ee37b908e384f46710746dbe07cd58f7dd29c5cb7c3b61f59",
-    "bytes": 86248
   },
   "kernel-main-baseline.log": {
     "sha256": "0e5f67b2c6cccecd6e388fc6c69eb18893a5e6e8b405dc83514927387c877f0b",

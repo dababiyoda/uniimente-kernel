@@ -85,8 +85,7 @@ def build_registry() -> ClosureRegistry:
         r = PassportRegistry()
         # This check needs A VALID REGISTERED PRINCIPAL, not a specific venture.
         # alfonso_lopez is chosen deliberately and stated here; it is never a
-        # silent default. Previously this read IVIO_NEMT_LLC, which made a
-        # Venture Cell's legal entity the implicit default inside a core module.
+        # silent default. Core examples use an explicit registered principal.
         p = r.issue(kind="workflow", creator="c", owner_organ="o", legal_principal="alfonso_lopez",
                     declared_capabilities=[], budget_ceiling_usd=10, consequence_class="internal_write")
         d = r.to_dict(p.passport_id)

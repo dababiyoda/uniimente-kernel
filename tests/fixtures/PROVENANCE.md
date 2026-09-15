@@ -1,33 +1,14 @@
 # Fixture provenance
 
-These fixtures were NOT hand-written. They were produced by executing the sibling
-organs' own code in-session on 2026-07-20, then frozen here so the kernel's
-integration tests exercise the real wire shapes without importing the sibling
-repositories.
+`wire_opportunity_packet.json` is a synthetic, domain-neutral derivative updated
+on 2026-09-15 under the founder deletion instruction. Its wire shape and identifiers
+are retained for adapter tests; its scenario is not a captured observation or market evidence.
 
-- `wire_opportunity_packet.json` — output of
-  `services.venture_protocol.packet_to_wire()` over a `db.models.OpportunityPacket`,
-  from `dababiyoda/daleobanks` @ `829c5f2810776bef65d6ea108800a3516c9f4c2b`.
-- `wire_venture_assessment.json` — output of
-  `services.wealthmachine_client.WealthMachineClient._evaluate_mock()` (the
-  deterministic scorer that mirrors the WealthMachineIntelligence engine contract,
-  including the adversarial committee from `services/adversarial_cases.py`)
-  serialized with `assessment_to_wire()`, same commit. The committee module is
-  mirrored field-for-field from `dababiyoda/wealthmachineintelligence`
-  @ `6549984a22a171f68b268b775f19192aee599609` (`src/services/adversarial.py`).
+`wire_venture_assessment.json` remains the historical scorer output captured on
+2026-07-20 from `dababiyoda/daleobanks` commit
+`829c5f2810776bef65d6ea108800a3516c9f4c2b`, with the committee mirrored from
+`dababiyoda/wealthmachineintelligence` commit
+`6549984a22a171f68b268b775f19192aee599609`.
 
-The scenario content (NEMT broker-dispute evidence) tracks the planned `ivio_nemt`
-proving-ground organ in `identity/organ-registry.yaml`.
-
-Regeneration: clone both repos at the commits above and re-run the capture snippet
-recorded in the Phase Zero PR description. Changing these files by hand breaks the
-"executable evidence" rule in `docs/CANONICAL_EXECUTION_ORDER.md`.
-
-## 2026-09-13 — IVIO-NEMT retired (HISTORICAL, not current canon)
-
-The `ivio_nemt` proving-ground organ referenced above was retired by founder
-directive on 2026-09-13 and removed from `identity/organ-registry.yaml`,
-`identity/agent-registry.yaml`, `authority/legal-principals.yaml`, and `ventures/`.
-These fixtures are preserved unchanged as frozen executable evidence of the
-2026-07-20 capture; their NEMT scenario content is HISTORICAL and does not imply
-an active venture.
+These files test wire compatibility. The modified packet must not be represented
+as byte-identical sibling output or as evidence that the scenario was observed.

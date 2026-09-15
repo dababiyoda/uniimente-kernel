@@ -1,6 +1,7 @@
+> Edited historical extract, 2026-09-15: retired-domain references removed by founder instruction. This is not an unchanged release record or a description of current registrations.
+
 # Contract Inventory
 
-**Candidate:** `release/canonical-v1` @ `a4fa43e`. Inventory only — **no contract decisions are made in Package 1**, and no IVIO contracts are added.
 
 ## On the candidate (13 schemas)
 
@@ -24,7 +25,6 @@
 
 | Schemas | Source | Why excluded from Package 1 |
 |---|---|---|
-| `ivio/v1/*` (3) | PR #45 | **IVIO is a Venture Cell.** Preserved as separate venture integration; must not enter core |
 | `settlement-*`, `verified-outcome-credential`, `verifier-attestation` (5) | PR #35 | **Generic extension candidate.** Preserved inactive; may not enter core until two distinct Venture Cells need the same mechanism with no hidden domain assumptions |
 
 ## Decision rule for the six unsettled schemas

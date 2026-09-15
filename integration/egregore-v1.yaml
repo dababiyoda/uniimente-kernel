@@ -58,7 +58,7 @@ canonical_functions:
   # registry. `delegated_to` resolves in identity/organ-registry.yaml.
   first_transaction_vertical:
     owner: venture_cell_registry
-    # No active Venture Cell to delegate to (IVIO-NEMT retired 2026-09-13).
+    # No active Venture Cell to delegate to.
     # Future delegation must resolve in identity/organ-registry.yaml.
     delegation_active: false
   # Previously `tgh_control_rail` — a named prospect's rail, registered nowhere
@@ -119,10 +119,6 @@ source_prs:
     role: governed_standing_cognition
     disposition: merged_into_integration
     merge_commit: 3768d5dc9424638312f4fb018a93a0800b0e05c9
-  - number: 30
-    role: setpoint_control_and_ivio_first_cell
-    disposition: merged_into_integration
-    merge_commit: 378d66dfb6bcab7e704a29a5c706bbbf9b91e9ea
   - number: 27
     role: foundry_omnimorph_source
     disposition: preserved_source_superseded_merge_path

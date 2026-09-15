@@ -1,3 +1,5 @@
+> Edited historical extract, 2026-09-15: retired-domain references removed by founder instruction. This is not an unchanged release record or a description of current registrations.
+
 # Core versus Venture Boundary Report
 
 **Candidate:** `release/canonical-v1` @ `a4fa43e` (baseline CI at `8b55efa`)
@@ -8,11 +10,10 @@
 
 ## Headline finding
 
-**The core is not currently venture-neutral.** Healthcare and IVIO-specific assumptions are present inside core-classified paths. They are contained and nameable — four files and one manifest — but they are real, and they are exactly the kind of drift the corrected boundary exists to prevent.
 
 **The deepest core is clean.** `tests/unit/test_closure.py`, `test_consequence_gate.py`, and `test_capabilities.py` contain zero healthcare assertions. Constitution, authority, gate, events, provenance, and memory carry no business logic.
 
-Nothing in this report is a deletion proposal. Everything named is preserved.
+This edited extract does not restore deleted material or authorize a venture.
 
 ---
 
@@ -72,28 +73,10 @@ A core closure module carries a specific industry's roles as in-code values. Eve
 **Severity: high** — it is core code, not documentation.
 **Disposition:** parameterise, moving the healthcare instance into a venture fixture. Not in Package 1.
 
-### L2 — `closure/kernel_registry.py:86` · core path, venture principal
+### Removed historical entries
 
-`legal_principal="IVIO_NEMT_LLC"` appears inside a core registry module.
-**Severity: medium** — appears to be demonstration data.
-**Disposition:** replace with a neutral placeholder principal; move the IVIO case to a venture test.
-
-### L3 — `morphogenesis/ivio_first_cell.py` · venture setpoint inside core package
-
-Declares `setpoint_id="ivio-nemt-first-validated-genome-v1"`, `venture_cell="IVIO-NEMT"`. You named this file directly: it is not the definition of the developmental organism.
-
-**Severity: medium** — it is correctly scoped internally (declares a target, claims nothing) but sits in a core package.
-**Disposition:** reclassify as **Venture Cell** work and relocate. `morphogenesis/contracts.py` and `morphogenesis/engine.py` remain core and are preserved unchanged.
-
-### L4 — `integration/egregore-v1.yaml` · manifest names a venture as owner
-
-`owner: ivio_obvio_nemt` and `role: setpoint_control_and_ivio_first_cell`.
-**Severity: medium** — an integration manifest asserting a venture owns a core role.
-**Disposition:** re-point to a neutral owner.
-
-### Not leakage — registry entries are data, not rules
-
-`authority/legal-principals.yaml` (`IVIO_NEMT_LLC`) and `identity/organ-registry.yaml` / `agent-registry.yaml` (`ivio_nemt`, `ivio_sales_agent`) are **correct as they stand.** A generic legal-principal registry must be able to name real entities, and the gate cannot function otherwise. The registry is core; the rows are venture data. `IVIO_NEMT_LLC` is properly marked `status: proving_ground`, `jurisdiction: to_be_confirmed_by_founder`.
+Retired-domain findings and former registry descriptions were deleted under the
+founder cleanup instruction. Consult the current registries for current state.
 
 ---
 

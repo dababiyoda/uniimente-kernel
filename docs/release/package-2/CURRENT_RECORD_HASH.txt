@@ -1,0 +1,1 @@
+ee15530700a41da93d20125d41a0ab135c0f2a945600a2c266bd199b0bc23b08  integration/egregore-v1.yaml (source_prs block; cleanup successor 2026-09-15)

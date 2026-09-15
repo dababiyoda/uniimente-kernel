@@ -1,3 +1,5 @@
+> Edited historical extract, 2026-09-15: retired-domain references removed by founder instruction. This is not an unchanged release record or a description of current registrations.
+
 # Package 1 — Canonical Core Release Candidate
 
 Evidence package produced under the three-pass founder protocol, **corrected** by the
@@ -35,5 +37,4 @@ events, provenance, or memory. None is remediated in Package 1.
 
 ## What was deliberately excluded
 
-No IVIO contracts. No PR #45, #42, #44, #35, #26 integration. No historical PR closed.
 No contract decisions. No remediation of the four contamination points. `main` untouched.

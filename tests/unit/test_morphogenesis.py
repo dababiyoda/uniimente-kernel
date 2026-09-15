@@ -20,10 +20,9 @@ NOW = datetime(2026, 7, 20, 16, 0, tzinfo=timezone.utc)
 
 
 def _setpoint():
-    """Neutral proving-cell setpoint (IVIO-NEMT retired by founder directive 2026-09-13).
+    """Neutral proving-cell setpoint.
 
-    Replaces the deleted ventures.ivio_nemt.first_cell.build_ivio_first_setpoint
-    fixture with an equivalent generic setpoint so the engine mechanics remain
+    Uses a generic setpoint so the engine mechanics remain
     tested without treating a retired venture as active.
     """
     metrics = (

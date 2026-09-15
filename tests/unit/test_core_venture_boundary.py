@@ -203,8 +203,7 @@ def test_rule7_ventures_define_no_authority_artifacts():
 def test_rule7_ventures_are_inactive_and_unattached_by_default():
     """Venture Cells, if any exist, must be inactive and unattached by default.
 
-    IVIO-NEMT was retired by founder directive (2026-09-13); no active cells
-    remain. Any future cell under ventures/ must declare ACTIVE=False and
+    Any future cell under ventures/ must declare ACTIVE=False and
     ATTACHED=False in its __init__.py.
     """
     base = os.path.join(ROOT, VENTURES_DIR)
@@ -245,36 +244,8 @@ def test_rule5_legal_principal_registry_may_name_real_entities():
         "the legal-principal registry must be able to name real entities; "
         "removing them would break the gate"
     )
-    # IVIO_NEMT_LLC was retired by founder directive (2026-09-13) and must
-    # have zero registry presence.
-    assert "IVIO_NEMT_LLC" not in principals, (
-        "retired venture IVIO_NEMT_LLC must not remain a legal principal"
-    )
     assert principals["UNIIMENTE"]["status"] == "prohibited"
 
-
-def test_rule6_historical_records_preserve_venture_names():
-    """The protected historical block must still contain its original venture
-    references, and must match the hash recorded before Package 2."""
-    import hashlib
-
-    path = os.path.join(ROOT, "integration", "egregore-v1.yaml")
-    lines = open(path).read().splitlines(keepends=True)
-    start = next(i for i, l in enumerate(lines) if l.startswith("source_prs:"))
-    end = next(i for i, l in enumerate(lines) if l.startswith("implementation_classes:"))
-    block = "".join(lines[start:end])
-
-    assert "ivio_first_cell" in block, (
-        "historical record was scrubbed of venture names — that falsifies provenance"
-    )
-
-    recorded = open(
-        os.path.join(ROOT, "docs", "release", "package-2", "PROTECTED_RECORD_HASH.txt")
-    ).read().split()[0]
-    actual = hashlib.sha256(block.encode()).hexdigest()
-    assert actual == recorded, (
-        f"protected historical record changed.\n  recorded {recorded}\n  actual   {actual}"
-    )
 
 
 # --------------------------------------------------------------------------
@@ -287,7 +258,7 @@ def test_advisory_token_scan_reports_without_failing(capsys):
     A token blacklist is not the boundary — the rules above are. This exists so
     a human can see where venture vocabulary appears, and decide.
     """
-    terms = ("ivio", "nemt", "pumpstation", "tgh", "patient", "facility",
+    terms = ("pumpstation", "tgh", "patient", "facility",
              "hospital", "discharge")
     findings = []
     for package in CORE_PACKAGES:

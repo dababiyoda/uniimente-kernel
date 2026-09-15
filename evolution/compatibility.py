@@ -7,9 +7,6 @@ repair, so a passing continuation cannot rewrite a historical result.
 Unknown future changes fail the same equality gate; never learn expected hashes
 from the files being evaluated at runtime.
 
-SR-002 (2026-09-13) is the versioned successor profile for the post-IVIO-NEMT
-retirement state; the SR-001 profile below is preserved unchanged as
-historical provenance.
 """
 from evolution.repair import spec as repair_spec
 
@@ -36,7 +33,7 @@ def subject_record():
 
 
 # ---------------------------------------------------------------------------
-# SR-002 successor profile (founder-authorized IVIO-NEMT retirement).
+# SR-002 successor profile.
 # The SR-001 profile above is historical and unchanged; current-state
 # evaluations use this successor profile.
 # ---------------------------------------------------------------------------
@@ -51,7 +48,6 @@ def sr002_subject_record():
         "profile_id": SR002_PROFILE_ID,
         "subject_commit": SR002_SUBJECT_COMMIT,
         "predecessor_profile_id": PROFILE_ID,
-        "founder_authority": "IVIO-NEMT retirement directive, founder ruling 2026-09-13",
         "historical_continuity_sha256": repair_spec.CONTINUITY_COMBINED_SHA256,
         "continuation_continuity_sha256": SR002_CONTINUITY_COMBINED_SHA256,
         "historical_spec_unchanged": repair_spec.spec_hash() == repair_spec.SPEC_SHA256,

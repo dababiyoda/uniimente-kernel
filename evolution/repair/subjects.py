@@ -53,17 +53,8 @@ SR001_WORKFLOW_CLASS_SHA256 = {
 }
 
 # ---------------------------------------------------------------------------
-# SR-002 — versioned successor baseline (founder-authorized IVIO-NEMT retirement)
-# ---------------------------------------------------------------------------
-# Lineage: SR-001 -> founder-authorized IVIO retirement -> SR-002/current.
-# SR-001 above is historical provenance and is NOT rewritten: its subject ID,
-# source commit, per-artifact hashes and continuity hash remain byte-for-byte.
-# SR-002 binds the exact reviewed post-retirement source state (commit
-# 07af5758197501662df81ff05e2b34ce8224a322). Per-artifact hashes were measured
-# as sha256(`git show 07af575:<rel>`) in the same artifact order as SR-001;
-# the combined hash is sha256 over the concatenated artifact bytes in that
-# order, exactly as SubjectBinding.matches() recomputes it.
-SR002 = SubjectBinding("sr002-post-ivio-retirement-0.1.0",
+# SR-002 — fixed source binding for current evaluations.
+SR002 = SubjectBinding("sr002-0.1.0",
     "07af5758197501662df81ff05e2b34ce8224a322",
     (
         ("constitution/constitution.ucl",
@@ -92,42 +83,3 @@ SR002 = SubjectBinding("sr002-post-ivio-retirement-0.1.0",
          "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"),
     ),
     "7755bdc6759a153f113cf4af98815f899b9a047aaf679fd38faff16b44f4aab8")
-
-
-@dataclass(frozen=True)
-class SubjectSuccession:
-    """Explicit lineage record for a successor subject binding.
-
-    Recorded on the successor, never by rewriting the predecessor.
-    """
-    subject_id: str
-    predecessor_id: str
-    founder_authority: str
-    source_commit: str
-    governed_artifacts: tuple
-    artifact_sha256: tuple
-    continuity_sha256: str
-    reason: str
-    date: str
-    authority_note: str
-
-
-SR002_SUCCESSION = SubjectSuccession(
-    subject_id=SR002.subject_id,
-    predecessor_id=SR001.subject_id,
-    founder_authority="IVIO-NEMT retirement directive, founder ruling 2026-09-13",
-    source_commit=SR002.source_commit,
-    governed_artifacts=tuple(rel for rel, _ in SR002.artifacts),
-    artifact_sha256=SR002.artifacts,
-    continuity_sha256=SR002.continuity_sha256,
-    reason=("founder-authorized retirement of IVIO-NEMT changed previously "
-            "protected current-state artifacts in authority/, identity/, "
-            "ventures/ (authority/legal-principals.yaml, "
-            "identity/organ-registry.yaml, identity/agent-registry.yaml); "
-            "the SR-001 review binding therefore no longer matches the "
-            "authorized current source"),
-    date="2026-09-13",
-    authority_note=("This changes the continuity reference, not constitutional "
-                    "authority. No capability grant is issued, nothing is "
-                    "promoted, and no authority is created by this succession."),
-)

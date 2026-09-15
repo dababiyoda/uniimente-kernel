@@ -1,0 +1,204 @@
+{
+  "decision_id": "DELIB-PROVIDER-2026-09-15-001",
+  "title": "Bind provider-native sessions, compaction, permissions, credentials, billing, and recovery to UNIIMENTE's single canonical control plane",
+  "problem": "OpenAI and Anthropic added provider-hosted agent state, compaction, and automated permission decisions while Kimi changed billing allocation and reported repeated search degradation; these capabilities can improve workflows but can also create parallel runtime, authority, replay, privacy, and cost paths.",
+  "founder_intent_refs": ["INTENT-0027", "INTENT-0028", "INTENT-0029", "INTENT-0030", "founder directive 2026-09-15 automation scope"],
+  "baseline": "Kernel main at d7c235ae owns canonical authority, history, task/receipt semantics, and consequence controls; DALEOBANKS main at e2f1ebed has the only active provider adapter found, using OpenAI Chat Completions and optional embeddings; WMI and PumpStation defer constitutional authority to the Kernel.",
+  "alternatives": [
+    {
+      "name": "Narrow provider capability bindings plus review evidence",
+      "description": "Treat hosted sessions, compaction blocks, permission evaluations, key-expiry metadata, billing allocation, and status events as evidence behind canonical adapters; add no runtime.",
+      "advantages": ["Preserves provider capability access", "Keeps one source of truth and one authority path", "Makes replay, cost, and residency risks reviewable"],
+      "disadvantages": ["Adds governance text", "Requires future adapter fixtures before adoption"],
+      "revival_evidence": "Retain unless a simpler existing Kernel contract already proves all mappings without new protocol text."
+    },
+    {
+      "name": "Brief only",
+      "description": "Report the material changes without durable repository evidence or protocol rules.",
+      "advantages": ["Lowest mutation and review cost"],
+      "disadvantages": ["Later agents may reinterpret provider state as authority", "No durable compaction or billing-allocation rule"],
+      "revival_evidence": "Revive if the protocol is merged elsewhere or a canonical contract already encodes these rules."
+    },
+    {
+      "name": "Provider-native agent runtimes",
+      "description": "Use OpenAI Agents API and Claude Managed Agents as independent durable orchestration systems with provider-native permissions and recovery.",
+      "advantages": ["Fast access to hosted orchestration, sandboxes, recovery, and tooling"],
+      "disadvantages": ["Duplicates scheduler, history, memory, approvals, and receipts", "Creates vendor lock-in and residency constraints", "Can execute effects before UNIIMENTE review"],
+      "revival_evidence": "Only a founder-approved architecture proving one canonical authority/event/receipt plane and measured superiority over the Kernel baseline could revive it."
+    },
+    {
+      "name": "Fixture-only experiment",
+      "description": "Without provider calls, model signed-block, permission, timeout, and billing events as deterministic fixtures mapped into existing canonical records.",
+      "advantages": ["Reversible", "Can falsify mapping assumptions without credentials or external effects"],
+      "disadvantages": ["Does not prove live provider behavior"],
+      "revival_evidence": "Run only when an owning adapter is proposed and a founder authorizes the bounded experiment."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Current main remains unchanged and the existing draft provider protocol stays stale/conflicted while provider-native state can be adopted later without explicit canonical bindings.",
+    "advantages": ["No new review burden", "No repository mutation"],
+    "disadvantages": ["Hosted state or auto permissions may be mistaken for authority", "Compaction may erase replay evidence", "Billing and outage retries may be misclassified"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Retain the provider capability horizon while binding every new surface to founder-authorized Kernel authority and INTENT-0029's reversible review boundary.",
+      "material_concerns": ["Provider convenience must not narrow or replace the canonical UNIIMENTE destination", "No provider change grants production authority"],
+      "evidence_refs": ["INTENT-0029", "Kernel AGENTS.md", "OpenAI and Anthropic official release notes"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Use one adapter seam and canonical workflow, event, approval, idempotency, receipt, and cost identities; provider sessions and summaries remain subordinate artifacts.",
+      "material_concerns": ["Second durable runtime", "Compaction lineage loss", "Provider event IDs replacing canonical identities"],
+      "evidence_refs": ["Kernel main d7c235ae", "OpenAI Agents API overview", "Anthropic compaction documentation"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The strongest competitor is fast but constitutionally unsafe by default: provider auto-permission can execute irreversible effects and hosted recovery can duplicate work.",
+      "material_concerns": ["Authority laundering through provider allow signals", "Duplicate effects after ambiguous completion", "Governance automation becoming de facto policy authority"],
+      "evidence_refs": ["Anthropic permission-policy warning", "Provider status incidents", "PR 91 dissent"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "The only direct exposure is DALEOBANKS' existing OpenAI key and non-effectful generation path; record expiry readiness but perform no rotation or routing work.",
+      "material_concerns": ["Credential expiry availability pressure", "Retry cost", "Live configuration differs from repository"],
+      "evidence_refs": ["DALEOBANKS services/llm_adapter.py at e2f1ebed", "DALEOBANKS services/embeddings.py at e2f1ebed", "OpenAI key guidance"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Provider-signed summaries and safety evaluations are claims, not independent proof; preserve raw and canonical records, protect data classes, and separate unit price from account balances.",
+      "material_concerns": ["US-only/no-ZDR Agents API", "Same-provider self-evaluation", "Billing-account privacy and contract ambiguity"],
+      "evidence_refs": ["OpenAI Agents API data controls", "Kimi platform changelog", "GitHub default-branch searches"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "OpenAI released the Agents API public beta and project-key expiration controls on 2026-09-10.",
+      "tier": "primary_source",
+      "reference": "https://developers.openai.com/api/docs/changelog",
+      "finding": "Hosted durable sessions/orchestration/recovery and key-lifetime controls are available; Agents API is US-residency-only and not ZDR eligible."
+    },
+    {
+      "claim": "Anthropic released on-demand signed compaction on 2026-09-14 and Managed Agents auto permission evaluation on 2026-09-10.",
+      "tier": "primary_source",
+      "reference": "https://platform.claude.com/docs/en/release-notes/overview",
+      "finding": "Signed summaries replace history in provider requests; auto may execute a tool before human review and is explicitly not a human checkpoint."
+    },
+    {
+      "claim": "Kimi changed cash/voucher allocation on 2026-09-14 and had repeated search-error incidents from 2026-09-09 through 2026-09-14.",
+      "tier": "primary_source",
+      "reference": "https://platform.kimi.ai/docs/platform-changelog and https://status.moonshot.cn/",
+      "finding": "Public-account cash timing changes without a unit-price change; repeated short search degradation raises retry and duplicate-cost risk."
+    },
+    {
+      "claim": "The four default branches have no active OpenAI Agents API, Anthropic, or Kimi adapter surface; DALEOBANKS has the only active provider code found.",
+      "tier": "other",
+      "reference": "GitHub connector searches and file reads at d7c235ae, e2f1ebed, ec82b802, and db6758df",
+      "finding": "No exact native-agent/compaction/permission/Kimi-search tokens were found; DALEOBANKS uses gpt-4o-mini and text-embedding-3-small."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Material provider releases require an immediate integration migration.",
+      "tier": "other",
+      "reference": "Exact GitHub default-branch searches on 2026-09-15",
+      "finding": "No direct use of the new hosted agent, compaction, auto-permission, cyber, live, or Kimi search surfaces was found; a runtime migration is not warranted."
+    },
+    {
+      "claim": "Status recovery proves a timed-out or disconnected task is safe to retry.",
+      "tier": "primary_source",
+      "reference": "https://status.claude.com/ and https://status.moonshot.cn/",
+      "finding": "Status pages report service recovery, not per-request absence, completion, or external-effect reconciliation."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Preserve access to useful provider capabilities while keeping one canonical UNIIMENTE authority, workflow, event, replay, receipt, evaluation, credential, cost, and runtime path.",
+    "advantages": [
+      {"id": "A1", "statement": "Provider-native continuity and compaction can reduce operational work and context cost.", "amplified_value": "Used behind one adapter, provider innovations become replaceable capabilities that strengthen rather than fragment the Kernel."},
+      {"id": "A2", "statement": "Permission and status telemetry can improve observability.", "amplified_value": "Preserved beside canonical decisions and receipts, it supports independent auditing and safer recovery."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Hosted durable sessions can become a second runtime and source of truth.", "severity": "critical", "response_type": "protective", "redesigned_response": "Treat every provider session as a revocable leased capability mapped to the existing canonical workflow, event, approval, and receipt identities."},
+      {"id": "D2", "statement": "Signed compaction can erase replay evidence or split histories.", "severity": "high", "response_type": "evidence", "redesigned_response": "Preserve raw blocks, summarized source ranges, canonical cursors, and original event provenance; never delete canonical history."},
+      {"id": "D3", "statement": "Provider auto-permission can execute effects before human review.", "severity": "critical", "response_type": "do_not_proceed", "redesigned_response": "Prohibit auto for consequence-bearing tools; provider allow remains telemetry and cannot bypass the Consequence Gate."},
+      {"id": "D4", "statement": "Key expiry can create availability pressure and unsafe emergency rotation.", "severity": "high", "response_type": "governance", "redesigned_response": "Track non-secret expiry metadata and escalate rotation to the credential owner; preserve canonical task identities across key versions."},
+      {"id": "D5", "statement": "Outages, background compaction, and recovery can make completion ambiguous and duplicate cost or effects.", "severity": "critical", "response_type": "protective", "redesigned_response": "Require canonical receipt reconciliation, idempotency continuity, circuit breaking, and recovery canaries before retry or failover."},
+      {"id": "D6", "statement": "Recurring review can create low-signal governance churn.", "severity": "medium", "response_type": "learning", "redesigned_response": "Keep no-material-change/no-PR and kill after one immaterial recurring PR."}
+    ],
+    "comparisons": {
+      "baseline": "Current main has generic recursive governance but no merged provider-change section; PR 91 holds the prior bounded protocol and is behind main.",
+      "do_nothing": "Avoids mutation but leaves hosted-state, compaction, auto-permission, key-expiry, and billing-allocation semantics implicit.",
+      "simplest_viable_alternative": "A brief-only report is lower effort but lacks a durable rule for future adapters and collaborators.",
+      "strongest_competing_architecture": "Provider-native durable agent runtimes maximize feature access but duplicate canonical state, approvals, recovery, and cost paths.",
+      "reversible_experiment": "A fixture-only adapter mapping can test event/receipt/compaction semantics without credentials, network calls, production routing, or a second runtime."
+    },
+    "rejected_alternatives": [
+      {"name": "Do nothing", "rejection_reason": "The new hosted and permission surfaces expose a concrete constitutional ambiguity not stated on current main.", "revival_evidence": "Revive if an already-merged canonical contract is shown to cover every provider state and permission mapping."},
+      {"name": "Immediate provider-native adoption", "rejection_reason": "No direct exposure or measured benefit justifies a second durable control plane, new retention posture, or credential work.", "revival_evidence": "Founder authorization plus an independently verified adapter experiment that preserves singular authority/runtime and beats baseline on defined outcomes."},
+      {"name": "Immediate credential rotation", "rejection_reason": "The review has no authority or account evidence to rotate keys, and the feature does not state that existing keys changed.", "revival_evidence": "Authorized credential-owner inventory showing an expiry deadline and an approved zero-downtime rotation plan."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The Pass-1 mapping layer could still launder provider state into canon, expand cost-account access, overfit mutable prose, or evolve into a standing compatibility scheduler.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "centralization", "statement": "A canonical adapter can become an unquestioned choke point that silently reinterprets provider state.", "strengthening_response": "Require raw-provider preservation, explicit loss/addition mapping, deterministic fixtures, and an independent evaluator before promotion."},
+      {"id": "N2", "category": "gaming", "statement": "Cost or key-readiness reviews could be used to justify unauthorized account or secret access.", "strengthening_response": "Record only repository-visible configuration and public provider rules; account, contract, and secret inspection require separate authorization."},
+      {"id": "N3", "category": "dependency", "statement": "Documentation may change in place and make the evidence packet non-reproducible.", "strengthening_response": "Record observation/effective dates, exact surfaces, repository SHAs, and future captured fixtures; treat links as provider claims rather than live proof."},
+      {"id": "N4", "category": "fragility", "statement": "A standing compatibility harness could become a duplicate scheduler/runtime.", "strengthening_response": "Permit fixture-only tests invoked by the existing test system; no daemon, queue, provider session owner, or new durable loop."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "resolved", "rationale": "The protocol explicitly makes provider sessions leased capabilities and prohibits canonical ownership or a second scheduler/runtime.", "owner": "kernel architecture owner", "review_trigger": "Any provider-session adapter proposal"},
+      {"disadvantage_id": "D2", "outcome": "resolved", "rationale": "Raw block, source-range, canonical cursor, and original event lineage are mandatory; canonical history is never deleted.", "owner": "provider adapter owner", "review_trigger": "Any compaction fixture or adapter proposal"},
+      {"disadvantage_id": "D3", "outcome": "prohibited", "rationale": "Auto permission is not allowed for consequence-bearing tools and cannot bypass Kernel policy or human review.", "owner": "constitutional reviewer", "review_trigger": "Any Managed Agents permission-policy proposal"},
+      {"disadvantage_id": "D4", "outcome": "deferred", "rationale": "Only non-secret readiness metadata is in scope; real rotation requires credential-owner authority and account evidence.", "owner": "credential owner", "review_trigger": "Known key expiry or founder-authorized credential inventory"},
+      {"disadvantage_id": "D5", "outcome": "resolved", "rationale": "Canonical receipts, idempotency continuity, circuit breaking, and recovery canaries gate retry and failover.", "owner": "workflow operator", "review_trigger": "Any timeout, disconnect, background completion, or status recovery"},
+      {"disadvantage_id": "D6", "outcome": "accepted", "rationale": "The materiality and no-change/no-PR gates bound review noise.", "owner": "weekly provider reviewer", "review_trigger": "One immaterial PR or repeated low-signal brief"}
+    ],
+    "final_design": "Update the existing draft PR 91 rather than create a duplicate PR: reconcile its protocol file with current main, add explicit provider-session, compaction, permission, credential-expiry, cost-allocation, and recovery bindings, and append this source-backed review plus validated deliberation. Make no runtime, provider, credential, account, or production change.",
+    "residual_risks": [
+      {"risk": "Live configurations and contracts can differ from repository evidence.", "mitigation": "State the inspection limit and require separate authorized production/account inventory.", "owner": "founder or delegated operator", "review_trigger": "Before any migration or credential/account action"},
+      {"risk": "One agent performed all five perspectives.", "mitigation": "Keep the PR draft and require human or independent review before merge or adoption.", "owner": "alfonso_lopez", "review_trigger": "Draft PR review"},
+      {"risk": "Provider documentation may mutate.", "mitigation": "Use dated links, exact surfaces, repository SHAs, and captured fixtures in any implementation PR.", "owner": "weekly provider reviewer", "review_trigger": "Next weekly run or provider adapter proposal"}
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve the objection in the review and PR; draft-only execution proceeds because it is reversible, but merge and any consequential adoption remain human decisions.",
+    "entries": [
+      {"role": "Adversarial Reviewer", "position": "Do not let recurring model-authored protocol edits normalize de facto policy authority.", "rationale": "Even correct draft text can consume founder attention and shift institutional norms without measured benefit.", "evidence_threshold": "Show that the packet prevents a missed deadline or unsafe retry without producing an immaterial recurring PR; otherwise regress to brief-only review.", "owner": "alfonso_lopez", "review_trigger": "Review of PR 91 and immediately after any low-signal PR or boundary violation"}
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "alfonso_lopez"
+  },
+  "migration_plan": "No runtime migration. If a provider feature is later proposed, first add a narrow canonical adapter contract and deterministic fixtures, then run a separately authorized sandbox canary with independent evaluation; production routing, credentials, data class, cost ceiling, and rollback require their own founder-approved change.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": ["Leave draft PR 91 unmerged or revert its docs-only commits", "Preserve the dated review and dissent as historical evidence", "Regress recurring repository edits to brief-only review if the materiality gate fails"],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any write to a default branch or merge without founder approval",
+    "Any production, credential, billing-account, contract, or routing change",
+    "Any provider-owned canonical workflow, event, approval, memory, receipt, evaluator, or cost ledger",
+    "Any second scheduler or durable runtime",
+    "Any lost replay lineage, missing receipt, or duplicate external effect",
+    "Any consequence-bearing tool allowed solely by provider auto permission",
+    "Any ineligible data residency or retention path",
+    "Any same-provider sole evaluation of promotion",
+    "One immaterial recurring pull request"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR 91; next material provider change; any proposed provider adapter; any known key expiry; any ambiguous provider completion; or one immaterial recurring PR"
+}

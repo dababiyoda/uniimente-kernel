@@ -35,5 +35,5 @@ events, provenance, or memory. None is remediated in Package 1.
 
 ## What was deliberately excluded
 
-No IVIO contracts. No PR #45, #42, #44, #35, #26 integration. No historical PR closed.
+No PR #45, #42, #44, #35, #26 integration. No historical PR closed.
 No contract decisions. No remediation of the four contamination points. `main` untouched.

@@ -198,8 +198,6 @@ def activate(engine, *, provider_id: str, workflow_ids, activated_by: str,
         raise ActivationRefused(
             "a replacement may not run without pre-append validation")
 
-    _ACTIVE, _ACTIVE_ID, _ALLOWLIST = engine, provider_id, ids
-    _VALIDATOR, _ACTIVATED_BY = validator, activated_by
     if ledger is not None:
         ledger.append("event", {"type": "workflow.provider_activated",
                                 "provider_id": provider_id,

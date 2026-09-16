@@ -204,6 +204,8 @@ def activate(engine, *, provider_id: str, workflow_ids, activated_by: str,
                                 "activated_by": activated_by,
                                 "workflow_ids": sorted(ids),
                                 "scope": "temporary, context-bound"})
+    _ACTIVE, _ACTIVE_ID, _ALLOWLIST = engine, provider_id, ids
+    _VALIDATOR, _ACTIVATED_BY = validator, activated_by
     try:
         yield
     finally:

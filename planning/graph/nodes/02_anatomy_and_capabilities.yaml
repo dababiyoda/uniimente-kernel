@@ -1,0 +1,396 @@
+# SP-2 / SP-3 / SP-4 — institutional anatomy, capability classification, bridges.
+#
+# The presence classification here is the round's most consequential output. The
+# canonical prompt expects a list of missing machinery; the import graph says
+# otherwise. Every classification below was produced by executing a static import
+# analysis over the kernel at 8cb3074 and by running the institutional linker
+# across the committed organ manifests — not by reading READMEs.
+#
+# Method (reproducible):
+#   ast.parse over every package with an __init__.py; count intra-repo imports,
+#   reverse-imports, and test references. A package imported by nothing except
+#   tests is built-but-unwired regardless of how complete it looks.
+#   python -c "... InstitutionalLinker(manifests).link()"  for bridge edges.
+
+nodes:
+  # ------------------------------------------------------- the shape of the thing
+  - id: anatomy.kernel_is_a_library_not_a_running_system
+    kind: finding
+    title: The Kernel is a governed component library plus benchmark harnesses — there is no running institution
+    evidence_status: verified_by_execution
+    measurement:
+      python_packages: 22
+      total_entrypoints: 3
+      entrypoints:
+        - "developmental/__main__.py — TARGET_FORM_001 benchmark runner"
+        - "evolution/migration/__main__.py — migration experiment runner"
+        - "evolution/repair/__main__.py — repair experiment runner"
+      servers_or_daemons: 0
+      operating_loops: 0
+      external_effect_paths_exercised: 0
+      ci_jobs: 4
+    statement: >-
+      There is no server, no daemon, no scheduler and no operating loop anywhere in
+      the Kernel. What exists is a well-tested library of institutional components,
+      three experiment runners, and four CI guards (full suite + institutional
+      verifier, contract $ref resolution, authority singleton, sealed developmental
+      work). This is not a criticism — it is the precise reason nothing has ever
+      reached reality, and it makes the strategic question tractable.
+    consequence: >-
+      "Connect the organism" cannot mean wiring more modules to each other. Nothing
+      is running to be connected. The missing element is an execution surface that
+      carries a real input to a real consequence, not more components.
+    refs: [repo.uniimente-kernel, intent.anti_self_deception]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "find . -name __main__.py; ls .github/workflows; ast import analysis over 22 packages"
+
+  - id: anatomy.closure_is_the_integration_hub
+    kind: capability
+    title: "closure/ is the one real integration hub (imports 18 of 22 packages)"
+    evidence_status: verified_by_execution
+    presence: existing_and_connected
+    lifecycle_role: CANONICAL
+    region: BRIDGE
+    path: closure/
+    files: 8
+    imports_packages: 18
+    imported_by: [business, egregore, evolution, foundry]
+    test_refs: 6
+    contents:
+      - whole_body.py — the Whole-Body Closure Controller
+      - framework.py
+      - kernel_registry.py
+      - integration_registry.py
+      - developmental_registry.py
+      - commercial_registry.py
+      - advantage_registry.py
+    note: >-
+      Final Build Order §5.7 lists the Whole-Body Closure Controller as required
+      nervous-system machinery. It exists, it is the most connected module in the
+      repository, and it carries five registries. This is the single strongest
+      counterexample to the "missing machinery" premise.
+    refs: [discrepancy.missing_machinery_premise]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: closure/
+        command: "ast import analysis"
+
+  # --------------------------------------------- built but unwired (the real gap)
+  - id: capability.adapters_membrane_orphaned
+    kind: capability
+    title: "The Universal Compatibility Membrane exists and nothing imports it"
+    evidence_status: verified_by_execution
+    presence: existing_but_disconnected
+    lifecycle_role: EXPERIMENTAL
+    region: BRIDGE
+    path: adapters/
+    files: 4
+    imports_packages: 0
+    imported_by: []
+    test_refs: 4
+    contents:
+      - bridge_transport.py — third mirror of the organs' transport security, adds the kernel identity
+      - daleobanks_opportunity.py — wire→canonical opportunity packet adapter
+      - wealthmachine_assessment.py — wire→canonical venture assessment adapter
+    statement: >-
+      Final Build Order §8 requires the membrane; Phase Zero built its first ring.
+      The adapters are real, declare their field mappings and information lost, and
+      are exercised by four test references — but zero non-test modules import them.
+      The membrane is a shelf of correct parts that no runtime path crosses.
+    why_it_matters: >-
+      This is the difference between "we have an adapter layer" and "our organs
+      translate through an adapter layer". Only the second is a bridge.
+    refs: [anatomy.kernel_is_a_library_not_a_running_system]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: adapters/
+        command: "ast reverse-import analysis: imported_by == 0"
+
+  - id: capability.egregore_runtime_orphaned
+    kind: capability
+    title: "egregore/ — a runtime, closure, drift and gate adapter that nothing imports"
+    evidence_status: verified_by_execution
+    presence: existing_but_disconnected
+    lifecycle_role: EXPERIMENTAL
+    region: RIGHT
+    path: egregore/
+    files: 7
+    imported_by: []
+    test_refs: 6
+    contents: [closure.py, contracts.py, drift.py, gate_adapter.py, resources.py, runtime.py]
+    statement: >-
+      The package named for the project's own identity contains a runtime, a gate
+      adapter and a drift detector, imports closure/ and policy/, and is imported by
+      nothing. It is reachable only from its own tests.
+    refs: [anatomy.kernel_is_a_library_not_a_running_system]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: egregore/
+        command: "ast reverse-import analysis: imported_by == 0"
+
+  - id: capability.morphogenesis_orphaned
+    kind: capability
+    title: "morphogenesis/ — fully isolated: imports nothing, imported by nothing"
+    evidence_status: verified_by_execution
+    presence: existing_but_disconnected
+    lifecycle_role: EXPERIMENTAL
+    region: LEFT
+    path: morphogenesis/
+    files: 3
+    imports_packages: 0
+    imported_by: []
+    test_refs: 2
+    note: >-
+      The weakest-attached package in the repository, and a Track B artifact. Its
+      isolation is itself evidence for the Track A / Track B decision: the
+      morphogenetic line has not earned a connection to the canonical path.
+    refs: [intent.track_a_track_b]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: morphogenesis/
+        command: "ast import analysis: imports 0, imported_by 0, test_refs 2"
+
+  - id: capability.developmental_mica_cdpe
+    kind: capability
+    title: "developmental/ — MICA and CDPE, reachable only from closure/ and one test"
+    evidence_status: verified_by_execution
+    presence: existing_but_disconnected
+    lifecycle_role: CHALLENGER
+    region: LEFT
+    path: developmental/
+    files: 5
+    imported_by: [closure]
+    test_refs: 1
+    has_entrypoint: "python -m developmental (TARGET_FORM_001 benchmark, run in CI job 4)"
+    note: >-
+      Track B's flagship. It does run in CI and does emit a benchmark report, which
+      is more than morphogenesis/ can claim, but a single test reference for a
+      five-module package is thin coverage for something proposed as substrate.
+    refs: [intent.track_a_track_b]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: developmental/
+        command: "ast analysis; .github/workflows/canonical-ci.yml job 4"
+
+  - id: capability.evolution_laboratory
+    kind: capability
+    title: "evolution/ — 30 modules, 44 test references, the best-covered subsystem"
+    evidence_status: verified_by_execution
+    presence: existing_and_connected
+    lifecycle_role: CHAMPION
+    region: BRIDGE
+    path: evolution/
+    files: 30
+    test_refs: 44
+    imported_by: [closure]
+    contents_of_note:
+      - strategy_tree.py — StrategyTree/StrategyBranch with decisive_unknown and coverage()
+      - spider_web.py — SpiderWebAudit with sides, mechanism mapping, decorative removal, verdict
+      - "repair/ — the frozen-spec repair laboratory (spec.py self-seals via SPEC_SHA256)"
+      - migration/ — governed stateful replacement harness
+      - experiment.py, capsule.py, comparison.py, failure_analysis.py, branch_generator.py
+    statement: >-
+      The repair laboratory already implements the hard half of a developmental
+      closure: a frozen experiment specification whose canonical JSON is hashed into
+      SPEC_SHA256 and guarded by a test, so candidate code cannot silently retune the
+      experiment that judges it. That is evaluator sovereignty (Override §12) in
+      working code.
+    refs: [intent.evaluator_sovereignty, intent.first_developmental_proof]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: evolution/repair/spec.py
+        symbol: "SPEC_SHA256, REQUIRED_FUNCTION_THRESHOLD, TARGET_CAPABILITY"
+
+  - id: capability.evaluator_firewall_partially_exists
+    kind: capability
+    title: The protected evaluator firewall is half-built and its existing half is sound
+    evidence_status: verified_by_inspection
+    presence: existing_but_disconnected
+    region: BRIDGE
+    what_exists:
+      - "evolution/repair/spec.py freezes the experiment and self-seals with SPEC_SHA256"
+      - "tests/unit/test_repair_spec_frozen.py fails the build if the hash drifts"
+      - "ORIGINAL_LINKER_FILE_SHA256 makes 'preserved unchanged' a checkable claim rather than a promise"
+      - "the detector is given the capability NAME and contract, never told which module provides it"
+      - "REQUIRED_FUNCTION_THRESHOLD = 1.0 — 3 of 4 is a failure, not a 75% pass"
+    what_is_missing:
+      - builder/evaluator process isolation (candidates currently run in the same interpreter)
+      - candidate writable-path confinement
+      - held-out cases the builder cannot read
+      - a negative control proving the evaluator itself can fail
+      - detection of evaluator mutation at runtime
+    statement: >-
+      Override §12 says candidate generation is not the scarce primitive; reliable
+      judgment is. The frozen-spec mechanism is a genuine, working instance of that
+      principle. What it lacks is isolation, not concept.
+    refs: [intent.evaluator_sovereignty]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        path: evolution/repair/spec.py
+
+  - id: capability.genuinely_absent
+    kind: finding
+    title: What is genuinely absent, after classification
+    evidence_status: verified_by_execution
+    statement: >-
+      After classifying all 22 packages by import connectivity, very little of the
+      prompt's "expected missing machinery" is actually absent. The genuine gaps are
+      narrower and more specific than the brief anticipated.
+    genuinely_absent:
+      - "an execution surface: any loop, service or scheduled process that carries an input to a consequence"
+      - "organ manifests for PumpStation and RESEARCH-IN (2 of 6 organs are invisible to the linker)"
+      - "builder/evaluator process isolation and held-out case confinement"
+      - "a capability router selecting among competing implementations at runtime"
+      - "any external-effect path that has ever been exercised (0 verified outcomes)"
+    already_exists_contrary_to_brief:
+      - "Whole-Body Closure Controller — closure/whole_body.py, most-connected module"
+      - "Capability registry — five registries under closure/"
+      - "Universal Compatibility Membrane — adapters/ (built, unwired)"
+      - "Institutional Linker — linker/, executable, produces real edge reports"
+      - "Institutional compiler — compiler/, imported by closure/evolution/policy"
+      - "Mechanism/strategy tooling — evolution/strategy_tree.py, evolution/spider_web.py"
+      - "Developmental compiler + candidate builders — evolution/repair/, evolution/migration/"
+      - "Protected evaluator — evolution/repair/spec.py frozen-spec mechanism"
+      - "OMNIMORPH composition — omnimorph/engine.py, imported by closure and foundry"
+      - "Asymmetric Advantage Foundry — foundry/ (12 modules, 20 test refs)"
+    refs: [discrepancy.missing_machinery_premise, anatomy.kernel_is_a_library_not_a_running_system]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "ast import analysis across 22 packages; linker edge report; find -name __main__.py"
+
+  # ----------------------------------------------------------------- SP-4 bridges
+  - id: bridge.linker_measured_state
+    kind: bridge_status
+    title: Measured cross-organ edge state from the institutional linker
+    evidence_status: verified_by_execution
+    typed_edges_resolved: 4
+    edges:
+      - "daleobanks -> constitutional-controller : wire-opportunity-packet"
+      - "daleobanks -> wealthmachine : wire-opportunity-packet"
+      - "wealthmachine -> daleobanks : wire-venture-assessment"
+      - "wealthmachine -> constitutional-controller : wire-venture-assessment"
+    unconsumed_contracts: 11
+    unconsumed_of_note:
+      - "constitutional-controller produces capability-grant — consumed by no one"
+      - "constitutional-controller produces decision — consumed by no one"
+      - "constitutional-controller produces evidence — consumed by no one"
+      - "constitutional-controller produces outcome — consumed by no one"
+      - "constitutional-controller produces event — consumed by no one"
+    unproduced_contracts: 1
+    untyped_contracts: 0
+    unresolved_fields: 7
+    overlapping_authority:
+      - daleobanks.constitution_service
+      - wealthmachine.risk_management
+    decisive_reading: >-
+      Every contract the Kernel PRODUCES is unconsumed. The organs talk to each
+      other over the wire protocol (4 edges, all Bridge A), and nobody consumes a
+      kernel-issued grant, decision, evidence record, outcome or event. The linker's
+      own unresolved list states it plainly: "peer organs do not yet consume
+      kernel-issued grants (Bridges B/C incomplete)".
+    consequence: >-
+      The Kernel is not currently in the authority path of anything. It is a
+      constitutional government whose statutes no organ reads at runtime. Bridge A
+      is the only bridge with typed edges; B through H have no edges at all.
+    refs: [anatomy.kernel_is_a_library_not_a_running_system]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "InstitutionalLinker(load_manifest(organs/*.manifest.yaml)).link()"
+
+  - id: bridge.two_organs_invisible
+    kind: bridge_status
+    title: PumpStation and RESEARCH-IN have no organ manifests and are invisible to the linker
+    evidence_status: verified_by_execution
+    manifests_present: [kernel, daleobanks, wealthmachine]
+    manifests_absent: [pumpstation, research-in]
+    consequence: >-
+      Two of six organs cannot appear in any edge, authority overlap report, or
+      capability discovery result. Any claim about whole-system connectivity that
+      does not say this is overstating coverage by a third.
+    note: >-
+      Writing these manifests is runtime work and is NOT authorized this round. The
+      round records the gap and specifies the manifests; it does not create them.
+    refs: [repo.pumpstation, repo.research-in, intent.research_in_role]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "ls organs/"
+
+  - id: bridge.status_a_through_h
+    kind: bridge_status
+    title: Bridges A–H — measured status
+    evidence_status: verified_by_execution
+    A_signal_to_venture:
+      status: PARTIALLY_TYPED
+      edges: 4
+      note: "wire protocol v1.1 typed and registered; adapters exist but are unwired; no episode ever recorded"
+    B_venture_to_experiment:
+      status: NO_EDGES
+      blocker: "no organ consumes capability-grant; Venture Cell charters never requested from kernel authority envelopes"
+    C_experiment_to_reality:
+      status: NO_EDGES
+      blocker: "no external-effect path has ever been exercised; 0 receipts, 0 reconciliations"
+    D_reality_to_learning:
+      status: NO_EDGES
+      blocker: "depends on C; no external observation exists to learn from"
+    E_learning_to_evolution:
+      status: MACHINERY_PRESENT_NO_INPUT
+      note: "evolution/ is the best-covered subsystem (44 test refs) but has no reality input to consume"
+    F_audience_to_business:
+      status: NO_EDGES
+      blocker: "DALEOBANKS has zero published output; no owned audience exists yet"
+    G_business_to_capability:
+      status: NO_EDGES
+      blocker: "depends on F and a completed business workflow"
+    H_revenue_to_regeneration:
+      status: NO_EDGES
+      blocker: "zero revenue"
+    summary: >-
+      One bridge partially typed, seven with no edges. The chain is blocked at C —
+      the first place the institution must touch reality — and everything downstream
+      of C is blocked by C rather than by its own difficulty.
+    refs: [bridge.linker_measured_state]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "linker edge report + organ manifest inspection"
+
+  - id: authority.overlaps_measured
+    kind: authority_conflict
+    title: Two organ-local authority implementations, both already flagged
+    evidence_status: verified_by_execution
+    overlaps:
+      - organ: daleobanks
+        capability: daleobanks.constitution_service
+        disposition: SPECIALIZED beneath kernel authority — preserve, do not promote
+      - organ: wealthmachine
+        capability: wealthmachine.risk_management
+        disposition: SPECIALIZED beneath kernel authority — preserve, do not promote
+    third_candidate:
+      source: "WMI PR #30 — 'Constitutional Control Layer (Phase 0 doctrine foundation)'"
+      head: 14e7bba896e60f31c6dc5885a477ff7e100d64c6
+      risk: >-
+        Unmerged, so it does not yet appear in the linker's overlap report. If merged
+        as written it would create a second constitutional control layer inside a
+        non-Kernel organ, which Override §19 forbids. It must land as adapter,
+        specialist, test oracle or organ-local control BENEATH kernel authority.
+    ci_guard: "scripts/ci/check_authority_singleton.py enforces no second Constitution/Gate/identity/authority registry"
+    assessment: >-
+      Authority duplication is currently CONTAINED, and the containment is
+      mechanical rather than aspirational. The live risk is PR #30, not main.
+    refs: [pr.wmi.30, intent.wmi_role]
+    evidence_refs:
+      - repo: dababiyoda/uniimente-kernel
+        sha: 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1
+        command: "linker overlapping_authority; cat scripts/ci/check_authority_singleton.py"

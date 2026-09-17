@@ -1,0 +1,629 @@
+{
+  "graph_digest": "4233f52b9bcae3cedb9c852613369d4526d565f6051b01e98da4490e55be41ed",
+  "node_count": 27,
+  "nodes": [
+    {
+      "default_branch": "master",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD",
+          "repo": "dababiyoda/build-your-own-x",
+          "sha": "aa17439b62f384511a5561ce308e9598b94d8989"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "aa17439b62f384511a5561ce308e9598b94d8989",
+      "id": "repo.build-your-own-x",
+      "kind": "repository",
+      "lifecycle_role": "HISTORICAL",
+      "refs": [
+        "intent.byox.mechanism_atlas"
+      ],
+      "region": "LEFT",
+      "title": "dababiyoda/build-your-own-x — read-only mechanism anatomy atlas",
+      "write_policy": "FORBIDDEN — read-only for this assignment"
+    },
+    {
+      "default_branch": "main",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD; git ls-remote --heads origin | wc -l",
+          "repo": "dababiyoda/DALEOBANKS",
+          "sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "github_description_is_stale": true,
+      "head": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+      "id": "repo.daleobanks",
+      "kind": "repository",
+      "open_prs": 9,
+      "refs": [
+        "intent.daleobanks_role"
+      ],
+      "region": "RIGHT",
+      "remote_branches": 51,
+      "stale_description_note": "The GitHub repo description still reads \"a production-grade, self-evolving AI agent that operates on Twitter/X\" — materially narrower than Override §18, which defines DALEOBANKS as a global multilingual lifestyle brand, media network and primary early cash engine. Recorded as a discrepancy, not resolved by this round (changing it is an outward-facing write).",
+      "title": "dababiyoda/DALEOBANKS — perception, media, distribution, early cash engine"
+    },
+    {
+      "default_branch": "main",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD; git log --oneline -2",
+          "repo": "dababiyoda/PumpStation",
+          "sha": "df6a732f44412c626098ee9591b9d19f420d02dd"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "github_description_is_stale": true,
+      "head": "df6a732f44412c626098ee9591b9d19f420d02dd",
+      "id": "repo.pumpstation",
+      "kind": "repository",
+      "open_prs": 10,
+      "presence": "existing_but_disconnected",
+      "refs": [
+        "intent.pumpstation_role",
+        "intent.supersession_matrix"
+      ],
+      "region": "RIGHT",
+      "remote_branches": 11,
+      "stale_description_note": "Repo description still describes \"a real-time, decentralized memecoin coordination platform\". Override §20 explicitly supersedes this. main itself is still the older memecoin/wallet application — the newer doctrine lives only in unmerged branches. This is the §28 named conflict, recorded on both sides.",
+      "title": "dababiyoda/PumpStation — regenerative social-economic OS (Venture Cell)"
+    },
+    {
+      "default_branch": "main",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD; list_pull_requests(state=open)",
+          "repo": "dababiyoda/RESEARCH-IN",
+          "sha": "576913809432fc1dd47a245a14184988607e27eb"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "576913809432fc1dd47a245a14184988607e27eb",
+      "id": "repo.research-in",
+      "kind": "repository",
+      "open_prs": 11,
+      "presence": "existing_but_disconnected",
+      "refs": [
+        "intent.research_in_role"
+      ],
+      "region": "RIGHT",
+      "remote_branches": 23,
+      "role_note": "Override §21 forbids inventing this organ's role. Evidence so far establishes the product (research ingestion/search) but NOT its institutional role, owner, authority, or interfaces. All eleven open PRs are codex/* from 2025-06 based on main @ 30c099f9 — an ancestor of the current head — so the open-PR surface is roughly fourteen months stale and does not describe current intent.",
+      "role_status": "UNRESOLVED",
+      "stated_purpose": "Per its GitHub description: a free global hub that ingests serious PDFs, datasets, hypotheses and experiments and makes them searchable, discussable and remixable, so no human re-does solved work.",
+      "title": "dababiyoda/RESEARCH-IN — open research hub (sixth organ, role underived)"
+    },
+    {
+      "baseline_suite": "495 passed in 6.22s (Python 3.11.15)",
+      "default_branch": "main",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD; python -m pytest -q -p no:randomly",
+          "note": "release commit 'UNIIMENTE canonical-v1 Kernel release'",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+      "id": "repo.uniimente-kernel",
+      "kind": "repository",
+      "open_prs": 26,
+      "refs": [
+        "intent.topology.three_region",
+        "intent.golden_kernel_cockpit"
+      ],
+      "region": "CENTER",
+      "remote_branches": 65,
+      "role": "constitutional law, authority, proof, identity, governance, institutional memory, capability composition, evolution, continuity",
+      "title": "dababiyoda/uniimente-kernel — constitutional Kernel"
+    },
+    {
+      "default_branch": "main",
+      "evidence_refs": [
+        {
+          "command": "git rev-parse HEAD; git ls-remote --heads origin | wc -l",
+          "repo": "dababiyoda/WealthMachineIntelligence",
+          "sha": "6549984a22a171f68b268b775f19192aee599609"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "6549984a22a171f68b268b775f19192aee599609",
+      "id": "repo.wealthmachineintelligence",
+      "kind": "repository",
+      "open_prs": 13,
+      "refs": [
+        "intent.wmi_role"
+      ],
+      "region": "RIGHT",
+      "remote_branches": 34,
+      "title": "dababiyoda/WealthMachineIntelligence — commercial and strategic cognition"
+    },
+    {
+      "evidence_refs": [],
+      "evidence_status": "unresolved",
+      "id": "repo.unavailable.chario_obvio",
+      "kind": "repository_unavailable",
+      "reason": "Repository discovery denied; not in session scope; never inspected.",
+      "title": "CHARIO / OBVIO — named in the prompt, not reachable this session"
+    },
+    {
+      "do_not_claim": "No file, commit, test or capability of IVIO-NEMT may be cited by this round.",
+      "evidence_refs": [],
+      "evidence_status": "unresolved",
+      "id": "repo.unavailable.ivio_nemt",
+      "kind": "repository_unavailable",
+      "partial_substitute": "Kernel-side IVIO artifacts DO exist and were inspected: PR #45 (build/ivio-v1-contracts, 1b52a7a7) adds IVIO v1 proof-to-settlement contracts and a compiler; PR #53 (strategy/cvo-001-venture-selection, 7a784655) records a venture-selection decision titled \"IVIO excluded, C9 recommended (PLAN ONLY)\". These are Kernel claims about IVIO, not evidence from the IVIO repository.",
+      "reason": "Repository discovery was attempted via the claude-code-remote list_repos tool and the call was denied in this session. The repository is not attached to the session scope and was never inspected. Per prompt §8.6, absence of inspection is recorded rather than substituted with inference.",
+      "title": "IVIO-NEMT — named in the prompt, not reachable this session"
+    },
+    {
+      "evidence_refs": [],
+      "evidence_status": "unresolved",
+      "id": "repo.unavailable.tgh_control_rail",
+      "kind": "repository_unavailable",
+      "reason": "Repository discovery denied; not in session scope; never inspected.",
+      "title": "TGH-CONTROL-RAIL — named in the prompt, not reachable this session"
+    },
+    {
+      "evidence_refs": [],
+      "evidence_status": "unresolved",
+      "id": "source.unavailable.founder_briefs",
+      "kind": "source_unavailable",
+      "missing": [
+        "Branch · Egregore and UNIIMENTE System.txt",
+        "Proof to Settlement Egregore.pdf",
+        "Branch · Continue Egregore Work.txt"
+      ],
+      "reason": "Cited in founder messages but never present on disk in this session. A filesystem search across the workspace returned nothing.",
+      "reconstruction_route": "Kernel branch agent/proof-to-settlement-trust-rail (e09c2088, PR #35 \"Add the OpenClaw proof-to-settlement trust rail\"), docs/EGREGORE_V1_INTEGRATION_PROGRAM.md on main, and the integration/* branches. Anything not reconstructable from those stays an explicit unresolved field.",
+      "title": "Three referenced briefs absent from the workspace"
+    },
+    {
+      "base_sha": "1ba3b85474af60c1c0b1f34159f464cf69011e18",
+      "branch": "agent/canonical-media-brand-architecture",
+      "draft": true,
+      "evidence_refs": [
+        {
+          "command": "list_pull_requests(state=open)",
+          "repo": "dababiyoda/DALEOBANKS",
+          "sha": "2394127f603636da789a30c765ad756d58a7a82f"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "2394127f603636da789a30c765ad756d58a7a82f",
+      "id": "pr.daleobanks.65",
+      "kind": "pull_request",
+      "number": 65,
+      "refs": [
+        "intent.daleobanks_role"
+      ],
+      "repo": "dababiyoda/DALEOBANKS",
+      "scope": "documentation-only founder-intent consolidation",
+      "state": "open",
+      "status_note": "High-priority founder-intent source. NOT merged runtime truth.",
+      "title": "DALEOBANKS PR #65 — canonical lifestyle brand and founder-intent lineage"
+    },
+    {
+      "branch": "strategy/cvo-001-venture-selection",
+      "draft": true,
+      "evidence_refs": [
+        {
+          "command": "list_pull_requests(state=open)",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "7a7846559f23682983898975ba89174a99c50c10"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "7a7846559f23682983898975ba89174a99c50c10",
+      "id": "pr.kernel.53.ivio_excluded",
+      "kind": "pull_request",
+      "number": 53,
+      "refs": [
+        "repo.unavailable.ivio_nemt"
+      ],
+      "repo": "dababiyoda/uniimente-kernel",
+      "significance": "A prior venture-selection round already EXCLUDED IVIO and recommended an alternative labelled C9. The canonical prompt §24 asks whether IVIO-NEMT remains the strongest first economic wedge and says not to assume it. This PR is direct repository evidence that an earlier evidence-based pass answered \"no\". Its reasoning must be read before the economic-closure decision, and the IVIO repository itself is unavailable to check the other side.",
+      "state": "open",
+      "title": "Kernel PR #53 — CVO-001 venture selection: IVIO excluded, C9 recommended (PLAN ONLY)"
+    },
+    {
+      "additions": 145317,
+      "base_ref": "main",
+      "base_sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+      "branch": "claude/uniimente-repo-audit-jpytcy",
+      "changed_files": 240,
+      "check_names": [
+        "1 · Kernel and organ tests",
+        "2 · Contract schema references resolve",
+        "3 · One source of authority",
+        "4 · Developmental work stays sealed",
+        "ancestry"
+      ],
+      "checks": "5/5 success",
+      "comments": 9,
+      "commits": 133,
+      "created_at": "2026-07-31T11:52:25Z",
+      "deletions": 2,
+      "draft": true,
+      "evidence_refs": [
+        {
+          "command": "pull_request_read(get); pull_request_read(get_check_runs); git rev-list --count main..origin/claude/uniimente-repo-audit-jpytcy",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "gate_f": "UNMEASURED",
+      "gate_g": "UNMEASURED",
+      "head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "id": "pr.kernel.66",
+      "kind": "pull_request",
+      "mergeable_state": "clean",
+      "merged": false,
+      "number": 66,
+      "r8": "NOT_RUN",
+      "r8_eligibility": "NOT_ELIGIBLE",
+      "refs": [
+        "intent.track_a_track_b",
+        "intent.round_authority"
+      ],
+      "repo": "dababiyoda/uniimente-kernel",
+      "state": "open",
+      "suite_ci_merge_ref": "922 passed · 3 skipped · 24 xfailed · 0 failed",
+      "suite_local": "924 passed · 1 skipped · 24 xfailed · 0 failed",
+      "suite_note": "The two compositions differ because CI runs on the merge ref and the Git-ancestry pre-registration checks skip under a shallow checkout. They are recorded separately and must never be collapsed into one number.",
+      "title": "PR #66 — Phase 3G: author-direction classification + canonical decision authority",
+      "updated_at": "2026-08-08T06:47:36Z",
+      "write_policy": "ZERO_WRITES — founder-directed for this round"
+    },
+    {
+      "base_sha": "df6a732f44412c626098ee9591b9d19f420d02dd",
+      "branch": "claude/uniimente-system-design-hczheq",
+      "draft": true,
+      "evidence_refs": [
+        {
+          "command": "list_pull_requests(state=open)",
+          "repo": "dababiyoda/PumpStation",
+          "sha": "618d49e20435c03f6adde6e6401983ca94712f5a"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "618d49e20435c03f6adde6e6401983ca94712f5a",
+      "id": "pr.pumpstation.16",
+      "kind": "pull_request",
+      "note": "Substrate, not the whole final product. No treasury, token, DeFi or real-value operation authorized.",
+      "number": 16,
+      "refs": [
+        "intent.pumpstation_role"
+      ],
+      "repo": "dababiyoda/PumpStation",
+      "state": "open",
+      "title": "PumpStation PR #16 — SIWE wallet auth fix + executable admission gate"
+    },
+    {
+      "authority_risk": "Titled a \"Constitutional Control Layer\" inside a non-Kernel organ. Override §19 forbids WMI becoming a parallel Constitution, authority root, identity root or Consequence Gate. Classification required in SP-2 — preserve the mechanisms, refuse the authority.",
+      "base_sha": "6549984a22a171f68b268b775f19192aee599609",
+      "branch": "claude/wmi-doctrine-roadmap-vfcrh0",
+      "disposition_candidates": [
+        "adapter_to_kernel",
+        "specialist_implementation",
+        "test_oracle",
+        "historical_donor",
+        "local_organ_control_beneath_kernel",
+        "prohibited_duplicate_authority"
+      ],
+      "draft": true,
+      "evidence_refs": [
+        {
+          "command": "list_pull_requests(state=open)  ->  head confirmed, prompt value matched",
+          "repo": "dababiyoda/WealthMachineIntelligence",
+          "sha": "14e7bba896e60f31c6dc5885a477ff7e100d64c6"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "head": "14e7bba896e60f31c6dc5885a477ff7e100d64c6",
+      "id": "pr.wmi.30",
+      "kind": "pull_request",
+      "number": 30,
+      "refs": [
+        "intent.wmi_role"
+      ],
+      "repo": "dababiyoda/WealthMachineIntelligence",
+      "state": "open",
+      "title": "WMI PR #30 — Constitutional Control Layer (Phase 0 doctrine foundation)"
+    },
+    {
+      "consequence": "\"Connect the organism\" cannot mean wiring more modules to each other. Nothing is running to be connected. The missing element is an execution surface that carries a real input to a real consequence, not more components.",
+      "evidence_refs": [
+        {
+          "command": "find . -name __main__.py; ls .github/workflows; ast import analysis over 22 packages",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "anatomy.kernel_is_a_library_not_a_running_system",
+      "kind": "finding",
+      "measurement": {
+        "ci_jobs": 4,
+        "entrypoints": [
+          "developmental/__main__.py — TARGET_FORM_001 benchmark runner",
+          "evolution/migration/__main__.py — migration experiment runner",
+          "evolution/repair/__main__.py — repair experiment runner"
+        ],
+        "external_effect_paths_exercised": 0,
+        "operating_loops": 0,
+        "python_packages": 22,
+        "servers_or_daemons": 0,
+        "total_entrypoints": 3
+      },
+      "refs": [
+        "repo.uniimente-kernel",
+        "intent.anti_self_deception"
+      ],
+      "statement": "There is no server, no daemon, no scheduler and no operating loop anywhere in the Kernel. What exists is a well-tested library of institutional components, three experiment runners, and four CI guards (full suite + institutional verifier, contract $ref resolution, authority singleton, sealed developmental work). This is not a criticism — it is the precise reason nothing has ever reached reality, and it makes the strategic question tractable.",
+      "title": "The Kernel is a governed component library plus benchmark harnesses — there is no running institution"
+    },
+    {
+      "already_exists_contrary_to_brief": [
+        "Whole-Body Closure Controller — closure/whole_body.py, most-connected module",
+        "Capability registry — five registries under closure/",
+        "Universal Compatibility Membrane — adapters/ (built, unwired)",
+        "Institutional Linker — linker/, executable, produces real edge reports",
+        "Institutional compiler — compiler/, imported by closure/evolution/policy",
+        "Mechanism/strategy tooling — evolution/strategy_tree.py, evolution/spider_web.py",
+        "Developmental compiler + candidate builders — evolution/repair/, evolution/migration/",
+        "Protected evaluator — evolution/repair/spec.py frozen-spec mechanism",
+        "OMNIMORPH composition — omnimorph/engine.py, imported by closure and foundry",
+        "Asymmetric Advantage Foundry — foundry/ (12 modules, 20 test refs)"
+      ],
+      "evidence_refs": [
+        {
+          "command": "ast import analysis across 22 packages; linker edge report; find -name __main__.py",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "genuinely_absent": [
+        "an execution surface: any loop, service or scheduled process that carries an input to a consequence",
+        "organ manifests for PumpStation and RESEARCH-IN (2 of 6 organs are invisible to the linker)",
+        "builder/evaluator process isolation and held-out case confinement",
+        "a capability router selecting among competing implementations at runtime",
+        "any external-effect path that has ever been exercised (0 verified outcomes)"
+      ],
+      "id": "capability.genuinely_absent",
+      "kind": "finding",
+      "refs": [
+        "discrepancy.missing_machinery_premise",
+        "anatomy.kernel_is_a_library_not_a_running_system"
+      ],
+      "statement": "After classifying all 22 packages by import connectivity, very little of the prompt's \"expected missing machinery\" is actually absent. The genuine gaps are narrower and more specific than the brief anticipated.",
+      "title": "What is genuinely absent, after classification"
+    },
+    {
+      "evidence_refs": [
+        {
+          "command": "linker report; find -name __main__.py; pytest",
+          "path": "docs/release/canonical-v1/00-README.md",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "decision.controlling_fact",
+      "kind": "finding",
+      "refs": [
+        "anatomy.kernel_is_a_library_not_a_running_system",
+        "bridge.status_a_through_h"
+      ],
+      "statement": "Across six repositories, 184 branches, 69 open pull requests and 517 passing tests, the number of externally verified consequences is zero. Not low — zero. The canonical-v1 release record states it, the linker confirms no organ consumes a kernel grant, and there is no server, daemon or loop that could produce one.",
+      "title": "The controlling fact — nothing has ever crossed into reality",
+      "why_this_orders_everything": "Every autonomy threshold, evidence gate, routing weight and calibration constant in the system is uncalibrated theory until one loop closes against something outside the repository. That makes \"which loop can close first, with the fewest external dependencies\" the only question whose answer changes what to build tomorrow."
+    },
+    {
+      "evidence_refs": [
+        {
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+          "symbol": "PR #66 body, section 'Dissent — unchanged'"
+        }
+      ],
+      "evidence_status": "verified_by_inspection",
+      "id": "pr.kernel.66.dissent",
+      "kind": "finding",
+      "refs": [
+        "pr.kernel.66",
+        "intent.track_a_track_b",
+        "intent.anti_self_deception"
+      ],
+      "significance": "This is the single most consequential sentence in the workstream for the Track A / Track B decision. The morphogenetic substrate has NOT beaten the conventional baseline, and the branch's own author says so. Override §9 requires exactly this: Track B may replace Track A components only after proving better results and paying complexity rent. On present evidence it has not.",
+      "statement": "PR #66's own body records, unchanged across the workstream: \"The conventional durable workflow engine still wins on the evidence available. Supervisor, static dependency graph, explicit state, targeted retries, amplification near one. None of this work is evidence about that comparison — it establishes correctness prerequisites and measurement integrity. R8 decides it.\"",
+      "title": "Preserved dissent: the conventional durable workflow engine still wins"
+    },
+    {
+      "corrected_framing": "The defect is NOT \"a disabled subsystem retains an authority it should not have\". It is that the canonical repair path is not independent of the legacy repair path: they share state, and the legacy ledger is a live participant in canonical repair rather than a residue of a completed migration.",
+      "eliminated_designs": [
+        "A",
+        "E",
+        "H"
+      ],
+      "evidence_refs": [
+        {
+          "path": "verification/phase3g/REPAIR_AUTHORITY_DESIGN_A_FALSIFIED.md",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+        }
+      ],
+      "evidence_status": "verified_by_inspection",
+      "id": "pr.kernel.66.latest_finding",
+      "interpretation": "Zero strict XPASS means all twenty-one are real regressions, not earned activations. Removing the legacy ledger is not an authority removal; it is a behavioural change to repair, credit accounting, bounded-exhaustion escalation and the second-repair projection.",
+      "kind": "finding",
+      "leading_hypothesis": "B + D — separate the ledger's bookkeeping from its authority and centralise retirement. NOT ADOPTED.",
+      "measurement": "924 passed / 0 failed  ->  904 passed / 21 failed, XPASS(strict) = 0",
+      "refs": [
+        "pr.kernel.66",
+        "intent.anti_self_deception"
+      ],
+      "runtime_changed": false,
+      "source_commit": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "surviving_designs": [
+        "B",
+        "C",
+        "D",
+        "F"
+      ],
+      "title": "RA-2 — the legacy `_search` ledger is load-bearing for canonical repair",
+      "uncommitted_work": "The DUAL_REPAIR_SEARCHES detector reordering is correct and independent of Design A's failure, but was not committed because it arrived inside a falsified candidate. It still requires its own negative control."
+    },
+    {
+      "actual_head": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "actual_status": "pre-arrival control is IMPLEMENTED AND ADVERSARIALLY VERIFIED (PA-1..PA-5); the bottleneck moved twice since",
+      "actual_suite": "924 passed · 1 skipped · 24 xfailed · 0 failed",
+      "claimed_bottleneck": "pre-arrival controls reaching a receiver before the search edge is adopted",
+      "claimed_head": "0ccda5c8030b0e1ea010a838694cdf514cd0babb",
+      "claimed_suite": "886 passed · 1 skipped · 11 xfailed · 0 failed",
+      "comments": 7,
+      "evidence_refs": [
+        {
+          "command": "issue_read(get, 67)",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "discrepancy.issue67_stale",
+      "kind": "discrepancy",
+      "note": "The issue body is the durable resumption marker, so its staleness is more consequential than the PR body's: a session reloading from it would resume at a bottleneck that was closed weeks ago.",
+      "resolution": "RECORDED_ONLY",
+      "title": "Issue #67 records a hold point three findings out of date"
+    },
+    {
+      "consequence": "The same prompt says \"Test this diagnosis rather than assuming it.\" On this evidence the diagnosis does not hold as written. The real question is almost never \"does it exist\" but which of existing-and-connected / existing-but-disconnected / genuinely-absent applies. SP-3 resolves this per component; nothing may be proposed for construction before that classification.",
+      "evidence_refs": [
+        {
+          "command": "ls closure/ foundry/ omnimorph/ egregore/ evolution/ developmental/ linker/ compiler/ adapters/",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_inspection",
+      "id": "discrepancy.missing_machinery_premise",
+      "kind": "discrepancy",
+      "measured": "main at 8cb3074 already contains closure/ (whole_body.py plus five registries), foundry/ (12 modules incl. advantage.py, composition.py, tribunal.py), omnimorph/engine.py, egregore/ (closure, contracts, drift, gate_adapter, resources, runtime), evolution/ (30 modules incl. strategy_tree.py, spider_web.py and the repair/ laboratory), developmental/ (MICA/CDPE), linker/, compiler/, adapters/, contracts/ (12 schemas), organs/ (3 manifests).",
+      "prompt_claim": "§10 of the earlier canonical prompt lists INSTITUTIONAL ANATOMY GRAPH, UNIVERSAL COMPATIBILITY MEMBRANE, CAPABILITY EXTRACTION AND REGISTRY, MECHANISM ATLAS, DEVELOPMENTAL COMPILER, CANDIDATE BUILDERS, PROTECTED EVALUATOR FIREWALL, SANDBOX/INCUBATOR, LINEAGE AND CAPABILITY ROUTER, WHOLE-BODY CLOSURE CONTROLLER and PROOF-TO-SETTLEMENT REALITY PATH as expected missing machinery.",
+      "refs": [
+        "repo.uniimente-kernel",
+        "intent.malleability"
+      ],
+      "title": "Most \"expected missing machinery\" already exists on main"
+    },
+    {
+      "actual": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "also_stale": "The body's \"next active bottleneck\" section names \"truthful and exclusive authority over root-generation retirement\". Commit a6f14d3 (RA-2) supersedes that framing — the coupling is broader than retirement authority. The body's stated bottleneck is therefore superseded by its own branch tip.",
+      "claimed": "Head 15623a9",
+      "commits_behind_body": 1,
+      "evidence_refs": [
+        {
+          "command": "pull_request_read(get) vs git rev-parse origin/claude/uniimente-repo-audit-jpytcy",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "discrepancy.pr66_body_stale",
+      "kind": "discrepancy",
+      "refs": [
+        "pr.kernel.66",
+        "pr.kernel.66.latest_finding"
+      ],
+      "resolution": "RECORDED_ONLY — zero writes to PR #66 this round",
+      "title": "PR #66 body describes head 15623a9; actual head is a6f14d3"
+    },
+    {
+      "evidence_refs": [
+        {
+          "command": "list_pull_requests(state=open) across all five repositories",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "discrepancy.stacked_pr_backlog",
+      "kind": "discrepancy",
+      "note": "This is not a tidiness observation. It is the mechanical reason capability lands slowly: the institution's throughput is gated by chain order and stale bases, not by whether the work is good. It belongs in the strategic tree as a real constraint.",
+      "stale_base_problem": "Kernel PRs 44, 45, 46 and 35 are based on 3d9b5779 — the ARCHIVED main (archive/main-2026-07-19), not the current 8cb3074. PR 21 is based on 8a0b65cd, older still. PR 51 targets release/canonical-v1. These cannot merge cleanly without rebasing, and their diffs no longer describe the current tree.",
+      "structural_problem": "A large fraction target another feature branch rather than the default branch, forming chains that can only land in order. Kernel PRs 15->16->17->18->19->20->22 ->23->24->25->26 form one such chain; WMI 15->16->18->22 and 17->19->20->21->23 ->24 form two more; PumpStation 7->13->14->15 forms a fourth.",
+      "title": "69 open PRs across five repos, many stacked on non-default bases",
+      "totals": {
+        "DALEOBANKS": 9,
+        "PumpStation": 10,
+        "RESEARCH-IN": 11,
+        "WealthMachineIntelligence": 13,
+        "total": 69,
+        "uniimente-kernel": 26
+      }
+    },
+    {
+      "evidence_refs": [
+        {
+          "command": "python -m pytest -q -p no:randomly  ->  495 passed in 6.22s",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "discrepancy.suite_495_vs_924",
+      "kind": "discrepancy",
+      "main_suite": "495 passed in 6.22s",
+      "note": "The canonical prompt §8.1 presents 924/1/24 immediately under the kernel-main heading, which reads as if it were main's figure. Measured directly: main at 8cb3074 runs 495 passed. The 429-test difference is the PR #66 branch's own verification corpus, which lives only on that branch (verification/ does not exist on main at all). Both numbers are real. Collapsing them would overstate main's tested surface by ~87%.",
+      "pr66_suite": "924 passed · 1 skipped · 24 xfailed",
+      "refs": [
+        "repo.uniimente-kernel",
+        "pr.kernel.66"
+      ],
+      "title": "495 (main) and 924 (PR #66) are different branches, not a contradiction"
+    },
+    {
+      "evidence_refs": [
+        {
+          "command": "git rev-parse --abbrev-ref HEAD; git ls-remote --heads origin",
+          "repo": "dababiyoda/uniimente-kernel",
+          "sha": "8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1"
+        }
+      ],
+      "evidence_status": "verified_by_execution",
+      "id": "round.branch_deviation",
+      "kind": "assumption",
+      "rationale": "The session harness mandates this branch and forbids pushing elsewhere without explicit permission. §28 of the canonical prompt permits \"a more appropriate existing planning branch\"; this branch already exists locally and on origin at 8cb3074 and was created for this round. Conservative assumption, labelled per §0.",
+      "reversible": true,
+      "suggested": "planning/uniimente-whole-system-reconciliation-v1",
+      "title": "Planning branch: harness-designated name used instead of the suggested one",
+      "used": "claude/super-planning-prompt-h8l0oj"
+    },
+    {
+      "evidence_refs": [
+        {
+          "note": "founder direction recorded in session, 2026-08-08",
+          "repo": "founder-upload",
+          "sha": "1fd49e07437d53c6ac708e4a3871272acd1fd2a1507acc95bbd0599de7468c9e"
+        }
+      ],
+      "evidence_status": "asserted",
+      "id": "round.pr66_zero_writes",
+      "kind": "assumption",
+      "rationale": "§34 of the canonical prompt permits one optional evidence-grounded correction comment. The founder directed zero writes and an inert founder-ready patch instead. The narrower instruction governs. PR66_PROPOSED_SYNC holds the exact replacement body and comment; applying either is a later explicit founder action.",
+      "refs": [
+        "pr.kernel.66",
+        "discrepancy.pr66_body_stale"
+      ],
+      "title": "PR #66 receives zero writes; the corrective comment is generated inert"
+    }
+  ],
+  "projection": "INSPECTION_TRUTH",
+  "title": "SP-0 — Inspection Truth Freeze"
+}

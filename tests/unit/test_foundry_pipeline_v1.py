@@ -40,16 +40,16 @@ def future():
 
 def opportunity():
     return OpportunitySpec(
-        opportunity_id="generic-pilot-1",
-        buyer="facility CFO", beneficiary="patient",
-        pain_owner="case management", budget_owner="facility CFO",
-        mandate_actor="compliance executive",
-        recurring_transaction="patient transport discharge",
-        broken_state="missing payer-grade transport proof",
+        opportunity_id="parser-test-1",
+        buyer="test_buyer", beneficiary="test_operator",
+        pain_owner="test_maintainer", budget_owner="test_buyer",
+        mandate_actor="test_reviewer",
+        recurring_transaction="parse a synthetic input record",
+        broken_state="a parser rejects a synthetic input record",
         trapped_value_usd=250000.0,
-        accepted_artifact="Request-Accept-Evidence packet",
-        external_consequence="one accepted and reconciled transport outcome",
-        lawful_path="BAA plus fair-market-value evidence service",
+        accepted_artifact="parsed-record.json",
+        external_consequence="test operator accepts the parsed record",
+        lawful_path="test operator grants permission to parse synthetic input",
         evidence_refs=(HASH,), legal_operator="alfonso_lopez",
     )
 
@@ -92,8 +92,8 @@ def capability():
 
 def composition_request():
     return CompositionRequest(
-        market_failure="missing payer-grade transport proof",
-        beneficiaries=("patient",), payer="facility CFO",
+        market_failure="a parser rejects a synthetic input record",
+        beneficiaries=("test_operator",), payer="test_buyer",
         control_surfaces=("proof",),
         desired_metrics=("clean_verified_outcome_count",),
         legal_principal="alfonso_lopez", max_budget_usd=100.0,
@@ -159,7 +159,7 @@ def build_stack():
 
 def design(pipeline, *, reconfigure=False):
     return pipeline.design(
-        opportunity_id="generic-pilot-1",
+        opportunity_id="parser-test-1",
         branches=branches(), capability_needs=(capability_need(),),
         control_surfaces=("proof",),
         success_metrics=("clean_verified_outcome_count",),
@@ -237,7 +237,7 @@ def test_modify_preserves_result_but_cannot_seal():
     assert run.status is PipelineStatus.MODIFY_REQUIRED
     with pytest.raises(AdvantageRefused, match="RETAIN"):
         pipeline.finalize_retained_genome(
-            run.run_id, genome_name="generic-proof", genome_version="1.0.0",
+            run.run_id, genome_name="parser-test", genome_version="1.0.0",
             capability_versions=("proof.audit@1.0.0",),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",
@@ -253,14 +253,14 @@ def test_clean_retain_seals_reusable_genome():
         human_approval_ref=HUMAN_APPROVAL,
     )
     genome = pipeline.finalize_retained_genome(
-        run.run_id, genome_name="generic-proof", genome_version="1.0.0",
+        run.run_id, genome_name="parser-test", genome_version="1.0.0",
         capability_versions=("proof.audit@1.0.0",),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
     assert run.status is PipelineStatus.RETAINED_GENOME
-    assert genome.key == "generic-proof@1.0.0"
-    assert foundry.get_genome("generic-proof", "1.0.0") == genome
+    assert genome.key == "parser-test@1.0.0"
+    assert foundry.get_genome("parser-test", "1.0.0") == genome
 
 
 def test_pipeline_rebuilds_outcome_and_terminal_state_from_ledger():
@@ -277,9 +277,9 @@ def test_pipeline_rebuilds_outcome_and_terminal_state_from_ledger():
     )
     assert rebuilt.get(run.run_id).status is PipelineStatus.READY_TO_SEAL
     genome = rebuilt.finalize_retained_genome(
-        run.run_id, genome_name="generic-proof", genome_version="1.0.0",
+        run.run_id, genome_name="parser-test", genome_version="1.0.0",
         capability_versions=("proof.audit@1.0.0",),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
-    assert genome.key == "generic-proof@1.0.0"
+    assert genome.key == "parser-test@1.0.0"

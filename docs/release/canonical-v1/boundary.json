@@ -52,17 +52,7 @@
     "tests": "mixed",
     "docs": "mixed"
   },
-  "leakage": [
-    {
-      "id": "L1",
-      "path": "closure/advantage_registry.py",
-      "class_declared": "core",
-      "issue": "healthcare roles as in-code values (facility CFO, patient, case management, patient transport discharge)",
-      "severity": "high",
-      "disposition": "parameterise; move healthcare instance to venture fixture",
-      "remediated": false
-    }
-  ],
+  "leakage": [],
   "not_leakage": [
     {
       "path": "identity/organ-registry.yaml",
@@ -106,7 +96,6 @@
   "remediation_performed_in_package_1": false,
   "open_questions": [
     "Must foundry/omnimorph/business/egregore prove genericity before or after the canonical merge?",
-    "Re-scope docs/TARGET_FORM_001.md, or preserve and write 002 clean?",
-    "Do L1 relocate to adapters/ or to a separate venture repository?"
+    "Re-scope docs/TARGET_FORM_001.md, or preserve and write 002 clean?"
   ]
 }

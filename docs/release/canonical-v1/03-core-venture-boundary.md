@@ -6,12 +6,6 @@
 
 ---
 
-## Headline finding
-
-**The core is not currently venture-neutral.** Healthcare assumptions are present inside core-classified paths. They are contained and nameable — one file — but they are real, and they are exactly the kind of drift the corrected boundary exists to prevent.
-
-**The deepest core is clean.** `tests/unit/test_closure.py`, `test_consequence_gate.py`, and `test_capabilities.py` contain zero healthcare assertions. Constitution, authority, gate, events, provenance, and memory carry no business logic.
-
 
 ---
 
@@ -35,7 +29,7 @@
 | `loom/` | **core** | Workflow patterns |
 | `twins/` | **core** | Counterfactual forks |
 | `evolution/` | **core** | Improvement cycle |
-| `closure/` | **core, CONTAMINATED** | See leakage L1 |
+| `closure/` | **core** | Closure checks |
 | `verifier/` | **core** | V1–V5 |
 | `observability/`, `sandbox/` | **core** | Build targets |
 | `sdk-python/`, `sdk-typescript/` | **core** | Organ integration |
@@ -50,26 +44,9 @@
 | `organs/` | **core** | Organ manifests |
 | `integration/` | **core** | Integration manifest |
 | `contracts/` | **mixed** | See contract inventory |
-| `tests/` | **mixed** | Core tests clean; foundry/omnimorph tests carry domain fixtures |
+| `tests/` | **mixed** | Shared mechanism tests |
 | `docs/` | **mixed** | 7 of 12 mention a venture domain |
 | `scripts/ci/` | **core** | Added by Package 1; fully generic |
-
----
-
-## Named leakage
-
-### L1 — `closure/advantage_registry.py` · core path, healthcare defaults
-
-```
-buyer="facility CFO", beneficiary="patient", pain_owner="case management",
-budget_owner="facility CFO", mandate_actor="compliance executive",
-recurring_transaction="patient transport discharge"
-```
-
-A core closure module carries a specific industry's roles as in-code values. Even as examples, these teach every future reader that the core assumes a healthcare buyer.
-
-**Severity: high** — it is core code, not documentation.
-**Disposition:** parameterise, moving the healthcare instance into a venture fixture. Not in Package 1.
 
 ---
 
@@ -87,16 +64,7 @@ Enforced structurally by the UCL compiler invariant `never_uniimente_principal`.
 
 ---
 
-## What this means for the corrected build
-
-The corrected order is achievable: the core's *governing* layers are already venture-neutral. Contamination sits in one closure module — not in the Constitution, the gate, identity, authority, events, provenance, or memory.
-
-**No remediation is performed in Package 1.** These are recorded for the founder's decision on sequencing.
-
----
-
 ## Open boundary questions for the founder
 
 1. **`foundry/`, `omnimorph/`, `business/`, `egregore/`** are classified *generic extension candidate*, not core. Each must prove genericity before entering the core. Do you want that proof required before or after the canonical merge?
 2. **`docs/TARGET_FORM_001.md`** references venture domains. TARGET_FORM_002 must not. Should 001's documentation be re-scoped, or preserved as-is with 002 written clean?
-3. **`adapters/`** is the correct home for domain translation. Should L1–L4 relocate there, or to a separate venture repository?

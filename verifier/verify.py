@@ -29,7 +29,12 @@ for f in glob.glob("contracts/*.schema.json"):
     except Exception as e:
         bad.append(f"{f}: {e}")
 schemas = glob.glob("contracts/*.schema.json")
-check("C2", not bad and len(schemas) == 9, "; ".join(bad) if bad else f"{len(schemas)} valid 2020-12 schemas")
+# The count is hard-coded deliberately: it is a deliberate-addition canary, so
+# adding a schema must be a conscious act that also updates this verifier.
+# 9 dated from 2026-07-19; the canonical-v1 contract set is 13. Stale count
+# surfaced by the independent audit (docs/audit/INDEPENDENT_VERIFICATION_8cb3074a.md,
+# Finding 1); failing run record preserved in verifier/runs/.
+check("C2", not bad and len(schemas) == 13, "; ".join(bad) if bad else f"{len(schemas)} valid 2020-12 schemas")
 
 # C3: YAML parse
 try:

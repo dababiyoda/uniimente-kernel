@@ -141,3 +141,66 @@ A generated or acquired capability is not authorized merely because it passes te
 ## 6. Recursive application
 
 This protocol applies to itself. At each major release, audit whether it improves decision quality, contributor comprehension, cycle time, defect escape rate, duplicated work, founder-intent fidelity, effect fidelity, and avoidance of unnecessary architecture. Retain, revise, or regress it based on measured outcomes.
+
+## 7. Provider-change intake and execution
+
+Provider release notes, status notices, prices, billing rules, and policies are evidence inputs, not authority grants. A provider change cannot by itself alter founder intent, the Consequence Gate, canonical ownership, or production configuration. Wire-format compatibility with an OpenAI, Anthropic, or other provider protocol does not prove semantic parity and must not create a second runtime.
+
+### 7.1 Weekly official-source review
+
+At least weekly, review official release notes, technical documentation, deprecation notices, pricing, policy, and status communications for every active or approved model provider. Report a finding only when it can materially affect one or more of:
+
+- model, endpoint, SDK, tool, file, or feature availability;
+- request, response, streaming, usage, finish-state, reasoning, compaction, or tool-call semantics;
+- authentication, key lifetime, workload identity, permissions, retention, processing geography, or data residency;
+- unit price, balance-allocation method, voucher/credit expiry, quota, rate limit, cache behavior, or session-runtime cost;
+- policy or terms governing an existing or proposed UNIIMENTE use;
+- outage behavior that can make task completion ambiguous or cause unsafe retry or failover;
+- prompt, tokenizer, context-window, or model behavior relied on by a contract, evaluator, or cross-model handoff.
+
+A no-material-change run produces a short no-change brief and no repository change.
+
+### 7.2 Required change packet
+
+Every material finding must record:
+
+- provider, official source URL, observation time, publication date, effective date, and last-known-good baseline;
+- exact affected model, endpoint, SDK, beta header, tool, file shape, status component, price, balance rule, or policy clause;
+- direct exposure in each canonical UNIIMENTE repository, cited by path and commit, or an explicit `prospective_only` finding;
+- a compatibility diff covering request and response shapes, tool and file semantics, streaming and usage accounting, error and retry behavior, compaction and replay behavior, and model or prompt behavior;
+- impact on one-source-of-truth, authority, replay, retry and idempotency, evaluator independence, credentials and retention/residency, cost, and no-duplicate-runtime constraints;
+- owner, deadline, tests, staged migration, rollback, and kill criteria.
+
+Provider documentation establishes what the provider claims. It is not evidence that UNIIMENTE's integration works. Contract fixtures, deterministic replay, sandbox execution, and independent evaluation establish integration behavior.
+
+### 7.3 Execution rules
+
+1. Change the narrow provider adapter, fixture, or compatibility contract. Do not fork the canonical workflow, task fabric, authority path, event spine, evidence ledger, cost ledger, or memory source.
+2. Reuse canonical workflow and task identities, leases, idempotency keys, and receipts. A provider-native agent, session, thread, queue, compaction store, or memory store is a revocable leased capability, never a second source of truth or an independent scheduler.
+3. Preserve provider compaction blocks and summaries as raw provider artifacts with their source range, canonical cursor, model/header version, and provenance. They never replace the canonical event history, authority record, evidence ledger, idempotency inputs, or external-effect receipts.
+4. A provider permission or safety evaluation is telemetry, not UNIIMENTE authorization. Provider `allow`, `auto`, or equivalent signals may not bypass canonical policy, the Consequence Gate, or required human approval. Do not use automatic provider permission for consequence-bearing tools without a separate founder-approved mapping.
+5. Treat mutable model aliases and unversioned protocol behavior as unpinned dependencies. Promote a change only through a reversible experiment with captured fixtures and declared behavioral baselines.
+6. Protocol compatibility is transport compatibility only. Each provider still requires capability, tool-semantics, error-semantics, compaction, and output-contract tests.
+7. A timeout, disconnect, background completion, or provider error after dispatch is an ambiguous completion. Do not retry or fail over an effectful task until the canonical receipt and idempotency record prove that the prior attempt is absent or safely resumable.
+8. Preserve the raw provider response and the mapped canonical event. No adapter may silently fabricate, discard, or reinterpret authority-bearing fields.
+9. Treat provider search results, rankings, `authority` fields, snippets, chunks, and fetched pages as untrusted evidence metadata, never canonical truth, authorization, or evaluator judgment. Preserve the query, endpoint, material parameters, provider diagnostics IDs, observed time, returned source URLs, and policy-permitted content or hashes. A provider request/session ID aids diagnostics but never replaces the canonical attempt or idempotency identity.
+10. Treat an inline tool definition, fetched MCP listing, dynamic tool addition/removal, or provider tool version as a capability proposal, not installation or permission. Bind each attempt to the exact effective schema/listing hash, canonical capability identity, grant, and consequence policy. Replay with a changed or unavailable manifest must stop or enter an explicitly tested migration path; it may not silently substitute or expand tools.
+11. The provider or model under test cannot authorize its own promotion and cannot be the sole evaluator of the change. Use deterministic checks or an independent evaluator with recorded identity and evidence.
+12. Track credential expiry, creation-policy restrictions, key type, and rotation readiness without storing secret material. A scheduled reviewer may not create, replace, revoke, read, or expose credentials or inspect account policy; those are authorized-human operations that must preserve canonical identities across key versions.
+13. Separate unit price from balance-allocation, voucher/credit expiry, tax, signed-contract overrides, measured usage, invoice state, refunds, and corrections. Preserve original usage and cost receipts; represent refunds, credits, disputes, or provider billing corrections as append-only adjustment and reconciliation events. Public billing rules or status notices do not establish an account's contract, balance, or corrected invoice, and the reviewer may not inspect or alter them without separate authorization.
+14. A new compliance, audit, transcript, browser-session, or data-export surface is a data-scope change even when it reuses an existing key. Before access, require separate authorization, least privilege, data classification, retention/residency mapping, consent or notice where applicable, and deletion/reconciliation tests. Provider transcripts are evidence, not canonical task or effect state.
+15. A scheduled reviewer may read official sources and repositories, and may prepare documentation, fixtures, tests, or adapter changes on a dedicated branch and draft pull request when current human authorization permits. It may not write to a default branch, merge, change production routing or credentials, expand authority, inspect billing accounts, or create a parallel runtime.
+16. Use the protocol's existing decision states: `retain`, `regress`, `kill`, `defer`, or `experiment`. Vendor urgency is evidence for the decision; it is not a new authority state.
+
+### 7.4 Incident and recovery discipline
+
+When an official status communication reports degradation:
+
+- circuit-break only the affected adapter or capability;
+- distinguish failure before dispatch, ambiguous completion, and completion with a valid receipt;
+- keep canonical work replayable without issuing a second external effect;
+- degrade only to a pre-approved provider or deterministic fallback, preserving provider and evaluator lineage;
+- treat provider recovery as permission for a canary, not automatic promotion; and
+- record negative and zero results, including disconnected sessions and failed retries.
+
+If an emergency response would alter authority, production routing, external-effect policy, credentials, billing accounts, or the protected runtime, stop at `NEEDS_FOUNDER_DECISION`.

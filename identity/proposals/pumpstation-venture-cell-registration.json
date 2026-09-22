@@ -1,0 +1,46 @@
+{
+  "proposal_id": "00000000-0000-4000-8000-000000000100",
+  "status": "PROPOSED",
+  "activation_status": "INACTIVE",
+  "service_identity": "spiffe://uniimente.internal/venture/pumpstation",
+  "legal_principal": "alfonso_lopez",
+  "mission": "Operate PumpStation as a simulation-only community capital Venture Cell that compiles evidence-bound proposals while the UNIIMENTE Kernel retains sole authority over identity, grants, policy, budgets, commit witnesses, receipts, reconciliation, and external consequences.",
+  "allowed_capabilities": [
+    "pumpstation.opportunity.submit",
+    "pumpstation.deliberation.record",
+    "pumpstation.simulation.compile",
+    "pumpstation.kernel.proposal.compile"
+  ],
+  "prohibited_capabilities": [
+    "trade.place",
+    "asset.transfer",
+    "wallet.custody",
+    "outside_capital.accept",
+    "public_asset_promotion.publish",
+    "contract.sign",
+    "grant.issue",
+    "budget.increase",
+    "policy.change",
+    "stage.self_approve",
+    "external_effect.execute"
+  ],
+  "capital_authorization_usd": 0,
+  "max_autonomy_level": 0,
+  "external_targets": [],
+  "required_approvals": [
+    "founder_manifest_approval",
+    "service_identity_registration",
+    "legal_principal_confirmation",
+    "kernel_contract_lock_approval",
+    "security_review",
+    "capability_grant_issuance"
+  ],
+  "approval_status": "NOT_REQUESTED",
+  "created_by": "spiffe://uniimente.internal/human/founder",
+  "created_at": "2026-07-26T03:00:00Z",
+  "expires_at": "2026-10-24T03:00:00Z",
+  "source_repository": "dababiyoda/PumpStation",
+  "source_branch": "agent/phase3-kernel-contract-adapter",
+  "source_manifest_path": "kernel/pumpstation-organ-manifest.json",
+  "source_manifest_hash_status": "TO_BE_BOUND_AT_APPROVAL"
+}

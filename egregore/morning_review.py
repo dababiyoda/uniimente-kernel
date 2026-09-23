@@ -129,7 +129,9 @@ def _project(ledger, mission_id, head):
             if (not completed or completed[-1].payload["state"].get("receipt") != receipt.hash or
                     completed[-1].payload["state"].get("appraisal") != appraisal):
                 raise ValueError("closure lacks completed bound workflow")
-            status = "RETAINED_AUDIT_COMPLETE" if report["compatible"] else "RETAINED_AUDIT_DISCREPANCY"
+            status = ("RECONCILIATION_REQUIRED" if stopped and data(stopped[-1])["status"] != "COMPLETE"
+                      else "RETAINED_AUDIT_COMPLETE" if report["compatible"]
+                      else "RETAINED_AUDIT_DISCREPANCY")
         elif stopped and data(stopped[-1])["status"] == "COMPLETE":
             raise ValueError("host success without retained verified closure")
         notes = [r for r in snapshot.by_type("review_note")

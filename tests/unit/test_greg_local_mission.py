@@ -10,6 +10,7 @@ import pytest
 
 from egregore.repository_audit import capture, derive
 from egregore.local_mission import ROOT, proposal, run_once, supervise
+from egregore.morning_review import review
 from events.spine import EventSpine
 from policy.consequence_gate import ConsequenceGate
 from provenance.ledger import EvidenceLedger
@@ -97,6 +98,31 @@ def test_missing_grant_blocks_and_stays_remembered(mission, tmp_path):
         assert not history.by_type("grant_dispatch")
         assert not history.by_type("receipt")
         assert not EventSpine(history).replay("greg.closed")
+    finally:
+        history.close()
+
+
+def test_host_start_failure_is_retained_as_blocker_without_dispatch(mission, tmp_path, monkeypatch):
+    auth, path = authority(mission), tmp_path / "history"
+    prepare(path, mission, auth)
+
+    def refuse_process(_):
+        raise RuntimeError("sensitive diagnostic must not enter the ledger")
+
+    monkeypatch.setattr("egregore.local_mission.multiprocessing.get_context", refuse_process)
+    blocked = supervise(path, mission, auth)
+    assert blocked["status"] == "BLOCKED"
+    assert blocked["host_failure_type"] == "RuntimeError"
+    assert blocked["worker_exits"] == []
+    assert "sensitive diagnostic" not in json.dumps(blocked)
+    assert supervise(path, mission, auth) == blocked
+    history = ledger(path, auth)
+    try:
+        assert not history.by_type("grant_dispatch")
+        assert not history.by_type("receipt")
+        report = review(path, auth["compiled"].constitution_hash, mission["mission_id"], history.head)
+        assert report["status"] == "RECONCILIATION_REQUIRED"
+        assert report["blocker"]["kind"] == "RECOVERY_REQUIRED"
     finally:
         history.close()
 

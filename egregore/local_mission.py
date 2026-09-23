@@ -228,60 +228,71 @@ def supervise(path, job, authority, *, crash_first=False):
                          "model_calls": 0, "external_spend_usd": 0}})
     finally:
         prior.close()
-    while time.time() < min(job["due"], job["deadline"]):
-        time.sleep(max(0, min(.1, job["due"] - time.time())))
-    trigger_ledger = EvidenceLedger(authority["compiled"].constitution_hash, str(path))
-    try:
-        emit(EventSpine(trigger_ledger), authority["actor"], "triggered", job,
-             {"at": time.time(), "host_pid": os.getpid(), "cause": "due time"})
-    finally:
-        trigger_ledger.close()
     exits = []
     worker_pids = []
-    for attempt in range(3):
-        if time.time() >= job["deadline"]:
-            break
-        process = multiprocessing.get_context("fork").Process(
-            target=_worker, args=(path, job, authority, crash_first and attempt == 0))
-        process.start()
-        worker_pids.append(process.pid)
+    host_failure = None
+    try:
+        while time.time() < min(job["due"], job["deadline"]):
+            time.sleep(max(0, min(.1, job["due"] - time.time())))
+        trigger_ledger = EvidenceLedger(authority["compiled"].constitution_hash, str(path))
         try:
-            process.join(min(20, max(0, job["deadline"] - time.time())))
-            if process.is_alive():
+            emit(EventSpine(trigger_ledger), authority["actor"], "triggered", job,
+                 {"at": time.time(), "host_pid": os.getpid(), "cause": "due time"})
+        finally:
+            trigger_ledger.close()
+        for attempt in range(3):
+            if time.time() >= job["deadline"]:
+                break
+            process = multiprocessing.get_context("fork").Process(
+                target=_worker, args=(path, job, authority, crash_first and attempt == 0))
+            process.start()
+            worker_pids.append(process.pid)
+            try:
+                process.join(min(20, max(0, job["deadline"] - time.time())))
+                if process.is_alive():
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        process.kill()
+                    process.join(3)
+                exits.append(process.exitcode)
+            finally:
+                if process.is_alive():
+                    process.kill()
+                    process.join(3)
+                # Remove any descendants still in this worker's owned process group.
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
-                    process.kill()
-                process.join(3)
-            exits.append(process.exitcode)
-        finally:
-            if process.is_alive():
-                process.kill()
-                process.join(3)
-            # Remove any descendants still in this worker's owned process group.
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.close()
-        if exits[-1] != 75:
-            break
+                    pass
+                process.close()
+            if exits[-1] != 75:
+                break
+    except Exception as exc:
+        # An ordinary host error must become a retained blocker, never an
+        # implicit license to re-enter the worker or mint replacement authority.
+        # Retain only the exception class: arbitrary exception text may be secret.
+        host_failure = type(exc).__name__
     ledger = EvidenceLedger(authority["compiled"].constitution_hash, str(path))
     try:
         spine = EventSpine(ledger)
         bound_job(spine, job)
         closed = [e for e in spine.replay("greg.closed") if e.payload["mission_id"] == job["mission_id"]]
         data = {"worker_exits": exits, "worker_pids": worker_pids, "attempt_limit": 3,
-                "status": "COMPLETE" if closed else "BLOCKED",
+                "status": "COMPLETE" if closed and host_failure is None else "BLOCKED",
                 "next_reconsideration": None if closed else "explicit operator reconciliation; no blind redispatch"}
+        if host_failure is not None:
+            data["host_failure_type"] = host_failure
+            data["next_reconsideration"] = "explicit operator reconciliation; no blind redispatch"
         cpu_end = resource.getrusage(resource.RUSAGE_SELF)
         data["host_elapsed_seconds"] = time.monotonic() - started_at
         data["host_cpu_seconds"] = ((cpu_end.ru_utime + cpu_end.ru_stime) -
                                     (cpu_start.ru_utime + cpu_start.ru_stime))
-        if not closed:
+        if not closed or host_failure is not None:
             data["pending_message"] = {
                 "kind": "RECOVERY_REQUIRED", "goal_id": job["mission_id"],
-                "why_now": "bounded host stopped without verified closure",
+                "why_now": ("host failed after claim; inspect retained acceptance before retry"
+                            if host_failure else "bounded host stopped without verified closure"),
                 "requested_action": "review retained failure before any further execution",
                 "evidence_head": ledger.head, "delivery": "retained locally; no real channel"}
         emit(spine, authority["actor"], "host_stopped", job, data)

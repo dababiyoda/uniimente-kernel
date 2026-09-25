@@ -1,5 +1,9 @@
 # Founder Intent Ledger
 
+## First body and persistent GREG product — 2026-09-22
+
+`INTENT-2026-09-22-FIRST-BODY` preserves Alfonso's direct correction: the first owned computer is the practical body of a persistent, governed GREG operating layer above macOS. This is an active product requirement, not a claim of an installed service or a grant of live authority. The intent record and exactly two strengthening passes are in `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. The date-based ID avoids the unresolved `INTENT-0029` collision in draft #86 and draft #105. Runtime ownership (#70/#87) and live founder authentication remain unresolved.
+
 ## Embodied GREG and developmental trajectory — 2026-09-11
 
 [INTENT-GREG-EMBODIED-2026-09-11](intent/INTENT-GREG-EMBODIED-2026-09-11.md)

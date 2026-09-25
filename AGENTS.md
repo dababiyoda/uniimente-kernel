@@ -17,6 +17,8 @@ Before substantive work, read:
 4. `docs/UNIIMENTE_FINAL_BUILD_ORDER.md`
 5. `docs/CANONICAL_EXECUTION_ORDER.md`
 
+For the first owned-computer body, persistent GREG product effect and its current experimental boundary, read `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. A shell, host, agent or organ may not create a second authority plane.
+
 ## Non-negotiable interpretation rule
 
 > **Preserve the founder's intended effect. Do not literalize the metaphor.**

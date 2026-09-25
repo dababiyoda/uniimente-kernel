@@ -1,5 +1,27 @@
 # UNIIMENTE FINAL BUILD ORDER
 
+## Current sequencing correction — 2026-09-11
+
+`INTENT-GREG-EMBODIED-2026-09-11` and `collaboration/OPUS-RECONCILIATION.md`
+govern conflicting sequencing below. Preserve the historical catalog and all
+useful evidence, but do not require every compiler, graph, registry, adapter,
+organ or bridge before one useful mission. Preservation does not require active
+ownership or runtime registration of every alternative. Build an item only when
+it closes a demonstrated deficit better than the simpler route.
+
+Current dependency order: adopted shared integrity → bounded persistent mission
+and truthful review → canonical founder authentication plus host supervision →
+GREG interface and real bounded computer use → native development installation →
+one verified overnight mission and morning critique → first business loop →
+verified missing-capability acquisition and goal resumption → useful AI/human
+workforce integration → justified compute growth. Independent verification,
+authority limits, recovery and shutdown apply at every stage. Closures, not the
+number of architectures, determine advancement.
+
+The historical revenue allocation ordering below is not a new treasury policy:
+lawful obligations/reserves and Alfonso's explicit goals govern surplus. The
+machine has no right to survive and no automatic capital or authority allocation.
+
 ## CRITICAL ARCHITECTURAL OVERRIDE
 
 **Preserve Everything. Connect Everything. Convert Every Useful Component into an

@@ -171,13 +171,28 @@ def test_the_episode_writes_nothing_into_the_kernel_repository(episode):
     )
 
 
-def test_organ_side_effects_were_contained_and_counted(episode):
-    """A side effect nobody counted is the kind that later turns out to matter."""
-    a = _state(episode, "A_healthy")
-    assert a["organ_files_written_in_scratch"], (
-        "the organs wrote nothing at all — either containment is measuring the "
-        "wrong directory, or the consumer never really ran"
-    )
+def test_organ_side_effects_are_contained_wherever_they_happen(episode):
+    """Containment, without assuming when the organs choose to write.
+
+    An earlier version required this list to be non-empty and was accidentally
+    order-dependent: WealthMachineIntelligence's agent-store write is an
+    **import-time** log, so it happens at most once per process. Once another
+    test in the suite imported WMI first, the episode's own scratch directory
+    legitimately saw no write and this failed — reporting a containment breach
+    where there was none.
+
+    The claim worth holding is containment, so that is what is asserted: every
+    recorded organ write is a relative path inside the scratch directory, and
+    nothing reached the kernel repository (checked above). Non-vacuity lives
+    where it belongs — ``executed_files_in_consumer_repo`` proves the consumer
+    really ran, and it is asserted on its own.
+    """
+    import os
+
+    for name in ("A_healthy", "C_repaired"):
+        for written in _state(episode, name)["organ_files_written_in_scratch"]:
+            assert not os.path.isabs(written), f"{name}: escaped the scratch dir: {written}"
+            assert ".." not in written.split(os.sep), f"{name}: traversal: {written}"
 
 
 def test_the_function_is_restored_by_finding_not_creating(episode):

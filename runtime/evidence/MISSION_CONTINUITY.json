@@ -1,0 +1,96 @@
+{
+  "baseline": {
+    "arm": "baseline_conventional",
+    "assessment": {
+      "go_no_go": "go",
+      "packet_id": "dd32f494-0de1-426d-ac5f-9eaf8a5b3e34",
+      "requires_human_approval": true
+    },
+    "developmental": false,
+    "external_intervention": "an operator outside the durable runtime re-enabled linker.linker.InstitutionalLinker; the runtime cannot do this for itself",
+    "external_interventions_required": 1,
+    "mission_completed": true,
+    "mission_parked_on_capability_loss": true,
+    "mission_status": "completed",
+    "resumed_rather_than_restarted": true,
+    "trace": [
+      "produce_packet",
+      "route_to_intake",
+      "route_to_intake",
+      "record_assessment"
+    ],
+    "trace_before_recovery": [
+      "produce_packet",
+      "route_to_intake"
+    ]
+  },
+  "both_missions_completed": true,
+  "both_resumed_from_checkpoint": true,
+  "challenger": "capabilities.router.CapabilityRouter restoration",
+  "challenger_arm": {
+    "arm": "challenger_developmental",
+    "assessment": {
+      "go_no_go": "go",
+      "packet_id": "dd32f494-0de1-426d-ac5f-9eaf8a5b3e34",
+      "requires_human_approval": true
+    },
+    "deficit": {
+      "at": "2026-09-25T19:11:27.828959Z",
+      "capability": "institutional.cross_organ_edge_resolution",
+      "examined": [
+        "linker.linker.InstitutionalLinker",
+        "runtime.seam.topology.ManifestContractTopology"
+      ],
+      "failed_invocation": "runtime.seam.router.ContractRouter.deliver",
+      "failure_error": "ROUTE_NOT_ESTABLISHED",
+      "missing_evidence": [],
+      "morphogenesis_authorized": true,
+      "required_by": "mission-challenger_developmental",
+      "status": "VERIFIED",
+      "unserviceable_reason": "capability 'institutional.cross_organ_edge_resolution' is registered but unserviceable: [('linker.linker.InstitutionalLinker', 'lifecycle QUARANTINED'), ('runtime.seam.topology.ManifestContractTopology', 'lifecycle QUARANTINED')]"
+    },
+    "developmental": true,
+    "external_interventions_required": 0,
+    "mission_completed": true,
+    "mission_parked_on_capability_loss": true,
+    "mission_status": "completed",
+    "replacement": "runtime.seam.topology.ManifestContractTopology",
+    "replacement_origin": "RETRIEVED",
+    "resolution_rung": "EXISTING_CAPABILITY",
+    "resumed_rather_than_restarted": true,
+    "routing_decision": {
+      "at": "2026-09-25T19:11:27.829007Z",
+      "authority_granted": false,
+      "capability": "institutional.cross_organ_edge_resolution",
+      "chosen": "runtime.seam.topology.ManifestContractTopology",
+      "considered": [
+        "linker.linker.InstitutionalLinker",
+        "runtime.seam.topology.ManifestContractTopology"
+      ],
+      "origin_of_chosen": "RETRIEVED",
+      "reason": "cheapest healthy implementation at lifecycle FALLBACK (cost 1.0, evidence tested)",
+      "rejected": [
+        {
+          "implementation": "linker.linker.InstitutionalLinker",
+          "why": "lifecycle QUARANTINED"
+        }
+      ]
+    },
+    "trace": [
+      "produce_packet",
+      "route_to_intake",
+      "route_to_intake",
+      "record_assessment"
+    ],
+    "trace_before_recovery": [
+      "produce_packet",
+      "route_to_intake"
+    ]
+  },
+  "challenger_wins_on_continuity": true,
+  "closure_claim": "NONE. This measures mission continuity, not a developmental closure.",
+  "metric": "external_interventions_required",
+  "primary_comparator": "events.spine.DurableWorkflow (conventional, pre-existing)",
+  "question": "can UNIIMENTE resume a persistent mission after a verified CapabilityDeficit better than the conventional route?",
+  "what_the_challenger_does_not_win": "the replacement discards the linker's unresolved-question and overlapping-authority analysis, so continuity is bought with information. And it only wins at all because a preserved alternative existed; with nothing to find it degrades exactly to the baseline."
+}

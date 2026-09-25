@@ -1,7 +1,7 @@
 # Track-A resume packet. A fresh context should verify this file against the
 # branch and CI before acting. It is not an authority source.
 
-updated_at: '2026-08-11'
+updated_at: '2026-09-25'
 branch: claude/track-a-runtime-spine
 previous_head: 519a390cb18994b81d2a000363f142b7b7b9db2c
 head_resolution: git rev-parse HEAD
@@ -106,6 +106,8 @@ evidence_paths:
   p3_second_test: tests/integration/test_p3_counterfactual.py
   capability_router: capabilities/router.py
   evaluator_freeze: runtime/evaluator/freeze.py
+  capability_deficit: capabilities/deficit.py
+  mission_continuity_comparison: runtime/mission.py
 
 source_classification:
   doctrine: canonical founder requirement
@@ -129,6 +131,29 @@ unresolved:
     competitor among four, not the default)
   - named external verifier, acceptance schema, payable event, and first commercial wedge
 
+founder_clarification_2026_09_09:
+  source: "relayed founder comments on PR #68 (INTENT-0030 / draft #99)"
+  rule: >-
+    Preserve the intended effect. Do not literalize the metaphor. Search reality
+    before inventing architecture.
+  morphogenesis_canonical: >-
+    resourceful functional capability formation or reconfiguration after a
+    VERIFIED CapabilityDeficit.
+  comparator_relationship: >-
+    conventional durable runtime is the PRIMARY COMPARATOR; developmental work
+    is the CHALLENGER. Both arms must be run, not described.
+  measured_result: >-
+    runtime/mission.py — both arms complete the persistent mission and resume
+    from checkpoint; baseline needs 1 external intervention, challenger 0.
+    Challenger's cost recorded: the replacement discards the linker's unresolved
+    and authority analysis, and it wins only because a preserved alternative
+    existed.
+  regressed: literal-metaphor interpretation only; all planning evidence, Track-B
+    research, negative results and topology findings retained
+  ivio_nemt: >-
+    ABANDONED by founder ruling 2026-09-13. Never referenced by Track-A; no
+    Track-A artifact frames it as live.
+
 local_test_status:
   exact_pin_route_b_integration: 1 passed
   four_state_counterfactual: PASS
@@ -136,7 +161,7 @@ local_test_status:
   source_revision_attestation: PASS
   intent_ledger_validation: VALID; 5 records
   deliberation_validation: VALID; exactly two passes
-  canonical_full_kernel_suite: 566 passed, 1 skipped (was 512/15 at af82717)
+  canonical_full_kernel_suite: 589 passed, 1 skipped (was 512/15 at af82717)
   canonical_verifier_v2_unit_evidence: 491 passed, 14 skipped
   canonical_route_b_step: 1 passed
   canonical_ci_jobs: 4 of 4 succeeded

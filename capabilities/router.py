@@ -41,7 +41,24 @@ LIFECYCLES = (
 SELECTABLE = ("ACTIVE", "CANARY", "SPECIALIZED", "FALLBACK", "SUPERSEDED", "HISTORICAL")
 
 #: Where an implementation came from. Recorded for audit; never scored.
-ORIGINS = ("CANONICAL", "RETRIEVED", "RECOMPOSED", "GENERATED")
+#:
+#: One rung per step of the founder's binding resolution ladder (2026-09-09,
+#: "search reality before inventing architecture" — see
+#: ``capabilities.deficit.RESOLUTION_LADDER``). ACQUIRED and CONVENTIONAL were
+#: added after an audit found the enum skipped straight from preserved code to
+#: generated code, silently omitting the two cheapest real answers: use the
+#: boring durable-runtime path, or pick up a commodity, open-source, API, CLI or
+#: computer-use solution that already exists in the world. An enum that cannot
+#: name an option cannot route to it, so the omission was a bias toward
+#: inventing architecture — exactly what the ladder exists to prevent.
+ORIGINS = (
+    "CANONICAL",      # the current default implementation
+    "RETRIEVED",      # preserved alternative already in the registry
+    "CONVENTIONAL",   # the plain durable-runtime answer
+    "ACQUIRED",       # commodity, open source, API, CLI tool, computer use
+    "RECOMPOSED",     # composed from registered Capability Genomes
+    "GENERATED",      # newly built; the most expensive rung, never the default
+)
 
 EVIDENCE_MATURITY = ("none", "asserted", "tested", "verified_by_execution")
 

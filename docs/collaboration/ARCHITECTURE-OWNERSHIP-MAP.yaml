@@ -5,6 +5,28 @@
 
 architecture_ownership_records:
 
+  - record_id: OWN-GREG-2026-09-11
+    concern: embodied GREG product responsibilities
+    decision: OPUS-2026-09-11 EXPERIMENT
+    founder_intent_ids: [INTENT-0030, INTENT-GREG-EMBODIED-2026-09-11]
+    canonical_owner: uniimente-kernel; native shell remains a consumer
+    responsibilities:
+      greg_shell: founder interaction, review, notifications; no authority decisions
+      body_runtime: host lifecycle and bounded workers; no second mission store
+      mission_state: egregore projections over canonical EventSpine
+      authority: policy/consequence_gate.py and existing identity/grant owners
+      evidence: provenance/ledger.py and protected verifier owners
+      morning_review: egregore/morning_review.py; inert unverified notes only
+      capability_genesis: deficit resolution and verified attachment, not automatic grants
+      business_work: specialized organs; future AI and consent-based human workers
+      compute_growth: future measured bottleneck and founder-governed enrollment
+    distribution: responsibilities, not separate microservices or a new package
+    review_trigger: authenticated mission on available hardware, independent review
+    supersedes_active_framing: OWN-0007 dashboard-only interpretation
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+
   - record_id: OWN-SR-001
     concern: shared transport admission, integrity and durable recovery
     canonical_owner: uniimente-kernel
@@ -20,7 +42,7 @@ architecture_ownership_records:
       persistent_missions: egregore/ (not activated)
       mechanism_selection: mission-resolution routing above omnimorph/
       organization_design: omnimorph/ (subordinate, not activated)
-    distribution: uniimente-kernel-boundaries 0.1.1, exact source revision required; 0.1.0 retained as pre-format-repair evidence
+    distribution: uniimente-kernel-boundaries 0.1.2 at 4999acff1a69502c05af455fbccfca380cad18ee; 0.1.0 and 0.1.1 retained as historical evidence
     consumers:
       - name: WealthMachineIntelligence
         integration: pinned_dependency
@@ -40,7 +62,7 @@ architecture_ownership_records:
     authority_impact:
       introduces_new_authority_source: false
       creates_parallel_canon: false
-    review_trigger: "adoption review; no merge or activation authorized"
+    review_trigger: "SR-001 adopted at Kernel b2f101a, DALE e2f1ebe, WMI ec82b80; hardware loop and activation remain gated"
 
   - record_id: OWN-0001
     concern: constitution, institutional authority, consequence policy

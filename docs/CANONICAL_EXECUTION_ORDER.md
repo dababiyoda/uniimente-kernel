@@ -66,6 +66,13 @@ Every material capability-formation claim should preserve:
 
 ## Order of work (dependency order)
 
+Current product priority is `collaboration/OPUS-RECONCILIATION.md` and the
+2026-09-11 sequencing correction at the top of Final Build Order. Its first
+embodied persistent mission takes precedence over completing the historical
+Phase Zero catalog. Existing components and history remain preserved. Build
+only the dependency required by the active outcome; do not create another
+authority plane, mandatory organization or blanket registration prerequisite.
+
 1. Founder-effect compilation for the active mission.
 2. Phase Zero — institutional connection and capability preservation (see Final Build Order §13).
 3. Bridges A–H in dependency order (see Final Build Order §6), each bridge landing with contracts, adapters, tests, adversarial tests and a recorded causal episode.

@@ -286,14 +286,20 @@ class StandingCognitionRuntime:
                 attention_telemetry=attention_telemetry,
             )
 
-        for proposer_name in sorted(self.proposers):
+        proposers = dict(self.proposers)
+        if "institutional_leverage" in clean_context:
+            from .leverage import PROPOSER_NAME, propose_institutional_leverage
+
+            proposers.setdefault(PROPOSER_NAME, propose_institutional_leverage)
+
+        for proposer_name in sorted(proposers):
             component = f"proposer:{proposer_name}"
             try:
                 resources.consume_call(
                     component=component,
                     estimated_cost_usd=self._call_cost(clean_costs, component),
                 )
-                produced = self.proposers[proposer_name](
+                produced = proposers[proposer_name](
                     self._copy_signals(signals),
                     canonical_copy(clean_context),
                 )

@@ -69,6 +69,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
+| `/greg` | GREG body: persistent founder-sovereign operating layer (signed founder commands, Infinite Goal Chase missions, Capability Genesis, morning tribunal, supervisor configs); composes the Gate, owns no policy |
 | `/developmental` | biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
 | `/omnimorph` | optional temporary-organization/capability-composition mechanism; subordinate to Capability Genesis |
 | `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records |

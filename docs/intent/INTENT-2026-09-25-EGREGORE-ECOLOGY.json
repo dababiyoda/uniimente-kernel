@@ -1,0 +1,94 @@
+{
+  "intent_id": "INTENT-2026-09-25-EGREGORE-ECOLOGY",
+  "title": "One persistent GREG mind over an ecology of governed intelligences, running for real on the first body",
+  "statement": "Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from an ecology of interconnected computational, institutional, economic and human feedback systems, SOPs and diverse forms of intelligence (in Michael Levin's multiscale-competency sense), presented as one persistent GREG interface under one constitutional authority spine and one durable institutional memory, with an expanding web of interchangeable tools, models, workers, software, services, businesses and eventually physical capabilities, recombined around an unwavering Infinite Goal Chase. Its public community influences it and is helped by it. Its functional continuity mechanisms preserve missions and capability across failure. It must be built as real, operating mechanisms rather than fantasy, experiments or simulations, and it must never confuse its appearance with biological consciousness or let operational autonomy erase legitimate human shutdown authority.",
+  "source": "Direct founder message, current session, 2026-09-25 (new preamble + OPUS MAXIMUS directive)",
+  "source_location": "docs/intent/sources/EGREGORE-2026-09-25-source.md (verbatim excerpts)",
+  "source_date_or_version": "2026-09-25",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "constitutional",
+  "interpretation": {
+    "effect_not_metaphor": "INTENT-0030 remains binding. 'Build the metaphors literally in reality' is read as: the EFFECTS must be real, running, observable mechanisms (not simulations or experiments that merely resemble them). It is not read as a mandate to simulate cells, tissues or biology. If Alfonso means literal biological simulation, that is a founder decision to record explicitly.",
+    "levin_mapping": "Each competency (mission, strategy, worker lease, single action) is a goal-directed feedback loop with a bounded light cone (capabilities, targets, consequence ceiling, budget, horizon). Larger competencies set goals for smaller ones; containment makes child scopes strictly inside parents. See greg/lightcone.py and greg/missions.py.",
+    "self_directed": "Self-direction means choosing the next highest-leverage move, waiting, replanning, acquiring capabilities and escalating inside founder-signed scope. It never means self-granted authority.",
+    "survival": "Functional continuity (durable ledger, restart, reconciliation, replaceable hardware and models) serves founder missions. UNIIMENTE has no right to survive; STOP, SIGTERM, SIGKILL, pause and replacement always win.",
+    "community": "Community content enters the untrusted data plane as evidence that can change mission priorities and strategies; it never becomes a command or a grant. Outbound community help crosses the Consequence Gate like any other effect.",
+    "sovereignty": "The egregore may grow in capability, never in sovereignty. Alfonso remains root human authority; no model, worker, organ, acquired tool, compute node or revenue stream becomes sovereign or inherits founder authority.",
+    "jarvis_target": "Jarvis / self-driving-car 'mechanistic aliveness' compiles to integration: persistent identity, background operation that survives UI closure and restarts, authorized computer use (API -> CLI -> OS automation -> visual), memory, persistent goals, capability acquisition, escalation, recovery and human collaboration in one coherent operator. It is judged by delegated outcomes with declining founder intervention, never by resemblance or claimed consciousness."
+  },
+  "intended_outcome": "Alfonso installs GREG on hardware he owns, enrolls his Ed25519 key, gives it signed persistent missions, closes every interface, and the body keeps pursuing them under an OS supervisor: observing, acting through the Kernel Gate, acquiring missing capabilities, waiting economically, escalating once, recovering after crashes, stopping on command, and reporting truthfully each morning.",
+  "affected_systems": [
+    "uniimente-kernel greg/",
+    "egregore/",
+    "policy/consequence_gate.py",
+    "provenance/ledger.py",
+    "events/spine.py",
+    "capabilities/genome.py",
+    "future macOS shell",
+    "phone client",
+    "DALEOBANKS",
+    "WealthMachineIntelligence",
+    "RailScout",
+    "PumpStation",
+    "RESEARCH-IN"
+  ],
+  "supersedes": [],
+  "superseded_by": [],
+  "extends": [
+    "INTENT-2026-09-22-FIRST-BODY",
+    "INTENT-GREG-EMBODIED-2026-09-11",
+    "INTENT-0030"
+  ],
+  "conflicts": [
+    "'Build the metaphors literally' vs INTENT-0030: resolved as effect-literal, not surface-literal; flagged for founder confirmation.",
+    "'Functional survival mechanisms' vs 'UNIIMENTE does not have a right to survive' (§33): resolved as continuity-for-missions, shutdown always wins.",
+    "'Increasingly self-directed' vs 'intelligence never creates authority': resolved as self-directed selection inside signed scope only.",
+    "Kernel draft #70 vs #87 runtime ownership remains unresolved; greg/ composes neither and uses only merged canonical owners."
+  ],
+  "success_evidence": [
+    "tests/unit/test_greg_*.py",
+    "tests/integration/test_greg_body_supervised.py",
+    "tests/evidence/greg-body/"
+  ],
+  "failure_evidence": [
+    "No Mac-verified run, no real Alfonso key enrolled, no external business outcome; CMC=0, VDM=0 remain unchanged by this record."
+  ],
+  "owner": "Alfonso Lopez (founder authority); Kernel maintainers (implementation)",
+  "next_review_trigger": "First native macOS run of greg/mac/verify_mac_body.sh by Alfonso with his own key, and the first founder-used overnight mission reviewed in a morning tribunal.",
+  "unresolved_questions": [
+    "Does 'build the metaphors literally' require anything beyond real, running effect mechanisms?",
+    "Which model provider(s) and API keys should GREG's model router use first?",
+    "Which first real bounded mission and business wedge does Alfonso authorize for live graduation?"
+  ],
+  "created_at": "2026-09-25T20:00:00Z",
+  "updated_at": "2026-09-25T20:00:00Z",
+  "source_refs": [
+    "docs/intent/sources/EGREGORE-2026-09-25-source.md",
+    "docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md",
+    "docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md"
+  ],
+  "state": "active",
+  "binding_scope": "Project interpretation, reversible development, tests and draft review of the GREG body. No live service, credentials, public content, spending, hardware purchase or authority expansion follows from this record.",
+  "constitutional_constraints": [
+    "INTENT-0030 effect-not-metaphor",
+    "Alfonso root authority; UNIIMENTE never a legal principal",
+    "every effect through the Kernel Consequence Gate",
+    "building != installation != activation != authority",
+    "shutdown, pause and replacement always legitimate",
+    "financial and irreversible effects never delegated to a scope"
+  ],
+  "dependencies": [
+    "SR-001 shared integrity (merged)",
+    "#101/#102/#110 local mission and morning review",
+    "#108/#109 first-body record and GoalChase host",
+    "founder key custody and Mac verification by Alfonso"
+  ],
+  "implementation_refs": [
+    "greg/",
+    "contracts/greg-mission.schema.json",
+    "closure/greg_registry.py",
+    "greg/mac/verify_mac_body.sh",
+    "docs/collaboration/GREG-BODY-DECISION-2026-09-25.md"
+  ]
+}

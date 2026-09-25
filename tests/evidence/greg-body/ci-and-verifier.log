@@ -1,0 +1,24 @@
+schemas scanned: 17, local refs checked: 67
+all document-local schema references resolve
+artifact             found  paths
+Constitution         1      constitution/constitution.ucl
+Consequence Gate     1      policy/consequence_gate.py
+Authority matrix     1      authority/authority-matrix.yaml
+Legal principals     1      authority/legal-principals.yaml
+Organ registry       1      identity/organ-registry.yaml
+Agent registry       1      identity/agent-registry.yaml
+
+exactly one source of authority for each governed artifact
+  ok   external_effects = 0 (required 0)
+  ok   authorization_state = 'SIMULATED_NOT_AUTHORIZED' (required 'SIMULATED_NOT_AUTHORIZED')
+  ok   exact_restoration_attempts = 0 (required 0)
+  ok   false_activations = 0 (required 0)
+  ok   verdict = MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
+
+sealed developmental state declared and intact (declaration check only — see module docstring)
+PASS V1: all v1 canonical artifacts present (45/45)
+PASS V2: pytest tests/unit: 692 passed in 16.46s
+PASS V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, embassy, events, evidence_ledger, evolution, foundry, greg_body, identity, linker, loom, memory, omnimorph, proof, treasury, twins
+PASS V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED
+PASS V5: 19 module READMEs declare the buildability standard
+run recorded -> verifier/runs/v2-2026-09-25T19-54-19.023371+00-00.json :: PASS

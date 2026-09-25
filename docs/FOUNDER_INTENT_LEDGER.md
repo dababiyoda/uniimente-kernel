@@ -1,5 +1,9 @@
 # Founder Intent Ledger
 
+## Egregore ecology on the first body — 2026-09-25
+
+`INTENT-2026-09-25-EGREGORE-ECOLOGY` (`intent/INTENT-2026-09-25-EGREGORE-ECOLOGY.json`, verbatim source in `intent/sources/EGREGORE-2026-09-25-source.md`) extends the 09-11 and 09-22 records: one persistent GREG mind over an ecology of governed intelligences (Levin's multiscale competency, compiled to nested light cones), community-coupled through the untrusted data plane, continuity without a survival right, shutdown always winning, and built as real running mechanisms. Implementation and two-pass decision: `collaboration/GREG-BODY-DECISION-2026-09-25.md` and `greg/`. State: active; reality: integration-tested, not Mac-verified, not founder-used.
+
 ## First body and persistent GREG product — 2026-09-22
 
 `INTENT-2026-09-22-FIRST-BODY` preserves Alfonso's direct correction: the first owned computer is the practical body of a persistent, governed GREG operating layer above macOS. This is an active product requirement, not a claim of an installed service or a grant of live authority. The intent record and exactly two strengthening passes are in `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. The date-based ID avoids the unresolved `INTENT-0029` collision in draft #86 and draft #105. Runtime ownership (#70/#87) and live founder authentication remain unresolved.

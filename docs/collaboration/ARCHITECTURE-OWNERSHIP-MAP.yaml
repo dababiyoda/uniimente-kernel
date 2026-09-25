@@ -199,3 +199,20 @@ architecture_ownership_records:
     evidence:
       - "prose_claim: rationalization plan wave 4"
     review_trigger: "first cockpit PR opened"
+
+  - record_id: OWN-0008
+    concern: GREG body — persistent founder-sovereign operating layer (lifecycle, missions, capability broker, genesis, tribunal)
+    canonical_owner: uniimente-kernel (greg/)
+    canonical_source_ref: branch claude/egregore-project-overview-btn5y2 (INTENT-2026-09-25-EGREGORE-ECOLOGY)
+    scope: host lifecycle, founder command ingestion, mission projection, capability attachment; NO policy, grants or consequence authority of its own
+    consumers:
+      - name: future macOS GREG shell and phone client
+        integration: signed-command inbox + read-only status projection
+        may_fork_behavior: false
+    reclassifies: OWN-0007 founder cockpit is the GREG shell over this body, not a dashboard or second governance engine
+    authority_impact:
+      introduces_new_authority_source: false
+      creates_parallel_canon: false
+    evidence:
+      - "executed: tests/unit/test_greg_*.py, tests/integration/test_greg_body_supervised.py, closure module greg_body"
+    review_trigger: "Mac verification run by Alfonso; founder merge decision"

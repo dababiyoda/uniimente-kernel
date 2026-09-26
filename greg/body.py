@@ -426,6 +426,19 @@ def observe(home: str | Path, *, actor: str = "spiffe://uniimente.internal/greg/
         ledger.close()
 
 
+def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
+    """Sign one founder command and drop it into the body inbox (any interface, then close)."""
+    from greg.founder import sign_command
+    layout = Layout(home)
+    config = json.loads(layout.config.read_text())
+    envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
+    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    temporary = target.with_suffix(".tmp")
+    temporary.write_text(json.dumps(envelope, indent=1))
+    temporary.replace(target)
+    return target
+
+
 def morning_projection(home: str | Path) -> dict:
     """The morning report from a read-only view; works while the body runs."""
     from types import SimpleNamespace

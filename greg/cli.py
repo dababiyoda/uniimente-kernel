@@ -25,8 +25,9 @@ from pathlib import Path
 import sys
 
 from greg import service
-from greg.body import Body, BodyError, Layout, init_body, morning_projection, observe, status
-from greg.founder import generate_founder_key, load_founder_key, sign_command
+from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
+                       status)
+from greg.founder import generate_founder_key, load_founder_key
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
@@ -43,16 +44,8 @@ def _passphrase(args) -> bytes | None:
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    layout = Layout(home)
-    config = json.loads(layout.config.read_text())
     key = load_founder_key(args.key, _passphrase(args))
-    envelope = sign_command(key, kind, body, body_id=config["body_id"],
-                            ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
-    tmp = target.with_suffix(".tmp")
-    tmp.write_text(json.dumps(envelope, indent=1))
-    tmp.replace(target)
-    return target
+    return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
 def main(argv=None) -> int:
@@ -102,6 +95,10 @@ def main(argv=None) -> int:
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
 
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
+    c.add_argument("--key", help="founder key; without it the console is read-only")
+    c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8765)
+    c.add_argument("--no-model", action="store_true", help="plan with templates only (no model calls)")
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
     r.add_argument("--max-ticks", type=int)
@@ -180,6 +177,22 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "console":
+            from greg import planner
+            from greg.capabilities import SecretBroker
+            from greg.console import Console, serve
+            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            transport = None if args.no_model else planner.default_transport(SecretBroker(Layout(home).secrets))
+            server = serve(Console(home, key=key, transport=transport), port=args.port)
+            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+                  f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "Ctrl-C closes the console; the body keeps running.", flush=True)
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
         elif args.cmd == "decisions":

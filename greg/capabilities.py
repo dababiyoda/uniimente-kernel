@@ -62,7 +62,7 @@ class CapabilityManifest:
     target_prefix: str                 # every target this capability touches starts with this
     network: str = "none"              # none | egress-allowlist
     egress_allowlist: tuple = ()
-    filesystem: str = "none"           # none | read-scoped | workspace-write
+    filesystem: str = "none"           # none | read-scoped | workspace-write | deliver-write (founder-visible)
     credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
     binaries: tuple = ()               # exact executables a CLI capability may run
     data_classes: tuple = ()
@@ -86,7 +86,7 @@ class CapabilityManifest:
             problems.append("network must be none or egress-allowlist")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
-        if self.filesystem not in ("none", "read-scoped", "workspace-write"):
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "deliver-write"):
             problems.append("unknown filesystem class")
         if self.route == "cli" and not self.binaries:
             problems.append("cli capability must name exact binaries")
@@ -199,6 +199,7 @@ class InvocationContext:
     read_roots: tuple[Path, ...]       # filesystem roots this mission may read
     secrets: SecretBroker
     manifest: CapabilityManifest
+    deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -373,7 +374,18 @@ STRENGTHENS = {
     "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
     "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
     "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
+    "github.pulls": ("proof", "routing"), "brief.freshness": ("proof", "settlement"),
+    "brief.engineering": ("settlement", "proof", "routing"),
 }
+
+
+def _lazy(module: str, name: str):
+    """Adapter defined in another greg module (imported on first call, avoiding cycles)."""
+    def adapter(params, ctx):
+        import importlib
+        return getattr(importlib.import_module(module), name)(params, ctx)
+    adapter.__name__ = name
+    return adapter
 
 
 def _builtin(capability_id, function, description, route, consequence, target_prefix, inputs, outputs, **kw):
@@ -425,6 +437,31 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 provenance={"source": "uniimente-kernel/greg/capabilities.py",
                                             "mechanism_from": "PR #101 egregore/repository_audit.py (capture, derive)"}),
                        repo_pin_audit),
+    "github.pulls": (_builtin("github.pulls", "code_hosting.pull_requests",
+                              "Open pull requests and their check runs from the GitHub REST API (read-only)",
+                              "api", "read_only", "github:", {"github": "list[owner/name]"},
+                              {"repos": "dict", "rate_limited": "bool"}, network="egress-allowlist",
+                              egress_allowlist=("api.github.com",), credentials=("github_token",),
+                              data_classes=("public_web", "repository_metadata"), retry_safe=True),
+                     _lazy("greg.briefs", "github_pulls")),
+    "brief.freshness": (_builtin("brief.freshness", "delivery.freshness",
+                                 "Age of the newest delivered brief of one kind", "api", "read_only", "deliver:",
+                                 {"kind": "str"}, {"age_hours": "float|null", "latest": "str|null"},
+                                 filesystem="read-scoped", retry_safe=True),
+                        _lazy("greg.briefs", "brief_freshness")),
+    "brief.engineering": (_builtin("brief.engineering", "report.engineering_brief",
+                                   "Read local Git and GitHub pull requests, render the engineering brief, "
+                                   "deliver it as one new file for the founder", "api", "internal_write",
+                                   "deliver:", {"local": "list[{name,path}]", "github": "list[owner/name]",
+                                                "stale_days": "int"},
+                                   {"path": "str", "sha256": "str", "inputs_digest": "str"},
+                                   network="egress-allowlist", egress_allowlist=("api.github.com",),
+                                   filesystem="deliver-write", credentials=("github_token",),
+                                   data_classes=("public_web", "repository_metadata"),
+                                   provenance={"source": "uniimente-kernel/greg/briefs.py",
+                                               "mechanism_from": "#112 source-bound morning brief; "
+                                                                 "#101 exact Git reads"}),
+                          _lazy("greg.briefs", "engineering_brief")),
 }
 
 

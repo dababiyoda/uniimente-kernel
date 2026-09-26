@@ -239,9 +239,10 @@ class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
     def __init__(self, *, journal: Journal, office: AuthorityOffice, registry, secrets, workspace_root: Path,
-                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1):
+                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1, deliver_root: Path | None = None):
         self.journal, self.office, self.registry, self.secrets = journal, office, registry, secrets
         self.workspace_root, self.read_roots = Path(workspace_root), tuple(Path(p) for p in read_roots)
+        self.deliver_root = Path(deliver_root) if deliver_root else None
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
 
@@ -310,7 +311,8 @@ class MissionEngine:
 
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
-                                 read_roots=self.read_roots, secrets=self.secrets, manifest=manifest)
+                                 read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
+                                 deliver_root=self.deliver_root)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:

@@ -65,4 +65,49 @@ def workspace_note(*, text: str, must_contain: str, workspace_file: Path, horizo
     }
 
 
-TEMPLATES = {"repo-guardian": repo_guardian, "workspace-note": workspace_note}
+def engineering_brief(*, local: dict[str, str], github: list[str], daily: bool = False,
+                      preauthorize_delivery: bool = False, stale_days: int = 14, horizon_days: float = 2,
+                      today: str | None = None) -> dict:
+    """The first useful mission: a morning engineering brief delivered to Alfonso.
+
+    Reads local checkouts (no fetch) and open pull requests with their checks, renders
+    one markdown brief and delivers it into the body's delivery root. Delivery is an
+    internal_write outside the read-only cone, so by default the first run stops at a
+    real founder approval boundary; the approved exact scope is then reused, so a
+    ``daily`` mission asks once and delivers every morning after.
+
+    ``bounded`` (default): closes when a brief no older than 12 hours exists, re-observed.
+    ``daily``: an infinite mission that re-observes hourly and delivers again whenever
+    the newest brief is older than 20 hours.
+    """
+    today = today or datetime.now(timezone.utc).date().isoformat()
+    local_rows = [{"name": name, "path": str(Path(path).expanduser().resolve())} for name, path in sorted(local.items())]
+    delivery = {"action_id": "deliver-engineering-brief", "capability": "brief.engineering",
+                "params": {"local": local_rows, "github": sorted(github), "stale_days": stale_days},
+                "target": "deliver:briefs", "advances": ["fresh-brief"],
+                "expected_outcome": "one new engineering brief file in the delivery root",
+                "rationale": "read-only sources, one founder-visible file; nothing in any repository changes"}
+    capabilities = ["brief.freshness", "fs.read"] + (["brief.engineering"] if preauthorize_delivery else [])
+    return {
+        "mission_id": "m:engineering-brief-daily" if daily else f"m:engineering-brief-{today}",
+        "founder_expression": "Every morning tell me the real state of my repositories and pull requests: what is "
+                              "failing, what is stale, what needs my decision. Change nothing.",
+        "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+        "beneficiaries": ["Alfonso"],
+        "unacceptable_outcomes": ["writing to any repository", "fabricated status", "overwriting a previous brief"],
+        "priority": 60,
+        "closure": {"kind": "infinite", "cadence_seconds": 3600} if daily else {"kind": "bounded"},
+        "success_checks": [{"check_id": "fresh-brief",
+                            "description": "the newest engineering brief is recent enough",
+                            "sensor": {"capability": "brief.freshness", "params": {"kind": "engineering"},
+                                       "target": "deliver:briefs"},
+                            "predicate": {"op": "lte", "field": "age_hours", "value": 20 if daily else 12}}],
+        "strategies": [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(30 if daily else horizon_days)},
+    }
+
+
+TEMPLATES = {"repo-guardian": repo_guardian, "workspace-note": workspace_note,
+             "engineering-brief": engineering_brief}

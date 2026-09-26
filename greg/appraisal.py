@@ -31,7 +31,8 @@ from greg.journal import Journal
 from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
-REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit"}
+REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "brief.freshness"}
+DELIVERING = {"brief.engineering"}   # deliverables re-rendered from their receipts
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
@@ -110,7 +111,9 @@ def appraise(request: dict) -> dict:
                 manifest, adapter = BUILTINS[cap]
                 ctx = InvocationContext(workspace=Path(request["workspace"]),
                                         read_roots=tuple(Path(p) for p in request["read_roots"]),
-                                        secrets=None, manifest=manifest)
+                                        secrets=None, manifest=manifest,
+                                        deliver_root=Path(request["deliver_root"])
+                                        if request.get("deliver_root") else None)
                 try:
                     now_ok, now_detail = evaluate_predicate(check["predicate"],
                                                             adapter(check["sensor"].get("params", {}), ctx))
@@ -133,6 +136,20 @@ def appraise(request: dict) -> dict:
         if not checks["exactly_once"]:
             findings.append("duplicate receipt or dispatch claim")
 
+        # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
+        from greg.briefs import verify_delivery
+        delivered_ok = True
+        for action in actions:
+            if action.get("capability") not in DELIVERING:
+                continue
+            receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
+            output = receipt.payload["result"].get("output") if receipt else None
+            ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None)
+            if not ok:
+                delivered_ok = False
+                findings.append(f"{action['action_id']}: {detail}")
+        checks["deliveries_bound_to_evidence"] = delivered_ok
+
         # 5. approval boundaries honored
         answered = {e.payload["request_id"]: (e.payload, seq[e.event_id]) for e in journal.replay("decision.answered")}
         approvals_ok, approvals_seen = True, 0
@@ -151,7 +168,8 @@ def appraise(request: dict) -> dict:
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
         required = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
-                    "world_reobserved", "exactly_once", "approval_boundaries_honored")
+                    "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
+                    "approval_boundaries_honored")
         return _verdict(request, checks, findings, required=required)
     finally:
         ledger.close()

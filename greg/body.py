@@ -77,8 +77,13 @@ def _private_write(path: Path, data: bytes):
         fh.write(data)
 
 
-def init_body(home: str | Path, *, read_roots: list[str]) -> dict:
-    """Create a new body directory. Refuses to overwrite an existing body."""
+def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None) -> dict:
+    """Create a new body directory. Refuses to overwrite an existing body.
+
+    ``deliver_root`` is the founder-visible folder where deliverables (briefs,
+    reports) land; it defaults to ``<home>/deliveries``. GREG never writes
+    anywhere else outside its own workspace.
+    """
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
@@ -95,6 +100,7 @@ def init_body(home: str | Path, *, read_roots: list[str]) -> dict:
     config = {"body_id": "body-" + key_id(public)[8:24], "device_public_key": public,
               "created_at": iso(utcnow()), "constitution_hash": compiled.constitution_hash,
               "read_roots": [str(Path(r).expanduser().resolve()) for r in read_roots],
+              "deliver_root": str(Path(deliver_root or layout.home / "deliveries").expanduser().resolve()),
               "version": BODY_VERSION}
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
@@ -106,6 +112,8 @@ class Body:
         if not self.layout.config.exists():
             raise BodyError("no body here; run `greg init` first")
         self.config = json.loads(self.layout.config.read_text())
+        # Bodies created before deliverables existed deliver inside their own home.
+        self.deliver_root = Path(self.config.get("deliver_root") or self.layout.home / "deliveries")
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.builder = builder
         self.stop_requested = False
@@ -139,7 +147,8 @@ class Body:
         self.genesis.restore()
         self.engine = MissionEngine(journal=self.journal, office=self.office, registry=self.registry,
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
-                                    read_roots=tuple(self.config["read_roots"]), genesis=self.genesis)
+                                    read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
+                                    deliver_root=self.deliver_root)
         return self
 
     def close(self):
@@ -330,6 +339,7 @@ class Body:
         import sys
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
+                   "deliver_root": str(self.deliver_root),
                    "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}

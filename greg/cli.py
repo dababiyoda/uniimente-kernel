@@ -61,6 +61,7 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
+    s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
@@ -78,6 +79,12 @@ def main(argv=None) -> int:
             q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
             q.add_argument("--cadence-seconds", type=int, default=21600)
             q.add_argument("--text"); q.add_argument("--must-contain")
+            q.add_argument("--local", action="append", default=[], help="name=path (engineering-brief)")
+            q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
+            q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
+            q.add_argument("--preauthorize-delivery", action="store_true",
+                           help="engineering-brief: sign delivery into the cone (no approval stop)")
+            q.add_argument("--stale-days", type=int, default=14)
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -108,7 +115,8 @@ def main(argv=None) -> int:
 
     try:
         if args.cmd == "init":
-            print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())]), indent=1))
+            print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
+                                       deliver_root=args.deliver_root), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
@@ -127,6 +135,11 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target == "engineering-brief":
+                    spec = templates.engineering_brief(local=dict(r.split("=", 1) for r in args.local),
+                                                       github=args.github, daily=args.daily,
+                                                       preauthorize_delivery=args.preauthorize_delivery,
+                                                       stale_days=args.stale_days)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission

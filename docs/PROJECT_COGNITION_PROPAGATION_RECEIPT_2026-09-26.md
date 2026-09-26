@@ -89,3 +89,41 @@ These draft PRs add only repository-local cognition handoff files; they do not c
 Do not copy all 93 source bodies wholesale into GitHub merely to claim completeness. The census preserves the complete accessible inventory and IDs. Preserve verbatim founder language when it is necessary to control interpretation, resolve a conflict, or prevent aspiration shrinkage. Preserve other sources by provenance and targeted extraction unless their full body is required for implementation.
 
 This avoids converting unrelated/private/noisy source material into permanent repository content while still making the entire accessible source universe discoverable.
+
+
+## Communication-surface audit addendum
+
+Repository metadata was inspected for every repository in the current ecology registry.
+
+| Repository | Issues | Projects | Wiki | Discussions | Cognition handoff |
+|---|---:|---:|---:|---:|---|
+| uniimente-kernel | enabled | enabled | disabled | **enabled** | central branch + issue #117 + PR steering |
+| DALEOBANKS | enabled | enabled | enabled | disabled | draft PR #80 + prior PR comment |
+| WealthMachineIntelligence | enabled | enabled | enabled | disabled | draft PR #38 + prior PR comment |
+| RAILSCOUT | enabled | enabled | enabled | disabled | draft PR #10 + prior PR comment |
+| PumpStation | enabled | enabled | enabled | disabled | cognition branch/file + issue #19 |
+| RESEARCH-IN | enabled | enabled | enabled | disabled | draft PR #21 + issue #20 |
+| gods-eye-view-EGGREGORE-TOOL | disabled | enabled | disabled | disabled | draft PR #1 |
+| build-your-own-x | disabled | enabled | disabled | disabled | draft PR #2 |
+
+### Discussions
+
+`uniimente-kernel` is the only current ecology repository whose metadata reports GitHub Discussions enabled. The available GitHub connector exposes no Discussions read/create/update action. Its generic fetch rejects both the Discussions API/page as an unsupported endpoint. Web search did not produce indexable discussion content and is not treated as proof that the surface is empty.
+
+Therefore Discussions is classified **TECHNICALLY INACCESSIBLE, KNOWN ENABLED** rather than inspected or synchronized. `docs/DISCUSSIONS_SEED.md` contains the exact orientation post to use when Discussions-capable access becomes available. This is synchronization debt, not hidden completion.
+
+### Wikis and Projects
+
+Several organ repositories report Wikis and all current ecology repositories report Projects enabled. The connected GitHub tool exposes no wiki or Projects read/write action and rejects their generic page endpoints. They are therefore **TECHNICALLY INACCESSIBLE** through this connection. Repo-local cognition PRs/issues provide the reachable handoff instead; no claim is made that Wiki/Projects content was inspected.
+
+### Community/contributor files
+
+On the active Kernel product branch:
+- `CONTRIBUTING.md` now routes contributors through canonical cognition.
+- `.github/ISSUE_TEMPLATE/config.yml` routes issue creators to #117.
+- PR and agent-issue templates carry cognition requirements.
+- `CODEOWNERS`, `SECURITY.md`, `SUPPORT.md`, `GOVERNANCE.md`, and `CODE_OF_CONDUCT.md` were checked and are absent on this branch. They are not fabricated merely to create more surfaces.
+
+### Completion rule
+
+An enabled surface that the authenticated tool cannot read or write is complete **only as an audited limitation**: existence verified, access failure reproduced, fallback handoff installed where possible, and synchronization debt recorded. It must never be described as inspected/populated.

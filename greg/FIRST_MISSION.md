@@ -7,9 +7,10 @@ supervised process on Linux, through this same path
 (`tests/evidence/greg-product/product-path-summary.json`, and on real repositories
 with live GitHub: `live-real-repos-summary.json`).
 
-Time: about 30 minutes. Cost: $0. External effects: none. GREG reads your local
+The first mission needs no model key or paid API. GREG reads your local
 checkouts and public pull-request data, and writes one brief into a folder you choose,
-only after you approve it.
+only after you approve it. The public GitHub reads require connectivity; the brief
+contains repository metadata, so review it before sharing it.
 
 ## 0. Before you start
 
@@ -22,7 +23,7 @@ only after you approve it.
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/greg-persistent-mission-build-t0vqu7
+git checkout codex/one-greg-vepmc-convergence
 python3 -m venv ~/.uniimente/venv && ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 alias greg="~/.uniimente/venv/bin/python -m greg"
 ```
@@ -119,7 +120,7 @@ a lost phone with `greg device revoke <device_key_id> --key ~/.greg-founder.pem`
 
 
 ```bash
-greg vepmc                          # VEPMC: 1, missing: []   (on the Mac, after your acceptance)
+greg vepmc                          # JSON with VEPMC: 1, missing: [] after your acceptance
 ```
 
 To have it every morning instead: *"Every morning brief me on my repositories"*. You approve

@@ -356,7 +356,8 @@ class Genesis:
             self.journal.record("genesis.built", {
                 "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
                 "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
-                "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only"},
+                "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
+                "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried")},
                 key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
             path = self.store / f"{digest}.py"

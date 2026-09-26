@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -26,6 +27,25 @@ ROOT = Path(__file__).resolve().parents[2]
 SUPERVISORD = shutil.which("supervisord")
 pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord (requirements-dev) not installed; "
                                                             "no substitute supervisor is used")
+
+
+def supervisor_endpoint(tmp_path):
+    """Keep the real supervisor acceptance test runnable where Unix sockets are denied."""
+    path = tmp_path / "sd.sock"
+    try:
+        with socket.socket(socket.AF_UNIX) as probe:
+            probe.bind(str(path))
+    except OSError:
+        pass
+    else:
+        path.unlink()
+        return (f"[unix_http_server]\nfile={path}\n",
+                f"[supervisorctl]\nserverurl=unix://{path}\n")
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    return (f"[inet_http_server]\nport=127.0.0.1:{port}\n",
+            f"[supervisorctl]\nserverurl=http://127.0.0.1:{port}\n")
 
 
 def greg(home, *args, check=True):
@@ -78,11 +98,12 @@ def test_body_survives_hard_kill_waits_for_founder_and_stops_on_command(tmp_path
 
     conf = tmp_path / "supervisord.conf"
     (home / "logs").mkdir(exist_ok=True)
+    server, ctl = supervisor_endpoint(tmp_path)
     conf.write_text(
         f"[supervisord]\nnodaemon=true\nlogfile={tmp_path / 'supervisord.log'}\npidfile={tmp_path / 'sd.pid'}\n"
-        f"[unix_http_server]\nfile={tmp_path / 'sd.sock'}\n"
+        + server +
         "[rpcinterface:supervisor]\nsupervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface\n"
-        f"[supervisorctl]\nserverurl=unix://{tmp_path / 'sd.sock'}\n"
+        + ctl
         + service.supervisord_program(home, tick_seconds=0.3))
     supervisor = subprocess.Popen([SUPERVISORD, "-c", str(conf)], cwd=ROOT,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

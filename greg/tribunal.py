@@ -16,6 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
+from greg import anchor
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -96,6 +97,7 @@ def morning_report(journal: Journal, engine=None) -> dict:
                           + by("command.rejected"),
         "q7_surprises": surprises,
         "q8_evidence": {"ledger_head": journal.ledger.head, "chain_verified": ok, "chain": chain,
+                        "external_anchor": anchor.summary(journal),
                         "receipts": [a["receipt"] for a in done if a.get("receipt")]},
         "q9_learned": {"capabilities_acquired": by("deficit.resolved"), "sops_proposed": by("sop.proposed"),
                        "critiques_applied": [c["critique_id"] for c in critiques]},
@@ -134,7 +136,7 @@ def mark_reviewed(journal: Journal, report: dict) -> None:
 def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     """Apply a founder-signed critique without rewriting the criticized history."""
     required = {"target_event_id", "verdict", "evidence_type", "text"}
-    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression"}:
+    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression", "attention"}:
         raise CritiqueError("critique needs target_event_id, verdict, evidence_type, text")
     if body["verdict"] not in VERDICTS or body["evidence_type"] not in EVIDENCE_TYPES:
         raise CritiqueError("unknown verdict or evidence type")
@@ -146,10 +148,23 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
               "target_event_hash": journal.event_hash(target.event_id), "target_type": target.type,
               "verdict": body["verdict"], "evidence_type": body["evidence_type"], "text": body["text"][:4000],
               "command_digest": command_digest, "history_rewritten": False}
+    if "attention" in body:   # founder label on a delivered brief: the evidence greg.improvement learns from
+        from greg.improvement import ImprovementError, validate_labels
+        try:
+            record["attention"] = validate_labels(body["attention"])
+        except ImprovementError as exc:
+            raise CritiqueError(str(exc)) from exc
+        if target.type != "greg.mission.action" or target.payload.get("status") != "DONE":
+            raise CritiqueError("attention labels must reference a delivered brief action")
     if body.get("regression"):
         record["regression"] = {"regression_id": "reg-" + command_digest[7:23],
                                 "description": str(body["regression"])[:1000], "state": "OPEN",
-                                "close_condition": "a test or check that fails on the criticized behavior"}
+                                "close_condition": (
+                                    {"kind": "held_out_attention_correction", "labels": record["attention"],
+                                     "min_cases": 3, "rule": "the same labelled error is removed on three later "
+                                     "briefs without increasing total errors"}
+                                    if record.get("attention") and any(record["attention"].values())
+                                    else "a test or check that fails on the criticized behavior")}
     journal.record("critique.recorded", record, key=critique_id)
     if body.get("exclude_strategy"):
         mission_id = target.payload.get("mission_id")

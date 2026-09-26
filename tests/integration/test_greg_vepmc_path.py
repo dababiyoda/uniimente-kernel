@@ -15,7 +15,7 @@ import subprocess
 import pytest
 
 from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat, history,
-                                                         wait_for)
+                                                         supervisor_endpoint, wait_for)
 from greg import service
 
 pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord (requirements-dev) not installed")
@@ -28,11 +28,12 @@ def test_first_vepmc_path_meets_every_condition_except_the_mac(tmp_path):
          greg(home, "founder", "keygen", "--key", str(key), "--no-passphrase").stdout.strip())
     conf = tmp_path / "supervisord.conf"
     (home / "logs").mkdir(exist_ok=True)
+    endpoint, ctl = supervisor_endpoint(tmp_path)
     conf.write_text(
         f"[supervisord]\nnodaemon=true\nlogfile={tmp_path / 'sd.log'}\npidfile={tmp_path / 'sd.pid'}\n"
-        f"[unix_http_server]\nfile={tmp_path / 'sd.sock'}\n"
+        + endpoint +
         "[rpcinterface:supervisor]\nsupervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface\n"
-        f"[supervisorctl]\nserverurl=unix://{tmp_path / 'sd.sock'}\n" + service.supervisord_program(home, tick_seconds=0.3))
+        + ctl + service.supervisord_program(home, tick_seconds=0.3))
     supervisor = subprocess.Popen(["supervisord", "-c", str(conf)], cwd=ROOT,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:

@@ -171,34 +171,69 @@ def _checks(checks: dict | None) -> str:
     return ", ".join(parts)
 
 
-def attention(inputs: dict) -> list[dict]:
-    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository."""
+# What the brief flags for the founder: GREG-owned presentation policy inside the signed mission.
+# It never changes the signed parameters (stale_days, repositories), the capability, its target or
+# its consequence class; greg.improvement may replace it only after a held-out gain on founder labels.
+ATTENTION_BASELINE = {"idle_includes_drafts": True, "flag_pending_after_days": None,
+                      "flag_behind_commits": None, "uncommitted_min": 1}
+ATTENTION_SPACE = {"idle_includes_drafts": (True, False), "flag_pending_after_days": (None, 1, 3, 7),
+                   "flag_behind_commits": (None, 1, 10, 50), "uncommitted_min": (1, 5, 20)}
+
+
+def attention_policy(inputs: dict) -> dict:
+    return {**ATTENTION_BASELINE, **(inputs.get("attention_policy") or {})}
+
+
+def attention(inputs: dict, policy: dict | None = None) -> list[dict]:
+    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository.
+
+    Each item carries ``keys``: the atomic things it flags (``owner/repo#N``, ``local:name``), which
+    is what a founder's attention label refers to."""
+    policy = attention_policy(inputs) if policy is None else {**ATTENTION_BASELINE, **policy}
     now = datetime.fromisoformat(inputs["generated_at"].replace("Z", "+00:00"))
     stale = inputs["stale_days"]
+    pending_days = policy["flag_pending_after_days"]
     items = []
     for repo, data in sorted(inputs["github"]["repos"].items()):
         idle = []
         for pull in data.get("pulls", []):
             checks, age = pull["checks"], _age_days(pull["updated_at"], now)
+            key = f"{repo}#{pull['number']}"
             if checks and checks["failing"]:
-                items.append({"rank": 0, "ref": f"{repo}#{pull['number']}", "sort": -checks["failing"],
+                items.append({"rank": 0, "ref": key, "sort": -checks["failing"], "keys": [key],
                               "why": f"checks failing: {', '.join(checks['failing_names'])}", "title": pull["title"]})
-            elif age is not None and age >= stale:
+            elif (pending_days is not None and checks and checks["pending"] and age is not None
+                  and age >= pending_days):
+                items.append({"rank": 1, "ref": key, "sort": -age, "keys": [key],
+                              "why": f"{checks['pending']} check(s) still pending after {age} days", "title": pull["title"]})
+            elif age is not None and age >= stale and (policy["idle_includes_drafts"] or not pull["draft"]):
                 idle.append((age, pull["number"]))
         if idle:
             idle.sort(reverse=True)
             numbers = ", ".join(f"#{n}" for _, n in idle[:12]) + (" …" if len(idle) > 12 else "")
-            items.append({"rank": 1, "ref": repo, "sort": -len(idle),
+            items.append({"rank": 2, "ref": repo, "sort": -len(idle), "keys": [f"{repo}#{n}" for _, n in idle],
                           "why": f"{len(idle)} open pull request(s) idle for {stale}+ days (oldest {idle[0][0]} days): "
                                  f"{numbers}", "title": "merge, close or re-scope them"})
     for local in inputs["local"]:
-        if local.get("readable") and local.get("uncommitted"):
-            items.append({"rank": 2, "ref": local["name"], "why": f"{local['uncommitted']} uncommitted change(s) on "
-                          f"{local.get('branch')}", "title": local["path"], "sort": 0})
-        elif not local.get("readable"):
-            items.append({"rank": 2, "ref": local["name"], "why": "not a readable Git repository",
-                          "title": local["path"], "sort": 0})
+        key = f"local:{local['name']}"
+        if not local.get("readable"):
+            items.append({"rank": 3, "ref": local["name"], "why": "not a readable Git repository",
+                          "title": local["path"], "sort": 0, "keys": [key]})
+            continue
+        reasons = []
+        if local.get("uncommitted") and local["uncommitted"] >= policy["uncommitted_min"]:
+            reasons.append(f"{local['uncommitted']} uncommitted change(s) on {local.get('branch')}")
+        behind = policy["flag_behind_commits"]
+        if behind is not None and local.get("behind") is not None and local["behind"] >= behind:
+            reasons.append(f"{local['behind']} commit(s) behind cached origin/main")
+        if reasons:
+            items.append({"rank": 3, "ref": local["name"], "why": "; ".join(reasons), "title": local["path"],
+                          "sort": 0, "keys": [key]})
     return sorted(items, key=lambda i: (i["rank"], i["sort"], i["ref"]))
+
+
+def flagged_keys(inputs: dict, policy: dict | None = None) -> set[str]:
+    return {key for item in attention(inputs, policy) for key in item["keys"]}
 
 
 def render(inputs: dict) -> str:
@@ -251,7 +286,11 @@ def render(inputs: dict) -> str:
               f"- inputs digest: `{inputs_digest(inputs)}`",
               f"- renderer: `{RENDERER}`; GitHub calls: {github['api_calls']} "
               f"({'authenticated' if github['authenticated'] else 'unauthenticated'})",
-              "- local Git read without fetch; the receipt retains every input used above", ""]
+              "- local Git read without fetch; the receipt retains every input used above"]
+    if inputs.get("attention_policy"):
+        lines.append(f"- attention policy: `{json.dumps(inputs['attention_policy'], sort_keys=True)}` "
+                     "(learned; kept only after beating the previous policy on later briefs you labelled)")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -324,6 +363,8 @@ def engineering_brief(params, ctx: InvocationContext) -> dict:
     now = NOW()
     inputs = {"generated_at": now.isoformat().replace("+00:00", "Z"), "renderer": RENDERER,
               "stale_days": int(params.get("stale_days", 14)),
+              **({"attention_policy": dict(policy)} if (policy := (ctx.learned or {}).get("brief.attention"))
+                 and policy != ATTENTION_BASELINE else {}),
               "local": [gather_local(str(r["name"]), _inside(Path(r["path"]), ctx.read_roots)) for r in local],
               "github": gather_github(_repos(params), token=_token(ctx))}
     text = render(inputs)

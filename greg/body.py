@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import compute, dataplane, metrics, sop, tribunal
+from greg import compute, dataplane, learning, metrics, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -238,6 +238,7 @@ class Body:
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         self.engine.book.rebuild()
+        self._signer = {"founder_key_id": env["founder_key_id"], "principal": principal, "channel": channel}
         result = self._dispatch(kind, body, digest)
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
@@ -256,7 +257,16 @@ class Body:
             self.engine.lifecycle(body, digest)
             return {"mission_id": body["mission_id"], "state": body["state"]}
         if kind == "CRITIQUE":
-            return tribunal.critique(self.journal, self.engine, body, digest)
+            record = tribunal.critique(self.journal, self.engine, body, digest)
+            if body.get("review"):
+                target = next(e for e in self.journal.replay() if e.event_id == body["target_event_id"])
+                mission = self.engine.book.missions.get(target.payload.get("mission_id"))
+                record["learning"] = learning.on_review(
+                    self.journal, record, body, target=target.payload if target.type == "greg.mission.action"
+                    else {}, receipt_output=self._receipt_output, now=self.clock(), head=self.ledger.head,
+                    signer=getattr(self, "_signer", None),
+                    authority_ceiling=mission.cone.max_consequence_class if mission else None)
+            return record
         if kind in ("CAPABILITY_ATTACH", "CAPABILITY_DETACH"):
             cid = body.get("capability_id")
             if cid not in self.registry.manifests:
@@ -371,6 +381,7 @@ class Body:
             return {"commands": commands, "paused": True}
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
+        learning.evaluate_shadows(self.journal, self._receipt_output, now)
         sop.propose(self.journal)
         return {"commands": commands, "missions": summary}
 
@@ -388,6 +399,10 @@ class Body:
             if mid not in appraised:
                 verdict = self.appraise(mid)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
+
+    def _receipt_output(self, receipt_hash: str):
+        record = self.ledger.find(receipt_hash)
+        return (record.payload.get("result") or {}).get("output") if record is not None else None
 
     def appraise(self, mission_id: str) -> dict:
         import subprocess

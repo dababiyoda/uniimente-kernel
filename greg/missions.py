@@ -32,7 +32,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
-from greg import routing
+from greg import learning, routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -324,7 +324,8 @@ class MissionEngine:
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
-                                 deliver_root=self.deliver_root)
+                                 deliver_root=self.deliver_root,
+                                 learning=learning.context_for(self.journal, manifest.capability_id))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:

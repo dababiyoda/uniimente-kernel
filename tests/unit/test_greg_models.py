@@ -179,3 +179,33 @@ def test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_
     why = body.journal.replay("genesis.builder")[0].payload
     assert why["available"] is False and "credential unavailable" in why["why"]
     body.close()
+
+
+
+def test_a_provider_policy_error_is_a_refusal_not_an_outage():
+    class PolicyError(Exception):
+        code = "content_policy_violation"
+
+    class Declines:
+        responses = NS(create=lambda **kw: (_ for _ in ()).throw(PolicyError("400 flagged by moderation")))
+
+    other = FakeAnthropic("would have answered")
+    router = models.ModelRouter([models.OpenAIRoute("k", client=Declines(), price=(1.0, 4.0)),
+                                 models.AnthropicRoute("k", client=other)])
+    with pytest.raises(models.Refusal):
+        router.complete("sys", "user")
+    assert other.calls == []                                                   # never re-asked elsewhere
+    outage = models.ModelRouter([models.OpenAIRoute("k", client=FakeOpenAI(ConnectionError("503")), price=(1, 4)),
+                                 models.AnthropicRoute("k", client=FakeAnthropic("ok"))])
+    assert outage.complete("s", "u")["route"].startswith("anthropic")          # availability fallback still works
+
+
+def test_configured_price_overrides_a_stale_builtin_price():
+    stale = models.AnthropicRoute("k", model="claude-opus-5", client=FakeAnthropic("ok"))
+    raised = models.AnthropicRoute("k", model="claude-opus-5", price=(10.0, 50.0), client=FakeAnthropic("ok"))
+    assert raised.price == (10.0, 50.0) and stale.price != raised.price
+    raised.complete("s", "u", budget_usd=0.10)
+    assert raised.client.calls[0]["max_tokens"] * 50.0 / 1e6 <= 0.10           # bound follows the configured price
+    unknown = models.AnthropicRoute("k", model="claude-future-9", client=FakeAnthropic("ok"))
+    with pytest.raises(models.Unbounded):                                      # unknown price degrades safely
+        unknown.complete("s", "u", budget_usd=0.10)

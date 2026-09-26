@@ -1,0 +1,83 @@
+{
+ "reality": "TESTED: each body life ran in a forked process killed by SIGKILL; the next life was a new Body built from the GREG home; per-test key; fixture GitHub",
+ "retained_in_dying_life": {
+  "version": 1,
+  "values": {
+   "draft_attention": "after_ready",
+   "check_fetch_order": "api_order"
+  },
+  "retained": [
+   "ret-5678634dd7dc7152e566b1aa"
+  ]
+ },
+ "rebuilt_after_death": {
+  "version": 1,
+  "values": {
+   "draft_attention": "after_ready",
+   "check_fetch_order": "api_order"
+  },
+  "retained": [
+   "ret-5678634dd7dc7152e566b1aa"
+  ]
+ },
+ "day_C_policy": {
+  "version": 1,
+  "draft_attention": "after_ready",
+  "check_fetch_order": "api_order"
+ },
+ "day_C_appraisal": {
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+   "achieved_claimed": true,
+   "approval_boundaries_honored": true,
+   "approval_boundary_encountered": false,
+   "arrived_via_inbox": true,
+   "chain_intact": true,
+   "checks_rederived_from_receipts": true,
+   "deliveries_bound_to_evidence": true,
+   "exactly_once": true,
+   "founder_signature_verified": true,
+   "registered_once": true,
+   "world_reobserved": true
+  },
+  "findings": [],
+  "head": "sha256:17a3c983699a28ad542fea5a3168522c6b9b2de19b8b60c211665934cd7ea977",
+  "limits": "shares reviewed Kernel code; not an independent implementation",
+  "mission_id": "m:engineering-brief-2026-09-27",
+  "verdict": "VERIFIED"
+ },
+ "reverted": [
+  {
+   "retained_id": "ret-5678634dd7dc7152e566b1aa",
+   "critique_id": "crit-7266704e6faf4fd57ad5581f",
+   "capability": "brief.engineering",
+   "why": "revert: drafts inline again"
+  }
+ ],
+ "day_D_policy_after_revert_and_death": {
+  "version": 0,
+  "draft_attention": "inline",
+  "check_fetch_order": "api_order"
+ },
+ "day_D_appraisal": {
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+   "achieved_claimed": true,
+   "approval_boundaries_honored": true,
+   "approval_boundary_encountered": false,
+   "arrived_via_inbox": true,
+   "chain_intact": true,
+   "checks_rederived_from_receipts": true,
+   "deliveries_bound_to_evidence": true,
+   "exactly_once": true,
+   "founder_signature_verified": true,
+   "registered_once": true,
+   "world_reobserved": true
+  },
+  "findings": [],
+  "head": "sha256:5cc371ec6c59d5c4637952486bd4dbcf958c89e443a6b77e5a103f6f89fdb4f0",
+  "limits": "shares reviewed Kernel code; not an independent implementation",
+  "mission_id": "m:engineering-brief-2026-09-28",
+  "verdict": "VERIFIED"
+ }
+}

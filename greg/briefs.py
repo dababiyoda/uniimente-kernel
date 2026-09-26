@@ -95,8 +95,37 @@ def gather_local(name: str, path: Path) -> dict:
                        if line.count("\t") >= 2]}
 
 
+def _check_run_tally(repo: str, sha: str, token: str | None):
+    code, runs = FETCH(f"https://{API}/repos/{repo}/commits/{sha}/check-runs?per_page=100", token)
+    if code in (403, 429):
+        return code, None
+    if code != 200 or not isinstance(runs, dict):
+        return code, None
+    tally = {"passed": 0, "failing": 0, "pending": 0, "other": 0, "failing_names": []}
+    for run in runs.get("check_runs", [])[:100]:
+        if run.get("status") != "completed":
+            tally["pending"] += 1
+        elif run.get("conclusion") in FAILING:
+            tally["failing"] += 1
+            tally["failing_names"].append(str(run.get("name", ""))[:80])
+        elif run.get("conclusion") in ("success", "neutral", "skipped"):
+            tally["passed"] += 1
+        else:
+            tally["other"] += 1
+    tally["failing_names"].sort()
+    return code, tally
+
+
+def _checked(pulls: list, max_checked: int, order: str) -> set:
+    """Indices whose checks are fetched: the first N in API order, or ready (non-draft) pulls first."""
+    indices = list(range(len(pulls)))
+    if order == "ready_first":
+        indices.sort(key=lambda i: (bool(pulls[i].get("draft")), i))
+    return set(indices[:max_checked])
+
+
 def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_PULLS,
-                  max_checked: int = MAX_CHECKED_PULLS) -> dict:
+                  max_checked: int = MAX_CHECKED_PULLS, order: str = "api_order") -> dict:
     result, calls, limited = {}, 0, False
     for repo in repos[:MAX_REPOS]:
         if limited:
@@ -112,37 +141,26 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
             result[repo] = {"fetched": False, "gap": f"GitHub returned {status}"}
             continue
         rows = []
+        selected = _checked(pulls[:max_pulls], max_checked, order)
         for index, pull in enumerate(pulls[:max_pulls]):
             row = {"number": pull["number"], "title": str(pull.get("title", ""))[:200],
                    "draft": bool(pull.get("draft")), "author": (pull.get("user") or {}).get("login"),
                    "created_at": pull.get("created_at"), "updated_at": pull.get("updated_at"),
                    "head_sha": (pull.get("head") or {}).get("sha"), "base": (pull.get("base") or {}).get("ref"),
                    "checks": None}
-            if index < max_checked and row["head_sha"] and not limited:
-                code, runs = FETCH(f"https://{API}/repos/{repo}/commits/{row['head_sha']}/check-runs?per_page=100",
-                                   token)
+            if index in selected and row["head_sha"] and not limited:
+                code, tally = _check_run_tally(repo, row["head_sha"], token)
                 calls += 1
                 if code in (403, 429):
                     limited = True
-                elif code == 200 and isinstance(runs, dict):
-                    tally = {"passed": 0, "failing": 0, "pending": 0, "other": 0, "failing_names": []}
-                    for run in runs.get("check_runs", [])[:100]:
-                        if run.get("status") != "completed":
-                            tally["pending"] += 1
-                        elif run.get("conclusion") in FAILING:
-                            tally["failing"] += 1
-                            tally["failing_names"].append(str(run.get("name", ""))[:80])
-                        elif run.get("conclusion") in ("success", "neutral", "skipped"):
-                            tally["passed"] += 1
-                        else:
-                            tally["other"] += 1
-                    tally["failing_names"].sort()
-                    row["checks"] = tally
+                row["checks"] = tally
             rows.append(row)
         result[repo] = {"fetched": True, "open": len(rows), "pulls": rows,
                         "truncated": len(pulls) >= max_pulls}
-    return {"repos": result, "api_calls": calls, "rate_limited": limited,
-            "authenticated": bool(token)}
+    out = {"repos": result, "api_calls": calls, "rate_limited": limited, "authenticated": bool(token)}
+    if order != "api_order":
+        out["check_order"] = order
+    return out
 
 
 # -- deterministic render -------------------------------------------------------------
@@ -172,32 +190,43 @@ def _checks(checks: dict | None) -> str:
 
 
 def attention(inputs: dict) -> list[dict]:
-    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository."""
+    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository.
+
+    ``inputs["policy"]`` carries retained learned knobs (greg/learning.py). Absent, the list is
+    exactly the original behavior, so every earlier receipt re-renders byte for byte."""
     now = datetime.fromisoformat(inputs["generated_at"].replace("Z", "+00:00"))
     stale = inputs["stale_days"]
+    split = (inputs.get("policy") or {}).get("draft_attention", "inline") == "after_ready"
     items = []
     for repo, data in sorted(inputs["github"]["repos"].items()):
-        idle = []
+        idle = {False: [], True: []}
         for pull in data.get("pulls", []):
             checks, age = pull["checks"], _age_days(pull["updated_at"], now)
+            draft = bool(pull["draft"]) and split
             if checks and checks["failing"]:
-                items.append({"rank": 0, "ref": f"{repo}#{pull['number']}", "sort": -checks["failing"],
-                              "why": f"checks failing: {', '.join(checks['failing_names'])}", "title": pull["title"]})
+                items.append({"rank": 3 if draft else 0, "ref": f"{repo}#{pull['number']}", "sort": -checks["failing"],
+                              "why": ("draft; " if draft else "") + f"checks failing: {', '.join(checks['failing_names'])}",
+                              "title": pull["title"], "covers": [f"{repo}#{pull['number']}"]})
             elif age is not None and age >= stale:
-                idle.append((age, pull["number"]))
-        if idle:
-            idle.sort(reverse=True)
-            numbers = ", ".join(f"#{n}" for _, n in idle[:12]) + (" …" if len(idle) > 12 else "")
-            items.append({"rank": 1, "ref": repo, "sort": -len(idle),
-                          "why": f"{len(idle)} open pull request(s) idle for {stale}+ days (oldest {idle[0][0]} days): "
-                                 f"{numbers}", "title": "merge, close or re-scope them"})
+                idle[draft].append((age, pull["number"]))
+        for draft, group in ((False, idle[False]), (True, idle[True])):
+            if not group:
+                continue
+            group.sort(reverse=True)
+            numbers = ", ".join(f"#{n}" for _, n in group[:12]) + (" …" if len(group) > 12 else "")
+            kind = ("draft " if draft else "ready-for-review ") if split else ""
+            items.append({"rank": 4 if draft else 1, "ref": repo, "sort": -len(group),
+                          "why": f"{len(group)} open {kind}pull request(s) idle for {stale}+ days "
+                                 f"(oldest {group[0][0]} days): {numbers}",
+                          "title": "merge, close or re-scope them" if not draft else "finish or close the drafts",
+                          "covers": [f"{repo}#{n}" for _, n in group[:12]]})
     for local in inputs["local"]:
         if local.get("readable") and local.get("uncommitted"):
             items.append({"rank": 2, "ref": local["name"], "why": f"{local['uncommitted']} uncommitted change(s) on "
-                          f"{local.get('branch')}", "title": local["path"], "sort": 0})
+                          f"{local.get('branch')}", "title": local["path"], "sort": 0, "covers": [local["name"]]})
         elif not local.get("readable"):
             items.append({"rank": 2, "ref": local["name"], "why": "not a readable Git repository",
-                          "title": local["path"], "sort": 0})
+                          "title": local["path"], "sort": 0, "covers": [local["name"]]})
     return sorted(items, key=lambda i: (i["rank"], i["sort"], i["ref"]))
 
 
@@ -251,7 +280,12 @@ def render(inputs: dict) -> str:
               f"- inputs digest: `{inputs_digest(inputs)}`",
               f"- renderer: `{RENDERER}`; GitHub calls: {github['api_calls']} "
               f"({'authenticated' if github['authenticated'] else 'unauthenticated'})",
-              "- local Git read without fetch; the receipt retains every input used above", ""]
+              "- local Git read without fetch; the receipt retains every input used above"]
+    if inputs.get("policy"):
+        knobs = ", ".join(f"{k}={v}" for k, v in sorted(inputs["policy"].items()) if k != "version")
+        lines.append(f"- learned policy v{inputs['policy']['version']} ({knobs}); retained only after a held-out "
+                     "comparison beat the previous version")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -322,14 +356,78 @@ def engineering_brief(params, ctx: InvocationContext) -> dict:
     if not isinstance(local, list) or len(local) > MAX_REPOS:
         raise CapabilityError("local must be a list of {name, path}")
     now = NOW()
+    learned = (ctx.learning or {}).get("policy")
+    token = _token(ctx)
     inputs = {"generated_at": now.isoformat().replace("+00:00", "Z"), "renderer": RENDERER,
               "stale_days": int(params.get("stale_days", 14)),
               "local": [gather_local(str(r["name"]), _inside(Path(r["path"]), ctx.read_roots)) for r in local],
-              "github": gather_github(_repos(params), token=_token(ctx))}
+              "github": gather_github(_repos(params), token=token,
+                                      order=(learned or {}).get("check_fetch_order", "api_order"))}
+    if learned:
+        inputs["policy"] = dict(learned)
     text = render(inputs)
     path = deliver(text, ctx, kind="engineering", day=inputs["generated_at"][:10])
-    return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
-            "inputs": inputs, "inputs_digest": inputs_digest(inputs), "attention": len(attention(inputs))}
+    output = {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
+              "inputs": inputs, "inputs_digest": inputs_digest(inputs), "attention": len(attention(inputs))}
+    shadows = (ctx.learning or {}).get("shadow") or []
+    if shadows:
+        output["shadow"] = shadow_gather(inputs["github"], shadows, token=token)
+    return output
+
+
+def shadow_gather(production: dict, shadows: list[dict], *, token: str | None) -> dict:
+    """Held-out evaluation inside the same approved read: the candidate's acquisition order over the SAME
+    pull request lists, plus an exhaustive observation of every ready pull request as independent truth.
+    Nothing here is rendered or delivered; it is retained evidence for greg/learning.py."""
+    cache, calls, complete = {}, 0, True
+    for repo, data in production["repos"].items():
+        for pull in data.get("pulls", []):
+            if pull["checks"] is not None:
+                cache[(repo, pull["number"])] = pull["checks"]
+
+    def tally(repo, pull):
+        nonlocal calls, complete
+        key = (repo, pull["number"])
+        if key not in cache and pull.get("head_sha"):
+            code, result = _check_run_tally(repo, pull["head_sha"], token)
+            calls += 1
+            if result is None:
+                complete = False
+            cache[key] = result
+        return cache.get(key)
+
+    out = {"candidates": {}, "truth": {}}
+    for shadow in shadows:
+        order = shadow["values"].get("check_fetch_order", "api_order")
+        repos, api_calls = {}, 0
+        for repo, data in production["repos"].items():
+            if not data.get("fetched"):
+                repos[repo] = data
+                continue
+            api_calls += 1
+            pulls = data["pulls"]
+            selected = _checked(pulls, MAX_CHECKED_PULLS, order)
+            rows = []
+            for index, pull in enumerate(pulls):
+                row = dict(pull, checks=tally(repo, pull) if index in selected and pull.get("head_sha") else None)
+                api_calls += int(index in selected and bool(pull.get("head_sha")))
+                rows.append(row)
+            repos[repo] = {**data, "pulls": rows}
+        out["candidates"][shadow["candidate_id"]] = {"github": {**production, "repos": repos, "api_calls": api_calls,
+                                                               "check_order": order}}
+        for ref in shadow.get("claimed", []):
+            out["truth"].setdefault(ref, None)
+    for repo, data in production["repos"].items():
+        for pull in data.get("pulls", []):
+            ref = f"{repo}#{pull['number']}"
+            if not pull["draft"] or ref in out["truth"]:
+                checks = tally(repo, pull)
+                out["truth"][ref] = {"ready": not pull["draft"], "failing": bool(checks and checks["failing"]),
+                                     "checks": checks}
+    out["truth"] = {k: v for k, v in out["truth"].items() if v is not None}
+    out["truth_complete"] = complete and not production.get("rate_limited")
+    out["evaluation_api_calls"] = calls
+    return out
 
 
 def brief_freshness(params, ctx: InvocationContext) -> dict:

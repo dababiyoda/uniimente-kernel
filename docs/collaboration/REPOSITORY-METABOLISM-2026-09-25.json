@@ -721,6 +721,45 @@
    "extracted_mechanism": "per-incident deficit generations (fixes EventError crash loop); quarantine with evidence; rebuild must pass frozen oracle and live-input replay; one signed budget across generations",
    "disposition": "PRODUCTIZE",
    "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/learning.py (+ tribunal typed review, briefs policy/shadow)",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "settlement",
+    "routing",
+    "compounding"
+   ],
+   "evidence": "tests/unit/test_greg_learning.py; tests/evidence/greg-product/learning-closures.json (two orthogonal RETAIN closures, policy v2)",
+   "extracted_mechanism": "founder review -> frozen candidate over whitelisted knobs -> first later held-out case -> unchanged baseline vs candidate -> decide -> retained policy drives the next run",
+   "disposition": "PRODUCTIZE",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/brief_learning.py",
+   "bucket": "B",
+   "super_nodes": [
+    "proof"
+   ],
+   "evidence": "its invariants (unchanged baseline, held-out cases, RETAIN/REGRESS/NO_IMPROVEMENT, authority_change False) now run on the GREG path in greg/learning.py",
+   "extracted_mechanism": "held-out baseline-vs-candidate comparison with no authority change",
+   "disposition": "EXTRACT",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/morning_review.py",
+   "bucket": "F",
+   "super_nodes": [
+    "proof"
+   ],
+   "evidence": "synthetic-authority review path; its statement 'no critique has been promoted into policy' remains true for that path. On GREG, critique changes behavior only through a held-out comparison",
+   "extracted_mechanism": "critique is bound evidence, never automatic truth",
+   "disposition": "RETAIN_AS_EVIDENCE",
+   "reality": "TESTED"
   }
  ],
  "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"

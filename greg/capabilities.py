@@ -207,6 +207,7 @@ class InvocationContext:
     secrets: SecretBroker
     manifest: CapabilityManifest
     deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
+    learning: dict | None = None       # retained learned policy + pending shadows (greg/learning.py); no authority
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)

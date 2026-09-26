@@ -1,0 +1,434 @@
+{
+ "reality": "TESTED: real Body, real CRITIQUE path, real brief.engineering capability and appraiser byte-compare; GitHub replaced by per-day fixture worlds modelled on the live 2026-09-26 brief; reviews signed with a per-test key (not Alfonso)",
+ "reviews": [
+  {
+   "review_id": "crit-9f06e79fcadbb049790c6000",
+   "classification": "PREFERENCE",
+   "epistemic_status": "founder_preference",
+   "mission_id": "m:engineering-brief-daily",
+   "action_id": "deliver-engineering-brief",
+   "capability": "brief.engineering",
+   "receipt": "sha256:8191033e2610d7fa6ee8ef9c3240b34a65ed38234fc7ca05ef0ddf11d52324b6",
+   "evidence_head": "sha256:c9aa460e0b7f28617963fd0f9da2bf63e679935c2afe01ac331477bd4a8dc34a",
+   "reviewed_at": "2026-09-26T16:41:11.141245Z",
+   "text": "test-key review (PREFERENCE)",
+   "signer": {
+    "founder_key_id": "ed25519:99261b3b74d2df89e144a1433e612d57",
+    "principal": "founder",
+    "channel": "inbox"
+   },
+   "labels": {
+    "needs_decision": [
+     "acme/kernel#7",
+     "acme/organ#2"
+    ]
+   },
+   "claimed_missed": [],
+   "correction": null,
+   "authority_ceiling": "internal_write",
+   "founder_command": "sha256:9f06e79fcadbb049790c6000228938a18a8b719365b8d3034417a334fe8029ce",
+   "is_truth": false,
+   "inputs_digest": "sha256:fb74993150d46bc84e0ab85929b5510c9b718771ed53107b2b68a18789578b12"
+  },
+  {
+   "review_id": "crit-8bf683b653b5c5dd34d6f597",
+   "classification": "PREFERENCE",
+   "epistemic_status": "founder_preference",
+   "mission_id": "m:engineering-brief-daily",
+   "action_id": "deliver-engineering-brief",
+   "capability": "brief.engineering",
+   "receipt": "sha256:8191033e2610d7fa6ee8ef9c3240b34a65ed38234fc7ca05ef0ddf11d52324b6",
+   "evidence_head": "sha256:5508e775c4948395142b8f7d1ea2ab7543081d6581213eb47e253716ff876417",
+   "reviewed_at": "2026-09-26T16:41:16.141245Z",
+   "text": "test-key review (PREFERENCE)",
+   "signer": {
+    "founder_key_id": "ed25519:99261b3b74d2df89e144a1433e612d57",
+    "principal": "founder",
+    "channel": "inbox"
+   },
+   "labels": {
+    "needs_decision": [
+     "acme/kernel#7"
+    ]
+   },
+   "claimed_missed": [],
+   "correction": null,
+   "authority_ceiling": "internal_write",
+   "founder_command": "sha256:8bf683b653b5c5dd34d6f5975cb0d4b0ab46a18d314bf7506dd17c3e696acbfe",
+   "is_truth": false,
+   "inputs_digest": "sha256:fb74993150d46bc84e0ab85929b5510c9b718771ed53107b2b68a18789578b12"
+  },
+  {
+   "review_id": "crit-6703626660ce8318391a35aa",
+   "classification": "PREFERENCE",
+   "epistemic_status": "founder_preference",
+   "mission_id": "m:engineering-brief-daily",
+   "action_id": "deliver-engineering-brief",
+   "capability": "brief.engineering",
+   "receipt": "sha256:5a534348bce9b501d93f949e67df45ddf77e06b91cefa61aadd34ef4d3757fc7",
+   "evidence_head": "sha256:62d3a771179f86c4fbf673d365ae8a08fd37bcd74f5b88738eccdf713c5771ae",
+   "reviewed_at": "2026-09-27T13:42:51.141245Z",
+   "text": "test-key review (PREFERENCE)",
+   "signer": {
+    "founder_key_id": "ed25519:99261b3b74d2df89e144a1433e612d57",
+    "principal": "founder",
+    "channel": "inbox"
+   },
+   "labels": {
+    "needs_decision": [
+     "acme/kernel#11",
+     "acme/kernel#7",
+     "acme/organ#22"
+    ]
+   },
+   "claimed_missed": [],
+   "correction": null,
+   "authority_ceiling": "internal_write",
+   "founder_command": "sha256:6703626660ce8318391a35aaed2f3a5a21c38bb180ff964b3f3a0f07a10821a2",
+   "is_truth": false,
+   "inputs_digest": "sha256:42797e65ec4b8b8cbe4064d957a71df0210a33f67dc12667b474849c0fea3d08"
+  },
+  {
+   "review_id": "crit-4afa0dda184bcaf047cad9e3",
+   "classification": "FAILURE_CLAIM",
+   "epistemic_status": "founder_reported_failure",
+   "mission_id": "m:engineering-brief-daily",
+   "action_id": "deliver-engineering-brief",
+   "capability": "brief.engineering",
+   "receipt": "sha256:7c595f309c511d55d53456f1d2cf699cd63bcb8926745e84906fe2da78d32554",
+   "evidence_head": "sha256:574936990ebd6f90550088e80976cf8696e368b3e05f6027b9f743ff324cf93d",
+   "reviewed_at": "2026-09-28T10:44:26.141245Z",
+   "text": "test-key review (FAILURE_CLAIM)",
+   "signer": {
+    "founder_key_id": "ed25519:99261b3b74d2df89e144a1433e612d57",
+    "principal": "founder",
+    "channel": "inbox"
+   },
+   "labels": {},
+   "claimed_missed": [
+    "acme/organ#30"
+   ],
+   "correction": null,
+   "authority_ceiling": "internal_write",
+   "founder_command": "sha256:4afa0dda184bcaf047cad9e318fe277c9cada3f53b11f19a3ca442e7ec93c7bb",
+   "is_truth": false,
+   "inputs_digest": "sha256:08e2ad6245a52b0d7f14d842f8ee6fcbfb716b68d0c7a2ea6b37247335d15ef6"
+  }
+ ],
+ "candidates": [
+  {
+   "candidate_id": "cand-9f06e79fcadbb049790c6000",
+   "capability": "brief.engineering",
+   "change": {
+    "draft_attention": "after_ready"
+   },
+   "evaluated_by": "render",
+   "strengthens": [
+    "human_attention",
+    "outcome"
+   ],
+   "baseline": {
+    "version": 0,
+    "values": {
+     "draft_attention": "inline",
+     "check_fetch_order": "api_order"
+    }
+   },
+   "origin": {
+    "review_id": "crit-9f06e79fcadbb049790c6000",
+    "receipt": "sha256:8191033e2610d7fa6ee8ef9c3240b34a65ed38234fc7ca05ef0ddf11d52324b6",
+    "inputs_digest": "sha256:fb74993150d46bc84e0ab85929b5510c9b718771ed53107b2b68a18789578b12",
+    "generated_at": "2026-09-26T16:40:06.141245Z",
+    "claimed_missed": []
+   },
+   "basis": "the smallest learnable change that serves this case's labels better (fit on the origin only)",
+   "fit_on_origin": {
+    "baseline": {
+     "missed_obligations": 0,
+     "noise_before_last_needed": 4,
+     "top_item_needed": 1,
+     "needed_in_top3": 1.0,
+     "items": 2
+    },
+    "candidate": {
+     "missed_obligations": 0,
+     "noise_before_last_needed": 0,
+     "top_item_needed": 1,
+     "needed_in_top3": 1.0,
+     "items": 4
+    }
+   },
+   "frozen_at": "2026-09-26T16:41:11.141245Z",
+   "held_out_rule": "the first later result of this capability, never the origin, labels given after this freeze; up to 3 inconclusive cases",
+   "authority_change": false,
+   "scope_change": false,
+   "digest": "sha256:4574813c1c79e3de2094d883eacd024a059e70f55e8c5a0d0568307fffb74988"
+  },
+  {
+   "candidate_id": "cand-4afa0dda184bcaf047cad9e3",
+   "capability": "brief.engineering",
+   "change": {
+    "check_fetch_order": "ready_first"
+   },
+   "evaluated_by": "acquisition",
+   "strengthens": [
+    "proof",
+    "outcome"
+   ],
+   "baseline": {
+    "version": 1,
+    "values": {
+     "draft_attention": "after_ready",
+     "check_fetch_order": "api_order"
+    }
+   },
+   "origin": {
+    "review_id": "crit-4afa0dda184bcaf047cad9e3",
+    "receipt": "sha256:7c595f309c511d55d53456f1d2cf699cd63bcb8926745e84906fe2da78d32554",
+    "inputs_digest": "sha256:08e2ad6245a52b0d7f14d842f8ee6fcbfb716b68d0c7a2ea6b37247335d15ef6",
+    "generated_at": "2026-09-28T10:43:21.141245Z",
+    "claimed_missed": [
+     "acme/organ#30"
+    ]
+   },
+   "basis": "check budget spent on drafts before ready pull requests: fetch ready ones first",
+   "fit_on_origin": {
+    "diagnosis": {
+     "explains": true,
+     "findings": [
+      {
+       "ref": "acme/organ#30",
+       "acquisition_order": true,
+       "finding": "ready pull request left unchecked while 10 draft(s) used the check budget"
+      }
+     ],
+     "why": "check budget spent on drafts before ready pull requests: fetch ready ones first"
+    }
+   },
+   "frozen_at": "2026-09-28T10:44:26.141245Z",
+   "held_out_rule": "the first later result of this capability, never the origin, labels given after this freeze; up to 3 inconclusive cases",
+   "authority_change": false,
+   "scope_change": false,
+   "digest": "sha256:f049a8c5a6176551ab37b0d61ba1715e6d95806542ea63bc9b62f8229cefb3c4"
+  }
+ ],
+ "evaluations": [
+  {
+   "candidate_id": "cand-9f06e79fcadbb049790c6000",
+   "case": {
+    "receipt": "sha256:5a534348bce9b501d93f949e67df45ddf77e06b91cefa61aadd34ef4d3757fc7",
+    "review_id": "crit-6703626660ce8318391a35aa",
+    "inputs_digest": "sha256:42797e65ec4b8b8cbe4064d957a71df0210a33f67dc12667b474849c0fea3d08",
+    "truth": "founder labels given after the freeze"
+   },
+   "baseline": {
+    "missed_obligations": 0,
+    "noise_before_last_needed": 4,
+    "top_item_needed": 1,
+    "needed_in_top3": 1.0,
+    "items": 3
+   },
+   "candidate": {
+    "missed_obligations": 0,
+    "noise_before_last_needed": 0,
+    "top_item_needed": 1,
+    "needed_in_top3": 1.0,
+    "items": 5
+   },
+   "decision": "RETAIN",
+   "detail": {
+    "better": [
+     "noise_before_last_needed"
+    ],
+    "worse": []
+   },
+   "at": "2026-09-27T13:42:51.141245Z",
+   "baseline_version": 0
+  },
+  {
+   "candidate_id": "cand-4afa0dda184bcaf047cad9e3",
+   "case": {
+    "receipt": "sha256:f574dc943f27d88acd38828091a83ca8690f4166708114870e2d819732068aa2",
+    "inputs_digest": "sha256:7df019c64bfe778f7a6913ac8c1b6cee47d72de937f2d5d3a3009b4a978d3041",
+    "truth": "exhaustive check-run observation of ready pull requests in the same action",
+    "truth_complete": true
+   },
+   "baseline": {
+    "missed_failing_ready": 2,
+    "unknown_ready_checks": 3,
+    "false_failing": 0,
+    "api_calls": 13
+   },
+   "candidate": {
+    "missed_failing_ready": 0,
+    "unknown_ready_checks": 0,
+    "false_failing": 0,
+    "api_calls": 13
+   },
+   "decision": "RETAIN",
+   "detail": {
+    "better": [
+     "missed_failing_ready",
+     "unknown_ready_checks"
+    ],
+    "worse": []
+   },
+   "at": "2026-09-29T07:44:56.141245Z",
+   "baseline_version": 1
+  }
+ ],
+ "decisions": [
+  {
+   "candidate_id": "cand-9f06e79fcadbb049790c6000",
+   "decision": "RETAIN",
+   "detail": {
+    "better": [
+     "noise_before_last_needed"
+    ],
+    "worse": []
+   },
+   "case": {
+    "receipt": "sha256:5a534348bce9b501d93f949e67df45ddf77e06b91cefa61aadd34ef4d3757fc7",
+    "review_id": "crit-6703626660ce8318391a35aa",
+    "inputs_digest": "sha256:42797e65ec4b8b8cbe4064d957a71df0210a33f67dc12667b474849c0fea3d08",
+    "truth": "founder labels given after the freeze"
+   },
+   "at": "2026-09-27T13:42:51.141245Z",
+   "applied": true
+  },
+  {
+   "candidate_id": "cand-4afa0dda184bcaf047cad9e3",
+   "decision": "RETAIN",
+   "detail": {
+    "better": [
+     "missed_failing_ready",
+     "unknown_ready_checks"
+    ],
+    "worse": []
+   },
+   "case": {
+    "receipt": "sha256:f574dc943f27d88acd38828091a83ca8690f4166708114870e2d819732068aa2",
+    "inputs_digest": "sha256:7df019c64bfe778f7a6913ac8c1b6cee47d72de937f2d5d3a3009b4a978d3041",
+    "truth": "exhaustive check-run observation of ready pull requests in the same action",
+    "truth_complete": true
+   },
+   "at": "2026-09-29T07:44:56.141245Z",
+   "applied": true
+  }
+ ],
+ "retained": [
+  {
+   "retained_id": "ret-9f06e79fcadbb049790c6000",
+   "candidate_id": "cand-9f06e79fcadbb049790c6000",
+   "capability": "brief.engineering",
+   "change": {
+    "draft_attention": "after_ready"
+   },
+   "version": 1,
+   "rollback_to": 0,
+   "effective_at": "2026-09-27T13:42:51.141245Z",
+   "originating_review": "crit-9f06e79fcadbb049790c6000",
+   "held_out_case": {
+    "receipt": "sha256:5a534348bce9b501d93f949e67df45ddf77e06b91cefa61aadd34ef4d3757fc7",
+    "review_id": "crit-6703626660ce8318391a35aa",
+    "inputs_digest": "sha256:42797e65ec4b8b8cbe4064d957a71df0210a33f67dc12667b474849c0fea3d08",
+    "truth": "founder labels given after the freeze"
+   },
+   "baseline": {
+    "missed_obligations": 0,
+    "noise_before_last_needed": 4,
+    "top_item_needed": 1,
+    "needed_in_top3": 1.0,
+    "items": 3
+   },
+   "candidate": {
+    "missed_obligations": 0,
+    "noise_before_last_needed": 0,
+    "top_item_needed": 1,
+    "needed_in_top3": 1.0,
+    "items": 5
+   },
+   "strengthens": [
+    "human_attention",
+    "outcome"
+   ],
+   "evidence_basis": "founder preference (labels of a later result)",
+   "scope": "this capability's presentation / evidence order only",
+   "authority_change": false,
+   "revert_with": "a signed CRITIQUE rejecting this learning.retained event"
+  },
+  {
+   "retained_id": "ret-4afa0dda184bcaf047cad9e3",
+   "candidate_id": "cand-4afa0dda184bcaf047cad9e3",
+   "capability": "brief.engineering",
+   "change": {
+    "check_fetch_order": "ready_first"
+   },
+   "version": 2,
+   "rollback_to": 1,
+   "effective_at": "2026-09-29T07:44:56.141245Z",
+   "originating_review": "crit-4afa0dda184bcaf047cad9e3",
+   "held_out_case": {
+    "receipt": "sha256:f574dc943f27d88acd38828091a83ca8690f4166708114870e2d819732068aa2",
+    "inputs_digest": "sha256:7df019c64bfe778f7a6913ac8c1b6cee47d72de937f2d5d3a3009b4a978d3041",
+    "truth": "exhaustive check-run observation of ready pull requests in the same action",
+    "truth_complete": true
+   },
+   "baseline": {
+    "missed_failing_ready": 2,
+    "unknown_ready_checks": 3,
+    "false_failing": 0,
+    "api_calls": 13
+   },
+   "candidate": {
+    "missed_failing_ready": 0,
+    "unknown_ready_checks": 0,
+    "false_failing": 0,
+    "api_calls": 13
+   },
+   "strengthens": [
+    "proof",
+    "outcome"
+   ],
+   "evidence_basis": "independent observation (exhaustive re-read in the same approved action)",
+   "scope": "this capability's presentation / evidence order only",
+   "authority_change": false,
+   "revert_with": "a signed CRITIQUE rejecting this learning.retained event"
+  }
+ ],
+ "claims": [
+  {
+   "candidate_id": "cand-4afa0dda184bcaf047cad9e3",
+   "ref": "acme/organ#30",
+   "status": "independently_verified_failure",
+   "observed": {
+    "ready": true,
+    "failing": true,
+    "checks": {
+     "passed": 0,
+     "failing": 1,
+     "pending": 0,
+     "other": 0,
+     "failing_names": [
+      "build"
+     ]
+    }
+   },
+   "receipt": "sha256:f574dc943f27d88acd38828091a83ca8690f4166708114870e2d819732068aa2",
+   "at": "2026-09-29T07:44:56.141245Z"
+  }
+ ],
+ "policy_after": {
+  "brief.engineering": {
+   "version": 2,
+   "values": {
+    "draft_attention": "after_ready",
+    "check_fetch_order": "ready_first"
+   },
+   "retained": [
+    "ret-9f06e79fcadbb049790c6000",
+    "ret-4afa0dda184bcaf047cad9e3"
+   ]
+  }
+ }
+}

@@ -48,11 +48,13 @@ class Morning:
         output = self.body.ledger.find(action.payload["receipt"]).payload["result"]["output"]
         return action, output
 
-    def label(self, action, *, missed=(), noise=()):
-        drop(self.home, signed(self.key, self.body_id, "CRITIQUE", {
-            "target_event_id": action.event_id, "verdict": "note", "evidence_type": "founder_judgment",
-            "text": "morning review of the brief", "attention": {"missed": list(missed), "noise": list(noise)}},
-            now=self.clock.now))                                         # signed that morning, by the body's clock
+    def label(self, action, *, missed=(), noise=(), regression=None):
+        critique = {"target_event_id": action.event_id, "verdict": "note", "evidence_type": "founder_judgment",
+                    "text": "morning review of the brief", "attention": {"missed": list(missed), "noise": list(noise)}}
+        if regression:
+            critique["regression"] = regression
+        drop(self.home, signed(self.key, self.body_id, "CRITIQUE", critique,
+                               now=self.clock.now))                                         # signed that morning, by the body's clock
         self.body.tick()
         assert not [e for e in self.body.journal.replay("command.rejected")], "the founder's label was refused"
 
@@ -168,3 +170,29 @@ def test_the_founder_labels_from_the_cli_and_reads_the_learning_report(tmp_path,
     assert cli.main(["--home", str(m.home), "learning"]) == 0
     report = _json.loads(capsys.readouterr().out)
     assert report["labelled_briefs"] == 1 and len(report["proposed"]) == 1
+
+
+def test_only_the_originating_regression_closes_on_its_declared_held_out_check(tmp_path, repo, github):
+    """Ported from #122: an unrelated open regression is untouched when a learned change closes another."""
+    from greg import tribunal
+    m = Morning(tmp_path, repo)
+    action, _ = m.brief()
+    m.label(action, noise=[DRAFT], regression="idle drafts bury decisions")
+    origin = m.events("critique.recorded")[-1]
+    mission = m.body.journal.replay("mission.registered")[0]
+    drop(m.home, signed(m.key, m.body_id, "CRITIQUE", {
+        "target_event_id": mission.event_id, "verdict": "note", "evidence_type": "founder_judgment",
+        "text": "unrelated", "regression": "an unrelated check still fails"}, now=m.clock.now))
+    m.body.tick()
+    unrelated = m.events("critique.recorded")[-1]
+    for _ in range(3):
+        action, _ = m.brief()
+        m.label(action, noise=[DRAFT])
+    closed = m.events("critique.regression_closed")
+    assert [c["regression_id"] for c in closed] == [origin["regression"]["regression_id"]]
+    assert closed[0]["critique_id"] == origin["critique_id"]
+    evidence = closed[0]["proof"]["held_out_evidence"]
+    assert len(evidence) >= 3
+    assert [r["regression_id"] for r in tribunal.morning_report(m.body.journal, m.body.engine)["q11_change"]] == [
+        unrelated["regression"]["regression_id"]]
+    m.body.close()

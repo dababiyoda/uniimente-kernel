@@ -9,7 +9,10 @@ reverted learning on restart. Every attack below must fail.
 The founder key is a real Ed25519 test key, not Alfonso's. GitHub is an in-process fixture.
 """
 from datetime import datetime, timedelta, timezone
+import json
+import multiprocessing
 import os
+import signal
 import urllib.parse
 
 import pytest
@@ -349,6 +352,84 @@ def test_retained_learning_survives_death_and_reverted_learning_stays_reverted(t
     assert "attention_policy" not in output["inputs"] and DRAFT in briefs.flagged_keys(output["inputs"])
     restart(m)                                                                 # death 3: still reverted
     assert improvement.active_policy(m.body.journal) == briefs.ATTENTION_BASELINE
+    assert len(m.events("improvement.proposed")) == 1                         # and not silently re-proposed
+    m.body.close()
+
+
+def _killed_life(m, steps, out):
+    """Run ``steps`` in a forked process with its own Body, then SIGKILL it: nothing is closed or flushed.
+
+    Ported from #119 (``test_greg_learning_durability``): the learning happens inside the process
+    that dies, so a store that only persists on a clean close fails here. The next Body is built
+    from the GREG home alone.
+    """
+    m.body.close()
+
+    def run():
+        m.body = Body(m.home, clock=m.clock).open()
+        m.body.boot()
+        result = steps(m)
+        out.write_text(json.dumps({"clock": m.clock.now.isoformat(), "day": m.day, "result": result}, default=str))
+        os.kill(os.getpid(), signal.SIGKILL)
+
+    child = multiprocessing.get_context("fork").Process(target=run)
+    child.start()
+    child.join(180)
+    assert child.exitcode == -signal.SIGKILL, child.exitcode
+    state = json.loads(out.read_text())
+    m.clock.now, m.day = datetime.fromisoformat(state["clock"]), state["day"]
+    m.body = Body(m.home, clock=m.clock).open()
+    m.body.boot()
+    return state["result"]
+
+
+def _one_off_brief(m, repo, today):
+    """A new founder-signed bounded brief mission, appraised by the separate-process appraiser."""
+    for path in (Layout(m.home).home / "deliveries" / "briefs").glob("*.md"):
+        aged = (datetime.now(timezone.utc) - timedelta(hours=13)).timestamp()   # stale for a one-off (12h),
+        os.utime(path, (aged, aged))                                            # fresh for the daily (20h)
+    spec = _brief_mission(repo, preauthorize_delivery=True, today=today, horizon_days=60)  # body clock runs ahead
+    drop(m.home, signed(m.key, m.body_id, "MISSION", spec, now=m.clock.now))
+    _run(m.body, m.clock, 4)
+    mid = spec["mission_id"]
+    action = [e.payload for e in m.body.journal.replay("mission.action")
+              if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"]
+    appraisal = [e.payload for e in m.body.journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
+    assert len(action) == 1 and appraisal, (action, appraisal)
+    return m.body.ledger.find(action[0]["receipt"]).payload["result"]["output"], appraisal[-1]
+
+
+def test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays(
+        tmp_path, repo, github):
+    m = Morning(tmp_path, repo)
+
+    def learn(m):
+        for _ in range(4):
+            action, _ = m.brief()
+            m.label(action, noise=[DRAFT])
+        return improvement.active_policy(m.body.journal)
+
+    in_life = _killed_life(m, learn, tmp_path / "life1.json")
+    assert in_life["idle_includes_drafts"] is False                            # retained before the death
+    assert improvement.active_policy(m.body.journal) == in_life                 # rebuilt from the ledger alone
+
+    output, verdict = _one_off_brief(m, repo, "after-death-1")                    # a new eligible mission uses it
+    assert output["inputs"]["attention_policy"] == in_life
+    assert DRAFT not in briefs.flagged_keys(output["inputs"])
+    assert verdict["verdict"] == "VERIFIED" and verdict["checks"]["deliveries_bound_to_evidence"] is True
+
+    retained = m.body.journal.replay("improvement.retained")[0]
+
+    def revert(m):
+        sign(m, retained.event_id, verdict="reject", text="revert: drafts matter to me again")
+        return [e.payload["candidate_id"] for e in m.body.journal.replay("improvement.reverted")]
+
+    assert _killed_life(m, revert, tmp_path / "life2.json")                     # reverted before the death
+    assert improvement.active_policy(m.body.journal) == briefs.ATTENTION_BASELINE
+    output, verdict = _one_off_brief(m, repo, "after-death-2")
+    assert "attention_policy" not in output["inputs"] and DRAFT in briefs.flagged_keys(output["inputs"])
+    assert verdict["verdict"] == "VERIFIED"
+    assert m.events("improvement.retained") and m.events("improvement.reverted")   # history kept
     assert len(m.events("improvement.proposed")) == 1                         # and not silently re-proposed
     m.body.close()
 

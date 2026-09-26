@@ -106,6 +106,8 @@ def main(argv=None) -> int:
         q.add_argument("--ttl-hours", type=int, default=24)
     sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
+    st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
+    st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
@@ -201,6 +203,12 @@ def main(argv=None) -> int:
             print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "
                   f"tailscale serve --bg --https=443 http://{args.host}:{args.port}", flush=True)
             return serve(home, args.host, args.port)
+        elif args.cmd == "start":
+            stop = Layout(home).stop_file
+            prior = stop.read_text() if stop.exists() else None
+            stop.unlink(missing_ok=True)
+            print(json.dumps({"cleared_stop": prior, "next": "launchctl kickstart gui/$(id -u)/"
+                              + service.LABEL + "  (or start the supervisor unit)"}, indent=1))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
         elif args.cmd == "decisions":

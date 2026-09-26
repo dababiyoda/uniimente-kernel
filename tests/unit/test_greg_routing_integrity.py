@@ -136,3 +136,77 @@ def test_genesis_escalates_a_policy_refused_build_instead_of_asking_another_vend
     recorded = [e.payload for e in body.journal.replay("model.route")]
     assert recorded and recorded[0]["outcome"] == "refused" and recorded[0]["class"] == "provider_policy_refusal"
     body.close()
+
+
+# -- falsifiers: an ambiguous code is not a policy verdict ------------------------------------------
+
+BARE_INVALID_PROMPT = {"error": {"message": "Invalid prompt.", "type": "invalid_request_error", "param": None,
+                                 "code": "invalid_prompt"}}
+
+
+def test_a_bare_invalid_prompt_is_not_a_policy_refusal_and_may_fail_over():
+    witness = Witness()
+    router = models.ModelRouter([models.OpenAIRoute("sk-test", model="gpt-x", price=(2.0, 12.0),
+                                                    client=openai_client(400, BARE_INVALID_PROMPT)), witness])
+    result = router.complete("sys", "user")
+    assert witness.calls == 1 and result["route"] == "witness:model"
+    assert result["tried"][0] == {"route": "openai:gpt-x", "outcome": "failed", "class": "unconfirmed_rejection",
+                                  "why": result["tried"][0]["why"]}
+
+
+def test_invalid_prompt_corroborated_by_policy_wording_is_a_terminal_refusal():
+    witness = Witness()
+    router = models.ModelRouter([models.OpenAIRoute("sk-test", model="gpt-x", price=(2.0, 12.0),
+                                                    client=openai_client(400, FLAGGED)), witness])
+    with pytest.raises(models.Refusal) as info:
+        router.complete("sys", "user")
+    assert info.value.kind == models.PROVIDER_POLICY_REFUSAL and witness.calls == 0
+
+
+@pytest.mark.parametrize("code", sorted(models.POLICY_CODES))
+def test_a_structured_policy_code_alone_is_a_terminal_refusal(code):
+    witness = Witness()
+    body = {"error": {"message": "Request rejected.", "type": "invalid_request_error", "code": code}}
+    router = models.ModelRouter([models.OpenAIRoute("sk-test", model="gpt-x", price=(2.0, 12.0),
+                                                    client=openai_client(400, body)), witness])
+    with pytest.raises(models.Refusal):
+        router.complete("sys", "user")
+    assert witness.calls == 0
+
+
+# -- prices are configuration, not constants ------------------------------------------------------
+
+class Recorder:
+    def __init__(self):
+        self.calls = []
+        self.beta = NS(messages=NS(create=self._create))
+
+    def _create(self, **kw):
+        self.calls.append(kw)
+        return NS(stop_reason="end_turn", model="claude-opus-5-20260901", content=[NS(type="text", text="ok")],
+                  usage=NS(input_tokens=1000, output_tokens=1000))
+
+
+def test_a_configured_anthropic_price_supersedes_the_built_in_snapshot_without_a_code_change(monkeypatch):
+    stale = models.AnthropicRoute("k", model="claude-opus-5", client=Recorder())
+    assert stale.price == models.ANTHROPIC_PRICES["claude-opus-5"]
+    client = Recorder()
+    real = models.AnthropicRoute
+    monkeypatch.setattr(models, "AnthropicRoute", lambda key, **kw: real(key, client=client, **kw))  # no SDK needed
+    routes, _ = models.available_routes(
+        NS(resolve=lambda name, declared: "k"),
+        config={"order": ["anthropic"], "anthropic_model": "claude-opus-5", "anthropic_price_per_mtok": [10.0, 50.0]})
+    route = routes[0]
+    assert route.price == (10.0, 50.0)
+    result = route.complete("s", "u", budget_usd=0.2)
+    assert result["cost_usd"] == pytest.approx((1000 * 10.0 + 1000 * 50.0) / 1e6)
+    assert client.calls[0]["max_tokens"] * 50.0 / 1e6 <= 0.2          # the bound uses the configured price
+    assert result["served_model"] == "claude-opus-5-20260901"       # provenance is untouched
+
+
+@pytest.mark.parametrize("bad", [[-1, 5], ["x", 1], [0, 0], [1], "free", [float("nan"), 1]])
+def test_a_malformed_configured_price_fails_conservatively_instead_of_using_a_stale_one(bad):
+    route = models.AnthropicRoute("k", model="claude-opus-5", price=bad, client=Recorder())
+    assert route.price is None
+    with pytest.raises(models.Unbounded):
+        route.complete("s", "u", budget_usd=1.0)                    # no invented bound when money is at stake

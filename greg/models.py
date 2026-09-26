@@ -11,8 +11,11 @@ What routing never does:
 * **Shop a refusal.** A model that declines is an answer, not an outage. The router
   stops there; it does not re-ask another vendor to get around a safety decision. The
   same holds when the *provider's* policy filter rejects the request before the model
-  answers (OpenAI returns this as HTTP 400 ``invalid_prompt``): that is a policy verdict
-  that looks like a validation error, so it is classified and treated as a refusal.
+  answers with affirmative policy evidence: a documented policy code
+  (``content_policy_violation``, ``moderation_blocked``, ``cyber_policy`` ...) or unmistakable
+  policy wording. A bare ``invalid_prompt`` is NOT such evidence (OpenAI's status history
+  records an outage seen as elevated ``invalid_prompt`` errors): it is recorded as
+  ``unconfirmed_rejection`` and another route may legitimately try.
   Fallback may improve availability; it is never a way around a policy decision.
 * **Spend without a bound.** For spending contexts (Capability Genesis builds) each
   API route computes the largest output it may generate so that its worst-case cost
@@ -39,12 +42,16 @@ AUTH = "auth"                                        # 401/403: this route's cre
 UNAVAILABLE = "capability_unavailable"               # 404: model or endpoint absent; CLI not installed
 INVALID_REQUEST = "invalid_request"                  # other 400/413/422: this route cannot take this request
 BAD_OUTPUT = "bad_output"                            # empty or unreadable answer
+UNCONFIRMED_REJECTION = "unconfirmed_rejection"         # a code that may mean policy OR a provider fault
 UNKNOWN = "unknown"
 REFUSAL_CLASSES = (SAFETY_REFUSAL, PROVIDER_POLICY_REFUSAL)
-POLICY_CODES = {"invalid_prompt", "content_policy_violation", "content_filter", "moderation_blocked",
+# Two separate questions: what happened (the class), and may another route try (only refusals say no).
+# A refusal needs affirmative policy evidence: one of these structured codes, or unmistakable wording.
+POLICY_CODES = {"content_policy_violation", "content_filter", "moderation_blocked", "cyber_policy",
                 "responsible_ai_policy_violation"}
-# Documented: OpenAI's 400 invalid_prompt text; Azure OpenAI's content_filter / content management policy.
-# Generic: other providers' policy rejections are recognised by wording, since each reports them differently.
+# Codes that do not by themselves prove a policy decision: terminal only together with policy wording.
+AMBIGUOUS_CODES = {"invalid_prompt"}
+# Wording: OpenAI's flagged-prompt message; Azure OpenAI's content filter / content management policy.
 POLICY_PHRASES = ("usage policy", "usage policies", "content policy", "content management policy",
                   "content filter", "safety system", "flagged as potentially violating")
 
@@ -84,6 +91,8 @@ def classify(exc: BaseException) -> str:
     code = _error_code(exc)
     if status in (400, 403, 422) and (code in POLICY_CODES or is_policy_text(str(exc))):
         return PROVIDER_POLICY_REFUSAL
+    if status in (400, 403, 422) and code in AMBIGUOUS_CODES:
+        return UNCONFIRMED_REJECTION
     if isinstance(exc, (TimeoutError, ConnectionError)) or type(exc).__name__ in (
             "APIConnectionError", "APITimeoutError") or status in (408, 409, 429) or (status or 0) >= 500:
         return TRANSIENT
@@ -113,6 +122,16 @@ class Unbounded(RouteError):
 ANTHROPIC_PRICES = {"claude-opus-5": (5.0, 25.0), "claude-opus-5-5": (4.0, 20.0), "claude-sonnet-5": (2.0, 10.0),
                     "claude-fable-5-1": (10.0, 50.0), "claude-haiku-4-5": (1.0, 5.0)}
 MAX_OUTPUT_TOKENS = 16000
+
+
+def _price(value):
+    """(input, output) USD per million tokens, both finite and positive; anything else is 'no price'."""
+    try:
+        price_in, price_out = (float(v) for v in value)
+    except (TypeError, ValueError):
+        return None
+    ok = all(0 < v < 10_000 for v in (price_in, price_out))
+    return (price_in, price_out) if ok else None
 MIN_OUTPUT_TOKENS = 1024
 
 
@@ -138,9 +157,12 @@ class AnthropicRoute:
     """Claude via the official Anthropic SDK (optional dependency ``anthropic``)."""
     provider = "anthropic"
 
-    def __init__(self, api_key: str, *, model: str = "claude-opus-5", client=None):
+    def __init__(self, api_key: str, *, model: str = "claude-opus-5", price=None, client=None):
         self.model, self.name = model, f"anthropic:{model}"
-        self.price = ANTHROPIC_PRICES.get(model)
+        # Prices are operational evidence, not constants: a configured price supersedes the built-in
+        # snapshot without a code change. A malformed configured price is not silently replaced by the
+        # (possibly stale) snapshot: the route has no price, so a spending context skips it (Unbounded).
+        self.price = _price(price) if price is not None else ANTHROPIC_PRICES.get(model)
         if client is None:
             import anthropic
             client = anthropic.Anthropic(api_key=api_key, base_url="https://api.anthropic.com", max_retries=2)
@@ -173,7 +195,7 @@ class OpenAIRoute:
     provider = "openai"
 
     def __init__(self, api_key: str, *, model: str = "gpt-5.5", price=None, client=None):
-        self.model, self.name, self.price = model, f"openai:{model}", tuple(price) if price else None
+        self.model, self.name, self.price = model, f"openai:{model}", _price(price)
         if client is None:
             from openai import OpenAI
             client = OpenAI(api_key=api_key, base_url="https://api.openai.com/v1", max_retries=2)
@@ -327,7 +349,8 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
     config = config or {}
     builders = {
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
-                                            model=config.get("anthropic_model", "claude-opus-5")),
+                                            model=config.get("anthropic_model", "claude-opus-5"),
+                                            price=config.get("anthropic_price_per_mtok")),
         "openai": lambda: OpenAIRoute(secrets.resolve("openai_api_key", declared=("openai_api_key",)),
                                       model=config.get("openai_model", "gpt-5.5"),
                                       price=config.get("openai_price_per_mtok")),

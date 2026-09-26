@@ -1,0 +1,274 @@
+# Evidence binding for the 55-technology Foundry arsenal (foundry/arsenal.py).
+#
+# The arsenal status is read by FoundryComposer: it ranks candidates by status
+# and emits deployment_blocker notes for target technologies. A status is
+# therefore an operational input, not prose. This file binds every status to
+# checkable evidence so the Composer cannot rank on an unsupported claim.
+#
+# Status rules (enforced by tests/unit/test_arsenal_evidence.py):
+#   executable - at least one kernel implementation path AND one kernel test
+#                path, all existing. Means "runs and is tested inside the
+#                kernel for its bounded scope". Never means production,
+#                external verification, or revenue.
+#   partial    - at least one kernel path or organ reference showing a real
+#                fragment of the mechanism. Kernel paths must exist. Organ
+#                references ("REPO:path") are recorded, not verified here.
+#   target     - architecture only. No evidence required; the gap is.
+#
+# Every entry names the residual gap and the commodity mechanisms to adopt
+# before anything is built (resourcefulness ladder, FOUNDER_EFFECT_COMPILER).
+# Audited against uniimente-kernel 04b1b7e, DALEOBANKS e2f1ebe and
+# WealthMachineIntelligence ec82b80 on 2026-09-26.
+
+1:
+  implementation: [compiler/ucl_compiler.py, compiler/ucl_parser.py, evolution/experiment.py]
+  tests: [tests/unit/test_ucl_compiler.py]
+  gap: UCL compiles constitutional policy and experiments; no Business, Organ Charter or Swarm Contract compilers.
+  adopt: [OPA/Rego, Cedar]
+2:
+  implementation: [compiler/ucl_parser.py, constitution/constitution.ucl]
+  tests: [tests/unit/test_ucl_compiler.py]
+  organ_evidence: ["DALEOBANKS:services/thought_dsl.py"]
+  gap: One policy DSL exists; no restricted languages for pricing, budgets or capital rules.
+  adopt: [Cedar, CUE, JSON Schema]
+3:
+  implementation: [evolution/capsule.py, loom/ratify.py]
+  tests: [tests/unit/test_evolution.py, tests/unit/test_loom.py]
+  gap: Git versions source; institutional objects (policies, genomes, charters) have hash-bound ratification but no unified versioned store with diff and rollback.
+  adopt: [git, Dolt]
+4:
+  implementation: [provenance/ledger.py]
+  tests: [tests/unit/test_provenance.py]
+  organ_evidence: ["DALEOBANKS:db/models.py", "WealthMachineIntelligence:src/database"]
+  gap: Kernel state is a single-writer POSIX ledger plus in-memory objects; no shared institutional data model across organs.
+  adopt: [PostgreSQL, SQLite]
+5:
+  implementation: [events/spine.py, events/engine.py]
+  tests: [tests/unit/test_events.py, tests/unit/test_events_engine_activation.py]
+  gap: Replay and idempotency are proven in-process; no production event store or cross-organ replay under load.
+  adopt: [PostgreSQL outbox, EventStoreDB]
+6:
+  implementation: [provenance/proof.py, provenance/ledger.py, provenance/commit_witness.py, greg/anchor.py]
+  tests: [tests/unit/test_proof.py, tests/unit/test_provenance.py, tests/unit/test_greg_anchor.py, tests/unit/test_greg_anchor_witness.py]
+  gap: "GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE; with a witness bundle and TSA root retained outside GREG, `greg anchor verify --witness` detects rewrite, deletion, rollback, substitution or reconstruction within the witnessed prefix. Not covered: the unwitnessed tail, or an attacker who also controls the witness. Not yet run against a public TSA or on a founder body; kernel Merkle checkpoints outside GREG remain self-anchored."
+  adopt: [RFC 3161 timestamp authority, Sigstore Rekor v2, OpenTimestamps]
+7:
+  implementation: [identity/machine_passport.py, identity/service-identities.yaml, greg/founder.py]
+  tests: [tests/unit/test_identity.py, tests/unit/test_greg_founder_and_scope.py]
+  gap: GREG commands are Ed25519-signed by the founder key or a delegated, expiring, revocable device key, with rotation. Inter-organ bridge signing (DALEOBANKS/WMI) is still shared-key HMAC, and there are no certificates.
+  adopt: [SPIFFE/SPIRE, Ed25519 via cryptography, Sigstore]
+8:
+  implementation: [policy/consequence_gate.py, identity/machine_passport.py]
+  tests: [tests/unit/test_consequence_gate.py, tests/authority]
+  gap: Grants are narrow, expiring and budgeted in-process; not enforced at OS, network or credential-broker level.
+  adopt: [short-lived cloud credentials, Vault dynamic secrets]
+9:
+  organ_evidence: ["WealthMachineIntelligence:Dockerfile"]
+  gap: One organ ships a Dockerfile; the kernel and capabilities are not packaged as reproducible containers.
+  adopt: [OCI images, Docker, Podman]
+10:
+  gap: No stronger isolation for generated code or third-party packages.
+  adopt: [Firecracker, gVisor, E2B-style sandboxes]
+11:
+  gap: No portable component packaging.
+  adopt: [WASI component model, Wasmtime]
+12:
+  implementation: [capabilities/genome.py, business/genome.py]
+  tests: [tests/unit/test_capabilities.py]
+  gap: Registry validates envelopes; instantiation is "a bounded check, not a build". No install, migrate, measure or detach.
+  adopt: [OCI registries, Sigstore-signed artifacts]
+13:
+  implementation: [linker/linker.py, linker/manifest.py, foundry/composition.py]
+  tests: [tests/unit/test_foundry_pipeline_v1.py, tests/integration/test_phase_zero_connection.py]
+  gap: Linker resolves edges and Composer emits non-executing plans; nothing attaches a composed system to live capabilities.
+  adopt: [Temporal, Dagger]
+14:
+  gap: No institutional command surface (inspect/propose/simulate/authorize/revoke).
+  adopt: [Typer or Click CLI over existing modules]
+15:
+  implementation: [events/spine.py, loom/weaver.py, loom/canonical.py]
+  tests: [tests/unit/test_events.py, tests/unit/test_loom.py]
+  gap: Durable workflows survive kill-and-resume in-process; no hosted engine with timers, scale-out or operator UI.
+  adopt: [Temporal, Restate, DBOS]
+16:
+  implementation: [.github/workflows/canonical-ci.yml, scripts/ci/check_authority_singleton.py, verifier/v2/verify.py]
+  tests: [tests/unit/test_required_schema_formats.py]
+  gap: CI tests and verifies; no historical-replay, canary or ratified deployment stage.
+  adopt: [GitHub Actions environments, Argo Rollouts]
+17:
+  implementation: [memory/causal.py]
+  tests: [tests/unit/test_memory.py]
+  organ_evidence: ["DALEOBANKS:services/semantic_index.py"]
+  gap: Precedent retrieval by action class over the ledger; no outcome-weighted similarity search over prior decisions.
+  adopt: [pgvector, SQLite FTS5]
+18:
+  implementation: [memory/causal.py, foundry/territory.py]
+  tests: [tests/unit/test_memory.py, tests/unit/test_foundry.py]
+  gap: Causal ancestry and Territory Graphs exist; no unified Repository-to-Capital knowledge graph.
+  adopt: [PostgreSQL recursive CTEs, Neo4j]
+19:
+  implementation: [evolution/experiment.py, evolution/spider_web.py]
+  tests: [tests/unit/test_evolution.py]
+  organ_evidence: ["DALEOBANKS:services/bandit.py"]
+  gap: Decisive-unknown selection and a Thompson-sampling bandit exist; no Next-Best-Test router ranking experiments by information value.
+  adopt: [Thompson sampling, value-of-information scoring]
+20:
+  gap: No deterministic emulators of external providers or incident conditions.
+  adopt: [LocalStack, WireMock, Toxiproxy]
+21:
+  implementation: [twins/twin.py]
+  tests: [tests/unit/test_twins.py]
+  gap: Hermetic institutional forks exist in memory; no persisted state snapshots or branch-and-restore of real stores.
+  adopt: [database snapshots, Dolt branches]
+22:
+  implementation: [twins/tribunal.py, twins/twin.py, foundry/tribunal.py]
+  tests: [tests/unit/test_twins.py, tests/unit/test_advantage_foundry_v1.py]
+  gap: Counterfactual verdicts run over frozen corpora; no calibrated simulation of platform loss, regulation or competitor attack.
+  adopt: [Monte Carlo over recorded outcomes, SimPy]
+23:
+  implementation: [events/spine.py, adapters/bridge_transport.py, events/bridge_state.py]
+  tests: [tests/unit/test_shared_recovery.py, tests/unit/test_shared_durable_boundary.py]
+  gap: Idempotency, replay protection and compensation proven locally; no multi-node deployment.
+  adopt: [PostgreSQL outbox/inbox, Temporal]
+24:
+  implementation: [events/spine.py, adapters/bridge_transport.py]
+  tests: [tests/unit/test_events.py, tests/unit/test_shared_compatibility.py]
+  gap: Typed outbox and signed bridge transport; no broker.
+  adopt: [PostgreSQL LISTEN/NOTIFY, NATS JetStream]
+25:
+  gap: No multi-provider cognitive router; the DALEOBANKS LLM adapter is single-provider.
+  adopt: [LiteLLM, OpenRouter]
+26:
+  implementation: [adapters/bridge_transport.py]
+  tests: [tests/unit/test_shared_recovery.py]
+  gap: Inter-organ messages are authenticated and replay-protected; no network-level segmentation or egress policy.
+  adopt: [Tailscale/WireGuard ACLs, Cloudflare Access]
+27:
+  implementation: [organs/kernel.manifest.yaml, linker/linker.py]
+  tests: [tests/integration/test_phase_zero_connection.py]
+  gap: Organ manifests are static files; no live signed discovery service with health, cost or latency.
+  adopt: [A2A Agent Cards, Consul]
+28:
+  gap: No MCP server or client behind Kernel identity and the Consequence Gate.
+  adopt: [MCP Python SDK]
+29:
+  implementation: [embassy/gate.py]
+  tests: [tests/unit/test_embassy.py]
+  gap: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.
+  adopt: [A2A protocol v1 with signed Agent Cards]
+30:
+  implementation: [policy/consequence_gate.py, policy/engine.py, provenance/commit_witness.py]
+  tests: [tests/unit/test_consequence_gate.py, tests/security]
+  gap: Closes one bounded action family (draft.publish) end to end; no hosted gateway fronting organ side effects.
+  adopt: [Envoy or Kong in front of the Gate]
+31:
+  organ_evidence: ["DALEOBANKS:app.py", "DALEOBANKS:server/index.ts", "WealthMachineIntelligence:src/api/main.py"]
+  gap: Organs run application servers; there is no owned canonical site, customer portal or knowledge hub, and the kernel serves nothing.
+  adopt: [static site on a CDN, FastAPI]
+32:
+  gap: No owned or federated community; DALEOBANKS distributes through rented platforms.
+  adopt: [Discourse, Ghost memberships]
+33:
+  organ_evidence: ["DALEOBANKS:services/mastodon_client.py"]
+  gap: Publishes to ActivityPub through a client; no owned instance, portable identity or follower export.
+  adopt: [self-hosted Mastodon/GoToSocial, AT Protocol PDS]
+34:
+  organ_evidence: ["DALEOBANKS:services/analytics.py"]
+  gap: Content analytics exist; no map of which narrative sequences produce subscribers or customers.
+  adopt: [PostHog, Plausible]
+35:
+  gap: No graphics, audio, video or game production pipeline.
+  adopt: [FFmpeg, Remotion, Godot]
+36:
+  implementation: [loom/pattern.py, provenance/ledger.py]
+  tests: [tests/unit/test_loom.py, tests/unit/test_provenance.py]
+  gap: Patterns and records are hash-bound; artifacts are not stored or fetched by content address.
+  adopt: [OCI content store, IPFS/Kubo, restic]
+37:
+  gap: No independent supply or demand; a marketplace would be premature.
+  adopt: [Stripe Connect when real supply exists]
+38:
+  implementation: [business/commercial_loop.py, foundry/outcome_bridge.py]
+  tests: [tests/unit/test_business.py, tests/unit/test_outcome_bridge_v1.py]
+  organ_evidence: ["DALEOBANKS:tests/test_revenue.py"]
+  gap: Payment records are modeled and reconciled; no live processor integration.
+  adopt: [Stripe, x402 for machine buyers]
+39:
+  implementation: [capital/treasury.py]
+  tests: [tests/unit/test_treasury.py]
+  gap: Balanced postings inside the Treasury only; no general ledger, chart of accounts or bank reconciliation.
+  adopt: [Beancount, TigerBeetle, accounting SaaS API]
+40:
+  gap: No incentive or market-rule mechanisms are implemented.
+  adopt: [published auction and scoring-rule designs]
+41:
+  gap: No outcome-based reputation records.
+  adopt: [signed outcome receipts aggregated per provider]
+42:
+  implementation: [twins/twin.py]
+  tests: [tests/unit/test_twins.py]
+  gap: Twins rehearse amendments; no live shadow model continuously compared with operations.
+  adopt: [shadow-mode replay of the event spine]
+43:
+  implementation: [evolution/capsule.py, policy/engine.py]
+  tests: [tests/unit/test_evolution.py, tests/constitutional]
+  gap: Deterministic invariant checks; no model checking or property-based state exploration.
+  adopt: [Hypothesis stateful testing, TLA+]
+44:
+  implementation: [closure/whole_body.py]
+  tests: [tests/unit/test_whole_body.py]
+  organ_evidence: ["DALEOBANKS:services/observability.py"]
+  gap: Open-loop detection and organ-local telemetry; no correlated traces, cost or outcome metrics.
+  adopt: [OpenTelemetry, Grafana stack]
+45:
+  implementation: [egregore/drift.py, policy/consequence_gate.py]
+  tests: [tests/unit/test_egregore_runtime.py, tests/security]
+  gap: Gate refusals and drift telemetry exist; no correlation, alerting or incident-to-defense loop.
+  adopt: [Wazuh, Falco]
+46:
+  gap: No Institutional Seed, tested restore, or off-provider backup.
+  adopt: [restic, Litestream, git mirrors]
+47:
+  implementation: [business/genome.py, foundry/intake.py]
+  tests: [tests/unit/test_business.py, tests/unit/test_foundry_intake_v1.py]
+  gap: Business Genomes validate; no compiler from validated evidence to offer, workflow and pricing.
+  adopt: [existing Loom and UCL compilers]
+48:
+  implementation: [omnimorph/engine.py]
+  tests: [tests/unit/test_omnimorph_v1.py]
+  gap: Temporary organ manifests are simulated; no live agents run under them.
+  adopt: [Claude Agent SDK subagents under grants]
+49:
+  implementation: [foundry/company.py, foundry/distribution.py]
+  tests: [tests/unit/test_foundry.py]
+  organ_evidence: ["DALEOBANKS:services/x_client.py", "DALEOBANKS:persona.json"]
+  gap: Charter and distribution loop are modeled; no products, community or finance attached to a persona.
+  adopt: [existing DALEOBANKS persona and clients]
+50:
+  implementation: [foundry/territory.py]
+  tests: [tests/unit/test_foundry.py]
+  gap: Territory Graphs validate; no audience journey measured through them.
+  adopt: [PostHog funnels]
+51:
+  implementation: [.github/pull_request_template.md, .github/workflows/canonical-ci.yml]
+  tests: [tests/unit/test_founder_effect_doctrine.py]
+  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against frozen contracts.
+  adopt: [Claude Code, Claude Agent SDK]
+52:
+  implementation: [evolution/repair/harness.py, evolution/repair/detector.py, evolution/failure_analysis.py]
+  tests: [tests/unit/test_repair_harness.py, tests/unit/test_repair_candidates.py]
+  gap: Candidate repairs are compared over a fixed candidate set; no generated patches.
+  adopt: [coding agents generating candidates into the repair harness]
+53:
+  implementation: [compiler/ucl_compiler.py, contracts/__init__.py, provenance/proof.py]
+  tests: [tests/unit/test_ucl_compiler.py, tests/unit/test_proof.py]
+  gap: Policy compiler, schemas and proof system are owned; registries and deploy tooling are not.
+  adopt: [own only the control plane; rent commodity runtime]
+54:
+  gap: No machine-readable offers or agent payments.
+  adopt: [x402, A2A Agent Cards, MCP]
+55:
+  implementation: [capital/treasury.py, capital/allocation-policy.yaml]
+  tests: [tests/unit/test_treasury.py]
+  gap: The waterfall runs in memory against modeled surplus; no real revenue has entered it.
+  adopt: [bank and processor APIs feeding the Treasury]

@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import compute, dataplane, metrics, sop, tribunal
+from greg import anchor, compute, dataplane, metrics, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -304,6 +304,11 @@ class Body:
             self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
                                                    "at": iso(self.clock())}, key=[kid, digest])
             return {"device_key_id": kid, "revoked": True}
+        if kind == "ANCHOR_CONFIGURE":
+            try:
+                return anchor.configure(self.journal, body, digest)
+            except anchor.AnchorError as exc:
+                raise MissionError(str(exc)) from None
         if kind == "ROTATE_FOUNDER_KEY":
             new_hex = body["new_public_key"]
             old = next(iter(self.enrolled_keys()))
@@ -372,7 +377,8 @@ class Body:
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
         sop.propose(self.journal)
-        return {"commands": commands, "missions": summary}
+        anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
+        return {"commands": commands, "missions": summary, "anchor": anchored}
 
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
@@ -544,6 +550,7 @@ def status(home: str | Path) -> dict:
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
+            "external_anchor": anchor.summary(journal),
         }
     finally:
         ledger.close()

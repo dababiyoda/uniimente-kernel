@@ -3,4 +3,5 @@ pytest>=8.0
 jsonschema>=4.20
 rfc3339-validator==0.1.4
 cryptography>=41
+rfc3161-client>=1.0,<2
 supervisor>=4.2

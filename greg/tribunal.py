@@ -16,6 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
+from greg import anchor
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -96,6 +97,7 @@ def morning_report(journal: Journal, engine=None) -> dict:
                           + by("command.rejected"),
         "q7_surprises": surprises,
         "q8_evidence": {"ledger_head": journal.ledger.head, "chain_verified": ok, "chain": chain,
+                        "external_anchor": anchor.summary(journal),
                         "receipts": [a["receipt"] for a in done if a.get("receipt")]},
         "q9_learned": {"capabilities_acquired": by("deficit.resolved"), "sops_proposed": by("sop.proposed"),
                        "critiques_applied": [c["critique_id"] for c in critiques]},

@@ -3,6 +3,10 @@
 The registry is descriptive and selection-oriented. An entry never claims
 production completeness. Status is explicit so the Composer cannot confuse
 target architecture with executable capability.
+
+Every status is bound to checkable evidence in ``arsenal-evidence.yaml`` and
+enforced by ``tests/unit/test_arsenal_evidence.py``; see
+``docs/ASYMMETRIC_ADVANTAGE_ARSENAL.md``.
 """
 from __future__ import annotations
 
@@ -68,7 +72,7 @@ _ENTRIES = (
     _t(17, "Causal search engines", "intelligence", "partial", ("search", "memory"), (4, 5)),
     _t(18, "Knowledge graphs", "intelligence", "partial", ("knowledge", "eligibility", "reputation"), (4,)),
     _t(19, "Recommender systems", "intelligence", "partial", ("routing", "distribution", "validation"), (17,)),
-    _t(20, "Emulators", "simulation", "partial", ("simulation", "resilience")),
+    _t(20, "Emulators", "simulation", "target", ("simulation", "resilience")),
     _t(21, "Virtual machines and snapshots", "simulation", "partial", ("simulation", "resilience"), (20,)),
     _t(22, "Simulation engines", "simulation", "executable", ("simulation", "strategy"), (20, 21)),
     _t(23, "Distributed-systems controls", "coordination", "partial", ("coordination", "workflow", "resilience"), (5,)),
@@ -79,16 +83,16 @@ _ENTRIES = (
     _t(28, "MCP integration", "coordination", "target", ("tools", "composition"), (8, 27)),
     _t(29, "Agent-to-agent protocols", "coordination", "partial", ("agents", "composition"), (8, 26, 27)),
     _t(30, "API gateway and Consequence Gate", "authority", "executable", ("authority", "proof", "settlement"), (5, 6, 8), "external_contact"),
-    _t(31, "Web servers", "distribution", "executable", ("distribution", "customer"), (), "external_contact"),
-    _t(32, "Owned social networks", "distribution", "partial", ("distribution", "community"), (31,), "external_contact"),
-    _t(33, "Federated protocols", "distribution", "target", ("distribution", "resilience"), (31,), "external_contact"),
+    _t(31, "Web servers", "distribution", "partial", ("distribution", "customer"), (), "external_contact"),
+    _t(32, "Owned social networks", "distribution", "target", ("distribution", "community"), (31,), "external_contact"),
+    _t(33, "Federated protocols", "distribution", "partial", ("distribution", "resilience"), (31,), "external_contact"),
     _t(34, "Recommendation-graph observability", "distribution", "target", ("distribution", "measurement"), (19, 44)),
     _t(35, "Graphics, audio, video, and game engines", "media", "target", ("media", "distribution"), (31,), "external_contact"),
     _t(36, "Content-addressed storage", "trust", "partial", ("proof", "media", "resilience"), (6,)),
     _t(37, "Marketplace systems", "commerce", "target", ("marketplace", "coordination", "settlement"), (18, 23, 38), "financial"),
     _t(38, "Payment systems", "commerce", "partial", ("payment", "settlement"), (30,), "financial"),
     _t(39, "Double-entry accounting", "commerce", "partial", ("capital", "settlement", "measurement"), (38,), "financial"),
-    _t(40, "Game theory and mechanism design", "market-design", "partial", ("incentives", "marketplace", "reputation"), (18,)),
+    _t(40, "Game theory and mechanism design", "market-design", "target", ("incentives", "marketplace", "reputation"), (18,)),
     _t(41, "Reputation systems", "market-design", "target", ("reputation", "routing", "eligibility"), (5, 18, 40)),
     _t(42, "Digital twins", "simulation", "partial", ("simulation", "measurement"), (5, 22)),
     _t(43, "Formal methods", "assurance", "partial", ("governance", "security", "proof"), (1, 2)),

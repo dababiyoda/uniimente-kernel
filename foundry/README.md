@@ -47,6 +47,10 @@ Likewise, biological metaphors are mechanism mines. A useful mechanism may be re
 
 The strongest route may be boring. A mature external tool that closes the target effect can correctly beat an elegant internally invented subsystem.
 
+## Arsenal evidence
+
+Every arsenal status is bound to checkable evidence in `arsenal-evidence.yaml` and audited by `python -m foundry.arsenal_evidence` (enforced in `tests/unit/test_arsenal_evidence.py`). The doctrine, current reality and generated status table live in `docs/ASYMMETRIC_ADVANTAGE_ARSENAL.md`.
+
 ## Buildability contract
 
 - **Existing mechanism:** Phase Zero adapters, Territory Graph, technology/capability registry, Capability Genome Registry, hash-bound Ratifier, Spider-Web Tribunal, Consequence Gate, Evidence Ledger, Business Foundry, and Whole-Body Closure Controller.

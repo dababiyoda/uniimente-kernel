@@ -25,9 +25,10 @@ from pathlib import Path
 import sys
 
 from greg import service
-from greg.body import Body, BodyError, Layout, init_body, status
+from greg.body import Body, BodyError, Layout, init_body, morning_projection, observe, status
 from greg.founder import generate_founder_key, load_founder_key, sign_command
 from greg.tribunal import mark_reviewed, morning_report
+from provenance.ledger import WriterConflict
 
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
@@ -138,17 +139,9 @@ def main(argv=None) -> int:
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
         elif args.cmd in ("vepmc", "routing"):
-            from events.spine import EventSpine
             from greg import metrics, routing
-            from greg.journal import Journal
-            from provenance.ledger import EvidenceLedger
-            config = json.loads(Layout(home).config.read_text())
-            ledger = EvidenceLedger(config["constitution_hash"], str(Layout(home).ledger), read_only=True)
-            try:
-                journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/cli-reader")
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
-            finally:
-                ledger.close()
             print(json.dumps(data, indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
@@ -179,10 +172,16 @@ def main(argv=None) -> int:
         elif args.cmd == "decisions":
             print(json.dumps(status(home)["decisions_required"], indent=1))
         elif args.cmd == "morning":
-            with Body(home) as body:
-                report = morning_report(body.journal, body.engine)
-                if args.mark_reviewed:
-                    mark_reviewed(body.journal, report)
+            if args.mark_reviewed:  # advancing the review window writes history: the body must be stopped
+                try:
+                    with Body(home) as body:
+                        report = morning_report(body.journal, body.engine)
+                        mark_reviewed(body.journal, report)
+                except WriterConflict:
+                    raise BodyError("the body is running and owns the ledger; read the report without "
+                                    "--mark-reviewed, or accept/critique the closure (signed) instead")
+            else:
+                report = morning_projection(home)
             print(json.dumps(report, indent=1, default=str))
         elif args.cmd == "run":
             if args.clear_stop:

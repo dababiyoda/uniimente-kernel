@@ -295,11 +295,16 @@ class MissionEngine:
         self.book.rebuild()
 
     # -- the loop ---------------------------------------------------------------
-    def tick(self, now: datetime) -> list[dict]:
+    def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
+        """One turn per mission. ``should_stop`` is consulted before every mission step:
+        a stop that arrives mid-tick admits no further dispatch (from #112)."""
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
         for m in order:
+            if should_stop is not None and should_stop():
+                summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
+                continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
 

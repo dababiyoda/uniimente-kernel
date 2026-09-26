@@ -50,7 +50,7 @@ def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
 
 def appraise(request: dict) -> dict:
     ledger = EvidenceLedger(request["constitution"], request["ledger"], read_only=True,
-                            expected_head=request["head"])
+                            expected_head=request["head"], tail="ignore")
     findings, checks = [], {}
     try:
         ok, why = ledger.verify_chain()

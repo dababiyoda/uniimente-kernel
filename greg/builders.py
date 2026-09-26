@@ -260,6 +260,7 @@ class ModelBuilder:
             raise BuildError(f"no model route produced a candidate: {exc}"[:300] + (f" (spent ${spent:.4f})"
                                                                                   if spent else "")) from exc
         return {"source": extract_source(result["text"]), "builder": "model:" + result["route"],
+                "served_model": result.get("served_model"),
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
                 "cost_usd": result.get("cost_usd"), "routes_tried": result.get("tried", [])}
 

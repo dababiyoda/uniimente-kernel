@@ -90,3 +90,33 @@ The burden of proof is:
 > Why does this mechanism improve the founder's intended observable effect better than the strongest simpler route?
 
 If it does not, preserve the idea as research and use the simpler route.
+
+## Spider-Web Compounding Rule
+
+Founder directive of 2026-09-25, recorded as `INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (verbatim source: `intent/sources/SPIDER-WEB-2026-09-25-source.md`).
+
+Governing transaction: Alfonso expresses an authorized intention → GREG converts it into a verified real-world outcome → evidence and capability gained from that outcome make the next intention easier to execute.
+
+> Do not optimize UNIIMENTE for the number of subsystems, tools, organs, agents, integrations, or repositories it contains.
+>
+> Optimize for the strength of the recurring founder-intent-to-verified-outcome transaction.
+>
+> Every capability retained, extracted, recombined, acquired, or built must materially improve at least one of:
+>
+> 1. eligibility / authority;
+> 2. routing / coordination;
+> 3. proof / truth;
+> 4. outcome / settlement;
+> 5. reliability / recovery;
+> 6. capability formation;
+> 7. economic or computational compounding.
+>
+> Prefer capabilities that reinforce multiple other capabilities.
+>
+> Repeated successful mission execution must create proprietary institutional knowledge that improves future eligibility, routing, verification, execution, recovery, or resource allocation.
+>
+> The desired end state is not a warehouse of tools. It is an increasingly non-fragile web of interoperable capabilities whose combined behavior allows GREG to complete larger classes of founder-authorized missions with less intervention, lower cost, greater reliability, and stronger evidence.
+>
+> A capability that adds complexity without strengthening this web must be reconfigured, archived, or killed.
+
+The rule is enforced in code: `greg.capabilities.CapabilityRegistry.register` refuses a capability that declares none of these control points, and `greg/routing.py` turns receipts and independent appraisals into the next mission's routing. "Archived or killed" applies to executable complexity; history and evidence stay preserved as the Final Build Order requires. Termination trigger: a workstream that cannot materially advance the first Verified Embodied Persistent Mission Closure (VEPMC 0 → 1) or strengthen a reusable control node stops and is metabolized. Current dispositions are proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json` for founder review.

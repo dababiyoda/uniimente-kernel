@@ -1,5 +1,9 @@
 # Founder Intent Ledger
 
+## Spider-Web compounding rule — 2026-09-25
+
+`INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (`intent/INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING.json`, verbatim source in `intent/sources/SPIDER-WEB-2026-09-25-source.md`) makes the founder-intent → verified-outcome transaction the optimization target. Every capability must strengthen at least one of seven control points (eligibility, routing, proof, settlement, reliability, capability formation, compounding), and repeated missions must yield institutional knowledge that improves the next one. Clause inserted in `CANONICAL_EXECUTION_ORDER.md`; enforced by `greg/capabilities.py` registration and `greg/routing.py`; repository dispositions proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json`. State: active; bottleneck VEPMC remains 0 until a Mac run with Alfonso's own key.
+
 ## Egregore ecology on the first body — 2026-09-25
 
 `INTENT-2026-09-25-EGREGORE-ECOLOGY` (`intent/INTENT-2026-09-25-EGREGORE-ECOLOGY.json`, verbatim source in `intent/sources/EGREGORE-2026-09-25-source.md`) extends the 09-11 and 09-22 records: one persistent GREG mind over an ecology of governed intelligences (Levin's multiscale competency, compiled to nested light cones), community-coupled through the untrusted data plane, continuity without a survival right, shutdown always winning, and built as real running mechanisms. Implementation and two-pass decision: `collaboration/GREG-BODY-DECISION-2026-09-25.md` and `greg/`. State: active; reality: integration-tested, not Mac-verified, not founder-used.

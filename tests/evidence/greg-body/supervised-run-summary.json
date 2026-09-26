@@ -1,31 +1,31 @@
 {
  "boots": [
   {
-   "boot_id": "boot-73c4fc0f84887d12",
-   "pid": 3296,
-   "at": "2026-09-25T19:46:26.048169Z",
+   "boot_id": "boot-5849970672da3518",
+   "pid": 1829,
+   "at": "2026-09-26T00:54:11.464649Z",
    "version": "greg-body/0.1.0",
-   "body_id": "body-9a08862f517c0e57",
+   "body_id": "body-608f00b1ad26dc96",
    "boot_number": 1,
    "platform": "Linux",
-   "ledger_head_at_boot": "sha256:1033f2f6930463d772790a3a6226318b271c1508bedabb0917980d39dc785a4e"
+   "ledger_head_at_boot": "sha256:896b75fdbdd6dfa161c278daa64d843cbefc766df3ee7b251e0704b005486170"
   },
   {
-   "boot_id": "boot-6102f7c6a27679ec",
-   "pid": 3298,
-   "at": "2026-09-25T19:46:27.614995Z",
+   "boot_id": "boot-7796718396dc5141",
+   "pid": 1832,
+   "at": "2026-09-26T00:54:13.219042Z",
    "version": "greg-body/0.1.0",
-   "body_id": "body-9a08862f517c0e57",
+   "body_id": "body-608f00b1ad26dc96",
    "boot_number": 2,
    "platform": "Linux",
-   "ledger_head_at_boot": "sha256:6c13f1be8b5e638dd81440a6122c2a424c1545b22d183b7edb84accf79b0f9df"
+   "ledger_head_at_boot": "sha256:0327d21d2181ef77a4611c7cb6a7acac2c58290056380b9f5eddfca0ff4ad44a"
   }
  ],
  "recovered": [
   {
-   "boot_id": "boot-6102f7c6a27679ec",
+   "boot_id": "boot-7796718396dc5141",
    "previous_unfinished_boots": [
-    "boot-73c4fc0f84887d12"
+    "boot-5849970672da3518"
    ],
    "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
   }
@@ -49,7 +49,7 @@
     "cost_usd": 0.0
    },
    "consequence_of_no_response": "the mission waits; no action is taken",
-   "created_at": "2026-09-25T19:46:26.353028Z",
+   "created_at": "2026-09-26T00:54:11.801765Z",
    "reality_status": "RECORDED_LOCAL_MESSAGE"
   }
  ],
@@ -60,26 +60,32 @@
    "attempt": 0,
    "status": "DONE",
    "reasons": [],
-   "receipt": "sha256:b6d8ed5d658fb495050f442c8e0af5d4c7e03fde392a354d3c4380cea314ce35",
+   "receipt": "sha256:8f124ece8cdc655949078a62c2fc166313806d0cbd3be6edf3dd8cb40d7d1d2f",
    "capability": "fs.write",
    "route": "api",
    "cost_usd": 0.0,
    "scope_digest": "sha256:7f7f0d436963aaf5577d92b365b416550e66151c2468ea5967478b4f196127a8",
-   "at": "2026-09-25T19:46:29.341137Z"
+   "routing": {
+    "chosen": "write-report",
+    "expected_value": 0.5,
+    "reliability": 0.5,
+    "alternatives": []
+   },
+   "at": "2026-09-26T00:54:15.263659Z"
   }
  ],
  "achieved": [
   {
    "mission_id": "m:overnight-report",
    "evidence": [
-    "sha256:e7249b3d1cfe98dd754fd17d380bcb889119fefbd02abaf4bce65fe7becd5d52"
+    "sha256:7140cbbd8f2b094daf03b5aad07214200d41c6f1f90973ef235f07df5558be0d"
    ],
    "actions_done": 1,
    "closure_rule": "every success check re-observed passing through the Gate",
    "founder_authenticated_mission": true,
-   "at": "2026-09-25T19:46:29.715737Z"
+   "at": "2026-09-26T00:54:15.665892Z"
   }
  ],
- "supervisor_status": "greg-body                        EXITED    Sep 25 07:46 PM",
+ "supervisor_status": "greg-body                        EXITED    Sep 26 12:54 AM",
  "founder_key": "per-test Ed25519 key; NOT Alfonso"
 }

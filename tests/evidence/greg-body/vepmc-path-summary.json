@@ -1,0 +1,108 @@
+{
+ "vepmc": {
+  "VEPMC": 0,
+  "missions": [
+   {
+    "mission_id": "m:first-note",
+    "closure_event_id": "c4a111ec-d2ce-5861-a8f2-2f236e0d38f5",
+    "founder_signed": true,
+    "interface_detached": true,
+    "persistent_runtime": true,
+    "real_capability": true,
+    "approval_boundary": true,
+    "interruption_survived": true,
+    "appraised_verified": true,
+    "founder_accepted": true,
+    "mac_body": false,
+    "counts": false,
+    "missing": [
+     "mac_body"
+    ]
+   }
+  ],
+  "conditions": [
+   "founder_signed",
+   "interface_detached",
+   "persistent_runtime",
+   "real_capability",
+   "approval_boundary",
+   "interruption_survived",
+   "appraised_verified",
+   "founder_accepted",
+   "mac_body"
+  ]
+ },
+ "appraisal": {
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+   "achieved_claimed": true,
+   "approval_boundaries_honored": true,
+   "approval_boundary_encountered": true,
+   "arrived_via_inbox": true,
+   "chain_intact": true,
+   "checks_rederived_from_receipts": true,
+   "exactly_once": true,
+   "founder_signature_verified": true,
+   "registered_once": true,
+   "world_reobserved": true
+  },
+  "findings": [],
+  "head": "sha256:4c15595536ddfd8245247e8b9f96257d567d2d1cf89851a0cf88c9f4d3d3b0e6",
+  "limits": "shares reviewed Kernel code; not an independent implementation",
+  "mission_id": "m:first-note",
+  "verdict": "VERIFIED"
+ },
+ "decision": {
+  "request_id": "req-03e4df3b7a993d740a3b65e9",
+  "mission_id": "m:first-note",
+  "kind": "APPROVAL",
+  "action_id": "write-note",
+  "scope_digest": "sha256:ea65bd0d88e3ed02a691e146d284b226aecc8665c0be3ad099cdf515c1968058",
+  "why_now": "capability 'fs.write' outside scope; internal_write exceeds scope ceiling read_only",
+  "recommendation": "approve write-note (fs.write on workspace:note.txt) at $0.0: write the note (outside the read-only cone: asks Alfonso first)",
+  "alternatives": [
+   "reject: the mission will try alternatives or ask again"
+  ],
+  "authority_requested": {
+   "capability": "fs.write",
+   "target": "workspace:note.txt",
+   "consequence_class": "internal_write",
+   "cost_usd": 0.0
+  },
+  "consequence_of_no_response": "the mission waits; no action is taken",
+  "created_at": "2026-09-26T01:05:51.820291Z",
+  "reality_status": "RECORDED_LOCAL_MESSAGE"
+ },
+ "recovered": [
+  {
+   "boot_id": "boot-f265069586d9a2bb",
+   "previous_unfinished_boots": [
+    "boot-e06b6e158301e961"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  }
+ ],
+ "actions": [
+  {
+   "mission_id": "m:first-note",
+   "action_id": "write-note",
+   "attempt": 0,
+   "status": "DONE",
+   "reasons": [],
+   "receipt": "sha256:3e0f0c83b18b46ecbd2a0d5223bc41509486a1588bc0bba482e796ec776b54e1",
+   "capability": "fs.write",
+   "route": "api",
+   "cost_usd": 0.0,
+   "scope_digest": "sha256:ea65bd0d88e3ed02a691e146d284b226aecc8665c0be3ad099cdf515c1968058",
+   "routing": {
+    "chosen": "write-note",
+    "expected_value": 0.5,
+    "reliability": 0.5,
+    "alternatives": []
+   },
+   "at": "2026-09-26T01:05:53.664895Z"
+  }
+ ],
+ "founder_key": "per-test Ed25519 key; NOT Alfonso",
+ "platform": "Linux"
+}

@@ -1,0 +1,79 @@
+{
+  "intent_id": "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING",
+  "title": "Optimize for the strength of the founder-intent -> verified-outcome transaction, not the number of subsystems",
+  "statement": "Do not optimize UNIIMENTE for the number of subsystems, tools, organs, agents, integrations, or repositories it contains. Optimize for the strength of the recurring founder-intent-to-verified-outcome transaction. Every capability retained, extracted, recombined, acquired, or built must materially improve at least one of: eligibility / authority; routing / coordination; proof / truth; outcome / settlement; reliability / recovery; capability formation; economic or computational compounding. Prefer capabilities that reinforce multiple other capabilities. Repeated successful mission execution must create proprietary institutional knowledge that improves future eligibility, routing, verification, execution, recovery, or resource allocation. A capability that adds complexity without strengthening this web must be reconfigured, archived, or killed.",
+  "governing_transaction": "Alfonso expresses an authorized intention -> GREG converts it into a verified real-world outcome -> evidence and capability gained from that outcome make the next intention easier to execute.",
+  "source": "Direct founder message, current session, 2026-09-25 (Spider-Web Hegemony application + REPOSITORY ALCHEMY BUILD DIRECTIVE)",
+  "source_location": "docs/intent/sources/SPIDER-WEB-2026-09-25-source.md (verbatim)",
+  "source_date_or_version": "2026-09-25",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "architectural",
+  "interpretation": {
+    "effect_not_metaphor": "INTENT-0030 still binds. 'Spider web', 'hegemony', 'organism' and 'metabolism' are read as a selection rule over real capabilities, not as a new framework to build.",
+    "super_nodes": "The four structural control points (Eligibility, Default Routing, Proof/Truth, Settlement/Outcome) plus the rule's reliability, capability-formation and compounding items are the seven values of greg.capabilities.SUPER_NODES. evolution/spider_web.py keeps its older four-node strategy vocabulary; greg.capabilities.STRATEGY_SUPER_NODES is the single tested translation.",
+    "repository_metabolism": "Old code, experiments, failures and duplicates are mined for causal mechanisms, classified A-G, and either strengthen the transaction as bounded capabilities connected to GREG, or remain research evidence / archive. Classification never deletes history (Final Build Order section 2).",
+    "compounding": "Institutional knowledge is realized as ledger-derived routing: receipts, ineffective actions and appraiser refutations of the effect change which capability the NEXT mission uses (greg/routing.py). It is not a claim of economic compounding, which has zero evidence.",
+    "termination_trigger": "A workstream that cannot materially advance the first VEPMC closure or strengthen a reusable control node stops and is metabolized, archived or killed. This record does not itself kill any workstream; dispositions in docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json are proposals for founder review."
+  },
+  "intended_outcome": "GREG completes larger classes of founder-authorized missions with less intervention, lower cost, greater reliability and stronger evidence, because each surviving capability is typed to the control points it strengthens and each closure changes future routing.",
+  "affected_systems": [
+    "uniimente-kernel greg/",
+    "uniimente-kernel evolution/spider_web.py",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "every capability registered with GREG"
+  ],
+  "supersedes": [],
+  "superseded_by": [],
+  "extends": [
+    "INTENT-2026-09-25-EGREGORE-ECOLOGY",
+    "INTENT-0030"
+  ],
+  "conflicts": [
+    "Final Build Order 'Preserve everything / register every useful capability' vs 'kill complexity that does not strengthen the web': resolved as preserve history and evidence always; stop EXECUTABLE complexity (inactive, archived, benchmark) rather than delete. Deletion remains limited to Final Build Order section 2 cases.",
+    "evolution/spider_web.py uses four super-nodes ('Decorative mechanisms (mapping to none) are removed'); the founder rule lists seven items. Resolved by a tested translation map, no rewrite of the historical engine."
+  ],
+  "success_evidence": [
+    "greg/capabilities.py: CapabilityRegistry.register refuses a manifest with no or unknown super-nodes",
+    "tests/unit/test_greg_spiderweb.py (routing learned across missions; appraiser refutation lowers routing; super-node translation)",
+    "tests/unit/test_greg_platform.py guardrail for this record and the execution-order clause",
+    "tests/integration/test_greg_vepmc_path.py and tests/evidence/greg-body/vepmc-path-summary.json (8 of 9 VEPMC conditions on Linux)"
+  ],
+  "failure_evidence": [
+    "VEPMC = 0: no Mac run with Alfonso's own key yet.",
+    "No economic or computational compounding has been observed; the 'compounding' super-node has capabilities declared against it but no outcome evidence."
+  ],
+  "owner": "Alfonso Lopez (founder authority); Kernel maintainers (implementation)",
+  "next_review_trigger": "The first founder-used VEPMC closure on the Mac, then the first mission whose routing measurably changed because of a previous mission's receipts or appraisal.",
+  "unresolved_questions": [
+    "Which metabolism dispositions (archive / kill / keep as benchmark) does Alfonso ratify?",
+    "Should 'compounding' require an economic outcome before a capability may claim it?"
+  ],
+  "created_at": "2026-09-26T01:00:00Z",
+  "updated_at": "2026-09-26T01:00:00Z",
+  "source_refs": [
+    "docs/intent/sources/SPIDER-WEB-2026-09-25-source.md",
+    "docs/intent/sources/EGREGORE-2026-09-25-source.md",
+    "evolution/spider_web.py"
+  ],
+  "state": "active",
+  "binding_scope": "Selection and retention rule for capabilities and workstreams in reversible development and draft review. Creates no runtime authority, activation, spend or external effect.",
+  "constitutional_constraints": [
+    "INTENT-0030 effect-not-metaphor",
+    "Final Build Order section 2: no destructive deletion of history or evidence",
+    "Alfonso root authority; intelligence never creates authority",
+    "building != installation != activation != authority"
+  ],
+  "dependencies": [
+    "INTENT-2026-09-25-EGREGORE-ECOLOGY and the greg/ body",
+    "founder review of the metabolism dispositions"
+  ],
+  "implementation_refs": [
+    "greg/capabilities.py (SUPER_NODES, STRATEGY_SUPER_NODES, register validation)",
+    "greg/routing.py",
+    "greg/appraisal.py",
+    "greg/metrics.py",
+    "docs/CANONICAL_EXECUTION_ORDER.md (Spider-Web Compounding Rule)",
+    "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json"
+  ]
+}

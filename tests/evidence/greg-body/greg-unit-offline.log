@@ -1,4 +1,4 @@
 OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
-OFFLINE_COMMAND=["/usr/local/bin/python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/unit/test_greg_founder_and_scope.py", "tests/unit/test_greg_capabilities.py", "tests/unit/test_greg_missions.py", "tests/unit/test_greg_platform.py"]
-................................................                         [100%]
-48 passed in 3.60s
+OFFLINE_COMMAND=["/usr/local/bin/python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/unit/test_greg_founder_and_scope.py", "tests/unit/test_greg_capabilities.py", "tests/unit/test_greg_missions.py", "tests/unit/test_greg_platform.py", "tests/unit/test_greg_spiderweb.py"]
+...........................................................              [100%]
+59 passed in 12.24s

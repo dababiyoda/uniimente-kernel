@@ -160,3 +160,59 @@ architecture count grows without VEPMC; any module self-authorizes or optimizes 
 
 **EXPERIMENT** — retain as the product runtime candidate; founder decisions listed in the final report are required
 before merge, live enrollment and any live capability beyond the local filesystem.
+
+## 13. Addendum — Spider-Web compounding and repository alchemy (2026-09-25/26)
+
+Founder input: `INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (verbatim source
+`docs/intent/sources/SPIDER-WEB-2026-09-25-source.md`) and the Repository Alchemy directive. One contributor's
+analysis; the five roles below are perspectives, not five reviewers.
+
+**Target effect.** Each closure makes the next mission more likely to close, with evidence, and a capability that
+strengthens nothing cannot enter. Falsified if: a capability with no super-node registers; one mission's
+failure or refuted closure leaves the next mission's routing unchanged; VEPMC is awarded without ledger facts;
+the appraiser shares the body's process or trusts the body's claims.
+
+**Built (vertical, on the existing body; no new authority plane).** Super-node validation at registration;
+`routing.py` (ledger-derived reliability, routing decision recorded with alternatives); `appraisal.py`
+(separate-process appraiser over a read-only head-pinned ledger); `metrics.py` (VEPMC from nine ledger
+conditions); `templates.py` (`repo-guardian`, `workspace-note`); `repo.pin_audit` (extracted from
+`egregore/repository_audit.py`, #101); Proof→Routing edge (appraiser refutation of the effect lowers
+reliability; mechanism from `memory/causal.py`); `STRATEGY_SUPER_NODES` translation to `evolution/spider_web.py`;
+`closure_event_id` on the product surface; `FIRST_MISSION.md`.
+
+**Alternatives.**
+
+| Alternative | Benefit | Liability | Disposition |
+|---|---|---|---|
+| Do nothing (founder-authored strategy order) | simplest | no institutional learning; violates the rule's knowledge clause | baseline in tests (first mission uses cost order) |
+| Posterior-mean routing from the ledger (chosen) | deterministic, replayable, auditable | never explores; a recovered capability stays penalized until drift re-enables it | retain |
+| DALEOBANKS `services/bandit.py` Thompson sampling | explores; handles non-stationary tools | in-memory state, unseeded randomness: not replayable, weak for exactly-once audit | benchmark; seeded-draw recombination proposed |
+| External model-based planner/router | richer choices | model output is not evidence; cost; vendor dependence | deferred until a mission lacks strategies |
+| Rewrite `evolution/spider_web.py` to seven nodes | one vocabulary | destroys history; strategy tribunal ≠ capability rule | rejected; translation map instead |
+
+**Pass 1 — structural inversion.** Routing knowledge is a proprietary asset only if it survives model and
+hardware replacement: it lives in the ledger, not in process memory, so it passes to any future body. It becomes
+a liability if it overfits to one bad night, so penalties are counted, never permanent exclusions (only a founder
+critique excludes). The appraiser becomes a proof moat only if it is independent: separate process, re-derivation
+from receipt bytes, and re-observation of the world; its stated limit is that it shares reviewed Kernel code. The
+rule could become a vanity checkbox: a capability declares a super-node without strengthening it. Bound: the
+declaration is necessary, not sufficient; the metabolism record requires GREG-path evidence for bucket A.
+
+**Pass 2 — adversarial compounding.** (1) A hostile or buggy appraiser could poison routing by refuting
+everything. Bound: only effect-related appraiser checks move routing, the appraiser is replay-reproducible from a
+pinned head, and its verdicts are ledgered for audit. Accepted residual, owner: Kernel maintainers; kill if
+appraiser false-refutation is observed. (2) Routing knowledge could leak across missions with different targets.
+Accepted: reliability is per capability, not per target; revisit when target-level history exists. (3)
+Metabolism dispositions could be read as authority to archive or kill. Bound: the record is `PROPOSED`, a
+guardrail forbids delete dispositions, and termination remains a founder decision. (4) The Proof→Routing edge
+counts the same refutation against every capability that acted, including sensors. Accepted: only DONE actions
+are counted, and read-only sensors are not actions.
+
+**Five roles (condensed).** Builder: every addition sits on the running body and changes a measurable number.
+Adversary: the three hostile cases (forged closure, changed world, foreign-fault refutation) are tests, and two
+mutations of the routing rule are caught. Operator: `greg vepmc`, `greg routing` and `closure_event_id` make the
+metric inspectable without the journal. Beneficiary: Alfonso's effort is the runbook's ~30 minutes, and nothing
+here spends or publishes. Constitutional: no module grants itself anything; `founder_accepted` and `mac_body` are
+unreachable by the machine.
+
+**Decision.** EXPERIMENT, continuing §12. VEPMC stays 0 until Alfonso runs `greg/FIRST_MISSION.md` on his Mac.

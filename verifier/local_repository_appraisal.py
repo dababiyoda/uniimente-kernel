@@ -31,10 +31,10 @@ def appraise(request):
         result = receipt.payload["result"]
         if result["scope_digest"] != sha256_json(job):
             raise ValueError("receipt belongs to another scope")
-        actual = capture(job["repositories"])
+        actual = capture(job["repositories"], job.get("profile"))
         if actual != result["sources"]:
             raise ValueError("worker evidence differs from actual Git objects")
-        report = derive(actual, job["expected_pin"], job["expected_version"])
+        report = derive(actual, job["expected_pin"], job["expected_version"], job.get("profile"))
         return {"head": request["head"], "receipt": receipt.hash, "report": report,
                 "evidence_tier": "actual local sources; separate-process appraisal",
                 "external_publication": False}

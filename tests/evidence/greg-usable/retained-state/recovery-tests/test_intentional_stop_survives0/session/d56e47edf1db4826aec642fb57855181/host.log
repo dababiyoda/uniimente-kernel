@@ -1,0 +1,18 @@
+{
+  "attempt_limit": 3,
+  "host_cpu_seconds": 0.003239999999999993,
+  "host_elapsed_seconds": 0.0032719780000434184,
+  "in_flight": "terminated if active; retained receipts require review; no redispatch",
+  "next_reconsideration": "none; intentional terminal stop",
+  "pending_message": {
+    "delivery": "retained locally; no real channel",
+    "evidence_head": "sha256:e3cf6757496e8b647b0092633ba15f3c1babf5f493091bf9e9c01891fea8406e",
+    "goal_id": "greg-proof:d56e47edf1db4826aec642fb57855181",
+    "kind": "RECOVERY_REQUIRED",
+    "requested_action": "review retained failure before any further execution",
+    "why_now": "bounded host stopped without verified closure"
+  },
+  "status": "STOPPED",
+  "worker_exits": [],
+  "worker_pids": []
+}

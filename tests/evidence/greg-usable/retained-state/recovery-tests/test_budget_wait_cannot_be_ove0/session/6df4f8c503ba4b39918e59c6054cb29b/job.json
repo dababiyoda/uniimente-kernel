@@ -1,0 +1,26 @@
+{
+  "control_ledger": "/workspace/scratch/242854d06306/greg-test-state/test_budget_wait_cannot_be_ove0/session/control.jsonl",
+  "deadline": 1790363285.8959327,
+  "due": 1790363245.8959327,
+  "expected_pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+  "expected_version": "0.1.2",
+  "mission_id": "greg-proof:6df4f8c503ba4b39918e59c6054cb29b",
+  "profile": "integration-v1",
+  "repositories": [
+    {
+      "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+      "path": "/workspace/scratch/242854d06306/kernel",
+      "role": "kernel"
+    },
+    {
+      "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+      "path": "/workspace/scratch/242854d06306/daleobanks",
+      "role": "dale"
+    },
+    {
+      "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+      "path": "/workspace/scratch/242854d06306/wmi",
+      "role": "wmi"
+    }
+  ]
+}

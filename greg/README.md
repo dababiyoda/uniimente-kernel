@@ -85,6 +85,14 @@ is the single tested translation. Dispositions for the rest of the project are i
 On the Mac (not yet exercised against a public TSA: this build container's network policy blocks every public TSA): fetch Sigstore's chain from `https://timestamp.sigstore.dev/api/v1/timestamp/certchain`, keep only its last (root) certificate, then
 `greg anchor configure --tsa-url https://timestamp.sigstore.dev/api/v1/timestamp --roots ROOT.pem --key ~/.greg-founder.pem`, and periodically `greg anchor export --roots ROOT.pem --out /Volumes/<elsewhere>/greg-witness.json`.
 
+## Founder correction becomes bounded, evidence-tested routing knowledge (2026-09-26)
+
+| Effect | Mechanism | Evidence |
+|---|---|---|
+| Correct GREG once; a materially similar later mission is handled differently; evidence decides whether the change stays | A signed `CRITIQUE` of a mission action may carry a `correction` (`greg critique EVENT --correct avoid --scope capability --scope params.content`). `greg/corrections.py` records it as a CANDIDATE with a typed scope (capability, route, target, check sensor, declared-input params; never free text) and a declared close condition. `MissionEngine._pursue` keeps the empirical ranking (`routing.py`) as the baseline and adds one leading key: matching admitted strategies are avoided or preferred, and both decisions are recorded. Later evidence (re-observed checks, or Alfonso's signed accept/reject of the changed behaviour) gives trials: RETAINED closes the critique's regression obligation; REGRESSED stops influencing routing and is surfaced for review. `binding` makes a founder RULE that evidence cannot regress, though contrary evidence is still surfaced. Conflicting corrections neutralize and are exposed. `greg corrections` shows state, trials and contradictions. | `tests/unit/test_greg_corrections.py` (cases A-I; mutation-checked); `tests/evidence/greg-product/correction-loop-live-2026-09-26.json` (two supervised bodies, CLI only, SIGKILL + restart) |
+
+A correction changes selection **within** authority: it reorders strategies the signed mission already admits, and the Authority Office still judges every act. It never creates a strategy, widens a light cone, raises a budget or attaches a capability. Not claimed: self-modification of code, general learning, or any business outcome.
+
 ## Using it (developer mode today)
 
 **First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**

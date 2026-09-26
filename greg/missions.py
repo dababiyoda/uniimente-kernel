@@ -32,7 +32,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
-from greg import routing
+from greg import corrections, routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -319,6 +319,7 @@ class MissionEngine:
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
+        corrections.evaluate(self.journal, iso(now))
         return summary
 
     def _context(self, m: MissionState, manifest) -> InvocationContext:
@@ -616,7 +617,7 @@ class MissionEngine:
             estimate = routing.reliability(records.get(manifest.capability_id) if manifest else None)
             expected = routing.score(gain=gain, reliability_estimate=estimate,
                                      cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
-            candidates.append((-expected, route, index, s, estimate))
+            candidates.append((-expected, route, index, s, estimate, corrections.strategy_facts(s, manifest, m.spec)))
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
@@ -627,12 +628,30 @@ class MissionEngine:
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
-        candidates.sort(key=lambda c: c[:3])
+        candidates.sort(key=lambda c: c[:3])  # baseline: empirical routing only
+        # Founder corrections are one more evidence input into the same ranking; they
+        # reorder admitted candidates and never add one.
+        ranked = corrections.rank(corrections.book(self.journal),
+                                  [{"action_id": c[3]["action_id"], "facts": c[5], "baseline_key": c[:3]}
+                                   for c in candidates])
+        by_action = {c[3]["action_id"]: c for c in candidates}
+        candidates = [by_action[r["action_id"]] for r in ranked["ordered"]]
         s = candidates[0][3]
         routing_decision = {"chosen": s["action_id"], "expected_value": round(-candidates[0][0], 4),
                             "reliability": round(candidates[0][4], 4),
+                            "baseline_choice": ranked["baseline_choice"], "changed_by": ranked["changed_by"],
+                            "correction_bias": ranked["bias"], "conflicts": ranked["conflicts"],
                             "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
                                               "reliability": round(c[4], 4)} for c in candidates[1:6]]}
+        for conflict in ranked["conflicts"]:
+            self.journal.record("correction.conflict", {"mission_id": m.mission_id, **conflict, "at": iso(now)},
+                                key=[m.mission_id, sha256_json(conflict)])
+        if ranked["changed_by"]:
+            self.journal.record("correction.applied", {
+                "mission_id": m.mission_id, "baseline_choice": ranked["baseline_choice"], "chosen": s["action_id"],
+                "changed_by": ranked["changed_by"], "attempt": m.attempts.get(s["action_id"], 0),
+                "why": "founder correction(s) reordered admitted strategies; the Authority Office still judges the act",
+                "at": iso(now)}, key=[m.mission_id, s["action_id"], m.attempts.get(s["action_id"], 0)])
         manifest, adapter, _ = self._resolve(s)
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:

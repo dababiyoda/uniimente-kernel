@@ -102,6 +102,15 @@ def main(argv=None) -> int:
             q.add_argument("event_id"); q.add_argument("--verdict", required=True)
             q.add_argument("--evidence-type", required=True); q.add_argument("--text", required=True)
             q.add_argument("--exclude-strategy", action="store_true"); q.add_argument("--regression")
+            q.add_argument("--correct", choices=["avoid", "prefer"],
+                           help="turn this critique into a bounded correction for later missions")
+            q.add_argument("--scope", action="append", default=[],
+                           help="typed fact of the criticized strategy: capability, route, target, "
+                                "check_sensor or params.<declared input> (repeatable)")
+            q.add_argument("--prefer", action="append", default=[], help="key=value scope for --correct prefer")
+            q.add_argument("--close-condition", choices=["checks", "founder_accepts"])
+            q.add_argument("--min-trials", type=int, default=1)
+            q.add_argument("--binding", action="store_true", help="a founder RULE: never regressed by evidence")
         if name == "stop":
             q.add_argument("--local", action="store_true")
         if name in ("attach", "detach"):
@@ -139,6 +148,7 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("corrections", help="founder corrections: state, trials, contradictions (read-only)")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
     c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
@@ -199,6 +209,10 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "corrections":
+            from greg import corrections
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(corrections.review(journal), indent=1, default=str))
         elif args.cmd in ("vepmc", "routing"):
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
@@ -214,6 +228,16 @@ def main(argv=None) -> int:
                 body["exclude_strategy"] = True
             if args.regression:
                 body["regression"] = args.regression
+            if args.correct:
+                correction = {"adjustment": args.correct, "min_trials": args.min_trials, "binding": args.binding}
+                if args.scope:
+                    correction["scope"] = args.scope
+                if args.prefer:
+                    correction["scope_values"] = {k: (int(v) if v.lstrip("-").isdigit() else v)
+                                                  for k, v in (item.split("=", 1) for item in args.prefer)}
+                if args.close_condition:
+                    correction["close_condition"] = args.close_condition
+                body["correction"] = correction
             print(_drop(home, "CRITIQUE", body, args))
         elif args.cmd in ("pause", "resume"):
             print(_drop(home, "BODY_" + args.cmd.upper(), {}, args))

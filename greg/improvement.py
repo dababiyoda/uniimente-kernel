@@ -70,8 +70,13 @@ def policy_id(policy: dict) -> str:
 
 # -- cases: delivered briefs the founder labelled ------------------------------------------
 
-def labelled_cases(journal: Journal, ledger) -> list[dict]:
-    """Every founder-labelled brief, oldest label first, with the inputs its receipt retains."""
+def labelled_cases(journal: Journal, ledger, *, every_label: bool = False) -> list[dict]:
+    """Every founder-labelled brief, oldest label first, with the inputs its receipt retains.
+
+    One brief is one case: a later label on the same brief supersedes the earlier one, so
+    re-labelling a brief can neither add weight nor turn a training brief into held-out
+    evidence. ``every_label`` returns each label, for mapping case ids to briefs.
+    """
     events = {e.event_id: e for e in journal.replay("mission.action")}
     order = {e.event_id: i for i, e in enumerate(journal.replay())}   # one ordering across every fact
     cases = []
@@ -93,7 +98,14 @@ def labelled_cases(journal: Journal, ledger) -> list[dict]:
                       "brief_event_id": target.event_id, "inputs": inputs, "truth": sorted(truth),
                       "labels": labels,
                       "delivered_policy": briefs.attention_policy(inputs)})
-    return cases
+    if every_label:
+        return cases
+    latest = {case["brief_event_id"]: case for case in cases}
+    return sorted(latest.values(), key=lambda case: case["seq"])
+
+
+def _briefs(case_ids, brief_of: dict) -> set:
+    return {brief_of[case_id] for case_id in case_ids if case_id in brief_of}
 
 
 def errors(policy: dict, case: dict) -> int:
@@ -142,7 +154,7 @@ def _derive(cases: list[dict], current: dict) -> tuple[dict | None, dict]:
                   "fields_changed": None if best is None else best_key[1]}
 
 
-def _recently_lost(journal: Journal, candidate: dict, current: dict, cases: list[dict]) -> bool:
+def _recently_lost(journal: Journal, candidate: dict, current: dict, cases: list[dict], brief_of: dict) -> bool:
     """Anti-thrash: a change that was rejected or reverted between the same two policies waits for new evidence."""
     pair = {policy_id(candidate), policy_id(current)}
     for kind in ("improvement.rejected", "improvement.reverted"):
@@ -150,7 +162,9 @@ def _recently_lost(journal: Journal, candidate: dict, current: dict, cases: list
             data = event.payload
             other = data.get("replaces") or data.get("restores")
             if {policy_id(data["policy"]), policy_id(other)} == pair and \
-                    sum(c["seq"] > data["decided_after_seq"] for c in cases) < HELD_OUT_MIN:
+                    sum(c["seq"] > data["decided_after_seq"] and c["brief_event_id"] not in
+                        _briefs(data.get("held_out") or data.get("cases") or [], brief_of)
+                        for c in cases) < HELD_OUT_MIN:
                 return True
     return False
 
@@ -159,6 +173,7 @@ def learn(journal: Journal, ledger, now) -> list[dict]:
     """Advance the loop from retained history. Idempotent; returns the records it wrote."""
     written = []
     cases = labelled_cases(journal, ledger)
+    brief_of = {c["case_id"]: c["brief_event_id"] for c in labelled_cases(journal, ledger, every_label=True)}
     decided = _decided(journal)
     proposals = [e.payload for e in journal.replay("improvement.proposed")]
 
@@ -169,7 +184,8 @@ def learn(journal: Journal, ledger, now) -> list[dict]:
         if "retained" in outcome:
             # keep comparing a retained policy with the one it replaced, on labels given after retention
             since = outcome["retained"]["decided_after_seq"]
-            later = [c for c in cases if c["seq"] > since]
+            used = _briefs(cand["derived_from"] + outcome["retained"]["held_out"], brief_of)
+            later = [c for c in cases if c["seq"] > since and c["brief_event_id"] not in used]
             if len(later) >= HELD_OUT_MIN:
                 kept = sum(errors(cand["policy"], c) for c in later)
                 prior = sum(errors(cand["replaces"], c) for c in later)
@@ -182,7 +198,8 @@ def learn(journal: Journal, ledger, now) -> list[dict]:
                     journal.record("improvement.reverted", record, key=[cand["candidate_id"], "reverted"])
                     written.append(record)
             continue
-        held_out = [c for c in cases if c["seq"] > cand["proposed_after_seq"] and c["case_id"] not in cand["derived_from"]]
+        trained_on = _briefs(cand["derived_from"], brief_of)   # never a derivation brief, however re-labelled
+        held_out = [c for c in cases if c["seq"] > cand["proposed_after_seq"] and c["brief_event_id"] not in trained_on]
         for case in held_out:
             record = {"candidate_id": cand["candidate_id"], "case_id": case["case_id"],
                       "errors": {"current": errors(cand["replaces"], case), "candidate": errors(cand["policy"], case)}}
@@ -209,7 +226,7 @@ def learn(journal: Journal, ledger, now) -> list[dict]:
         latest = cases[-1]
         if errors(current, latest) > 0:
             candidate, stats = _derive(cases, current)
-            if candidate is not None and _recently_lost(journal, candidate, current, cases):
+            if candidate is not None and _recently_lost(journal, candidate, current, cases, brief_of):
                 candidate, stats = None, {**stats, "suppressed": "this change lost its last held-out test; it may be "
                                                                   f"proposed again after {HELD_OUT_MIN} new labelled briefs"}
             if candidate is None:
@@ -276,6 +293,10 @@ def _close_demonstrated_regressions(journal: Journal, candidate: dict, held_out:
 def report(journal: Journal, ledger) -> dict:
     """Founder corrections per labelled brief, by the policy that produced each brief."""
     cases = labelled_cases(journal, ledger)
+    effective = {case["brief_event_id"]: case["case_id"] for case in cases}
+    superseded = [{"case_id": c["case_id"], "brief_event_id": c["brief_event_id"], "labels": c["labels"],
+                   "superseded_by": effective[c["brief_event_id"]]}
+                  for c in labelled_cases(journal, ledger, every_label=True) if c["case_id"] not in effective.values()]
     by_policy = {}
     for case in cases:
         pid = policy_id(case["delivered_policy"])
@@ -285,7 +306,7 @@ def report(journal: Journal, ledger) -> dict:
     for row in by_policy.values():
         row["corrections_per_brief"] = round(row["corrections"] / row["briefs"], 3)
     return {"lever": LEVER, "active_policy": active_policy(journal), "labelled_briefs": len(cases),
-            "by_policy": by_policy,
+            "by_policy": by_policy, "superseded_labels": superseded,
             "proposed": [e.payload["candidate_id"] for e in journal.replay("improvement.proposed")],
             "retained": [e.payload["candidate_id"] for e in journal.replay("improvement.retained")],
             "rejected": [e.payload["candidate_id"] for e in journal.replay("improvement.rejected")],

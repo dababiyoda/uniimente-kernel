@@ -1,0 +1,91 @@
+{
+ "boots": [
+  {
+   "boot_id": "boot-efa562de4ed74c0e",
+   "pid": 19232,
+   "at": "2026-09-26T01:44:57.278865Z",
+   "version": "greg-body/0.1.0",
+   "body_id": "body-b2ffde95e43934d0",
+   "boot_number": 1,
+   "platform": "Linux",
+   "ledger_head_at_boot": "sha256:e278c13ad98821fffd3eb46e9bf9aa7d1ae9bc9d7a80de77ec2328102a7b93a5"
+  },
+  {
+   "boot_id": "boot-41682c054de70b77",
+   "pid": 19234,
+   "at": "2026-09-26T01:44:59.270621Z",
+   "version": "greg-body/0.1.0",
+   "body_id": "body-b2ffde95e43934d0",
+   "boot_number": 2,
+   "platform": "Linux",
+   "ledger_head_at_boot": "sha256:7bdaa68d2f0fcd248697e74f7a56284b6f73fa801a2f5d03c7165aceee7bf28c"
+  }
+ ],
+ "recovered": [
+  {
+   "boot_id": "boot-41682c054de70b77",
+   "previous_unfinished_boots": [
+    "boot-efa562de4ed74c0e"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  }
+ ],
+ "decision_requests": [
+  {
+   "request_id": "req-bf689f7f80516b653311e16f",
+   "mission_id": "m:overnight-report",
+   "kind": "APPROVAL",
+   "action_id": "write-report",
+   "scope_digest": "sha256:7f7f0d436963aaf5577d92b365b416550e66151c2468ea5967478b4f196127a8",
+   "why_now": "capability 'fs.write' outside scope; internal_write exceeds scope ceiling read_only",
+   "recommendation": "approve write-report (fs.write on workspace:report.txt) at $0.0: write the report (requires founder approval: outside read-only scope)",
+   "alternatives": [
+    "reject: the mission will try alternatives or ask again"
+   ],
+   "authority_requested": {
+    "capability": "fs.write",
+    "target": "workspace:report.txt",
+    "consequence_class": "internal_write",
+    "cost_usd": 0.0
+   },
+   "consequence_of_no_response": "the mission waits; no action is taken",
+   "created_at": "2026-09-26T01:44:57.784448Z",
+   "reality_status": "RECORDED_LOCAL_MESSAGE"
+  }
+ ],
+ "actions": [
+  {
+   "mission_id": "m:overnight-report",
+   "action_id": "write-report",
+   "attempt": 0,
+   "status": "DONE",
+   "reasons": [],
+   "receipt": "sha256:1335c73a6da830446795f6bfb14bbd401c8cb9acd4e0db8836a347e0b61c5315",
+   "capability": "fs.write",
+   "route": "api",
+   "cost_usd": 0.0,
+   "scope_digest": "sha256:7f7f0d436963aaf5577d92b365b416550e66151c2468ea5967478b4f196127a8",
+   "routing": {
+    "chosen": "write-report",
+    "expected_value": 0.5,
+    "reliability": 0.5,
+    "alternatives": []
+   },
+   "at": "2026-09-26T01:45:01.320215Z"
+  }
+ ],
+ "achieved": [
+  {
+   "mission_id": "m:overnight-report",
+   "evidence": [
+    "sha256:91a22b2b121678888ff0ec3fa7edf64c144797d5c47620137d0004cb8f891064"
+   ],
+   "actions_done": 1,
+   "closure_rule": "every success check re-observed passing through the Gate",
+   "founder_authenticated_mission": true,
+   "at": "2026-09-26T01:45:01.715892Z"
+  }
+ ],
+ "supervisor_status": "greg-body                        EXITED    Sep 26 01:45 AM",
+ "founder_key": "per-test Ed25519 key; NOT Alfonso"
+}

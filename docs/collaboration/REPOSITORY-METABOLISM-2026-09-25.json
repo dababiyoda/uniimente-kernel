@@ -1,0 +1,616 @@
+{
+ "record": "REPOSITORY-METABOLISM-2026-09-25",
+ "intent": "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING",
+ "status": "PROPOSED dispositions for founder review; nothing deleted, archived or unsealed by this record",
+ "buckets": {
+  "A": "canonical product capability",
+  "B": "reusable mechanism",
+  "C": "competing implementation",
+  "D": "complementary implementation",
+  "E": "experimental evidence",
+  "F": "historical / superseded",
+  "G": "dead weight (executable)"
+ },
+ "reality_labels": [
+  "IMPLEMENTED",
+  "INTEGRATED",
+  "TESTED",
+  "SANDBOXED",
+  "LOCAL-REAL",
+  "MAC-VERIFIED",
+  "PERSISTENT",
+  "REBOOT-VERIFIED",
+  "EXTERNALLY-VERIFIED",
+  "PRODUCTION-AUTHORIZED",
+  "PROPOSED",
+  "BLOCKED",
+  "ASPIRATIONAL"
+ ],
+ "inspection": {
+  "kernel": "every top-level package: file count, LOC, test importers, greg usage, module docstrings (commit 1db6ce0 + this session)",
+  "organs": "module docstrings, sizes and directory structure on each repo's claude/egregore-project-overview-btn5y2 head; not a line-by-line audit",
+  "method": "executable evidence (tests, imports, runs) outranks prose; bucket A requires use on the GREG path"
+ },
+ "governing_transaction": "Alfonso expresses an authorized intention -> GREG converts it into a verified real-world outcome -> evidence and capability gained make the next intention easier",
+ "entries": [
+  {
+   "repo": "uniimente-kernel",
+   "path": "provenance/",
+   "bucket": "A",
+   "super_nodes": [
+    "proof"
+   ],
+   "evidence": "41 test files import it; greg uses it in 10 places",
+   "extracted_mechanism": "hash-chained single-writer ledger, read-only head-pinned replay",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "events/",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "routing"
+   ],
+   "evidence": "27 test files; every greg.* event goes through EventSpine",
+   "extracted_mechanism": "typed causal events with SPIFFE source",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "policy/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility"
+   ],
+   "evidence": "19 test files; greg authority office calls ConsequenceGate + GrantIssuer + evaluate",
+   "extracted_mechanism": "pre-existing-grant gate, single-use effect-bound grants",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "identity/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility"
+   ],
+   "evidence": "8 test files; per-action worker passports in greg/authority.py",
+   "extracted_mechanism": "short-lived SPIFFE-style workload identity",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "capabilities/genome.py",
+   "bucket": "A",
+   "super_nodes": [
+    "capability_formation",
+    "eligibility"
+   ],
+   "evidence": "greg CapabilityRegistry registers every manifest as a genome",
+   "extracted_mechanism": "capability genome + authority envelope",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "compiler/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility"
+   ],
+   "evidence": "15 test files; greg body compiles the constitution hash at boot",
+   "extracted_mechanism": "UCL -> deterministic policy",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "constitution/ + authority/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility"
+   ],
+   "evidence": "compiled at every body boot; reserved matters enforced by policy",
+   "extracted_mechanism": "constitutional text and authority matrix",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "closure/ + verifier/",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "reliability"
+   ],
+   "evidence": "V1-V5 PASS including greg_body five closures",
+   "extracted_mechanism": "orthogonal loop closure, false-closure detection",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "adapters/ + contracts/ + linker/ + organs/",
+   "bucket": "A",
+   "super_nodes": [
+    "routing",
+    "proof"
+   ],
+   "evidence": "11+8 test files; DALEOBANKS/WMI pin 4999acff observed consistent by repo.pin_audit",
+   "extracted_mechanism": "typed contract bridges, organ manifests",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/repository_audit.py",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "reliability",
+    "eligibility"
+   ],
+   "evidence": "extracted into greg capability repo.pin_audit; real repos observed",
+   "extracted_mechanism": "read-only cross-repo pin/version audit",
+   "disposition": "RETAIN_CANONICAL (now a GREG capability)",
+   "reality": "LOCAL-REAL"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility",
+    "routing",
+    "proof",
+    "settlement",
+    "reliability",
+    "capability_formation"
+   ],
+   "evidence": "795 tests; supervised SIGKILL/restart; VEPMC path 8/9 conditions on Linux",
+   "extracted_mechanism": "the persistent body itself",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "SANDBOXED",
+   "note": "Not MAC-VERIFIED, not founder-used; VEPMC 0."
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "memory/causal.py",
+   "bucket": "B",
+   "super_nodes": [
+    "proof",
+    "routing"
+   ],
+   "evidence": "6 test files; not used by greg until this session",
+   "extracted_mechanism": "outcome weighting by verification strength",
+   "disposition": "EXTRACTED into greg/routing.py (appraiser refutation of the effect lowers capability reliability)",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "evolution/repair/",
+   "bucket": "B",
+   "super_nodes": [
+    "reliability",
+    "capability_formation"
+   ],
+   "evidence": "blind function-loss detector + replacement harness (646-line harness); fixed candidate set",
+   "extracted_mechanism": "detect lost function without knowing the provider; compare replacement candidates",
+   "disposition": "EXTRACT_NEXT: feed its blind detector into greg Genesis restore so a lost capability is found by contract, not by name",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "autonomy/levels.py",
+   "bucket": "B",
+   "super_nodes": [
+    "eligibility",
+    "compounding"
+   ],
+   "evidence": "1 test file; not wired to greg",
+   "extracted_mechanism": "evidence-earned autonomy: rises slowly, falls immediately, weakest-link",
+   "disposition": "EXTRACT_NEXT: propose light-cone widening only from retained closures (founder-signed, never self-granted)",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "loom/",
+   "bucket": "B",
+   "super_nodes": [
+    "capability_formation",
+    "routing"
+   ],
+   "evidence": "2 test files; greg/sop.py proposes SOPs but has no ratified-weave step",
+   "extracted_mechanism": "human ratification of machine-authored workflows -> durable workflows",
+   "disposition": "EXTRACT_NEXT: ratified SOP -> mission template",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/drift.py + egregore/resources.py",
+   "bucket": "B",
+   "super_nodes": [
+    "reliability"
+   ],
+   "evidence": "bounded drift and hard resource bounds for continuous cognition",
+   "extracted_mechanism": "resource ceilings per loop",
+   "disposition": "HOLD as mechanism source; greg enforces budgets via light cones",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "evolution/strategy_tree.py",
+   "bucket": "B",
+   "super_nodes": [
+    "routing"
+   ],
+   "evidence": "greg has no autonomous planner; strategies are founder-authored",
+   "extracted_mechanism": "branch generation + pruning over strategies",
+   "disposition": "CANDIDATE planner mechanism once a real mission lacks strategies",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/local_mission.py + egregore/morning_review.py (GREG-001)",
+   "bucket": "C",
+   "super_nodes": [
+    "proof",
+    "settlement"
+   ],
+   "evidence": "#101 lineage; bounded one-shot mission and review",
+   "extracted_mechanism": "first bounded persistent mission proof",
+   "disposition": "BENCHMARK / REGRESSION ORACLE for greg missions + tribunal; not the active path",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/runtime.py + egregore/leverage.py",
+   "bucket": "C",
+   "super_nodes": [
+    "routing"
+   ],
+   "evidence": "deterministic proposal-only standing cognition (ade1 CI)",
+   "extracted_mechanism": "proposal-only cognition loop",
+   "disposition": "BENCHMARK; greg body is the hosted loop",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "DALEOBANKS",
+   "path": "services/bandit.py",
+   "bucket": "C",
+   "super_nodes": [
+    "routing"
+   ],
+   "evidence": "58-line Beta-Bernoulli Thompson sampler; in-memory state; unseeded random",
+   "extracted_mechanism": "exploration via posterior sampling",
+   "disposition": "COMPARE against greg/routing.py (posterior mean, ledger-replayable). Recombination proposal: Thompson draw seeded by mission_id+attempt so exploration stays replayable",
+   "reality": "IMPLEMENTED"
+  },
+  {
+   "repo": "DALEOBANKS",
+   "path": "services/ledger.py + services/capability.py",
+   "bucket": "C",
+   "super_nodes": [
+    "proof",
+    "eligibility"
+   ],
+   "evidence": "tamper-evident ledger and capability grants inside the organ",
+   "extracted_mechanism": "organ-local ledger/grants",
+   "disposition": "ADAPT to Kernel owners (already shimmed: kernel_contracts.py); never a second authority",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "DALEOBANKS",
+   "path": "services/heartbeat.py",
+   "bucket": "C",
+   "super_nodes": [
+    "reliability"
+   ],
+   "evidence": "127-line supervised cognitive loop",
+   "extracted_mechanism": "24/7 loop with drift control",
+   "disposition": "BENCHMARK vs greg body + OS supervisor",
+   "reality": "IMPLEMENTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "evolution/spider_web.py + foundry/tribunal.py",
+   "bucket": "D",
+   "super_nodes": [
+    "eligibility",
+    "routing",
+    "proof",
+    "settlement"
+   ],
+   "evidence": "4-node strategy tribunal; mapped by greg.capabilities.STRATEGY_SUPER_NODES (tested)",
+   "extracted_mechanism": "eight-sided strategy integrity test",
+   "disposition": "RETAIN; judges strategies while greg rule judges capabilities",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "DALEOBANKS",
+   "path": "services/prompt_firewall.py",
+   "bucket": "D",
+   "super_nodes": [
+    "proof",
+    "eligibility"
+   ],
+   "evidence": "161-line injection defense",
+   "extracted_mechanism": "prompt-injection detection",
+   "disposition": "RECOMBINE into greg/dataplane.py when a model reads untrusted content",
+   "reality": "IMPLEMENTED"
+  },
+  {
+   "repo": "DALEOBANKS",
+   "path": "services/operator_notifications.py",
+   "bucket": "D",
+   "super_nodes": [
+    "routing"
+   ],
+   "evidence": "Twilio SMS transport for operator line",
+   "extracted_mechanism": "founder reachability off-machine",
+   "disposition": "CANDIDATE phone channel for decision requests (needs founder credential + consent)",
+   "reality": "BLOCKED",
+   "note": "Requires live credentials: founder decision."
+  },
+  {
+   "repo": "WealthMachineIntelligence",
+   "path": "src/services/ (opportunity_intake, decision_engine, risk_management, treasury)",
+   "bucket": "D",
+   "super_nodes": [
+    "settlement",
+    "compounding"
+   ],
+   "evidence": "bridge contracts pinned to kernel 4999acff",
+   "extracted_mechanism": "opportunity -> assessment -> venture protocol",
+   "disposition": "FIRST BUSINESS LOOP candidate after VEPMC=1",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "RESEARCH-IN",
+   "path": "services/ingest (Rust) + apps/",
+   "bucket": "D",
+   "super_nodes": [
+    "proof"
+   ],
+   "evidence": "ingest service with tests; web/community apps",
+   "extracted_mechanism": "source ingestion",
+   "disposition": "CANDIDATE evidence source via untrusted data plane",
+   "reality": "IMPLEMENTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/goal_chase*.py",
+   "bucket": "E",
+   "super_nodes": [
+    "capability_formation"
+   ],
+   "evidence": "sealed simulated experiment (#93/#97/#109); HMAC demo key",
+   "extracted_mechanism": "infinite goal chase control law",
+   "disposition": "LAB; its setpoint-ladder idea lives in greg missions",
+   "reality": "SANDBOXED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "developmental/ (MICA/CDPE)",
+   "bucket": "E",
+   "super_nodes": [
+    "reliability"
+   ],
+   "evidence": "sealed; TARGET_FORM_001 CI declaration",
+   "extracted_mechanism": "local-rule regeneration benchmark",
+   "disposition": "LAB (INTENT-0030 counterevidence and mechanism source)",
+   "reality": "SANDBOXED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "omnimorph/",
+   "bucket": "E",
+   "super_nodes": [
+    "capability_formation"
+   ],
+   "evidence": "5 test files; no founder mission has needed a temporary organization",
+   "extracted_mechanism": "temporary organ composition without self-activation",
+   "disposition": "LAB until organization design is the bottleneck",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "foundry/ (advantage, pipeline, company)",
+   "bucket": "E",
+   "super_nodes": [
+    "compounding"
+   ],
+   "evidence": "6 test files; no external validation outcome",
+   "extracted_mechanism": "advantage composition pipeline",
+   "disposition": "LAB; method, not product (Alchemy section 3)",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "evolution/ (loop, auto_cycle, comparison, capsule, migration)",
+   "bucket": "E",
+   "super_nodes": [
+    "reliability",
+    "capability_formation"
+   ],
+   "evidence": "15 test files; improvement cycles over synthetic subjects",
+   "extracted_mechanism": "baseline comparison, capsules, state migration",
+   "disposition": "LAB; migration harness reusable when the greg mission schema changes",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "twins/",
+   "bucket": "E",
+   "super_nodes": [
+    "proof"
+   ],
+   "evidence": "1 test file",
+   "extracted_mechanism": "read-only counterfactual forks",
+   "disposition": "LAB",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "memory/affect.py + affect/",
+   "bucket": "E",
+   "super_nodes": [
+    "reliability"
+   ],
+   "evidence": "bounded control states",
+   "extracted_mechanism": "functional affect",
+   "disposition": "LAB",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "morphogenesis/",
+   "bucket": "F",
+   "super_nodes": [
+    "capability_formation"
+   ],
+   "evidence": "1 test file; literal framing regressed by INTENT-0030",
+   "extracted_mechanism": "target-state evaluator",
+   "disposition": "HISTORICAL; canonical morphogenesis = greg/genesis.py",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "business/ + capital/ + embassy/",
+   "bucket": "F",
+   "super_nodes": [
+    "settlement"
+   ],
+   "evidence": "phase-7 loops with no customer, payment or foreign agent",
+   "extracted_mechanism": "ordered commercial loop and treasury policy",
+   "disposition": "HISTORICAL design until a real business loop exists",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "WealthMachineIntelligence",
+   "path": "historical/",
+   "bucket": "F",
+   "super_nodes": [],
+   "evidence": "preserved bytecode and root main",
+   "extracted_mechanism": "provenance only",
+   "disposition": "HISTORICAL",
+   "reality": "IMPLEMENTED"
+  },
+  {
+   "repo": "PumpStation",
+   "path": "server/index.js + client/",
+   "bucket": "F",
+   "super_nodes": [
+    "settlement"
+   ],
+   "evidence": "56-line Express server + client stub; memecoin coordination",
+   "extracted_mechanism": "none beyond a socket skeleton",
+   "disposition": "FOUNDER_DECISION: financial/crypto effects are never delegable to GREG; keep as historical organ",
+   "reality": "PROPOSED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "sandbox/, observability/, sdk-python/, sdk-typescript/",
+   "bucket": "G",
+   "super_nodes": [],
+   "evidence": "README-only directories; no code",
+   "extracted_mechanism": "none",
+   "disposition": "KEEP README as intent; no executable work until a mission needs it",
+   "reality": "ASPIRATIONAL"
+  },
+  {
+   "repo": "RAILSCOUT",
+   "path": "(repository)",
+   "bucket": "G",
+   "super_nodes": [],
+   "evidence": "README, AGENTS.md and CLAUDE.md only",
+   "extracted_mechanism": "none",
+   "disposition": "KEEP as named organ slot; no executable work until a mission needs it",
+   "reality": "ASPIRATIONAL"
+  },
+  {
+   "repo": "build-your-own-x",
+   "path": "(repository)",
+   "bucket": "E",
+   "super_nodes": [],
+   "evidence": "tutorial index fork",
+   "extracted_mechanism": "anatomy atlas (compilers, databases, VCS, OS) consulted for mechanisms",
+   "disposition": "REFERENCE ONLY; never rebuilt as product",
+   "reality": "ASPIRATIONAL"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/remote.py + greg/phone/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility",
+    "routing"
+   ],
+   "evidence": "phone path end to end in real Chromium (iPhone profile) 6/6; JS and Python byte-compatible",
+   "extracted_mechanism": "founder-delegated device keys; signed reads; loopback transport",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "SANDBOXED",
+   "note": "Not iOS-Safari-verified; reached via tailscale serve on the Mac."
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/capabilities.py browser.render",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "capability_formation"
+   ],
+   "evidence": "real Chromium rendered a JavaScript-only truth; hostile beacon by name and by IP literal received nothing",
+   "extracted_mechanism": "headless browser, target-bound origin-only egress",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "LOCAL-REAL"
+  },
+  {
+   "repo": "uniimente-kernel (PR #112)",
+   "path": "egregore/local_console.py, egregore/repository_audit.py integration-v1, egregore/runtime.py resume",
+   "bucket": "C",
+   "super_nodes": [
+    "eligibility",
+    "proof"
+   ],
+   "evidence": "#112 found the stop-bypass; reproduced here on main and #113; fixed by porting",
+   "extracted_mechanism": "resume consumes an exact-suspension Gate grant; static integration findings; no lazy Git fetch",
+   "disposition": "SUPERSEDED by #113 and closed; mechanism ledger in PR112-SUPERSESSION.md; branch preserved",
+   "reality": "TESTED",
+   "note": "Resume fix merged to main via #116. Stop-survives-restart replaced by GREG persisted founder stop. Held-out comparison gate recorded for extraction."
+  },
+  {
+   "repo": "uniimente-kernel (PR #70)",
+   "path": "capabilities/deficit.py",
+   "bucket": "B",
+   "super_nodes": [
+    "capability_formation",
+    "proof"
+   ],
+   "evidence": "three-fact verified-deficit rule",
+   "extracted_mechanism": "required + failed + unserviceable recorded before any capability search",
+   "disposition": "EXTRACTED into greg/genesis.py deficit.opened.verification",
+   "reality": "TESTED",
+   "note": "#70 itself remains conflicted with main; runtime ownership still a founder decision."
+  },
+  {
+   "repo": "DALEOBANKS (PR #79)",
+   "path": "services/feedback.py community correction",
+   "bucket": "D",
+   "super_nodes": [
+    "proof",
+    "compounding"
+   ],
+   "evidence": "12 fixture tests; source-backed correction retained only on strict held-out gain; engagement alone rejected",
+   "extracted_mechanism": "community influence gated by source support and held-out improvement",
+   "disposition": "CANDIDATE rule for greg/dataplane.py when community items start moving mission priorities",
+   "reality": "IMPLEMENTED",
+   "note": "Fixture outcomes, not measured participant benefit."
+  }
+ ],
+ "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"
+}

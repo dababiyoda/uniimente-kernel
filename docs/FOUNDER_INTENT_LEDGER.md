@@ -1,5 +1,51 @@
 # Founder Intent Ledger
 
+## Spider-Web compounding rule — 2026-09-25
+
+`INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (`intent/INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING.json`, verbatim source in `intent/sources/SPIDER-WEB-2026-09-25-source.md`) makes the founder-intent → verified-outcome transaction the optimization target. Every capability must strengthen at least one of seven control points (eligibility, routing, proof, settlement, reliability, capability formation, compounding), and repeated missions must yield institutional knowledge that improves the next one. Clause inserted in `CANONICAL_EXECUTION_ORDER.md`; enforced by `greg/capabilities.py` registration and `greg/routing.py`; repository dispositions proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json`. State: active; bottleneck VEPMC remains 0 until a Mac run with Alfonso's own key.
+
+## Egregore ecology on the first body — 2026-09-25
+
+`INTENT-2026-09-25-EGREGORE-ECOLOGY` (`intent/INTENT-2026-09-25-EGREGORE-ECOLOGY.json`, verbatim source in `intent/sources/EGREGORE-2026-09-25-source.md`) extends the 09-11 and 09-22 records: one persistent GREG mind over an ecology of governed intelligences (Levin's multiscale competency, compiled to nested light cones), community-coupled through the untrusted data plane, continuity without a survival right, shutdown always winning, and built as real running mechanisms. Implementation and two-pass decision: `collaboration/GREG-BODY-DECISION-2026-09-25.md` and `greg/`. State: active; reality: integration-tested, not Mac-verified, not founder-used.
+
+## First body and persistent GREG product — 2026-09-22
+
+`INTENT-2026-09-22-FIRST-BODY` preserves Alfonso's direct correction: the first owned computer is the practical body of a persistent, governed GREG operating layer above macOS. This is an active product requirement, not a claim of an installed service or a grant of live authority. The intent record and exactly two strengthening passes are in `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. The date-based ID avoids the unresolved `INTENT-0029` collision in draft #86 and draft #105. Runtime ownership (#70/#87) and live founder authentication remain unresolved.
+
+## Embodied GREG and developmental trajectory — 2026-09-11
+
+[INTENT-GREG-EMBODIED-2026-09-11](intent/INTENT-GREG-EMBODIED-2026-09-11.md)
+is the current product correction, subordinate to no older metaphorical framing.
+It preserves INTENT-0030 and the full business, human-workforce and economic/
+compute horizon. GREG-001 is partial proof, not that destination. Exact selected
+source, conflicts, scope and two-pass OPUS-2026-09-11 decision are linked there.
+No new runtime authority or activation is created.
+
+## GREG bounded real mission — 2026-09-10
+
+The current chat directs one bounded real mission that continues after the
+interface closes, uses a real capability, respects approval, recovers from
+interruption and reports evidence. This advances INTENT-0030 and SR-INTENT-2;
+the hardware operating layer, capability growth, human teams/business operation
+and compounding horizon remain intended. A fixed audit is a proof dependency,
+not a redefinition of that destination. It confers no machine sovereignty.
+
+- intent_id: GREG-INTENT-1
+- statement: prove one persistent bounded mission before expanding architecture
+- source_refs: current chat, 2026-09-10 GREG core-loop direction; no cryptographic founder authentication claim
+- owner: Alfonso; existing Kernel mission, workflow, policy and appraisal owners
+- state: active; local development proof exercised, hardware mission unproven
+- binding_scope: reversible implementation, verification and draft review
+- constitutional_constraints: existing five powers, pre-existing grants, no activation or authority expansion
+- success_evidence: tests/evidence/greg-proof/ and linked GREG-001 decision
+- failure_evidence: focused-first.log; retained host/authentication/evaluator limitations
+- dependencies: adopted SR-001 package, existing DurableWorkflow/Gate/Ledger, independent hardware/authentication gate
+- conflicts: generalizing frozen synthetic Goal Chase merely for one audit adds avoidable scope
+- next_review_trigger: review executable local proof, then supply an approved hardware and authority integration route
+- supersedes: no implementation or historical alternative; prioritizes an executable proof over additional architecture
+
+Decision and two-pass dissent: [GREG-001](collaboration/GREG-ONE-MISSION-PROOF.md).
+
 ## SR-001 bounded recovery — 2026-09-08
 
 These are faithful summaries of the current founder directive, not verbatim

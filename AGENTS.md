@@ -2,6 +2,13 @@
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
+Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
+GREG's interface belongs to a persistent operating layer above the founder's
+computer OS. Background mission continuity and authorized computer use are core
+requirements. Human collaborators and replaceable cloud mechanics remain valid.
+Advance one verified embodied mission before expanding infrastructure. Preserve
+history while choosing one active semantic owner; autonomy never creates authority.
+
 Before substantive work, read:
 
 1. `docs/FOUNDER_EFFECT_COMPILER.md`
@@ -9,6 +16,8 @@ Before substantive work, read:
 3. `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`
 4. `docs/UNIIMENTE_FINAL_BUILD_ORDER.md`
 5. `docs/CANONICAL_EXECUTION_ORDER.md`
+
+For the first owned-computer body, persistent GREG product effect and its current experimental boundary, read `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. A shell, host, agent or organ may not create a second authority plane.
 
 ## Non-negotiable interpretation rule
 
@@ -56,3 +65,7 @@ OMNIMORPH is an optional organization-design/composition mechanism, not the mean
 - Preserve failures, dissent, historical branches, and counterevidence.
 
 For any material PR, explicitly state the target effect, metaphor/literal split, simplest viable mechanism, existing mechanisms searched, residual CapabilityDeficit, verification plan, and why added complexity is warranted.
+
+## GREG body (2026-09-25)
+
+The product runtime is `greg/` (persistent body, signed founder commands, missions, Capability Genesis, morning tribunal) under `INTENT-2026-09-25-EGREGORE-ECOLOGY`. It composes the canonical Gate, ledger and spine and owns no policy. Read `greg/README.md` and `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md` before changing it.

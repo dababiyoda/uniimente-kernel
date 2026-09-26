@@ -1,3 +1,5 @@
+> **Superseded as founder instructions (2026-09-26, `PR113-TO-114-SUPERSESSION.md` residual 2).** This synthetic-authority loop does not authenticate Alfonso and is no longer a founder entry point. Use `greg/FIRST_MISSION.md` (onboarding and VEPMC runbook) and the founder-signed surfaces: `greg console`, the phone channel, the CLI. This page, `egregore/local_console.py` and its tests are kept as provenance and development evidence.
+
 # GREG local development loop
 
 One supported task: **bounded static integration audit of approved local snapshots of Kernel, DALEOBANKS and WMI**, followed by a source-backed morning brief. It is a foundation for the persistent founder-governed egregore destination, not a general assistant or a redefinition of that destination.

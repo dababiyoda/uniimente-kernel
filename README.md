@@ -1,3 +1,5 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 > **Agent entry:** before material work, read [AGENTS.md](AGENTS.md), [Project Cognition SOP](docs/PROJECT_COGNITION_SOP.md), and [Project Source Census](docs/PROJECT_SOURCE_CENSUS_2026-09-26.md). The source census currently records 93 Project-backed sources and the SOP defines how to reconstruct founder intent without mistaking historical experiments for current product architecture.
 
 # UNIIMENTE Kernel

@@ -1,0 +1,224 @@
+{
+ "what": "Founder correction -> bounded hypothesis -> held-out later mission -> evidence -> retain/regress, on two supervised GREG bodies driven only through the CLI (signed MISSION, CRITIQUE --correct, ACCEPT/CRITIQUE), including SIGKILL and restart",
+ "reality_status": "LOCAL-REAL on Linux with test founder keys; consequence-inert (mission workspace files only). Not MAC-VERIFIED, not founder-used.",
+ "scenario": "Every strategy uses fs.write, so per-capability empirical reliability cannot separate them: mission 1's placeholder note PASSED its check and was appraised, which raises fs.write reliability. Only the founder's judgment identifies it as worthless.",
+ "bodies": {
+  "R": {
+   "label": "retain path",
+   "missions": [
+    {
+     "mission_id": "m:status-1",
+     "chosen": "quick-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [],
+     "status": "DONE"
+    },
+    {
+     "mission_id": "m:status-2",
+     "chosen": "full-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [
+      "corr-c8624bd16e5d5b15cbdd9aff"
+     ],
+     "status": "DONE"
+    },
+    {
+     "mission_id": "m:status-3",
+     "chosen": "full-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [
+      "corr-c8624bd16e5d5b15cbdd9aff"
+     ],
+     "status": "DONE"
+    }
+   ],
+   "corrections": {
+    "corrections": [
+     {
+      "correction_id": "corr-c8624bd16e5d5b15cbdd9aff",
+      "state": "RETAINED",
+      "adjustment": "avoid",
+      "scope": {
+       "capability": "fs.write",
+       "params.content": "status: TODO"
+      },
+      "close_condition": "founder_accepts",
+      "trials": {
+       "helped": 1,
+       "did_not_help": 0
+      },
+      "contradicted": false
+     }
+    ],
+    "founder_review": [],
+    "conflicts": []
+   },
+   "trials": [
+    {
+     "correction_id": "corr-c8624bd16e5d5b15cbdd9aff",
+     "applied_event": "c4534598-aae7-5ea3-9fca-dd633a240046",
+     "mission_id": "m:status-2",
+     "baseline_choice": "quick-note",
+     "chosen": "full-note",
+     "result": "helped",
+     "close_condition": "founder_accepts",
+     "evidence": {
+      "alternative_action_event": "d773dc4d-20be-5667-ad69-160258670dae",
+      "receipt": "sha256:6c98ab6186f350a2b51f79a2742146a8c8cf7c4d8c9a8011036ea863a710a8c9",
+      "founder_critique": "crit-7fa0e977295af8f1551f50f6"
+     },
+     "at": "2026-09-26T16:38:32.762242Z"
+    }
+   ],
+   "state_changes": [
+    {
+     "correction_id": "corr-c8624bd16e5d5b15cbdd9aff",
+     "state": "RETAINED",
+     "from": "CANDIDATE",
+     "trials": [
+      "c4534598-aae7-5ea3-9fca-dd633a240046"
+     ],
+     "at": "2026-09-26T16:38:32.762242Z"
+    }
+   ],
+   "regression_closed": [
+    {
+     "regression_id": "reg-c8624bd16e5d5b15",
+     "correction_id": "corr-c8624bd16e5d5b15cbdd9aff",
+     "critique_id": "crit-c8624bd16e5d5b15cbdd9aff",
+     "evidence_inspected": [
+      {
+       "alternative_action_event": "d773dc4d-20be-5667-ad69-160258670dae",
+       "receipt": "sha256:6c98ab6186f350a2b51f79a2742146a8c8cf7c4d8c9a8011036ea863a710a8c9",
+       "founder_critique": "crit-7fa0e977295af8f1551f50f6"
+      }
+     ],
+     "check": "Alfonso signs an accepting critique of the alternative's action or closure on 1 eligible later choice(s) with no contrary trial",
+     "result": "satisfied",
+     "prior_behavior": {
+      "mission_id": "m:status-1",
+      "action_id": "quick-note",
+      "event_id": "6f5f5769-42f4-5a12-be5f-39299308c42f",
+      "receipt": "sha256:0a822ec9d18473c4ce9216d434e997fbff5f88ae09f4e5bc67094655403e5d8f",
+      "status": "DONE"
+     },
+     "changed_behavior": {
+      "mission_id": "m:status-2",
+      "baseline_choice": "quick-note",
+      "chosen": "full-note"
+     },
+     "reason": "1 held-out trial(s) met the declared close condition (founder_accepts) with no contrary trial",
+     "disposition": "RETAINED",
+     "at": "2026-09-26T16:38:32.762242Z"
+    }
+   ],
+   "boots": 2,
+   "recovered": 1
+  },
+  "G": {
+   "label": "regress path",
+   "missions": [
+    {
+     "mission_id": "m:status-1",
+     "chosen": "quick-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [],
+     "status": "DONE"
+    },
+    {
+     "mission_id": "m:status-2",
+     "chosen": "full-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [
+      "corr-a44d7ca3bbabfea3dd60fecc"
+     ],
+     "status": "DONE"
+    },
+    {
+     "mission_id": "m:status-3",
+     "chosen": "quick-note",
+     "baseline_choice": "quick-note",
+     "changed_by": [],
+     "status": "DONE"
+    }
+   ],
+   "corrections": {
+    "corrections": [
+     {
+      "correction_id": "corr-a44d7ca3bbabfea3dd60fecc",
+      "state": "REGRESSED",
+      "adjustment": "avoid",
+      "scope": {
+       "capability": "fs.write",
+       "params.content": "status: TODO"
+      },
+      "close_condition": "founder_accepts",
+      "trials": {
+       "helped": 0,
+       "did_not_help": 1
+      },
+      "contradicted": false
+     }
+    ],
+    "founder_review": [
+     {
+      "correction_id": "corr-a44d7ca3bbabfea3dd60fecc",
+      "state": "REGRESSED",
+      "trials": {
+       "helped": 0,
+       "did_not_help": 1
+      },
+      "message": "Founder correction says to avoid {'capability': 'fs.write', 'params.content': 'status: TODO'}, but subsequent evidence indicates it may be harmful or overbroad. Founder review recommended."
+     }
+    ],
+    "conflicts": []
+   },
+   "trials": [
+    {
+     "correction_id": "corr-a44d7ca3bbabfea3dd60fecc",
+     "applied_event": "c4534598-aae7-5ea3-9fca-dd633a240046",
+     "mission_id": "m:status-2",
+     "baseline_choice": "quick-note",
+     "chosen": "full-note",
+     "result": "did_not_help",
+     "close_condition": "founder_accepts",
+     "evidence": {
+      "alternative_action_event": "d773dc4d-20be-5667-ad69-160258670dae",
+      "receipt": "sha256:1b660244dc1ae1ef029dddb75909b42791cc2276ac11fb3c68fd5889bb772b25",
+      "founder_critique": "crit-7c79ac36dd1729adfe536a4f"
+     },
+     "at": "2026-09-26T16:38:33.359448Z"
+    }
+   ],
+   "state_changes": [
+    {
+     "correction_id": "corr-a44d7ca3bbabfea3dd60fecc",
+     "state": "REGRESSED",
+     "from": "CANDIDATE",
+     "trials": [
+      "c4534598-aae7-5ea3-9fca-dd633a240046"
+     ],
+     "at": "2026-09-26T16:38:33.359448Z"
+    }
+   ],
+   "regression_closed": [],
+   "boots": 2,
+   "recovered": 1
+  }
+ },
+ "sequence": [
+  "m:status-1 on both bodies: baseline chose quick-note ('status: TODO'); check passed; mission achieved",
+  "signed CRITIQUE --verdict reject --evidence-type founder_judgment --correct avoid --scope capability --scope params.content --regression ...",
+  "m:status-2 (held-out: new mission id, own workspace file): baseline_choice quick-note, correction-aware choice full-note; still CANDIDATE (no verdict yet)",
+  "R: greg accept on the full-note action -> trial helped -> RETAINED -> critique.regression_closed (disposition RETAINED)",
+  "G: signed CRITIQUE reject on the full-note action -> trial did_not_help -> REGRESSED -> surfaced for founder review; regression stays open",
+  "kill -9 both bodies; restart (boot 2, body.recovered)",
+  "m:status-3: R still chooses full-note (retained correction survives restart); G chooses quick-note (regressed correction no longer influences routing)",
+  "both bodies stopped with greg stop --local"
+ ],
+ "negative_evidence": [
+  "First implementation re-evaluated already-judged applications every tick with a new timestamp; the ledger's fact-identity guard refused it (EventError). Fixed by skipping judged (correction, application) pairs.",
+  "First implementation counted the pre-action observation (same tick, same timestamp) as the outcome, so the objective 'checks' close condition never retained. Fixed by ordering evidence by ledger position, not wall-clock time.",
+  "Mutation: routing that ignores corrections fails 7/11 correction tests; an evaluator that marks every applied change 'helped' fails the insufficient-evidence, regression and founder-rule contradiction tests (3/11)."
+ ]
+}

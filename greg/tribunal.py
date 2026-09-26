@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor
+from greg import anchor, corrections
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -103,6 +103,7 @@ def morning_report(journal: Journal, engine=None) -> dict:
                        "critiques_applied": [c["critique_id"] for c in critiques]},
         "q10_retain": sorted({a["capability"] for a in done}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
+        "q11b_corrections": corrections.review(journal),
         "q12_decisions_required": [{"request_id": r["request_id"], "kind": r["kind"], "mission_id": r["mission_id"],
                                     "why_now": r["why_now"], "recommendation": r["recommendation"],
                                     "alternatives": r["alternatives"],
@@ -136,7 +137,7 @@ def mark_reviewed(journal: Journal, report: dict) -> None:
 def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     """Apply a founder-signed critique without rewriting the criticized history."""
     required = {"target_event_id", "verdict", "evidence_type", "text"}
-    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression"}:
+    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression", "correction"}:
         raise CritiqueError("critique needs target_event_id, verdict, evidence_type, text")
     if body["verdict"] not in VERDICTS or body["evidence_type"] not in EVIDENCE_TYPES:
         raise CritiqueError("unknown verdict or evidence type")
@@ -160,4 +161,9 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
             raise CritiqueError("strategy exclusion needs a mission-bound target event")
         engine.exclude_strategy(mission_id, action_id, f"founder critique ({body['evidence_type']}): "
                                 + body["text"][:200], critique_id)
+    if body.get("correction") is not None:
+        try:
+            record["correction"] = corrections.propose(journal, engine.registry, record, target, body["correction"])
+        except corrections.CorrectionError as exc:
+            raise CritiqueError(str(exc)) from None
     return record

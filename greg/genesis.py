@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 from pathlib import Path
 import random
 import sys
@@ -29,6 +30,7 @@ import tempfile
 
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
+from greg import builders
 from greg.journal import Journal, iso
 from provenance.ledger import sha256_json
 
@@ -117,6 +119,7 @@ class Genesis:
     def __init__(self, *, journal: Journal, registry, workspace_root: Path, builder=None):
         self.journal, self.registry = journal, registry
         self.workspace_root, self.builder = Path(workspace_root), builder
+        self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -131,13 +134,25 @@ class Genesis:
         states = {}
         for event in self.journal.replay("capability."):
             data = event.payload
-            if event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith("installed:"):
+            if event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith("built:"):
+                states[data["manifest"]["capability_id"]] = (data, states.get(data["manifest"]["capability_id"], (None, "VERIFIED"))[1])
+            elif event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith("installed:"):
                 states[data["manifest"]["capability_id"]] = (data, states.get(data["manifest"]["capability_id"], (None, "VERIFIED"))[1])
             elif event.type == "greg.capability.state" and data["capability_id"] in states:
                 states[data["capability_id"]] = (states[data["capability_id"]][0], data["state"])
         for cid, (data, state) in states.items():
             manifest = CapabilityManifest.from_dict(data["manifest"])
             origin = data["origin"]
+            if origin.get("kind") == "built":
+                path = self.store / f"{origin['source_sha256']}.py"
+                intact = path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == origin["source_sha256"]
+                self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
+                                       state=state if intact else "QUARANTINED")
+                if not intact and state != "QUARANTINED":
+                    self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
+                                                             "why": "built source missing or changed since verification"},
+                                        key=[cid, "quarantine", origin["source_sha256"]])
+                continue
             binary = manifest.binaries[0]
             candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
             intact = Path(binary).exists() and hashlib.sha256(
@@ -156,11 +171,16 @@ class Genesis:
             return found
         deficit_id = "deficit-" + sha256_json({"mission": mission.mission_id, "function": function})[7:31]
         spec = CATALOG.get(function)
+        contract = next((c for c in mission.spec.get("capability_specs", []) if c["function"] == function), None)
         seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)
         acceptance = {"oracle": function if spec else None, "seed": seed,
                       "vector_digest": sha256_json([{k: (v.hex() if isinstance(v, bytes) else v)
                                                      for k, v in c.items()} for c in spec["oracle"](seed)])
                       if spec else None}
+        if spec is None and contract is not None:
+            acceptance = {"oracle": "founder-signed mission contract", "public_examples": len(contract["examples"]),
+                          "held_out_vectors": len(contract["held_out"]),
+                          "vector_digest": sha256_json([contract["examples"], contract["held_out"]])}
         self.journal.record("deficit.opened", {
             "deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
             "purpose": purpose, "acceptance": acceptance, "at": iso(now),
@@ -175,9 +195,9 @@ class Genesis:
         self._route(deficit_id, "verified_detached", "none", None)
 
         if spec is None:
-            self._route(deficit_id, "installed_software", "no frozen oracle for this function; cannot verify",
+            self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
                         None)
-            return self._builder_route(mission, function, deficit_id, now)
+            return self._builder_route(mission, function, deficit_id, now, contract)
 
         # 3. installed commodity software
         for candidate in spec["candidates"]:
@@ -202,23 +222,93 @@ class Genesis:
                 key=[manifest.capability_id, manifest.digest()])
             self._route(deficit_id, "installed_software", "acquired", manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now)
-        return self._builder_route(mission, function, deficit_id, now)
+        return self._builder_route(mission, function, deficit_id, now, contract)
 
     def _route(self, deficit_id, route, result, capability_id):
         self.journal.record("genesis.route", {"deficit_id": deficit_id, "route": route, "result": result,
                                               "capability_id": capability_id},
                             key=[deficit_id, route, result, capability_id])
 
-    def _builder_route(self, mission, function, deficit_id, now):
-        if self.builder is None:
-            self._route(deficit_id, "builder", "no builder attached (coding agent/human/model not connected)", None)
+    def _builder_route(self, mission, function, deficit_id, now, contract=None):
+        """Commission the residual capability against the founder-frozen contract, verify, register."""
+        if self.builder is None or contract is None:
+            why = ("no builder attached (coding agent/human/model not connected)" if self.builder is None
+                   else "the mission declares no contract for this function; nothing to build against")
+            self._route(deficit_id, "builder", why, None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
-        result = self.builder.build(function=function, deficit_id=deficit_id)
-        self._route(deficit_id, "builder", f"builder {getattr(self.builder, 'identity', 'unknown')} returned "
-                    f"{'a candidate' if result else 'nothing'}", None)
+        spent = sum(e.payload.get("cost_usd") or 0.0 for e in self.journal.replay("genesis.built")
+                    if e.payload["deficit_id"] == deficit_id)
+        if contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]:
+            self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
+        if hasattr(self.builder, "max_budget_usd"):
+            self.builder.max_budget_usd = min(self.builder.max_budget_usd, contract["build_budget_usd"] - spent)
+        request = {"function": function, "description": contract["description"],
+                   "returns": contract.get("returns", "a JSON value"), "examples": contract["examples"]}
+        feedback = None
+        self.store.mkdir(parents=True, exist_ok=True)
+        for attempt in (1, 2):
+            try:
+                built = self.builder.build(request, feedback)
+            except Exception as exc:  # the builder is untrusted; its failure is evidence
+                self._route(deficit_id, "builder", f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300], None)
+                break
+            source = built["source"]
+            digest = hashlib.sha256(source.encode()).hexdigest()
+            self.journal.record("genesis.built", {
+                "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
+                "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
+                "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only"},
+                key=[deficit_id, attempt, digest])
+            problems = builders.screen(source)
+            path = self.store / f"{digest}.py"
+            if not problems and not path.exists():
+                path.write_text(source)
+            public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
+            passed, report = (False, {"screen": problems}) if problems else builders.verify(
+                path, contract["examples"] + contract["held_out"])
+            report = {"screen": problems, "public": public, "cases": report.get("cases"),
+                      "failed_cases": len(report.get("failures", [])), "isolation": report.get("isolation")}
+            self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": f"built:{digest}",
+                                                     "passed": passed, "report": report,
+                                                     "verifier": "founder-frozen held-out oracle; separate no-network "
+                                                                 "interpreter; candidate never saw held-out vectors"},
+                                key=[deficit_id, digest])
+            if passed:
+                manifest = self._built_manifest(function, contract, built, digest, deficit_id, report)
+                origin = {"kind": "built", "function": function, "source_sha256": digest,
+                          "contract": {"output_field": contract["output_field"]}}
+                self.registry.register(manifest, builders.built_adapter(origin["contract"], path, digest),
+                                       state="VERIFIED")
+                self.journal.record("capability.registered", {"manifest": manifest.to_dict(), "state": "VERIFIED",
+                                                              "deficit_id": deficit_id, "origin": origin},
+                                    key=[manifest.capability_id, manifest.digest()])
+                self._route(deficit_id, "builder", "built and verified", manifest.capability_id)
+                return self._attach(mission, manifest, deficit_id, now)
+            feedback = problems or [f"input {json.dumps(contract['examples'][f['case']]['input_text'])[:200]} expected "
+                                    f"{json.dumps(contract['examples'][f['case']]['expected'])} but got "
+                                    f"{f.get('got', f.get('error'))}" for f in public.get("failures", [])
+                                    if isinstance(f.get("case"), int)] or ["fails hidden acceptance cases; "
+                                                                          "re-read the description precisely"]
+            self._route(deficit_id, "builder", f"attempt {attempt} failed verification", None)
         self._route(deficit_id, "founder", "escalated", None)
         return None
+
+    def _built_manifest(self, function, contract, built, digest, deficit_id, report) -> CapabilityManifest:
+        return CapabilityManifest(
+            capability_id=f"built.{function}.{digest[:12]}", version="1.0.0", provider=f"built:{built['builder']}",
+            function=function, description=contract["description"][:300], route="internal",
+            consequence_class="read_only", inputs={"path": "str"},
+            outputs={contract["output_field"]: contract.get("returns", "value"), "path": "str"},
+            target_prefix="fs:", filesystem="read-scoped", retry_safe=True, tests=(f"founder-oracle:{deficit_id}",),
+            strengthens=("capability_formation", "proof"),
+            provenance={"source_sha256": digest, "builder": built["builder"], "prompt_sha256": built.get("prompt_sha256"),
+                        "deficit_id": deficit_id, "oracle": "founder-signed held-out vectors",
+                        "verification": report, "cost_usd": built.get("cost_usd"),
+                        "license": "generated for this body by the named builder",
+                        "runtime": "isolated interpreter per call; never in the body process"})
 
     def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str) -> CapabilityManifest:
         version = run_isolated([binary, "--version"], cwd=Path(tempfile.gettempdir()), timeout=10)

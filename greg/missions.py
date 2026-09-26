@@ -71,6 +71,11 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError("ladder rung names unknown checks")
     if spec["closure"]["kind"] == "bounded" and ladder:
         raise MissionError("bounded missions close on their checks; ladders are for infinite missions")
+    functions = [c["function"] for c in spec.get("capability_specs", [])]
+    if len(functions) != len(set(functions)):
+        raise MissionError("duplicate capability_specs functions")
+    if sum(c["build_budget_usd"] for c in spec.get("capability_specs", [])) > cone.budget_usd + 1e-9:
+        raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
 

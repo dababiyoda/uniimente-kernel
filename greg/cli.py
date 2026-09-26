@@ -102,6 +102,8 @@ def main(argv=None) -> int:
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
     r.add_argument("--max-ticks", type=int)
+    r.add_argument("--builder", choices=["none", "claude-code"], default="none",
+                   help="Capability Genesis builder route (spends only a mission's signed build budget)")
     r.add_argument("--clear-stop", action="store_true",
                    help="remove a previous local STOP file (a deliberate human restart)")
     sv = sub.add_parser("service"); svs = sv.add_subparsers(dest="service_cmd", required=True)
@@ -212,7 +214,11 @@ def main(argv=None) -> int:
         elif args.cmd == "run":
             if args.clear_stop:
                 Layout(home).stop_file.unlink(missing_ok=True)
-            return Body(home).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
+            builder = None
+            if args.builder == "claude-code":
+                from greg.builders import ClaudeCodeBuilder
+                builder = ClaudeCodeBuilder()
+            return Body(home, builder=builder).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
         elif args.cmd == "service":
             target = service.install(Path(home), args.platform,
                                      target_dir=Path(args.target_dir) if args.target_dir else None)

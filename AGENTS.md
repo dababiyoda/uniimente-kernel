@@ -22,6 +22,9 @@ history while choosing one active semantic owner; autonomy never creates authori
 
 Before substantive work, read:
 
+0. `docs/PROJECT_COGNITION_SOP.md`
+0a. `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`
+
 1. `docs/FOUNDER_EFFECT_COMPILER.md`
 2. `docs/FOUNDER_INTENT_LEDGER.md`
 3. `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`

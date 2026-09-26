@@ -29,7 +29,7 @@ pushed to the #114 branch; that branch belongs to another active session.
 | #112 mechanism | #113 record said | On the #114 line |
 |---|---|---|
 | 10 loopback console | REPLACED by `greg serve` + phone; console retained only as evidence | **PORTED as `greg/console.py`** (port 8766), which signs with the founder key held in memory. It sits beside the phone channel (8765, delegated device key). Both write founder-signed envelopes into one body inbox, so this is two transports over one authority path, not two authorities. |
-| 10–11 `egregore/local_console.py`, `development_session.py` | not active | **Still active in #114**: `tests/unit/test_greg_console.py`, `tests/greg_acceptance_driver.py` and `docs/GREG_LOCAL_START.md` drive them. `GREG_LOCAL_START.md` tells the founder to start the synthetic-authority console. **Duplicate active founder path.** Recommended: keep the modules and tests as evidence, remove `GREG_LOCAL_START.md` from founder instructions in favour of `greg/FIRST_MISSION.md`. |
+| 10–11 `egregore/local_console.py`, `development_session.py` | not active | **Still active in #114**: `tests/unit/test_greg_console.py`, `tests/greg_acceptance_driver.py` and `docs/GREG_LOCAL_START.md` drive them. `GREG_LOCAL_START.md` tells the founder to start the synthetic-authority console. **Duplicate active founder path.** Recommended: take the synthetic-authority `egregore.local_console` out of active founder instructions; keep its modules, tests and the document as historical provenance. |
 | 12 brief "what changed" | gap | **PORTED as `greg/briefs.py`** (source-bound morning brief, appraiser re-renders and byte-compares). |
 | 13 held-out gate `brief_learning.compare` | not ported as code | Imported by the #114 resume-authority test; the module is present. Still recorded as the admission rule for future learned changes. |
 
@@ -37,6 +37,13 @@ pushed to the #114 branch; that branch belongs to another active session.
 
 1. Persisted founder stop (above), until #113's head is merged into #114.
 2. The synthetic `egregore.local_console` founder path is still advertised.
+
+**Founder correction (2026-09-26).** `greg/FIRST_MISSION.md` is the founder-owned first-mission,
+onboarding and VEPMC acceptance runbook. It is not meant to be GREG's only permanent entry point.
+The product is Alfonso ↔ GREG: one persistent GREG identity with several authenticated surfaces
+(`greg console`, the phone channel, the CLI). They coexist because each writes founder-signed
+envelopes into the same inbox, so none is a separate authority. Only the synthetic-authority
+`egregore.local_console` leaves active founder instructions.
 3. Model cognition is Anthropic-only (`greg/planner.py`: `AnthropicTransport`, `ClaudeCodeTransport`).
    The founder asked for provider-independent OpenAI and Anthropic routing with health, capability,
    cost, latency, task suitability, fallback and model provenance. This is the next product

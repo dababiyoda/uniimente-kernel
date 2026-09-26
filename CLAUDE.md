@@ -13,6 +13,9 @@ Treat the entire historical repository as mechanism substrate. Extract what work
 
 Read and obey, in this order:
 
+- @docs/PROJECT_COGNITION_SOP.md
+- @docs/PROJECT_SOURCE_CENSUS_2026-09-26.md
+
 - @docs/FOUNDER_EFFECT_COMPILER.md
 - @docs/FOUNDER_INTENT_LEDGER.md
 - @docs/RECURSIVE_COLLABORATION_PROTOCOL.md

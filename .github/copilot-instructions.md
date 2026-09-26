@@ -1,5 +1,16 @@
 # UNIIMENTE GitHub Agent Instructions
 
+## Current product priority
+
+Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` before proposing architecture.
+
+Repository history is feedstock, not a mandate to preserve every executable design. Prefer productizing/recombining mechanisms into the real `greg/` path. Preserve provenance and negative evidence, but do not preserve duplicate active architectures from sunk cost.
+
+Every material coding task must identify the product capability it creates and finish by answering: **What can actual GREG do after this change that it could not do before?** A test-only, simulation-only, benchmark-only or documentation-only result is subordinate evidence unless it removes a precise blocker to the next real product capability.
+
+Current bottleneck remains VEPMC 0 -> 1 until verified otherwise.
+
+
 Read `AGENTS.md` and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
 
 The founder's biological and science-fiction language expresses **desired effects and mechanism-discovery prompts**, not mandatory surface implementations, unless Alfonso explicitly specifies the implementation.

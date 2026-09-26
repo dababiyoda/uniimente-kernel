@@ -66,7 +66,12 @@ def morning_report(journal: Journal, engine=None) -> dict:
         if e.type == "greg.decision.requested" and e.payload["request_id"] not in answered:
             open_requests.append(e.payload)
     critiques = [e.payload for e in all_events if e.type == "greg.critique.recorded"]
-    closed = {e.payload["regression_id"] for e in all_events if e.type == "greg.critique.regression_closed"}
+    closed = set()   # closed only through its own proven close condition; a reverted fix reopens it
+    for e in all_events:
+        if e.type == "greg.critique.regression_closed":
+            closed.add(e.payload["regression_id"])
+        elif e.type == "greg.critique.regression_reopened":
+            closed.discard(e.payload["regression_id"])
     regressions = [c["regression"] for c in critiques if c.get("regression")
                    and c["regression"]["regression_id"] not in closed]
     ok, chain = journal.ledger.verify_chain()
@@ -120,6 +125,8 @@ def morning_report(journal: Journal, engine=None) -> dict:
     report["single_bottleneck_metric"] = metrics.vepmc(journal)
     report["appraisals"] = [e.payload for e in journal.replay("mission.appraised")]
     report["routing_knowledge"] = routing.routing_knowledge(journal)
+    from greg import improvement
+    report["learning"] = improvement.report(journal, journal.ledger)   # kept, rejected, reverted, expired
     report["report_digest"] = sha256_json(report)
     return report
 
@@ -134,7 +141,7 @@ def mark_reviewed(journal: Journal, report: dict) -> None:
 def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     """Apply a founder-signed critique without rewriting the criticized history."""
     required = {"target_event_id", "verdict", "evidence_type", "text"}
-    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression", "attention"}:
+    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression", "attention", "failure_claim"}:
         raise CritiqueError("critique needs target_event_id, verdict, evidence_type, text")
     if body["verdict"] not in VERDICTS or body["evidence_type"] not in EVIDENCE_TYPES:
         raise CritiqueError("unknown verdict or evidence type")
@@ -146,19 +153,35 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
               "target_event_hash": journal.event_hash(target.event_id), "target_type": target.type,
               "verdict": body["verdict"], "evidence_type": body["evidence_type"], "text": body["text"][:4000],
               "command_digest": command_digest, "history_rewritten": False}
-    if "attention" in body:   # founder label on a delivered brief: the evidence greg.improvement learns from
-        from greg.improvement import ImprovementError, validate_labels
-        try:
-            record["attention"] = validate_labels(body["attention"])
-        except ImprovementError as exc:
-            raise CritiqueError(str(exc)) from exc
-        if target.type != "greg.mission.action" or target.payload.get("status") != "DONE":
-            raise CritiqueError("attention labels must reference a delivered brief action")
+    # Typed evidence for greg.improvement: a preference label is what Alfonso wants; a failure claim is a
+    # statement about the world to verify independently. Neither is recorded as truth.
+    from greg import improvement
+    epistemic = {}
+    try:
+        if "attention" in body:
+            record["attention"] = improvement.validate_labels(body["attention"])
+            epistemic["attention"] = improvement.EPISTEMIC["attention"]
+        if "failure_claim" in body:
+            record["failure_claim"] = improvement.validate_claim(body["failure_claim"])
+            epistemic["failure_claim"] = improvement.EPISTEMIC["failure_claim"]
+    except improvement.ImprovementError as exc:
+        raise CritiqueError(str(exc)) from exc
+    if epistemic:
+        if target.type != "greg.mission.action" or target.payload.get("status") != "DONE" \
+                or target.payload.get("capability") != improvement.CAPABILITY:
+            raise CritiqueError("brief labels and failure claims must reference a delivered brief action")
+        record["epistemic"] = {**epistemic, "is_truth": False}
     if body.get("regression"):
+        condition = ("a test or check that fails on the criticized behavior" if not epistemic else
+                     improvement.claim_close_condition() if "failure_claim" in epistemic
+                     else improvement.attention_close_condition())
         record["regression"] = {"regression_id": "reg-" + command_digest[7:23],
                                 "description": str(body["regression"])[:1000], "state": "OPEN",
-                                "close_condition": "a test or check that fails on the criticized behavior"}
+                                "close_condition": condition}
     journal.record("critique.recorded", record, key=critique_id)
+    reverted = improvement.founder_revert(journal, record, target, utcnow())
+    if reverted:
+        record["reverted"] = reverted
     if body.get("exclude_strategy"):
         mission_id = target.payload.get("mission_id")
         action_id = target.payload.get("action_id") or body["exclude_strategy"]

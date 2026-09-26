@@ -257,7 +257,7 @@ class Body:
             return {"mission_id": body["mission_id"], "state": body["state"]}
         if kind == "CRITIQUE":
             record = tribunal.critique(self.journal, self.engine, body, digest)
-            if "attention" in record:   # a founder label advances the held-out learning loop
+            if record.get("epistemic"):   # founder evidence advances the held-out learning loop now
                 improvement.learn(self.journal, self.ledger, self.clock())
             return record
         if kind in ("CAPABILITY_ATTACH", "CAPABILITY_DETACH"):
@@ -374,6 +374,7 @@ class Body:
             return {"commands": commands, "paused": True}
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
+        improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
         return {"commands": commands, "missions": summary}
 

@@ -1,0 +1,28 @@
+# PR #119 → one improvement substrate (mechanism-level disposition)
+
+Founder decision (2026-09-26): #120 is the canonical preference-learning spine. #119 ("founder
+learning implementation A", head `2e73ef3`, `greg/learning.py`) is metabolized into #120's
+`greg/improvement.py` and stops being an executable competitor. Its branch, tests, evidence
+(`tests/evidence/greg-product/learning-closures.json`) and history are preserved; nothing is deleted.
+
+The routing changes #119 also carried (`greg/models.py`) are dispositioned into #118, not here, so
+routing logic is never split between the two learning PRs.
+
+| # | #119 mechanism | Disposition | Where it lives now / why |
+|---|---|---|---|
+| 1 | Typed founder epistemology (`ACCEPT/REJECT/CORRECT/PREFERENCE/FAILURE_CLAIM`, `is_truth: False`) | **RECOMBINED** | Critique records carry `epistemic`: `attention` labels are `founder_preference`; `failure_claim` is `founder_reported_failure`, `is_truth: False`. A claim only becomes `independently_verified_failure` or `not_reproduced` through `improvement.claim_checked` against independent observation. The finer `ACCEPT/REJECT/CORRECT` split is not ported: it did not change any decision. |
+| 2 | Evidence-acquisition knob `check_fetch_order` (`api_order`/`ready_first`), diagnosis of a claimed miss, shadow gather with exhaustive truth | **TRANSPLANTED** into the same lifecycle as lever `brief.acquisition` (`briefs.ACQUISITION_SPACE`, `briefs.shadow_gather`, `improvement._learn_evidence`) | Mutated: the independent observation is capped (`MAX_TRUTH_CALLS`), an incomplete observation decides nothing, retention needs ≥3 held-out cases (like preference) **and** an independently reproduced founder claim. |
+| 3 | Resource guard: learning may not buy results with API calls (`GUARDS = {"api_calls"}`) | **TRANSPLANTED** | Any held-out case where the candidate's acquisition uses more calls than the current policy rejects the candidate, even when it was more complete (`test_completeness_bought_with_extra_calls_is_rejected`). |
+| 4 | Candidate expiry (`MAX_PENDING_DAYS = 14`, NO_IMPROVEMENT) | **TRANSPLANTED** | `improvement.expired`, decision `NO_IMPROVEMENT`, never retained; an expired change waits for new evidence before being proposed again. |
+| 5 | Protected surface (`PROTECTED` terms, `NEEDS_FOUNDER_DECISION`) | **TRANSPLANTED + strengthened** | `validate_policy` refuses any protected key for every lever; `active_policy` re-validates on read, so a forged ledger record with protected state is never executed (tested for 13 protected fields × 2 levers). #119's explicit `{knob, value}` founder correction is **not ported**: no knob is named directly; changes come only from derivation plus held-out evidence. |
+| 6 | Founder-signed revert of a retained change (CRITIQUE `reject` on `learning.retained`) | **TRANSPLANTED** | `improvement.founder_revert`; it also reopens any regression the change had closed. |
+| 7 | `draft_attention` ordering knob (`inline`/`after_ready`) and label metrics (`noise_before_last_needed`, `needed_in_top3`) | **RETAIN_AS_EVIDENCE** | Overlaps #120's selection lever (`idle_includes_drafts`). A second draft-handling knob with a different metric would be two meanings of improvement for one presentation decision. Revisit if real labels show ordering, not selection, is the residual. |
+| 8 | Single first held-out case decides; `CONFLICTED` on mixed metrics | **REJECT_WITH_REASON** | One later case is too little evidence for automatic retention; the canonical rule is ≥3 held-out cases, strict aggregate gain, a tie loses. |
+| 9 | Separate engine `greg/learning.py`, events `learning.*`, context field `learning`, morning-report section | **SUPERSEDED** | One engine (`greg/improvement.py`), one event namespace (`improvement.*`), one context field (`learned`), one CLI (`greg learning`, `greg critique --missed/--noise/--claim-failing`), one decision function (`improvement.verdict`). The morning report now includes `improvement.report`. |
+| 10 | `models.py`: `_classify` policy markers incl. bare `invalid_prompt`; configurable `anthropic_price_per_mtok` | **Dispositioned in #118** | Price override transplanted into #118. Bare `invalid_prompt` is **not** a policy refusal (founder falsifier); #118 requires affirmative policy evidence. |
+| 11 | `tribunal`: regression obligations never close | **NEW in #120** (neither PR had it) | `critique.regression_closed` is written only when the regression's own close condition is proven by the retained evidence (bound to regression, critique, candidate, baseline, held-out cases, decision, proof); `critique.regression_reopened` when the change is reverted. |
+
+## Result
+
+One learning implementation. #119 is historical/developmental evidence and should be closed as
+superseded, not merged. VEPMC remains 0: none of this is founder-owned Mac evidence.

@@ -432,7 +432,55 @@ def _conclude(journal: Journal, candidate: dict, case: dict, baseline: dict, tri
             "scope": "this capability's presentation / evidence order only", "authority_change": False,
             "revert_with": "a signed CRITIQUE rejecting this learning.retained event"},
             key="ret-" + cid[5:])
+        _close_regression(journal, candidate, case, baseline, trial, now)
     return evaluation
+
+
+# Defect checks a regression can be closed on: counts of the criticized behavior (lower is better, 0 = gone).
+DEFECT_CHECKS = ("missed_obligations", "noise_before_last_needed", "missed_failing_ready", "unknown_ready_checks",
+                 "false_failing")
+
+
+def regression_check(baseline: dict, candidate: dict) -> tuple[bool, dict]:
+    """The tribunal's declared close condition, made executable: a check that FAILS on the criticized
+    behavior (the unchanged baseline shows the defect on the held-out case) and PASSES on the retained
+    candidate (the defect is gone there), with no other defect check made worse."""
+    failing = {m: baseline[m] for m in DEFECT_CHECKS if baseline.get(m)}
+    cleared = {m: candidate.get(m) for m in failing}
+    worse = [m for m in DEFECT_CHECKS if m in baseline and m in candidate and candidate[m] > baseline[m]]
+    satisfied = bool(failing) and all(v == 0 for v in cleared.values()) and not worse
+    reason = ("the unchanged baseline fails " + ", ".join(f"{m}={v}" for m, v in failing.items())
+              + " on the held-out case and the retained candidate clears them"
+              if satisfied else
+              "no defect on the held-out baseline to demonstrate" if not failing else
+              "the candidate does not clear every failing check" if not all(v == 0 for v in cleared.values())
+              else f"the candidate makes {worse} worse")
+    return satisfied, {"failing_on_baseline": failing, "on_candidate": cleared, "made_worse": worse,
+                       "reason": reason}
+
+
+def _close_regression(journal: Journal, candidate: dict, case: dict, baseline: dict, trial: dict, now) -> None:
+    """Close ONLY the regression carried by the critique this candidate came from, and only on demonstration."""
+    origin = candidate["origin"]["review_id"]
+    critique = next((e for e in _events(journal, "critique.recorded") if e["critique_id"] == origin), None)
+    regression = (critique or {}).get("regression")
+    if not regression:
+        return
+    closed = {e["regression_id"] for e in _events(journal, "critique.regression_closed")}
+    if regression["regression_id"] in closed:
+        return
+    satisfied, check = regression_check(baseline, trial)
+    record = {"regression_id": regression["regression_id"], "critique_id": origin,
+              "candidate_id": candidate["candidate_id"], "held_out_case": case, "baseline": baseline,
+              "candidate": trial, "decision": "RETAIN", "check": check, "at": iso(now),
+              "close_condition": regression["close_condition"],
+              "evidence": {"receipt": case["receipt"], "inputs_digest": case.get("inputs_digest"),
+                           "truth": case.get("truth")}}
+    if satisfied:
+        journal.record("critique.regression_closed", record, key=[regression["regression_id"], "closed"])
+    else:   # retained, but the obligation is not demonstrated: it stays OPEN, and says why
+        journal.record("learning.regression_still_open", record, key=[regression["regression_id"],
+                                                                       candidate["candidate_id"], case["receipt"]])
 
 
 def revert(journal: Journal, critique: dict, target_event) -> dict | None:

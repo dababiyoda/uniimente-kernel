@@ -2,6 +2,18 @@
 
 # Founder Intent Ledger
 
+## #114 children topology reconciliation — 2026-09-26
+
+Founder reconciliation, recorded from Alfonso's 2026-09-26 review of #119: the founder-learning work was originally authorized to stack on #115; it was built on #114 instead. The original stacking instruction is **superseded for structural reasons**, and there is no rebase merely to satisfy it. Accepted topology:
+
+```
+#114  (canonical GREG product line)
+├── #115  external witness (RFC 3161 ledger anchoring)
+└── #119  bounded founder learning (review -> held-out test -> retain/revert)
+```
+
+#115 and #119 are orthogonal children; neither is a competing GREG. Canonical convergence must later preserve the accepted mechanisms of both. Invariant: **one eventual GREG contains both externally witnessed evidence and bounded institutional learning.** No new convergence PR is created unless the repository process requires one. State: active. Claim discipline for #119: GREG can convert authenticated founder feedback into a bounded hypothesis about one supported capability, test it on later evidence, retain or reject it, reconstruct retained learning after restart, and reversibly change later behavior without expanding authority. The learnable surface is deliberately narrow; this is not general intelligence or unrestricted self-improvement.
+
 ## Real-product repository metabolism — 2026-09-26
 
 `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` preserves Alfonso's latest explicit anti-cathedral correction with verbatim excerpts in `intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`: the project corpus is developmental substrate to be metabolized into the actual GREG product. Experiments, simulations, tests, benchmarks and architecture remain subordinate verification/evidence, not the milestone. Every substantial session must produce a truthful product delta ("what can actual GREG do now that it could not do before?") or identify a precise external blocker. Historical mechanisms may be productized, extracted, recombined, retained as evidence, archived, or removed from the active canonical path while preserving provenance. State: active. Current Single Bottleneck Metric remains VEPMC 0 -> 1.

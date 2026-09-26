@@ -48,14 +48,14 @@
   gap: Replay and idempotency are proven in-process; no production event store or cross-organ replay under load.
   adopt: [PostgreSQL outbox, EventStoreDB]
 6:
-  implementation: [provenance/proof.py, provenance/ledger.py, provenance/commit_witness.py]
-  tests: [tests/unit/test_proof.py, tests/unit/test_provenance.py]
-  gap: Merkle checkpoints are anchored inside the same ledger, so whoever controls the ledger can regenerate history. No external timestamp or transparency-log anchor yet; the "cannot be manufactured retroactively" moat does not hold until one exists.
+  implementation: [provenance/proof.py, provenance/ledger.py, provenance/commit_witness.py, greg/anchor.py]
+  tests: [tests/unit/test_proof.py, tests/unit/test_provenance.py, tests/unit/test_greg_anchor.py]
+  gap: GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE, and `greg anchor verify` detects rewritten anchored history. Not yet exercised against a public TSA (blocked from the build container) and not yet enabled on a founder body; kernel Merkle checkpoints outside GREG remain self-anchored.
   adopt: [RFC 3161 timestamp authority, Sigstore Rekor v2, OpenTimestamps]
 7:
-  implementation: [identity/machine_passport.py, identity/service-identities.yaml]
-  tests: [tests/unit/test_identity.py]
-  gap: SPIFFE-style identifiers exist, but inter-organ signing is shared-key HMAC. No asymmetric keys, certificates, rotation or revocation lists.
+  implementation: [identity/machine_passport.py, identity/service-identities.yaml, greg/founder.py]
+  tests: [tests/unit/test_identity.py, tests/unit/test_greg_founder_and_scope.py]
+  gap: GREG commands are Ed25519-signed by the founder key or a delegated, expiring, revocable device key, with rotation. Inter-organ bridge signing (DALEOBANKS/WMI) is still shared-key HMAC, and there are no certificates.
   adopt: [SPIFFE/SPIRE, Ed25519 via cryptography, Sigstore]
 8:
   implementation: [policy/consequence_gate.py, identity/machine_passport.py]

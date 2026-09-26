@@ -32,7 +32,7 @@ from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness"}
-DELIVERING = {"brief.engineering"}   # deliverables re-rendered from their receipts
+DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
@@ -137,13 +137,14 @@ def appraise(request: dict) -> dict:
             findings.append("duplicate receipt or dispatch claim")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
-        from greg.briefs import verify_delivery
+        import importlib
         delivered_ok = True
         for action in actions:
             if action.get("capability") not in DELIVERING:
                 continue
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
+            verify_delivery = importlib.import_module(DELIVERING[action["capability"]]).verify_delivery
             ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None)
             if not ok:
                 delivered_ok = False

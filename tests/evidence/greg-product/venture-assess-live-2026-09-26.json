@@ -1,0 +1,86 @@
+{
+ "evidence": "GREG venture.assess live run (Bridge A as a GREG capability)",
+ "date": "2026-09-26",
+ "reality": "LOCAL-REAL (supervised body in a Linux dev container; test founder key, not Alfonso's; not Mac-verified)",
+ "commands": [
+  "python -m greg --home BODY init --read-root /tmp/claude-0/organs",
+  "python -m greg --home BODY founder keygen/enroll (test key)",
+  "python -m greg --home BODY run --tick-seconds 2  (background host loop)",
+  "python -m greg --home BODY mission new venture-assessment --railscout RS --wmi WMI --manifest RS/examples/project-source-packet/manifest.json --source-root RS/examples/project-source-packet --key K",
+  "python -m greg --home BODY decisions  -> one APPROVAL: venture.assess outside the read-only cone",
+  "python -m greg --home BODY decide REQ approve --key K",
+  "kill -9 host loop; restart; SIGTERM",
+  "tamper memo -> Body.appraise; restore -> Body.appraise"
+ ],
+ "organs": {
+  "railscout": "dababiyoda/RAILSCOUT origin/founder/railscout-coded-slice-20260926 @ 232f72421e5dbbf4ded6cc58ce5b4fd61cfbbf50 (worktree)",
+  "wealthmachine": "dababiyoda/WealthMachineIntelligence main @ ec82b8027d987c865dc123215afb53d20916908f (worktree)",
+  "signal": "RailScout examples/project-source-packet (three real project-source excerpts, sha256-pinned)"
+ },
+ "result": {
+  "approval_before_any_organ_ran": true,
+  "railscout_status": "NEEDS_EVIDENCE",
+  "engine_verdict": "go (score 0.72, alignment 0.49, 'Ultra Low' engine risk)",
+  "binding_verdict": "needs_more_evidence",
+  "canonical_packet_unresolved": [
+   "pain_owner",
+   "budget_owner",
+   "governing_bottleneck"
+  ],
+  "execution_authority": false,
+  "memo": "venture-f61c352f91b2538f.md",
+  "memo_sha256": "7252a4bedf1500e75f240b220cb90c9ec74512be934c3e72c23282180108fea4"
+ },
+ "appraisal": {
+  "appraisals": [
+   {
+    "mission_id": "m:venture-0d6bc0a477d5",
+    "verdict": "VERIFIED",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": true,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": []
+   }
+  ],
+  "actions": [
+   {
+    "action_id": "assess-venture",
+    "capability": "venture.assess",
+    "status": "DONE",
+    "receipt": "sha256:c962b4b227820a560af5137774932091a2ab8e8a5fad7988d31d5e6a1c3001f2"
+   }
+  ],
+  "requests": [
+   "APPROVAL"
+  ],
+  "answers": [
+   "approve"
+  ]
+ },
+ "restart_and_tamper": {
+  "boots": 2,
+  "done_actions_after_restart": 1,
+  "tampered_memo": {
+   "verdict": "REFUTED",
+   "findings": [
+    "assess-venture: delivered memo differs from the render of the receipted inputs"
+   ]
+  },
+  "restored_memo": {
+   "verdict": "VERIFIED",
+   "findings": []
+  },
+  "boots_note": "two greg.body.booted records in ledger.jsonl; the helper's replay filter used the wrong name and printed 0"
+ },
+ "memo_text": "# Venture assessment \u2014 Does the accessible source corpus justify building a custom proof-to-settlement substrate now?\n\n**Binding verdict: needs_more_evidence** \u2014 RailScout status NEEDS_EVIDENCE caps the engine's 'go'.\n\n- RailScout (evidence): **NEEDS_EVIDENCE**; next action: Find independent evidence for buyer\n- WealthMachine (venture engine): **go**, opportunity score 0.72, market alignment 0.49, risk low\n- Requires your approval: yes. GREG executed nothing beyond reading sources and running both organs.\n\n## Governing transaction\n\nAn unspecified buyer accepts proof before releasing an unspecified physical-world payment\n\nFailure layer: proof \u2014 Potential proof/trust/settlement bottleneck requires a real named transaction\n\n## Evidence (source bytes verified; assertions not independently verified)\n\n- supports [D1, observation] Founder seeks trapped recurring physical-world money streams (`doctrine` bytes 23-144)\n- supports [H1, allegation] Historical essay says dependence on external APIs precludes autonomy (`historical` bytes 0-153)\n- challenges [K1, observation] Current agent rule favors existing mechanisms when they close the effect (`current` bytes 0-115)\n\n## What is not evidenced\n\n- buyer\n- budget_owner\n- verifier\n- accepted_decision\n- canonical packet fields unresolved: pain_owner, budget_owner, governing_bottleneck\n\n## Strongest counterexample\n\nCurrent agent rule favors existing mechanisms when they close the effect \u2014 \"Do not recommend building new substrate when an existing real mechanism closes the effect more cheaply or reliably.\"\n\n## Venture engine reasoning\n\n- opportunity score 0.72 meets the 0.55 threshold\n- engine risk level: Ultra Low\n- [bear] only 2 evidence item(s); demand is asserted, not shown; no path implies anyone has agreed to pay; willingness to pay is untested until a buyer commits value\n- [incumbent_response] an incumbent with distribution can copy research appraisal quickly; the durable edge must be trust and cultural specificity, not the artifact itself\n\n## Adversarial committee\n\n- bull (for, medium): opportunity score 0.72 clears threshold\n- bear (against, medium): only 2 evidence item(s); demand is asserted, not shown; no path implies anyone has agreed to pay; willingness to pay is untested until a buyer commits value\n- fraud_manipulation (neutral, low): no sybil indicators in the evidence set; keep verifying provenance\n- incumbent_response (against, medium): an incumbent with distribution can copy research appraisal quickly; the durable edge must be trust and cultural specificity, not the artifact itself\n- adoption_friction (against, low): audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause\n- do_nothing (against, low): skipping this preserves founder attention for a stronger signal; the cost of waiting is one cycle of learning, not the market\n- opportunity_cost (against, low): score 0.72 vs. alignment 0.49: compare against the best alternative use of the same attention and budget\n\n## Validation plan (proposed, not executed)\n\n1. Find independent evidence for buyer\n1. Draft landing-page copy and collect waitlist interest (no payment yet)\n1. Run 3-5 buyer interviews from engaged repliers\n\n## Provenance\n\n- RailScout receipt `f61c352f91b2538f1da6a69786abeff7f38c8cd541db69c18ac0ec8ae9db1f40` at `232f72421e5dbbf4ded6cc58ce5b4fd61cfbbf50`\n- WealthMachine engine at `ec82b8027d987c865dc123215afb53d20916908f`\n- Wire packet `d6f36402-fe40-536a-8bec-cc2c84f2e40d` sent under the kernel identity; assessment adapted under the wealthmachine identity; execution authority False\n- Signal: manifest 0d6bc0a477d52cb53412eafba6f3fa0ed7bdeb7546ffd243c4dda4f8e9f64eff\n- Renderer greg.ventures/1\n"
+}

@@ -143,5 +143,46 @@ def engineering_brief(*, local: dict[str, str], github: list[str], daily: bool =
     }
 
 
+def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, source_root: str,
+                       preauthorize_delivery: bool = False, horizon_days: float = 2) -> dict:
+    """Signal -> venture decision memo through the real organs (Bridge A).
+
+    RailScout appraises the signal's real source bytes; WealthMachine's venture engine
+    evaluates the packet built from that appraisal; the memo's binding verdict is the
+    engine's verdict capped by the evidence status. Delivery is one founder-visible
+    file and, like every internal_write, stops at a founder approval unless signed
+    into the cone. Nothing is sent, published, bought or contacted.
+    """
+    import hashlib
+    resolved = {k: str(Path(v).expanduser().resolve()) for k, v in
+                {"railscout_root": railscout_root, "wmi_root": wmi_root, "manifest": manifest,
+                 "source_root": source_root}.items()}
+    digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
+    delivery = {"action_id": "assess-venture", "capability": "venture.assess", "params": resolved,
+                "target": "deliver:ventures", "advances": ["assessed"],
+                "expected_outcome": "one decision memo in the delivery root; no external act",
+                "rationale": "run both organs read-only on source bytes; deliver one memo for Alfonso"}
+    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else [])
+    return {
+        "mission_id": f"m:venture-{digest[:12]}",
+        "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
+                              "next. Do not act on it; do not let a score outrun the evidence.",
+        "intended_effect": "a source-bound venture decision memo for this signal is waiting for Alfonso, with "
+                           "the evidence gap and the smallest validation step named",
+        "beneficiaries": ["Alfonso", "the buyers the venture would serve"],
+        "unacceptable_outcomes": ["contacting anyone", "spending", "publishing", "an unevidenced buyer or budget",
+                                  "a go verdict on NEEDS_EVIDENCE"],
+        "priority": 65, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "assessed", "description": "a memo exists for this exact manifest",
+                            "sensor": {"capability": "venture.status", "params": {"manifest": resolved["manifest"]},
+                                       "target": "deliver:ventures"},
+                            "predicate": {"op": "equals", "field": "assessed", "value": True}}],
+        "strategies": [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
-             "engineering-brief": engineering_brief}
+             "engineering-brief": engineering_brief, "venture-assessment": venture_assessment}

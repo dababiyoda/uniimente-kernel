@@ -93,6 +93,38 @@ On the Mac (not yet exercised against a public TSA: this build container's netwo
 
 A correction changes selection **within** authority: it reorders strategies the signed mission already admits, and the Authority Office still judges every act. It never creates a strategy, widens a light cone, raises a budget or attaches a capability. Not claimed: self-modification of code, general learning, or any business outcome.
 
+## Signal to venture decision through the real organs (2026-09-26)
+
+`venture.assess` (`greg/ventures.py`) is Bridge A as a GREG capability. A signed `venture-assessment` mission runs:
+
+1. **RailScout** `appraise` on sha256-pinned source bytes.
+2. A deterministic wire OpportunityPacket built from that appraisal. A buyer or budget owner goes into the packet only if RailScout evidenced it.
+3. **WealthMachine** `OpportunityIntakeService.evaluate_packet`.
+4. The Kernel canonical adapters, which report unresolved fields and reject contract violations.
+5. One write-once decision memo in `deliveries/ventures/`.
+
+Each organ runs in its own process from its own checkout. It gets a stripped environment and a fresh bytecode cache, and no GREG keys, secrets or ledger.
+
+**Binding rule, which no organ applies alone:** a score may not outrun missing evidence. The memo's verdict is the engine's verdict capped at `needs_more_evidence` unless RailScout says `READY_FOR_HUMAN_REVIEW`. Both verdicts are shown.
+
+**Appraisal.** The appraiser re-renders the memo from the receipt, re-runs both organs, and refutes any substitution:
+- memo edited;
+- source bytes changed;
+- manifest changed;
+- engine code changed;
+- receipt rewritten.
+
+**Authority.** Delivery is `internal_write`, so it stops at a founder approval unless signed into the cone. The cone budget is 0, and there is no send, publish, spend or contact.
+
+**Live run.** `tests/evidence/greg-product/venture-assess-live-2026-09-26.json`, on real project sources:
+- WealthMachine said `go`, score 0.72, "Ultra Low" risk.
+- RailScout said `NEEDS_EVIDENCE`: no buyer, budget owner, verifier or accepted decision.
+- The delivered verdict was `needs_more_evidence`, independently VERIFIED.
+- It survived kill -9 without re-execution.
+- A tampered memo was REFUTED.
+
+    greg mission new venture-assessment --railscout RS --wmi WMI --manifest M.json --source-root DIR --key K
+
 ## Using it (developer mode today)
 
 **First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**

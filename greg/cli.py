@@ -91,8 +91,12 @@ def main(argv=None) -> int:
             q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
             q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
             q.add_argument("--preauthorize-delivery", action="store_true",
-                           help="engineering-brief: sign delivery into the cone (no approval stop)")
+                           help="engineering-brief, venture-assessment: sign delivery into the cone (no approval stop)")
             q.add_argument("--stale-days", type=int, default=14)
+            q.add_argument("--railscout", help="venture-assessment: RailScout checkout")
+            q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
+            q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
+            q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -198,6 +202,13 @@ def main(argv=None) -> int:
                                                        github=args.github, daily=args.daily,
                                                        preauthorize_delivery=args.preauthorize_delivery,
                                                        stale_days=args.stale_days)
+                elif args.target == "venture-assessment":
+                    missing = [f for f in ("railscout", "wmi", "manifest", "source_root") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError(f"venture-assessment needs --{', --'.join(m.replace('_', '-') for m in missing)}")
+                    spec = templates.venture_assessment(railscout_root=args.railscout, wmi_root=args.wmi,
+                                                        manifest=args.manifest, source_root=args.source_root,
+                                                        preauthorize_delivery=args.preauthorize_delivery)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission

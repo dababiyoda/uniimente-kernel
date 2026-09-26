@@ -541,6 +541,76 @@
    "extracted_mechanism": "anatomy atlas (compilers, databases, VCS, OS) consulted for mechanisms",
    "disposition": "REFERENCE ONLY; never rebuilt as product",
    "reality": "ASPIRATIONAL"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/remote.py + greg/phone/",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility",
+    "routing"
+   ],
+   "evidence": "phone path end to end in real Chromium (iPhone profile) 6/6; JS and Python byte-compatible",
+   "extracted_mechanism": "founder-delegated device keys; signed reads; loopback transport",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "SANDBOXED",
+   "note": "Not iOS-Safari-verified; reached via tailscale serve on the Mac."
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/capabilities.py browser.render",
+   "bucket": "A",
+   "super_nodes": [
+    "proof",
+    "capability_formation"
+   ],
+   "evidence": "real Chromium rendered a JavaScript-only truth; hostile beacon by name and by IP literal received nothing",
+   "extracted_mechanism": "headless browser, target-bound origin-only egress",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "LOCAL-REAL"
+  },
+  {
+   "repo": "uniimente-kernel (PR #112)",
+   "path": "egregore/local_console.py, egregore/repository_audit.py integration-v1, egregore/runtime.py resume",
+   "bucket": "C",
+   "super_nodes": [
+    "eligibility",
+    "proof"
+   ],
+   "evidence": "#112 found the stop-bypass; reproduced here on main and #113; fixed by porting",
+   "extracted_mechanism": "resume consumes an exact-suspension Gate grant; static integration findings; no lazy Git fetch",
+   "disposition": "PORTED the fix and the audit profile into #113; console kept as BENCHMARK (synthetic authority, one task)",
+   "reality": "TESTED",
+   "note": "Stop/dispatch serialization of the #101 host was not ported: GREG's body is single-writer and checks stop per tick."
+  },
+  {
+   "repo": "uniimente-kernel (PR #70)",
+   "path": "capabilities/deficit.py",
+   "bucket": "B",
+   "super_nodes": [
+    "capability_formation",
+    "proof"
+   ],
+   "evidence": "three-fact verified-deficit rule",
+   "extracted_mechanism": "required + failed + unserviceable recorded before any capability search",
+   "disposition": "EXTRACTED into greg/genesis.py deficit.opened.verification",
+   "reality": "TESTED",
+   "note": "#70 itself remains conflicted with main; runtime ownership still a founder decision."
+  },
+  {
+   "repo": "DALEOBANKS (PR #79)",
+   "path": "services/feedback.py community correction",
+   "bucket": "D",
+   "super_nodes": [
+    "proof",
+    "compounding"
+   ],
+   "evidence": "12 fixture tests; source-backed correction retained only on strict held-out gain; engagement alone rejected",
+   "extracted_mechanism": "community influence gated by source support and held-out improvement",
+   "disposition": "CANDIDATE rule for greg/dataplane.py when community items start moving mission priorities",
+   "reality": "IMPLEMENTED",
+   "note": "Fixture outcomes, not measured participant benefit."
   }
- ]
+ ],
+ "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"
 }

@@ -7,6 +7,7 @@
     greg status | greg decisions | greg morning
     greg decide REQUEST_ID approve|reject --key K
     greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
+    greg critique EVENT_ID --classification PREFERENCE --needs owner/repo#12 --text ... --key K   (typed review)
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
     greg run                                  the host loop (normally started by the supervisor)
     greg service install --platform macos|linux|supervisord [--remote]
@@ -96,9 +97,16 @@ def main(argv=None) -> int:
         if name == "decide":
             q.add_argument("request_id"); q.add_argument("answer"); q.add_argument("--reason", default="")
         if name == "critique":
-            q.add_argument("event_id"); q.add_argument("--verdict", required=True)
-            q.add_argument("--evidence-type", required=True); q.add_argument("--text", required=True)
+            q.add_argument("event_id"); q.add_argument("--verdict")
+            q.add_argument("--evidence-type"); q.add_argument("--text", required=True)
             q.add_argument("--exclude-strategy", action="store_true"); q.add_argument("--regression")
+            q.add_argument("--classification", choices=["ACCEPT", "REJECT", "CORRECT", "PREFERENCE", "FAILURE_CLAIM"],
+                           help="typed review of a result: GREG may learn from it, only after a held-out test")
+            q.add_argument("--needs", action="append", default=[], metavar="REF",
+                           help="what truly needed your decision in this result (owner/repo#N or a repo); repeat")
+            q.add_argument("--claim-missed", action="append", default=[], metavar="OWNER/REPO#N",
+                           help="a failure you claim the result missed; GREG checks it independently")
+            q.add_argument("--knob"); q.add_argument("--value")
         if name == "stop":
             q.add_argument("--local", action="store_true")
         if name in ("attach", "detach"):
@@ -119,7 +127,7 @@ def main(argv=None) -> int:
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
-    sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing"); sub.add_parser("learning")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
     c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
@@ -180,17 +188,33 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
-        elif args.cmd in ("vepmc", "routing"):
-            from greg import metrics, routing
+        elif args.cmd in ("vepmc", "routing", "learning"):
+            from greg import learning, metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+                data = (metrics.vepmc(journal) if args.cmd == "vepmc" else learning.summary(journal)
+                        if args.cmd == "learning" else routing.routing_knowledge(journal))
             print(json.dumps(data, indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
                                            "reason": args.reason}, args))
         elif args.cmd == "critique":
-            body = {"target_event_id": args.event_id, "verdict": args.verdict,
-                    "evidence_type": args.evidence_type, "text": args.text}
+            implied = {"ACCEPT": ("accept", "founder_judgment"), "REJECT": ("reject", "founder_judgment"),
+                       "CORRECT": ("note", "founder_judgment"), "PREFERENCE": ("note", "founder_judgment"),
+                       "FAILURE_CLAIM": ("reject", "objective_failure")}.get(args.classification, (None, None))
+            verdict, evidence_type = args.verdict or implied[0], args.evidence_type or implied[1]
+            if not verdict or not evidence_type:
+                raise BodyError("critique needs --verdict and --evidence-type, or a --classification")
+            body = {"target_event_id": args.event_id, "verdict": verdict,
+                    "evidence_type": evidence_type, "text": args.text}
+            if args.classification:
+                review = {"classification": args.classification}
+                if args.needs:
+                    review["labels"] = {"needs_decision": args.needs}
+                if args.claim_missed:
+                    review["claimed_missed"] = args.claim_missed
+                if args.knob or args.value:
+                    review["correction"] = {"knob": args.knob or "", "value": args.value or ""}
+                body["review"] = review
             if args.exclude_strategy:
                 body["exclude_strategy"] = True
             if args.regression:

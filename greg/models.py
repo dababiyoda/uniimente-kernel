@@ -39,6 +39,24 @@ class Unbounded(RouteError):
     """The route's worst-case cost cannot be bounded under the remaining budget."""
 
 
+# Provider error codes/messages that mean "declined by policy", not "unavailable". An SDK raises these
+# as ordinary HTTP errors (e.g. OpenAI 400 content_policy_violation); treating them as outages would
+# let the router re-ask another vendor, which is exactly the policy bypass routing must never do.
+POLICY_MARKERS = ("content_policy", "policy_violation", "invalid_prompt", "safety", "moderation", "refusal")
+
+
+def _classify(exc: Exception) -> RouteError:
+    """Availability failure (fallback allowed) or policy refusal (terminal)."""
+    code = str(getattr(exc, "code", "") or "")
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        code += " " + str((body.get("error") or {}).get("code", "") if isinstance(body.get("error"), dict) else "")
+    text = f"{code} {exc}".lower()
+    if any(marker in text for marker in POLICY_MARKERS):
+        return Refusal(f"provider declined by policy: {type(exc).__name__}: {exc}"[:300])
+    return RouteError(f"{type(exc).__name__}: {exc}"[:300])
+
+
 # USD per million tokens (input, output). Anthropic prices from the Claude API reference;
 # other providers' prices are supplied by the founder's configuration, never guessed.
 ANTHROPIC_PRICES = {"claude-opus-5": (5.0, 25.0), "claude-opus-5-5": (4.0, 20.0), "claude-sonnet-5": (2.0, 10.0),
@@ -69,9 +87,11 @@ class AnthropicRoute:
     """Claude via the official Anthropic SDK (optional dependency ``anthropic``)."""
     provider = "anthropic"
 
-    def __init__(self, api_key: str, *, model: str = "claude-opus-5", client=None):
+    def __init__(self, api_key: str, *, model: str = "claude-opus-5", price=None, client=None):
         self.model, self.name = model, f"anthropic:{model}"
-        self.price = ANTHROPIC_PRICES.get(model)
+        # Economic metadata is configuration: a configured price wins over the built-in table, so a
+        # price change is corrected without code; an unknown model has no price and is skipped with money at stake.
+        self.price = tuple(price) if price else ANTHROPIC_PRICES.get(model)
         if client is None:
             import anthropic
             client = anthropic.Anthropic(api_key=api_key, base_url="https://api.anthropic.com", max_retries=2)
@@ -85,8 +105,8 @@ class AnthropicRoute:
                 messages=[{"role": "user", "content": user}],
                 thinking={"type": "adaptive"}, output_config={"effort": "high"},
                 betas=["server-side-fallback-2026-07-01"], fallbacks="default")
-        except Exception as exc:   # SDK/network errors: an outage of this route
-            raise RouteError(f"{type(exc).__name__}: {exc}"[:300]) from exc
+        except Exception as exc:   # SDK/network errors: an outage, unless the provider says "policy"
+            raise _classify(exc) from exc
         if response.stop_reason == "refusal":
             category = getattr(getattr(response, "stop_details", None), "category", None)
             raise Refusal(f"model declined (refusal: {category})")
@@ -115,7 +135,7 @@ class OpenAIRoute:
             response = self.client.responses.create(model=self.model, instructions=system, input=user,
                                                     max_output_tokens=max_tokens)
         except Exception as exc:
-            raise RouteError(f"{type(exc).__name__}: {exc}"[:300]) from exc
+            raise _classify(exc) from exc
         refusals = [part for item in (getattr(response, "output", None) or [])
                     for part in (getattr(item, "content", None) or []) if getattr(part, "type", "") == "refusal"]
         if refusals:
@@ -244,7 +264,8 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
     config = config or {}
     builders = {
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
-                                            model=config.get("anthropic_model", "claude-opus-5")),
+                                            model=config.get("anthropic_model", "claude-opus-5"),
+                                            price=config.get("anthropic_price_per_mtok")),
         "openai": lambda: OpenAIRoute(secrets.resolve("openai_api_key", declared=("openai_api_key",)),
                                       model=config.get("openai_model", "gpt-5.5"),
                                       price=config.get("openai_price_per_mtok")),

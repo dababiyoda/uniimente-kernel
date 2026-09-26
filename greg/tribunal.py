@@ -16,6 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
+from greg import learning
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -120,6 +121,7 @@ def morning_report(journal: Journal, engine=None) -> dict:
     report["single_bottleneck_metric"] = metrics.vepmc(journal)
     report["appraisals"] = [e.payload for e in journal.replay("mission.appraised")]
     report["routing_knowledge"] = routing.routing_knowledge(journal)
+    report["learning"] = learning.summary(journal)
     report["report_digest"] = sha256_json(report)
     return report
 
@@ -134,10 +136,12 @@ def mark_reviewed(journal: Journal, report: dict) -> None:
 def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     """Apply a founder-signed critique without rewriting the criticized history."""
     required = {"target_event_id", "verdict", "evidence_type", "text"}
-    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression"}:
+    if not required <= set(body) or set(body) - required - {"exclude_strategy", "regression", "review"}:
         raise CritiqueError("critique needs target_event_id, verdict, evidence_type, text")
     if body["verdict"] not in VERDICTS or body["evidence_type"] not in EVIDENCE_TYPES:
         raise CritiqueError("unknown verdict or evidence type")
+    if "review" in body:
+        _validate_review(body["review"])
     target = next((e for e in journal.replay() if e.event_id == body["target_event_id"]), None)
     if target is None:
         raise CritiqueError("critique must reference a retained event")
@@ -150,7 +154,12 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
         record["regression"] = {"regression_id": "reg-" + command_digest[7:23],
                                 "description": str(body["regression"])[:1000], "state": "OPEN",
                                 "close_condition": "a test or check that fails on the criticized behavior"}
+    if body.get("review"):
+        record["review"] = body["review"]
     journal.record("critique.recorded", record, key=critique_id)
+    reverted = learning.revert(journal, record, target)
+    if reverted:
+        record["reverted"] = reverted
     if body.get("exclude_strategy"):
         mission_id = target.payload.get("mission_id")
         action_id = target.payload.get("action_id") or body["exclude_strategy"]
@@ -159,3 +168,23 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
         engine.exclude_strategy(mission_id, action_id, f"founder critique ({body['evidence_type']}): "
                                 + body["text"][:200], critique_id)
     return record
+
+
+def _validate_review(review) -> None:
+    """A typed founder review: what kind of statement it is, what it labels, what it would change."""
+    if not isinstance(review, dict) or set(review) - {"classification", "labels", "claimed_missed", "correction"}:
+        raise CritiqueError("review has classification, and optional labels, claimed_missed, correction")
+    if review.get("classification") not in learning.CLASSIFICATIONS:
+        raise CritiqueError(f"review classification must be one of {learning.CLASSIFICATIONS}")
+    labels = review.get("labels", {})
+    if not isinstance(labels, dict) or set(labels) - {"needs_decision"} or not all(
+            isinstance(r, str) and len(r) <= 200 for r in labels.get("needs_decision", [])) \
+            or len(labels.get("needs_decision", [])) > 50:
+        raise CritiqueError("labels.needs_decision is a list of at most 50 references")
+    claimed = review.get("claimed_missed", [])
+    if not isinstance(claimed, list) or len(claimed) > 20 or not all(isinstance(r, str) and "#" in r for r in claimed):
+        raise CritiqueError("claimed_missed is a list of at most 20 owner/repo#number references")
+    correction = review.get("correction")
+    if correction is not None and (not isinstance(correction, dict) or set(correction) != {"knob", "value"}
+                                   or not all(isinstance(v, str) and len(v) <= 100 for v in correction.values())):
+        raise CritiqueError("correction is {knob, value}")

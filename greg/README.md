@@ -72,6 +72,7 @@ is the single tested translation. Dispositions for the rest of the project are i
 | Survive power loss | torn ledger tail quarantined to a sidecar, never replayed, never lost; observers ignore unacknowledged tails | `tests/unit/test_ledger_tail_recovery.py`, product-path test (SIGSTOP + torn write + SIGKILL) |
 | No crash loops | `Journal.record` is idempotent on type + key + payload (it hashed the per-boot envelope before) | `tests/unit/test_greg_continuity.py` |
 | Self-repair | a formed capability that faults twice in service (source/binary changed, or raises on live input) is quarantined with the failure as evidence and re-formed as a new deficit generation under the same signed contract and one shared build budget; the rebuild must also run cleanly on the live input that broke its predecessor (replayed locally; never sent to a model). Before: a tampered capability crash-looped the body (`EventError`), a failing one only escalated | `tests/unit/test_greg_self_repair.py`, `tests/evidence/greg-product/self-repair-summary.json` |
+| Learns from the founder, only when a later case proves it | a signed `CRITIQUE` with a typed `review` (ACCEPT / REJECT / CORRECT / PREFERENCE / FAILURE_CLAIM; preference, claim and verified failure kept apart) becomes a frozen candidate over whitelisted learnable knobs; the first later result of that capability compares the unchanged baseline with the candidate (re-render from its receipted inputs against labels given after the freeze, or a shadow acquisition against an exhaustive independent observation inside the same approved action); RETAIN / NO_IMPROVEMENT / REGRESS / CONFLICTED / NEEDS_MORE_EVIDENCE; retained knobs are ledgered, versioned, revertible by a signed rejection, printed in every brief, and are what the next brief runs with. Constitutional state (authority, budgets, scope, credentials, shutdown, policy) is never learnable | `tests/unit/test_greg_learning.py`, `tests/evidence/greg-product/learning-closures.json` |
 | Any model vendor | `greg/models.py`: one router over the Anthropic API, the OpenAI API (Responses) and Claude Code; failover, demotion with cooldown, route health retained in the ledger (`greg.model.route`), the true author recorded on every draft and built capability. Refusals are final (never re-asked elsewhere); in a spending context an unpriced route is skipped and every priced route bounds its worst-case cost to the remaining signed budget | `tests/unit/test_greg_models.py` (SDK-shaped fakes; no live key used) |
 
 ## Using it (developer mode today)
@@ -94,7 +95,9 @@ python -m greg --home ~/.uniimente/greg vepmc | routing       # the bottleneck m
 python -m greg --home ~/.uniimente/greg device enroll --pubkey <phone hex> --label phone --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg serve                   # phone channel; expose with tailscale serve
 python -m greg --home ~/.uniimente/greg accept <closure_event_id> --key ~/.greg-founder.pem
-python -m greg --home ~/.uniimente/greg status | decisions | morning
+python -m greg --home ~/.uniimente/greg status | decisions | morning | learning
+python -m greg --home ~/.uniimente/greg critique <brief action event> --classification PREFERENCE \
+       --needs owner/repo#12 --text "..." --key ~/.greg-founder.pem   # GREG learns only if a later brief proves it
 python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg stop --local            # OS-level stop always works
 ```

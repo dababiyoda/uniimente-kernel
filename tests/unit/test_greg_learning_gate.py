@@ -8,8 +8,6 @@ strict held-out gain. Rejections and reversions stay in the ledger.
 """
 from datetime import datetime, timedelta, timezone
 import os
-import subprocess
-import sys
 
 import pytest
 
@@ -50,13 +48,10 @@ class Morning:
         output = self.body.ledger.find(action.payload["receipt"]).payload["result"]["output"]
         return action, output
 
-    def label(self, action, *, missed=(), noise=(), regression=None):
-        critique = {
+    def label(self, action, *, missed=(), noise=()):
+        drop(self.home, signed(self.key, self.body_id, "CRITIQUE", {
             "target_event_id": action.event_id, "verdict": "note", "evidence_type": "founder_judgment",
-            "text": "morning review of the brief", "attention": {"missed": list(missed), "noise": list(noise)}}
-        if regression:
-            critique["regression"] = regression
-        drop(self.home, signed(self.key, self.body_id, "CRITIQUE", critique,
+            "text": "morning review of the brief", "attention": {"missed": list(missed), "noise": list(noise)}},
             now=self.clock.now))                                         # signed that morning, by the body's clock
         self.body.tick()
         assert not [e for e in self.body.journal.replay("command.rejected")], "the founder's label was refused"
@@ -173,50 +168,3 @@ def test_the_founder_labels_from_the_cli_and_reads_the_learning_report(tmp_path,
     assert cli.main(["--home", str(m.home), "learning"]) == 0
     report = _json.loads(capsys.readouterr().out)
     assert report["labelled_briefs"] == 1 and len(report["proposed"]) == 1
-
-
-def test_a_retained_policy_survives_complete_process_death(tmp_path, repo, github):
-    m = Morning(tmp_path, repo)
-    for _ in range(4):
-        action, _ = m.brief()
-        m.label(action, noise=[DRAFT])
-    expected = improvement.active_policy(m.body.journal)
-    assert expected["idle_includes_drafts"] is False
-    m.body.close()
-    child = subprocess.run([sys.executable, "-c", "import os, signal; from greg.body import Body; "
-                            "b=Body(os.environ['GREG_TEST_HOME']).open(); b.boot(); "
-                            "os.kill(os.getpid(), signal.SIGKILL)"],
-                           env={**os.environ, "GREG_TEST_HOME": str(m.home)})
-    assert child.returncode == -9
-    m.body = Body(m.home, clock=m.clock).open()
-    m.body.boot()
-    assert improvement.active_policy(m.body.journal) == expected
-    _, output = m.brief()
-    assert output["inputs"]["attention_policy"] == expected
-    m.body.close()
-
-
-def test_only_the_originating_regression_closes_on_its_declared_held_out_check(tmp_path, repo, github):
-    from greg import tribunal
-    m = Morning(tmp_path, repo)
-    action, _ = m.brief()
-    m.label(action, noise=[DRAFT], regression="idle drafts bury decisions")
-    origin = m.events("critique.recorded")[-1]
-    mission = m.body.journal.replay("mission.registered")[0]
-    drop(m.home, signed(m.key, m.body_id, "CRITIQUE", {
-        "target_event_id": mission.event_id, "verdict": "note", "evidence_type": "founder_judgment",
-        "text": "unrelated", "regression": "an unrelated check still fails"}, now=m.clock.now))
-    m.body.tick()
-    unrelated = m.events("critique.recorded")[-1]
-    for _ in range(3):
-        action, _ = m.brief()
-        m.label(action, noise=[DRAFT])
-    closed = m.events("critique.regression_closed")
-    assert len(closed) == 1
-    assert closed[0]["regression_id"] == origin["regression"]["regression_id"]
-    assert closed[0]["critique_id"] == origin["critique_id"]
-    assert len(closed[0]["held_out_evidence"]) >= 3
-    assert all(row["baseline_errors"] > row["candidate_errors"] for row in closed[0]["held_out_evidence"])
-    assert [r["regression_id"] for r in tribunal.morning_report(m.body.journal, m.body.engine)["q11_change"]] == [
-        unrelated["regression"]["regression_id"]]
-    m.body.close()

@@ -61,3 +61,31 @@ It does **not** mean every repository default branch contains the cognition file
 ## Follow-up rule
 
 Any future agent with additional access should treat the blocked rows above as explicit synchronization debt. Resolve them, update this receipt, and rerun the anti-context-loss test.
+
+
+## Verification addendum — second pass
+
+Re-enumeration of the ChatGPT Project source surface returned **93 files, no pagination cursor**. A programmatic comparison of the 93 visible Project file IDs against `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md` found:
+
+- missing Project IDs from census: **0**
+- phantom/extra Project IDs in census: **0**
+
+The founder real-product source was reopened and confirmed to contain verbatim excerpts rather than only normalized paraphrase.
+
+Clean retry of repo-local propagation succeeded beyond the earlier connector failures:
+
+- DALEOBANKS: draft PR #80
+- WealthMachineIntelligence: draft PR #38
+- RAILSCOUT: draft PR #10
+- RESEARCH-IN: draft PR #21
+- gods-eye-view-EGGREGORE-TOOL: draft PR #1
+- build-your-own-x: draft PR #2
+- PumpStation: existing cognition branch/file plus issue #19
+
+These draft PRs add only repository-local cognition handoff files; they do not change runtime behavior or authority and are intentionally **not merged** without founder authorization.
+
+### Verbatim-source policy
+
+Do not copy all 93 source bodies wholesale into GitHub merely to claim completeness. The census preserves the complete accessible inventory and IDs. Preserve verbatim founder language when it is necessary to control interpretation, resolve a conflict, or prevent aspiration shrinkage. Preserve other sources by provenance and targeted extraction unless their full body is required for implementation.
+
+This avoids converting unrelated/private/noisy source material into permanent repository content while still making the entire accessible source universe discoverable.

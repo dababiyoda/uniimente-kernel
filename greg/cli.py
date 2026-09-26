@@ -13,7 +13,8 @@
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
-    greg anchor verify                        REWRITTEN/INVALID anchors exit non-zero
+    greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG (append-only)
+    greg anchor verify --witness W.json --roots R.pem   rewrite/rollback of witnessed history exits 3
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -127,7 +128,12 @@ def main(argv=None) -> int:
     for q in (ac, ad):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
-    ans.add_parser("verify", help="re-verify every anchor; REWRITTEN means anchored history changed")
+    av = ans.add_parser("verify", help="check the ledger; with --witness, against state kept outside GREG")
+    av.add_argument("--witness", help="witness bundle exported earlier and retained outside GREG")
+    av.add_argument("--roots", help="TSA root PEM held by the verifier (required with --witness)")
+    ae = ans.add_parser("export", help="write/extend a witness bundle to keep outside GREG (read-only on the ledger)")
+    ae.add_argument("--roots", required=True, help="TSA root PEM held by the verifier, not read from the ledger")
+    ae.add_argument("--out", required=True, help="witness bundle path outside GREG's home; extended append-only")
     sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
@@ -257,11 +263,35 @@ def main(argv=None) -> int:
         elif args.cmd == "anchor" and args.anchor_cmd == "disable":
             print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": None}, args))
         elif args.cmd == "anchor" and args.anchor_cmd == "verify":
-            from greg.anchor import verify as verify_anchors
+            from greg import anchor
+            if args.witness:
+                if not args.roots:
+                    raise BodyError("--witness needs --roots: the verifier supplies its own TSA root")
+                bundle = json.loads(Path(args.witness).read_text())
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    report = anchor.verify_witness(journal, bundle, Path(args.roots).read_text())
+                print(json.dumps(report, indent=1, default=str))
+                return 0 if report["verdict"] == "VERIFIED" else 3
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                report = verify_anchors(journal)
+                report = anchor.verify(journal)
             print(json.dumps(report, indent=1, default=str))
             return 0 if report["chain_intact"] and not report["rewritten"] and not report["invalid"] else 3
+        elif args.cmd == "anchor" and args.anchor_cmd == "export":
+            from greg import anchor
+            out = Path(args.out).expanduser().resolve()
+            if Path(home).expanduser().resolve() in out.parents:
+                raise BodyError("the witness must live outside GREG's home, or GREG's rewrite domain covers it")
+            existing = json.loads(out.read_text()) if out.exists() else None
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                try:
+                    result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
+                except anchor.AnchorError as exc:
+                    raise BodyError(str(exc)) from None
+            tmp = out.with_suffix(out.suffix + ".tmp")
+            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
+            tmp.replace(out)
+            print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
+                              "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
         elif args.cmd == "serve":
             from greg.remote import serve
             print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "

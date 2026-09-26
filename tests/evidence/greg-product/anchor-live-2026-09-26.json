@@ -76,5 +76,29 @@
     "status": "REWRITTEN"
    }
   ]
+ },
+ "witness_boundary_2026-09-26": {
+  "finding": "The ledger-internal verifier (anchor.verify) reads anchors AND TSA roots from the ledger it checks. A complete ledger rewriter defeats it. Reproduced on this live ledger via the CLI: anchor deletion (B) and rollback (C) return exit 0. The earlier rewrite result (A) proved only: an anchored prefix cannot be edited and re-chained undetectably while the anchor record and configuration are left in place.",
+  "fix": "`greg anchor export --roots R --out W` writes a witness bundle outside GREG's home (refused inside it); `greg anchor verify --witness W --roots R` checks the presented ledger using only the retained bundle and the verifier's own TSA root, and never reads the ledger's proof.* records.",
+  "live_cli_results": {
+   "control": "VERIFIED (1 witnessed head, 5 later records uncovered)",
+   "A_prefix_rewrite": {
+    "ledger_internal_exit": 3,
+    "witness_exit": 3,
+    "witness": "DIVERGED"
+   },
+   "B_anchor_deletion": {
+    "ledger_internal_exit": 0,
+    "witness_exit": 3,
+    "witness": "DIVERGED"
+   },
+   "C_rollback": {
+    "ledger_internal_exit": 0,
+    "witness_exit": 3,
+    "witness": "ROLLED_BACK"
+   }
+  },
+  "unit_tests": "tests/unit/test_greg_anchor_witness.py: A-F each FAILED against the retained witness; the ledger-internal verifier accepts B, C, D.",
+  "mutation": "Replacing verify_witness with a verifier that derives witness and roots from the presented ledger makes attacks B, C, D, E and F succeed (5 of 10 witness tests fail); A is caught either way."
  }
 }

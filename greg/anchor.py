@@ -1,10 +1,19 @@
 """External time anchoring of GREG's ledger (RFC 3161).
 
 The ledger's hash chain proves internal consistency, but whoever holds the ledger
--- including the body itself -- can rewrite history and re-chain it. An anchor
-closes that gap: an independent Time-Stamp Authority signs the ledger head at a
-moment in time. Afterwards, any rewrite of anchored history removes the anchored
-head from the chain, and ``verify`` reports it as REWRITTEN.
+-- including the body itself -- can rewrite history and re-chain it. An independent
+Time-Stamp Authority signs the ledger head at a moment in time.
+
+Two verifiers, with different trust:
+
+* ``verify`` reads anchors and TSA roots from the ledger it checks. It catches a
+  rewriter who leaves the anchor records alone, and nothing stronger: a complete
+  ledger rewriter can delete anchors, roll back, or substitute roots and anchors.
+* ``verify_witness`` uses only a witness bundle exported earlier (``export_witness``)
+  and kept outside GREG's rewrite domain, plus TSA roots supplied by the verifier.
+  It detects rewrite, deletion, rollback, root/anchor substitution and wholesale
+  reconstruction *within the witnessed prefix*. Records after the latest witnessed
+  head are not covered, and nothing protects a witness the attacker can also edit.
 
 Authority: anchoring is off until Alfonso signs ``ANCHOR_CONFIGURE`` naming the
 TSA and pinning its root certificate(s). Only a SHA-256 digest of the ledger
@@ -184,12 +193,105 @@ def verify(journal) -> dict:
             row["status"], row["error"] = "INVALID", str(exc)[:300]
         results.append(row)
     verified = [r for r in results if r["status"] == "VERIFIED"]
-    return {"chain_intact": chain_ok, "chain": chain, "anchors": len(results),
+    return {"scope": "ledger-internal only: anchors and roots are read from the ledger being checked, "
+                     "so a complete ledger rewriter can defeat this check; use verify_witness",
+            "chain_intact": chain_ok, "chain": chain, "anchors": len(results),
             "verified": len(verified), "rewritten": [r for r in results if r["status"] == "REWRITTEN"],
             "invalid": [r for r in results if r["status"] == "INVALID"],
             "latest": verified[-1] if verified else None,
             "unanchored_tail": _unanchored_records(journal, verified[-1]["head"] if verified else None),
             "configured": current_config(journal) is not None}
+
+
+WITNESS_FORMAT = "greg-anchor-witness/1"
+
+
+def _token_covers(entry: dict, roots: list) -> None:
+    """Raise unless ``entry``'s token is a valid TSA signature over its head under ``roots``."""
+    response = decode_timestamp_response(base64.b64decode(entry["token_b64"]))
+    VerifierBuilder(nonce=int(entry["nonce"]), roots=roots).build().verify_message(response, _message(entry["head"]))
+
+
+def verify_witness(journal, bundle: dict, roots_pem: str) -> dict:
+    """Check a presented ledger against witness state retained OUTSIDE GREG.
+
+    Trust comes only from ``bundle`` (exported earlier and kept elsewhere) and ``roots_pem``
+    (supplied by the verifier). The ledger's own proof.anchored / proof.anchor_configured
+    records are not consulted: a ledger rewriter controls those.
+
+    Per witnessed head:
+      VERIFIED       the TSA token is valid under the verifier's roots and the presented
+                     ledger holds exactly that head at the witnessed position;
+      DIVERGED       the ledger holds a different record there (rewrite, deletion, substitution,
+                     reconstruction);
+      ROLLED_BACK    the ledger is shorter than the witnessed position;
+      INVALID_TOKEN  the witness entry itself does not verify under the verifier's roots.
+    """
+    if bundle.get("format") != WITNESS_FORMAT:
+        raise AnchorError(f"not a {WITNESS_FORMAT} bundle")
+    roots = _roots(roots_pem)
+    records = journal.ledger.records
+    chain_ok, chain = journal.ledger.verify_chain()
+    rows = []
+    for w in bundle["witnesses"]:
+        row = {"head": w["head"], "record_count": w["record_count"], "gen_time": w["gen_time"]}
+        try:
+            _token_covers(w, roots)
+        except (VerificationError, AnchorError, ValueError) as exc:
+            row["status"], row["error"] = "INVALID_TOKEN", str(exc)[:300]
+            rows.append(row)
+            continue
+        n = w["record_count"]
+        if not isinstance(n, int) or n < 1:
+            row["status"], row["error"] = "INVALID_TOKEN", "witness position must be a positive integer"
+        elif n > len(records):
+            row["status"] = "ROLLED_BACK"
+        elif records[n - 1].hash != w["head"]:
+            row["status"], row["presented"] = "DIVERGED", records[n - 1].hash
+        else:
+            row["status"] = "VERIFIED"
+        rows.append(row)
+    ok = [r for r in rows if r["status"] == "VERIFIED"]
+    if not rows:
+        verdict = "NO_WITNESS"
+    elif chain_ok and len(ok) == len(rows):
+        verdict = "VERIFIED"
+    else:
+        verdict = "FAILED"
+    covered = max((r["record_count"] for r in ok), default=0)
+    return {"verdict": verdict, "chain_intact": chain_ok, "chain": chain, "witnesses": rows,
+            "witnessed_records": covered, "unwitnessed_tail_records": len(records) - covered,
+            "scope": "witnessed prefix only; records after the latest witnessed head are not covered"}
+
+
+def export_witness(journal, roots_pem: str, existing: dict | None = None) -> dict:
+    """Build or extend a witness bundle to be stored outside GREG's rewrite domain.
+
+    Only anchors whose tokens verify under the verifier-supplied roots are admitted, so an
+    anchor injected under a substituted TSA root never becomes witness state. An existing
+    bundle is append-only: if the presented ledger contradicts it, export is refused.
+    """
+    roots = _roots(roots_pem)
+    bundle = existing or {"format": WITNESS_FORMAT, "witnesses": []}
+    if bundle["witnesses"]:
+        report = verify_witness(journal, bundle, roots_pem)
+        if report["verdict"] != "VERIFIED":
+            raise AnchorError(f"presented ledger contradicts the retained witness: {report['verdict']}")
+    known = {w["head"] for w in bundle["witnesses"]}
+    admitted, rejected = [], []
+    for event in journal.replay("proof.anchored"):
+        a = event.payload
+        if a["head"] in known:
+            continue
+        entry = {k: a[k] for k in ("head", "record_count", "gen_time", "tsa_url", "nonce", "token_b64")}
+        try:
+            _token_covers(entry, roots)
+        except (VerificationError, AnchorError, ValueError) as exc:
+            rejected.append({"head": a["head"], "error": str(exc)[:200]})
+            continue
+        admitted.append(entry)
+    bundle = {**bundle, "witnesses": sorted(bundle["witnesses"] + admitted, key=lambda w: w["record_count"])}
+    return {"bundle": bundle, "admitted": len(admitted), "rejected": rejected}
 
 
 def summary(journal) -> dict:

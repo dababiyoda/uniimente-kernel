@@ -49,8 +49,8 @@
   adopt: [PostgreSQL outbox, EventStoreDB]
 6:
   implementation: [provenance/proof.py, provenance/ledger.py, provenance/commit_witness.py, greg/anchor.py]
-  tests: [tests/unit/test_proof.py, tests/unit/test_provenance.py, tests/unit/test_greg_anchor.py]
-  gap: GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE, and `greg anchor verify` detects rewritten anchored history. Not yet exercised against a public TSA (blocked from the build container) and not yet enabled on a founder body; kernel Merkle checkpoints outside GREG remain self-anchored.
+  tests: [tests/unit/test_proof.py, tests/unit/test_provenance.py, tests/unit/test_greg_anchor.py, tests/unit/test_greg_anchor_witness.py]
+  gap: "GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE; with a witness bundle and TSA root retained outside GREG, `greg anchor verify --witness` detects rewrite, deletion, rollback, substitution or reconstruction within the witnessed prefix. Not covered: the unwitnessed tail, or an attacker who also controls the witness. Not yet run against a public TSA or on a founder body; kernel Merkle checkpoints outside GREG remain self-anchored."
   adopt: [RFC 3161 timestamp authority, Sigstore Rekor v2, OpenTimestamps]
 7:
   implementation: [identity/machine_passport.py, identity/service-identities.yaml, greg/founder.py]

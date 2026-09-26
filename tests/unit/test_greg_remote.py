@@ -196,3 +196,30 @@ def test_an_answer_to_a_request_raised_in_this_same_process_is_accepted(tmp_path
         rejected = [e.payload for e in body.journal.replay("command.rejected")]
     assert not rejected, rejected
     assert note.read_text() == "approved from the phone"
+
+
+def test_a_founder_stop_survives_restart_until_a_human_clears_it(tmp_path):
+    """Replaces #112's 'intentional stop survives process restart': a signed stop (from the Mac
+    or the phone) must not be undone by launchd RunAtLoad after a login or reboot."""
+    home, key, body_id, phone, clock = _phone(tmp_path)
+    note = _approval_mission(home, key, body_id)
+    drop(home, sign_command(phone, "BODY_STOP", {}, body_id=body_id, now=clock.now))
+    assert Body(home, clock=clock).run(tick_seconds=0.01, max_ticks=5) == 0
+    assert (home / "STOP").exists() and events(home, "body.stop_persisted")
+    observed = len(events(home, "mission.observed"))
+    # A restart (login, reboot, launchctl kickstart) exits immediately and does no mission work.
+    assert Body(home, clock=clock).run(tick_seconds=0.01, max_ticks=5) == 0
+    assert len(events(home, "mission.observed")) == observed and not note.exists()
+    assert [e["reason"] for e in events(home, "body.stopped")][-1] == "local STOP file"
+    from greg.cli import main
+    assert main(["--home", str(home), "start", "--local"]) == 0 and not (home / "STOP").exists()
+    Body(home, clock=clock).run(tick_seconds=0.01, max_ticks=2)
+    assert len(events(home, "mission.observed")) > observed  # work resumes only after a human cleared it
+
+
+def test_an_os_shutdown_signal_is_not_a_persisted_founder_stop(tmp_path):
+    home, key, body_id, phone, clock = _phone(tmp_path)
+    body = Body(home, clock=clock)
+    body.stop_requested = True  # what SIGTERM does
+    assert body.run(tick_seconds=0.01, max_ticks=3) == 0
+    assert not (home / "STOP").exists()  # after a reboot the body resumes its missions

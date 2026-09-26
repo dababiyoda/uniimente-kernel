@@ -3,15 +3,19 @@
 Ported from PR #112 (greg/usable-local-loop-20260925, d0d0a34) with its runtime fix.
 Synthetic workload authority, not authenticated founder enrollment.
 """
+from pathlib import Path
+
 import pytest
+
 from compiler.ucl_compiler import compile_constitution
-from egregore.local_mission import ROOT
 from egregore.runtime import StandingCognitionRuntime
 from egregore.contracts import ContractError
 from identity.machine_passport import PassportRegistry
 from policy.consequence_gate import ConsequenceGate, GrantIssuer
 from provenance.commit_witness import WitnessSigner
 from provenance.ledger import EvidenceLedger
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_resume_requires_exact_preexisting_grant_and_reconstructs(tmp_path):

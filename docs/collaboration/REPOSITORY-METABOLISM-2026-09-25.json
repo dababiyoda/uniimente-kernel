@@ -575,9 +575,9 @@
    ],
    "evidence": "#112 found the stop-bypass; reproduced here on main and #113; fixed by porting",
    "extracted_mechanism": "resume consumes an exact-suspension Gate grant; static integration findings; no lazy Git fetch",
-   "disposition": "PORTED the fix and the audit profile into #113; console kept as BENCHMARK (synthetic authority, one task)",
+   "disposition": "SUPERSEDED by #113 and closed; mechanism ledger in PR112-SUPERSESSION.md; branch preserved",
    "reality": "TESTED",
-   "note": "Stop/dispatch serialization of the #101 host was not ported: GREG's body is single-writer and checks stop per tick."
+   "note": "Resume fix merged to main via #116. Stop-survives-restart replaced by GREG persisted founder stop. Held-out comparison gate recorded for extraction."
   },
   {
    "repo": "uniimente-kernel (PR #70)",

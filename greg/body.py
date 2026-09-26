@@ -263,8 +263,17 @@ class Body:
             self.journal.record("body.resumed", {"command_digest": digest}, key=digest)
             return {"paused": False}
         if kind == "BODY_STOP":
+            # A founder stop is terminal until a human on this machine clears it: it must survive
+            # login, reboot and supervisor restarts (launchd RunAtLoad would otherwise resume all
+            # missions). A plain SIGTERM (e.g. an OS shutdown) is not a founder stop and is not persisted.
             self.stop_requested = True
-            return {"stop": True}
+            record = {"command_digest": digest, "at": iso(self.clock()),
+                      "clear_with": "greg run --clear-stop  (or: greg start --local)"}
+            tmp = self.layout.stop_file.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"reason": "signed founder BODY_STOP", **record}))
+            tmp.replace(self.layout.stop_file)
+            self.journal.record("body.stop_persisted", record, key=[digest, "stop"])
+            return {"stop": True, "persisted": True}
         if kind == "NODE_ENROLL":
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":

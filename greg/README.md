@@ -52,12 +52,27 @@ The strategy tribunal in `evolution/spider_web.py` keeps its four-node vocabular
 is the single tested translation. Dispositions for the rest of the project are in
 `docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json`.
 
+## The founder interface, useful work, real capability formation (2026-09-26)
+
+| Product requirement | Mechanism | Evidence |
+|---|---|---|
+| One coherent interface | `greg console`: loopback page; plain words -> `greg/planner.py` proposal -> "what signing lets GREG do" -> Ed25519 signature into the inbox. Reads only through the read-only observer; never a second Kernel | `tests/unit/test_greg_interface.py`, `tests/integration/test_greg_product_path.py` |
+| Models propose, founder signs | template route first (zero model calls); model route via Anthropic SDK or installed Claude Code (no tools, spend cap); every draft vetted (contract, known capabilities, would-it-run check, one repair round) and clamped to read-only, $0, <= 7 days | `tests/evidence/greg-product/planner-live-draft-*.json` (first live draft unrunnable and caught) |
+| A real, useful capability | `brief.engineering`: local Git + GitHub PRs/checks -> one brief in the founder's folder; the appraiser re-renders it from the receipt and byte-compares | `tests/evidence/greg-product/live-real-repos-summary.json` (real repos, live API, VERIFIED) |
+| Capability Genesis that builds | missing function + founder-frozen contract -> Claude Code writes source only -> static screen -> isolated no-network run vs held-out vectors -> VERIFIED -> signed attach rule -> ORIGINAL mission resumes | `tests/unit/test_greg_genesis_builder.py`, `tests/evidence/greg-product/genesis-live-claude-code.json` |
+| Survive power loss | torn ledger tail quarantined to a sidecar, never replayed, never lost; observers ignore unacknowledged tails | `tests/unit/test_ledger_tail_recovery.py`, product-path test (SIGSTOP + torn write + SIGKILL) |
+| No crash loops | `Journal.record` is idempotent on type + key + payload (it hashed the per-boot envelope before) | `tests/unit/test_greg_continuity.py` |
+
 ## Using it (developer mode today)
 
 **First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**
 
 ```bash
-python -m greg --home ~/.uniimente/greg init --read-root ~/Projects
+python -m greg --home ~/.uniimente/greg init --read-root ~/Projects --deliver-root ~/GREG
+python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface (127.0.0.1:8765)
+python -m greg --home ~/.uniimente/greg mission new engineering-brief --local kernel=~/src/uniimente-kernel \
+       --github dababiyoda/uniimente-kernel [--daily] --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg run --builder claude-code     # opt in to Genesis builds (signed budget only)
 python -m greg founder keygen --key ~/.greg-founder.pem          # on a device Alfonso controls
 python -m greg --home ~/.uniimente/greg founder enroll --pubkey <printed hex>
 python -m greg --home ~/.uniimente/greg service install --platform macos   # writes, does not load
@@ -91,9 +106,10 @@ Mission contract: `contracts/greg-mission.schema.json`. Native macOS verificatio
 
 ## Reality gradient (as of this commit)
 
-IMPLEMENTED · UNIT TESTED · INTEGRATION TESTED (real processes, commodity supervisor, SIGKILL) ·
-SANDBOXED (first-VEPMC path: 8 of 9 conditions on Linux, test key) · LOCAL-REAL (repo guardian read the real
-repositories) · **not** PACKAGED · **not** MAC-VERIFIED · **not** REBOOT-VERIFIED · **not** FOUNDER-USED ·
-**not** PRODUCTION-AUTHORIZED · no external outcome. **VEPMC = 0.**
-Model router, human work fabric and business runtime are PROPOSED (see
-`docs/collaboration/GREG-BODY-DECISION-2026-09-25.md`).
+IMPLEMENTED · UNIT TESTED · INTEGRATION TESTED (real processes under supervisord: SIGKILL, SIGSTOP + torn write,
+console closed mid-mission; 5/5 repeated runs) · LOCAL-REAL (engineering brief on real Kernel/DALEOBANKS/WMI checkouts
+and the live GitHub API; Claude Code built and verified a missing capability; Claude Code drafted a mission) ·
+**not** MAC-VERIFIED · **not** REBOOT-VERIFIED (power loss is simulated by a torn write, not a real reboot) ·
+**not** FOUNDER-USED · **not** PRODUCTION-AUTHORIZED · no external business outcome.
+**VEPMC = 0**: on Linux 8 of 9 conditions hold with a test key; `mac_body` (and Alfonso's own key and acceptance)
+remain. Phone access, visual computer use and the human work fabric are PROPOSED.

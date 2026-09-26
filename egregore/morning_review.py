@@ -17,7 +17,7 @@ from types import SimpleNamespace
 
 from adapters.contract_validation import strict_json
 from egregore.local_mission import receipt_for
-from egregore.repository_audit import FILES, MAX_BLOB, derive
+from egregore.repository_audit import FILES, MAX_BLOB, derive, source_files
 from events.spine import EventSpine
 from provenance.ledger import EvidenceLedger, ReconciliationRequired, sha256_json
 
@@ -52,7 +52,7 @@ def _sources(job, sources):
     repos = job["repositories"]
     if len(repos) != 3 or {r["role"] for r in repos} != set(FILES):
         raise ValueError("three retained repository bindings required")
-    expected = {(r["role"], r["commit"], name) for r in repos for name in FILES[r["role"]]}
+    expected = {(r["role"], r["commit"], name) for r in repos for name in source_files(job.get("profile"))[r["role"]]}
     if not isinstance(sources, list) or len(sources) != len(expected):
         raise ValueError("incomplete retained source manifest")
     observed = set()
@@ -66,7 +66,7 @@ def _sources(job, sources):
         observed.add((source["role"], source["commit"], source["file"]))
     if observed != expected:
         raise ValueError("retained source scope differs from mission")
-    return derive(sources, job["expected_pin"], job["expected_version"])
+    return derive(sources, job["expected_pin"], job["expected_version"], job.get("profile"))
 
 
 def _project(ledger, mission_id, head):

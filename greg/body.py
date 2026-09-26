@@ -19,6 +19,7 @@ Shutdown authority is never conditioned: STOP, SIGTERM and SIGKILL always win.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -88,8 +89,13 @@ def _private_write(path: Path, data: bytes):
         fh.write(data)
 
 
-def init_body(home: str | Path, *, read_roots: list[str]) -> dict:
-    """Create a new body directory. Refuses to overwrite an existing body."""
+def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None) -> dict:
+    """Create a new body directory. Refuses to overwrite an existing body.
+
+    ``deliver_root`` is the founder-visible folder where deliverables (briefs,
+    reports) land; it defaults to ``<home>/deliveries``. GREG never writes
+    anywhere else outside its own workspace.
+    """
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
@@ -106,6 +112,7 @@ def init_body(home: str | Path, *, read_roots: list[str]) -> dict:
     config = {"body_id": "body-" + key_id(public)[8:24], "device_public_key": public,
               "created_at": iso(utcnow()), "constitution_hash": compiled.constitution_hash,
               "read_roots": [str(Path(r).expanduser().resolve()) for r in read_roots],
+              "deliver_root": str(Path(deliver_root or layout.home / "deliveries").expanduser().resolve()),
               "version": BODY_VERSION}
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
@@ -117,6 +124,8 @@ class Body:
         if not self.layout.config.exists():
             raise BodyError("no body here; run `greg init` first")
         self.config = json.loads(self.layout.config.read_text())
+        # Bodies created before deliverables existed deliver inside their own home.
+        self.deliver_root = Path(self.config.get("deliver_root") or self.layout.home / "deliveries")
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.builder = builder
         self.stop_requested = False
@@ -128,7 +137,9 @@ class Body:
         if self.compiled.constitution_hash != self.config["constitution_hash"]:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
                             "migration is required (history is bound to the old constitution)")
-        self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger))  # one writer
+        # One writer. A final line torn by power loss or SIGKILL was never acknowledged:
+        # quarantine its bytes and continue instead of crash-looping under the supervisor.
+        self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), tail="quarantine")
         self.spine = EventSpine(self.ledger)
         self.passports = PassportRegistry()
         self.identity = self.passports.issue(kind="process", creator="greg-body", owner_organ="uniimente-kernel",
@@ -143,12 +154,25 @@ class Body:
             self.registry.register(manifest, adapter, state="ATTACHED")
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
+        if self.builder is not None and not hasattr(self.builder, "build"):
+            try:   # factory: needs this body's credentials. A missing route degrades; it never crash-loops.
+                self.builder = self.builder(self.secrets, self.config)
+            except Exception as exc:
+                why = f"{type(exc).__name__}: {exc}"[:300]
+                self.builder = None
+                self.journal.record("genesis.builder", {"available": False, "why": why}, key=["unavailable", why])
+        router = getattr(self.builder, "router", None)
+        if router is not None and hasattr(router, "observe"):
+            for event in self.journal.replay("model.route"):          # route health survives restarts
+                router.observe(event.payload)
+            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
-                               builder=self.builder)
+                               builder=self.builder, read_roots=self.config["read_roots"])
         self.genesis.restore()
         self.engine = MissionEngine(journal=self.journal, office=self.office, registry=self.registry,
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
-                                    read_roots=tuple(self.config["read_roots"]), genesis=self.genesis)
+                                    read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
+                                    deliver_root=self.deliver_root)
         return self
 
     def close(self):
@@ -289,6 +313,9 @@ class Body:
             return {"new_key_id": key_id(new_hex)}
         raise MissionError(f"unsupported command kind {kind}")
 
+    def _stop_now(self) -> bool:
+        return self.stop_requested or self.layout.stop_file.exists()
+
     def paused(self) -> bool:
         if self.layout.pause_file.exists():
             return True
@@ -323,6 +350,8 @@ class Body:
         record = {"boot_id": boot_id, "pid": os.getpid(), "at": iso(self.clock()), "version": BODY_VERSION,
                   "body_id": self.config["body_id"], "boot_number": len(boots) + 1,
                   "platform": os.uname().sysname, "ledger_head_at_boot": self.ledger.head}
+        if self.ledger.unacknowledged_tail:
+            record["ledger_recovery"] = dict(self.ledger.unacknowledged_tail)
         self.journal.record("body.booted", record, key=boot_id)
         if unfinished:
             self.journal.record("body.recovered", {"boot_id": boot_id, "previous_unfinished_boots": unfinished,
@@ -340,7 +369,7 @@ class Body:
         if self.paused():
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
-        summary = self.engine.tick(now)
+        summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
         sop.propose(self.journal)
         return {"commands": commands, "missions": summary}
@@ -365,6 +394,7 @@ class Body:
         import sys
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
+                   "deliver_root": str(self.deliver_root),
                    "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
@@ -435,11 +465,48 @@ class Body:
             self.close()
 
 
+@contextmanager
+def observe(home: str | Path, *, actor: str = "spiffe://uniimente.internal/greg/observer"):
+    """Read-only view of retained history, safe while the body runs.
+
+    Never takes the writer lock. A line the body is still writing (or one torn by
+    a crash) was never acknowledged and is left out rather than failing the read.
+    """
+    layout = Layout(home)
+    config = json.loads(layout.config.read_text())
+    ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore")
+    try:
+        yield Journal(EventSpine(ledger), actor=actor)
+    finally:
+        ledger.close()
+
+
+def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
+    """Sign one founder command and drop it into the body inbox (any interface, then close)."""
+    from greg.founder import sign_command
+    layout = Layout(home)
+    config = json.loads(layout.config.read_text())
+    envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
+    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    temporary = target.with_suffix(".tmp")
+    temporary.write_text(json.dumps(envelope, indent=1))
+    temporary.replace(target)
+    return target
+
+
+def morning_projection(home: str | Path) -> dict:
+    """The morning report from a read-only view; works while the body runs."""
+    from types import SimpleNamespace
+    from greg.missions import MissionBook
+    with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
+        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)))
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
-    ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True) \
+    ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True, tail="ignore") \
         if layout.ledger.exists() else None
     heartbeat = json.loads(layout.heartbeat.read_text()) if layout.heartbeat.exists() else None
     if ledger is None:

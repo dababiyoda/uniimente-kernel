@@ -42,3 +42,11 @@ def test_legacy_bare_hash_resume_cannot_clear_stop():
     runtime.suspend(actor='synthetic',reason='stop')
     ledger.append(runtime.RESUME_RECORD,{'actor':'fake-founder','authorization_hash':'sha256:'+'a'*64})
     assert StandingCognitionRuntime(ledger=ledger,proposers={},evaluators={}).is_suspended
+
+
+def test_comparison_retains_ties_and_regressions():
+    from egregore.brief_learning import compare
+    cases=[dict(id='one',findings=[dict(id='dep',kind='dependency')],expected='dep')]
+    assert compare(cases)['decision']=='no_improvement'
+    cases[0]['findings'].append(dict(id='auth',kind='authority'))
+    assert compare(cases)['decision']=='regress'

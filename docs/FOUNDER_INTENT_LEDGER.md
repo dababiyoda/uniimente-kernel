@@ -1,4 +1,11 @@
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+
 # Founder Intent Ledger
+
+## Real-product repository metabolism — 2026-09-26
+
+`INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` preserves Alfonso's latest explicit anti-cathedral correction with verbatim excerpts in `intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`: the project corpus is developmental substrate to be metabolized into the actual GREG product. Experiments, simulations, tests, benchmarks and architecture remain subordinate verification/evidence, not the milestone. Every substantial session must produce a truthful product delta ("what can actual GREG do now that it could not do before?") or identify a precise external blocker. Historical mechanisms may be productized, extracted, recombined, retained as evidence, archived, or removed from the active canonical path while preserving provenance. State: active. Current Single Bottleneck Metric remains VEPMC 0 -> 1.
+
 
 ## Spider-Web compounding rule — 2026-09-25
 

@@ -27,9 +27,11 @@ from pathlib import Path
 import sys
 
 from greg import service
-from greg.body import Body, BodyError, Layout, init_body, status
-from greg.founder import generate_founder_key, load_founder_key, sign_command
+from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
+                       status)
+from greg.founder import generate_founder_key, load_founder_key
 from greg.tribunal import mark_reviewed, morning_report
+from provenance.ledger import WriterConflict
 
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
@@ -44,16 +46,18 @@ def _passphrase(args) -> bytes | None:
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    layout = Layout(home)
-    config = json.loads(layout.config.read_text())
     key = load_founder_key(args.key, _passphrase(args))
-    envelope = sign_command(key, kind, body, body_id=config["body_id"],
-                            ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
-    tmp = target.with_suffix(".tmp")
-    tmp.write_text(json.dumps(envelope, indent=1))
-    tmp.replace(target)
-    return target
+    return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
+
+
+def _model_builder(secrets, config):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+    from greg.builders import BuildError, ModelBuilder
+    from greg.models import ModelRouter, available_routes
+    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    if not routes:
+        raise BuildError(f"no model route is available: {unavailable}")
+    return ModelBuilder(ModelRouter(routes))
 
 
 def main(argv=None) -> int:
@@ -62,6 +66,7 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
+    s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
@@ -79,6 +84,12 @@ def main(argv=None) -> int:
             q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
             q.add_argument("--cadence-seconds", type=int, default=21600)
             q.add_argument("--text"); q.add_argument("--must-contain")
+            q.add_argument("--local", action="append", default=[], help="name=path (engineering-brief)")
+            q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
+            q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
+            q.add_argument("--preauthorize-delivery", action="store_true",
+                           help="engineering-brief: sign delivery into the cone (no approval stop)")
+            q.add_argument("--stale-days", type=int, default=14)
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -109,21 +120,32 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
+    c.add_argument("--key", help="founder key; without it the console is read-only")
+    c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
+    c.add_argument("--no-model", action="store_true", help="plan with templates only (no model calls)")
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
     r.add_argument("--max-ticks", type=int)
+    r.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                   help="Capability Genesis builder: claude-code (local CLI) or models (every reachable route: "
+                        "Anthropic API, OpenAI API, Claude Code, with failover). Spends only a mission's signed "
+                        "build budget")
     r.add_argument("--clear-stop", action="store_true",
                    help="remove a previous local STOP file (a deliberate human restart)")
     sv = sub.add_parser("service"); svs = sv.add_subparsers(dest="service_cmd", required=True)
     si = svs.add_parser("install"); si.add_argument("--platform", required=True, choices=["macos", "linux", "supervisord"])
     si.add_argument("--target-dir")
     si.add_argument("--remote", action="store_true", help="the phone channel (greg serve) instead of the body")
+    si.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                    help="let the installed body build and repair capabilities (spends only signed build budgets)")
     args = p.parse_args(argv)
     home = args.home
 
     try:
         if args.cmd == "init":
-            print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())]), indent=1))
+            print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
+                                       deliver_root=args.deliver_root), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
@@ -142,6 +164,11 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target == "engineering-brief":
+                    spec = templates.engineering_brief(local=dict(r.split("=", 1) for r in args.local),
+                                                       github=args.github, daily=args.daily,
+                                                       preauthorize_delivery=args.preauthorize_delivery,
+                                                       stale_days=args.stale_days)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission
@@ -154,17 +181,9 @@ def main(argv=None) -> int:
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
         elif args.cmd in ("vepmc", "routing"):
-            from events.spine import EventSpine
             from greg import metrics, routing
-            from greg.journal import Journal
-            from provenance.ledger import EvidenceLedger
-            config = json.loads(Layout(home).config.read_text())
-            ledger = EvidenceLedger(config["constitution_hash"], str(Layout(home).ledger), read_only=True)
-            try:
-                journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/cli-reader")
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
-            finally:
-                ledger.close()
             print(json.dumps(data, indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
@@ -190,6 +209,26 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "console":
+            from greg import planner
+            from greg.capabilities import SecretBroker
+            from greg.console import Console, serve
+            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            layout = Layout(home)
+            models_config = (json.loads(layout.config.read_text()).get("models")
+                             if layout.config.is_file() else None)
+            transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
+                                                                            config=models_config)
+            server = serve(Console(home, key=key, transport=transport), port=args.port)
+            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+                  f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "Ctrl-C closes the console; the body keeps running.", flush=True)
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
         elif args.cmd == "device" and args.device_cmd == "enroll":
             from datetime import datetime, timezone
             expires = datetime.now(timezone.utc) + timedelta(days=args.days)
@@ -214,17 +253,29 @@ def main(argv=None) -> int:
         elif args.cmd == "decisions":
             print(json.dumps(status(home)["decisions_required"], indent=1))
         elif args.cmd == "morning":
-            with Body(home) as body:
-                report = morning_report(body.journal, body.engine)
-                if args.mark_reviewed:
-                    mark_reviewed(body.journal, report)
+            if args.mark_reviewed:  # advancing the review window writes history: the body must be stopped
+                try:
+                    with Body(home) as body:
+                        report = morning_report(body.journal, body.engine)
+                        mark_reviewed(body.journal, report)
+                except WriterConflict:
+                    raise BodyError("the body is running and owns the ledger; read the report without "
+                                    "--mark-reviewed, or accept/critique the closure (signed) instead")
+            else:
+                report = morning_projection(home)
             print(json.dumps(report, indent=1, default=str))
         elif args.cmd == "run":
             if args.clear_stop:
                 Layout(home).stop_file.unlink(missing_ok=True)
-            return Body(home).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
+            builder = None
+            if args.builder == "claude-code":
+                from greg.builders import ClaudeCodeBuilder
+                builder = ClaudeCodeBuilder()
+            elif args.builder == "models":
+                builder = _model_builder
+            return Body(home, builder=builder).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
         elif args.cmd == "service":
-            target = service.install(Path(home), args.platform, remote=args.remote,
+            target = service.install(Path(home), args.platform, remote=args.remote, builder=args.builder,
                                      target_dir=Path(args.target_dir) if args.target_dir else None)
             print(json.dumps({"written": str(target), "loaded": False,
                               "to_load": service.load_instructions(args.platform, target)}, indent=1))

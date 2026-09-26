@@ -1,0 +1,89 @@
+{
+  "authority": "SYNTHETIC; no enrolled Alfonso identity",
+  "published_implementation": {
+    "daleobanks": "6466569e070bd46c12db0303eef221c4f1fa661c",
+    "kernel": "0722b1287fc63371ee2f72a2e95a706cf2b5aae7",
+    "mapping": "Each published Git tree matched the locally tested tree exactly; commit metadata differs."
+  },
+  "recovery": {
+    "HTTP_client_closure": "passed",
+    "UI_server_restart": "passed",
+    "browser_window": "not exercised; Chromium unavailable in prior attempt",
+    "budget_zero": "WAIT_BUDGET; zero dispatch",
+    "host_SIGKILL": "retained claim; no redispatch",
+    "hostile_worker_filesystem_separation": "not established",
+    "inflight_stop": "fault-injected worker terminated, uncertain dispatch retained",
+    "machine_reboot": "not exercised",
+    "native_Mac": "not exercised",
+    "worker_receipt_interruption": "passed"
+  },
+  "retained_files": {
+    "retained-state/actual-missions/a6914452b19a45cdb742b078913121e7/host.log": "b41b487e40ef95870805adec1be6f47af315249e59fbc4a9528aea5d2ae2865e",
+    "retained-state/actual-missions/a6914452b19a45cdb742b078913121e7/job.json": "6fb74499f66d6eb2510bd0fb8f6e422034c01553f6b4c5fc987e15dc859758a8",
+    "retained-state/actual-missions/a6914452b19a45cdb742b078913121e7/ledger.jsonl": "bb430e12d90a3defa1f3888df42932c8c0a1101fc5f9a790a7dfa879bd712c2f",
+    "retained-state/actual-missions/config.json": "cf5fc48071b9e1c5b7d086a14613b11dbfc6700d08cc712cd4c56f02306ed6cd",
+    "retained-state/actual-missions/control.jsonl": "0387eac02420e8fd8f4394aad8c6f50dfc36a19cdce404876bc09e2c1978ffbc",
+    "retained-state/actual-missions/d4d575b2bd2a4dfe95527a76e1769107/host.log": "8e6222f0d896cb3810059193bc512b9e5ecdd9da6a432ae91ff6a8ccfba1329a",
+    "retained-state/actual-missions/d4d575b2bd2a4dfe95527a76e1769107/job.json": "90d4231283af9774e3eb863cb8b626cdf69f1f420663515b8f70ff30d85b8b20",
+    "retained-state/actual-missions/d4d575b2bd2a4dfe95527a76e1769107/ledger.jsonl": "af4c43130c95ce4a3e4b510ddcdbf91d79778cb3a99b7e0a18a8ae1bdb0db158",
+    "retained-state/recovery-tests/test_budget_wait_cannot_be_ove0/session/6df4f8c503ba4b39918e59c6054cb29b/host.log": "0db7c18d0693fdb1a2b7d1c6dc46f99d216062acafad76a617fce6ad51c06a1a",
+    "retained-state/recovery-tests/test_budget_wait_cannot_be_ove0/session/6df4f8c503ba4b39918e59c6054cb29b/job.json": "6c164dc62eb5c3b2be9399ac064ffdfe9efdd0adbf325b80138f9d81a6b2aea2",
+    "retained-state/recovery-tests/test_budget_wait_cannot_be_ove0/session/6df4f8c503ba4b39918e59c6054cb29b/ledger.jsonl": "387c82094c3b1acbe8ffc4359802e0c1fa31c31c0b07ddc10732cb2826efe24a",
+    "retained-state/recovery-tests/test_budget_wait_cannot_be_ove0/session/config.json": "9522d02758b9c2ae13e085268268dce60ebc34e05abdf1dac416908d51e27cf3",
+    "retained-state/recovery-tests/test_budget_wait_cannot_be_ove0/session/control.jsonl": "8030a1c6ec33a964315226dc162355b4c283c2bd3269d8b247471fb626affc85",
+    "retained-state/recovery-tests/test_intentional_stop_survives0/session/config.json": "01fc1e4f377397834d0e5d338cf530348f9fb5344ef6e169aead97f3c4b4c819",
+    "retained-state/recovery-tests/test_intentional_stop_survives0/session/control.jsonl": "9253aa7451b505f4c32fc1fe04361dcbf00a62f8aadcacf543076bf3d48bd2b0",
+    "retained-state/recovery-tests/test_intentional_stop_survives0/session/d56e47edf1db4826aec642fb57855181/host.log": "92e0b68ec4bd3c152dc2bdb8a4cec2a6bc88d483a995c59a4d19f6282f2bbeae",
+    "retained-state/recovery-tests/test_intentional_stop_survives0/session/d56e47edf1db4826aec642fb57855181/job.json": "ffd85123cdd0c5e001f07b29bf2ea9fa411b19d3def75aa513411d3198a82c7c",
+    "retained-state/recovery-tests/test_intentional_stop_survives0/session/d56e47edf1db4826aec642fb57855181/ledger.jsonl": "a994121200278e9d56d32a7c0eebb6999bf309f361f49ff38010b577d1707aed",
+    "retained-state/recovery-tests/test_killed_host_reconstructs_0/session/config.json": "a7da6dd4fe38a4ca6fbde88d4d2f0b4ddadb69ab28693053c0b4c4e272f07a97",
+    "retained-state/recovery-tests/test_killed_host_reconstructs_0/session/control.jsonl": "dbe7711fa066c466849dde5d0a6fe2417e7a7ea6c7d5719b27b81983845b51ca",
+    "retained-state/recovery-tests/test_killed_host_reconstructs_0/session/f78b55e859844c749cb4faf048346b27/host.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained-state/recovery-tests/test_killed_host_reconstructs_0/session/f78b55e859844c749cb4faf048346b27/job.json": "4eea154e92244c72b729457f6698d57c3d6da7f6885c9553132ce661725f18f8",
+    "retained-state/recovery-tests/test_killed_host_reconstructs_0/session/f78b55e859844c749cb4faf048346b27/ledger.jsonl": "a67bf53aadeb2a71d34f711ecd80774d7e37f0aa93c8ad27ed5a9df35d6a7642",
+    "retained-state/recovery-tests/test_stop_terminates_inflight_0/session/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/ledger.jsonl": "b9721a670cb0e3c3a5a4fa67dfbbfb3e8a86c475a69369ddfbdb3e8f525ce554",
+    "retained-state/recovery-tests/test_stop_terminates_inflight_0/session/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/result.json": "7e079619e991a0e19c0b5d6a7a07f9ab0a211cccd4443f05f17ba9f3fcb8190f",
+    "retained-state/recovery-tests/test_stop_terminates_inflight_0/session/config.json": "dfaa68c65776fb7567a0f23e6f5b425861a2c4ee4f5f5174b740651627f398ca",
+    "retained-state/recovery-tests/test_stop_terminates_inflight_0/session/control.jsonl": "5d5eaa83a83eae06657b66d21e2ff3d2e0583241de114d23b9e683a44d0ec6d9"
+  },
+  "source_revisions": {
+    "daleobanks": {
+      "inspected_main": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+      "local_implementation": "b135074fd0ae36bdb6994ebd744271c8ad455779"
+    },
+    "kernel": {
+      "inspected_main": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+      "local_implementation": "7d64ae35dc2abbb58ef1205112f87902e98d7bab"
+    },
+    "wmi": {
+      "inspected_main": "ec82b8027d987c865dc123215afb53d20916908f",
+      "local_implementation": "ec82b8027d987c865dc123215afb53d20916908f"
+    }
+  },
+  "test_suites": {
+    "acceptance.xml": [
+      {
+        "errors": "0",
+        "failures": "0",
+        "hostname": "2124b0f3a546",
+        "name": "pytest",
+        "skipped": "0",
+        "tests": "68",
+        "time": "10.067",
+        "timestamp": "2026-09-25T15:07:23.084814-04:00"
+      }
+    ],
+    "broad.xml": [
+      {
+        "errors": "0",
+        "failures": "0",
+        "hostname": "2124b0f3a546",
+        "name": "pytest",
+        "skipped": "0",
+        "tests": "622",
+        "time": "15.126",
+        "timestamp": "2026-09-25T15:09:52.448752-04:00"
+      }
+    ]
+  }
+}

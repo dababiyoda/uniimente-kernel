@@ -26,11 +26,7 @@
   "BLOCKED",
   "ASPIRATIONAL"
  ],
- "inspection": {
-  "kernel": "every top-level package: file count, LOC, test importers, greg usage, module docstrings (commit 1db6ce0 + this session)",
-  "organs": "module docstrings, sizes and directory structure on each repo's claude/egregore-project-overview-btn5y2 head; not a line-by-line audit",
-  "method": "executable evidence (tests, imports, runs) outranks prose; bucket A requires use on the GREG path"
- },
+ "inspection": "{'kernel': 'every top-level package: file count, LOC, test importers, greg usage, module docstrings (commit 1db6ce0 + this session)', 'organs': \"module docstrings, sizes and directory structure on each repo's claude/egregore-project-overview-btn5y2 head; not a line-by-line audit\", 'method': 'executable evidence (tests, imports, runs) outranks prose; bucket A requires use on the GREG path'} | 2026-09-26 session: #112 converged into #113 lineage; entries appended for its components and for new greg/ capabilities.",
  "governing_transaction": "Alfonso expresses an authorized intention -> GREG converts it into a verified real-world outcome -> evidence and capability gained make the next intention easier",
  "entries": [
   {
@@ -610,6 +606,121 @@
    "disposition": "CANDIDATE rule for greg/dataplane.py when community items start moving mission priorities",
    "reality": "IMPLEMENTED",
    "note": "Fixture outcomes, not measured participant benefit."
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/local_console.py",
+   "bucket": "B",
+   "super_nodes": [
+    "eligibility",
+    "settlement"
+   ],
+   "evidence": "#112; 6 tests pass against real sibling repositories on the converged tree",
+   "extracted_mechanism": "loopback page with Host check, CSRF, head-bound review; interface closes while a host continues",
+   "disposition": "MECHANISM_EXTRACTED_INTO greg/console.py (real Ed25519 signing replaces synthetic authority); retained runnable as #112 lineage",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/development_session.py",
+   "bucket": "F",
+   "super_nodes": [],
+   "evidence": "#112; labels itself SYNTHETIC_DEVELOPMENT_ONLY_NOT_FOUNDER_AUTHENTICATION",
+   "extracted_mechanism": "explicit synthetic-authority label so fixtures can never pass as founder authority",
+   "disposition": "RETAIN_HISTORICAL; superseded for product use by greg/founder.py enrolment",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/brief_learning.py",
+   "bucket": "E",
+   "super_nodes": [
+    "routing"
+   ],
+   "evidence": "#112 held-out presentation comparison 2/4 -> 4/4 on author-labelled synthetic cases",
+   "extracted_mechanism": "retain a change only on strict held-out gain; withdraw on later negative evidence",
+   "disposition": "RETAIN_LABORATORY; same held-out principle now guards Capability Genesis (greg/builders.py)",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "egregore/runtime.py",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility"
+   ],
+   "evidence": "#112 resume-authority fix merged: resume needs a pre-existing exact-suspension grant through the Gate",
+   "extracted_mechanism": "a hash is evidence, not permission",
+   "disposition": "RETAIN_CANONICAL (security fix converged)",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/briefs.py",
+   "bucket": "A",
+   "super_nodes": [
+    "settlement",
+    "proof",
+    "routing"
+   ],
+   "evidence": "live supervised run on real Kernel/DALEOBANKS/WMI checkouts + api.github.com, appraiser VERIFIED (tests/evidence/greg-product/live-real-repos-summary.json)",
+   "extracted_mechanism": "deterministic render of receipted inputs; appraiser re-renders and byte-compares",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "LOCAL-REAL"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/builders.py",
+   "bucket": "A",
+   "super_nodes": [
+    "capability_formation",
+    "proof"
+   ],
+   "evidence": "live Claude Code build closed a real deficit; 6/6 vectors incl. 4 held out; original mission ACHIEVED (tests/evidence/greg-product/genesis-live-claude-code.json)",
+   "extracted_mechanism": "coding agent with no tools vs founder-frozen held-out oracle; isolated runtime; quarantine on change",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "LOCAL-REAL"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/planner.py + greg/console.py",
+   "bucket": "A",
+   "super_nodes": [
+    "eligibility",
+    "routing"
+   ],
+   "evidence": "supervised product-path test 5/5; live Claude Code planner draft retained (first draft unrunnable, caught)",
+   "extracted_mechanism": "plain words -> vetted, clamped proposal -> founder signature -> inbox; UI never a second Kernel",
+   "disposition": "RETAIN_CANONICAL",
+   "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/models.py (from greg/planner.py AnthropicTransport + ClaudeCodeTransport)",
+   "bucket": "A",
+   "super_nodes": [
+    "routing",
+    "reliability",
+    "capability_formation"
+   ],
+   "evidence": "tests/unit/test_greg_models.py: failover, refusal not shopped, bounded spend, demotion/cooldown, health replayed after restart",
+   "extracted_mechanism": "one complete() over Anthropic API, OpenAI Responses API and Claude Code; true author recorded; refusal terminal",
+   "disposition": "RECOMBINE",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/genesis.py repair() + greg/missions.py _self_repair",
+   "bucket": "A",
+   "super_nodes": [
+    "reliability",
+    "capability_formation",
+    "proof"
+   ],
+   "evidence": "tests/unit/test_greg_self_repair.py; tests/evidence/greg-product/self-repair-summary.json",
+   "extracted_mechanism": "per-incident deficit generations (fixes EventError crash loop); quarantine with evidence; rebuild must pass frozen oracle and live-input replay; one signed budget across generations",
+   "disposition": "PRODUCTIZE",
+   "reality": "TESTED"
   }
  ],
  "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"

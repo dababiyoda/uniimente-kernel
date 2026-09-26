@@ -7,6 +7,7 @@ The caller owns the host and must provide reviewed paths, identity and grants.
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 import math
 import multiprocessing
 import os
@@ -28,11 +29,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def validate_job(job):
-    if set(job) != {"mission_id", "repositories", "expected_pin", "expected_version", "due", "deadline"}:
+    if set(job) - {"profile", "control_ledger"} != {"mission_id", "repositories", "expected_pin", "expected_version", "due", "deadline"}:
         raise ValueError("unknown or missing mission field")
     if not isinstance(job["mission_id"], str) or not job["mission_id"].startswith("greg-proof:"):
         raise ValueError("explicit proof mission identity required")
+    from egregore.repository_audit import source_files
+    source_files(job.get("profile"))
     validate_repositories(job["repositories"])
+    if "control_ledger" in job:
+        control = Path(job["control_ledger"])
+        if not control.is_absolute() or not control.is_file() or control.resolve() != control:
+            raise ValueError("existing absolute control ledger required")
     if not SHA.fullmatch(job["expected_pin"]) or job["expected_version"] != "0.1.2":
         raise ValueError("unsupported package contract")
     if any(type(job[k]) not in (int, float) or not math.isfinite(job[k]) for k in ("due", "deadline")):
@@ -117,6 +124,30 @@ def receipt_for(ledger, p):
     return None
 
 
+def retained_stop(job, constitution_hash):
+    """The safety control is bound into the exact granted job."""
+    if "control_ledger" not in job:
+        return False  # Legacy proof-only job.
+    control = EvidenceLedger(constitution_hash, job["control_ledger"], read_only=True)
+    try:
+        return bool(control.by_type("egregore.suspended"))
+    finally:
+        control.close()
+
+
+@contextmanager
+def dispatch_admission(job, constitution_hash):
+    control = (EvidenceLedger(constitution_hash, job["control_ledger"])
+               if "control_ledger" in job else None)
+    try:
+        if control and control.by_type("egregore.suspended"):
+            raise ReconciliationRequired("intentional stop; dispatch prohibited")
+        yield (control.close if control else lambda: None)
+    finally:
+        if control:
+            control.close()
+
+
 def run_once(path, job, *, compiled, passports, grants, signer, actor, grant_id, crash_after_receipt=False):
     """Fixed reviewed worker. No authority provisioning or external channel."""
     job = validate_job(job)
@@ -131,6 +162,8 @@ def run_once(path, job, *, compiled, passports, grants, signer, actor, grant_id,
         closed = [e for e in spine.replay("greg.closed") if e.payload["mission_id"] == job["mission_id"]]
         if closed:
             return closed[-1].payload["data"]
+        if retained_stop(job, compiled.constitution_hash):
+            raise ReconciliationRequired("intentional stop; dispatch prohibited")
         if time.time() < job["due"]:
             return {"status": "WAITING", "reconsider_at": job["due"]}
         if time.time() >= job["deadline"]:
@@ -142,10 +175,15 @@ def run_once(path, job, *, compiled, passports, grants, signer, actor, grant_id,
             retained = receipt_for(ledger, p)
             if retained is None:
                 grant = grants.get(grant_id)
-                rec = gate.run(p, standing_grant=grant, executor=lambda _: {
-                    "observed_outcome": p.expected_outcome, "result_class": "positive",
-                    "sources": capture(job["repositories"]), "scope_digest": sha256_json(job),
-                    "validation_status": "self_reported"})
+                with dispatch_admission(job, compiled.constitution_hash) as release_admission:
+                    def execute(_):
+                        release_admission()  # Gate has retained the dispatch claim.
+                        if retained_stop(job, compiled.constitution_hash):
+                            raise ReconciliationRequired("stop after admission; no source read started")
+                        return {"observed_outcome": p.expected_outcome, "result_class": "positive",
+                            "sources": (capture(job["repositories"], job["profile"]) if job.get("profile") else capture(job["repositories"])),
+                            "scope_digest": sha256_json(job), "validation_status": "self_reported"}
+                    rec = gate.run(p, standing_grant=grant, executor=execute)
                 if rec.state != "recorded":
                     raise ReconciliationRequired("Gate refused or awaits reconciliation: " + "; ".join(rec.refusal_reasons))
                 retained = receipt_for(ledger, p)
@@ -180,6 +218,8 @@ def run_once(path, job, *, compiled, passports, grants, signer, actor, grant_id,
             wf = (resume_workflow(spine, job["mission_id"], steps) if checkpoints else
                   durable_workflow(spine, job["mission_id"], steps, actor=actor, legal_principal="alfonso_lopez"))
             state = wf.execute().state
+        if retained_stop(job, compiled.constitution_hash):
+            raise ReconciliationRequired("intentional stop; evidence retained without closure")
         result = {"status": "VERIFIED_LOCAL_AUDIT", "mission_id": job["mission_id"],
                   "receipt": state["receipt"], "appraisal": state["appraisal"],
                   "CMC": 0, "VDM": 0, "founder_authenticated": False}
@@ -197,13 +237,16 @@ def _worker(path, job, authority, crash):
         raise
 
 
-def supervise(path, job, authority, *, crash_first=False):
+def supervise(path, job, authority, *, crash_first=False, max_attempts=3):
     """Finite host: wait economically, replace a crashed worker, stop at bounds.
 
     Unix proof host only. A hardware service manager may call this composition
     later; no service is installed and no new grants are created on restart.
     """
     job = validate_job(job)
+    if type(max_attempts) is not int or not 0 <= max_attempts <= 3:
+        raise ValueError("attempt budget must be 0..3")
+    stop_requested = lambda: retained_stop(job, authority["compiled"].constitution_hash)
     started_at = time.monotonic()
     cpu_start = resource.getrusage(resource.RUSAGE_SELF)
     if job["due"] - time.time() > 60:
@@ -224,15 +267,16 @@ def supervise(path, job, authority, *, crash_first=False):
         emit(spine, authority["actor"], "host_started", job,
              {"host_pid": os.getpid(), "at": time.time(), "due": job["due"],
               "priority": "sole admitted mission; no competing work",
-              "limits": {"attempts": 3, "worker_seconds": 20, "window_seconds": 60,
+              "limits": {"attempts": max_attempts, "worker_seconds": 20, "window_seconds": 60,
                          "model_calls": 0, "external_spend_usd": 0}})
     finally:
         prior.close()
     exits = []
     worker_pids = []
     host_failure = None
+    intentional_stop = False
     try:
-        while time.time() < min(job["due"], job["deadline"]):
+        while not stop_requested() and time.time() < min(job["due"], job["deadline"]):
             time.sleep(max(0, min(.1, job["due"] - time.time())))
         trigger_ledger = EvidenceLedger(authority["compiled"].constitution_hash, str(path))
         try:
@@ -240,7 +284,10 @@ def supervise(path, job, authority, *, crash_first=False):
                  {"at": time.time(), "host_pid": os.getpid(), "cause": "due time"})
         finally:
             trigger_ledger.close()
-        for attempt in range(3):
+        for attempt in range(max_attempts):
+            if stop_requested():
+                intentional_stop = True
+                break
             if time.time() >= job["deadline"]:
                 break
             process = multiprocessing.get_context("fork").Process(
@@ -248,7 +295,12 @@ def supervise(path, job, authority, *, crash_first=False):
             process.start()
             worker_pids.append(process.pid)
             try:
-                process.join(min(20, max(0, job["deadline"] - time.time())))
+                end = min(time.time() + 20, job["deadline"])
+                while process.is_alive() and time.time() < end:
+                    if stop_requested():
+                        intentional_stop = True
+                        break
+                    process.join(min(.1, max(0, end - time.time())))
                 if process.is_alive():
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
@@ -278,9 +330,14 @@ def supervise(path, job, authority, *, crash_first=False):
         spine = EventSpine(ledger)
         bound_job(spine, job)
         closed = [e for e in spine.replay("greg.closed") if e.payload["mission_id"] == job["mission_id"]]
-        data = {"worker_exits": exits, "worker_pids": worker_pids, "attempt_limit": 3,
+        data = {"worker_exits": exits, "worker_pids": worker_pids, "attempt_limit": max_attempts,
                 "status": "COMPLETE" if closed and host_failure is None else "BLOCKED",
                 "next_reconsideration": None if closed else "explicit operator reconciliation; no blind redispatch"}
+        if intentional_stop or stop_requested():
+            data.update(status="STOPPED", next_reconsideration="none; intentional terminal stop",
+                        in_flight="terminated if active; retained receipts require review; no redispatch")
+        elif max_attempts == 0:
+            data.update(status="WAIT_BUDGET", next_reconsideration="explicit new mission with approved budget")
         if host_failure is not None:
             data["host_failure_type"] = host_failure
             data["next_reconsideration"] = "explicit operator reconciliation; no blind redispatch"

@@ -31,6 +31,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
+from greg.genesis import is_capability_fault
 from greg import routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
@@ -71,6 +72,11 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError("ladder rung names unknown checks")
     if spec["closure"]["kind"] == "bounded" and ladder:
         raise MissionError("bounded missions close on their checks; ladders are for infinite missions")
+    functions = [c["function"] for c in spec.get("capability_specs", [])]
+    if len(functions) != len(set(functions)):
+        raise MissionError("duplicate capability_specs functions")
+    if sum(c["build_budget_usd"] for c in spec.get("capability_specs", [])) > cone.budget_usd + 1e-9:
+        raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
 
@@ -243,9 +249,10 @@ class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
     def __init__(self, *, journal: Journal, office: AuthorityOffice, registry, secrets, workspace_root: Path,
-                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1):
+                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1, deliver_root: Path | None = None):
         self.journal, self.office, self.registry, self.secrets = journal, office, registry, secrets
         self.workspace_root, self.read_roots = Path(workspace_root), tuple(Path(p) for p in read_roots)
+        self.deliver_root = Path(deliver_root) if deliver_root else None
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
 
@@ -301,17 +308,23 @@ class MissionEngine:
         self.book.rebuild()
 
     # -- the loop ---------------------------------------------------------------
-    def tick(self, now: datetime) -> list[dict]:
+    def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
+        """One turn per mission. ``should_stop`` is consulted before every mission step:
+        a stop that arrives mid-tick admits no further dispatch (from #112)."""
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
         for m in order:
+            if should_stop is not None and should_stop():
+                summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
+                continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
 
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
-                                 read_roots=self.read_roots, secrets=self.secrets, manifest=manifest)
+                                 read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
+                                 deliver_root=self.deliver_root)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:
@@ -405,6 +418,9 @@ class MissionEngine:
         self._record_routing_outcomes(m)
         if not failing:
             return self._setpoint_reached(m, now, evidence)
+        repaired = self._self_repair(m, now)
+        if repaired is not None:
+            return repaired
         errors = set(self.sensor_errors)
         if errors and errors == failing:
             # The world was not measured; that is not a failed goal. Back off and
@@ -429,9 +445,32 @@ class MissionEngine:
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
 
+    def _self_repair(self, m: MissionState, now: datetime):
+        """A formed capability that faults twice in a row on the same check is re-formed, not escalated."""
+        for check_id, (manifest, detail, params) in sorted(self.capability_faults.items()):
+            # Only faults of *this* implementation count: a replacement starts with a clean record.
+            since = max((e.payload["at"] for e in self.journal.replay("deficit.resolved")
+                         if e.payload["capability_id"] == manifest.capability_id), default="")
+            streak = 0
+            for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
+                                 if e.payload["mission_id"] == m.mission_id and e.payload["check_id"] == check_id]):
+                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"]):
+                    break
+                streak += 1
+            if streak < 2:
+                continue
+            repaired = self.genesis.repair(mission=m, capability_id=manifest.capability_id, failure=detail,
+                                           params=params, now=now)
+            if repaired is not None:   # the next tick re-measures with the re-formed capability
+                return {"state": "REPAIRED", "replaced": manifest.capability_id, "by": repaired.capability_id}
+            self._escalate_capability(m, manifest.function, None, f"self-repair of {manifest.capability_id}", now)
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        return None
+
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
+        self.capability_faults = {}
         for check in m.current_checks():
             sensor = check["sensor"]
             manifest, adapter, missing = self._resolve(sensor)
@@ -460,6 +499,8 @@ class MissionEngine:
                     return None, None
                 passed, detail = False, "sensor " + outcome.status + ": " + "; ".join(outcome.reasons)[:200]
                 sensor_errors.add(check["check_id"])
+                if self.genesis is not None and is_capability_fault(manifest, detail):
+                    self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
@@ -547,12 +588,15 @@ class MissionEngine:
             capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now)
             if capability is not None:
                 return capability
+        return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
+
+    def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime):
         rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}),
                             action_id=None, why=f"missing capability for {purpose}",
                             recommendation="attach a verified capability for this function, or revise the mission",
                             alternatives=["provide an API key/connector", "revise the strategy", "abandon"],
                             requested={"function": function}, now=now)
-        self._block(m, {"type": "capability", "function": function, "capability_id": spec.get("capability"),
+        self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
                         "reconsider": "a verified capability for this function is attached"})
         return None

@@ -54,3 +54,14 @@ envelopes into the same inbox, so none is a separate authority. Only the synthet
 #113 accrues no further product work. Its remaining value reaches #114 by one merge of #113's
 head into #114's branch. After that, #113 is kept open only as #114's base until #114 is
 retargeted to `main`, then closed as superseded. Its branch and history are not deleted.
+
+## Residual status on #114 (2026-09-26, after merging #113 head `51c1374`)
+
+1. Persisted founder stop — **carried** by the merge of `40d3bdc`; full suite green on the merged tree.
+2. Synthetic `egregore.local_console` founder path — **removed from active founder instructions**:
+   `docs/GREG_LOCAL_START.md` now opens with a supersession notice; modules, tests and the page stay as provenance.
+3. Anthropic-only model cognition — **closed for vendors, partial for scoring**: `greg/models.py` routes planner
+   and builder across the Anthropic API, the OpenAI Responses API and Claude Code with failover, demotion and
+   cooldown, ledgered route health, budget-bounded spend and true-author provenance; refusals are never shopped.
+   Not yet scored: latency and task suitability (routing is preference order plus health). Live API routes
+   await Alfonso's own keys; tests use SDK-shaped fakes.

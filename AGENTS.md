@@ -1,4 +1,17 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 # UNIIMENTE Agent Entry Contract
+
+## Latest founder correction — real product over laboratory output
+
+Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and its verbatim source **before choosing new work**.
+
+The repository is developmental substrate for the real GREG product. Mine experiments, simulations, failures, duplicates and superseded architectures for mechanisms; then PRODUCTIZE, EXTRACT, RECOMBINE, RETAIN_AS_EVIDENCE, ARCHIVE, or KILL_ACTIVE_COMPLEXITY. Historical work does not earn canonical ownership from sunk cost.
+
+A substantial coding session must answer: **What can the actual GREG now do that it could not do before?** Tests, sandboxes, simulations, benchmarks and documents verify product work; they are not the product milestone. Until evidence changes the bottleneck, optimize VEPMC 0 -> 1 and the vertical product path that makes that closure real.
+
+Do not create another framework to implement this rule. Apply it to `greg/` and the existing canonical owners.
+
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
@@ -10,6 +23,9 @@ Advance one verified embodied mission before expanding infrastructure. Preserve
 history while choosing one active semantic owner; autonomy never creates authority.
 
 Before substantive work, read:
+
+0. `docs/PROJECT_COGNITION_SOP.md`
+0a. `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`
 
 1. `docs/FOUNDER_EFFECT_COMPILER.md`
 2. `docs/FOUNDER_INTENT_LEDGER.md`

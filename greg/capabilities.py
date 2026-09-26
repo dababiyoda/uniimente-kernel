@@ -64,7 +64,7 @@ class CapabilityManifest:
     target_prefix: str                 # every target this capability touches starts with this
     network: str = "none"              # none | egress-allowlist
     egress_allowlist: tuple = ()
-    filesystem: str = "none"           # none | read-scoped | workspace-write
+    filesystem: str = "none"           # none | read-scoped | workspace-write | deliver-write (founder-visible)
     credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
     binaries: tuple = ()               # exact executables a CLI capability may run
     data_classes: tuple = ()
@@ -91,7 +91,7 @@ class CapabilityManifest:
             problems.append("target-host-only network requires target_from (and only it may use target_from)")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
-        if self.filesystem not in ("none", "read-scoped", "workspace-write"):
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "deliver-write"):
             problems.append("unknown filesystem class")
         if self.route == "cli" and not self.binaries:
             problems.append("cli capability must name exact binaries")
@@ -206,6 +206,7 @@ class InvocationContext:
     read_roots: tuple[Path, ...]       # filesystem roots this mission may read
     secrets: SecretBroker
     manifest: CapabilityManifest
+    deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -483,9 +484,20 @@ STRENGTHENS = {
     "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
     "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
     "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
+    "github.pulls": ("proof", "routing"), "brief.freshness": ("proof", "settlement"),
+    "brief.engineering": ("settlement", "proof", "routing"),
     "repo.integration_audit": ("proof", "eligibility", "reliability"),
     "browser.render": ("proof", "capability_formation"),
 }
+
+
+def _lazy(module: str, name: str):
+    """Adapter defined in another greg module (imported on first call, avoiding cycles)."""
+    def adapter(params, ctx):
+        import importlib
+        return getattr(importlib.import_module(module), name)(params, ctx)
+    adapter.__name__ = name
+    return adapter
 
 
 def _builtin(capability_id, function, description, route, consequence, target_prefix, inputs, outputs, **kw):
@@ -500,20 +512,24 @@ def _builtin(capability_id, function, description, route, consequence, target_pr
 
 BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
     "fs.read": (_builtin("fs.read", "filesystem.read", "Read one file inside permitted roots", "api",
-                         "read_only", "fs:", {"path": "str"}, {"sha256": "str", "text": "str"},
+                         "read_only", "fs:", {"path": "str"},
+                         {"path": "str", "exists": "bool", "bytes": "int", "sha256": "str", "text": "str"},
                          filesystem="read-scoped", retry_safe=True), fs_read),
     "fs.list": (_builtin("fs.list", "filesystem.list", "List one directory inside permitted roots", "api",
-                         "read_only", "fs:", {"path": "str"}, {"entries": "list"},
+                         "read_only", "fs:", {"path": "str"}, {"path": "str", "exists": "bool", "entries": "list"},
                          filesystem="read-scoped", retry_safe=True), fs_list),
     "fs.write": (_builtin("fs.write", "filesystem.write", "Write one text file inside the mission workspace",
                           "api", "internal_write", "workspace:", {"relative_path": "str", "content": "str"},
-                          {"sha256": "str"}, filesystem="workspace-write"), fs_write),
+                          {"path": "str", "sha256": "str"}, filesystem="workspace-write"), fs_write),
     "git.inspect": (_builtin("git.inspect", "repository.inspect", "Read HEAD, dirtiness and recent log", "cli",
-                             "read_only", "fs:", {"path": "str"}, {"head": "str"}, filesystem="read-scoped",
+                             "read_only", "fs:", {"path": "str"},
+                             {"path": "str", "head": "str", "dirty": "bool", "recent": "list[str]"},
+                             filesystem="read-scoped",
                              binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
                              retry_safe=True), git_inspect),
     "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
-                          "read_only", "https:", {"url": "str"}, {"text": "str"},
+                          "read_only", "https:", {"url": "str"},
+                          {"url": "str", "status": "int", "sha256": "str", "text": "str", "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),
     "browser.render": (_builtin("browser.render", "web.render",
@@ -526,10 +542,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                             "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
                        browser_render),
     "mac.notify": (_builtin("mac.notify", "founder.notify", "Local macOS notification to the founder",
-                            "os_automation", "internal_write", "founder:", {"text": "str"}, {"delivered": "bool"},
+                            "os_automation", "internal_write", "founder:", {"text": "str", "title": "str?"}, {"delivered": "bool"},
                             binaries=("/usr/bin/osascript",), platforms=("darwin",)), mac_notify),
     "mac.screenshot": (_builtin("mac.screenshot", "screen.capture", "Capture the screen into the workspace",
-                                "visual", "read_only", "screen:", {"name": "str"}, {"sha256": "str"},
+                                "visual", "read_only", "screen:", {"name": "str?"}, {"path": "str", "sha256": "str"},
                                 binaries=("/usr/sbin/screencapture",), platforms=("darwin",),
                                 data_classes=("screen_content",)), mac_screenshot),
     "mac.frontmost_app": (_builtin("mac.frontmost_app", "desktop.observe", "Name the frontmost application",
@@ -540,12 +556,42 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "Verify organs pin the same Kernel boundary package (real Git objects, read-only)",
                                 "cli", "read_only", "repo:",
                                 {"repositories": "list[{role,path}]", "expected_pin": "sha",
-                                 "expected_version": "str"}, {"compatible": "bool", "drift": "list"},
+                                 "expected_version": "str"},
+                                {"compatible": "bool", "rows": "list", "commits": "dict", "drift": "list",
+                                 "source_scope": "str"},
                                 filesystem="read-scoped", retry_safe=True,
                                 binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
                                 provenance={"source": "uniimente-kernel/greg/capabilities.py",
                                             "mechanism_from": "PR #101 egregore/repository_audit.py (capture, derive)"}),
                        repo_pin_audit),
+    "github.pulls": (_builtin("github.pulls", "code_hosting.pull_requests",
+                              "Open pull requests and their check runs from the GitHub REST API (read-only)",
+                              "api", "read_only", "github:", {"github": "list[owner/name]"},
+                              {"repos": "dict", "api_calls": "int", "rate_limited": "bool", "authenticated": "bool"},
+                              network="egress-allowlist",
+                              egress_allowlist=("api.github.com",), credentials=("github_token",),
+                              data_classes=("public_web", "repository_metadata"), retry_safe=True),
+                     _lazy("greg.briefs", "github_pulls")),
+    "brief.freshness": (_builtin("brief.freshness", "delivery.freshness",
+                                 "Age of the newest delivered brief of one kind", "api", "read_only", "deliver:",
+                                 {"kind": "str?"}, {"kind": "str", "count": "int", "latest": "str|null",
+                                                   "age_hours": "float|null", "sha256": "str"},
+                                 filesystem="read-scoped", retry_safe=True),
+                        _lazy("greg.briefs", "brief_freshness")),
+    "brief.engineering": (_builtin("brief.engineering", "report.engineering_brief",
+                                   "Read local Git and GitHub pull requests, render the engineering brief, "
+                                   "deliver it as one new file for the founder", "api", "internal_write",
+                                   "deliver:", {"local": "list[{name,path}]", "github": "list[owner/name]",
+                                                "stale_days": "int?"},
+                                   {"path": "str", "sha256": "str", "bytes": "int", "inputs": "dict",
+                                    "inputs_digest": "str", "attention": "int"},
+                                   network="egress-allowlist", egress_allowlist=("api.github.com",),
+                                   filesystem="deliver-write", credentials=("github_token",),
+                                   data_classes=("public_web", "repository_metadata"),
+                                   provenance={"source": "uniimente-kernel/greg/briefs.py",
+                                               "mechanism_from": "#112 source-bound morning brief; "
+                                                                 "#101 exact Git reads"}),
+                          _lazy("greg.briefs", "engineering_brief")),
     "repo.integration_audit": (_builtin("repo.integration_audit", "repository.integration_audit",
                                         "Static integration findings across Kernel/DALEOBANKS/WMI (exact Git blobs, read-only)",
                                         "cli", "read_only", "repo:",
@@ -600,6 +646,9 @@ class CapabilityRegistry:
         for cid, manifest in sorted(self.manifests.items()):
             ok, why = manifest.available()
             rows.append({"capability_id": cid, "function": manifest.function, "route": manifest.route,
+                         "description": manifest.description, "inputs": manifest.inputs,
+                         "outputs": manifest.outputs, "target_prefix": manifest.target_prefix,
+                         "filesystem": manifest.filesystem,
                          "consequence_class": manifest.consequence_class, "state": self.state[cid],
                          "provider": manifest.provider, "health": "available" if ok else why,
                          "credentials": list(manifest.credentials), "network": manifest.network,

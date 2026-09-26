@@ -1,0 +1,138 @@
+{
+ "reality": "TESTED: real Body, real journal/ledger, built code in real isolated interpreters; deterministic builder; not supervised, not Mac",
+ "states_after_breakage": [
+  "SENSOR_RETRY",
+  "REPAIRED",
+  "HOLDING",
+  "HOLDING",
+  "HOLDING",
+  "HOLDING"
+ ],
+ "quarantined": [
+  {
+   "capability_id": "built.markdown.unchecked_count.6c8372726f35",
+   "state": "QUARANTINED",
+   "why": "failed in service: sensor REFUSED: capability refused: built capability raised ValueError",
+   "by": "self-repair (repeated capability fault)",
+   "mission_id": "m:runbook"
+  }
+ ],
+ "repair_deficit": {
+  "deficit_id": "deficit-999596068a0b8f2a7fe45e58",
+  "mission_id": "m:runbook",
+  "function": "markdown.unchecked_count",
+  "purpose": "self-repair of built.markdown.unchecked_count.6c8372726f35",
+  "acceptance": {
+   "oracle": "founder-signed mission contract",
+   "public_examples": 2,
+   "held_out_vectors": 4,
+   "vector_digest": "sha256:8092b4022d6b1f1dd6c92f6558923a7e8937b2a54fc0c1cb0386992ce7615e7b"
+  },
+  "at": "2026-09-26T11:49:22.629070Z",
+  "verification": {
+   "required_by": {
+    "mission_id": "m:runbook",
+    "purpose": "self-repair of built.markdown.unchecked_count.6c8372726f35"
+   },
+   "failed": "no ATTACHED, usable implementation of 'markdown.unchecked_count' resolved",
+   "unserviceable": [
+    {
+     "capability_id": "built.markdown.unchecked_count.6c8372726f35",
+     "state": "QUARANTINED",
+     "why_not": "state QUARANTINED"
+    }
+   ],
+   "verified": true
+  },
+  "search_order": [
+   "attached",
+   "verified_detached",
+   "installed_software",
+   "builder",
+   "founder"
+  ],
+  "repair": {
+   "capability_id": "built.markdown.unchecked_count.6c8372726f35",
+   "failure": "sensor REFUSED: capability refused: built capability raised ValueError",
+   "replay_path": "/tmp/pytest-of-root/pytest-55/test_capability_that_breaks_on0/data/FIRST_MISSION.md"
+  }
+ },
+ "verifications": [
+  {
+   "deficit_id": "deficit-999596068a0b8f2a7fe45e58",
+   "capability_id": "built:6c8372726f35abee4be43db77c98b8ad1942a5bebd207a1a3fc42d2f357b1305",
+   "passed": false,
+   "report": {
+    "screen": [],
+    "public": {
+     "cases": 2,
+     "failures": [],
+     "isolation": "separate python -I -S process, no network, scrubbed env, timeout"
+    },
+    "cases": 6,
+    "failed_cases": 0,
+    "isolation": "separate python -I -S process, no network, scrubbed env, timeout",
+    "service_replay": {
+     "passed": false,
+     "error": "ValueError"
+    }
+   },
+   "verifier": "founder-frozen held-out oracle; separate no-network interpreter; candidate never saw held-out vectors"
+  },
+  {
+   "deficit_id": "deficit-999596068a0b8f2a7fe45e58",
+   "capability_id": "built:2a6f0ba8ed8d7433345865a1e93e106dc8181281983db87f525983f3cb529d9f",
+   "passed": true,
+   "report": {
+    "screen": [],
+    "public": {
+     "cases": 2,
+     "failures": [],
+     "isolation": "separate python -I -S process, no network, scrubbed env, timeout"
+    },
+    "cases": 6,
+    "failed_cases": 0,
+    "isolation": "separate python -I -S process, no network, scrubbed env, timeout",
+    "service_replay": {
+     "passed": true,
+     "error": null
+    }
+   },
+   "verifier": "founder-frozen held-out oracle; separate no-network interpreter; candidate never saw held-out vectors"
+  }
+ ],
+ "builder_feedback_on_repair": [
+  [
+   "a previously verified implementation failed in service (sensor REFUSED: capability refused: built capability raised ValueError); it must handle arbitrary real input without raising"
+  ],
+  [
+   "your candidate passes the examples but raised on real input (ValueError); handle arbitrary text without raising"
+  ]
+ ],
+ "attached": [
+  {
+   "capability_id": "built.markdown.unchecked_count.6c8372726f35",
+   "state": "ATTACHED",
+   "by": "founder-signed mission auto_attach (read_only)",
+   "mission_id": "m:runbook",
+   "deficit_id": "deficit-b8ba868b495b06a7e0823c82"
+  },
+  {
+   "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
+   "state": "ATTACHED",
+   "by": "founder-signed mission auto_attach (read_only)",
+   "mission_id": "m:runbook",
+   "deficit_id": "deficit-999596068a0b8f2a7fe45e58"
+  }
+ ],
+ "last_observation": {
+  "mission_id": "m:runbook",
+  "check_id": "open-items-counted",
+  "passed": true,
+  "detail": "3 == 3",
+  "receipt": "sha256:021513a16f5a7f0d30052629ca1310fe485028d79e9e6be5cc0df3496bbf02e5",
+  "rung": 0,
+  "at": "2026-09-26T11:57:22.629070Z"
+ },
+ "decisions_requested": []
+}

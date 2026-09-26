@@ -49,3 +49,7 @@ Two residuals are named rather than hidden:
 - the "what changed since the previous brief" diff.
 
 #112 is closed as superseded by #113. Its branch `greg/usable-local-loop-20260925` is not deleted.
+
+**Later correction (2026-09-26):** #114, the descendant of #113, ported mechanisms 10, 12 and 13 differently
+from what this record says (`greg/console.py`, `greg/briefs.py`, and the #112 modules kept active).
+See `PR113-TO-114-SUPERSESSION.md`.

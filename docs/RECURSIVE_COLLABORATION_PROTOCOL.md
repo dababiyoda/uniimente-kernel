@@ -1,3 +1,5 @@
+> **Project cognition prerequisite:** use `docs/PROJECT_COGNITION_SOP.md` and `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md` to reconstruct the relevant project source field before applying this protocol. Source coverage must be stated; do not claim inaccessible conversations were inspected.
+
 # Recursive Collaboration Protocol
 
 This protocol turns collaboration, dissent, and founder-intent preservation into an auditable institutional process.

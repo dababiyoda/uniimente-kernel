@@ -17,7 +17,9 @@ Computer-use route preference (structured before visual):
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
+import glob
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -70,6 +72,7 @@ class CapabilityManifest:
     platforms: tuple = ("linux", "darwin")
     retry_safe: bool = False           # read-only and idempotent: an unknown outcome may be re-attempted
     strengthens: tuple = ()            # SUPER_NODES this capability reinforces (Spider-Web rule; required)
+    target_from: str = ""              # param holding the URL whose host the signed target must name
     tests: tuple = ()
     provenance: dict = field(default_factory=dict)
     attach: str = "founder command or pre-authorized mission light cone"
@@ -82,8 +85,10 @@ class CapabilityManifest:
             problems.append(f"unknown route {self.route!r}")
         if self.consequence_class not in CONSEQUENCE_CLASSES:
             problems.append(f"unknown consequence class {self.consequence_class!r}")
-        if self.network not in ("none", "egress-allowlist"):
-            problems.append("network must be none or egress-allowlist")
+        if self.network not in ("none", "egress-allowlist", "target-host-only"):
+            problems.append("network must be none, egress-allowlist or target-host-only")
+        if (self.network == "target-host-only") != bool(self.target_from):
+            problems.append("target-host-only network requires target_from (and only it may use target_from)")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
         if self.filesystem not in ("none", "read-scoped", "workspace-write", "deliver-write"):
@@ -121,6 +126,8 @@ class CapabilityManifest:
         for key, item in value.items():
             if isinstance(item, tuple):
                 value[key] = list(item)
+        if not value["target_from"]:
+            value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
         return value
 
     @classmethod
@@ -322,6 +329,87 @@ def http_get(params, ctx: InvocationContext) -> dict:
             "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data"}
 
 
+CHROME_CANDIDATES = (
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+)
+
+
+def chrome_binary() -> str:
+    """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
+    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
+                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
+        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    return CHROME_CANDIDATES[0]
+
+
+class _VisibleText(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts, self.title, self._skip, self._in_title = [], "", 0, False
+
+    def handle_starttag(self, tag, attrs):
+        self._skip += tag in ("script", "style", "noscript", "template")
+        self._in_title = self._in_title or tag == "title"
+
+    def handle_endtag(self, tag):
+        self._skip -= tag in ("script", "style", "noscript", "template") and self._skip > 0
+        self._in_title = self._in_title and tag != "title"
+
+    def handle_data(self, data):
+        if self._in_title:
+            self.title += data
+        elif not self._skip and data.strip():
+            self.parts.append(" ".join(data.split()))
+
+
+def browser_render(params, ctx: InvocationContext) -> dict:
+    """Load a page in a real headless browser, run its JavaScript, return what a person would see.
+
+    The signed target must be ``web:<host>`` of this URL (enforced by the authority office via
+    ``target_from``), and the browser may resolve ONLY that host: every other name maps to
+    NOTFOUND, so page scripts cannot reach third parties. https, or http on loopback only.
+    Fresh profile per call, no extensions, no sync, no background networking.
+    """
+    import tempfile
+    url = str(params["url"])
+    parts = urllib.parse.urlsplit(url)
+    host = parts.hostname or ""
+    loopback = host in ("127.0.0.1", "localhost", "::1")
+    authority = f"{host}:{parts.port or (443 if parts.scheme == 'https' else 80)}"
+    if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
+        raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
+    binary = chrome_binary()
+    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
+        argv = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                "--disable-extensions", "--disable-background-networking", "--disable-sync",
+                "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
+                f"--user-data-dir={profile}", f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
+                # Every request goes to a dead proxy except the exact target origin, so page scripts
+                # cannot reach third parties even by IP literal (implicit loopback bypass removed).
+                "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
+                "--virtual-time-budget=5000", "--dump-dom", url]
+        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0)
+        if not sandboxed:
+            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux; reported below
+        env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
+        try:
+            proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+        except subprocess.TimeoutExpired as exc:
+            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
+    dom = proc.stdout[:MAX_READ_BYTES * 4]
+    if proc.returncode or not dom.strip():
+        raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
+    parser = _VisibleText()
+    parser.feed(dom.decode("utf-8", errors="replace"))
+    text = "\n".join(parser.parts)[:MAX_READ_BYTES]
+    return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
+            "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
+            "egress": f"only {authority} reachable", "trust": "untrusted-external-data"}
+
+
 def mac_notify(params, ctx: InvocationContext) -> dict:
     text, title = str(params["text"])[:200], str(params.get("title", "GREG"))[:60]
     script = f"display notification {json.dumps(text)} with title {json.dumps(title)}"
@@ -356,17 +444,39 @@ def repo_pin_audit(params, ctx: InvocationContext) -> dict:
     proof mission around them is not. Observes each repository's cached
     origin/main itself, so it can run every night without a pre-known commit.
     """
+    repositories, report = _repo_report(params, ctx, profile=None)
+    return {"compatible": report["compatible"], "rows": report["rows"],
+            "commits": {r["role"]: r["commit"] for r in repositories},
+            "drift": [r for r in report["rows"] if not r["matches"]], "source_scope": report["source_scope"]}
+
+
+def _repo_report(params, ctx: InvocationContext, *, profile):
     from egregore.repository_audit import capture, derive, git_read
     repositories = []
     for repo in params["repositories"]:
         path = _inside(Path(repo["path"]), ctx.read_roots)
         commit = git_read(str(path), "rev-parse", "refs/remotes/origin/main").decode().strip()
         repositories.append({"role": repo["role"], "path": str(path), "commit": commit})
-    sources = capture(repositories)
-    report = derive(sources, params["expected_pin"], params["expected_version"])
-    return {"compatible": report["compatible"], "rows": report["rows"],
-            "commits": {r["role"]: r["commit"] for r in repositories},
-            "drift": [r for r in report["rows"] if not r["matches"]], "source_scope": report["source_scope"]}
+    sources = capture(repositories, profile) if profile else capture(repositories)
+    return repositories, derive(sources, params["expected_pin"], params["expected_version"], profile)
+
+
+def repo_integration_audit(params, ctx: InvocationContext) -> dict:
+    """Bounded static integration findings across the organs (read-only).
+
+    Ported from PR #112 (repository_audit integration-v1 profile): exact Git
+    blobs of the boundary files plus the Gate/runtime/reflection/bridge sources,
+    AST-level checks such as "resume accepts a hash without the Gate". Findings
+    are evidence for the founder's morning brief, never authority.
+    """
+    repositories, report = _repo_report(params, ctx, profile="integration-v1")
+    findings = [{k: f[k] for k in ("id", "kind", "summary", "next_action")} | {
+        "evidence": {k: f["evidence"].get(k) for k in ("role", "commit", "file", "blob", "line") if k in f["evidence"]}}
+        for f in report["findings"]]
+    return {"compatible": report["compatible"], "commits": {r["role"]: r["commit"] for r in repositories},
+            "finding_ids": sorted(f["id"] for f in findings), "count": len(findings), "findings": findings,
+            "authority_findings": sorted(f["id"] for f in findings if f["kind"] == "authority"),
+            "coverage": report["coverage"], "limits": report["limits"]}
 
 
 STRENGTHENS = {
@@ -376,6 +486,8 @@ STRENGTHENS = {
     "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
     "github.pulls": ("proof", "routing"), "brief.freshness": ("proof", "settlement"),
     "brief.engineering": ("settlement", "proof", "routing"),
+    "repo.integration_audit": ("proof", "eligibility", "reliability"),
+    "browser.render": ("proof", "capability_formation"),
 }
 
 
@@ -420,6 +532,15 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                           {"url": "str", "status": "int", "sha256": "str", "text": "str", "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),
+    "browser.render": (_builtin("browser.render", "web.render",
+                                "Render a page in a real headless browser (JavaScript executed) and read it",
+                                "browser", "read_only", "web:", {"url": "str"},
+                                {"title": "str", "text": "str", "dom_sha256": "str"},
+                                network="target-host-only", data_classes=("public_web",), retry_safe=True,
+                                binaries=(chrome_binary(),), target_from="url",
+                                provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                            "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
+                       browser_render),
     "mac.notify": (_builtin("mac.notify", "founder.notify", "Local macOS notification to the founder",
                             "os_automation", "internal_write", "founder:", {"text": "str", "title": "str?"}, {"delivered": "bool"},
                             binaries=("/usr/bin/osascript",), platforms=("darwin",)), mac_notify),
@@ -471,6 +592,17 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                "mechanism_from": "#112 source-bound morning brief; "
                                                                  "#101 exact Git reads"}),
                           _lazy("greg.briefs", "engineering_brief")),
+    "repo.integration_audit": (_builtin("repo.integration_audit", "repository.integration_audit",
+                                        "Static integration findings across Kernel/DALEOBANKS/WMI (exact Git blobs, read-only)",
+                                        "cli", "read_only", "repo:",
+                                        {"repositories": "list[{role,path}]", "expected_pin": "sha",
+                                         "expected_version": "str"},
+                                        {"finding_ids": "list[str]", "count": "int", "findings": "list"},
+                                        filesystem="read-scoped", retry_safe=True,
+                                        binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                        provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                                    "mechanism_from": "PR #112 egregore/repository_audit.py integration-v1"}),
+                               repo_integration_audit),
 }
 
 

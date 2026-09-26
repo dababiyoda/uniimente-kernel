@@ -1,6 +1,6 @@
 """GREG console: the one founder-facing interface, on this computer.
 
-    python -m greg console --key ~/.greg-founder.pem        (http://127.0.0.1:8765)
+    python -m greg console --key ~/.greg-founder.pem        (http://127.0.0.1:8766; the phone channel keeps 8765)
 
 Alfonso says what he wants in plain words, reviews what GREG proposes and exactly
 what signing it would let GREG do, signs, and closes the window. The body keeps
@@ -381,7 +381,7 @@ def make_handler(console: Console):
     return Handler
 
 
-def serve(console: Console, *, port: int = 8765, ready=None) -> ThreadingHTTPServer:
+def serve(console: Console, *, port: int = 8766, ready=None) -> ThreadingHTTPServer:
     server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(console))
     if ready is not None:
         ready(server)

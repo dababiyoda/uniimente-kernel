@@ -185,3 +185,84 @@ def test_strategy_tribunal_super_nodes_translate_into_the_capability_rule():
     from greg.capabilities import STRATEGY_SUPER_NODES, SUPER_NODES
     assert set(spider_web.SUPER_NODES) == set(STRATEGY_SUPER_NODES)
     assert set(STRATEGY_SUPER_NODES.values()) <= set(SUPER_NODES)
+
+
+VULNERABLE_RESUME = '''
+def require_hash(name, value):
+    return value
+
+
+class StandingCognitionRuntime:
+    def resume(self, *, actor, authorization_hash):
+        return require_hash("authorization_hash", authorization_hash)
+'''
+FIXED_RESUME = '''
+class StandingCognitionRuntime:
+    def resume(self, *, actor, gate=None, grant=None):
+        return gate.run(self.resume_proposal(actor), standing_grant=grant)
+'''
+
+
+def _integration_repos(tmp_path, runtime_source):
+    extra = {"kernel": {"egregore/runtime.py": runtime_source, "policy/consequence_gate.py": "GATE = 1\n"},
+             "dale": {"services/reflection.py": "def learn(outcome):\n    return outcome['follower_delta']\n",
+                      "services/generator.py": "def draft():\n    return 'text'\n"},
+             "wmi": {"src/services/bridge_security.py": "KNOWN = frozenset({'kernel'})\n"}}
+    repos = {}
+    for role in ("kernel", "dale", "wmi"):
+        path, git = _repo(tmp_path, role, PIN)
+        for name, text in extra[role].items():
+            (path / name).parent.mkdir(parents=True, exist_ok=True)
+            (path / name).write_text(text)
+        git("add", ".")
+        git("-c", "user.name=Fixture", "-c", "user.email=f@example.invalid", "-c", "commit.gpgsign=false",
+            "commit", "-qm", "integration sources")
+        git("update-ref", "refs/remotes/origin/main", git("rev-parse", "HEAD"))
+        repos[role] = (path, git)
+    return repos
+
+
+def test_integration_watch_escalates_a_real_authority_defect_once_then_holds_after_the_fix(tmp_path):
+    """The mission #112 ran by hand, on the signed body: find the stop-bypass in source, tell
+    Alfonso once with exact evidence, and hold again when the fix lands."""
+    repos = _integration_repos(tmp_path, VULNERABLE_RESUME)
+    home, key, body_id, data = make_body(tmp_path, read_roots=[tmp_path / "repos"])
+    drop(home, signed(key, body_id, "MISSION", templates.integration_watch(
+        repositories={r: str(p) for r, (p, _) in repos.items()}, expected_pin=PIN, expected_version="0.1.2",
+        cadence_seconds=60)))
+    clock = Clock()
+    missions, requests = run(home, clock, ticks=4)
+    assert [r["kind"] for r in requests] == ["NO_STRATEGY"]
+    failing = [o for o in events(home, "mission.observed") if not o["passed"]]
+    assert {o["check_id"] for o in failing} == {"no-authority-blockers"}
+    with Body(home) as body:
+        receipt = next(e.payload for e in body.journal.replay("mission.observed")
+                       if e.payload["check_id"] == "no-authority-blockers")
+    assert "resume-authority" in json.dumps(receipt)  # the source evidence travels with the decision
+    kernel, git = repos["kernel"]
+    (kernel / "egregore/runtime.py").write_text(FIXED_RESUME)
+    git("-c", "user.name=Fixture", "-c", "user.email=f@example.invalid", "-c", "commit.gpgsign=false",
+        "commit", "-qam", "resume consumes a Gate grant")
+    git("update-ref", "refs/remotes/origin/main", git("rev-parse", "HEAD"))
+    clock.advance(61)
+    missions, requests = run(home, clock, ticks=4)
+    latest = {}
+    for o in events(home, "mission.observed"):
+        latest[o["check_id"]] = o["passed"]
+    assert latest == {"pins-consistent": True, "no-authority-blockers": True}
+    assert requests == [] and missions["m:integration-watch"].blocker is None  # healed: holding again
+    withdrawn = events(home, "decision.withdrawn")
+    assert len(withdrawn) == 1 and "without any GREG action" in withdrawn[0]["why"]
+    assert len(events(home, "decision.requested")) == 1
+    # The defect returns: a fresh escalation, never deduplicated into silence by the old withdrawn one.
+    (kernel / "egregore/runtime.py").write_text(VULNERABLE_RESUME)
+    git("-c", "user.name=Fixture", "-c", "user.email=f@example.invalid", "-c", "commit.gpgsign=false",
+        "commit", "-qam", "regression")
+    git("update-ref", "refs/remotes/origin/main", git("rev-parse", "HEAD"))
+    clock.advance(61)
+    missions, requests = run(home, clock, ticks=4)
+    assert [r["kind"] for r in requests] == ["NO_STRATEGY"] and requests[0]["request_id"] != withdrawn[0]["request_id"]
+    with Body(home) as body:
+        with pytest.raises(Exception, match="withdrawn"):
+            body.engine.answer({"request_id": withdrawn[0]["request_id"], "answer": "approve"}, "sha256:" + "0" * 64)
+    assert not events(home, "mission.action")  # read-only throughout: GREG never touched a repository

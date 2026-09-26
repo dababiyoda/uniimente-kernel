@@ -52,7 +52,7 @@ launchd restarts the body after any crash, not after you stop it, and starts it 
 ## 3. Ask GREG, sign, close the window
 
 ```bash
-greg console --key ~/.greg-founder.pem --no-model     # http://127.0.0.1:8765
+greg console --key ~/.greg-founder.pem --no-model     # http://127.0.0.1:8766
 ```
 
 In the browser, type: *"Brief me on the state of my repositories."* Review the proposal:
@@ -84,6 +84,32 @@ Approve the one waiting decision. Within a tick GREG writes exactly one brief to
 `~/GREG/briefs/`, and a separate process appraises it: it re-verifies your signature,
 re-renders the brief from the receipted inputs and byte-compares the file, and confirms the
 action ran once. Open the brief from **Deliveries**. If it is right, click **Accept result**.
+
+### 5b. Or answer from your phone (optional)
+
+Your phone gets its own key, delegated by your founder key. It can decide, criticize, pause,
+resume and stop. It can **never** submit missions, attach capabilities, rotate your key or
+enroll another device. The delegation expires within 30 days by default (90 at most).
+
+```bash
+greg service install --platform macos --remote     # persistent phone channel (loopback only)
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.uniimente.greg.remote.plist
+tailscale serve --bg --https=443 http://127.0.0.1:8765   # HTTPS on your tailnet only (not Funnel)
+```
+
+1. Install Tailscale on the Mac and the iPhone and sign both into the same tailnet.
+2. On the iPhone, open `https://<your-mac>.<tailnet>.ts.net/` in Safari. HTTPS is required,
+   because Safari only offers its cryptography API on secure pages.
+3. Open "This phone's key" and copy the enroll command it shows. Run it on the Mac:
+   `greg device enroll --pubkey <hex> --label phone --key ~/.greg-founder.pem`
+4. Refresh the page. Decisions appear with Approve and Reject buttons, and Stop is always there.
+
+The phone's private key is generated inside Safari as non-extractable and never leaves the
+phone. Every read and every command is signed on the phone. The Mac's `greg serve` only
+checks signatures and hands commands to the body, and the body verifies them again. Revoke
+a lost phone with `greg device revoke <device_key_id> --key ~/.greg-founder.pem`
+(`greg status` lists the delegated devices).
+
 
 ```bash
 greg vepmc                          # VEPMC: 1, missing: []   (on the Mac, after your acceptance)

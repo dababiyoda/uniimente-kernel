@@ -1,4 +1,8 @@
-"""Synthetic workload authority, not authenticated founder enrollment."""
+"""Resume of standing cognition consumes an exact Kernel grant; a hash is not authority.
+
+Ported from PR #112 (greg/usable-local-loop-20260925, d0d0a34) with its runtime fix.
+Synthetic workload authority, not authenticated founder enrollment.
+"""
 import pytest
 from compiler.ucl_compiler import compile_constitution
 from egregore.local_mission import ROOT

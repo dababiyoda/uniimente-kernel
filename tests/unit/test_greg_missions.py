@@ -168,6 +168,9 @@ def test_capability_genesis_acquires_installed_tool_and_resumes_mission(tmp_path
     assert missions["m:hash"].status == "ACHIEVED"
     opened, resolved = events(home, "deficit.opened"), events(home, "deficit.resolved")
     assert len(opened) == 1 and opened[0]["acceptance"]["vector_digest"]  # frozen before search
+    facts = opened[0]["verification"]  # verified deficit: required, failed, unserviceable (PR #70 rule)
+    assert facts["verified"] and facts["required_by"]["mission_id"] == "m:hash" and facts["failed"]
+    assert facts["unserviceable"] == "no registered implementation of this function"
     assert resolved[0]["capability_id"].startswith("acquired.hash.sha256.")
     verified = events(home, "genesis.verified")
     assert verified[-1]["passed"] and verified[-1]["report"]["cases"] == 6

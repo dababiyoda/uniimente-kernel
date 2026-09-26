@@ -17,6 +17,8 @@ manifest, never from the caller, so a mislabelled action cannot pass as harmless
 """
 from __future__ import annotations
 
+import urllib.parse
+
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -79,6 +81,11 @@ class AuthorityOffice:
         if not target.startswith(manifest.target_prefix):
             return ActionOutcome("REFUSED", [f"target {target!r} outside capability prefix "
                                              f"{manifest.target_prefix!r}"], **base)
+        if manifest.target_from:  # the founder-signed target must name the host actually contacted
+            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
+            if target != manifest.target_prefix + host:
+                return ActionOutcome("REFUSED", [f"target {target!r} does not name the host {host!r} "
+                                                 f"that {manifest.target_from} would contact"], **base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
         if outside and scope not in approved_scopes:

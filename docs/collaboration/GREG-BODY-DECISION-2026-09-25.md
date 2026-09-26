@@ -216,3 +216,66 @@ here spends or publishes. Constitutional: no module grants itself anything; `fou
 unreachable by the machine.
 
 **Decision.** EXPERIMENT, continuing §12. VEPMC stays 0 until Alfonso runs `greg/FIRST_MISSION.md` on his Mac.
+
+## 14. Addendum — reconciliation with #112/#70/DALEOBANKS #79, phone and browser (2026-09-26)
+
+Founder input: the OPUS MAXIMUS directive re-sent unchanged. No new intent record, because no new
+founder intent was expressed. The work traces to `INTENT-2026-09-25-EGREGORE-ECOLOGY`,
+`INTENT-2026-09-22-FIRST-BODY` (phone as a remote interface, §9; computer use as core, §11) and
+`INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING`.
+
+**Inspection truth.** All default heads were re-fetched. New since #113 opened: kernel #112 (by
+another agent account), a #70 commit, and DALEOBANKS #79. All other heads are unchanged.
+
+**Defects found and fixed (each reproduced first, then covered by a failing-then-passing test).**
+
+1. *Stop bypass on `main` and #113.* `StandingCognitionRuntime.resume()` accepted any
+   well-formed hash, and on replay any resume record cleared a stop. Found by #112's integration
+   audit. Fixed by porting #112's fix: resume consumes an exact-suspension grant through the Gate.
+   The existing test that *asserted* the bypass now asserts refusal.
+2. *Approvals lost on a running body.* A signed approval arriving before the next tick's rebuild
+   was refused as "unknown request" and moved to `rejected/`, permanently. Every earlier test
+   masked this by restarting the body before approving. Found by the phone end-to-end test.
+   Fixed: the body rebuilds the mission book before applying any command.
+3. *Blind NO_STRATEGY missions.* A blocked watcher waited for Alfonso forever even after the world
+   healed. It now re-observes at cadence. A moot escalation is withdrawn as a body event (never a
+   founder answer), and a recurrence gets a fresh escalation.
+4. *Browser egress.* My first version restricted DNS only, and a page script reached an
+   IP-literal beacon. It is now origin-only through a dead proxy with the implicit loopback bypass
+   removed. Mutation-tested.
+
+**Alternatives for the phone channel.**
+
+| Alternative | Benefit | Liability | Disposition |
+|---|---|---|---|
+| Do nothing (CLI on the Mac only) | none new | §81 "check it from his phone" unmet | rejected |
+| SSH from the phone (Tailscale + Blink/Termius) running the CLI | zero code | the founder key must live on the Mac and be typed on the phone; no push; poor UX | fallback only |
+| #112 loopback console (CSRF token) | exists | no identity: "SYNTHETIC DEVELOPMENT ONLY" | benchmark |
+| Native iOS app with Secure Enclave key | strongest custody; push notifications | App Store / signing / build pipeline; not buildable here | future (Pass 2) |
+| **Web client with a non-extractable WebCrypto key, founder-delegated, over tailscale serve** | real key custody on the phone; zero install; every command signed on the phone | page code is served by the Mac, so a compromised Mac could serve a malicious page (bounded by the device kinds) | **chosen** |
+
+**Pass 1.** Device keys turn "the phone" from a second founder into a narrow, expiring and
+revocable delegation. The server is transport: it holds a read-only ledger and no keys. Inversion
+risk: approval is the most powerful device kind. Bound: approvals still only unlock the exact
+scope a founder-signed mission requested. Financial and irreversible effects are never delegable
+to any scope.
+
+**Pass 2.** (a) The phone page is served by the same Mac it controls. A compromised Mac could
+serve JavaScript that signs approvals. Accepted with owner Alfonso: the native iOS client with a
+Secure Enclave key is the kill-and-replace path. (b) Tailscale is a vendor dependency. Bound: any
+TLS proxy on the Mac works, since the protocol is plain HTTPS. (c) As root on Linux, Chromium
+runs unsandboxed. This is reported per call (`os_sandboxed`), and on a Mac user account it runs
+sandboxed.
+
+**Five roles (condensed).**
+- Builder: two unbuilt §81 steps now run for real ("check it from his phone", "operate the
+  browser").
+- Adversary: four defects found by reproduction rather than argument, three of them in code
+  already pushed.
+- Operator: the phone channel is a second launchd agent; revocation is one command.
+- Beneficiary: Alfonso can approve, stop and review from anywhere without carrying the founder key.
+- Constitutional: no new authority source, every command re-verified by the body, and a device
+  can never submit missions, attach capabilities, rotate keys or enroll devices (guardrail test).
+
+**Decision.** EXPERIMENT continues. VEPMC is still 0. iOS Safari, launchd reboot and Alfonso's own
+key remain the unproven links.

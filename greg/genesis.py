@@ -181,9 +181,17 @@ class Genesis:
             acceptance = {"oracle": "founder-signed mission contract", "public_examples": len(contract["examples"]),
                           "held_out_vectors": len(contract["held_out"]),
                           "vector_digest": sha256_json([contract["examples"], contract["held_out"]])}
+        # A deficit is VERIFIED only by three facts (mechanism from PR #70 capabilities/deficit.py):
+        # something requires the function, resolving it failed, and no registered implementation can serve.
+        examined = [{"capability_id": m.capability_id, "state": self.registry.state[m.capability_id],
+                     "why_not": self.registry.usable(m.capability_id)[1]} for m in self.registry.by_function(function)]
+        verification = {"required_by": {"mission_id": mission.mission_id, "purpose": purpose},
+                        "failed": f"no ATTACHED, usable implementation of {function!r} resolved",
+                        "unserviceable": examined or "no registered implementation of this function",
+                        "verified": True}
         self.journal.record("deficit.opened", {
             "deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
-            "purpose": purpose, "acceptance": acceptance, "at": iso(now),
+            "purpose": purpose, "acceptance": acceptance, "at": iso(now), "verification": verification,
             "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"]},
             key=deficit_id)
 

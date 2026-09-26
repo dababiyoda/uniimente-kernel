@@ -48,6 +48,15 @@ outcome → evidence and capability that make the next intention easier.*
 | Settlement / outcome | `metrics.py`: VEPMC computed only from ledger facts (nine conditions; two only Alfonso and his Mac can supply) | `tests/integration/test_greg_vepmc_path.py` |
 | Reliability | `repo.pin_audit`: a real, read-only watcher of Kernel/DALEOBANKS/WMI pin consistency (`templates.repo_guardian`) | `test_repository_guardian_holds_then_escalates_real_git_drift_once` |
 
+| Reliability (organs) | `repo.integration_audit` + `templates.integration_watch`: static integration findings with exact commits, blobs and lines (from PR #112); one decision per defect, withdrawn as moot when the world heals, re-raised if it returns | `test_integration_watch_escalates_a_real_authority_defect_once_then_holds_after_the_fix` |
+
+## Phone and browser (2026-09-26)
+
+| Effect | Mechanism | Evidence |
+|---|---|---|
+| Check and steer GREG from the phone | `DEVICE_ENROLL` (founder-signed) delegates a narrow, expiring key: decide, criticize, pause, resume, stop, never missions, capabilities, rotation or enrollment. `greg serve` (`remote.py`) is loopback-only transport: signed reads, pre-verified commands into the inbox, ledger opened read-only. `phone/` holds a non-extractable WebCrypto Ed25519 key in IndexedDB. Reached over HTTPS through `tailscale serve`. | `test_greg_remote.py` (incl. JS↔Python byte compatibility), `tests/integration/test_greg_phone_e2e.py` (real Chromium, iPhone profile) |
+| Use the browser | `browser.render`: installed Chrome/Chromium headless, JavaScript executed. The signed target must be `web:<host of the URL>` (`target_from`). Only that exact origin is reachable: DNS rules plus a dead proxy with the loopback bypass removed, so no third-party beacons, even by IP literal. | `test_greg_browser.py` (hostile beacon control; mutation-tested) |
+
 The strategy tribunal in `evolution/spider_web.py` keeps its four-node vocabulary. `STRATEGY_SUPER_NODES`
 is the single tested translation. Dispositions for the rest of the project are in
 `docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json`.
@@ -69,7 +78,7 @@ is the single tested translation. Dispositions for the rest of the project are i
 
 ```bash
 python -m greg --home ~/.uniimente/greg init --read-root ~/Projects --deliver-root ~/GREG
-python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface (127.0.0.1:8765)
+python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface (127.0.0.1:8766)
 python -m greg --home ~/.uniimente/greg mission new engineering-brief --local kernel=~/src/uniimente-kernel \
        --github dababiyoda/uniimente-kernel [--daily] --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg run --builder claude-code     # opt in to Genesis builds (signed budget only)
@@ -79,6 +88,8 @@ python -m greg --home ~/.uniimente/greg service install --platform macos   # wri
 python -m greg --home ~/.uniimente/greg mission submit mission.json --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg mission new workspace-note|repo-guardian ... --key ...   # templates
 python -m greg --home ~/.uniimente/greg vepmc | routing       # the bottleneck metric; learned routing
+python -m greg --home ~/.uniimente/greg device enroll --pubkey <phone hex> --label phone --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg serve                   # phone channel; expose with tailscale serve
 python -m greg --home ~/.uniimente/greg accept <closure_event_id> --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg status | decisions | morning
 python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
@@ -107,9 +118,10 @@ Mission contract: `contracts/greg-mission.schema.json`. Native macOS verificatio
 ## Reality gradient (as of this commit)
 
 IMPLEMENTED · UNIT TESTED · INTEGRATION TESTED (real processes under supervisord: SIGKILL, SIGSTOP + torn write,
-console closed mid-mission; 5/5 repeated runs) · LOCAL-REAL (engineering brief on real Kernel/DALEOBANKS/WMI checkouts
-and the live GitHub API; Claude Code built and verified a missing capability; Claude Code drafted a mission) ·
-**not** MAC-VERIFIED · **not** REBOOT-VERIFIED (power loss is simulated by a torn write, not a real reboot) ·
-**not** FOUNDER-USED · **not** PRODUCTION-AUTHORIZED · no external business outcome.
-**VEPMC = 0**: on Linux 8 of 9 conditions hold with a test key; `mac_body` (and Alfonso's own key and acceptance)
-remain. Phone access, visual computer use and the human work fabric are PROPOSED.
+console closed mid-mission; 5/5 repeated runs) · SANDBOXED (phone path in real Chromium with an iPhone profile, not iOS
+Safari) · LOCAL-REAL (engineering brief on real Kernel/DALEOBANKS/WMI checkouts and the live GitHub API; repo guardian and
+integration watch read the real repositories; browser.render drove a real Chromium; Claude Code built and verified a
+missing capability; Claude Code drafted a mission) · **not** PACKAGED · **not** MAC-VERIFIED · **not** REBOOT-VERIFIED
+(power loss is simulated by a torn write, not a real reboot) · **not** FOUNDER-USED · **not** PRODUCTION-AUTHORIZED ·
+no external business outcome. **VEPMC = 0**: on Linux 8 of 9 conditions hold with a test key; `mac_body` (and Alfonso's
+own key and acceptance) remain. Model router, human work fabric and business runtime are PROPOSED.

@@ -95,8 +95,42 @@ def gather_local(name: str, path: Path) -> dict:
                        if line.count("\t") >= 2]}
 
 
+# What evidence the brief FETCHES (greg.improvement lever "brief.acquisition"). Same call ceiling in every
+# order: learning may change which pull requests get their checks read, never how many calls are made.
+ACQUISITION_BASELINE = {"check_fetch_order": "api_order"}
+ACQUISITION_SPACE = {"check_fetch_order": ("api_order", "ready_first")}
+MAX_TRUTH_CALLS = 30          # ceiling on the independent observation made while a candidate is under test
+
+
+def _check_run_tally(repo: str, sha: str, token: str | None):
+    code, runs = FETCH(f"https://{API}/repos/{repo}/commits/{sha}/check-runs?per_page=100", token)
+    if code != 200 or not isinstance(runs, dict):
+        return code, None
+    tally = {"passed": 0, "failing": 0, "pending": 0, "other": 0, "failing_names": []}
+    for run in runs.get("check_runs", [])[:100]:
+        if run.get("status") != "completed":
+            tally["pending"] += 1
+        elif run.get("conclusion") in FAILING:
+            tally["failing"] += 1
+            tally["failing_names"].append(str(run.get("name", ""))[:80])
+        elif run.get("conclusion") in ("success", "neutral", "skipped"):
+            tally["passed"] += 1
+        else:
+            tally["other"] += 1
+    tally["failing_names"].sort()
+    return code, tally
+
+
+def _checked(pulls: list, max_checked: int, order: str) -> set:
+    """Indices whose checks are fetched: the first N in API order, or ready (non-draft) pulls first."""
+    indices = list(range(len(pulls)))
+    if order == "ready_first":
+        indices.sort(key=lambda i: (bool(pulls[i].get("draft")), i))
+    return set(indices[:max_checked])
+
+
 def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_PULLS,
-                  max_checked: int = MAX_CHECKED_PULLS) -> dict:
+                  max_checked: int = MAX_CHECKED_PULLS, order: str = "api_order") -> dict:
     result, calls, limited = {}, 0, False
     for repo in repos[:MAX_REPOS]:
         if limited:
@@ -112,37 +146,81 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
             result[repo] = {"fetched": False, "gap": f"GitHub returned {status}"}
             continue
         rows = []
+        selected = _checked(pulls[:max_pulls], max_checked, order)
         for index, pull in enumerate(pulls[:max_pulls]):
             row = {"number": pull["number"], "title": str(pull.get("title", ""))[:200],
                    "draft": bool(pull.get("draft")), "author": (pull.get("user") or {}).get("login"),
                    "created_at": pull.get("created_at"), "updated_at": pull.get("updated_at"),
                    "head_sha": (pull.get("head") or {}).get("sha"), "base": (pull.get("base") or {}).get("ref"),
                    "checks": None}
-            if index < max_checked and row["head_sha"] and not limited:
-                code, runs = FETCH(f"https://{API}/repos/{repo}/commits/{row['head_sha']}/check-runs?per_page=100",
-                                   token)
+            if index in selected and row["head_sha"] and not limited:
+                code, tally = _check_run_tally(repo, row["head_sha"], token)
                 calls += 1
                 if code in (403, 429):
                     limited = True
-                elif code == 200 and isinstance(runs, dict):
-                    tally = {"passed": 0, "failing": 0, "pending": 0, "other": 0, "failing_names": []}
-                    for run in runs.get("check_runs", [])[:100]:
-                        if run.get("status") != "completed":
-                            tally["pending"] += 1
-                        elif run.get("conclusion") in FAILING:
-                            tally["failing"] += 1
-                            tally["failing_names"].append(str(run.get("name", ""))[:80])
-                        elif run.get("conclusion") in ("success", "neutral", "skipped"):
-                            tally["passed"] += 1
-                        else:
-                            tally["other"] += 1
-                    tally["failing_names"].sort()
-                    row["checks"] = tally
+                row["checks"] = tally
             rows.append(row)
         result[repo] = {"fetched": True, "open": len(rows), "pulls": rows,
                         "truncated": len(pulls) >= max_pulls}
-    return {"repos": result, "api_calls": calls, "rate_limited": limited,
-            "authenticated": bool(token)}
+    out = {"repos": result, "api_calls": calls, "rate_limited": limited, "authenticated": bool(token)}
+    if order != "api_order":
+        out["check_order"] = order          # absent in the baseline, so earlier receipts re-render unchanged
+    return out
+
+
+def shadow_gather(production: dict, shadows: list[dict], *, token: str | None) -> dict:
+    """Held-out evidence for acquisition candidates, inside the same approved read-only action.
+
+    Each shadow is the acquisition a candidate (or a replaced policy under monitoring) WOULD have made over
+    the SAME pull request lists, reusing reads already made. Truth is an independent, exhaustive read of
+    every ready pull request's checks, capped at MAX_TRUTH_CALLS; hitting the cap or a refusal marks it
+    incomplete, and an incomplete case decides nothing. Nothing here is rendered or delivered."""
+    cache, calls, complete = {}, 0, not production.get("rate_limited")
+    for repo, data in production["repos"].items():
+        for pull in data.get("pulls", []):
+            if pull["checks"] is not None:
+                cache[(repo, pull["number"])] = pull["checks"]
+
+    def tally(repo, pull):
+        nonlocal calls, complete
+        key = (repo, pull["number"])
+        if key not in cache and pull.get("head_sha"):
+            if calls >= MAX_TRUTH_CALLS:
+                complete = False
+                return None
+            code, result = _check_run_tally(repo, pull["head_sha"], token)
+            calls += 1
+            if result is None:
+                complete = False
+            cache[key] = result
+        return cache.get(key)
+
+    out = {"shadows": {}, "truth": {}}
+    for shadow in shadows:
+        order = shadow["values"]["check_fetch_order"]
+        repos, api_calls = {}, 0
+        for repo, data in production["repos"].items():
+            if not data.get("fetched"):
+                repos[repo] = data
+                continue
+            api_calls += 1                                    # the pull list read
+            selected = _checked(data["pulls"], MAX_CHECKED_PULLS, order)
+            rows = []
+            for index, pull in enumerate(data["pulls"]):
+                chosen = index in selected and bool(pull.get("head_sha"))
+                api_calls += int(chosen)
+                rows.append(dict(pull, checks=tally(repo, pull) if chosen else None))
+            repos[repo] = {**data, "pulls": rows}
+        out["shadows"][shadow["id"]] = {"repos": repos, "api_calls": api_calls, "check_order": order}
+    for repo, data in production["repos"].items():
+        for pull in data.get("pulls", []):
+            if not pull["draft"]:
+                checks = tally(repo, pull)
+                out["truth"][f"{repo}#{pull['number']}"] = {"ready": True, "checks": checks,
+                                                            "failing": bool(checks and checks["failing"])}
+    out["truth_complete"] = complete
+    out["evaluation_api_calls"] = calls
+    return out
 
 
 # -- deterministic render -------------------------------------------------------------
@@ -171,34 +249,69 @@ def _checks(checks: dict | None) -> str:
     return ", ".join(parts)
 
 
-def attention(inputs: dict) -> list[dict]:
-    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository."""
+# What the brief flags for the founder: GREG-owned presentation policy inside the signed mission.
+# It never changes the signed parameters (stale_days, repositories), the capability, its target or
+# its consequence class; greg.improvement may replace it only after a held-out gain on founder labels.
+ATTENTION_BASELINE = {"idle_includes_drafts": True, "flag_pending_after_days": None,
+                      "flag_behind_commits": None, "uncommitted_min": 1}
+ATTENTION_SPACE = {"idle_includes_drafts": (True, False), "flag_pending_after_days": (None, 1, 3, 7),
+                   "flag_behind_commits": (None, 1, 10, 50), "uncommitted_min": (1, 5, 20)}
+
+
+def attention_policy(inputs: dict) -> dict:
+    return {**ATTENTION_BASELINE, **(inputs.get("attention_policy") or {})}
+
+
+def attention(inputs: dict, policy: dict | None = None) -> list[dict]:
+    """Decision-sized list: failing checks one by one, idle pull requests grouped per repository.
+
+    Each item carries ``keys``: the atomic things it flags (``owner/repo#N``, ``local:name``), which
+    is what a founder's attention label refers to."""
+    policy = attention_policy(inputs) if policy is None else {**ATTENTION_BASELINE, **policy}
     now = datetime.fromisoformat(inputs["generated_at"].replace("Z", "+00:00"))
     stale = inputs["stale_days"]
+    pending_days = policy["flag_pending_after_days"]
     items = []
     for repo, data in sorted(inputs["github"]["repos"].items()):
         idle = []
         for pull in data.get("pulls", []):
             checks, age = pull["checks"], _age_days(pull["updated_at"], now)
+            key = f"{repo}#{pull['number']}"
             if checks and checks["failing"]:
-                items.append({"rank": 0, "ref": f"{repo}#{pull['number']}", "sort": -checks["failing"],
+                items.append({"rank": 0, "ref": key, "sort": -checks["failing"], "keys": [key],
                               "why": f"checks failing: {', '.join(checks['failing_names'])}", "title": pull["title"]})
-            elif age is not None and age >= stale:
+            elif (pending_days is not None and checks and checks["pending"] and age is not None
+                  and age >= pending_days):
+                items.append({"rank": 1, "ref": key, "sort": -age, "keys": [key],
+                              "why": f"{checks['pending']} check(s) still pending after {age} days", "title": pull["title"]})
+            elif age is not None and age >= stale and (policy["idle_includes_drafts"] or not pull["draft"]):
                 idle.append((age, pull["number"]))
         if idle:
             idle.sort(reverse=True)
             numbers = ", ".join(f"#{n}" for _, n in idle[:12]) + (" …" if len(idle) > 12 else "")
-            items.append({"rank": 1, "ref": repo, "sort": -len(idle),
+            items.append({"rank": 2, "ref": repo, "sort": -len(idle), "keys": [f"{repo}#{n}" for _, n in idle],
                           "why": f"{len(idle)} open pull request(s) idle for {stale}+ days (oldest {idle[0][0]} days): "
                                  f"{numbers}", "title": "merge, close or re-scope them"})
     for local in inputs["local"]:
-        if local.get("readable") and local.get("uncommitted"):
-            items.append({"rank": 2, "ref": local["name"], "why": f"{local['uncommitted']} uncommitted change(s) on "
-                          f"{local.get('branch')}", "title": local["path"], "sort": 0})
-        elif not local.get("readable"):
-            items.append({"rank": 2, "ref": local["name"], "why": "not a readable Git repository",
-                          "title": local["path"], "sort": 0})
+        key = f"local:{local['name']}"
+        if not local.get("readable"):
+            items.append({"rank": 3, "ref": local["name"], "why": "not a readable Git repository",
+                          "title": local["path"], "sort": 0, "keys": [key]})
+            continue
+        reasons = []
+        if local.get("uncommitted") and local["uncommitted"] >= policy["uncommitted_min"]:
+            reasons.append(f"{local['uncommitted']} uncommitted change(s) on {local.get('branch')}")
+        behind = policy["flag_behind_commits"]
+        if behind is not None and local.get("behind") is not None and local["behind"] >= behind:
+            reasons.append(f"{local['behind']} commit(s) behind cached origin/main")
+        if reasons:
+            items.append({"rank": 3, "ref": local["name"], "why": "; ".join(reasons), "title": local["path"],
+                          "sort": 0, "keys": [key]})
     return sorted(items, key=lambda i: (i["rank"], i["sort"], i["ref"]))
+
+
+def flagged_keys(inputs: dict, policy: dict | None = None) -> set[str]:
+    return {key for item in attention(inputs, policy) for key in item["keys"]}
 
 
 def render(inputs: dict) -> str:
@@ -251,7 +364,14 @@ def render(inputs: dict) -> str:
               f"- inputs digest: `{inputs_digest(inputs)}`",
               f"- renderer: `{RENDERER}`; GitHub calls: {github['api_calls']} "
               f"({'authenticated' if github['authenticated'] else 'unauthenticated'})",
-              "- local Git read without fetch; the receipt retains every input used above", ""]
+              "- local Git read without fetch; the receipt retains every input used above"]
+    if inputs.get("github", {}).get("check_order"):
+        lines.append(f"- evidence acquisition: checks fetched `{inputs['github']['check_order']}` (learned; kept only "
+                     "after an independent observation showed it missed fewer failing checks at no extra calls)")
+    if inputs.get("attention_policy"):
+        lines.append(f"- attention policy: `{json.dumps(inputs['attention_policy'], sort_keys=True)}` "
+                     "(learned; kept only after beating the previous policy on later briefs you labelled)")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -322,14 +442,22 @@ def engineering_brief(params, ctx: InvocationContext) -> dict:
     if not isinstance(local, list) or len(local) > MAX_REPOS:
         raise CapabilityError("local must be a list of {name, path}")
     now = NOW()
+    learned = ctx.learned or {}
+    token = _token(ctx)
+    order = (learned.get("brief.acquisition") or ACQUISITION_BASELINE)["check_fetch_order"]
     inputs = {"generated_at": now.isoformat().replace("+00:00", "Z"), "renderer": RENDERER,
               "stale_days": int(params.get("stale_days", 14)),
+              **({"attention_policy": dict(policy)} if (policy := learned.get("brief.attention"))
+                 and policy != ATTENTION_BASELINE else {}),
               "local": [gather_local(str(r["name"]), _inside(Path(r["path"]), ctx.read_roots)) for r in local],
-              "github": gather_github(_repos(params), token=_token(ctx))}
+              "github": gather_github(_repos(params), token=token, order=order)}
     text = render(inputs)
     path = deliver(text, ctx, kind="engineering", day=inputs["generated_at"][:10])
-    return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
-            "inputs": inputs, "inputs_digest": inputs_digest(inputs), "attention": len(attention(inputs))}
+    output = {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
+              "inputs": inputs, "inputs_digest": inputs_digest(inputs), "attention": len(attention(inputs))}
+    if learned.get("shadow"):              # an acquisition change under test: evidence only, never rendered
+        output["shadow"] = shadow_gather(inputs["github"], learned["shadow"], token=token)
+    return output
 
 
 def brief_freshness(params, ctx: InvocationContext) -> dict:

@@ -5,13 +5,16 @@ Reproduced first on #114 at 14b44e5: OpenAI reports a policy flag as HTTP 400
 The router treated it as an outage, asked the next vendor the same thing, and that
 vendor's answer came back as the draft. It also demoted the flagging route as "failed".
 
-These tests drive the real ``openai`` and ``anthropic`` SDK clients against an
-in-process HTTP stub (httpx MockTransport): the error objects are the SDKs' own.
+Here the client raises errors shaped like the SDKs' ``APIStatusError`` (``status_code``,
+``body``, message), so these run where the optional SDKs are not installed (CI).
+``test_greg_routing_integrity_sdk.py`` repeats the decisive cases through the real
+``openai`` and ``anthropic`` clients against an in-process HTTP stub when they are present.
 No network, no key, no spend.
 """
 import json
 
-import httpx2
+from types import SimpleNamespace as NS
+
 import pytest
 
 from greg import builders, models, planner
@@ -25,17 +28,18 @@ FLAGGED = {"error": {"message": "Invalid prompt: your prompt was flagged as pote
                      "type": "invalid_request_error", "param": None, "code": "invalid_prompt"}}
 
 
+class StatusError(Exception):
+    """Shaped like openai/anthropic ``APIStatusError``: status_code, body, and the SDK's message format."""
+
+    def __init__(self, status, body):
+        super().__init__(f"Error code: {status} - {body}")
+        self.status_code, self.body = status, body.get("error", body)
+
+
 def openai_client(status, body):
-    import openai
-    transport = httpx2.MockTransport(lambda request: httpx2.Response(status, json=body))
-    return openai.OpenAI(api_key="sk-test", base_url="https://api.openai.com/v1", max_retries=0,
-                         http_client=httpx2.Client(transport=transport))
-
-
-def anthropic_client(handler):
-    import anthropic
-    return anthropic.Anthropic(api_key="sk-ant-test", base_url="https://api.anthropic.com", max_retries=0,
-                               http_client=httpx2.Client(transport=httpx2.MockTransport(handler)))
+    def create(**kw):
+        raise StatusError(status, body)
+    return NS(responses=NS(create=create))
 
 
 class Witness:
@@ -81,31 +85,6 @@ def test_availability_failures_are_classified_and_still_fail_over(status, body, 
     result = router.complete("sys", "user")
     assert witness.calls == 1 and result["route"] == "witness:model" and result["served_model"] == "witness-1"
     assert result["tried"][0]["outcome"] == "failed" and result["tried"][0]["class"] == kind
-
-
-def test_anthropic_errors_are_classified_through_the_real_sdk():
-    def handler(request):
-        text = json.loads(request.content)["messages"][0]["content"]
-        if text == "overloaded":
-            return httpx2.Response(529, json={"type": "error", "error": {"type": "overloaded_error",
-                                                                          "message": "Overloaded"}})
-        if text == "policy":   # illustrative wording: Anthropic normally declines via stop_reason "refusal"
-            return httpx2.Response(400, json={"type": "error", "error": {
-                "type": "invalid_request_error", "message": "Output blocked by content filtering policy"}})
-        return httpx2.Response(200, json={
-            "id": "msg_1", "type": "message", "role": "assistant", "model": "claude-sonnet-5-20260801",
-            "content": [{"type": "text", "text": "ok"}], "stop_reason": "end_turn", "stop_sequence": None,
-            "usage": {"input_tokens": 10, "output_tokens": 5}})
-
-    route = models.AnthropicRoute("sk-ant-test", model="claude-opus-5", client=anthropic_client(handler))
-    with pytest.raises(models.RouteError) as outage:
-        route.complete("s", "overloaded")
-    assert outage.value.kind == models.TRANSIENT and not isinstance(outage.value, models.Refusal)
-    with pytest.raises(models.Refusal) as verdict:
-        route.complete("s", "policy")
-    assert verdict.value.kind == models.PROVIDER_POLICY_REFUSAL
-    served = route.complete("s", "hello")
-    assert served["served_model"] == "claude-sonnet-5-20260801"                 # the provider's report, not our request
 
 
 def test_the_planner_reports_the_refusal_class_and_proposes_nothing():

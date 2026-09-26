@@ -9,7 +9,9 @@
     greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
     greg run                                  the host loop (normally started by the supervisor)
-    greg service install --platform macos|linux|supervisord
+    greg service install --platform macos|linux|supervisord [--remote]
+    greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg serve                                   loopback remote channel for the phone
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -73,7 +75,7 @@ def main(argv=None) -> int:
         if name == "mission":
             q.add_argument("action", choices=["submit", "new"])
             q.add_argument("target", help="mission JSON file (submit) or template name (new)")
-            q.add_argument("--repo", action="append", default=[], help="role=path (repo-guardian)")
+            q.add_argument("--repo", action="append", default=[], help="role=path (repo-guardian, integration-watch)")
             q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
             q.add_argument("--cadence-seconds", type=int, default=21600)
             q.add_argument("--text"); q.add_argument("--must-contain")
@@ -93,6 +95,17 @@ def main(argv=None) -> int:
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
 
+    d = sub.add_parser("device", help="delegate a narrow, expiring key to a phone (founder-signed)")
+    ds = d.add_subparsers(dest="device_cmd", required=True)
+    de = ds.add_parser("enroll"); de.add_argument("--pubkey", required=True); de.add_argument("--label", required=True)
+    de.add_argument("--kinds", default="DECISION,CRITIQUE,BODY_PAUSE,BODY_RESUME,BODY_STOP")
+    de.add_argument("--days", type=int, default=30)
+    dr = ds.add_parser("revoke"); dr.add_argument("device_key_id")
+    for q in (de, dr):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
+    sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
@@ -102,6 +115,7 @@ def main(argv=None) -> int:
     sv = sub.add_parser("service"); svs = sv.add_subparsers(dest="service_cmd", required=True)
     si = svs.add_parser("install"); si.add_argument("--platform", required=True, choices=["macos", "linux", "supervisord"])
     si.add_argument("--target-dir")
+    si.add_argument("--remote", action="store_true", help="the phone channel (greg serve) instead of the body")
     args = p.parse_args(argv)
     home = args.home
 
@@ -118,8 +132,8 @@ def main(argv=None) -> int:
                 spec = json.loads(Path(args.target).read_text())
             else:
                 from greg import templates
-                if args.target == "repo-guardian":
-                    spec = templates.repo_guardian(repositories=dict(r.split("=", 1) for r in args.repo),
+                if args.target in ("repo-guardian", "integration-watch"):
+                    spec = templates.TEMPLATES[args.target](repositories=dict(r.split("=", 1) for r in args.repo),
                                                    expected_pin=args.pin, expected_version=args.pkg_version,
                                                    cadence_seconds=args.cadence_seconds)
                 elif args.target == "workspace-note":
@@ -174,6 +188,19 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "device" and args.device_cmd == "enroll":
+            from datetime import datetime, timezone
+            expires = datetime.now(timezone.utc) + timedelta(days=args.days)
+            print(_drop(home, "DEVICE_ENROLL", {"public_key": args.pubkey, "label": args.label,
+                                                "kinds": [k.strip() for k in args.kinds.split(",") if k.strip()],
+                                                "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
+        elif args.cmd == "device" and args.device_cmd == "revoke":
+            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+        elif args.cmd == "serve":
+            from greg.remote import serve
+            print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "
+                  f"tailscale serve --bg --https=443 http://{args.host}:{args.port}", flush=True)
+            return serve(home, args.host, args.port)
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
         elif args.cmd == "decisions":
@@ -189,7 +216,7 @@ def main(argv=None) -> int:
                 Layout(home).stop_file.unlink(missing_ok=True)
             return Body(home).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
         elif args.cmd == "service":
-            target = service.install(Path(home), args.platform,
+            target = service.install(Path(home), args.platform, remote=args.remote,
                                      target_dir=Path(args.target_dir) if args.target_dir else None)
             print(json.dumps({"written": str(target), "loaded": False,
                               "to_load": service.load_instructions(args.platform, target)}, indent=1))

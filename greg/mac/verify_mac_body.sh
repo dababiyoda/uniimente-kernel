@@ -98,6 +98,43 @@ for cid, params in (("mac.frontmost_app", {}), ("mac.notify", {"text": "GREG bod
 print(json.dumps(results, indent=1, default=str))
 EOF
 
+echo "== browser.render with this Mac's Chrome (JavaScript-rendered page on loopback; egress limited)"
+mkdir -p "$OUT/site"
+printf '<html><head><title>mac probe</title></head><body><p id="x">static</p><script>document.getElementById("x").textContent="rendered on the mac"</script></body></html>' > "$OUT/site/index.html"
+"$PY" -m http.server 8813 --bind 127.0.0.1 -d "$OUT/site" >/dev/null 2>&1 & SITE=$!
+sleep 1
+"$PY" - "$OUT" <<'EOF' | tee "$OUT/mac-browser.json"
+import json, sys
+from pathlib import Path
+from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
+out = Path(sys.argv[1]); manifest, adapter = BUILTINS["browser.render"]
+ctx = InvocationContext(workspace=out / "adapters", read_roots=(out,), secrets=SecretBroker(out / "s.json"), manifest=manifest)
+try:
+    r = adapter({"url": "http://127.0.0.1:8813/index.html"}, ctx)
+    print(json.dumps({"ok": "rendered on the mac" in r["text"], **{k: r[k] for k in ("title", "browser", "os_sandboxed", "egress")}}, indent=1))
+except Exception as exc:
+    print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}))
+EOF
+kill "$SITE" 2>/dev/null || true
+
+echo "== remote channel for the phone (loopback; signed reads only)"
+"$PY" -m greg --home "$HOME_DIR" serve --port 8814 >/dev/null 2>&1 & SERVE=$!
+sleep 1
+"$PY" - "$HOME_DIR" "$OUT/throwaway-founder.pem" <<'EOF' | tee "$OUT/mac-remote.json"
+import json, sys, urllib.request, urllib.error
+from greg.founder import load_founder_key, sign_read
+home, key = sys.argv[1], load_founder_key(sys.argv[2], None)
+body_id = json.load(urllib.request.urlopen("http://127.0.0.1:8814/api/hello"))["body_id"]
+try:
+    urllib.request.urlopen("http://127.0.0.1:8814/api/status"); unsigned = "ALLOWED (defect)"
+except urllib.error.HTTPError as e:
+    unsigned = e.code
+req = urllib.request.Request("http://127.0.0.1:8814/api/status",
+                             headers=sign_read(key, body_id=body_id, method="GET", path="/api/status"))
+print(json.dumps({"unsigned_read": unsigned, "signed_read_principal": json.load(urllib.request.urlopen(req))["principal"]}))
+EOF
+kill "$SERVE" 2>/dev/null || true
+
 echo "== signed founder stop: launchd must NOT restart"
 "$PY" -m greg --home "$HOME_DIR" stop --key "$OUT/throwaway-founder.pem" --no-passphrase
 wait_json "import json;assert json.load(open('$HOME_DIR/heartbeat.json'))['state']=='STOPPED'" "founder stop"

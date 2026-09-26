@@ -199,3 +199,19 @@ def test_guardrail_repository_metabolism_is_classified_without_destroying_histor
                 if path and "*" not in path:
                     assert (ROOT / path).exists(), path
     assert {e["bucket"] for e in record["entries"]} == set(record["buckets"])
+
+
+def test_guardrail_a_phone_is_a_remote_interface_never_a_second_founder():
+    from greg.founder import COMMAND_KINDS, DEVICE_KINDS
+    founder_only = {"MISSION", "CAPABILITY_ATTACH", "CAPABILITY_DETACH", "NODE_ENROLL", "SOP_RATIFY",
+                    "ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE"}
+    assert founder_only <= set(COMMAND_KINDS) and not founder_only & set(DEVICE_KINDS)
+    assert "BODY_STOP" in DEVICE_KINDS  # stopping from the phone must always be possible
+    remote = (GREG / "remote.py").read_text()
+    assert "read_only=True" in remote and ".append(" not in remote  # transport never writes history
+
+
+def test_guardrail_computer_use_is_core_not_decoration():
+    from greg.capabilities import BUILTINS
+    routes = {m.route for m, _ in BUILTINS.values()}
+    assert {"browser", "os_automation", "visual", "cli"} <= routes

@@ -160,7 +160,7 @@ class MissionBook:
         self.rebuild()
 
     def rebuild(self):
-        self.missions, self.requests, self.answers = {}, {}, {}
+        self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
         for event in self.journal.replay():
             kind, data = event.type[len("greg."):], event.payload
             mid = data.get("mission_id")
@@ -173,6 +173,8 @@ class MissionBook:
                     self.requests[data["request_id"]] = data
                 elif kind == "decision.answered":
                     self.answers[data["request_id"]] = data
+                elif kind == "decision.withdrawn":
+                    self.withdrawn[data["request_id"]] = data
                 continue
             elif kind == "mission.lifecycle":
                 m.paused = data["state"] == "PAUSED"
@@ -221,6 +223,8 @@ class MissionBook:
                 m.excluded[data["action_id"]] = data["reason"]
             elif kind == "decision.requested":
                 self.requests[data["request_id"]] = data
+            elif kind == "decision.withdrawn":
+                self.withdrawn[data["request_id"]] = data
             elif kind == "decision.answered":
                 self.answers[data["request_id"]] = data
                 request = self.requests.get(data["request_id"])
@@ -232,7 +236,7 @@ class MissionBook:
                         m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
 
     def open_requests(self) -> list[dict]:
-        return [r for rid, r in self.requests.items() if rid not in self.answers]
+        return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
 
 
 class MissionEngine:
@@ -275,6 +279,8 @@ class MissionEngine:
         request = self.book.requests.get(rid)
         if request is None or answer not in DECISION_ANSWERS:
             raise MissionError("unknown decision request or answer")
+        if rid in self.book.withdrawn:
+            raise MissionError("request withdrawn: " + self.book.withdrawn[rid]["why"])
         if rid in self.book.answers:
             if self.book.answers[rid]["answer"] == answer:
                 return  # duplicate approval: no duplicate action
@@ -309,7 +315,13 @@ class MissionEngine:
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:
-        rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest})[7:31]
+        epoch = 0
+        while True:
+            rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
+                                        **({"epoch": epoch} if epoch else {})})[7:31]
+            if rid not in self.book.withdrawn:
+                break
+            epoch += 1  # the same discrepancy returned after healing: a new escalation
         if rid in self.book.requests:
             return rid  # one escalation per exact scope; waiting creates no spam
         self.journal.record("decision.requested", {
@@ -364,6 +376,8 @@ class MissionEngine:
                 alternatives=["abandon", "renew with narrower scope"], requested={"horizon": "extend"}, now=now),
                 "why": "mandate expired", "reconsider": "founder renews or abandons"})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if m.blocker and m.blocker.get("failing_checks") and not self._blocker_resolved(m)[0]:
+            return self._watch_while_blocked(m, now)
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
             if not resolved:
@@ -472,6 +486,26 @@ class MissionEngine:
                                                         "capability": last["capability"], "verdict": "ineffective",
                                                         "receipt": last["receipt"], "reason": reason[:300]},
                                     key=[m.mission_id, aid, last["receipt"]])
+
+    def _watch_while_blocked(self, m: MissionState, now: datetime) -> dict:
+        """No strategy is not blindness: keep re-observing at cadence. If the world heals
+        without GREG acting, the escalation is withdrawn as moot (a body event, never a
+        founder answer) and the mission resumes; otherwise it keeps waiting, silently."""
+        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
+            return {"state": "WAITING", "blocker": m.blocker, "until": m.next_observe_at}
+        failing, evidence = self._observe(m, now)
+        if failing is None:
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        if failing:
+            self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))
+            return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
+        rid = m.blocker["request_id"]
+        why = "world re-observed: every failing check now passes without any GREG action"
+        self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                   "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+        self._unblock(m, why)
+        self.book.rebuild()
+        return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
 
     def _setpoint_reached(self, m: MissionState, now: datetime, evidence: list) -> dict:
         closure = m.spec["closure"]

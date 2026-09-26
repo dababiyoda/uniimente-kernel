@@ -36,7 +36,7 @@ from events.spine import EventSpine
 from greg import compute, dataplane, metrics, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id
+from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
@@ -50,6 +50,18 @@ BODY_VERSION = "greg-body/0.1.0"
 
 class BodyError(RuntimeError):
     pass
+
+
+def device_delegations(journal: Journal) -> dict[str, dict]:
+    """Currently delegated device keys (enrolled by the founder key, not revoked).
+    Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
+    devices = {}
+    for event in journal.replay("device."):
+        if event.type == "greg.device.enrolled":
+            devices[event.payload["device_key_id"]] = event.payload
+        elif event.type == "greg.device.revoked":
+            devices.pop(event.payload["device_key_id"], None)
+    return devices
 
 
 class Layout:
@@ -178,12 +190,15 @@ class Body:
         self.journal.record("founder.enrolled", record, key=kid)
         return record
 
+    def device_keys(self) -> dict[str, dict]:
+        return device_delegations(self.journal)
+
     def _seen_nonce(self, nonce: str) -> bool:
         return any(e.payload["nonce"] == nonce for e in self.journal.replay("command.accepted"))
 
     def verifier(self) -> FounderVerifier:
         return FounderVerifier(body_id=self.config["body_id"], enrolled=self.enrolled_keys(),
-                               seen_nonce=self._seen_nonce)
+                               seen_nonce=self._seen_nonce, devices=self.device_keys())
 
     # -- commands ------------------------------------------------------------------
     def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
@@ -192,11 +207,16 @@ class Body:
         prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload["digest"] == digest]
         if prior:
             return {"status": "ALREADY_APPLIED", "digest": digest}
-        env = self.verifier().verify(envelope, now=self.clock())
+        verifier = self.verifier()
+        env = verifier.verify(envelope, now=self.clock())
+        principal = verifier.principal(env, now=self.clock())
         kind, body = env["kind"], env["body"]
+        # Commands are applied before the next tick's rebuild; a request raised during the
+        # previous tick must already be visible, or a fast approval is refused as "unknown".
+        self.engine.book.rebuild()
         result = self._dispatch(kind, body, digest)
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
-                                                  "founder_key_id": env["founder_key_id"],
+                                                  "founder_key_id": env["founder_key_id"], "signer": principal,
                                                   "issued_at": env["issued_at"], "body": body,
                                                   "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
@@ -237,6 +257,20 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "DEVICE_ENROLL":  # only the founder key can sign this kind (DEVICE_KINDS excludes it)
+            grant = validate_device_grant(body, now=self.clock())
+            if grant["device_key_id"] in self.enrolled_keys() or grant["device_key_id"] in self.device_keys():
+                raise MissionError("key already enrolled; revoke before re-delegating")
+            self.journal.record("device.enrolled", {**grant, "command_digest": digest, "at": iso(self.clock())},
+                                key=[grant["device_key_id"], digest])
+            return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
+        if kind == "DEVICE_REVOKE":
+            kid = body.get("device_key_id")
+            if set(body) != {"device_key_id"} or kid not in self.device_keys():
+                raise MissionError("revocation needs exactly one currently delegated device_key_id")
+            self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
+                                                   "at": iso(self.clock())}, key=[kid, digest])
+            return {"device_key_id": kid, "revoked": True}
         if kind == "ROTATE_FOUNDER_KEY":
             new_hex = body["new_public_key"]
             old = next(iter(self.enrolled_keys()))
@@ -407,6 +441,7 @@ def status(home: str | Path) -> dict:
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
         answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
+        answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
         requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
@@ -418,6 +453,8 @@ def status(home: str | Path) -> dict:
             "body_id": config["body_id"], "version": config["version"],
             "background": heartbeat, "boots": len(boots),
             "security": {"founder_keys_enrolled": founder, "chain_verified": ok, "chain": chain,
+                         "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
+                                     for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists()},
             "goals": [{"mission_id": mid, "intended_effect": spec["intended_effect"],

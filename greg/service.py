@@ -66,10 +66,52 @@ def supervisord_program(home: Path, python: str | None = None, *, name: str = "g
         f"stdout_logfile={home / 'logs' / 'body.out.log'}\nstderr_logfile={home / 'logs' / 'body.err.log'}\n")
 
 
-def install(home: Path, platform: str, *, target_dir: Path | None = None) -> Path:
+REMOTE_LABEL = "ai.uniimente.greg.remote"
+
+
+def remote_command(home: Path, python: str | None = None, port: int = 8765) -> list[str]:
+    return [python or sys.executable, "-m", "greg", "--home", str(home), "serve", "--port", str(port)]
+
+
+def launchd_remote_plist(home: Path, python: str | None = None, port: int = 8765) -> bytes:
+    """The phone's channel, kept alive like the body. It holds no key and writes no history,
+    so it always restarts; stop it with launchctl bootout."""
+    home = Path(home)
+    return plistlib.dumps({
+        "Label": REMOTE_LABEL, "ProgramArguments": remote_command(home, python, port),
+        "WorkingDirectory": str(KERNEL_ROOT),
+        "EnvironmentVariables": {"PYTHONPATH": str(KERNEL_ROOT), "PYTHONDONTWRITEBYTECODE": "1"},
+        "RunAtLoad": True, "KeepAlive": True, "ThrottleInterval": 10, "ProcessType": "Background",
+        "StandardOutPath": str(home / "logs" / "remote.out.log"),
+        "StandardErrorPath": str(home / "logs" / "remote.err.log"),
+    })
+
+
+def install(home: Path, platform: str, *, target_dir: Path | None = None, remote: bool = False) -> Path:
     """Write (but do not load) the supervisor file. Loading is a separate founder step."""
     home = Path(home)
     (home / "logs").mkdir(parents=True, exist_ok=True)
+    if remote:
+        if platform == "macos":
+            target = (target_dir or Path.home() / "Library" / "LaunchAgents") / f"{REMOTE_LABEL}.plist"
+            data = launchd_remote_plist(home)
+        elif platform == "linux":
+            target = (target_dir or Path.home() / ".config" / "systemd" / "user") / "greg-remote.service"
+            data = ("[Unit]\nDescription=GREG remote channel (loopback)\n\n[Service]\nType=simple\n"
+                    f"WorkingDirectory={KERNEL_ROOT}\nEnvironment=PYTHONPATH={KERNEL_ROOT}\n"
+                    f"ExecStart={' '.join(remote_command(home))}\nRestart=always\nRestartSec=5\n"
+                    "NoNewPrivileges=true\n\n[Install]\nWantedBy=default.target\n").encode()
+        elif platform == "supervisord":
+            target = (target_dir or home) / "supervisord-greg-remote.conf"
+            data = (f"[program:greg-remote]\ncommand={' '.join(remote_command(home))}\ndirectory={KERNEL_ROOT}\n"
+                    f"environment=PYTHONPATH=\"{KERNEL_ROOT}\"\nautostart=true\nautorestart=true\n"
+                    f"stdout_logfile={home / 'logs' / 'remote.out.log'}\n"
+                    f"stderr_logfile={home / 'logs' / 'remote.err.log'}\n").encode()
+        else:
+            raise ValueError("platform must be macos, linux or supervisord")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        return target
     if platform == "macos":
         target = (target_dir or Path.home() / "Library" / "LaunchAgents") / f"{LABEL}.plist"
         data = launchd_plist(home)

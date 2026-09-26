@@ -45,6 +45,40 @@ def repo_guardian(*, repositories: dict[str, str], expected_pin: str, expected_v
     }
 
 
+def integration_watch(*, repositories: dict[str, str], expected_pin: str, expected_version: str,
+                      cadence_seconds: int = 21600, horizon_days: float = 30) -> dict:
+    """Nightly integration watch: no authority-class blocker may sit on the organs' default branches.
+
+    From PR #112's founder mission ("identify the most consequential integration blocker and
+    produce a source-backed morning brief"), rebuilt on the signed, supervised body. Read-only:
+    a finding becomes exactly one founder decision carrying exact commits, blobs and lines.
+    """
+    repos = [{"role": role, "path": str(Path(path).expanduser().resolve())} for role, path in sorted(repositories.items())]
+    params = {"repositories": repos, "expected_pin": expected_pin, "expected_version": expected_version}
+    return {
+        "mission_id": "m:integration-watch",
+        "founder_expression": "Inspect the approved local snapshots of the three repositories, identify the most "
+                              "consequential integration blocker, and produce a source-backed morning brief.",
+        "intended_effect": "no authority-class integration defect stays unseen on the Kernel, DALEOBANKS or WMI "
+                           "default branch; each one reaches Alfonso once with exact source evidence",
+        "beneficiaries": ["Alfonso", "every organ that relies on the Kernel's authority boundary"],
+        "unacceptable_outcomes": ["writing to any repository", "network fetches", "a finding without source evidence"],
+        "priority": 75,
+        "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds},
+        "success_checks": [
+            {"check_id": "pins-consistent", "description": "all organs pin the same Kernel boundary package",
+             "sensor": {"capability": "repo.pin_audit", "target": "repo:uniimente-organs", "params": params},
+             "predicate": {"op": "equals", "field": "compatible", "value": True}},
+            {"check_id": "no-authority-blockers", "description": "no authority-class static finding",
+             "sensor": {"capability": "repo.integration_audit", "target": "repo:uniimente-organs", "params": params},
+             "predicate": {"op": "equals", "field": "authority_findings", "value": []}}],
+        "strategies": [],
+        "light_cone": {"capabilities": ["repo.pin_audit", "repo.integration_audit", "fs.read"],
+                       "targets": ["repo:*", "fs:*", "workspace:*"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 def workspace_note(*, text: str, must_contain: str, workspace_file: Path, horizon_days: float = 2) -> dict:
     """Bounded first-body smoke mission with a real approval boundary (write needs founder approval)."""
     return {
@@ -65,4 +99,4 @@ def workspace_note(*, text: str, must_contain: str, workspace_file: Path, horizo
     }
 
 
-TEMPLATES = {"repo-guardian": repo_guardian, "workspace-note": workspace_note}
+TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note}

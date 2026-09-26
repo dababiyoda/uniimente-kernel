@@ -31,7 +31,7 @@ from greg.journal import Journal
 from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
-REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit"}
+REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit"}
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:

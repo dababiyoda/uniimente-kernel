@@ -60,7 +60,8 @@ def morning_report(journal: Journal, engine=None) -> dict:
                 surprises.append({"action_id": action["action_id"], "check_id": check,
                                   "expected": "check passes after action", "observed": later[0]["detail"]})
     open_requests = []
-    answered = {e.payload["request_id"] for e in all_events if e.type == "greg.decision.answered"}
+    answered = {e.payload["request_id"] for e in all_events
+                if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
     for e in all_events:
         if e.type == "greg.decision.requested" and e.payload["request_id"] not in answered:
             open_requests.append(e.payload)

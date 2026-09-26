@@ -1,3 +1,5 @@
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+
 # Founder Intent Ledger
 
 ## Real-product repository metabolism — 2026-09-26

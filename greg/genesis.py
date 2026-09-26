@@ -229,6 +229,7 @@ class Genesis:
             route="cli", consequence_class="read_only", inputs={"path": "str"},
             outputs={CATALOG[function]["output_field"]: "value"}, target_prefix="fs:", filesystem="read-scoped",
             binaries=(binary,), retry_safe=True, tests=(f"frozen-oracle:{function}",),
+            strengthens=("capability_formation", "proof"),
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
                         "license": "system package; license not inspected by GREG",

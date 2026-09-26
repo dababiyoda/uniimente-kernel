@@ -30,6 +30,15 @@ import urllib.request
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
+# Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
+# capability must strengthen at least one control point of the founder-intent ->
+# verified-outcome transaction. The seven nodes are the rule's seven items.
+SUPER_NODES = ("eligibility", "routing", "proof", "settlement", "reliability", "capability_formation",
+               "compounding")
+# evolution/spider_web.py judges strategies against four of them under older names;
+# this is the one translation between the two vocabularies (tested, not imported).
+STRATEGY_SUPER_NODES = {"eligibility": "eligibility", "default_routing": "routing",
+                        "proof_and_truth": "proof", "cashflow_and_settlement": "settlement"}
 STATES = ("DISCOVERED", "VERIFIED", "ATTACHED", "DETACHED", "QUARANTINED")
 MAX_READ_BYTES = 256 * 1024
 KERNEL_ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +69,7 @@ class CapabilityManifest:
     budget_ceiling_usd: float = 0.0
     platforms: tuple = ("linux", "darwin")
     retry_safe: bool = False           # read-only and idempotent: an unknown outcome may be re-attempted
+    strengthens: tuple = ()            # SUPER_NODES this capability reinforces (Spider-Web rule; required)
     tests: tuple = ()
     provenance: dict = field(default_factory=dict)
     attach: str = "founder command or pre-authorized mission light cone"
@@ -84,6 +94,11 @@ class CapabilityManifest:
             problems.append("only read_only capabilities may be retry_safe")
         if not self.target_prefix or self.target_prefix == "*":
             problems.append("bounded target prefix required")
+        if not self.strengthens:
+            problems.append("Spider-Web rule: capability must declare which control points it strengthens")
+        unknown = set(self.strengthens) - set(SUPER_NODES)
+        if unknown:
+            problems.append(f"unknown super-nodes {sorted(unknown)}")
         problems.extend(self.genome().validate())
         return problems
 
@@ -114,7 +129,8 @@ class CapabilityManifest:
         if set(value) - known:
             raise CapabilityError(f"unknown manifest fields {sorted(set(value) - known)}")
         data = dict(value)
-        for key in ("egress_allowlist", "credentials", "binaries", "data_classes", "platforms", "tests"):
+        for key in ("egress_allowlist", "credentials", "binaries", "data_classes", "platforms", "tests",
+                    "strengthens"):
             if key in data:
                 data[key] = tuple(data[key])
         return cls(**data)
@@ -331,13 +347,43 @@ def mac_frontmost_app(params, ctx: InvocationContext) -> dict:
     return {"frontmost": proc.stdout.strip()}
 
 
+def repo_pin_audit(params, ctx: InvocationContext) -> dict:
+    """Read-only contract-consistency audit of real local repositories.
+
+    Metabolized from #101 (egregore/repository_audit.py): the exact-object Git
+    reads and the semantic derive() are reused unchanged; the fixed 60-second
+    proof mission around them is not. Observes each repository's cached
+    origin/main itself, so it can run every night without a pre-known commit.
+    """
+    from egregore.repository_audit import capture, derive, git_read
+    repositories = []
+    for repo in params["repositories"]:
+        path = _inside(Path(repo["path"]), ctx.read_roots)
+        commit = git_read(str(path), "rev-parse", "refs/remotes/origin/main").decode().strip()
+        repositories.append({"role": repo["role"], "path": str(path), "commit": commit})
+    sources = capture(repositories)
+    report = derive(sources, params["expected_pin"], params["expected_version"])
+    return {"compatible": report["compatible"], "rows": report["rows"],
+            "commits": {r["role"]: r["commit"] for r in repositories},
+            "drift": [r for r in report["rows"] if not r["matches"]], "source_scope": report["source_scope"]}
+
+
+STRENGTHENS = {
+    "fs.read": ("proof",), "fs.list": ("proof",), "fs.write": ("settlement",),
+    "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
+    "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
+    "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
+}
+
+
 def _builtin(capability_id, function, description, route, consequence, target_prefix, inputs, outputs, **kw):
+    kw.setdefault("strengthens", STRENGTHENS[capability_id])
+    kw.setdefault("provenance", {"source": "uniimente-kernel/greg/capabilities.py"})
     return CapabilityManifest(capability_id=capability_id, version="1.0.0", provider="greg-builtin",
                               function=function, description=description, route=route,
                               consequence_class=consequence, inputs=inputs, outputs=outputs,
                               target_prefix=target_prefix,
-                              tests=(f"tests/unit/test_greg_capabilities.py::{capability_id}",),
-                              provenance={"source": "uniimente-kernel/greg/capabilities.py"}, **kw)
+                              tests=(f"tests/unit/test_greg_capabilities.py::{capability_id}",), **kw)
 
 
 BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
@@ -369,6 +415,16 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                    "os_automation", "read_only", "desktop:", {"none": "no parameters"}, {"frontmost": "str"},
                                    binaries=("/usr/bin/osascript",), platforms=("darwin",),
                                    retry_safe=True), mac_frontmost_app),
+    "repo.pin_audit": (_builtin("repo.pin_audit", "repository.contract_audit",
+                                "Verify organs pin the same Kernel boundary package (real Git objects, read-only)",
+                                "cli", "read_only", "repo:",
+                                {"repositories": "list[{role,path}]", "expected_pin": "sha",
+                                 "expected_version": "str"}, {"compatible": "bool", "drift": "list"},
+                                filesystem="read-scoped", retry_safe=True,
+                                binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                            "mechanism_from": "PR #101 egregore/repository_audit.py (capture, derive)"}),
+                       repo_pin_audit),
 }
 
 
@@ -414,7 +470,8 @@ class CapabilityRegistry:
             rows.append({"capability_id": cid, "function": manifest.function, "route": manifest.route,
                          "consequence_class": manifest.consequence_class, "state": self.state[cid],
                          "provider": manifest.provider, "health": "available" if ok else why,
-                         "credentials": list(manifest.credentials), "network": manifest.network})
+                         "credentials": list(manifest.credentials), "network": manifest.network,
+                         "strengthens": list(manifest.strengthens)})
         return rows
 
 

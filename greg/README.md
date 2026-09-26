@@ -34,7 +34,27 @@ Constitution and one Gate — not from a hierarchy of personas.
 | SOP compounding | `sop.py`: repeated verified procedures → proposal → founder ratification; per-outcome metrics | `test_repeated_verified_procedure…` |
 | House of compute | `compute.py`: telemetry → sustained bottleneck → one recommendation with alternatives; nodes join with bounded identity | `test_compute_bottleneck…`, `test_new_compute_node…` |
 
+## Spider-Web compounding (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING)
+
+The optimization target is one transaction: *Alfonso's authorized intention → verified real-world
+outcome → evidence and capability that make the next intention easier.*
+
+| Control point | Mechanism | Evidence |
+|---|---|---|
+| Eligibility | `CapabilityRegistry.register` refuses a capability that strengthens none of the seven super-nodes; light cones; Ed25519 founder envelopes | `test_spider_web_rule_rejects_capabilities_that_strengthen_nothing` |
+| Default routing | `routing.py`: ledger-derived reliability (Laplace) per capability; strategies ranked by expected discrepancy value closed minus cost; each choice recorded with its alternatives | `test_routing_learns_from_one_missions_failure_for_the_next_mission` |
+| Proof / truth | `appraisal.py`: a **separate process** re-verifies the founder signature, re-derives checks from receipt bytes, re-observes the world and confirms exactly-once | `test_independent_appraiser_…`, `test_appraiser_refutes_a_false_closure_claim` |
+| Proof → routing | an appraiser refutation of the *effect* lowers that capability's reliability for every future mission; refutations for foreign faults do not | `test_appraiser_refutation_of_the_effect_lowers_routing_but_foreign_faults_do_not` |
+| Settlement / outcome | `metrics.py`: VEPMC computed only from ledger facts (nine conditions; two only Alfonso and his Mac can supply) | `tests/integration/test_greg_vepmc_path.py` |
+| Reliability | `repo.pin_audit`: a real, read-only watcher of Kernel/DALEOBANKS/WMI pin consistency (`templates.repo_guardian`) | `test_repository_guardian_holds_then_escalates_real_git_drift_once` |
+
+The strategy tribunal in `evolution/spider_web.py` keeps its four-node vocabulary. `STRATEGY_SUPER_NODES`
+is the single tested translation. Dispositions for the rest of the project are in
+`docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json`.
+
 ## Using it (developer mode today)
+
+**First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**
 
 ```bash
 python -m greg --home ~/.uniimente/greg init --read-root ~/Projects
@@ -42,6 +62,9 @@ python -m greg founder keygen --key ~/.greg-founder.pem          # on a device A
 python -m greg --home ~/.uniimente/greg founder enroll --pubkey <printed hex>
 python -m greg --home ~/.uniimente/greg service install --platform macos   # writes, does not load
 python -m greg --home ~/.uniimente/greg mission submit mission.json --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg mission new workspace-note|repo-guardian ... --key ...   # templates
+python -m greg --home ~/.uniimente/greg vepmc | routing       # the bottleneck metric; learned routing
+python -m greg --home ~/.uniimente/greg accept <closure_event_id> --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg status | decisions | morning
 python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg stop --local            # OS-level stop always works
@@ -69,6 +92,8 @@ Mission contract: `contracts/greg-mission.schema.json`. Native macOS verificatio
 ## Reality gradient (as of this commit)
 
 IMPLEMENTED · UNIT TESTED · INTEGRATION TESTED (real processes, commodity supervisor, SIGKILL) ·
-**not** PACKAGED · **not** MAC-VERIFIED · **not** FOUNDER-USED · **not** LIVE-BOUNDED · no external outcome.
+SANDBOXED (first-VEPMC path: 8 of 9 conditions on Linux, test key) · LOCAL-REAL (repo guardian read the real
+repositories) · **not** PACKAGED · **not** MAC-VERIFIED · **not** REBOOT-VERIFIED · **not** FOUNDER-USED ·
+**not** PRODUCTION-AUTHORIZED · no external outcome. **VEPMC = 0.**
 Model router, human work fabric and business runtime are PROPOSED (see
 `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md`).

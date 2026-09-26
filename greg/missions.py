@@ -31,6 +31,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
+from greg import routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -387,6 +388,7 @@ class MissionEngine:
         # Fresh observations may reveal a surprise; decide on the updated truth.
         self.book.rebuild()
         m = self.book.missions[m.mission_id]
+        self._record_routing_outcomes(m)
         if not failing:
             return self._setpoint_reached(m, now, evidence)
         errors = set(self.sensor_errors)
@@ -455,6 +457,22 @@ class MissionEngine:
                 failing.add(check["check_id"])
         return failing, evidence
 
+    def _record_routing_outcomes(self, m: MissionState):
+        """Close the routing loop: an executed strategy that did not change the world
+        lowers its capability's reliability for every future mission."""
+        for aid, reason in m.failed.items():
+            if not reason.startswith("executed but "):
+                continue
+            done = [e.payload for e in self.journal.replay("mission.action")
+                    if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
+                    and e.payload["status"] == "DONE"]
+            if done:
+                last = done[-1]
+                self.journal.record("routing.outcome", {"mission_id": m.mission_id, "action_id": aid,
+                                                        "capability": last["capability"], "verdict": "ineffective",
+                                                        "receipt": last["receipt"], "reason": reason[:300]},
+                                    key=[m.mission_id, aid, last["receipt"]])
+
     def _setpoint_reached(self, m: MissionState, now: datetime, evidence: list) -> dict:
         closure = m.spec["closure"]
         if closure["kind"] == "bounded":
@@ -507,13 +525,20 @@ class MissionEngine:
 
     def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list) -> dict:
         candidates = []
+        records = routing.track_record(self.journal)
+        value = float(m.spec.get("value_per_check_usd", 1.0))
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
                 continue
             manifest = self.registry.manifests.get(s.get("capability"))
+            if manifest is None and s.get("function") and self.genesis is not None:
+                manifest = self.genesis.find_attached(s["function"])
             route = ROUTES.index(manifest.route) if manifest else len(ROUTES)
-            candidates.append((-gain / (s.get("cost_usd", 0.0) + 0.01), route, index, s))
+            estimate = routing.reliability(records.get(manifest.capability_id) if manifest else None)
+            expected = routing.score(gain=gain, reliability_estimate=estimate,
+                                     cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
+            candidates.append((-expected, route, index, s, estimate))
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
@@ -526,6 +551,10 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         candidates.sort(key=lambda c: c[:3])
         s = candidates[0][3]
+        routing_decision = {"chosen": s["action_id"], "expected_value": round(-candidates[0][0], 4),
+                            "reliability": round(candidates[0][4], 4),
+                            "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
+                                              "reliability": round(c[4], 4)} for c in candidates[1:6]]}
         manifest, adapter, _ = self._resolve(s)
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:
@@ -545,7 +574,7 @@ class MissionEngine:
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
-                  "scope_digest": outcome.scope_digest, "at": iso(now)}
+                  "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"

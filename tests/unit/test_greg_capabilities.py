@@ -165,7 +165,7 @@ def test_secret_values_never_enter_the_ledger(tmp_path):
         manifest = CapabilityManifest(capability_id="demo.secret", version="1.0.0", provider="test",
                                       function="demo.secret", description="uses a secret", route="api",
                                       consequence_class="read_only", inputs={"x": "str"}, outputs={"ok": "bool"},
-                                      target_prefix="fs:", credentials=("api_key",))
+                                      target_prefix="fs:", credentials=("api_key",), strengthens=("proof",))
         body.registry.register(manifest, lambda p, c: {"ok": c.secret("api_key") == "sk-live-DO-NOT-LEAK"},
                                state="ATTACHED")
         ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(data,), secrets=body.secrets, manifest=manifest)

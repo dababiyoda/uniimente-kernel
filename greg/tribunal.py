@@ -115,6 +115,10 @@ def morning_report(journal: Journal, engine=None) -> dict:
         "claims_not_made": ["no external business outcome", "no Mac verification unless recorded by the Mac package",
                             "no model output treated as evidence"],
     }
+    from greg import metrics, routing
+    report["single_bottleneck_metric"] = metrics.vepmc(journal)
+    report["appraisals"] = [e.payload for e in journal.replay("mission.appraised")]
+    report["routing_knowledge"] = routing.routing_knowledge(journal)
     report["report_digest"] = sha256_json(report)
     return report
 

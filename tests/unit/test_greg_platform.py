@@ -3,6 +3,7 @@ import ast
 import json
 from pathlib import Path
 import plistlib
+import re
 
 import pytest
 
@@ -151,9 +152,50 @@ def test_guardrail_first_body_intent_is_recorded_with_its_corrections():
     assert record["status"] == "active" and record["supersedes"] == []
 
 
-def test_new_intent_record_carries_every_required_ledger_field():
-    record = json.loads((ROOT / "docs/intent/INTENT-2026-09-25-EGREGORE-ECOLOGY.json").read_text())
+@pytest.mark.parametrize("name", ["INTENT-2026-09-25-EGREGORE-ECOLOGY", "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING"])
+def test_new_intent_record_carries_every_required_ledger_field(name):
+    record = json.loads((ROOT / f"docs/intent/{name}.json").read_text())
+    assert record["intent_id"] == name
     required = ["intent_id", "statement", "source_refs", "owner", "state", "binding_scope",
                 "constitutional_constraints", "success_evidence", "failure_evidence", "dependencies", "conflicts",
                 "next_review_trigger", "supersedes", "superseded_by", "implementation_refs"]
     assert [k for k in required if k not in record] == []
+
+
+SPIDER_WEB_CLAUSE = ("Every capability retained, extracted, recombined, acquired, or built must materially improve at "
+                     "least one of:")
+
+
+def test_guardrail_spider_web_rule_is_binding_doctrine_and_enforced_on_every_capability():
+    from greg.capabilities import BUILTINS, SUPER_NODES
+    from greg.genesis import CATALOG
+    order = (ROOT / "docs/CANONICAL_EXECUTION_ORDER.md").read_text()
+    source = (ROOT / "docs/intent/sources/SPIDER-WEB-2026-09-25-source.md").read_text()
+    for text in (order, source):
+        assert SPIDER_WEB_CLAUSE in text
+        assert "must be reconfigured, archived, or killed" in text
+    assert "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING" in (ROOT / "docs/FOUNDER_INTENT_LEDGER.md").read_text()
+    assert len(SUPER_NODES) == 7  # one per item of the founder's clause
+    assert all(m.strengthens and set(m.strengthens) <= set(SUPER_NODES) for m, _ in BUILTINS.values())
+    assert CATALOG  # acquired tools receive strengthens from genesis._manifest_for (test_greg_capabilities)
+
+
+def test_guardrail_repository_metabolism_is_classified_without_destroying_history():
+    from greg.capabilities import SUPER_NODES
+    record = json.loads((ROOT / "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json").read_text())
+    assert record["intent"] == "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING" and "PROPOSED" in record["status"]
+    labels = set(record["reality_labels"])
+    for entry in record["entries"]:
+        assert entry["bucket"] in record["buckets"], entry["path"]
+        assert set(entry["super_nodes"]) <= set(SUPER_NODES), entry["path"]
+        assert entry["reality"] in labels, entry["path"]
+        assert "DELETE" not in entry["disposition"].upper(), entry["path"]
+        # A canonical product capability must show evidence on the GREG path and a control point.
+        if entry["bucket"] == "A":
+            assert entry["super_nodes"], entry["path"]
+        if entry["repo"] == "uniimente-kernel":
+            for part in re.sub(r"\(.*?\)", "", entry["path"]).replace(" + ", ",").split(","):
+                path = part.strip().split(" ")[0]
+                if path and "*" not in path:
+                    assert (ROOT / path).exists(), path
+    assert {e["bucket"] for e in record["entries"]} == set(record["buckets"])

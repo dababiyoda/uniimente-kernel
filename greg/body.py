@@ -33,7 +33,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import compute, dataplane, sop, tribunal
+from greg import compute, dataplane, metrics, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id
@@ -186,7 +186,7 @@ class Body:
                                seen_nonce=self._seen_nonce)
 
     # -- commands ------------------------------------------------------------------
-    def apply(self, envelope: dict) -> dict:
+    def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
         """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
         digest = sha256_json(envelope)
         prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload["digest"] == digest]
@@ -198,6 +198,7 @@ class Body:
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"],
                                                   "issued_at": env["issued_at"], "body": body,
+                                                  "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
         return {"status": "APPLIED", "digest": digest, "result": result}
 
@@ -256,7 +257,7 @@ class Body:
         for path in sorted(self.layout.inbox.glob("*.json")):
             try:
                 envelope = json.loads(path.read_text())
-                outcome = self.apply(envelope)
+                outcome = self.apply(envelope, channel="inbox")
                 shutil.move(str(path), self.layout.processed / path.name)
             except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
                     tribunal.CritiqueError) as exc:
@@ -297,8 +298,39 @@ class Body:
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
         summary = self.engine.tick(now)
+        self._close_out(now)
         sop.propose(self.journal)
         return {"commands": commands, "missions": summary}
+
+    def _close_out(self, now):
+        """Record where each closure happened and have it appraised by a separate process."""
+        contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        for event in self.journal.replay("mission.achieved"):
+            mid = event.payload["mission_id"]
+            if mid not in contexts:
+                self.journal.record("mission.closure_context", {
+                    "mission_id": mid, "boot_id": getattr(self, "boot_id", None), "pid": os.getpid(),
+                    "platform": os.uname().sysname, "hosted": getattr(self, "boot_id", None) is not None,
+                    "at": iso(now)}, key=[mid, "context"])
+            if mid not in appraised:
+                verdict = self.appraise(mid)
+                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
+
+    def appraise(self, mission_id: str) -> dict:
+        import subprocess
+        import sys
+        request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
+                   "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
+                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+        env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
+               "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
+        child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
+                               capture_output=True, text=True, timeout=120, env=env, cwd=KERNEL_ROOT)
+        if child.returncode:
+            return {"mission_id": mission_id, "head": request["head"], "verdict": "APPRAISAL_FAILED",
+                    "checks": {}, "findings": [child.stderr[-500:]], "appraiser": "separate process"}
+        return json.loads(child.stdout)
 
     def next_wake(self, tick_seconds: float) -> float:
         now = self.clock()
@@ -398,6 +430,7 @@ def status(home: str | Path) -> dict:
             "secret_handles": SecretBroker(layout.secrets).names(),
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
+            "single_bottleneck_metric": metrics.vepmc(journal),
         }
     finally:
         ledger.close()

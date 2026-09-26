@@ -64,13 +64,22 @@ def main(argv=None) -> int:
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
 
-    for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle"):
+    for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
+                 "accept"):
         q = sub.add_parser(name)
         q.add_argument("--key")
         q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
         if name == "mission":
-            q.add_argument("action", choices=["submit"]); q.add_argument("file")
+            q.add_argument("action", choices=["submit", "new"])
+            q.add_argument("target", help="mission JSON file (submit) or template name (new)")
+            q.add_argument("--repo", action="append", default=[], help="role=path (repo-guardian)")
+            q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
+            q.add_argument("--cadence-seconds", type=int, default=21600)
+            q.add_argument("--text"); q.add_argument("--must-contain")
+            q.add_argument("--print-only", action="store_true", help="show the mission without signing")
+        if name == "accept":
+            q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
             q.add_argument("request_id"); q.add_argument("answer"); q.add_argument("--reason", default="")
         if name == "critique":
@@ -84,7 +93,7 @@ def main(argv=None) -> int:
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
 
-    sub.add_parser("status"); sub.add_parser("decisions")
+    sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
     r.add_argument("--max-ticks", type=int)
@@ -105,7 +114,42 @@ def main(argv=None) -> int:
             with Body(home) as body:
                 print(json.dumps(body.enroll_founder(args.pubkey), indent=1))
         elif args.cmd == "mission":
-            print(_drop(home, "MISSION", json.loads(Path(args.file).read_text()), args))
+            if args.action == "submit":
+                spec = json.loads(Path(args.target).read_text())
+            else:
+                from greg import templates
+                if args.target == "repo-guardian":
+                    spec = templates.repo_guardian(repositories=dict(r.split("=", 1) for r in args.repo),
+                                                   expected_pin=args.pin, expected_version=args.pkg_version,
+                                                   cadence_seconds=args.cadence_seconds)
+                elif args.target == "workspace-note":
+                    note = Layout(home).workspace / "m_first-note" / "note.txt"
+                    spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
+                                                    workspace_file=note)
+                else:
+                    raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
+            from greg.missions import validate_mission
+            validate_mission(spec)
+            if getattr(args, "print_only", False):
+                print(json.dumps(spec, indent=1))
+            else:
+                print(_drop(home, "MISSION", spec, args))
+        elif args.cmd == "accept":
+            print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
+                                           "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd in ("vepmc", "routing"):
+            from events.spine import EventSpine
+            from greg import metrics, routing
+            from greg.journal import Journal
+            from provenance.ledger import EvidenceLedger
+            config = json.loads(Layout(home).config.read_text())
+            ledger = EvidenceLedger(config["constitution_hash"], str(Layout(home).ledger), read_only=True)
+            try:
+                journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/cli-reader")
+                data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+            finally:
+                ledger.close()
+            print(json.dumps(data, indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
                                            "reason": args.reason}, args))

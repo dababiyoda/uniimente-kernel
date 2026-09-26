@@ -1,3 +1,5 @@
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+
 # UNIIMENTE Project Cognition and Agent Handoff SOP
 
 Status: **mandatory collaboration procedure on this development branch**. This SOP creates no runtime authority.

@@ -1,0 +1,180 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "egregore.morning_review", "--ledger", "/workspace/scratch/fa1437d21e0f/repos/opus-reconciliation/tests/evidence/greg-proof/adopted-repositories/ledger.jsonl", "--constitution", "sha256:30aed2083f0c19291fed0426cee1fe3ab7e89a2a109084be7bd802d301539d6d", "report", "--mission", "greg-proof:1d284372-c950-4dae-8e1a-5a27cf3a19b0", "--head", "sha256:d1e9c1f09d48fbf93ac11e6b34f5f6b843147b15caf7b67d55becd557f56698a"]
+{
+  "actions": {
+    "dispatch_claims": 1,
+    "outcomes": 1,
+    "receipts": 1
+  },
+  "as_of_head": "sha256:d1e9c1f09d48fbf93ac11e6b34f5f6b843147b15caf7b67d55becd557f56698a",
+  "blocker": null,
+  "evidence_refs": [
+    "sha256:ecd556a313fd8fe2802f23d541ab760e1cf655502560710e6fcae621c56ecc51",
+    "sha256:a17d8a4936f1b23bcd2392764a834d3899922aec06a36fe1315eb557d33547a3",
+    "sha256:dbf3b4495ba4d58e3ca5eccbcfcdab7f68c0a6f6d8509395f2afd65e1885e7a3",
+    "sha256:e52dcd0ca109e46b9e3d1857b4462da8892ede9e42d2a6e1403882958fc22593",
+    "sha256:efdba6d61a71fd1cee304306d883b2210eeed63e5cd7dfcd0bd74f0acb430503",
+    "sha256:d1e9c1f09d48fbf93ac11e6b34f5f6b843147b15caf7b67d55becd557f56698a",
+    "sha256:77123b29ee7ca1b0f18369bceab819e9cd188d1a63f299d90d5972acc9eb4dee",
+    "sha256:b2bdacc2b8547c38fcf173953146717553dfe83c0c6c291a04f18f06ebedc51d",
+    "sha256:dfc774dec7013464467e94bddcf2564059e0de700d110105eb4799ac5a1a72dc",
+    "sha256:464ff9fe612daa29483c96c7bc06be6d71774e02622eccf6c4f43cd6e4437778",
+    "sha256:92a54c18d245649862b4c3ba322b33226d31573f5191253b569e97a99845d534",
+    "sha256:b34a8f5416aa6fb6bccba60c2fbc9eb6e50f992d2ebf4d34ee5c8a7ccca2d76e",
+    "sha256:237c0c8c57f1ff98431106d56e28eb681c3789f370559373602fab6928853ec7",
+    "sha256:28b9cbc440a393c3f96cb3625883402d5ed9db4aefd9cf836473ef362936fd59",
+    "sha256:955ce973b752a7c18cad58f4801e37838828e95d26a938c78770e304a334ab4a",
+    "sha256:510f72c6f178d41f5d2392c76aada4690bfa07c1fad0c7bfdbcb1af1d33242f2",
+    "sha256:e78bef635ef62b7bd7f9fa7e593bca7e2ae04c75b462e6066eb3677c109777b5",
+    "sha256:f84f5c8ded37da1665faaa2a5728c2bb0810902e2f665e7313d48af7b58b3560",
+    "sha256:1be1fffc2833b0ef303fa7218b1b26d44fd4fad102725b24522656e50c9cff20"
+  ],
+  "evidence_tier": "RETAINED_LOCAL_EVIDENCE_REVIEW",
+  "goal": {
+    "deadline": 1789084305.3114524,
+    "due": 1789084267.3114524,
+    "expected_pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+    "expected_version": "0.1.2",
+    "mission_id": "greg-proof:1d284372-c950-4dae-8e1a-5a27cf3a19b0"
+  },
+  "host_observation": {
+    "attempt_limit": 3,
+    "host_cpu_seconds": 0.08101699999999999,
+    "host_elapsed_seconds": 2.225455876000069,
+    "next_reconsideration": null,
+    "status": "COMPLETE",
+    "worker_exits": [
+      75,
+      0
+    ],
+    "worker_pids": [
+      13,
+      27
+    ]
+  },
+  "learning": "No critique or retained result has been promoted into policy, tests or causal truth.",
+  "limits": {
+    "CMC": 0,
+    "VDM": 0,
+    "current_source_freshness_verified": false,
+    "founder_authenticated": false,
+    "native_mac_verified": false,
+    "verified_embodied_persistent_mission_closures": 0
+  },
+  "mission_id": "greg-proof:1d284372-c950-4dae-8e1a-5a27cf3a19b0",
+  "next_reconsideration": null,
+  "next_step": "Review evidence and unresolved gates; any mission or authority change uses its canonical owner.",
+  "result": {
+    "compatible": true,
+    "rows": [
+      {
+        "blob": "79b88d15ce352ae97e25964446d406b92c839bb3",
+        "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+        "file": "pyproject.toml",
+        "matches": true,
+        "pins": [
+          [
+            "4999acff1a69502c05af455fbccfca380cad18ee"
+          ]
+        ],
+        "role": "dale"
+      },
+      {
+        "blob": "97de7a4bebd8179979478b8509fcab117f17ebbb",
+        "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+        "file": "requirements.txt",
+        "matches": true,
+        "pins": [
+          [
+            "4999acff1a69502c05af455fbccfca380cad18ee"
+          ]
+        ],
+        "role": "dale"
+      },
+      {
+        "blob": "f89429bd840c0ce496b0022c4942fb37eb22be6b",
+        "commit": "b2f101a98d01d31e594018bc71b9d8d16e64d797",
+        "file": "pyproject.toml",
+        "matches": true,
+        "role": "kernel",
+        "version": "0.1.2"
+      },
+      {
+        "blob": "9a7f9743a023b7cc1f3492e2764cf420aeea0904",
+        "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+        "file": "pyproject.toml",
+        "matches": true,
+        "pins": [
+          [
+            "4999acff1a69502c05af455fbccfca380cad18ee"
+          ]
+        ],
+        "role": "wmi"
+      },
+      {
+        "blob": "65ac54b19b76e675d94d588df927fe819a8010af",
+        "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+        "file": "requirements.txt",
+        "matches": true,
+        "pins": [
+          [
+            "4999acff1a69502c05af455fbccfca380cad18ee"
+          ]
+        ],
+        "role": "wmi"
+      }
+    ],
+    "source_scope": "cached local Git snapshots"
+  },
+  "review_notes": [],
+  "schema_version": 1,
+  "status": "RETAINED_AUDIT_COMPLETE",
+  "why": "Retained fixed mission: audit the three approved cached repository snapshots.",
+  "workflow_history": [
+    {
+      "note": "execute_enter",
+      "ref": "sha256:92a54c18d245649862b4c3ba322b33226d31573f5191253b569e97a99845d534",
+      "status": "running"
+    },
+    {
+      "note": "step_started:audit",
+      "ref": "sha256:b34a8f5416aa6fb6bccba60c2fbc9eb6e50f992d2ebf4d34ee5c8a7ccca2d76e",
+      "status": "running"
+    },
+    {
+      "note": "resumed",
+      "ref": "sha256:237c0c8c57f1ff98431106d56e28eb681c3789f370559373602fab6928853ec7",
+      "status": "running"
+    },
+    {
+      "note": "execute_enter",
+      "ref": "sha256:28b9cbc440a393c3f96cb3625883402d5ed9db4aefd9cf836473ef362936fd59",
+      "status": "running"
+    },
+    {
+      "note": "step_started:audit",
+      "ref": "sha256:955ce973b752a7c18cad58f4801e37838828e95d26a938c78770e304a334ab4a",
+      "status": "running"
+    },
+    {
+      "note": "step_completed:audit",
+      "ref": "sha256:510f72c6f178d41f5d2392c76aada4690bfa07c1fad0c7bfdbcb1af1d33242f2",
+      "status": "running"
+    },
+    {
+      "note": "step_started:appraise",
+      "ref": "sha256:e78bef635ef62b7bd7f9fa7e593bca7e2ae04c75b462e6066eb3677c109777b5",
+      "status": "running"
+    },
+    {
+      "note": "step_completed:appraise",
+      "ref": "sha256:f84f5c8ded37da1665faaa2a5728c2bb0810902e2f665e7313d48af7b58b3560",
+      "status": "running"
+    },
+    {
+      "note": "completed",
+      "ref": "sha256:1be1fffc2833b0ef303fa7218b1b26d44fd4fad102725b24522656e50c9cff20",
+      "status": "completed"
+    }
+  ]
+}

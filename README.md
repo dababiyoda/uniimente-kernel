@@ -1,3 +1,7 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
+> **Agent entry:** before material work, read [AGENTS.md](AGENTS.md), [Project Cognition SOP](docs/PROJECT_COGNITION_SOP.md), and [Project Source Census](docs/PROJECT_SOURCE_CENSUS_2026-09-26.md). The source census currently records 93 Project-backed sources and the SOP defines how to reconstruct founder intent without mistaking historical experiments for current product architecture.
+
 # UNIIMENTE Kernel
 
 A constitutionally governed runtime for AI agents, ventures, media properties, workflows, evidence, and capital.
@@ -69,6 +73,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
+| `/greg` | GREG body: persistent founder-sovereign operating layer (signed founder commands, Infinite Goal Chase missions, Capability Genesis, morning tribunal, supervisor configs); composes the Gate, owns no policy |
 | `/developmental` | biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
 | `/omnimorph` | optional temporary-organization/capability-composition mechanism; subordinate to Capability Genesis |
 | `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records |

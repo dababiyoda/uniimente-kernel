@@ -172,7 +172,14 @@ class StandingCognitionRuntime:
             elif record_type == self.SUSPEND_RECORD:
                 self._suspended = True
             elif record_type == self.RESUME_RECORD:
-                self._suspended = False
+                # Legacy bare-hash resumes remain history, never authority.
+                receipt = self.ledger.find(payload.get("authorization_hash"))
+                stops = [r for r in records[:record.seq] if r.record_type == self.SUSPEND_RECORD]
+                if (receipt is not None and receipt.record_type == "receipt" and receipt.seq < record.seq
+                        and stops and payload.get("suspension") == stops[-1].hash
+                        and receipt.payload.get("result", {}).get("suspension") == stops[-1].hash
+                        and receipt.payload.get("result", {}).get("source") == self.source):
+                    self._suspended = False
 
     def ingest(self, signal: SignalEnvelope) -> str:
         if not isinstance(signal, SignalEnvelope):
@@ -286,14 +293,20 @@ class StandingCognitionRuntime:
                 attention_telemetry=attention_telemetry,
             )
 
-        for proposer_name in sorted(self.proposers):
+        proposers = dict(self.proposers)
+        if "institutional_leverage" in clean_context:
+            from .leverage import PROPOSER_NAME, propose_institutional_leverage
+
+            proposers.setdefault(PROPOSER_NAME, propose_institutional_leverage)
+
+        for proposer_name in sorted(proposers):
             component = f"proposer:{proposer_name}"
             try:
                 resources.consume_call(
                     component=component,
                     estimated_cost_usd=self._call_cost(clean_costs, component),
                 )
-                produced = self.proposers[proposer_name](
+                produced = proposers[proposer_name](
                     self._copy_signals(signals),
                     canonical_copy(clean_context),
                 )
@@ -493,18 +506,37 @@ class StandingCognitionRuntime:
         self._suspended = True
         return record.hash
 
-    def resume(self, *, actor: str, authorization_hash: str) -> str:
-        """Resume only from an externally issued, hash-bound authorization."""
+    def resume_proposal(self, actor):
+        from policy.engine import Proposal
+        suspension = self.ledger.by_type(self.SUSPEND_RECORD)[-1].hash
+        return Proposal(actor=require_text("actor", actor), legal_principal="alfonso_lopez",
+            action_class="cognition.resume", objective=suspension,
+            payload={"suspension": suspension, "source": self.source}, target=self.source,
+            consequence_class="internal_write", evidence_confidence=1.0,
+            evidence_refs=[suspension], estimated_cost_usd=0.0, requested_capability="cognition.resume",
+            expected_outcome="resume exact suspension", proposal_id="resume:" + suspension)
+
+    def resume(self, *, actor: str, authorization_hash: str = "", gate=None, grant=None) -> str:
+        """Consume canonical exact-suspension authority; a hash is not permission.
+
+        The trusted caller supplies the Gate and its pre-existing grant. This
+        does not authenticate the human behind a workload, or issue authority.
+        """
+        from policy.consequence_gate import ConsequenceGate
         if not self._suspended:
             raise ContractError("runtime is not suspended")
-        record = self.ledger.append(
-            self.RESUME_RECORD,
-            {
-                "source": self.source,
-                "actor": require_text("actor", actor),
-                "authorization_hash": require_hash("authorization_hash", authorization_hash),
-            },
-        )
+        if not isinstance(gate, ConsequenceGate) or gate.ledger is not self.ledger or grant is None:
+            raise ContractError("canonical Gate and pre-existing resume grant required; hash is not authority")
+        p = self.resume_proposal(actor)
+        action = gate.run(p, standing_grant=grant, executor=lambda _: {
+            "observed_outcome": p.expected_outcome, "result_class": "positive",
+            "suspension": p.payload["suspension"], "source": self.source})
+        if action.state != "recorded":
+            raise ContractError("resume refused: " + "; ".join(action.refusal_reasons))
+        record = self.ledger.append(self.RESUME_RECORD, {
+            "source": self.source, "actor": actor, "authorization_hash": action.receipt_hash,
+            "suspension": p.payload["suspension"],
+            "authentication": "Kernel workload grant; not founder authentication"})
         self._suspended = False
         return record.hash
 

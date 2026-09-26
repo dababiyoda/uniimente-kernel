@@ -1,0 +1,407 @@
+{
+  "INSPECTED_SCOPE": "Seven requested repositories; exact commits and draft lineages in ../goal-chase-v0-inspection.json. Relevant source and governance inspected; other six organ suites not run because no organ code changed.",
+  "REPOSITORY_TRUTH": "Kernel main bcbb1ab is baseline. #70/#71/#87 and #88/#90/#92 remain candidate lineages, not canonical runtime owners. first-goal-chase-runtime branch contains four doctrine files, no runtime implementation. Two named external documents not found in connected file search; quotations retained as user-provided intent.",
+  "FOUNDER_INTENT_ADVANCED": "INTENT-IGC-2026-09-05: first goal is the Infinite Goal Chase foundation toward far-future sci-fi capabilities. Generation 1 sandbox proof plus explicit deferred horizon, without shrinking ambition or expanding authority.",
+  "ARCHITECTURAL_OWNER": "Kernel egregore composition; canonical EventSpine/EvidenceLedger, DurableWorkflow, ConsequenceGate and existing registries retain ownership.",
+  "FILES_CHANGED": [
+    "contracts/goal-chase.schema.json",
+    "egregore/goal_chase.py",
+    "egregore/goal_chase_sandbox.py",
+    "egregore/goal_chase_demo.py",
+    "egregore/goal_chase_evaluator.py",
+    "egregore/goal_chase_spec.json",
+    "tests/fixtures/goal_chase_v0_seal.json",
+    "tests/integration/test_goal_chase.py",
+    "tests/unit/test_goal_chase_contracts.py",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/GOAL-CHASE-V0.md",
+    "docs/collaboration/goal-chase-v0-inspection.json",
+    "docs/collaboration/deliberation-goal-chase-v0.json",
+    "docs/collaboration/goal-chase-v0-evidence/*",
+    "verifier/runs/v2-2026-09-05T09-51-24.091510+00-00.json"
+  ],
+  "COMPONENTS_REUSED": [
+    "EventSpine",
+    "EvidenceLedger",
+    "DurableWorkflow/resume_workflow",
+    "ConsequenceGate/PolicyEngine",
+    "GrantIssuer",
+    "BudgetOffice",
+    "PassportRegistry",
+    "GenomeRegistry",
+    "CausalMemory"
+  ],
+  "NEW_COMPONENTS_CREATED": [
+    "GoalChase deterministic projection/composition",
+    "scoped synthetic founder inbox",
+    "simulated CommunicationRouter",
+    "goal/message/decision contract",
+    "two trusted sandbox functions and frozen evaluator",
+    "CLI founder demo"
+  ],
+  "WHY_NEW_COMPONENTS_WERE_NECESSARY": "Canonical main had no complete founder-facing goal/escalation/resume closure. New pieces compose the existing institution; runtime draft convergence remains explicit and unresolved.",
+  "TESTS_RUN": [
+    {
+      "command": "python -m pytest -q (canonical base)",
+      "result": "495 passed in 10.16s",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m pytest -q (initial environment)",
+      "result": "No module named pytest; declared requirements-dev.txt installed",
+      "status": "ENVIRONMENT_FAILURE_PRESERVED"
+    },
+    {
+      "command": "new integration suite, first attempt",
+      "result": "55 passed, 1 failed: test corruption fixture used incorrect payload nesting; corrected test setup; evaluator unchanged",
+      "status": "FAILED_ATTEMPT_PRESERVED"
+    },
+    {
+      "command": "new integration suite after test fixture correction",
+      "result": "56 passed in 4.66s",
+      "status": "PASS"
+    },
+    {
+      "command": "new integration + contract suites",
+      "result": "74 passed in 5.71s",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m pytest -q --junitxml=../goal-chase-final-suite.xml",
+      "result": "569 passed in 7.31s; 0 failed, 0 skipped",
+      "status": "PASS"
+    },
+    {
+      "command": "python verifier/v2/verify.py",
+      "result": "V1-V5 passed; 492 unit tests; 45/45 artifacts; false closure negative control passed. Ran before final horizon wording/projection addition; final full suite covers addition.",
+      "status": "PASS"
+    },
+    {
+      "command": "python scripts/ci/check_schema_refs.py",
+      "result": "14 schemas, 20 local references resolve",
+      "status": "PASS"
+    },
+    {
+      "command": "python scripts/ci/check_authority_singleton.py",
+      "result": "one owner each for constitution, gate, matrix, principals, organ/agent registries",
+      "status": "PASS"
+    },
+    {
+      "command": "python scripts/ci/check_sealed_developmental.py",
+      "result": "declarations intact; not a production-security proof",
+      "status": "PASS"
+    },
+    {
+      "command": "skill validate_deliberation.py docs/collaboration/deliberation-goal-chase-v0.json",
+      "result": "VALID: five-role review, exactly two strengthening passes",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m egregore.goal_chase_demo LEDGER --phase begin|inspect|approve --output JSON (three fresh processes; inspect/approve require pre-exit snapshot hash)",
+      "result": "Exact snapshot and ledger-head reconstruction; bounded approval resumes once; one sandbox goal achieved",
+      "status": "PASS"
+    },
+    {
+      "command": "finalize_goal_chase_evidence.py",
+      "result": "23 gates map to passing tests; saved trace causal ancestry and witness/receipt/outcome joins verified; 2 unique dispatches, zero duplicates",
+      "status": "PASS"
+    }
+  ],
+  "TEST_RESULTS": {
+    "baseline_passed": 495,
+    "final_passed": 569,
+    "new_passed": 74,
+    "failures": 0,
+    "skips": 0,
+    "acceptance_gates": 23
+  },
+  "NEGATIVE_CONTROLS": {
+    "required_cases": [
+      "forged_approval",
+      "expired_approval",
+      "different_goal_approval",
+      "widened_budget",
+      "duplicate_approval",
+      "duplicate_task_event",
+      "replayed_message",
+      "model_output_as_evidence",
+      "model_recommendation_as_authority",
+      "claimed_missing_capability",
+      "capability_without_authority",
+      "authority_without_capability",
+      "stale_observation",
+      "conflicting_intent",
+      "superseded_goal",
+      "crash_mid_transition",
+      "tampered_history",
+      "escalation_spam",
+      "quiet_state",
+      "evaluator_leakage",
+      "self_expansion",
+      "external_channel",
+      "adapter_unavailable",
+      "model_unavailable"
+    ],
+    "result": "PASS in sandbox scope; parameterized test cases in JUnit",
+    "preserved_failure": "First corruption-test fixture setup failed before exercising runtime; original output retained."
+  },
+  "REPLAY_RESULT": "PASS: separate processes reconstruct identical pending state/head; abrupt os._exit(73) at pending and after complete receipt recovers; ambiguous dispatch-start crash blocks without repeat.",
+  "SIMULATED_GOAL_CHASE_RESULT": "GOAL-001: synthetic capability-route research -> one bounded founder request -> restart -> exact approval -> simulated prototype -> reconciliation -> ACHIEVED; next portfolio trigger preserves other goals.",
+  "FOUNDER_ESCALATION_RESULT": "One necessary synthetic approval request, no reserved dispatch before approval, duplicate delivery/approval suppressed, denial persists across restart/new facts.",
+  "CAPABILITY_DEFICIT_RESULT": "GOAL-002 blocked with durable NEEDED deficit, developmental/research proposal boundary and no execution authority; no founder interruption or capability success invented.",
+  "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+  "DUPLICATE_CONSEQUENCES": 0,
+  "UNTRACEABLE_TRANSITIONS": 0,
+  "VERIFIED_PERSISTENT_GOAL_CHASE_CLOSURES": {
+    "before": 0,
+    "after": 1,
+    "scope": "SIMULATED / SANDBOX only; all 23 gates plus saved fresh-process proof"
+  },
+  "FOUNDER_INTERVENTION_METRICS": {
+    "reality_status": "SIMULATED",
+    "founder_interruptions": 1,
+    "decision_requests": 1,
+    "duplicate_suppressed": 1,
+    "sandbox_intervention_minutes": 2.0,
+    "sandbox_verified_outcomes": 1,
+    "sandbox_intervention_minutes_per_verified_outcome": 2.0,
+    "founder_intervention_minutes_per_verified_outcome": null,
+    "real_verified_outcomes": 0,
+    "unauthorized_external_effects": 0,
+    "time_waiting_on_founder_seconds": 300.0,
+    "time_to_resume_after_decision_seconds": [
+      0
+    ],
+    "work_started_under_standing_authority_fraction": 0.5,
+    "avoidable_escalations": null,
+    "unreconciled_actions": 0,
+    "persistent_closure_requires": "all acceptance gates plus separate fresh-process proof"
+  },
+  "KNOWN": [
+    "569 tests pass locally",
+    "One saved sandbox closure with complete causal joins",
+    "Existing authority/event/workflow owners reused"
+  ],
+  "INFERRED": [
+    "This composition is a plausible first institutional brick; no demonstrated superiority to ordinary deterministic software or reduction in actual founder effort"
+  ],
+  "UNCERTAIN": [
+    "Which competing runtime lineage founder will ratify",
+    "Production identity, key custody, distributed durability and external reconciliation",
+    "Real-world competence and later-generation feasibility"
+  ],
+  "IMPLEMENTED": [
+    "Deterministic persistent sandbox loop and founder CLI",
+    "Conjunctive proof, hostile tests, evidence retention",
+    "Durable rejection, capability deficit and no-action paths"
+  ],
+  "SIMULATED": [
+    "Founder identity/approval",
+    "Source records and capability candidates",
+    "Budget and prototype consequence",
+    "Two intervention minutes and outcome count"
+  ],
+  "PROPOSED": [
+    "Connect founder application/inbox to ratified runtime owner",
+    "Governed capability qualification and stronger reconciliation before external adapters"
+  ],
+  "BLOCKED": [
+    "Real external channels and effects disabled",
+    "Generated candidate execution absent",
+    "Continuous background service, real founder authentication and far-future capabilities not implemented"
+  ],
+  "STRONGEST_COUNTEREVIDENCE": "Trusted-process sandbox with public synthetic signing and built-in functions proves mechanics, not production security, real-world efficacy, 24/7 service or autonomous invention. Runtime draft competition is not resolved.",
+  "RESIDUAL_RISKS": [
+    "Local file locking only, no distributed exactly-once guarantee",
+    "Hash chain cannot stop privileged full-history rehash/rollback",
+    "No OS isolation of arbitrary candidate code; no such code accepted",
+    "Fixed action sequence within a goal and basic deterministic portfolio selector",
+    "No actual founder-attention measurements"
+  ],
+  "ROLLBACK": "Close draft or revert additive branch commits while preserving evidence. No production activation/migration occurred.",
+  "KILL_CRITERIA": [
+    "Unauthorized effect",
+    "Repeated dispatch",
+    "Forged/widened approval acceptance",
+    "Lost denial/negative evidence",
+    "False closure or evaluator modification",
+    "Parallel authority/event/task truth"
+  ],
+  "NEXT_NAMED_BOTTLENECK": "Independent review and founder-facing application/inbox integration with the founder-ratified runtime owner; preserve deferred far-future horizon and capability-deficit path.",
+  "FINAL_DECISION": "EXPERIMENT",
+  "acceptance_evidence": {
+    "durable_founder_goal": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "restart_reconstruction": {
+      "status": "PASS",
+      "test": "test_fresh_process_pending_boundary_exact_replay_and_closure",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "discrepancy_identified": {
+      "status": "PASS",
+      "test": "test_path_a_internal_work_closes_without_founder",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "explicit_bottleneck": {
+      "status": "PASS",
+      "test": "test_path_a_internal_work_closes_without_founder",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "selected_action": {
+      "status": "PASS",
+      "test": "test_path_a_internal_work_closes_without_founder",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "capability_or_deficit": {
+      "status": "PASS",
+      "test": "test_path_c_capability_deficit_is_durable_and_not_an_escalation",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "independent_authority_resolution": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "uninterrupted_internal_work": {
+      "status": "PASS",
+      "test": "test_path_a_internal_work_closes_without_founder",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "exactly_one_reserved_escalation": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "no_execution_before_approval": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "authenticated_synthetic_approval_resumes": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "enforceable_rejection": {
+      "status": "PASS",
+      "test": "test_rejection_survives_restart_new_facts_and_repeated_ticks",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "duplicate_approval_no_duplicate_action": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "quiet_no_action": {
+      "status": "PASS",
+      "test": "test_path_d_quiet_wait_emits_no_message_or_task",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "outcome_reconciliation": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "outcome_updates_goal": {
+      "status": "PASS",
+      "test": "test_path_b_persistent_boundary_approval_resume_and_duplicate",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "complete_causal_lineage": {
+      "status": "PASS",
+      "test": "test_fresh_process_pending_boundary_exact_replay_and_closure",
+      "scope": "sandbox",
+      "additional_evidence": "saved trace and ownership inspection"
+    },
+    "negative_evidence_preserved": {
+      "status": "PASS",
+      "test": "test_path_a_internal_work_closes_without_founder",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "crash_replay": {
+      "status": "PASS",
+      "test": "test_real_abrupt_process_exit_at_transition",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "zero_unauthorized_effects": {
+      "status": "PASS",
+      "test": "test_external_channels_never_construct_or_call",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    },
+    "single_authority_owner": {
+      "status": "PASS",
+      "test": "test_capability_does_not_create_sovereignty",
+      "scope": "sandbox",
+      "additional_evidence": "saved trace and ownership inspection"
+    },
+    "single_event_and_task_truth": {
+      "status": "PASS",
+      "test": "test_fresh_process_pending_boundary_exact_replay_and_closure",
+      "scope": "sandbox",
+      "additional_evidence": "saved trace and ownership inspection"
+    },
+    "documented_test_baseline": {
+      "status": "PASS",
+      "test": "test_fresh_process_pending_boundary_exact_replay_and_closure",
+      "scope": "sandbox",
+      "additional_evidence": "final JUnit"
+    }
+  },
+  "environment": {
+    "python": "3.12.13 (main, Aug  7 2026, 02:25:39) [Clang 22.1.3 ]",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.39",
+    "dependencies": {
+      "pytest": "9.1.1",
+      "jsonschema": "4.26.0",
+      "pyyaml": "6.0.3"
+    },
+    "note": "Runtime environment after conversation continuation again lacked pytest; declared requirements installed and full suite rerun. No dependency manifests changed."
+  },
+  "freeze": {
+    "local_commit": "8780bb785e97b79996e56e6e7bd9761da7ecba8e",
+    "remote_commit": "cf9efe7188bbf0bd4127bb1c29bb5f968ee53527",
+    "identical_tree": "bc0a5f6676c0d0609cf0ff0b8e8e4903a7f007a6",
+    "evaluator_and_spec_unchanged": true
+  },
+  "evidence_sha256": {
+    "approve.json": "e4ac54c24c3943aac3449e078fb7ebe1be8a0e7c398dd831c273ab6ecf571739",
+    "approve.txt": "e0f6537f315bdcd12f526ac967d2627f53dad6c09e5d5c9e3d62e54e96f97de4",
+    "baseline-pytest-installed.log": "16555b793cc77b2e20f8a6ddf16d36628f7debc4af791ad0c0a187fa891dfbee",
+    "baseline-pytest.log": "51f5550d86043279227c92b72199d4ee1f66d30623405f70c98442058ffe76c7",
+    "begin.json": "224bb36e6f874532d80c12999aed0d6eff5c11d367658e75bf9363d5d8a0d5b1",
+    "begin.txt": "897beb8012bb69ea7ffb6ad885f6ff890d9a004a14817f3065189ba5e456a71d",
+    "goal-chase-final-suite.log": "2cb34ec75c53fc03605c9502c59ca86dae168455c377a0311808123bd583f8d3",
+    "goal-chase-final-suite.xml": "6c1c788634199bad0be12f8a8f6950582dcbaaee6c9dcba132be87dd9c8bb6e6",
+    "goal-chase-first-tests.log": "c3e0aba44e072700962aa66b3a879b98799e9d9d222ab59110e3fab61b0da651",
+    "goal-chase-full-suite.log": "57d40b2c1c662e8204d3ec0814786db98dd3ea9e0fe4774cdf18541abdad69ab",
+    "goal-chase-sealed.log": "c6f5311fc4ae782a4051fa2a38b05044996e015a41f3d3acc2f0e92e94e5a2f1",
+    "goal-chase-second-tests.log": "f9a4a88210e63806bbca2433fe1dd7210dbba76dab3678fe9c8588fbb6c2037c",
+    "goal-chase-tests.log": "1c021acf7e23675f8dcfcb727be8ce800a740fc6f6ea1874c6c04f8a73e16d91",
+    "goal-chase-verifier.log": "134a55947cc4a3216d5acf24fbcb21d6035a1a73ccf5e0f67535ff2efc10c265",
+    "inspect.json": "224bb36e6f874532d80c12999aed0d6eff5c11d367658e75bf9363d5d8a0d5b1",
+    "inspect.txt": "c6d0f2734cf052d39a147e839262e2b70f9fe774fac1541e9a895cbf6ab25b59",
+    "sandbox.jsonl": "33d7b8917d02b855cc13cee8de2e04e8e78965f915f60da72c0cec549f80868a"
+  }
+}

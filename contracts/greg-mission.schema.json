@@ -312,6 +312,11 @@
           "minimum": 1,
           "maximum": 5
         },
+        "served_model": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Model the provider reported actually serving the answer; may differ from the route's requested model."
+        },
         "routes_tried": {
           "type": "array",
           "maxItems": 10,
@@ -335,6 +340,11 @@
                   "skipped",
                   "refused"
                 ]
+              },
+              "class": {
+                "type": "string",
+                "maxLength": 60,
+                "description": "greg.models failure class (transient, auth, capability_unavailable, invalid_request, bad_output, safety_refusal, provider_policy_refusal, unknown)."
               },
               "why": {
                 "type": "string",

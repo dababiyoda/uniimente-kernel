@@ -1,3 +1,5 @@
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+
 # UNIIMENTE pull request
 
 > Material PRs must follow `docs/PROJECT_COGNITION_SOP.md`. Do not claim complete project context unless it was actually accessible and inspected.

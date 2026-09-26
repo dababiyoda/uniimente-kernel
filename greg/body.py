@@ -154,8 +154,20 @@ class Body:
             self.registry.register(manifest, adapter, state="ATTACHED")
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
+        if self.builder is not None and not hasattr(self.builder, "build"):
+            try:   # factory: needs this body's credentials. A missing route degrades; it never crash-loops.
+                self.builder = self.builder(self.secrets, self.config)
+            except Exception as exc:
+                why = f"{type(exc).__name__}: {exc}"[:300]
+                self.builder = None
+                self.journal.record("genesis.builder", {"available": False, "why": why}, key=["unavailable", why])
+        router = getattr(self.builder, "router", None)
+        if router is not None and hasattr(router, "observe"):
+            for event in self.journal.replay("model.route"):          # route health survives restarts
+                router.observe(event.payload)
+            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
-                               builder=self.builder)
+                               builder=self.builder, read_roots=self.config["read_roots"])
         self.genesis.restore()
         self.engine = MissionEngine(journal=self.journal, office=self.office, registry=self.registry,
                                     secrets=self.secrets, workspace_root=self.layout.workspace,

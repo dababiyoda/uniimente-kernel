@@ -25,10 +25,9 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 
-from greg import templates
+from greg import models, templates
 from greg.missions import MissionError, validate_mission
 
 PLANNER = "greg.planner/1"
@@ -271,55 +270,36 @@ def vet(draft: dict, text: str, ctx: PlannerContext, *, origin: str, extra: dict
                      + clamped, extra=extra)
 
 
-class AnthropicTransport:
-    """Claude through the official Anthropic SDK (optional dependency: ``pip install anthropic``).
-
-    The key comes only from the declared ``anthropic_api_key`` handle and the base URL is
-    pinned, so an ambient ANTHROPIC_* environment cannot redirect or re-credential GREG.
-    """
-
-    def __init__(self, api_key: str, *, model: str = "claude-opus-5", client=None):
-        self.model, self.name = model, f"anthropic:{model}"
-        if client is None:
-            import anthropic
-            client = anthropic.Anthropic(api_key=api_key, base_url="https://api.anthropic.com", max_retries=2)
-        self.client = client
+class _TextTransport:
+    """Compatibility shim: the pre-router transports returned plain text and raised MissionError."""
 
     def complete(self, system: str, user: str) -> str:
-        response = self.client.beta.messages.create(
-            model=self.model, max_tokens=16000, system=system,
-            messages=[{"role": "user", "content": user}],
-            thinking={"type": "adaptive"}, output_config={"effort": "high"},
-            betas=["server-side-fallback-2026-07-01"], fallbacks="default")
-        if response.stop_reason == "refusal":
-            category = getattr(getattr(response, "stop_details", None), "category", None)
-            raise MissionError(f"model declined to plan (refusal: {category})")
-        return "".join(block.text for block in response.content if block.type == "text")
+        try:
+            return super().complete(system, user)["text"]
+        except models.RouteError as exc:
+            raise MissionError(str(exc)) from exc
 
 
-class ClaudeCodeTransport:
-    """The founder's installed Claude Code CLI, headless, with every tool disabled and a spend cap."""
+class AnthropicTransport(_TextTransport, models.AnthropicRoute):
+    """Claude through the official Anthropic SDK; now a single route of ``greg.models``."""
 
-    def __init__(self, binary: str | None = None, *, model: str | None = None, max_budget_usd: float = 0.50,
-                 timeout: int = 300, runner=subprocess.run):
-        self.binary = binary or shutil.which("claude")
-        if not self.binary:
-            raise MissionError("Claude Code CLI is not installed")
-        self.model, self.max_budget_usd, self.timeout, self.runner = model, max_budget_usd, timeout, runner
-        self.name = "claude-code" + (f":{model}" if model else "")
 
-    def complete(self, system: str, user: str) -> str:
-        argv = [self.binary, "-p", "--output-format", "json", "--tools", "", "--no-session-persistence",
-                "--strict-mcp-config", "--max-budget-usd", f"{self.max_budget_usd:.2f}", "--system-prompt", system]
-        if self.model:
-            argv += ["--model", self.model]
-        proc = self.runner(argv, input=user, capture_output=True, text=True, timeout=self.timeout)
-        if proc.returncode:
-            raise MissionError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
-        result = json.loads(proc.stdout)
-        if result.get("is_error"):
-            raise MissionError(f"Claude Code reported an error: {str(result.get('result'))[:300]}")
-        return str(result.get("result", ""))
+class ClaudeCodeTransport(_TextTransport, models.ClaudeCodeRoute):
+    """The installed Claude Code CLI, headless; now a single route of ``greg.models``."""
+
+    def __init__(self, *args, **kwargs):
+        try:
+            super().__init__(*args, **kwargs)
+        except models.RouteError as exc:
+            raise MissionError(str(exc)) from exc
+
+
+def _complete(transport, system: str, user: str) -> tuple[str, str, list]:
+    """Text, true author, and routes tried, for a plain transport or a ModelRouter."""
+    result = transport.complete(system, user)
+    if isinstance(result, dict):
+        return result["text"], result["route"], result.get("tried", [])
+    return result, transport.name, []
 
 
 def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int = 1) -> dict:
@@ -328,13 +308,19 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     origin = f"model:{transport.name}"
     attempts = []
     for round_number in range(repair_rounds + 1):
-        extra = {"model": transport.name, "rounds": round_number + 1,
-                 "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
         try:
-            draft = _first_json_object(transport.complete(SYSTEM, prompt))
-        except (MissionError, subprocess.TimeoutExpired, OSError, ValueError) as exc:
+            reply, author, tried = _complete(transport, SYSTEM, prompt)
+            draft = _first_json_object(reply)
+        except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
+            return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "attempts": attempts}
+        except (MissionError, models.RouteError, subprocess.TimeoutExpired, OSError, ValueError) as exc:
             return {"status": "FAILED", "origin": origin, "why": f"{type(exc).__name__}: {exc}"[:400],
                     "attempts": attempts}
+        origin = f"model:{author}"   # the route that actually wrote this draft
+        extra = {"model": author, "rounds": round_number + 1,
+                 "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
+        if tried:
+            extra["routes_tried"] = tried
         result = vet(draft, text, ctx, origin=origin, extra=extra)
         if result["status"] != "REJECTED" or round_number == repair_rounds:
             if attempts:
@@ -363,18 +349,10 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
     return model_route(text, ctx, transport)
 
 
-def default_transport(secrets=None):
-    """The model route available on this body, if any: an API key first, then the local CLI."""
-    if secrets is not None:
-        try:
-            key = secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",))
-            return AnthropicTransport(key)
-        except Exception:
-            pass
-    try:
-        return ClaudeCodeTransport()
-    except MissionError:
-        return None
+def default_transport(secrets=None, *, config: dict | None = None):
+    """Every model route this body can reach behind one router, or None when there is none."""
+    routes, _ = models.available_routes(secrets, config=config)
+    return models.ModelRouter(routes) if routes else None
 
 
 CONSEQUENCE_WORDS = {"read_only": "read", "internal_write": "write a file on this computer",

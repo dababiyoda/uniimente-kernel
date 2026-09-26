@@ -693,6 +693,34 @@
    "extracted_mechanism": "plain words -> vetted, clamped proposal -> founder signature -> inbox; UI never a second Kernel",
    "disposition": "RETAIN_CANONICAL",
    "reality": "INTEGRATED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/models.py (from greg/planner.py AnthropicTransport + ClaudeCodeTransport)",
+   "bucket": "A",
+   "super_nodes": [
+    "routing",
+    "reliability",
+    "capability_formation"
+   ],
+   "evidence": "tests/unit/test_greg_models.py: failover, refusal not shopped, bounded spend, demotion/cooldown, health replayed after restart",
+   "extracted_mechanism": "one complete() over Anthropic API, OpenAI Responses API and Claude Code; true author recorded; refusal terminal",
+   "disposition": "RECOMBINE",
+   "reality": "TESTED"
+  },
+  {
+   "repo": "uniimente-kernel",
+   "path": "greg/genesis.py repair() + greg/missions.py _self_repair",
+   "bucket": "A",
+   "super_nodes": [
+    "reliability",
+    "capability_formation",
+    "proof"
+   ],
+   "evidence": "tests/unit/test_greg_self_repair.py; tests/evidence/greg-product/self-repair-summary.json",
+   "extracted_mechanism": "per-incident deficit generations (fixes EventError crash loop); quarantine with evidence; rebuild must pass frozen oracle and live-input replay; one signed budget across generations",
+   "disposition": "PRODUCTIZE",
+   "reality": "TESTED"
   }
  ],
  "revised": "2026-09-26: reconciliation of PRs #112, #70 and DALEOBANKS #79; phone and browser capabilities"

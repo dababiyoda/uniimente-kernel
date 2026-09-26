@@ -67,8 +67,54 @@ delivered brief differs from the render of its receipted inputs yet is VERIFIED.
 1. A signature proves key possession, not presence (unchanged from #113).
 2. REBOOT-VERIFIED is not claimed: power loss was simulated by a torn write under SIGSTOP/SIGKILL.
 3. The template planner is narrow; broad requests need a model route, which needs an API key or Claude Code on the Mac.
-4. Phone access is not built. The console is loopback-only by design; a phone device key is the next seam.
+4. ~~Phone access is not built.~~ Superseded: the base branch added the phone channel (device keys delegated by the founder key, `greg serve`); exercised in Chromium with an iPhone profile, not iOS Safari.
 
 ## Kill criteria
 
 Any falsifier above observed; any built or planned artifact executing with authority it was not signed; VEPMC still 0 after Alfonso runs `greg/FIRST_MISSION.md` on the Mac (then the defect is in the product path, not the doctrine).
+
+## Pass 2 of this PR — self-repair and provider-independent models (founder steering on #114, 2026-09-26)
+
+Controlling source: `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` ("BUILD THE MACHINE ALFONSO ACTUALLY MEANS.",
+"Do not return with another cathedral.") and the founder's #114 comment naming the next deltas: "missing-function
+detector -> Genesis self-repair; provider-independent OpenAI/Anthropic model router; coding-agent builder with frozen
+tests and bounded authority".
+
+### Context Reconstruction Packet
+- **Inspected:** the founder's four #114 comments; `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` and its verbatim source;
+  `PROJECT_COGNITION_SOP.md`; the source census (as an index; the 93 raw Project files are not in the repository);
+  `.github/PULL_REQUEST_TEMPLATE.md`; `greg/genesis.py`, `missions.py`, `authority.py`, `builders.py`, `planner.py`,
+  `service.py`, `body.py`; base commits `40d3bdc` and `25ab9b4` (#116).
+- **Unavailable:** the raw ChatGPT Project conversations; RailScout code (`dababiyoda/RAILSCOUT` is outside this
+  session's repository scope). The RailScout adapter seam is left to its own PR, as the founder's comment allows.
+- **Reproduced before fixing:** (1) a quarantined built capability made every later tick raise
+  `EventError: fact identity greg.deficit.opened reused with different content`, so a supervised body would have
+  crash-looped; (2) a built capability that raised on live input was only ever escalated to the founder; (3) a
+  repair's build could spend past the signed budget (checked once, then two attempts); (4) the installed service
+  (`launchd`/`systemd`/`supervisord`) always ran without a builder, so the persistent body could never build.
+- **Contradiction resolved:** "stop experimenting / stop simulating" vs. verification. Resolved per the intent record:
+  every change here is product code on the running path; tests are evidence around it.
+
+### Product delta
+GREG can now (a) notice that a capability it formed is broken in service and re-form it without asking, then keep
+holding the original mission's setpoint; (b) reach models from any vendor it has a key for, failing over on outages
+while never shopping a refusal; (c) build and repair from the installed background service.
+
+### Repository metabolism
+| Artifact | Disposition | Why |
+|---|---|---|
+| `planner.AnthropicTransport` / `planner.ClaudeCodeTransport` | RECOMBINE into `greg/models.py` routes; kept as compatibility shims | two hand-rolled transports duplicated vendor code; one router now serves planner and builder |
+| `genesis` deficit id = hash(mission, function) | EXTRACT (per-incident generations) | the invariant (one identity per deficit) was right; the scope (one per function forever) caused the crash loop |
+| PR #70 verified-deficit record | PRODUCTIZE (unchanged, now also on repair deficits) | the three-fact verification applies to a lost function as much as to a missing one |
+
+### Falsifiers
+Self-repair: a repaired capability that fails the frozen oracle or the live replay is attached; the builder sees the
+live input or held-out vectors; total build spend for a function exceeds its signed `build_budget_usd` by more than
+one route-bounded attempt; a repair escalates when the rebuild succeeds. Router: a refusal is followed by a call to
+another route; an unpriced route is called with money at stake; a draft or built capability names a route other
+than the one that produced it.
+
+### Evidence tier
+TESTED on the product path (real `Body`, real ledger and journal, built code in real isolated interpreters). The model
+SDKs are faked with their documented call shapes; no live key was used, and a live OpenAI or Anthropic API route
+awaits Alfonso's own credentials. VEPMC unchanged at 0.

@@ -50,6 +50,16 @@ def _drop(home: str, kind: str, body: dict, args) -> Path:
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
+def _model_builder(secrets, config):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+    from greg.builders import BuildError, ModelBuilder
+    from greg.models import ModelRouter, available_routes
+    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    if not routes:
+        raise BuildError(f"no model route is available: {unavailable}")
+    return ModelBuilder(ModelRouter(routes))
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="greg", description="GREG: persistent personal agentic operating layer")
     p.add_argument("--home", default=DEFAULT_HOME)
@@ -117,14 +127,18 @@ def main(argv=None) -> int:
     m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
     r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
     r.add_argument("--max-ticks", type=int)
-    r.add_argument("--builder", choices=["none", "claude-code"], default="none",
-                   help="Capability Genesis builder route (spends only a mission's signed build budget)")
+    r.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                   help="Capability Genesis builder: claude-code (local CLI) or models (every reachable route: "
+                        "Anthropic API, OpenAI API, Claude Code, with failover). Spends only a mission's signed "
+                        "build budget")
     r.add_argument("--clear-stop", action="store_true",
                    help="remove a previous local STOP file (a deliberate human restart)")
     sv = sub.add_parser("service"); svs = sv.add_subparsers(dest="service_cmd", required=True)
     si = svs.add_parser("install"); si.add_argument("--platform", required=True, choices=["macos", "linux", "supervisord"])
     si.add_argument("--target-dir")
     si.add_argument("--remote", action="store_true", help="the phone channel (greg serve) instead of the body")
+    si.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                    help="let the installed body build and repair capabilities (spends only signed build budgets)")
     args = p.parse_args(argv)
     home = args.home
 
@@ -200,7 +214,11 @@ def main(argv=None) -> int:
             from greg.capabilities import SecretBroker
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
-            transport = None if args.no_model else planner.default_transport(SecretBroker(Layout(home).secrets))
+            layout = Layout(home)
+            models_config = (json.loads(layout.config.read_text()).get("models")
+                             if layout.config.is_file() else None)
+            transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
+                                                                            config=models_config)
             server = serve(Console(home, key=key, transport=transport), port=args.port)
             print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
@@ -253,9 +271,11 @@ def main(argv=None) -> int:
             if args.builder == "claude-code":
                 from greg.builders import ClaudeCodeBuilder
                 builder = ClaudeCodeBuilder()
+            elif args.builder == "models":
+                builder = _model_builder
             return Body(home, builder=builder).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
         elif args.cmd == "service":
-            target = service.install(Path(home), args.platform, remote=args.remote,
+            target = service.install(Path(home), args.platform, remote=args.remote, builder=args.builder,
                                      target_dir=Path(args.target_dir) if args.target_dir else None)
             print(json.dumps({"written": str(target), "loaded": False,
                               "to_load": service.load_instructions(args.platform, target)}, indent=1))

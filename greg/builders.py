@@ -233,6 +233,37 @@ class ClaudeCodeBuilder:
                 "cost_usd": result.get("total_cost_usd")}
 
 
+BUILDER_SYSTEM = ("You write one small, pure Python function to an exact contract. You have no tools. "
+                  "Reply with only the module source in one fenced python block.")
+
+
+class ModelBuilder:
+    """A coding agent reached through ``greg.models.ModelRouter``: any vendor, same frozen contract.
+
+    Source only comes back; screening, the held-out oracle and the isolated runtime judge it
+    exactly as they judge the Claude Code builder. ``max_budget_usd`` is set by Genesis to what
+    remains of the founder-signed build budget, and every API route bounds its worst-case spend
+    to it (a route whose cost cannot be bounded is skipped). The identity names the true author.
+    """
+
+    def __init__(self, router, *, max_budget_usd: float = 1.00):
+        self.router, self.max_budget_usd = router, max_budget_usd
+        self.identity = "models"
+
+    def build(self, request: dict, feedback: list[str] | None = None) -> dict:
+        from greg.models import RouteError
+        prompt = build_prompt(request, feedback)
+        try:
+            result = self.router.complete(BUILDER_SYSTEM, prompt, budget_usd=self.max_budget_usd)
+        except RouteError as exc:
+            spent = (getattr(self.router, "last", None) or {}).get("cost_usd") or 0.0
+            raise BuildError(f"no model route produced a candidate: {exc}"[:300] + (f" (spent ${spent:.4f})"
+                                                                                  if spent else "")) from exc
+        return {"source": extract_source(result["text"]), "builder": "model:" + result["route"],
+                "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
+                "cost_usd": result.get("cost_usd"), "routes_tried": result.get("tried", [])}
+
+
 class StaticBuilder:
     """Deterministic builder for tests and for a human-supplied implementation."""
 

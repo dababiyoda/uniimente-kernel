@@ -21,17 +21,31 @@ LABEL = "ai.uniimente.greg.body"
 KERNEL_ROOT = Path(__file__).resolve().parents[1]
 
 
-def command(home: Path, python: str | None = None, tick_seconds: float = 30) -> list[str]:
-    return [python or sys.executable, "-m", "greg", "--home", str(home), "run", "--tick-seconds", str(tick_seconds)]
+BUILDERS = ("none", "claude-code", "models")
 
 
-def launchd_plist(home: Path, python: str | None = None) -> bytes:
+def command(home: Path, python: str | None = None, tick_seconds: float = 30, builder: str = "none") -> list[str]:
+    if builder not in BUILDERS:
+        raise ValueError(f"builder must be one of {BUILDERS}")
+    argv = [python or sys.executable, "-m", "greg", "--home", str(home), "run", "--tick-seconds", str(tick_seconds)]
+    return argv + (["--builder", builder] if builder != "none" else [])
+
+
+def _path_for_builder(builder: str) -> dict:
+    # launchd starts agents with a minimal PATH; a CLI builder route must still find `claude`.
+    if builder == "none":
+        return {}
+    return {"PATH": f"{Path.home() / '.local' / 'bin'}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
+
+
+def launchd_plist(home: Path, python: str | None = None, builder: str = "none") -> bytes:
     home = Path(home)
     return plistlib.dumps({
         "Label": LABEL,
-        "ProgramArguments": command(home, python),
+        "ProgramArguments": command(home, python, builder=builder),
         "WorkingDirectory": str(KERNEL_ROOT),
-        "EnvironmentVariables": {"PYTHONPATH": str(KERNEL_ROOT), "PYTHONDONTWRITEBYTECODE": "1"},
+        "EnvironmentVariables": {"PYTHONPATH": str(KERNEL_ROOT), "PYTHONDONTWRITEBYTECODE": "1",
+                                 **_path_for_builder(builder)},
         "RunAtLoad": True,
         "KeepAlive": {"SuccessfulExit": False},   # restart after crash; stay stopped after STOP
         "ThrottleInterval": 10,
@@ -41,8 +55,8 @@ def launchd_plist(home: Path, python: str | None = None) -> bytes:
     })
 
 
-def systemd_unit(home: Path, python: str | None = None) -> str:
-    args = " ".join(command(Path(home), python))
+def systemd_unit(home: Path, python: str | None = None, builder: str = "none") -> str:
+    args = " ".join(command(Path(home), python, builder=builder))
     return (
         "[Unit]\nDescription=UNIIMENTE GREG body (persistent personal agentic operating layer)\n"
         "After=network-online.target\n\n"
@@ -54,11 +68,11 @@ def systemd_unit(home: Path, python: str | None = None) -> str:
 
 
 def supervisord_program(home: Path, python: str | None = None, *, name: str = "greg-body",
-                        tick_seconds: float = 30) -> str:
+                        tick_seconds: float = 30, builder: str = "none") -> str:
     home = Path(home)
     return (
         f"[program:{name}]\n"
-        f"command={' '.join(command(home, python, tick_seconds))}\n"
+        f"command={' '.join(command(home, python, tick_seconds, builder))}\n"
         f"directory={KERNEL_ROOT}\n"
         f"environment=PYTHONPATH=\"{KERNEL_ROOT}\",PYTHONDONTWRITEBYTECODE=\"1\"\n"
         "autostart=true\nautorestart=unexpected\nexitcodes=0\nstartsecs=1\nstartretries=100\n"
@@ -87,7 +101,8 @@ def launchd_remote_plist(home: Path, python: str | None = None, port: int = 8765
     })
 
 
-def install(home: Path, platform: str, *, target_dir: Path | None = None, remote: bool = False) -> Path:
+def install(home: Path, platform: str, *, target_dir: Path | None = None, remote: bool = False,
+            builder: str = "none") -> Path:
     """Write (but do not load) the supervisor file. Loading is a separate founder step."""
     home = Path(home)
     (home / "logs").mkdir(parents=True, exist_ok=True)
@@ -114,13 +129,13 @@ def install(home: Path, platform: str, *, target_dir: Path | None = None, remote
         return target
     if platform == "macos":
         target = (target_dir or Path.home() / "Library" / "LaunchAgents") / f"{LABEL}.plist"
-        data = launchd_plist(home)
+        data = launchd_plist(home, builder=builder)
     elif platform == "linux":
         target = (target_dir or Path.home() / ".config" / "systemd" / "user") / "greg-body.service"
-        data = systemd_unit(home).encode()
+        data = systemd_unit(home, builder=builder).encode()
     elif platform == "supervisord":
         target = (target_dir or home) / "supervisord-greg.conf"
-        data = supervisord_program(home).encode()
+        data = supervisord_program(home, builder=builder).encode()
     else:
         raise ValueError("platform must be macos, linux or supervisord")
     target.parent.mkdir(parents=True, exist_ok=True)

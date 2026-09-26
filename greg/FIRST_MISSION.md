@@ -49,6 +49,13 @@ greg status                                           # background state RUNNING
 
 launchd restarts the body after any crash, not after you stop it, and starts it at login.
 
+Optional: let the installed body build and repair missing capabilities. Install with
+`--builder models` instead. It uses whichever model routes you have enabled: Claude Code if
+it is installed, and any API keys you store yourself in the Keychain:
+`security add-generic-password -s uniimente.greg -a anthropic_api_key -w <key>` (or `openai_api_key`).
+It spends only the build budget you sign into a mission. If no route is available the body still
+runs, without a builder, and records why.
+
 ## 3. Ask GREG, sign, close the window
 
 ```bash

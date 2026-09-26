@@ -17,6 +17,12 @@ version string, builder identity) as VERIFIED. Attachment still needs either a
 founder CAPABILITY_ATTACH command or a founder-signed mission ``auto_attach``
 limited to read-only functions. The original mission then resumes; genesis
 completion never closes the mission.
+
+Self-repair: a formed capability that later fails in service (its built source or
+binary changed, or it raises on live input) is quarantined with the failure as
+evidence, and the same search runs again as a new deficit generation. A rebuilt
+candidate must pass the same frozen oracle *and* run cleanly on the live input
+that broke its predecessor (replayed locally in isolation; never sent to a model).
 """
 from __future__ import annotations
 
@@ -113,12 +119,30 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
     return adapter
 
 
+FORMED = ("built:", "installed:")      # providers Genesis formed, and therefore can re-form
+FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed")
+
+
+def is_formed(manifest) -> bool:
+    return manifest.provider.startswith(FORMED)
+
+
+def is_capability_fault(manifest, reason: str) -> bool:
+    """A failure of the capability itself, not of the world it reads (missing file, scope)."""
+    if not is_formed(manifest):
+        return False
+    binary = Path(manifest.binaries[0]).name if manifest.binaries else None
+    return any(m in reason for m in FAULT_MARKERS) or bool(binary and f"capability refused: {binary} exited" in reason)
+
+
 class Genesis:
     """The resourceful capability-formation loop, recorded on the canonical spine."""
 
-    def __init__(self, *, journal: Journal, registry, workspace_root: Path, builder=None):
+    def __init__(self, *, journal: Journal, registry, workspace_root: Path, builder=None, read_roots=()):
         self.journal, self.registry = journal, registry
         self.workspace_root, self.builder = Path(workspace_root), builder
+        self.read_roots = tuple(Path(r).resolve() for r in read_roots)
+        self.builder_cap = getattr(builder, "max_budget_usd", None)   # the builder's own ceiling, never ratcheted
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
 
     # -- queries used by the mission engine --------------------------------------
@@ -134,10 +158,9 @@ class Genesis:
         states = {}
         for event in self.journal.replay("capability."):
             data = event.payload
-            if event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith("built:"):
-                states[data["manifest"]["capability_id"]] = (data, states.get(data["manifest"]["capability_id"], (None, "VERIFIED"))[1])
-            elif event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith("installed:"):
-                states[data["manifest"]["capability_id"]] = (data, states.get(data["manifest"]["capability_id"], (None, "VERIFIED"))[1])
+            if event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith(FORMED):
+                # a re-verified (repaired) capability starts again from its registration state
+                states[data["manifest"]["capability_id"]] = (data, data.get("state", "VERIFIED"))
             elif event.type == "greg.capability.state" and data["capability_id"] in states:
                 states[data["capability_id"]] = (states[data["capability_id"]][0], data["state"])
         for cid, (data, state) in states.items():
@@ -165,11 +188,51 @@ class Genesis:
                                     key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
 
     # -- the loop -------------------------------------------------------------------
-    def resolve(self, *, mission, function: str, purpose: str, now):
+    def _deficit_for(self, mission_id: str, function: str):
+        """The open deficit for (mission, function), else the id of the next generation.
+
+        Reusing an open deficit keeps a restart mid-search idempotent; a new generation
+        after a resolved one lets the same function be lost and re-formed repeatedly."""
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == mission_id and e.payload["function"] == function]
+        resolved = {e.payload["deficit_id"] for e in self.journal.replay("deficit.resolved")}
+        if opened and opened[-1]["deficit_id"] not in resolved:
+            return opened[-1]["deficit_id"], opened[-1]
+        seed = {"mission": mission_id, "function": function}
+        if opened:
+            seed["generation"] = len(opened)
+        return "deficit-" + sha256_json(seed)[7:31], None
+
+    def repair(self, *, mission, capability_id: str, failure: str, params: dict, now):
+        """A formed capability failed in service: quarantine it with the evidence and re-form the function."""
+        manifest = self.registry.manifests[capability_id]
+        if not is_formed(manifest):
+            return None
+        incident = sha256_json({"capability_id": capability_id, "failure": failure})
+        self.registry.set_state(capability_id, "QUARANTINED")
+        self.journal.record("capability.state", {"capability_id": capability_id, "state": "QUARANTINED",
+                                                 "why": "failed in service: " + failure[:300],
+                                                 "by": "self-repair (repeated capability fault)",
+                                                 "mission_id": mission.mission_id},
+                            key=[capability_id, "quarantine", incident])
+        return self.resolve(mission=mission, function=manifest.function, now=now,
+                            purpose=f"self-repair of {capability_id}",
+                            repair={"capability_id": capability_id, "failure": failure[:300],
+                                    "replay_path": params.get("path")})
+
+    def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None):
         found = self.find_attached(function)
         if found:
             return found
-        deficit_id = "deficit-" + sha256_json({"mission": mission.mission_id, "function": function})[7:31]
+        deficit_id, existing = self._deficit_for(mission.mission_id, function)
+        if existing is not None:
+            repair = existing.get("repair") or repair
+        if repair is None:  # a formed implementation was lost (quarantined at restart): this is a repair too
+            lost = [m.capability_id for m in self.registry.by_function(function)
+                    if is_formed(m) and self.registry.state[m.capability_id] == "QUARANTINED"]
+            if lost:
+                repair = {"capability_id": lost[-1], "failure": "quarantined: source or binary changed since "
+                                                                "verification", "replay_path": None}
         spec = CATALOG.get(function)
         contract = next((c for c in mission.spec.get("capability_specs", []) if c["function"] == function), None)
         seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)
@@ -189,11 +252,13 @@ class Genesis:
                         "failed": f"no ATTACHED, usable implementation of {function!r} resolved",
                         "unserviceable": examined or "no registered implementation of this function",
                         "verified": True}
-        self.journal.record("deficit.opened", {
-            "deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
-            "purpose": purpose, "acceptance": acceptance, "at": iso(now), "verification": verification,
-            "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"]},
-            key=deficit_id)
+        if existing is None:
+            opened = {"deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
+                      "purpose": purpose, "acceptance": acceptance, "at": iso(now), "verification": verification,
+                      "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"]}
+            if repair is not None:
+                opened["repair"] = repair
+            self.journal.record("deficit.opened", opened, key=deficit_id)
 
         # 2. registered but detached
         for manifest in self.registry.by_function(function):
@@ -205,7 +270,7 @@ class Genesis:
         if spec is None:
             self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
                         None)
-            return self._builder_route(mission, function, deficit_id, now, contract)
+            return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         # 3. installed commodity software
         for candidate in spec["candidates"]:
@@ -230,14 +295,25 @@ class Genesis:
                 key=[manifest.capability_id, manifest.digest()])
             self._route(deficit_id, "installed_software", "acquired", manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now)
-        return self._builder_route(mission, function, deficit_id, now, contract)
+        return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
     def _route(self, deficit_id, route, result, capability_id):
         self.journal.record("genesis.route", {"deficit_id": deficit_id, "route": route, "result": result,
                                               "capability_id": capability_id},
                             key=[deficit_id, route, result, capability_id])
 
-    def _builder_route(self, mission, function, deficit_id, now, contract=None):
+    def _replay_text(self, repair: dict | None):
+        """The live input that broke the predecessor, read locally from the body's read roots."""
+        path = (repair or {}).get("replay_path")
+        if not path:
+            return None
+        path = Path(path).resolve()
+        if not any(path == r or r in path.parents for r in self.read_roots) or not path.is_file():
+            return None
+        data = path.read_bytes()
+        return data.decode("utf-8", errors="replace") if len(data) <= builders.MAX_INPUT else None
+
+    def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None):
         """Commission the residual capability against the founder-frozen contract, verify, register."""
         if self.builder is None or contract is None:
             why = ("no builder attached (coding agent/human/model not connected)" if self.builder is None
@@ -245,24 +321,36 @@ class Genesis:
             self._route(deficit_id, "builder", why, None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
+        # The signed build budget covers the function for the whole mission, across every repair
+        # generation: a capability that keeps breaking cannot spend past what the founder signed.
+        generations = {e.payload["deficit_id"] for e in self.journal.replay("deficit.opened")
+                       if e.payload["mission_id"] == mission.mission_id and e.payload["function"] == function}
         spent = sum(e.payload.get("cost_usd") or 0.0 for e in self.journal.replay("genesis.built")
-                    if e.payload["deficit_id"] == deficit_id)
+                    if e.payload["deficit_id"] in generations | {deficit_id})
         if contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]:
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
-        if hasattr(self.builder, "max_budget_usd"):
-            self.builder.max_budget_usd = min(self.builder.max_budget_usd, contract["build_budget_usd"] - spent)
         request = {"function": function, "description": contract["description"],
                    "returns": contract.get("returns", "a JSON value"), "examples": contract["examples"]}
-        feedback = None
+        # Repair: the builder learns that and how the predecessor failed, never the live input itself.
+        feedback = ([f"a previously verified implementation failed in service ({repair['failure'][:160]}); "
+                     "it must handle arbitrary real input without raising"] if repair else None)
+        replay = self._replay_text(repair)
         self.store.mkdir(parents=True, exist_ok=True)
         for attempt in (1, 2):
+            remaining = contract["build_budget_usd"] - spent
+            if remaining <= 0:   # re-checked per attempt: every attempt is spend
+                self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+                break
+            if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
+                self.builder.max_budget_usd = min(self.builder_cap, remaining)
             try:
                 built = self.builder.build(request, feedback)
             except Exception as exc:  # the builder is untrusted; its failure is evidence
                 self._route(deficit_id, "builder", f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300], None)
                 break
+            spent += float(built.get("cost_usd") or 0.0)
             source = built["source"]
             digest = hashlib.sha256(source.encode()).hexdigest()
             self.journal.record("genesis.built", {
@@ -272,6 +360,10 @@ class Genesis:
                 key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
             path = self.store / f"{digest}.py"
+            if not problems and path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                # stored bytes no longer match their name: keep them as evidence, restore the verified bytes
+                actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                path.rename(path.with_name(f"{path.name}.unverified-{actual[:16]}"))
             if not problems and not path.exists():
                 path.write_text(source)
             public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
@@ -279,6 +371,16 @@ class Genesis:
                 path, contract["examples"] + contract["held_out"])
             report = {"screen": problems, "public": public, "cases": report.get("cases"),
                       "failed_cases": len(report.get("failures", [])), "isolation": report.get("isolation")}
+            if passed and replay is not None:  # must not repeat the predecessor's failure on the live input
+                try:
+                    replayed = builders.execute(path, [replay])[0]
+                except CapabilityError as exc:
+                    replayed = {"ok": False, "error": str(exc)[:200]}
+                report["service_replay"] = {"passed": bool(replayed.get("ok")),
+                                            "error": None if replayed.get("ok") else str(replayed.get("error"))[:200]}
+                passed = passed and bool(replayed.get("ok"))
+            elif repair:
+                report["service_replay"] = {"passed": None, "error": "live input not replayable inside read roots"}
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": f"built:{digest}",
                                                      "passed": passed, "report": report,
                                                      "verifier": "founder-frozen held-out oracle; separate no-network "
@@ -295,6 +397,11 @@ class Genesis:
                                     key=[manifest.capability_id, manifest.digest()])
                 self._route(deficit_id, "builder", "built and verified", manifest.capability_id)
                 return self._attach(mission, manifest, deficit_id, now)
+            if report.get("service_replay", {}).get("passed") is False and not problems and not public.get("failures"):
+                feedback = [f"your candidate passes the examples but raised on real input "
+                            f"({report['service_replay']['error']}); handle arbitrary text without raising"]
+                self._route(deficit_id, "builder", f"attempt {attempt} failed the service replay", None)
+                continue
             feedback = problems or [f"input {json.dumps(contract['examples'][f['case']]['input_text'])[:200]} expected "
                                     f"{json.dumps(contract['examples'][f['case']]['expected'])} but got "
                                     f"{f.get('got', f.get('error'))}" for f in public.get("failures", [])
@@ -369,7 +476,7 @@ class Genesis:
         self.journal.record("capability.state", {"capability_id": manifest.capability_id, "state": "ATTACHED",
                                                  "by": "founder-signed mission auto_attach (read_only)",
                                                  "mission_id": mission.mission_id, "deficit_id": deficit_id},
-                            key=[manifest.capability_id, "attached", mission.mission_id])
+                            key=[manifest.capability_id, "attached", mission.mission_id, deficit_id])
         self.journal.record("deficit.resolved", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                  "mission_id": mission.mission_id, "resume": "original mission",
                                                  "at": iso(now)}, key=[deficit_id, "resolved"])

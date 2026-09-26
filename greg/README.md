@@ -74,6 +74,15 @@ is the single tested translation. Dispositions for the rest of the project are i
 | Self-repair | a formed capability that faults twice in service (source/binary changed, or raises on live input) is quarantined with the failure as evidence and re-formed as a new deficit generation under the same signed contract and one shared build budget; the rebuild must also run cleanly on the live input that broke its predecessor (replayed locally; never sent to a model). Before: a tampered capability crash-looped the body (`EventError`), a failing one only escalated | `tests/unit/test_greg_self_repair.py`, `tests/evidence/greg-product/self-repair-summary.json` |
 | Any model vendor | `greg/models.py`: one router over the Anthropic API, the OpenAI API (Responses) and Claude Code; failover, demotion with cooldown, route health retained in the ledger (`greg.model.route`), the true author recorded on every draft and built capability. Refusals are final (never re-asked elsewhere); in a spending context an unpriced route is skipped and every priced route bounds its worst-case cost to the remaining signed budget | `tests/unit/test_greg_models.py` (SDK-shaped fakes; no live key used) |
 
+## History the body cannot rewrite (2026-09-26)
+
+| Effect | Mechanism | Evidence |
+|---|---|---|
+| Anchored history is tamper-evident, even against the body itself | `greg/anchor.py`: once Alfonso signs `ANCHOR_CONFIGURE` (TSA URL plus pinned root certificate), the body timestamps the ledger head with an independent RFC 3161 Time-Stamp Authority at most once per interval and only when real history was added. Only a SHA-256 digest leaves the machine. `greg anchor verify` re-checks every token against the pinned roots: a rewritten and re-chained ledger still passes the local chain check but its anchored head disappears, so it is reported `REWRITTEN` (exit 3). A TSA outage is a recorded `proof.anchor_failed` and never blocks a mission. Verification is rfc3161-client (the sigstore-python verifier); GREG adds no timestamp cryptography. | `tests/unit/test_greg_anchor.py` (real OpenSSL TSA: rewrite detection, impostor TSA refused, outage, tampered token, idle body); live supervised run against a loopback OpenSSL TSA, including a SIGKILL restart |
+
+On the Mac (not yet exercised against a public TSA: this build container's network policy blocks every public TSA): fetch Sigstore's chain from `https://timestamp.sigstore.dev/api/v1/timestamp/certchain`, keep only its last (root) certificate in `~/.greg-tsa-roots.pem`, then
+`greg anchor configure --tsa-url https://timestamp.sigstore.dev/api/v1/timestamp --roots ~/.greg-tsa-roots.pem --key ~/.greg-founder.pem`.
+
 ## Using it (developer mode today)
 
 **First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**

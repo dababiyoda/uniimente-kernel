@@ -47,6 +47,7 @@ COMMAND_KINDS = (
     "ROTATE_FOUNDER_KEY",
     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
     "DEVICE_REVOKE",
+    "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
 )
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only

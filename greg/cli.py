@@ -12,6 +12,8 @@
     greg service install --platform macos|linux|supervisord [--remote]
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
+    greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
+    greg anchor verify                        REWRITTEN/INVALID anchors exit non-zero
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -115,6 +117,17 @@ def main(argv=None) -> int:
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
+    an = sub.add_parser("anchor", help="RFC 3161 time anchoring of the ledger head")
+    ans = an.add_subparsers(dest="anchor_cmd", required=True)
+    ac = ans.add_parser("configure", help="founder-signed: timestamp the ledger head at this TSA")
+    ac.add_argument("--tsa-url", required=True)
+    ac.add_argument("--roots", required=True, help="PEM file pinning the TSA root certificate(s)")
+    ac.add_argument("--interval-minutes", type=int, default=60)
+    ad = ans.add_parser("disable", help="founder-signed: stop anchoring")
+    for q in (ac, ad):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    ans.add_parser("verify", help="re-verify every anchor; REWRITTEN means anchored history changed")
     sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
@@ -237,6 +250,18 @@ def main(argv=None) -> int:
                                                 "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
         elif args.cmd == "device" and args.device_cmd == "revoke":
             print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "configure":
+            print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": args.tsa_url,
+                                                   "tsa_roots_pem": Path(args.roots).read_text(),
+                                                   "interval_minutes": args.interval_minutes}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "disable":
+            print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": None}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "verify":
+            from greg.anchor import verify as verify_anchors
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                report = verify_anchors(journal)
+            print(json.dumps(report, indent=1, default=str))
+            return 0 if report["chain_intact"] and not report["rewritten"] and not report["invalid"] else 3
         elif args.cmd == "serve":
             from greg.remote import serve
             print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "

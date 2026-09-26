@@ -1,3 +1,5 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 # UNIIMENTE Agent Entry Contract
 
 ## Latest founder correction — real product over laboratory output

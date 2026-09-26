@@ -1,5 +1,10 @@
 # Founder Intent Ledger
 
+## Real-product repository metabolism — 2026-09-26
+
+`INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` preserves Alfonso's latest explicit anti-cathedral correction with verbatim excerpts in `intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`: the project corpus is developmental substrate to be metabolized into the actual GREG product. Experiments, simulations, tests, benchmarks and architecture remain subordinate verification/evidence, not the milestone. Every substantial session must produce a truthful product delta ("what can actual GREG do now that it could not do before?") or identify a precise external blocker. Historical mechanisms may be productized, extracted, recombined, retained as evidence, archived, or removed from the active canonical path while preserving provenance. State: active. Current Single Bottleneck Metric remains VEPMC 0 -> 1.
+
+
 ## Spider-Web compounding rule — 2026-09-25
 
 `INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (`intent/INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING.json`, verbatim source in `intent/sources/SPIDER-WEB-2026-09-25-source.md`) makes the founder-intent → verified-outcome transaction the optimization target. Every capability must strengthen at least one of seven control points (eligibility, routing, proof, settlement, reliability, capability formation, compounding), and repeated missions must yield institutional knowledge that improves the next one. Clause inserted in `CANONICAL_EXECUTION_ORDER.md`; enforced by `greg/capabilities.py` registration and `greg/routing.py`; repository dispositions proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json`. State: active; bottleneck VEPMC remains 0 until a Mac run with Alfonso's own key.

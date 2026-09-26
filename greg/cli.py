@@ -99,6 +99,10 @@ def main(argv=None) -> int:
             q.add_argument("event_id"); q.add_argument("--verdict", required=True)
             q.add_argument("--evidence-type", required=True); q.add_argument("--text", required=True)
             q.add_argument("--exclude-strategy", action="store_true"); q.add_argument("--regression")
+            q.add_argument("--missed", action="append", default=None,
+                           help="brief label: a key the brief should have flagged (owner/repo#N or local:NAME)")
+            q.add_argument("--noise", action="append", default=None,
+                           help="brief label: a flagged key that was not worth your attention")
         if name == "stop":
             q.add_argument("--local", action="store_true")
         if name in ("attach", "detach"):
@@ -120,6 +124,7 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
     c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
@@ -195,6 +200,8 @@ def main(argv=None) -> int:
                 body["exclude_strategy"] = True
             if args.regression:
                 body["regression"] = args.regression
+            if args.missed is not None or args.noise is not None:
+                body["attention"] = {"missed": args.missed or [], "noise": args.noise or []}
             print(_drop(home, "CRITIQUE", body, args))
         elif args.cmd in ("pause", "resume"):
             print(_drop(home, "BODY_" + args.cmd.upper(), {}, args))
@@ -248,6 +255,11 @@ def main(argv=None) -> int:
             stop.unlink(missing_ok=True)
             print(json.dumps({"cleared_stop": prior, "next": "launchctl kickstart gui/$(id -u)/"
                               + service.LABEL + "  (or start the supervisor unit)"}, indent=1))
+        elif args.cmd == "learning":
+            from greg import improvement
+            from greg.body import observe
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli") as journal:
+                print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
         elif args.cmd == "decisions":

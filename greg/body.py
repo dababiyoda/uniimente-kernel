@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import compute, dataplane, metrics, sop, tribunal
+from greg import compute, dataplane, improvement, metrics, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -256,7 +256,10 @@ class Body:
             self.engine.lifecycle(body, digest)
             return {"mission_id": body["mission_id"], "state": body["state"]}
         if kind == "CRITIQUE":
-            return tribunal.critique(self.journal, self.engine, body, digest)
+            record = tribunal.critique(self.journal, self.engine, body, digest)
+            if "attention" in record:   # a founder label advances the held-out learning loop
+                improvement.learn(self.journal, self.ledger, self.clock())
+            return record
         if kind in ("CAPABILITY_ATTACH", "CAPABILITY_DETACH"):
             cid = body.get("capability_id")
             if cid not in self.registry.manifests:

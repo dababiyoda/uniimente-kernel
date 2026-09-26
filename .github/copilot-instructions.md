@@ -11,7 +11,7 @@ Every material coding task must identify the product capability it creates and f
 Current bottleneck remains VEPMC 0 -> 1 until verified otherwise.
 
 
-Read `AGENTS.md` and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
+Read `AGENTS.md`, `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`, and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
 
 The founder's biological and science-fiction language expresses **desired effects and mechanism-discovery prompts**, not mandatory surface implementations, unless Alfonso explicitly specifies the implementation.
 

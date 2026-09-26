@@ -235,7 +235,7 @@ def labelled_cases(journal: Journal, ledger) -> list[dict]:
         delivered = briefs.flagged_keys(inputs)
         latest[brief["event_id"]] = {
             "case_id": data["critique_id"], "seq": order[event.event_id], "brief_event_id": brief["event_id"],
-            "brief_seq": brief["seq"], "inputs": inputs,
+            "brief_seq": brief["seq"], "inputs": inputs, "labels": labels,
             "truth": sorted((delivered - set(labels["noise"])) | set(labels["missed"])),
             "delivered_policy": briefs.attention_policy(inputs), "regression": data.get("regression")}
     return sorted(latest.values(), key=lambda c: c["seq"])
@@ -412,7 +412,7 @@ def _learn_preferences(journal: Journal, ledger, now: datetime, written: list):
                                     "founder-labelled briefs; ties and regressions are rejected"})
         written.append(record)
         if decision == "retained":
-            _close_regressions(journal, cand, record, cases, now)
+            _close_regressions(journal, cand, record, held_out, now)
 
     if _open(journal, lever) or not cases:
         return
@@ -576,33 +576,61 @@ def founder_revert(journal: Journal, critique: dict, target_event, now) -> dict 
 
 # -- regression obligations ---------------------------------------------------------------------------
 
-def _close_regressions(journal: Journal, cand: dict, decision: dict, cases: list[dict], now):
-    """Close a regression only through its own close condition, proven by the retained evidence."""
+def _attention_corrected(condition: dict, case: dict, cand: dict) -> dict | None:
+    """Did this later brief show the SAME labelled error, and did the candidate remove all of it?
+
+    Every key the originating critique labelled must recur in this brief's labels and be corrected
+    (missed -> now flagged, noise -> no longer flagged), with no increase in total errors. A partial
+    fix is not a fix: a regression naming two errors does not close because one of them went away."""
+    wanted = condition["labels"]
+    for kind in ("missed", "noise"):
+        if not set(wanted[kind]) <= set(case["labels"][kind]):
+            return None
+    before = briefs.flagged_keys(case["inputs"], cand["replaces"])
+    after = briefs.flagged_keys(case["inputs"], cand["policy"])
+    fixed = (all(k not in before and k in after for k in wanted["missed"])
+             and all(k in before and k not in after for k in wanted["noise"]))
+    if not fixed or errors(cand["policy"], case) > errors(cand["replaces"], case):
+        return None
+    return {"case_id": case["case_id"], "brief_event_id": case["brief_event_id"],
+            "baseline_errors": errors(cand["replaces"], case), "candidate_errors": errors(cand["policy"], case)}
+
+
+def _close_regressions(journal: Journal, cand: dict, decision: dict, held_out: list[dict], now):
+    """Close a regression only through its own close condition, proven by the retained evidence.
+
+    A RETAIN is not enough. Attention: the originating critique's exact labelled error is removed on
+    HELD_OUT_MIN later briefs without increasing errors (the rule from #122, tightened to require the
+    whole error). Failure claim: the claim was independently reproduced and the retained acquisition
+    missed strictly fewer failing checks on the held-out briefs. A reversion reopens the regression."""
     critiques = {d["critique_id"]: d for d in _payloads(journal, "critique.recorded")}
-    by_case = {c["case_id"]: c for c in cases}
     for critique_id in cand["derived_from"]:
-        critique = critiques.get(critique_id)
-        regression = (critique or {}).get("regression")
+        regression = (critiques.get(critique_id) or {}).get("regression")
         if not regression:
             continue
+        condition = regression["close_condition"]
         if cand["lever"] == "brief.attention":
-            origin = by_case.get(critique_id)
-            residual = errors(cand["policy"], origin) if origin else None
-            satisfied = origin is not None and residual == 0 and decision["errors"]["candidate"] < decision["errors"]["current"]
-            proof = {"origin_errors_under_retained_policy": residual,
-                     "origin_errors_under_replaced_policy": errors(cand["replaces"], origin) if origin else None,
-                     "held_out_errors": decision["errors"]}
+            if not isinstance(condition, dict) or condition.get("kind") != "held_out_attention_correction":
+                continue                                   # a free-text obligation closes through its own check
+            evidence = [e for e in (_attention_corrected(condition, c, cand) for c in held_out) if e]
+            satisfied = len(evidence) >= condition["min_cases"]
+            proof = {"held_out_evidence": evidence, "held_out_errors": decision["errors"]}
         else:
-            satisfied = decision["claim"]["verified"] and decision["errors"]["candidate"] < decision["errors"]["current"]
+            satisfied = decision["claim"]["verified"] and verdict(decision["errors"]["current"],
+                                                                  decision["errors"]["candidate"]) == "retained"
             proof = {"claim_independently_verified": decision["claim"]["verified"],
                      "held_out_errors": decision["errors"]}
         if not satisfied:
+            journal.record("critique.regression_still_open", {
+                "regression_id": regression["regression_id"], "candidate_id": cand["candidate_id"],
+                "why": "retained, but the close condition was not demonstrated", "proof": proof, "at": iso(now)},
+                key=[regression["regression_id"], cand["candidate_id"], "still_open"])
             continue
         journal.record("critique.regression_closed", {
             "regression_id": regression["regression_id"], "critique_id": critique_id,
             "candidate_id": cand["candidate_id"], "lever": cand["lever"], "baseline": cand["replaces"],
             "retained": cand["policy"], "held_out": decision["held_out"], "decision": "RETAIN",
-            "close_condition": regression["close_condition"], "proof": proof, "at": iso(now)},
+            "close_condition": condition, "proof": proof, "at": iso(now), "authority_changed": False},
             key=[regression["regression_id"], cand["candidate_id"], "closed"])
 
 
@@ -615,9 +643,10 @@ def _reopen_regressions(journal: Journal, cand: dict, now):
                 key=[data["regression_id"], cand["candidate_id"], "reopened"])
 
 
-def attention_close_condition() -> str:
-    return (f"the criticized brief's labelled keys are all served by a retained attention policy (zero errors on "
-            f"the originating brief) that beat the replaced policy on {HELD_OUT_MIN} later founder-labelled briefs")
+def attention_close_condition(labels: dict) -> dict:
+    return {"kind": "held_out_attention_correction", "labels": labels, "min_cases": HELD_OUT_MIN,
+            "rule": f"the same labelled error (every key) is removed on {HELD_OUT_MIN} later briefs without "
+                    "increasing total errors; a reversion reopens it"}
 
 
 def claim_close_condition() -> str:

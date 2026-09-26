@@ -279,8 +279,9 @@ def test_a_regression_closes_only_through_its_own_proven_condition_and_reopens_o
     assert retained and len(closed) == 1
     c = closed[0]
     assert c["candidate_id"] == retained[0]["candidate_id"] and c["decision"] == "RETAIN"
-    assert c["proof"]["origin_errors_under_retained_policy"] == 0 and c["held_out"] == retained[0]["held_out"]
-    assert c["close_condition"] == improvement.attention_close_condition()
+    assert len(c["proof"]["held_out_evidence"]) == 3 and c["held_out"] == retained[0]["held_out"]
+    assert {e["case_id"] for e in c["proof"]["held_out_evidence"]} == set(retained[0]["held_out"])
+    assert c["close_condition"] == improvement.attention_close_condition({"missed": [], "noise": [DRAFT]})
     assert not tribunal.morning_report(m.body.journal)["q11_change"]
 
     # the founder signs a rejection of the retained change: reverted, and the regression reopens
@@ -306,6 +307,7 @@ def test_a_regression_the_retained_change_does_not_fix_stays_open(tmp_path, repo
         m.label(action, noise=[DRAFT])
     assert m.events("improvement.retained")                                   # a real gain was kept ...
     assert not m.events("critique.regression_closed")                         # ... but it does not fix THIS
+    assert m.events("critique.regression_still_open")                         # and that is recorded
     assert tribunal.morning_report(m.body.journal)["q11_change"]
     m.body.close()
 

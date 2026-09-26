@@ -174,7 +174,8 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
     if body.get("regression"):
         condition = ("a test or check that fails on the criticized behavior" if not epistemic else
                      improvement.claim_close_condition() if "failure_claim" in epistemic
-                     else improvement.attention_close_condition())
+                     else improvement.attention_close_condition(record["attention"])
+                     if any(record["attention"].values()) else "a test or check that fails on the criticized behavior")
         record["regression"] = {"regression_id": "reg-" + command_digest[7:23],
                                 "description": str(body["regression"])[:1000], "state": "OPEN",
                                 "close_condition": condition}

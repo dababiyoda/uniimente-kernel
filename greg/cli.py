@@ -257,7 +257,6 @@ def main(argv=None) -> int:
                               + service.LABEL + "  (or start the supervisor unit)"}, indent=1))
         elif args.cmd == "learning":
             from greg import improvement
-            from greg.body import observe
             with observe(home, actor="spiffe://uniimente.internal/greg/cli") as journal:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":

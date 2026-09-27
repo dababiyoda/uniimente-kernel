@@ -77,6 +77,36 @@ def test_repeated_verified_procedure_becomes_sop_proposal_then_ratified(tmp_path
     assert metrics["verified_outcomes"] == 3 and metrics["actions_per_outcome"] == 1.0
 
 
+def test_achieved_without_independent_appraisal_cannot_compile_a_procedure(tmp_path):
+    home, _, _, _ = make_body(tmp_path)
+    with Body(home) as body:
+        for n in range(3):
+            mid = f"m:unappraised-{n}"
+            body.journal.record("mission.action", {"mission_id": mid, "status": "DONE", "capability": "fs.write"})
+            body.journal.record("mission.achieved", {"mission_id": mid})
+        assert sop.propose(body.journal) == []
+        assert sop.compounding_metrics(body.journal)["verified_outcomes"] == 0
+
+
+def test_later_refutation_blocks_ratification_of_existing_sop_proposal(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    for n in range(3):
+        mid = f"m:weekly-note-{n}"
+        drop(home, signed(key, body_id, "MISSION", mission(
+            mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "done")],
+            strategies=[write_strategy("w", "n.txt", "done", ["n"])], capabilities=["fs.read", "fs.write"])))
+    run(home, Clock(), ticks=5)
+    proposal = events(home, "sop.proposed")[0]
+    with Body(home) as body:
+        body.journal.record("mission.appraised", {"mission_id": proposal["missions"][0],
+                                                    "verdict": "REFUTED", "checks": {},
+                                                    "findings": ["later observation refuted original closure"]})
+        with pytest.raises(ValueError, match="no longer locally appraised as verified"):
+            sop.ratify(body.journal, {"procedure_id": proposal["procedure_id"]}, "founder-command")
+        assert sop.compounding_metrics(body.journal)["verified_outcomes"] == 2
+        assert not body.journal.replay("sop.ratified")
+
+
 def test_supervisor_configs_restart_crashes_but_respect_stop(tmp_path):
     plist = plistlib.loads(service.launchd_plist(tmp_path))
     assert plist["KeepAlive"] == {"SuccessfulExit": False} and plist["RunAtLoad"] is True

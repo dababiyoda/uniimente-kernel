@@ -17,11 +17,29 @@ from greg.journal import Journal
 from provenance.ledger import sha256_json
 
 MIN_OCCURRENCES = 3
+REQUIRED_CHECKS = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
+                   "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
+                   "approval_boundaries_honored")
+
+
+def verified_appraisals(journal: Journal) -> dict[str, str]:
+    """Latest appraisal wins; an achievement alone does not establish an outcome.
+
+    This is the body's separate-process appraisal, not an external trust root.
+    Its event ID records which local evidence supported a proposal.
+    """
+    latest = {}
+    for event in journal.replay("mission.appraised"):
+        latest[event.payload["mission_id"]] = event
+    return {mid: event.event_id for mid, event in latest.items()
+            if event.payload.get("verdict") == "VERIFIED"
+            and all(event.payload.get("checks", {}).get(check) is True for check in REQUIRED_CHECKS)}
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
-    """mission_id -> ordered capabilities of DONE actions, for achieved missions only."""
+    """mission_id -> ordered capabilities of DONE actions for locally verified closures."""
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
+    achieved.intersection_update(verified_appraisals(journal))
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
@@ -31,6 +49,7 @@ def closed_procedures(journal: Journal) -> dict[str, list]:
 
 
 def propose(journal: Journal) -> list[dict]:
+    appraisals = verified_appraisals(journal)
     groups = defaultdict(list)
     for mission_id, sequence in closed_procedures(journal).items():
         groups[tuple(sequence)].append(mission_id)
@@ -44,6 +63,8 @@ def propose(journal: Journal) -> list[dict]:
             continue
         record = {"procedure_id": procedure_id, "steps": list(sequence), "occurrences": len(missions),
                   "missions": sorted(missions), "actions_per_outcome": len(sequence),
+                  "appraisal_events": {mid: appraisals[mid] for mid in sorted(missions)},
+                  "evidence_level": "local separate-process appraisal; external outcome unproven",
                   "state": "PROPOSED", "promotion": "requires founder SOP_RATIFY"}
         journal.record("sop.proposed", record, key=procedure_id)
         proposals.append(record)
@@ -55,6 +76,9 @@ def ratify(journal: Journal, body: dict, command_digest: str) -> dict:
     proposed = [e.payload for e in journal.replay("sop.proposed") if e.payload["procedure_id"] == procedure_id]
     if not proposed:
         raise ValueError("unknown SOP proposal")
+    current = closed_procedures(journal)
+    if any(current.get(mid) != proposed[0]["steps"] for mid in proposed[0]["missions"]):
+        raise ValueError("SOP proposal no longer locally appraised as verified; inspect its evidence")
     record = {"procedure_id": procedure_id, "steps": proposed[0]["steps"], "state": "RATIFIED",
               "command_digest": command_digest, "authority_inherited": False}
     journal.record("sop.ratified", record, key=procedure_id)
@@ -62,7 +86,8 @@ def ratify(journal: Journal, body: dict, command_digest: str) -> dict:
 
 
 def compounding_metrics(journal: Journal) -> dict:
-    outcomes = len(journal.replay("mission.achieved"))
+    achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
+    outcomes = len(achieved.intersection(verified_appraisals(journal)))
     actions = sum(1 for e in journal.replay("mission.action") if e.payload["status"] == "DONE")
     decisions = len(journal.replay("decision.requested"))
     return {"verified_outcomes": outcomes,

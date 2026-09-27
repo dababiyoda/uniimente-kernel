@@ -62,6 +62,15 @@ def _https_json(url: str, token: str | None) -> tuple[int, object]:
             return response.status, json.loads(body)
     except urllib.error.HTTPError as exc:
         return exc.code, None
+    except (urllib.error.URLError, OSError) as exc:   # offline, DNS, TLS: nothing was read, nothing changed
+        return None, {"unreachable": _unreachable(getattr(exc, "reason", exc))}
+
+
+def _unreachable(reason) -> str:
+    text = str(reason)[:200]
+    if "CERTIFICATE_VERIFY_FAILED" in text:     # python.org's macOS Python ships without a CA bundle
+        text += " (python.org Python on macOS: run 'Install Certificates.command' in its Applications folder)"
+    return text
 
 
 NOW = _utcnow
@@ -131,13 +140,20 @@ def _checked(pulls: list, max_checked: int, order: str) -> set:
 
 def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_PULLS,
                   max_checked: int = MAX_CHECKED_PULLS, order: str = "api_order") -> dict:
-    result, calls, limited = {}, 0, False
+    result, calls, limited, unreachable = {}, 0, False, None
     for repo in repos[:MAX_REPOS]:
         if limited:
             result[repo] = {"fetched": False, "gap": "not fetched: GitHub rate limit reached earlier"}
             continue
+        if unreachable:
+            result[repo] = {"fetched": False, "gap": "not fetched: GitHub unreachable earlier"}
+            continue
         status, pulls = FETCH(f"https://{API}/repos/{repo}/pulls?state=open&per_page={max_pulls}", token)
         calls += 1
+        if status is None:   # a failed read is a gap in the brief, not an uncertain effect
+            unreachable = (pulls or {}).get("unreachable") or "no response"
+            result[repo] = {"fetched": False, "gap": f"GitHub unreachable: {unreachable}"}
+            continue
         if status in (403, 429):
             limited = True
             result[repo] = {"fetched": False, "gap": f"GitHub refused ({status}); rate limit or access"}
@@ -153,11 +169,13 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
                    "created_at": pull.get("created_at"), "updated_at": pull.get("updated_at"),
                    "head_sha": (pull.get("head") or {}).get("sha"), "base": (pull.get("base") or {}).get("ref"),
                    "checks": None}
-            if index in selected and row["head_sha"] and not limited:
+            if index in selected and row["head_sha"] and not limited and not unreachable:
                 code, tally = _check_run_tally(repo, row["head_sha"], token)
                 calls += 1
                 if code in (403, 429):
                     limited = True
+                if code is None:
+                    unreachable = "lost during check-run reads"
                 row["checks"] = tally
             rows.append(row)
         result[repo] = {"fetched": True, "open": len(rows), "pulls": rows,
@@ -165,6 +183,8 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
     out = {"repos": result, "api_calls": calls, "rate_limited": limited, "authenticated": bool(token)}
     if order != "api_order":
         out["check_order"] = order          # absent in the baseline, so earlier receipts re-render unchanged
+    if unreachable:
+        out["unreachable"] = unreachable    # likewise absent when GitHub answered
     return out
 
 
@@ -175,7 +195,7 @@ def shadow_gather(production: dict, shadows: list[dict], *, token: str | None) -
     the SAME pull request lists, reusing reads already made. Truth is an independent, exhaustive read of
     every ready pull request's checks, capped at MAX_TRUTH_CALLS; hitting the cap or a refusal marks it
     incomplete, and an incomplete case decides nothing. Nothing here is rendered or delivered."""
-    cache, calls, complete = {}, 0, not production.get("rate_limited")
+    cache, calls, complete = {}, 0, not (production.get("rate_limited") or production.get("unreachable"))
     for repo, data in production["repos"].items():
         for pull in data.get("pulls", []):
             if pull["checks"] is not None:

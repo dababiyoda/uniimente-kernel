@@ -22,6 +22,8 @@ contains repository metadata, so review it before sharing it.
 
 macOS's own `python3` is 3.9, which GREG refuses. If the first line below says `no Python 3.11+ found`,
 install Python first (`brew install python@3.12`, or the python.org installer) and run it again.
+With the python.org installer, also run *Install Certificates.command* from its Applications folder;
+otherwise GitHub cannot be reached over HTTPS and the brief says so in its Gaps section.
 
 ```bash
 PY=$(for p in python3.13 python3.12 python3.11 python3; do command -v $p >/dev/null && $p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && echo $p && break; done); echo "${PY:?no Python 3.11+ found}"

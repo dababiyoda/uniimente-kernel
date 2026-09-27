@@ -178,6 +178,74 @@ def test_capability_genesis_acquires_installed_tool_and_resumes_mission(tmp_path
     assert registered["provenance"]["binary_sha256"] and registered["consequence_class"] == "read_only"
 
 
+def test_founder_detach_cannot_be_undone_by_capability_discovery(tmp_path, monkeypatch):
+    binary = genesis_mod.installed_binary("sha256sum")
+    if binary is None:
+        pytest.skip("sha256sum not installed")
+    monkeypatch.setattr(genesis_mod, "installed_binary", lambda name: binary if name == "sha256sum" else None)
+    home, key, body_id, data = make_body(tmp_path)
+    target = data / "evidence.bin"
+    target.write_bytes(b"evidence")
+    check = {"check_id": "digest", "description": "evidence digest matches",
+             "sensor": {"function": "hash.sha256", "params": {"path": str(target)},
+                        "target": "fs:evidence.bin"},
+             "predicate": {"op": "equals", "field": "sha256",
+                           "value": hashlib.sha256(target.read_bytes()).hexdigest()}}
+    scope = ["fs.read", "acquired.hash.sha256.*"]
+    submit(home, key, body_id, "MISSION", mission("m:initial", checks=[check], strategies=[],
+                                                  capabilities=scope, ceiling="read_only", auto_attach=True))
+    assert run(home, Clock(), ticks=4)[0]["m:initial"].status == "ACHIEVED"
+    cid = "acquired.hash.sha256.sha256sum"
+    with Body(home) as body:
+        assert body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": cid}))["status"] == "APPLIED"
+        assert body.registry.state[cid] == "DETACHED"
+
+    # A second signed mission may use the same read-only auto-attach rule, but that
+    # rule must not reverse the founder's later, explicit detachment of this tool.
+    submit(home, key, body_id, "MISSION", mission("m:after-detach", checks=[check], strategies=[],
+                                                  capabilities=scope, ceiling="read_only", auto_attach=True))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:after-detach"].status != "ACHIEVED"
+    with Body(home) as body:
+        assert body.registry.state[cid] == "DETACHED"
+        assert not body.registry.usable(cid)[0]
+        assert body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": cid}))["status"] == "APPLIED"
+    assert run(home, Clock(), ticks=4)[0]["m:after-detach"].status == "ACHIEVED"
+
+
+def test_detached_tool_is_replaced_by_independently_verified_alternative(tmp_path, monkeypatch):
+    primary = genesis_mod.installed_binary("sha256sum")
+    replacement = genesis_mod.installed_binary("shasum")
+    if primary is None or replacement is None:
+        pytest.skip("both sha256sum and shasum required for the real installed-tool swap")
+    found = {"sha256sum": primary, "shasum": replacement}
+    monkeypatch.setattr(genesis_mod, "installed_binary", lambda name: found.get(name))
+    home, key, body_id, data = make_body(tmp_path)
+    target = data / "evidence.bin"
+    target.write_bytes(b"independent evidence")
+    check = {"check_id": "digest", "description": "digest remains correct",
+             "sensor": {"function": "hash.sha256", "params": {"path": str(target)},
+                        "target": "fs:evidence.bin"},
+             "predicate": {"op": "equals", "field": "sha256", "value": hashlib.sha256(target.read_bytes()).hexdigest()}}
+    scope = ["fs.read", "acquired.hash.sha256.*"]
+    submit(home, key, body_id, "MISSION", mission("m:old-tool", checks=[check], strategies=[],
+                                                  capabilities=scope, ceiling="read_only", auto_attach=True))
+    assert run(home, Clock(), ticks=4)[0]["m:old-tool"].status == "ACHIEVED"
+    old = "acquired.hash.sha256.sha256sum"
+    new = "acquired.hash.sha256.shasum"
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": old}))
+    submit(home, key, body_id, "MISSION", mission("m:new-tool", checks=[check], strategies=[],
+                                                  capabilities=scope, ceiling="read_only", auto_attach=True))
+    assert run(home, Clock(), ticks=4)[0]["m:new-tool"].status == "ACHIEVED"
+    with Body(home) as body:
+        assert body.registry.state[old] == "DETACHED"
+        assert body.registry.state[new] == "ATTACHED"
+        assert body.genesis.find_attached("hash.sha256").capability_id == new
+        assert body.enrolled_keys()  # no authority or founder identity was swapped
+    assert any(e["capability_id"] == new and e["passed"] for e in events(home, "genesis.verified"))
+
+
 def test_genesis_rejects_a_lying_tool_and_escalates(tmp_path, monkeypatch):
     fake = tmp_path / "bin" / "sha256sum"
     fake.parent.mkdir()

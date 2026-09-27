@@ -563,7 +563,16 @@ class MissionEngine:
                                 key=[m.mission_id, "rung", m.rung])
             return {"state": "ADVANCED", "rung": m.rung + 1}
         # Homeostasis: the infinite mission holds its highest setpoint and keeps
-        # re-verifying it; a later failing check is pursued again.
+        # re-verifying it; a later failing check is pursued again. A hold reached
+        # after new action is a closure too: it is recorded once and appraised by
+        # the separate process, like a bounded mission's achievement.
+        held = {e.payload["actions_done"] for e in self.journal.replay("mission.held")
+                if e.payload["mission_id"] == m.mission_id}
+        if m.actions_done and m.actions_done not in held:
+            self.journal.record("mission.held", {
+                "mission_id": m.mission_id, "evidence": evidence, "actions_done": m.actions_done,
+                "closure_rule": "every success check re-observed passing after new action",
+                "at": iso(now)}, key=[m.mission_id, "held", m.actions_done])
         self._schedule(m, now, closure.get("cadence_seconds", 3600))
         return {"state": "HOLDING", "evidence": evidence}
 

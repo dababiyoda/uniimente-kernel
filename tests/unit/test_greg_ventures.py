@@ -229,3 +229,127 @@ def test_real_organs(tmp_path):
     assert out["inputs"]["canonical"]["assessment_execution_authority"] is False
     ok, detail = ventures.verify_delivery(out, ctx.deliver_root)
     assert ok, detail
+
+
+def _tick(body, clock, n=1):
+    states = []
+    for _ in range(n):
+        clock.advance(30)
+        states.append(body.tick()["missions"][0]["state"])
+    return states
+
+
+def test_standing_mission_reassesses_when_evidence_changes_and_states_what_changed(tmp_path, organs):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = venture_assessment(**organs, standing=True, cadence_seconds=60)
+    assert spec["closure"]["kind"] == "infinite" and spec["mission_id"].startswith("m:venture-watch-")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    folder = Layout(home).home / "deliveries" / "ventures"
+    with Body(home, clock=clock) as body:
+        body.boot()
+        _tick(body, clock)
+        body.engine.book.rebuild()
+        request = body.engine.book.open_requests()[0]
+    drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        assert _tick(body, clock, 2) == ["ACTED", "HOLDING"]
+        first = json.loads(next(folder.glob("venture-*.json")).read_bytes())
+        assert first["revision"] == 1 and first["binding"]["verdict"] == "needs_more_evidence"
+        assert "Evidencing buyer, budget_owner" in first["flip"]
+        _tick(body, clock, 4)                                            # cadence passes; evidence unchanged
+        done = [e for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
+        assert len(done) == 1 and len(list(folder.glob("*.md"))) == 1, "unchanged evidence: nothing re-runs"
+
+        _manifest(Path(organs["source_root"]), buyer_evidenced=True)   # Alfonso adds evidenced buyer/budget
+        assert "ACTED" in _tick(body, clock, 4)
+        sidecars = [json.loads(p.read_bytes()) for p in folder.glob("venture-*.json")]
+        second = next(s for s in sidecars if s["revision"] == 2)
+        assert second["binding"]["verdict"] == "go" and second["previous"]["verdict"] == "needs_more_evidence"
+        assert second["delta"]["newly_evidenced"] == ["buyer", "budget_owner"]
+        assert second["delta"]["verdict"] == ["needs_more_evidence", "go"]
+        memo = folder / f"venture-{second['railscout']['receipt_sha256'][:16]}.md"
+        assert "**needs_more_evidence** → now **go**" in memo.read_text()
+        assert len(list(body.journal.replay("decision.requested"))) == 1, "approved once, reused"
+        done = [e for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
+        assert len(done) == 2 and len(list(folder.glob("*.md"))) == 2, "two revisions, nothing overwritten"
+        receipt = body.ledger.find(done[-1].payload["receipt"]).payload["result"]["output"]
+        judged = [e.payload for e in body.journal.replay("mission.appraised")]
+        assert [j["verdict"] for j in judged] == ["VERIFIED", "VERIFIED"], [j["findings"] for j in judged]
+        assert all(j["checks"]["deliveries_bound_to_evidence"] for j in judged)
+        assert len({j["closure_event"] for j in judged}) == 2, "each hold after new action appraised once"
+    ok, detail = ventures.verify_delivery(receipt, Layout(home).home / "deliveries")
+    assert ok, detail
+
+
+@pytest.mark.parametrize("tamper, finding", [
+    ("prior", "prior revision this memo cites was altered"),
+    ("prior_deleted", "prior revision this memo cites is missing"),
+    ("delta", "stated change since the last assessment"),
+    ("flip", "verdict-change condition is not derived"),
+    ("sidecar", "inputs record differs"),
+])
+def test_appraiser_refutes_rewritten_history(tmp_path, organs, tamper, finding):
+    ctx = _ctx(tmp_path, [tmp_path / "data"])
+    first = ventures.assess(organs, ctx)
+    _manifest(Path(organs["source_root"]), buyer_evidenced=True)
+    out = ventures.assess(organs, ctx)
+    assert out["revision"] == 2 and out["inputs"]["previous"]["revision"] == 1
+    prior_sidecar = Path(first["path"]).with_suffix(".json")
+    if tamper == "prior":
+        value = json.loads(prior_sidecar.read_bytes())
+        value["binding"]["verdict"] = "kill"
+        prior_sidecar.write_bytes(ventures._canonical_json(value))
+    elif tamper == "prior_deleted":
+        prior_sidecar.unlink()
+    elif tamper in ("delta", "flip"):
+        inputs = out["inputs"]
+        if tamper == "delta":
+            inputs["delta"]["newly_evidenced"] = ["buyer", "budget_owner", "verifier"]
+        else:
+            inputs["flip"] = "Ship it now."
+        out["inputs_digest"] = ventures.inputs_digest(inputs)
+        text = ventures.render(inputs)
+        out["sha256"] = hashlib.sha256(text.encode()).hexdigest()
+        Path(out["path"]).write_text(text)
+        Path(out["path"]).with_suffix(".json").write_bytes(ventures._canonical_json(inputs))
+    else:
+        Path(out["path"]).with_suffix(".json").write_text("{}")
+    ok, detail = ventures.verify_delivery(out, ctx.deliver_root)
+    assert not ok and finding in detail, detail
+
+
+def test_flip_condition_names_the_gap_or_says_evidence_will_not_help():
+    gap = {"missing": ["buyer"], "next_action": "Find independent evidence for buyer", "status": "NEEDS_EVIDENCE"}
+    assert "stands between this signal and the engine's 'go'" in ventures.flip_condition(gap, "go", "needs_more_evidence")
+    assert "more evidence alone will not make this a go" in ventures.flip_condition(gap, "kill", "kill")
+    ready = {"missing": [], "next_action": "Ask the named buyer", "status": "READY_FOR_HUMAN_REVIEW"}
+    assert "the decision is yours" in ventures.flip_condition(ready, "go", "go")
+
+
+def test_standing_hold_is_refuted_when_its_new_delivery_was_altered(tmp_path, organs):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = venture_assessment(**organs, standing=True, cadence_seconds=60, preauthorize_delivery=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert _tick(body, clock) == ["ACTED"]
+        memo = next((Layout(home).home / "deliveries" / "ventures").glob("*.md"))
+        memo.write_text(memo.read_text().replace("needs_more_evidence", "go"))   # before the hold is judged
+        assert _tick(body, clock) == ["HOLDING"]
+        judged = [e.payload for e in body.journal.replay("mission.appraised")]
+    assert judged[-1]["verdict"] == "REFUTED" and "differs from the render" in judged[-1]["findings"][0]
+
+
+def test_counterevidence_travels_on_the_wire():
+    receipt = {"receipt_sha256": "cd" * 32, "appraisal": {
+        "question": "q", "failure": {"description": "d"}, "candidate": {"current_form": "c"}, "next_action": "n",
+        "sources": [{"id": "s", "path": "p", "sha256": "0" * 64, "collected_at": "2026-09-26T00:00:00Z"}],
+        "claims": [{"stance": "supports", "assertion": "pain is real", "source_id": "s", "byte_start": 0, "byte_end": 4},
+                   {"stance": "challenges", "assertion": "a cheaper tool exists", "source_id": "s",
+                    "byte_start": 5, "byte_end": 9}],
+        "market": {}}}
+    packet = ventures.packet_from_appraisal(receipt)
+    assert packet["risk_flags"] == ["counterevidence: a cheaper tool exists [source p sha256:" + "0" * 64 + " bytes 5-9]"]
+    assert all("cheaper" not in e for e in packet["evidence"])

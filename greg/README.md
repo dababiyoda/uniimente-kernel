@@ -125,6 +125,16 @@ Each organ runs in its own process from its own checkout. It gets a stripped env
 
     greg mission new venture-assessment --railscout RS --wmi WMI --manifest M.json --source-root DIR --key K
 
+**Standing watch** (`--standing [--cadence-seconds N]`). An infinite mission on one signal file. It needs one approval. After that, whenever the evidence changes (a buyer interview, a quote, a counterexample), both organs run again, and a new write-once revision is delivered with:
+- its prior verdict and the delta: newly evidenced, newly missing, claims added or removed, score movement;
+- "what would change the verdict": the evidence gap, or "more evidence alone will not make this a go".
+
+The appraiser refutes a rewritten prior revision, a false delta, or an invented flip condition.
+
+**Standing missions are now independently appraised.** Before this, only bounded missions reached the separate-process appraiser, so the daily brief's repeated deliveries were never verified. Each hold reached after new action is now recorded as `mission.held`, and the appraiser judges it. Its scope is the actions since the previous hold; superseded evidence is history, not a present claim.
+
+**Organ finding** (`tests/evidence/greg-product/venture-watch-live-2026-09-26.json`): WealthMachine's opportunity score does not read evidence content. Counterevidence cannot lower it. GREG forwards sourced counterevidence as `risk_flags` and states in the memo when the score ignored an evidence change.
+
 ## Using it (developer mode today)
 
 **First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**

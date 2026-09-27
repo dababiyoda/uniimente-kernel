@@ -34,7 +34,7 @@ import uuid
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 
 KERNEL_ROOT = Path(__file__).resolve().parents[1]
-RENDERER = "greg.ventures/1"
+RENDERER = "greg.ventures/2"
 ORGAN_TIMEOUT_SECONDS = 60
 NAMESPACE = uuid.UUID("2f0c6f86-3f1d-4b4e-9f2c-7a1e4c0d5b21")
 VERDICT_RANK = {"kill": 0, "needs_more_evidence": 1, "defer": 2, "go": 3}
@@ -85,7 +85,10 @@ def packet_from_appraisal(receipt: dict) -> dict:
     market, evidence = appraisal.get("market", {}), (appraisal.get("market") or {}).get("evidence", {})
     evidenced = lambda key: market.get(key, "").strip() if market.get(key, "").strip() and evidence.get(key) else ""
     supporting = [c for c in appraisal["claims"] if c["stance"] == "supports"]
+    challenging = [c for c in appraisal["claims"] if c["stance"] == "challenges"]
     sources = {s["id"]: s for s in appraisal["sources"]}
+    cite = lambda c: (f"[source {sources[c['source_id']]['path']} sha256:{sources[c['source_id']]['sha256']} "
+                      f"bytes {c['byte_start']}-{c['byte_end']}]")
     collected = max(s["collected_at"] for s in appraisal["sources"])
     return {
         "id": str(uuid.uuid5(NAMESPACE, receipt["receipt_sha256"])),
@@ -99,12 +102,12 @@ def packet_from_appraisal(receipt: dict) -> dict:
         "audience": evidenced("buyer"),
         "buyer_type": evidenced("budget_owner"),
         "urgency": "medium",
-        "evidence": [f"{c['assertion']} [source {sources[c['source_id']]['path']} sha256:"
-                     f"{sources[c['source_id']]['sha256']} bytes {c['byte_start']}-{c['byte_end']}]"
-                     for c in supporting],
+        "evidence": [f"{c['assertion']} {cite(c)}" for c in supporting],
         "possible_offer": appraisal["candidate"]["current_form"],
         "monetization_paths": [],
-        "risk_flags": [],
+        # Sourced counterevidence travels on the wire; the engine is not allowed to be
+        # handed a packet from which the adverse case was silently removed.
+        "risk_flags": [f"counterevidence: {c['assertion']} {cite(c)}" for c in challenging],
         "smallest_validation_action": appraisal["next_action"],
     }
 
@@ -137,17 +140,90 @@ STABLE_ASSESSMENT = ("go_no_go", "opportunity_score", "market_alignment", "risk_
                      "validation_plan", "recommended_next_action", "requires_human_approval")
 
 
+def thread_id(manifest_path: Path) -> str:
+    """One venture thread per signal manifest location: revisions of the same evidence file."""
+    return "thread-" + hashlib.sha256(str(Path(manifest_path).resolve()).encode()).hexdigest()[:16]
+
+
+def _canonical_json(value) -> bytes:
+    return (json.dumps(value, sort_keys=True, indent=1) + "\n").encode("utf-8")
+
+
+def _summary(inputs: dict) -> dict:
+    appraisal = inputs["railscout"]["appraisal"]
+    return {"revision": inputs["revision"], "receipt_sha256": inputs["railscout"]["receipt_sha256"],
+            "verdict": inputs["binding"]["verdict"], "engine_verdict": inputs["assessment"]["go_no_go"],
+            "opportunity_score": inputs["assessment"]["opportunity_score"], "status": appraisal["status"],
+            "missing": list(appraisal["missing"]), "claim_ids": sorted(c["id"] for c in appraisal["claims"])}
+
+
+def delta(previous: dict | None, current: dict) -> dict | None:
+    """What changed between two revisions of one venture thread (deterministic)."""
+    if previous is None:
+        return None
+    return {"verdict": [previous["verdict"], current["verdict"]],
+            "engine_verdict": [previous["engine_verdict"], current["engine_verdict"]],
+            "opportunity_score": [previous["opportunity_score"], current["opportunity_score"]],
+            "newly_evidenced": [m for m in previous["missing"] if m not in current["missing"]],
+            "newly_missing": [m for m in current["missing"] if m not in previous["missing"]],
+            "claims_added": [c for c in current["claim_ids"] if c not in previous["claim_ids"]],
+            "claims_removed": [c for c in previous["claim_ids"] if c not in current["claim_ids"]]}
+
+
+def flip_condition(appraisal: dict, engine_verdict: str, verdict: str) -> str:
+    """Value of information: which evidence stands between this signal and a different verdict."""
+    if verdict != engine_verdict:
+        return (f"Evidencing {', '.join(appraisal['missing']) or 'the contested topics'} is what stands between "
+                f"this signal and the engine's '{engine_verdict}'. Smallest next step: {appraisal['next_action']}.")
+    if appraisal["status"] == "READY_FOR_HUMAN_REVIEW":
+        return f"Evidence is complete enough for your review; the decision is yours: {appraisal['next_action']}."
+    return (f"Even with complete evidence the engine says '{engine_verdict}'; more evidence alone will not make "
+            f"this a go. Change the offer, buyer or transaction, or retire the signal.")
+
+
+def _prior(folder: Path, thread: str, receipt: str) -> tuple[dict | None, str | None, Path | None]:
+    """Latest earlier revision of this thread (by revision number), from write-once sidecars."""
+    best = None
+    for path in sorted(folder.glob("venture-*.json")) if folder.is_dir() else []:
+        try:
+            data = path.read_bytes()
+            value = json.loads(data)
+        except (OSError, ValueError):
+            continue
+        if value.get("thread") != thread or value["railscout"]["receipt_sha256"] == receipt:
+            continue
+        if best is None or value["revision"] > best[0]["revision"]:
+            best = (value, hashlib.sha256(data).hexdigest(), path)
+    return best if best else (None, None, None)
+
+
 def render(inputs: dict) -> str:
     appraisal, assessment = inputs["railscout"]["appraisal"], inputs["assessment"]
     v = inputs["binding"]
     lines = [f"# Venture assessment — {appraisal['question']}", "",
              f"**Binding verdict: {v['verdict']}** — {v['why']}.", "",
+             f"Revision {inputs.get('revision', 1)} of this signal.", "",
              f"- RailScout (evidence): **{appraisal['status']}**; next action: {appraisal['next_action']}",
              f"- WealthMachine (venture engine): **{assessment['go_no_go']}**, opportunity score "
              f"{assessment['opportunity_score']}, market alignment {assessment['market_alignment']}, risk "
              f"{assessment['risk_level']}",
              f"- Requires your approval: yes. GREG executed nothing beyond reading sources and running both organs.",
-             "", "## Governing transaction", "", appraisal["transaction"], "",
+             "", "## What would change the verdict", "", inputs["flip"], ""]
+    d, p = inputs.get("delta"), inputs.get("previous")
+    if d and p:
+        lines += ["## Since the last assessment", "",
+                  f"- Revision {p['revision']} (`{p['memo']}`): **{d['verdict'][0]}** → now **{d['verdict'][1]}**",
+                  f"- Engine: {d['engine_verdict'][0]} → {d['engine_verdict'][1]}; opportunity score "
+                  f"{d['opportunity_score'][0]} → {d['opportunity_score'][1]}",
+                  f"- Newly evidenced: {', '.join(d['newly_evidenced']) or 'nothing'}",
+                  f"- Newly missing: {', '.join(d['newly_missing']) or 'nothing'}",
+                  f"- Claims added: {', '.join(d['claims_added']) or 'none'}; removed: "
+                  f"{', '.join(d['claims_removed']) or 'none'}"]
+        if (d["claims_added"] or d["claims_removed"]) and d["opportunity_score"][0] == d["opportunity_score"][1]:
+            lines.append("- The engine's score did not move although the evidence changed: it is not reading "
+                         "evidence content here, so weigh the evidence above, not the score.")
+        lines.append("")
+    lines += ["## Governing transaction", "", appraisal["transaction"], "",
              f"Failure layer: {appraisal['failure']['layer']} — {appraisal['failure']['description']}", "",
              "## Evidence (source bytes verified; assertions not independently verified)", ""]
     for c in appraisal["claims"]:
@@ -169,6 +245,7 @@ def render(inputs: dict) -> str:
               f"- Wire packet `{inputs['packet']['id']}` sent under the kernel identity; assessment adapted under "
               f"the wealthmachine identity; execution authority {inputs['canonical']['assessment_execution_authority']}",
               f"- Signal: manifest {inputs['manifest_sha256']}",
+              f"- Venture thread `{inputs['thread']}`, revision {inputs['revision']}",
               f"- Renderer {RENDERER}", ""]
     return "\n".join(lines)
 
@@ -177,12 +254,12 @@ def inputs_digest(inputs: dict) -> str:
     return "sha256:" + hashlib.sha256(json.dumps(inputs, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-def _deliver(text: str, ctx: InvocationContext, name: str) -> Path:
+def _deliver(data: bytes, ctx: InvocationContext, filename: str) -> Path:
     if ctx.deliver_root is None:
         raise CapabilityError("this body has no delivery root configured")
     folder = Path(ctx.deliver_root).resolve() / "ventures"
     folder.mkdir(parents=True, exist_ok=True)
-    target, data = folder / f"{name}.md", text.encode("utf-8")
+    target = folder / filename
     if target.exists():
         if target.read_bytes() == data:
             return target
@@ -218,20 +295,35 @@ def assess(params, ctx: InvocationContext) -> dict:
     manifest_bytes = p["manifest"].read_bytes()
     manifest = json.loads(manifest_bytes.decode("utf-8"))
     receipt = _organ(_RAILSCOUT, manifest, str(p["railscout_root"]), str(p["source_root"]), cwd=p["railscout_root"])
-    packet = packet_from_appraisal(receipt)
-    assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"])
-    verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"])
-    inputs = {"renderer": RENDERER, "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(), "railscout": receipt, "packet": packet,
-              "assessment": assessment, "canonical": _canonical(packet, assessment),
-              "binding": {"verdict": verdict, "why": why},
-              "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
-              "paths": {k: str(v) for k, v in p.items()}}
+    name = f"venture-{receipt['receipt_sha256'][:16]}"
+    folder = Path(ctx.deliver_root).resolve() / "ventures"
+    existing = folder / f"{name}.json"
+    if existing.is_file():  # this exact receipt was already assessed: the delivered record stands
+        inputs = json.loads(existing.read_bytes())
+    else:
+        thread = thread_id(p["manifest"])
+        prior, prior_sha, prior_path = _prior(folder, thread, receipt["receipt_sha256"])
+        packet = packet_from_appraisal(receipt)
+        assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"])
+        verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"])
+        inputs = {"renderer": RENDERER, "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+                  "thread": thread, "revision": prior["revision"] + 1 if prior else 1,
+                  "railscout": receipt, "packet": packet,
+                  "assessment": assessment, "canonical": _canonical(packet, assessment),
+                  "binding": {"verdict": verdict, "why": why},
+                  "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict),
+                  "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
+                  "paths": {k: str(v) for k, v in p.items()}}
+        inputs["previous"] = (dict(_summary(prior), memo=prior_path.with_suffix(".md").name, sidecar=prior_path.name,
+                                   sidecar_sha256=prior_sha) if prior else None)
+        inputs["delta"] = delta(_summary(prior) if prior else None, _summary(inputs))
     text = render(inputs)
-    path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}")
+    path = _deliver(text.encode("utf-8"), ctx, f"{name}.md")
+    _deliver(_canonical_json(inputs), ctx, f"{name}.json")
     return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
-            "inputs": inputs, "inputs_digest": inputs_digest(inputs), "verdict": verdict,
-            "railscout_status": receipt["appraisal"]["status"], "engine_verdict": assessment["go_no_go"],
-            "manifest_sha256": inputs["manifest_sha256"]}
+            "inputs": inputs, "inputs_digest": inputs_digest(inputs), "verdict": inputs["binding"]["verdict"],
+            "railscout_status": receipt["appraisal"]["status"], "engine_verdict": inputs["assessment"]["go_no_go"],
+            "manifest_sha256": inputs["manifest_sha256"], "revision": inputs["revision"], "thread": inputs["thread"]}
 
 
 def status(params, ctx: InvocationContext) -> dict:
@@ -254,6 +346,8 @@ def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the assessment inputs"
     inputs = output["inputs"]
+    if inputs.get("renderer") != RENDERER:
+        return False, f"assessed by {inputs.get('renderer')}; this appraiser re-derives {RENDERER} only"
     if inputs_digest(inputs) != output.get("inputs_digest"):
         return False, "retained inputs do not match their digest"
     expected = render(inputs).encode("utf-8")
@@ -264,6 +358,26 @@ def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]
         return False, "delivered memo is outside the delivery root"
     if not path.is_file() or path.read_bytes() != expected:
         return False, "delivered memo differs from the render of the receipted inputs"
+    sidecar = path.with_suffix(".json")
+    if not sidecar.is_file() or sidecar.read_bytes() != _canonical_json(inputs):
+        return False, "delivered inputs record differs from the receipted inputs"
+    previous = inputs.get("previous")
+    if previous:
+        prior_path = path.parent / previous["sidecar"]
+        try:
+            prior_bytes = prior_path.read_bytes()
+            prior = json.loads(prior_bytes)
+        except (OSError, ValueError):
+            return False, "the prior revision this memo cites is missing"
+        if hashlib.sha256(prior_bytes).hexdigest() != previous["sidecar_sha256"] or prior.get("thread") != inputs["thread"]:
+            return False, "the prior revision this memo cites was altered"
+        if inputs["delta"] != delta(_summary(prior), _summary(inputs)) or inputs["revision"] != prior["revision"] + 1:
+            return False, "the stated change since the last assessment is not what the two revisions show"
+    elif inputs.get("revision", 1) != 1 or inputs.get("delta"):
+        return False, "a later revision must cite its prior revision"
+    if inputs["flip"] != flip_condition(inputs["railscout"]["appraisal"], inputs["assessment"]["go_no_go"],
+                                        inputs["binding"]["verdict"]):
+        return False, "the stated verdict-change condition is not derived from the organ outputs"
     paths = {k: Path(v) for k, v in inputs["paths"].items()}
     try:
         manifest_bytes = paths["manifest"].read_bytes()

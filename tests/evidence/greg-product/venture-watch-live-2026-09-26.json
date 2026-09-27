@@ -1,0 +1,97 @@
+{
+ "evidence": "GREG standing venture watch: evidence change -> automatic reassessment with lineage (live)",
+ "date": "2026-09-26",
+ "reality": "LOCAL-REAL (supervised Linux dev-container body; test founder key, not Alfonso's; not Mac-verified)",
+ "supersedes_note": "venture-assess-live-2026-09-26.json was recorded with renderer greg.ventures/1 (no lineage, counterevidence not forwarded); retained as history",
+ "organs": {
+  "railscout": "origin/founder/railscout-coded-slice-20260926 @ 232f724 (worktree)",
+  "wealthmachine": "main @ ec82b80 (worktree)"
+ },
+ "sequence": [
+  "init body; enroll test founder key; greg run (host loop)",
+  "greg mission new venture-assessment --standing --cadence-seconds 60 (signed)",
+  "one APPROVAL (venture.assess outside the read-only cone) -> greg decide approve",
+  "revision 1 delivered; mission.held recorded; separate-process appraisal VERIFIED",
+  "kill -9 host loop",
+  "while down: add a REAL source (kernel docs/FOUNDER_EFFECT_COMPILER.md line 39 excerpt) as challenge claim E1 to the signal manifest",
+  "restart host loop: cadence re-observation finds no memo for the new evidence -> both organs re-run under the approved scope -> revision 2 -> hold appraised VERIFIED"
+ ],
+ "boots": 2,
+ "approvals_requested": 1,
+ "actions_done": [
+  "assess-venture",
+  "assess-venture"
+ ],
+ "holds": [
+  {
+   "event_id": "f2a12bce-93bc-515f-a9b5-7b859635ad98",
+   "actions_done": 1
+  },
+  {
+   "event_id": "f8fafcf6-c58f-572f-ab8a-7e7a3ded7975",
+   "actions_done": 2
+  }
+ ],
+ "appraisals": [
+  {
+   "verdict": "VERIFIED",
+   "closure_event": "f2a12bce-93bc-515f-a9b5-7b859635ad98",
+   "findings": [],
+   "deliveries_bound_to_evidence": true
+  },
+  {
+   "verdict": "VERIFIED",
+   "closure_event": "f8fafcf6-c58f-572f-ab8a-7e7a3ded7975",
+   "findings": [],
+   "deliveries_bound_to_evidence": true
+  }
+ ],
+ "revisions": [
+  {
+   "revision": 1,
+   "receipt": "f61c352f91b2538f1da6a69786abeff7f38c8cd541db69c18ac0ec8ae9db1f40",
+   "verdict": "needs_more_evidence",
+   "engine": "go",
+   "score": 0.72,
+   "risk_flags": [
+    "counterevidence: Current agent rule favors existing mechanisms when they close the effect [source 03-current.txt sha256:73bf9e5e1b772b5a3d87274bf075872519ac2481edaf5a32e2c5cbe2c3ddd408 bytes 0-115]"
+   ],
+   "delta": null,
+   "flip": "Evidencing buyer, budget_owner, verifier, accepted_decision is what stands between this signal and the engine's 'go'. Smallest next step: Find independent evidence for buyer."
+  },
+  {
+   "revision": 2,
+   "receipt": "d9eef310870c344487399f203cf623a47e9cea31859c91d45499bd59ae52dd48",
+   "verdict": "needs_more_evidence",
+   "engine": "go",
+   "score": 0.72,
+   "risk_flags": [
+    "counterevidence: Current agent rule favors existing mechanisms when they close the effect [source 03-current.txt sha256:73bf9e5e1b772b5a3d87274bf075872519ac2481edaf5a32e2c5cbe2c3ddd408 bytes 0-115]",
+    "counterevidence: Founder Effect Compiler prefers existing mechanisms before inventing a new substrate [source 04-effect-compiler.txt sha256:9da6079f5c4996ca314a3d56bdb8d0eb9e4e6f672dddb577b47c4fee53076d7c bytes 130-162]"
+   ],
+   "delta": {
+    "claims_added": [
+     "E1"
+    ],
+    "claims_removed": [],
+    "engine_verdict": [
+     "go",
+     "go"
+    ],
+    "newly_evidenced": [],
+    "newly_missing": [],
+    "opportunity_score": [
+     0.72,
+     0.72
+    ],
+    "verdict": [
+     "needs_more_evidence",
+     "needs_more_evidence"
+    ]
+   },
+   "flip": "Evidencing buyer, budget_owner, verifier, accepted_decision is what stands between this signal and the engine's 'go'. Smallest next step: Find independent evidence for buyer."
+  }
+ ],
+ "finding": "WealthMachine opportunity_score is computed from urgency, confidence and evidence COUNT (src/services/opportunity_intake.py packet_to_engine_payload); no input carries evidence content and risk_flags only affect legal/finance handling. A new sourced challenge (E1) left the score at 0.72. GREG now forwards sourced counterevidence as risk_flags and states the non-movement in the memo; the binding rule keeps the score from outrunning evidence.",
+ "memo_revision_2": "# Venture assessment \u2014 Does the accessible source corpus justify building a custom proof-to-settlement substrate now?\n\n**Binding verdict: needs_more_evidence** \u2014 RailScout status NEEDS_EVIDENCE caps the engine's 'go'.\n\nRevision 2 of this signal.\n\n- RailScout (evidence): **NEEDS_EVIDENCE**; next action: Find independent evidence for buyer\n- WealthMachine (venture engine): **go**, opportunity score 0.72, market alignment 0.49, risk low\n- Requires your approval: yes. GREG executed nothing beyond reading sources and running both organs.\n\n## What would change the verdict\n\nEvidencing buyer, budget_owner, verifier, accepted_decision is what stands between this signal and the engine's 'go'. Smallest next step: Find independent evidence for buyer.\n\n## Since the last assessment\n\n- Revision 1 (`venture-f61c352f91b2538f.md`): **needs_more_evidence** \u2192 now **needs_more_evidence**\n- Engine: go \u2192 go; opportunity score 0.72 \u2192 0.72\n- Newly evidenced: nothing\n- Newly missing: nothing\n- Claims added: E1; removed: none\n- The engine's score did not move although the evidence changed: it is not reading evidence content here, so weigh the evidence above, not the score.\n\n## Governing transaction\n\nAn unspecified buyer accepts proof before releasing an unspecified physical-world payment\n\nFailure layer: proof \u2014 Potential proof/trust/settlement bottleneck requires a real named transaction\n\n## Evidence (source bytes verified; assertions not independently verified)\n\n- supports [D1, observation] Founder seeks trapped recurring physical-world money streams (`doctrine` bytes 23-144)\n- supports [H1, allegation] Historical essay says dependence on external APIs precludes autonomy (`historical` bytes 0-153)\n- challenges [K1, observation] Current agent rule favors existing mechanisms when they close the effect (`current` bytes 0-115)\n- challenges [E1, observation] Founder Effect Compiler prefers existing mechanisms before inventing a new substrate (`effect-compiler` bytes 130-162)\n\n## What is not evidenced\n\n- buyer\n- budget_owner\n- verifier\n- accepted_decision\n- canonical packet fields unresolved: pain_owner, budget_owner, governing_bottleneck\n\n## Strongest counterexample\n\nCurrent agent rule favors existing mechanisms when they close the effect \u2014 \"Do not recommend building new substrate when an existing real mechanism closes the effect more cheaply or reliably.\"\n\n## Venture engine reasoning\n\n- opportunity score 0.72 meets the 0.55 threshold\n- engine risk level: Ultra Low\n- [bear] only 2 evidence item(s); demand is asserted, not shown; no path implies anyone has agreed to pay; willingness to pay is untested until a buyer commits value\n- [incumbent_response] an incumbent with distribution can copy research appraisal quickly; the durable edge must be trust and cultural specificity, not the artifact itself\n\n## Adversarial committee\n\n- bull (for, medium): opportunity score 0.72 clears threshold\n- bear (against, medium): only 2 evidence item(s); demand is asserted, not shown; no path implies anyone has agreed to pay; willingness to pay is untested until a buyer commits value\n- fraud_manipulation (neutral, low): no sybil indicators in the evidence set; keep verifying provenance\n- incumbent_response (against, medium): an incumbent with distribution can copy research appraisal quickly; the durable edge must be trust and cultural specificity, not the artifact itself\n- adoption_friction (against, low): audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause\n- do_nothing (against, low): skipping this preserves founder attention for a stronger signal; the cost of waiting is one cycle of learning, not the market\n- opportunity_cost (against, low): score 0.72 vs. alignment 0.49: compare against the best alternative use of the same attention and budget\n\n## Validation plan (proposed, not executed)\n\n1. Find independent evidence for buyer\n1. Draft landing-page copy and collect waitlist interest (no payment yet)\n1. Run 3-5 buyer interviews from engaged repliers\n\n## Provenance\n\n- RailScout receipt `d9eef310870c344487399f203cf623a47e9cea31859c91d45499bd59ae52dd48` at `232f72421e5dbbf4ded6cc58ce5b4fd61cfbbf50`\n- WealthMachine engine at `ec82b8027d987c865dc123215afb53d20916908f`\n- Wire packet `5cc90790-38a2-514a-abfc-adfedc3fd956` sent under the kernel identity; assessment adapted under the wealthmachine identity; execution authority False\n- Signal: manifest 2fe932c2792d034b4b5a1d80541f167099c1ba27b05c964f1610e1cc2ca3d678\n- Venture thread `thread-589f3f7367f39934`, revision 2\n- Renderer greg.ventures/2\n"
+}

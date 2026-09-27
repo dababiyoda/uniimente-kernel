@@ -85,7 +85,7 @@ def main(argv=None) -> int:
             q.add_argument("target", help="mission JSON file (submit) or template name (new)")
             q.add_argument("--repo", action="append", default=[], help="role=path (repo-guardian, integration-watch)")
             q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
-            q.add_argument("--cadence-seconds", type=int, default=21600)
+            q.add_argument("--cadence-seconds", type=int, default=None, help="standing missions (default per template)")
             q.add_argument("--text"); q.add_argument("--must-contain")
             q.add_argument("--local", action="append", default=[], help="name=path (engineering-brief)")
             q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
@@ -97,6 +97,8 @@ def main(argv=None) -> int:
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
             q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
             q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
+            q.add_argument("--standing", action="store_true",
+                           help="venture-assessment: keep watching; re-assess whenever the evidence changes")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -192,7 +194,7 @@ def main(argv=None) -> int:
                 if args.target in ("repo-guardian", "integration-watch"):
                     spec = templates.TEMPLATES[args.target](repositories=dict(r.split("=", 1) for r in args.repo),
                                                    expected_pin=args.pin, expected_version=args.pkg_version,
-                                                   cadence_seconds=args.cadence_seconds)
+                                                   cadence_seconds=args.cadence_seconds or 21600)
                 elif args.target == "workspace-note":
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
@@ -208,7 +210,9 @@ def main(argv=None) -> int:
                         raise BodyError(f"venture-assessment needs --{', --'.join(m.replace('_', '-') for m in missing)}")
                     spec = templates.venture_assessment(railscout_root=args.railscout, wmi_root=args.wmi,
                                                         manifest=args.manifest, source_root=args.source_root,
-                                                        preauthorize_delivery=args.preauthorize_delivery)
+                                                        preauthorize_delivery=args.preauthorize_delivery,
+                                                        standing=args.standing,
+                                                        cadence_seconds=args.cadence_seconds or 3600)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission

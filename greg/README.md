@@ -1,4 +1,4 @@
-# GREG — the persistent, founder-sovereign operating layer (Body 1)
+# GREG — the persistent, founder-sovereign operating layer (first-body candidate)
 
 > **Founder-effect rule (INTENT-0030, INTENT-2026-09-25-EGREGORE-ECOLOGY):** the egregore is built
 > as real, running mechanisms. The *effects* (persistence, self-direction inside scope,
@@ -38,6 +38,14 @@ Constitution and one Gate — not from a hierarchy of personas.
 
 The optimization target is one transaction: *Alfonso's authorized intention → verified real-world
 outcome → evidence and capability that make the next intention easier.*
+
+The `memory.precedents` read-only tool makes previous actions available to a later signed
+mission via `{"capability":"fs.write"}` at `memory:fs.write` (change both together for
+another built-in capability). It reports action validation levels and separate local
+mission appraisal references; it never upgrades either to external proof. The
+founder light cone must include this capability and exact target. It can be detached
+with the same signed founder command as other built-ins. Item 17 of the Foundry's
+55-system obligation remains partial pending broader, outcome-ranked retrieval.
 
 | Control point | Mechanism | Evidence |
 |---|---|---|

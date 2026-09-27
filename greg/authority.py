@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import urllib.parse
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
 from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext
@@ -133,7 +133,7 @@ class AuthorityOffice:
 
         def execute(p):
             try:
-                output = adapter(params, ctx)
+                output = adapter(params, replace(ctx, target=target))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "output": None, "validation_status": "self_reported"}

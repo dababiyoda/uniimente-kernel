@@ -324,7 +324,8 @@ class MissionEngine:
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
-                                 deliver_root=self.deliver_root, learned=improvement.learned(self.journal))
+                                 deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
+                                 journal=self.journal if manifest.capability_id == "memory.precedents" else None)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:

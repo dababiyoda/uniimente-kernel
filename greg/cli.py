@@ -10,6 +10,7 @@
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
     greg run                                  the host loop (normally started by the supervisor)
     greg service install --platform macos|linux|supervisord [--remote]
+    greg body designate --key K                   founder signs the intended first body
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
@@ -73,6 +74,10 @@ def main(argv=None) -> int:
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
+    b = sub.add_parser("body", help="founder designation of the first physical execution body")
+    bs = b.add_subparsers(dest="body_cmd", required=True)
+    bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
+    bd.add_argument("--no-passphrase", action="store_true"); bd.add_argument("--ttl-hours", type=int, default=24)
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept"):
@@ -204,6 +209,8 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "body" and args.body_cmd == "designate":
+            print(_drop(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args))
         elif args.cmd in ("vepmc", "routing"):
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:

@@ -2,6 +2,7 @@
 the capability rule, the real repository guardian and the ledger-derived VEPMC."""
 from dataclasses import replace
 import json
+import os
 import subprocess
 
 import pytest
@@ -138,7 +139,7 @@ def test_repository_guardian_holds_then_escalates_real_git_drift_once(tmp_path):
     assert not [a for a in events(home, "mission.action")]  # the guardian never touches repositories
 
 
-def test_vepmc_is_derived_from_evidence_and_needs_founder_and_mac(tmp_path):
+def test_vepmc_is_derived_from_evidence_and_needs_designated_founder_body(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     note = workspace(home, "m:vepmc-probe") / "n.txt"
     submit(home, key, body_id, "MISSION", mission("m:vepmc-probe", checks=[note_check("n", note, "x")],
@@ -146,11 +147,39 @@ def test_vepmc_is_derived_from_evidence_and_needs_founder_and_mac(tmp_path):
                                                   capabilities=["fs.read", "fs.write"]))
     run(home, Clock(), ticks=4)
     with Body(home) as body:
+        body.journal.record("body.designated", {"body_id": body_id, "platform": "Linux",
+                                                 "purpose": "first_founder_body", "command_digest": "forged"},
+                            key="forged")
         result = metrics.vepmc(body.journal)
     row = result["missions"][0]
     assert result["VEPMC"] == 0 and row["founder_signed"] and row["real_capability"] and row["appraised_verified"]
-    # Direct ticks are not a hosted body, no interruption, no approval, no founder acceptance, no Mac.
-    assert {"persistent_runtime", "interruption_survived", "approval_boundary", "founder_accepted"} <= set(row["missing"])
+    # A designation record without an accepted signed command is not enough.
+    assert {"persistent_runtime", "interruption_survived", "approval_boundary", "founder_accepted",
+            "founder_body"} <= set(row["missing"])
+
+
+def test_first_body_designation_requires_founder_and_precedes_the_mission(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        with pytest.raises(Exception, match="exactly the first founder body purpose"):
+            body.apply(signed(key, body_id, "BODY_DESIGNATE", {"purpose": "other"}))
+        # The signature addresses this body and the choice cannot be silently changed.
+        body.apply(signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}))
+        with pytest.raises(Exception, match="already designated"):
+            body.apply(signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}))
+
+
+def test_first_body_designation_replays_across_interrupted_acceptance(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    envelope = signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"})
+    from provenance.ledger import sha256_json
+    with Body(home) as body:
+        body.journal.record("body.designated", {"body_id": body_id, "platform": os.uname().sysname,
+                                                 "purpose": "first_founder_body",
+                                                 "command_digest": sha256_json(envelope)}, key=[body_id, "first"])
+    with Body(home) as body:
+        assert body.apply(envelope)["status"] == "APPLIED"
+        assert body.apply(envelope)["status"] == "ALREADY_APPLIED"
 
 
 def test_appraiser_refutation_of_the_effect_lowers_routing_but_foreign_faults_do_not(tmp_path):

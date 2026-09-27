@@ -4,7 +4,7 @@ Directive §24: mission through the GREG interface -> durable -> interface close
 persistent supervised runtime -> real capability -> deliberate interruption ->
 restore without re-prompting -> no duplicate effect -> approval boundary honored ->
 evidence-backed appraisal -> inspectable episode. VEPMC is computed from the ledger.
-On Linux every condition can be met EXCEPT ``mac_body``; the key is a test key.
+The Linux fixture uses a test key, so even a complete structural row is not an external closure.
 """
 import json
 import os
@@ -21,7 +21,7 @@ from greg import service
 pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord (requirements-dev) not installed")
 
 
-def test_first_vepmc_path_meets_every_condition_except_the_mac(tmp_path):
+def test_first_vepmc_path_requires_founder_body_designation(tmp_path):
     home, key = tmp_path / "body", tmp_path / "founder.pem"
     greg(home, "init", "--read-root", str(tmp_path))
     greg(home, "founder", "enroll", "--pubkey",
@@ -38,6 +38,8 @@ def test_first_vepmc_path_meets_every_condition_except_the_mac(tmp_path):
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         first = wait_for(lambda: heartbeat(home)["state"] == "RUNNING" and heartbeat(home), what="body start")
+        greg(home, "body", "designate", "--key", str(key), "--no-passphrase")
+        wait_for(lambda: events(home, "body.designated"), what="signed first body designation")
         # 1. Mission through the GREG interface (template, signed, interface process exits).
         greg(home, "mission", "new", "workspace-note", "--text", "the first body is alive",
              "--must-contain", "alive", "--key", str(key), "--no-passphrase")
@@ -67,8 +69,9 @@ def test_first_vepmc_path_meets_every_condition_except_the_mac(tmp_path):
         wait_for(lambda: events(home, "critique.recorded"), what="founder acceptance")
         vepmc = json.loads(greg(home, "vepmc").stdout)
         row = next(r for r in vepmc["missions"] if r["mission_id"] == "m:first-note")
-        assert row["missing"] == ([] if os.uname().sysname == "Darwin" else ["mac_body"]), row
-        assert vepmc["VEPMC"] == (1 if os.uname().sysname == "Darwin" else 0)
+        assert row["missing"] == [] and row["founder_body"], row
+        # Structurally complete fixture; test key and test machine cannot establish external VEPMC.
+        assert vepmc["VEPMC"] == 1 and vepmc["external_confirmation_required"]
         done = [a for a in events(home, "mission.action") if a["status"] == "DONE"]
         assert len(done) == 1  # exactly one consequence across kill/restart
         greg(home, "stop", "--key", str(key), "--no-passphrase")

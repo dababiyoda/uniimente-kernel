@@ -277,6 +277,20 @@ class Body:
         if kind == "BODY_RESUME":
             self.journal.record("body.resumed", {"command_digest": digest}, key=digest)
             return {"paused": False}
+        if kind == "BODY_DESIGNATE":
+            if body != {"purpose": "first_founder_body"}:
+                raise MissionError("body designation must name exactly the first founder body purpose")
+            prior = self.journal.replay("body.designated")
+            if prior:
+                if len(prior) == 1 and prior[0].payload["command_digest"] == digest:
+                    # Power loss after the designation event but before command.accepted:
+                    # the same signed envelope can finish its acceptance on replay.
+                    return prior[0].payload
+                raise MissionError("the first body is already designated; do not silently replace it")
+            record = {"body_id": self.config["body_id"], "platform": os.uname().sysname,
+                      "purpose": body["purpose"], "command_digest": digest, "at": iso(self.clock())}
+            self.journal.record("body.designated", record, key=[self.config["body_id"], "first"])
+            return record
         if kind == "BODY_STOP":
             # A founder stop is terminal until a human on this machine clears it: it must survive
             # login, reboot and supervisor restarts (launchd RunAtLoad would otherwise resume all
@@ -392,7 +406,8 @@ class Body:
             if mid not in contexts:
                 self.journal.record("mission.closure_context", {
                     "mission_id": mid, "boot_id": getattr(self, "boot_id", None), "pid": os.getpid(),
-                    "platform": os.uname().sysname, "hosted": getattr(self, "boot_id", None) is not None,
+                    "platform": os.uname().sysname, "body_id": self.config["body_id"],
+                    "hosted": getattr(self, "boot_id", None) is not None,
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
                 verdict = self.appraise(mid)

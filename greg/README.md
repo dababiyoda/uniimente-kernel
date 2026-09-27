@@ -45,7 +45,7 @@ outcome → evidence and capability that make the next intention easier.*
 | Default routing | `routing.py`: ledger-derived reliability (Laplace) per capability; strategies ranked by expected discrepancy value closed minus cost; each choice recorded with its alternatives | `test_routing_learns_from_one_missions_failure_for_the_next_mission` |
 | Proof / truth | `appraisal.py`: a **separate process** re-verifies the founder signature, re-derives checks from receipt bytes, re-observes the world and confirms exactly-once | `test_independent_appraiser_…`, `test_appraiser_refutes_a_false_closure_claim` |
 | Proof → routing | an appraiser refutation of the *effect* lowers that capability's reliability for every future mission; refutations for foreign faults do not | `test_appraiser_refutation_of_the_effect_lowers_routing_but_foreign_faults_do_not` |
-| Settlement / outcome | `metrics.py`: VEPMC computed only from ledger facts (nine conditions; two only Alfonso and his Mac can supply) | `tests/integration/test_greg_vepmc_path.py` |
+| Settlement / outcome | `metrics.py`: nine ledger conditions, including a founder-signed first-body designation; external confirmation of hardware ownership remains necessary | `tests/integration/test_greg_vepmc_path.py` |
 | Reliability | `repo.pin_audit`: a real, read-only watcher of Kernel/DALEOBANKS/WMI pin consistency (`templates.repo_guardian`) | `test_repository_guardian_holds_then_escalates_real_git_drift_once` |
 
 | Reliability (organs) | `repo.integration_audit` + `templates.integration_watch`: static integration findings with exact commits, blobs and lines (from PR #112); one decision per defect, withdrawn as moot when the world heals, re-raised if it returns | `test_integration_watch_escalates_a_real_authority_defect_once_then_holds_after_the_fix` |
@@ -87,7 +87,8 @@ On the Mac (not yet exercised against a public TSA: this build container's netwo
 
 ## Using it (developer mode today)
 
-**First mission on the Mac (VEPMC 0 → 1): follow [`FIRST_MISSION.md`](FIRST_MISSION.md).**
+**Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**
+The older Mac option remains in [`FIRST_MISSION.md`](FIRST_MISSION.md).
 
 ```bash
 python -m greg --home ~/.uniimente/greg init --read-root ~/Projects --deliver-root ~/GREG
@@ -137,7 +138,8 @@ Safari) · LOCAL-REAL (engineering brief on real Kernel/DALEOBANKS/WMI checkouts
 integration watch read the real repositories; browser.render drove a real Chromium; Claude Code built and verified a
 missing capability; Claude Code drafted a mission) · **not** PACKAGED · **not** MAC-VERIFIED · **not** REBOOT-VERIFIED
 (power loss is simulated by a torn write, not a real reboot) · **not** FOUNDER-USED · **not** PRODUCTION-AUTHORIZED ·
-no external business outcome. **VEPMC = 0**: on Linux 8 of 9 conditions hold with a test key; `mac_body` (and Alfonso's
-own key and acceptance) remain. Self-repair and the model router are TESTED on the product path (real body, real
+no external business outcome. **Externally verified VEPMC = 0**: Linux fixtures can satisfy the nine structural
+ledger conditions, but they use test keys and test machines. Alfonso's Chromebook Linux availability, his own key,
+physical first-body designation and acceptance remain untested. Self-repair and the model router are TESTED on the product path (real body, real
 isolated interpreters; model SDKs faked, no live key used); a live OpenAI/Anthropic API route awaits Alfonso's own keys.
 Human work fabric and business runtime are PROPOSED.

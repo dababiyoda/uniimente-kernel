@@ -1,9 +1,10 @@
 # First mission on the Mac — the VEPMC 0 → 1 runbook
 
-This is for Alfonso, on his own Mac, with his own key. No agent can do these
-steps for him: two of the nine VEPMC conditions (`founder_accepted`, `mac_body`)
-cannot be produced by a machine for itself. The other seven were produced by a real
-supervised process on Linux, through this same path
+This is the optional Mac route. Alfonso owns a Chromebook, so his current first-body
+route is [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).
+The nine ledger conditions include a founder-signed first-body designation and result
+acceptance. A fixture can satisfy the structural conditions; only an actual founder
+run provides external VEPMC evidence. The process path was exercised on Linux
 (`tests/evidence/greg-product/product-path-summary.json`, and on real repositories
 with live GitHub: `live-real-repos-summary.json`).
 
@@ -34,6 +35,7 @@ alias greg="~/.uniimente/venv/bin/python -m greg"
 greg init --read-root ~/src --deliver-root ~/GREG     # reads under ~/src; delivers into ~/GREG
 greg founder keygen --key ~/.greg-founder.pem          # choose a real passphrase
 greg founder enroll --pubkey <the hex it printed>      # trust on first use; do it yourself
+greg body designate --key ~/.greg-founder.pem         # sign this as the intended first body
 ```
 
 Optional: a GitHub token raises the rate limit from 60 to 5,000 calls an hour. Store it in

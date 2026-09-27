@@ -29,6 +29,7 @@ branch name. Nothing on it is merged to #114 or `main`.
 | Nine held-out-independence falsifiers (one brief = one case, derivation/retention/monitoring briefs never reused, replayed critique adds nothing, reconstruction after death) | #122 line `6bf7687` (another session) | `tests/unit/test_greg_learning_heldout_independence.py`, run against the canonical engine | 9/9 pass |
 | **Defect found by those falsifiers in the canonical engine:** after a loss, re-labelling the lost-on briefs lifted the retry cool-down. Now counts briefs delivered after the decision | this convergence | `improvement._learn_preferences` | restoring label-order counting fails `test_retry_after_a_loss_needs_three_new_distinct_briefs` |
 | `labelled_cases(every_label=True)`, `report()["superseded_labels"]` (a corrected label stays inspectable; neither feeds a decision) | #122 line `6bf7687` | `greg/improvement.py` | `test_4_10_…` |
+| An unreachable GitHub (python.org Python without CA bundle, offline, DNS) is a Gaps line in a delivered brief, not an UNCERTAIN action that blocked the mission on founder reconciliation with no brief | this convergence | `greg/briefs.py` `_https_json`, `gather_github`, `shadow_gather` | `test_an_unreachable_github_is_a_gap_in_a_delivered_brief_not_an_uncertain_action` fails without the fix |
 | Runbook / install: Python ≥3.11 interpreter selection, persistent `greg` alias, restart-after-stop | this convergence | `greg/FIRST_MISSION.md`, `greg/mac/verify_mac_body.sh`, `greg/__main__.py` | under Python 3.9 `greg init` used to die with `TypeError` in `egregore/runtime.py`; it now exits with the fix |
 
 ## Superseded (history, branches and PRs preserved; nothing deleted)
@@ -64,7 +65,8 @@ branch name. Nothing on it is merged to #114 or `main`.
 
 ## Evidence
 
-- Full suite in a fresh venv built from `requirements-dev.txt`: see PR #122 body for the exact run on the head.
+- Full suite in a fresh venv built from `requirements-dev.txt` on `2a8deff`: 974 passed, 8 skipped (optional SDK /
+  Playwright only); verifier V1–V5 PASS; schema refs, authority singleton, sealed checks PASS.
 - Duplicate-plane search (commands in the PR body): one `class Body`; one `ModelRouter`; one module importing
   `rfc3161_client`; one learning engine imported by `greg/`; `greg/learning.py` and `greg/corrections.py` absent.
 

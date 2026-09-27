@@ -2,6 +2,8 @@
 
 # UNIIMENTE Agent Entry Contract
 
+**Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
+
 ## Latest founder correction — real product over laboratory output
 
 Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and its verbatim source **before choosing new work**.

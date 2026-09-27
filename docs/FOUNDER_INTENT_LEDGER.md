@@ -2,6 +2,10 @@
 
 # Founder Intent Ledger
 
+## Foundry Swiss Army knife — 55 mandatory executable systems, 2026-09-27
+
+`INTENT-2026-09-27-FOUNDRY-55` and its [verbatim source](intent/sources/FOUNDRY-55-2026-09-27-source.md) preserve Alfonso's obligation to build **all 55 numbered systems** as individually usable and composable GREG/Foundry capabilities with meaningful tests, reproducible execution evidence, limitations and recovery. Deferral retains the item; removal/substitution requires Alfonso's explicit approval. The `foundry/arsenal.py` status describes available mechanism maturity and **does not certify item-level completion**. Alfonso owns no Mac at present; first-body hardware selection remains open. No permission to deploy, spend, publish, contact third parties or change Kernel authority is granted.
+
 ## Real-product repository metabolism — 2026-09-26
 
 `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` preserves Alfonso's latest explicit anti-cathedral correction with verbatim excerpts in `intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`: the project corpus is developmental substrate to be metabolized into the actual GREG product. Experiments, simulations, tests, benchmarks and architecture remain subordinate verification/evidence, not the milestone. Every substantial session must produce a truthful product delta ("what can actual GREG do now that it could not do before?") or identify a precise external blocker. Historical mechanisms may be productized, extracted, recombined, retained as evidence, archived, or removed from the active canonical path while preserving provenance. State: active. Current Single Bottleneck Metric remains VEPMC 0 -> 1.

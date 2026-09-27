@@ -2,6 +2,8 @@
 
 # UNIIMENTE Permanent Operating Order
 
+**Foundry delivery scope (2026-09-27):** `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json` keeps all 55 numbered systems as active obligations; each needs executable GREG/Foundry integration, tests and reproducible evidence before completion can be claimed. Catalog status and a plan do not suffice. Hardware for the first founder-owned body remains open because Alfonso owns no Mac. This changes no constitutional or external-effect authority.
+
 ## Latest founder correction — BUILD THE REAL PRODUCT
 
 Before selecting work, read `@docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and `@docs/intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`.

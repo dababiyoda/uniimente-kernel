@@ -208,6 +208,8 @@ class InvocationContext:
     manifest: CapabilityManifest
     deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
     learned: dict | None = None        # held-out-verified presentation policies (greg.improvement); never authority
+    journal: object | None = None     # supplied only to the institutional memory sensor
+    target: str = ""                   # exact signed target set by the authority office
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -489,6 +491,7 @@ STRENGTHENS = {
     "brief.engineering": ("settlement", "proof", "routing"),
     "repo.integration_audit": ("proof", "eligibility", "reliability"),
     "browser.render": ("proof", "capability_formation"),
+    "memory.precedents": ("proof", "routing", "compounding"),
 }
 
 
@@ -512,6 +515,15 @@ def _builtin(capability_id, function, description, route, consequence, target_pr
 
 
 BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
+    "memory.precedents": (_builtin("memory.precedents", "memory.precedents",
+                                   "Retrieve bounded action precedents and separately appraised missions",
+                                   "api", "read_only", "memory:", {"capability": "str"},
+                                   {"capability": "str", "action_evidence": "dict",
+                                    "locally_appraised_missions": "list", "limitations": "str"},
+                                   retry_safe=True,
+                                   provenance={"source": "uniimente-kernel/greg/precedents.py",
+                                               "mechanism_from": "memory/causal.py; greg/sop.py"}),
+                           _lazy("greg.precedents", "precedents")),
     "fs.read": (_builtin("fs.read", "filesystem.read", "Read one file inside permitted roots", "api",
                          "read_only", "fs:", {"path": "str"},
                          {"path": "str", "exists": "bool", "bytes": "int", "sha256": "str", "text": "str"},

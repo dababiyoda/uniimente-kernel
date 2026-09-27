@@ -324,7 +324,8 @@ class MissionEngine:
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
-                                 deliver_root=self.deliver_root, learned=improvement.learned(self.journal))
+                                 deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
+                                 journal=self.journal if manifest.capability_id == "memory.precedents" else None)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:
@@ -480,7 +481,13 @@ class MissionEngine:
             if manifest.consequence_class != "read_only":
                 self._block(m, {"type": "no_strategy", "why": f"sensor {manifest.capability_id} is not read-only"})
                 return None, None
-            attempt = m.attempts.get("sense:" + check["check_id"], 0)
+            # A new observation must not reuse a prior sensor receipt merely
+            # because the wall clock repeated its timestamp (clock freeze/NTP).
+            # The journal survives process death; count only this check's
+            # retained observations so each completed read gets a new attempt.
+            attempt = sum(1 for e in self.journal.replay("mission.observed")
+                          if e.payload.get("mission_id") == m.mission_id
+                          and e.payload.get("check_id") == check["check_id"])
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
                 adapter=adapter, ctx=self._context(m, manifest), params=sensor.get("params", {}),

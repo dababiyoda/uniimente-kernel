@@ -31,7 +31,8 @@ from greg.journal import Journal
 from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
-REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness"}
+REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
+                "memory.precedents"}
 DELIVERING = {"brief.engineering"}   # deliverables re-rendered from their receipts
 
 
@@ -113,7 +114,9 @@ def appraise(request: dict) -> dict:
                                         read_roots=tuple(Path(p) for p in request["read_roots"]),
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
-                                        if request.get("deliver_root") else None)
+                                        if request.get("deliver_root") else None,
+                                        journal=journal if cap == "memory.precedents" else None,
+                                        target=check["sensor"].get("target", ""))
                 try:
                     now_ok, now_detail = evaluate_predicate(check["predicate"],
                                                             adapter(check["sensor"].get("params", {}), ctx))

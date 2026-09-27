@@ -1,5 +1,9 @@
 # UNIIMENTE Foundry
 
+**Standing delivery obligation:** [INTENT-2026-09-27-FOUNDRY-55](../docs/intent/INTENT-2026-09-27-FOUNDRY-55.json) requires all 55 numbered systems. Each requires working behavior usable through GREG/Foundry, meaningful tests, and reproducible evidence identifying limits and recovery. The `arsenal.py` status tracks available mechanisms for selection; even `executable` is not an audit that its numbered system meets this full requirement. Unfinished numbered items remain obligations until built or explicitly removed/substituted by Alfonso. Build and install never authorize external effects.
+
+**Productized substrate for item 17:** `memory/causal.py` now supplies `greg/capabilities.py`'s `memory.precedents` sensor, which a signed GREG mission can invoke with the exact target `memory:<capability_id>`. It returns bounded Kernel action precedents and separately labeled locally appraised mission references from the same ledger; test: `tests/unit/test_greg_precedents.py`. This gives GREG a real precedent lookup and supports composition with other mission capabilities. Full item 17 remains **partial**: no ranked cross-domain search, external truth guarantee or measured improvement in later decisions. Detach uses the existing founder capability state; recovery reconstructs the same history from the existing ledger.
+
 > **Founder-effect rule (INTENT-0030):** Foundry work begins from the desired transformation, not from a favored metaphor, repository, technology catalog, or existing subsystem. Preserve the founder's target effect, search reality, extract causal mechanisms, and build only what remains missing. See `docs/FOUNDER_EFFECT_COMPILER.md`.
 
 The package contains bounded institutional foundries with different jobs. These are tools inside UNIIMENTE's broader Capability Genesis process; they do not define the complete process.

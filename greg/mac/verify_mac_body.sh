@@ -26,7 +26,9 @@ echo "== system"; sw_vers; uname -m; sysctl -n hw.memsize; sysctl -n hw.ncpu
 [[ "$(uname)" == "Darwin" ]] || { echo "not macOS; refusing"; exit 2; }
 
 echo "== python environment (isolated venv)"
-python3 -m venv "$OUT/venv"
+PY3=$(for p in python3.13 python3.12 python3.11 python3; do command -v $p >/dev/null && $p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && echo $p && break; done)
+[[ -n "$PY3" ]] || { echo "needs Python 3.11+ (macOS python3 is 3.9): brew install python@3.12"; exit 2; }
+"$PY3" -m venv "$OUT/venv"
 "$OUT/venv/bin/pip" install -q -r "$KERNEL/requirements-dev.txt"
 PY="$OUT/venv/bin/python"
 export PYTHONPATH="$KERNEL"

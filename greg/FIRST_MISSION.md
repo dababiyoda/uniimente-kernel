@@ -20,12 +20,17 @@ contains repository metadata, so review it before sharing it.
   you want briefed under the same folder, e.g. `~/src/DALEOBANKS`.
 - Optional rehearsal first: `bash greg/mac/verify_mac_body.sh` (throwaway key and body).
 
+macOS's own `python3` is 3.9, which GREG refuses. If the first line below says `no Python 3.11+ found`,
+install Python first (`brew install python@3.12`, or the python.org installer) and run it again.
+
 ```bash
+PY=$(for p in python3.13 python3.12 python3.11 python3; do command -v $p >/dev/null && $p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && echo $p && break; done); echo "${PY:?no Python 3.11+ found}"
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
 git checkout codex/one-greg-vepmc-convergence
-python3 -m venv ~/.uniimente/venv && ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
-alias greg="~/.uniimente/venv/bin/python -m greg"
+$PY -m venv ~/.uniimente/venv && ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
+echo 'alias greg="$HOME/.uniimente/venv/bin/python -m greg"' >> ~/.zshrc && source ~/.zshrc   # survives the reboot in step 4
+greg --help | head -1                                 # usage: greg ...
 ```
 
 ## 1. Create the body and your founder key
@@ -130,6 +135,14 @@ the delivery once; the same exact scope is reused each day and nothing is ever o
 
 Console **Stop GREG**, or `greg stop --key ~/.greg-founder.pem`, or `greg stop --local`
 (no key needed). Then `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/ai.uniimente.greg.body.plist`.
+
+A stop is persisted: launchd, a crash restart or a reboot will not resume missions. To run
+again, clear it yourself at the Mac, then start the agent:
+
+```bash
+greg start --local
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.uniimente.greg.body.plist
+```
 
 ## What to send back for the PR
 

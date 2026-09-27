@@ -9,6 +9,28 @@ from greg.precedents import precedents
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
 
+def test_sensor_reobserves_a_new_receipt_even_when_wall_clock_is_frozen(tmp_path):
+    home, founder, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:frozen") / "note.txt"
+    drop(home, signed(founder, body_id, "MISSION", mission(
+        "m:frozen", checks=[note_check("written", note, "truth")],
+        strategies=[write_strategy("write", "note.txt", "truth", ["written"])],
+        capabilities=["fs.read", "fs.write"])))
+    # Same wall-clock value across ticks used to reuse an obsolete "absent"
+    # sensor receipt, causing repeated writes instead of the real closure.
+    with Body(home, clock=Clock()) as body:
+        for _ in range(4):
+            body.tick()
+        assert body.engine.book.missions["m:frozen"].status == "ACHIEVED"
+        reads = [e.payload["receipt"] for e in body.journal.replay("mission.observed")
+                 if e.payload.get("mission_id") == "m:frozen"]
+        writes = [e for e in body.journal.replay("mission.action")
+                  if e.payload.get("mission_id") == "m:frozen"
+                  and e.payload.get("capability") == "fs.write"]
+        assert len(reads) >= 2 and len(reads) == len(set(reads))
+        assert len(writes) == 1
+
+
 def test_signed_mission_uses_past_action_and_distinct_local_appraisal_after_restart(tmp_path):
     home, founder, body_id, data = make_body(tmp_path)
     note = workspace(home, "m:history") / "note.txt"

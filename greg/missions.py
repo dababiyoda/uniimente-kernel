@@ -481,7 +481,13 @@ class MissionEngine:
             if manifest.consequence_class != "read_only":
                 self._block(m, {"type": "no_strategy", "why": f"sensor {manifest.capability_id} is not read-only"})
                 return None, None
-            attempt = m.attempts.get("sense:" + check["check_id"], 0)
+            # A new observation must not reuse a prior sensor receipt merely
+            # because the wall clock repeated its timestamp (clock freeze/NTP).
+            # The journal survives process death; count only this check's
+            # retained observations so each completed read gets a new attempt.
+            attempt = sum(1 for e in self.journal.replay("mission.observed")
+                          if e.payload.get("mission_id") == m.mission_id
+                          and e.payload.get("check_id") == check["check_id"])
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
                 adapter=adapter, ctx=self._context(m, manifest), params=sensor.get("params", {}),

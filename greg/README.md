@@ -161,6 +161,19 @@ and discards pending drafts from a detached route.
 model needs one tested route adapter with this same interface; it cannot become
 a new Kernel, authority plane, mission ledger or autonomous policy selection.
 
+### Swapping a tool while preserving GREG
+
+`greg attach <capability_id>` and `greg detach <capability_id>` queue signed
+founder commands. Detaching a capability removes it from execution across body
+restarts. Genesis cannot automatically rediscover and reattach that exact
+identity, even if a later mission allows read-only auto-attachment. It may
+independently verify and attach a different installed tool for the same function
+inside the mission's signed light cone. Reusing the detached identity requires
+an explicit signed `greg attach`. Mission history, identity and the Kernel stay
+on the same ledger. This behavior is exercised with `sha256sum` and `shasum`
+where both are installed; it does not establish arbitrary plugin compatibility
+or a completed run on founder-owned hardware.
+
 Mission contract: `contracts/greg-mission.schema.json`. Native macOS verification package:
 `greg/mac/verify_mac_body.sh` (must be run by Alfonso on the Mac; nothing here claims it ran).
 

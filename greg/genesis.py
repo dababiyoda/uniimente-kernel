@@ -5,7 +5,7 @@ not pretend. It opens a CapabilityDeficit, freezes the acceptance test *before*
 any candidate exists, then searches reality in resourcefulness order:
 
     1. an ATTACHED capability with that function            (use what exists)
-    2. a VERIFIED but detached capability                   (re-attach)
+    2. a VERIFIED, never explicitly detached capability     (attach in signed scope)
     3. installed commodity software on this body            (acquire)
     4. a pluggable builder (coding agent / human / model)   (build the residual)
     5. founder escalation                                   (ask, wait)
@@ -17,6 +17,10 @@ version string, builder identity) as VERIFIED. Attachment still needs either a
 founder CAPABILITY_ATTACH command or a founder-signed mission ``auto_attach``
 limited to read-only functions. The original mission then resumes; genesis
 completion never closes the mission.
+
+An explicit founder DETACHED identity is skipped by automatic discovery,
+including when installed software or a builder returns that identity again.
+A different independently verified provider can still serve the function.
 
 Self-repair: a formed capability that later fails in service (its built source or
 binary changed, or it raises on live input) is quarantined with the failure as
@@ -279,6 +283,12 @@ class Genesis:
                 self._route(deficit_id, "installed_software", f"{candidate.binary_name} not installed", None)
                 continue
             manifest = self._manifest_for(function, candidate, binary, deficit_id)
+            # A signed founder detachment is a choice about this identity, not a
+            # missing implementation that discovery may silently re-register.
+            if self.registry.state.get(manifest.capability_id) == "DETACHED":
+                self._route(deficit_id, "installed_software", "founder-detached; explicit attach required",
+                            manifest.capability_id)
+                continue
             passed, report = self._verify(function, candidate, binary, seed, manifest)
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                      "passed": passed, "report": report,
@@ -390,6 +400,12 @@ class Genesis:
                                 key=[deficit_id, digest])
             if passed:
                 manifest = self._built_manifest(function, contract, built, digest, deficit_id, report)
+                if self.registry.state.get(manifest.capability_id) == "DETACHED":
+                    self._route(deficit_id, "builder", "founder-detached; explicit attach required",
+                                manifest.capability_id)
+                    feedback = ["this identical implementation was detached by the founder; produce a different "
+                                "implementation or escalate for explicit reattachment"]
+                    continue
                 origin = {"kind": "built", "function": function, "source_sha256": digest,
                           "contract": {"output_field": contract["output_field"]}}
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, digest),

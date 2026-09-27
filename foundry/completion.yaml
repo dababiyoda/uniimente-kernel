@@ -1,0 +1,742 @@
+# Foundry completion contract: 55 mandatory systems (founder directive 2026-09-27).
+#
+# COMPLETE      working implementation + GREG-integrated interface + tests + an evidence
+#               record whose result hash the audit re-derives by RE-RUNNING the system.
+# PARTIAL       real fragments exist; the named gap is an open obligation.
+# OUTSTANDING   not built; the acceptance criteria are the open obligation.
+#
+# No id may be removed or substituted without Alfonso's explicit approval.
+# Acceptance criteria are a DRAFT for founder ratification.
+# `python -m foundry.completion --audit` fails CI on any unsupported claim.
+1:
+  acceptance:
+  - Compiles policy, workflow, experiment and business-genome source into executable objects
+  - Rejects invalid source with located errors before execution
+  - Compiled output is deterministic (same source, same hash)
+  adopt:
+  - OPA/Rego
+  - Cedar
+  existing:
+  - compiler/ucl_compiler.py
+  - compiler/ucl_parser.py
+  - evolution/experiment.py
+  - tests/unit/test_ucl_compiler.py
+  gap: UCL compiles constitutional policy and experiments; no Business, Organ Charter or Swarm Contract compilers.
+  state: PARTIAL
+2:
+  acceptance:
+  - Restricted languages exist for pricing, budgets and capital rules, not only policy
+  - An out-of-grammar or over-budget statement is rejected before execution
+  - Programs are evaluated without arbitrary code execution
+  adopt:
+  - Cedar
+  - CUE
+  - JSON Schema
+  existing:
+  - compiler/ucl_parser.py
+  - constitution/constitution.ucl
+  - tests/unit/test_ucl_compiler.py
+  - DALEOBANKS:services/thought_dsl.py
+  gap: One policy DSL exists; no restricted languages for pricing, budgets or capital rules.
+  state: PARTIAL
+3:
+  acceptance:
+  - Institutional objects are versioned with ancestry, reason and evidence per version
+  - Stale concurrent writes are refused (compare-and-swap)
+  - Rollback creates a new version; no history is rewritten
+  - Any two versions can be diffed
+  evidence: foundry/evidence/system-03.json
+  implementation:
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply commit|rollback; foundry.query history|content|diff
+  limitations: 'Per-mission workspace store; single machine (fcntl lock); no signed versions yet (planned with #7).'
+  recovery: Refs move only by compare-and-swap; a crashed commit leaves the prior head valid; rollback is a new
+    version.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+4:
+  acceptance:
+  - A shared institutional data model (signals, decisions, authority, actions, outcomes, customers, money) persists
+    across restarts
+  - Schema migrations are versioned and reversible
+  - Queries join intelligence, action and outcome
+  adopt:
+  - PostgreSQL
+  - SQLite
+  existing:
+  - provenance/ledger.py
+  - tests/unit/test_provenance.py
+  - DALEOBANKS:db/models.py
+  - WealthMachineIntelligence:src/database
+  gap: Kernel state is a single-writer POSIX ledger plus in-memory objects; no shared institutional data model across
+    organs.
+  state: PARTIAL
+5:
+  acceptance:
+  - Every consequential transition is an immutable, hash-chained event
+  - Replay rebuilds state exactly
+  - Duplicate events are idempotent
+  adopt:
+  - PostgreSQL outbox
+  - EventStoreDB
+  existing:
+  - events/spine.py
+  - events/engine.py
+  - tests/unit/test_events.py
+  - tests/unit/test_events_engine_activation.py
+  gap: Replay and idempotency are proven in-process; no production event store or cross-organ replay under load.
+  state: PARTIAL
+6:
+  acceptance:
+  - Hashes, signatures, Merkle checkpoints and external timestamps bind claims to evidence
+  - Tampering with anchored history is detected by a verifier holding state outside GREG
+  adopt:
+  - RFC 3161 timestamp authority
+  - Sigstore Rekor v2
+  - OpenTimestamps
+  existing:
+  - provenance/proof.py
+  - provenance/ledger.py
+  - provenance/commit_witness.py
+  - greg/anchor.py
+  - tests/unit/test_proof.py
+  - tests/unit/test_provenance.py
+  - tests/unit/test_greg_anchor.py
+  - tests/unit/test_greg_anchor_witness.py
+  gap: 'GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE; with a witness
+    bundle and TSA root retained outside GREG, `greg anchor verify --witness` detects rewrite, deletion, rollback,
+    substitution or reconstruction within the witnessed prefix. Not covered: the unwitnessed tail, or an attacker
+    who also controls the witness. Not yet run against a public TSA or on a founder body; kernel Merkle checkpoints
+    outside GREG remain self-anchored.'
+  state: PARTIAL
+7:
+  acceptance:
+  - Every organ, agent, service and human approval has a verifiable key identity
+  - Credentials are short-lived, scoped and revocable; revocation takes effect before the next act
+  adopt:
+  - SPIFFE/SPIRE
+  - Ed25519 via cryptography
+  - Sigstore
+  existing:
+  - identity/machine_passport.py
+  - identity/service-identities.yaml
+  - greg/founder.py
+  - tests/unit/test_identity.py
+  - tests/unit/test_greg_founder_and_scope.py
+  gap: GREG commands are Ed25519-signed by the founder key or a delegated, expiring, revocable device key, with
+    rotation. Inter-organ bridge signing (DALEOBANKS/WMI) is still shared-key HMAC, and there are no certificates.
+  state: PARTIAL
+8:
+  acceptance:
+  - Grants bind capability x action x target x budget x deadline
+  - Compromise of one grant cannot reach other targets or budgets
+  - Enforced for GREG's real actions, not only in unit tests
+  adopt:
+  - short-lived cloud credentials
+  - Vault dynamic secrets
+  existing:
+  - policy/consequence_gate.py
+  - identity/machine_passport.py
+  - tests/unit/test_consequence_gate.py
+  - tests/authority
+  gap: Grants are narrow, expiring and budgeted in-process; not enforced at OS, network or credential-broker level.
+  state: PARTIAL
+9:
+  acceptance:
+  - A capability is packaged into a reproducible OCI image with pinned inputs
+  - The same capability runs identically from the image in a second environment
+  adopt:
+  - OCI images
+  - Docker
+  - Podman
+  existing:
+  - WealthMachineIntelligence:Dockerfile
+  gap: One organ ships a Dockerfile; the kernel and capabilities are not packaged as reproducible containers.
+  state: PARTIAL
+10:
+  acceptance:
+  - Generated or third-party code runs under stronger-than-process isolation (microVM or gVisor-class)
+  - Escape attempts (fs, network, secrets) are denied and logged
+  adopt:
+  - Firecracker
+  - gVisor
+  - E2B-style sandboxes
+  gap: No stronger isolation for generated code or third-party packages.
+  state: OUTSTANDING
+11:
+  acceptance:
+  - A narrow capability compiles to a WebAssembly component with declared imports/exports
+  - It executes from UNIIMENTE under a WASI host with only declared imports
+  adopt:
+  - WASI component model
+  - Wasmtime
+  gap: No portable component packaging.
+  state: OUTSTANDING
+12:
+  acceptance:
+  - Registry installs, attaches, measures, migrates and detaches a capability genome
+  - Genome records code, interface, authority, deps, tests, performance, incidents, rollback, contraindications
+  adopt:
+  - OCI registries
+  - Sigstore-signed artifacts
+  existing:
+  - capabilities/genome.py
+  - business/genome.py
+  - tests/unit/test_capabilities.py
+  gap: Registry validates envelopes; instantiation is "a bounded check, not a build". No install, migrate, measure
+    or detach.
+  state: PARTIAL
+13:
+  acceptance:
+  - Linker composes registered capabilities into a temporary system from typed interfaces
+  - Incompatible interfaces are refused with the mismatch named
+  adopt:
+  - Temporal
+  - Dagger
+  existing:
+  - linker/linker.py
+  - linker/manifest.py
+  - foundry/composition.py
+  - tests/unit/test_foundry_pipeline_v1.py
+  - tests/integration/test_phase_zero_connection.py
+  gap: Linker resolves edges and Composer emits non-executing plans; nothing attaches a composed system to live
+    capabilities.
+  state: PARTIAL
+14:
+  acceptance:
+  - 'One command surface: inspect, propose, simulate, authorize, execute, revoke, reconcile, fork, promote, regress,
+    terminate'
+  - Every command is scriptable and leaves an audit record
+  adopt:
+  - Typer or Click CLI over existing modules
+  gap: No institutional command surface (inspect/propose/simulate/authorize/revoke).
+  state: OUTSTANDING
+15:
+  acceptance:
+  - Durable workflows with approvals, retries, deadlines, compensation and recovery survive process death
+  adopt:
+  - Temporal
+  - Restate
+  - DBOS
+  existing:
+  - events/spine.py
+  - loom/weaver.py
+  - loom/canonical.py
+  - tests/unit/test_events.py
+  - tests/unit/test_loom.py
+  gap: Durable workflows survive kill-and-resume in-process; no hosted engine with timers, scale-out or operator
+    UI.
+  state: PARTIAL
+16:
+  acceptance:
+  - A mutation passes spec -> tests -> historical replay -> adversarial -> simulation -> canary -> verification
+    -> ratification before deploy
+  - A failed stage blocks promotion
+  adopt:
+  - GitHub Actions environments
+  - Argo Rollouts
+  existing:
+  - .github/workflows/canonical-ci.yml
+  - scripts/ci/check_authority_singleton.py
+  - verifier/v2/verify.py
+  - tests/unit/test_required_schema_formats.py
+  gap: CI tests and verifies; no historical-replay, canary or ratified deployment stage.
+  state: PARTIAL
+17:
+  acceptance:
+  - Retrieves prior cases by relevance and measured outcome
+  - Returns the closest worked and closest failed precedent for one decision
+  - Unmeasured outcomes are labelled and down-weighted; context filters apply
+  evidence: foundry/evidence/system-17.json
+  implementation:
+  - foundry/systems/search.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query search|precedents
+  limitations: Lexical BM25 relevance, not semantic embeddings; outcomes must be supplied by the caller.
+  recovery: Stateless; nothing to recover.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+18:
+  acceptance:
+  - Typed causal graph Signal->...->Capital with schema-checked edges
+  - why/impact traversal answers why a result happened
+  - Finds nodes shared by several ventures
+  - Builds from GREG's own journal
+  evidence: foundry/evidence/system-18.json
+  implementation:
+  - foundry/systems/graph.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply add; foundry.query why|impact|shared; greg foundry why <event>
+  limitations: GREG journal mapping covers missions, approvals, actions, receipts and appraisals; signals/evidence/capital
+    nodes come from callers.
+  recovery: Graph is rebuilt from the ledger on demand; the stored graph.json is a cache.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+19:
+  acceptance:
+  - Next-Best-Test router ranks experiments by expected information value per cost
+  - Narrative next-depth router ranks next content by relationship-deepening evidence
+  adopt:
+  - Thompson sampling
+  - value-of-information scoring
+  existing:
+  - evolution/experiment.py
+  - evolution/spider_web.py
+  - tests/unit/test_evolution.py
+  - DALEOBANKS:services/bandit.py
+  gap: Decisive-unknown selection and a Thompson-sampling bandit exist; no Next-Best-Test router ranking experiments
+    by information value.
+  state: PARTIAL
+20:
+  acceptance:
+  - Deterministic emulators reproduce external providers and their failures (timeouts, 429, partial writes)
+  - GREG capabilities run against them in tests
+  adopt:
+  - LocalStack
+  - WireMock
+  - Toxiproxy
+  gap: No deterministic emulators of external providers or incident conditions.
+  state: OUTSTANDING
+21:
+  acceptance:
+  - Institutional state can be forked into an isolated branch and run without touching production
+  - Branches can be compared and discarded
+  adopt:
+  - database snapshots
+  - Dolt branches
+  existing:
+  - twins/twin.py
+  - tests/unit/test_twins.py
+  gap: Hermetic institutional forks exist in memory; no persisted state snapshots or branch-and-restore of real
+    stores.
+  state: PARTIAL
+22:
+  acceptance:
+  - Counterfactual tribunal scores strategies under platform loss, regulation, attack, capital scarcity and founder
+    absence
+  - Produces a response playbook per scenario
+  adopt:
+  - Monte Carlo over recorded outcomes
+  - SimPy
+  existing:
+  - twins/tribunal.py
+  - twins/twin.py
+  - foundry/tribunal.py
+  - tests/unit/test_twins.py
+  - tests/unit/test_advantage_foundry_v1.py
+  gap: Counterfactual verdicts run over frozen corpora; no calibrated simulation of platform loss, regulation or
+    competitor attack.
+  state: PARTIAL
+23:
+  acceptance:
+  - Idempotency keys, retries with backoff, compensation and reconciliation across organs
+  - Interrupted multi-step operations converge after restart
+  adopt:
+  - PostgreSQL outbox/inbox
+  - Temporal
+  existing:
+  - events/spine.py
+  - adapters/bridge_transport.py
+  - events/bridge_state.py
+  - tests/unit/test_shared_recovery.py
+  - tests/unit/test_shared_durable_boundary.py
+  gap: Idempotency, replay protection and compensation proven locally; no multi-node deployment.
+  state: PARTIAL
+24:
+  acceptance:
+  - Durable queue between organs with at-least-once delivery, dead-letter and replay
+  - Consumers are idempotent
+  adopt:
+  - PostgreSQL LISTEN/NOTIFY
+  - NATS JetStream
+  existing:
+  - events/spine.py
+  - adapters/bridge_transport.py
+  - tests/unit/test_events.py
+  - tests/unit/test_shared_compatibility.py
+  gap: Typed outbox and signed bridge transport; no broker.
+  state: PARTIAL
+25:
+  acceptance:
+  - Router selects model/implementation by verified quality, price, privacy and latency
+  - Provider loss fails over without losing memory or governance
+  adopt:
+  - LiteLLM
+  - OpenRouter
+  gap: No multi-provider cognitive router; the DALEOBANKS LLM adapter is single-provider.
+  state: OUTSTANDING
+26:
+  acceptance:
+  - Egress and inter-organ traffic are allowlisted per identity
+  - A compromised component cannot reach undeclared hosts
+  adopt:
+  - Tailscale/WireGuard ACLs
+  - Cloudflare Access
+  existing:
+  - adapters/bridge_transport.py
+  - tests/unit/test_shared_recovery.py
+  gap: Inter-organ messages are authenticated and replay-protected; no network-level segmentation or egress policy.
+  state: PARTIAL
+27:
+  acceptance:
+  - Organs publish typed capability manifests; others discover them
+  - Discovery grants no access
+  adopt:
+  - A2A Agent Cards
+  - Consul
+  existing:
+  - organs/kernel.manifest.yaml
+  - linker/linker.py
+  - tests/integration/test_phase_zero_connection.py
+  gap: Organ manifests are static files; no live signed discovery service with health, cost or latency.
+  state: PARTIAL
+28:
+  acceptance:
+  - An MCP server's tools are reachable from GREG only through Kernel identity, authority and the Consequence Gate
+  - Tool providers are swappable
+  adopt:
+  - MCP Python SDK
+  gap: No MCP server or client behind Kernel identity and the Consequence Gate.
+  state: OUTSTANDING
+29:
+  acceptance:
+  - External agents discover, negotiate and perform bounded work through an embassy
+  - Their results are verified before acceptance; no interior access
+  adopt:
+  - A2A protocol v1 with signed Agent Cards
+  existing:
+  - embassy/gate.py
+  - tests/unit/test_embassy.py
+  gap: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.
+  state: PARTIAL
+30:
+  acceptance:
+  - Every external consequence crosses one gate with commit-time revalidation
+  - No bypass path exists (tested)
+  adopt:
+  - Envoy or Kong in front of the Gate
+  existing:
+  - policy/consequence_gate.py
+  - policy/engine.py
+  - provenance/commit_witness.py
+  - tests/unit/test_consequence_gate.py
+  - tests/security
+  gap: Closes one bounded action family (draft.publish) end to end; no hosted gateway fronting organ side effects.
+  state: PARTIAL
+31:
+  acceptance:
+  - UNIIMENTE serves canonical owned pages/portals from its own server
+  - Content is versioned and provenance-linked
+  adopt:
+  - static site on a CDN
+  - FastAPI
+  existing:
+  - DALEOBANKS:app.py
+  - DALEOBANKS:server/index.ts
+  - WealthMachineIntelligence:src/api/main.py
+  gap: Organs run application servers; there is no owned canonical site, customer portal or knowledge hub, and the
+    kernel serves nothing.
+  state: PARTIAL
+32:
+  acceptance:
+  - Owned community with member identity, posts and interaction history exportable by UNIIMENTE
+  adopt:
+  - Discourse
+  - Ghost memberships
+  gap: No owned or federated community; DALEOBANKS distributes through rented platforms.
+  state: OUTSTANDING
+33:
+  acceptance:
+  - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity
+  adopt:
+  - self-hosted Mastodon/GoToSocial
+  - AT Protocol PDS
+  existing:
+  - DALEOBANKS:services/mastodon_client.py
+  gap: Publishes to ActivityPub through a client; no owned instance, portable identity or follower export.
+  state: PARTIAL
+34:
+  acceptance:
+  - Maps which content sequences produced subscribers/customers from observed events
+  - Reports measured path conversion, not assumed
+  adopt:
+  - PostHog
+  - Plausible
+  existing:
+  - DALEOBANKS:services/analytics.py
+  gap: Content analytics exist; no map of which narrative sequences produce subscribers or customers.
+  state: PARTIAL
+35:
+  acceptance:
+  - Generates media assets (image/audio/video/interactive) from the canon through an integrated engine
+  - Assets are content-addressed with provenance
+  adopt:
+  - FFmpeg
+  - Remotion
+  - Godot
+  gap: No graphics, audio, video or game production pipeline.
+  state: OUTSTANDING
+36:
+  acceptance:
+  - Artifacts are addressed by SHA-256 of content; writes are atomic and deduplicated
+  - Every read re-hashes; corruption or substitution is refused and detected by a full verify
+  evidence: foundry/evidence/system-36.json
+  implementation:
+  - foundry/systems/cas.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply put; foundry.query get|verify
+  limitations: Local filesystem only; no replication or garbage collection.
+  recovery: Atomic rename writes; corruption is detected on read and by verify, never repaired silently.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+37:
+  acceptance:
+  - Matches independent supply and demand; settles through verification
+  - Market rules are enforced, not advisory
+  adopt:
+  - Stripe Connect when real supply exists
+  gap: No independent supply or demand; a marketplace would be premature.
+  state: OUTSTANDING
+38:
+  acceptance:
+  - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
+  - Every charge traces to delivered, verified work
+  adopt:
+  - Stripe
+  - x402 for machine buyers
+  existing:
+  - business/commercial_loop.py
+  - foundry/outcome_bridge.py
+  - tests/unit/test_business.py
+  - tests/unit/test_outcome_bridge_v1.py
+  - DALEOBANKS:tests/test_revenue.py
+  gap: Payment records are modeled and reconciled; no live processor integration.
+  state: PARTIAL
+39:
+  acceptance:
+  - Balanced double-entry journal in integer minor units; unbalanced, unknown-account, foreign-currency and fractional
+    entries refused
+  - Corrections are reversals, never edits; double reversal refused
+  - Trial balance satisfies the accounting equation
+  - Journal is hash-chained; tampering is detected
+  evidence: foundry/evidence/system-39.json
+  implementation:
+  - foundry/systems/accounting.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply open_account|post|reverse; foundry.query trial_balance|journal
+  limitations: 'Single currency per book; records only: no payment rail, no tax logic.'
+  recovery: Append-only hash-chained journal; a tampered journal refuses to load.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+40:
+  acceptance:
+  - Mechanisms (e.g. scoring rules, second-price, staking) are specified and simulated
+  - Truthful reporting is shown to be the best response in simulation
+  adopt:
+  - published auction and scoring-rule designs
+  gap: No incentive or market-rule mechanisms are implemented.
+  state: OUTSTANDING
+41:
+  acceptance:
+  - Reputation from evidenced outcomes only; conservative lower-bound ranking
+  - Recency decay; incidents weigh more unless recovery is verified; insufficient evidence is reported as such
+  - Builds from GREG's appraised closures
+  evidence: foundry/evidence/system-41.json
+  implementation:
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query score; greg foundry reputation
+  limitations: Beta/normal-approximation lower bound; context granularity is caller-defined.
+  recovery: Stateless; recomputed from evidence.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+42:
+  acceptance:
+  - A live shadow model predicts a workflow/venture metric and is compared with reality continuously
+  - Prediction error is recorded and drives recalibration
+  adopt:
+  - shadow-mode replay of the event spine
+  existing:
+  - twins/twin.py
+  - tests/unit/test_twins.py
+  gap: Twins rehearse amendments; no live shadow model continuously compared with operations.
+  state: PARTIAL
+43:
+  acceptance:
+  - Exhaustive explicit-state checking of declared state machines with invariants
+  - Shortest counterexample for a violated invariant
+  - GREG's approval boundary is modelled and verified; a planted defect is caught
+  evidence: foundry/evidence/system-43.json
+  implementation:
+  - foundry/systems/model_check.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query check|check_approval_boundary
+  limitations: Models are hand-declared, not extracted from code; bounded to 200k states.
+  recovery: Stateless; nothing to recover.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+44:
+  acceptance:
+  - Logs, traces, costs, authority decisions and outcomes are correlated by one id
+  - Answers why a metric changed
+  adopt:
+  - OpenTelemetry
+  - Grafana stack
+  existing:
+  - closure/whole_body.py
+  - tests/unit/test_whole_body.py
+  - DALEOBANKS:services/observability.py
+  gap: Open-loop detection and organ-local telemetry; no correlated traces, cost or outcome metrics.
+  state: PARTIAL
+45:
+  acceptance:
+  - Detects abnormal identity, credential, spend, network and outcome behavior
+  - Each incident yields a persistent detection rule
+  adopt:
+  - Wazuh
+  - Falco
+  existing:
+  - egregore/drift.py
+  - policy/consequence_gate.py
+  - tests/unit/test_egregore_runtime.py
+  - tests/security
+  gap: Gate refusals and drift telemetry exist; no correlation, alerting or incident-to-defense loop.
+  state: PARTIAL
+46:
+  acceptance:
+  - Institutional Seed reconstructs UNIIMENTE (ledger, keys-by-reference, config, stores) on a fresh machine
+  - Recovery is rehearsed and verified against the pre-failure state
+  adopt:
+  - restic
+  - Litestream
+  - git mirrors
+  gap: No Institutional Seed, tested restore, or off-provider backup.
+  state: OUTSTANDING
+47:
+  acceptance:
+  - Compiles validated evidence into buyer, offer, workflow, pricing, delivery, compliance, economics, distribution
+    and kill rules
+  - Refuses to compile unevidenced fields
+  adopt:
+  - existing Loom and UCL compilers
+  existing:
+  - business/genome.py
+  - foundry/intake.py
+  - tests/unit/test_business.py
+  - tests/unit/test_foundry_intake_v1.py
+  gap: Business Genomes validate; no compiler from validated evidence to offer, workflow and pricing.
+  state: PARTIAL
+48:
+  acceptance:
+  - Forms a temporary specialist team for one bounded objective from registered competences
+  - Team authority is the intersection of its grants; dissolves on completion
+  adopt:
+  - Claude Agent SDK subagents under grants
+  existing:
+  - omnimorph/engine.py
+  - tests/unit/test_omnimorph_v1.py
+  gap: Temporary organ manifests are simulated; no live agents run under them.
+  state: PARTIAL
+49:
+  acceptance:
+  - 'Synthetic media company loop: identity, canon, production, distribution, products, community, finance, performance
+    memory, operated end to end in sandbox'
+  adopt:
+  - existing DALEOBANKS persona and clients
+  existing:
+  - foundry/company.py
+  - foundry/distribution.py
+  - tests/unit/test_foundry.py
+  - DALEOBANKS:services/x_client.py
+  - DALEOBANKS:persona.json
+  gap: Charter and distribution loop are modeled; no products, community or finance attached to a persona.
+  state: PARTIAL
+50:
+  acceptance:
+  - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
+  adopt:
+  - PostHog funnels
+  existing:
+  - foundry/territory.py
+  - tests/unit/test_foundry.py
+  gap: Territory Graphs validate; no audience journey measured through them.
+  state: PARTIAL
+51:
+  acceptance:
+  - Agents write code, tests and docs in isolated branches; changes pass CI before proposal
+  adopt:
+  - Claude Code
+  - Claude Agent SDK
+  existing:
+  - .github/pull_request_template.md
+  - .github/workflows/canonical-ci.yml
+  - tests/unit/test_founder_effect_doctrine.py
+  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
+    frozen contracts.
+  state: PARTIAL
+52:
+  acceptance:
+  - A failure yields diagnosis, competing patches, regression test and updated recovery procedure
+  - The regression test fails before and passes after
+  adopt:
+  - coding agents generating candidates into the repair harness
+  existing:
+  - evolution/repair/harness.py
+  - evolution/repair/detector.py
+  - evolution/failure_analysis.py
+  - tests/unit/test_repair_harness.py
+  - tests/unit/test_repair_candidates.py
+  gap: Candidate repairs are compared over a fixed candidate set; no generated patches.
+  state: PARTIAL
+53:
+  acceptance:
+  - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains
+  - Build is reproducible
+  adopt:
+  - own only the control plane; rent commodity runtime
+  existing:
+  - compiler/ucl_compiler.py
+  - contracts/__init__.py
+  - provenance/proof.py
+  - tests/unit/test_ucl_compiler.py
+  - tests/unit/test_proof.py
+  gap: Policy compiler, schemas and proof system are owned; registries and deploy tooling are not.
+  state: PARTIAL
+54:
+  acceptance:
+  - Capabilities are published as machine-readable offers other agents can discover and purchase (test mode)
+  - Receipts feed reputation
+  adopt:
+  - x402
+  - A2A Agent Cards
+  - MCP
+  gap: No machine-readable offers or agent payments.
+  state: OUTSTANDING
+55:
+  acceptance:
+  - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner
+    distribution by versioned policy
+  - Postings reconcile with the double-entry ledger
+  adopt:
+  - bank and processor APIs feeding the Treasury
+  existing:
+  - capital/treasury.py
+  - capital/allocation-policy.yaml
+  - tests/unit/test_treasury.py
+  gap: The waterfall runs in memory against modeled surplus; no real revenue has entered it.
+  state: PARTIAL

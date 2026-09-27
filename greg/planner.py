@@ -294,12 +294,12 @@ class ClaudeCodeTransport(_TextTransport, models.ClaudeCodeRoute):
             raise MissionError(str(exc)) from exc
 
 
-def _complete(transport, system: str, user: str) -> tuple[str, str, list]:
-    """Text, true author, and routes tried, for a plain transport or a ModelRouter."""
+def _complete(transport, system: str, user: str) -> tuple[str, str, list, str | None]:
+    """Text, true author, routes tried and provider-reported served model, for a transport or a ModelRouter."""
     result = transport.complete(system, user)
     if isinstance(result, dict):
-        return result["text"], result["route"], result.get("tried", [])
-    return result, transport.name, []
+        return result["text"], result["route"], result.get("tried", []), result.get("served_model")
+    return result, transport.name, [], None
 
 
 def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int = 1) -> dict:
@@ -309,10 +309,11 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     attempts = []
     for round_number in range(repair_rounds + 1):
         try:
-            reply, author, tried = _complete(transport, SYSTEM, prompt)
+            reply, author, tried, served = _complete(transport, SYSTEM, prompt)
             draft = _first_json_object(reply)
         except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
-            return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "attempts": attempts}
+            return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "refusal_class": exc.kind,
+                    "attempts": attempts, "routes_tried": (getattr(transport, "last", None) or {}).get("tried", [])}
         except (MissionError, models.RouteError, subprocess.TimeoutExpired, OSError, ValueError) as exc:
             return {"status": "FAILED", "origin": origin, "why": f"{type(exc).__name__}: {exc}"[:400],
                     "attempts": attempts}
@@ -321,6 +322,8 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
                  "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
         if tried:
             extra["routes_tried"] = tried
+        if served:
+            extra["served_model"] = served
         result = vet(draft, text, ctx, origin=origin, extra=extra)
         if result["status"] != "REJECTED" or round_number == repair_rounds:
             if attempts:

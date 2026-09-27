@@ -18,7 +18,8 @@ import sys
 import pytest
 
 from greg import service
-from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat, wait_for)
+from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, events, greg, heartbeat,
+                                                         supervisor_endpoint, wait_for)
 
 playwright = pytest.importorskip("playwright.sync_api")
 CHROMIUM = os.environ.get("GREG_CHROMIUM") or next(
@@ -41,11 +42,12 @@ def test_phone_page_approves_a_real_decision_and_stops_the_body(tmp_path):
          greg(home, "founder", "keygen", "--key", str(key), "--no-passphrase").stdout.strip())
     (home / "logs").mkdir(exist_ok=True)
     conf = tmp_path / "supervisord.conf"
+    endpoint, ctl = supervisor_endpoint(tmp_path)
     conf.write_text(
         f"[supervisord]\nnodaemon=true\nlogfile={tmp_path / 'sd.log'}\npidfile={tmp_path / 'sd.pid'}\n"
-        f"[unix_http_server]\nfile={tmp_path / 'sd.sock'}\n"
+        + endpoint +
         "[rpcinterface:supervisor]\nsupervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface\n"
-        f"[supervisorctl]\nserverurl=unix://{tmp_path / 'sd.sock'}\n" + service.supervisord_program(home, tick_seconds=0.3))
+        + ctl + service.supervisord_program(home, tick_seconds=0.3))
     port = _free_port()
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
     supervisor = subprocess.Popen(["supervisord", "-c", str(conf)], cwd=ROOT,

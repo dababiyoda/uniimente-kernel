@@ -157,6 +157,37 @@ def test_appraiser_refutes_a_brief_edited_after_delivery(tmp_path, repo, github)
     body.close()
 
 
+def test_an_unreachable_github_is_a_gap_in_a_delivered_brief_not_an_uncertain_action(tmp_path, repo, monkeypatch):
+    """A failed read changes nothing, so it is data. Before: a TLS failure (python.org's macOS Python has no
+    CA bundle) or no network made the delivery UNCERTAIN, blocked the mission on founder reconciliation and
+    delivered no brief, so the first Mac mission could not close."""
+    import ssl
+    import urllib.error
+    calls = []
+
+    def urlopen(request, timeout):
+        calls.append(request.full_url)
+        raise urllib.error.URLError(ssl.SSLCertVerificationError(
+            1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate"))
+    monkeypatch.setattr(briefs.urllib.request, "urlopen", urlopen)     # the real _https_json, failing below it
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _brief_mission(repo, preauthorize_delivery=True)))
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    states = [t["missions"][0]["state"] for t in _run(body, clock, 3)]
+    assert "ACHIEVED" in states and not body.engine.book.open_requests(), states
+    delivered = list((Layout(home).home / "deliveries" / "briefs").glob("*.md"))
+    assert len(delivered) == 1
+    text = delivered[0].read_text()
+    assert "GitHub unreachable" in text and "Install Certificates.command" in text
+    assert "not fetched: GitHub unreachable earlier" in text                     # one failed call, not one per repo
+    assert len(calls) == 1
+    appraisal = body.journal.replay("mission.appraised")[-1].payload
+    assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]           # still f(receipted inputs)
+    body.close()
+
+
 def test_rate_limit_is_reported_as_a_gap_not_hidden(tmp_path, repo, monkeypatch):
     calls = []
     monkeypatch.setattr(briefs, "FETCH", fake_github(calls, refuse_checks=True))

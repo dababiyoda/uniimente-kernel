@@ -181,41 +181,62 @@
   acceptance:
   - Registry installs, attaches, measures, migrates and detaches a capability genome
   - Genome records code, interface, authority, deps, tests, performance, incidents, rollback, contraindications
-  adopt:
-  - OCI registries
-  - Sigstore-signed artifacts
-  existing:
+  evidence: foundry/evidence/system-12.json
+  implementation:
+  - foundry/systems/registry.py
   - capabilities/genome.py
-  - business/genome.py
-  - tests/unit/test_capabilities.py
-  gap: Registry validates envelopes; instantiation is "a bounded check, not a build". No install, migrate, measure
-    or detach.
-  state: PARTIAL
+  - foundry/systems/cas.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply install|attach|detach|measure|rollback; foundry.query report (system 12)
+  limitations: Genome code is stored by content but not executed by the registry; attachment is a registry state,
+    activation still needs GREG's founder-signed CAPABILITY_ATTACH. Test pass/fail is asserted by the caller.
+  recovery: Detach never deletes versions; migrate keeps the prior version as the rollback target; registry state
+    is written atomically.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 13:
   acceptance:
   - Linker composes registered capabilities into a temporary system from typed interfaces
   - Incompatible interfaces are refused with the mismatch named
-  adopt:
-  - Temporal
-  - Dagger
-  existing:
+  evidence: foundry/evidence/system-13.json
+  implementation:
+  - foundry/systems/linking.py
   - linker/linker.py
-  - linker/manifest.py
-  - foundry/composition.py
-  - tests/unit/test_foundry_pipeline_v1.py
-  - tests/integration/test_phase_zero_connection.py
-  gap: Linker resolves edges and Composer emits non-executing plans; nothing attaches a composed system to live
-    capabilities.
-  state: PARTIAL
+  - foundry/systems/registry.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query link|run_read_only; foundry.apply run (system 13)
+  limitations: Composes Foundry system ops in a linear order; no parallel branches; organ-level edges stay in linker/linker.py.
+  recovery: A plan is re-linked and hash-checked before running; a stage that breaks its output contract stops the
+    run with nothing further executed.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 14:
   acceptance:
   - 'One command surface: inspect, propose, simulate, authorize, execute, revoke, reconcile, fork, promote, regress,
     terminate'
   - Every command is scriptable and leaves an audit record
-  adopt:
-  - Typer or Click CLI over existing modules
-  gap: No institutional command surface (inspect/propose/simulate/authorize/revoke).
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-14.json
+  implementation:
+  - foundry/systems/shell.py
+  - greg/founder.py
+  - foundry/systems/snapshots.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query inspect|simulate|verify_audit; foundry.apply propose|authorize|execute|revoke|reconcile|fork|promote|regress|terminate
+    (system 14)
+  limitations: Governs Foundry ops only; GREG missions keep their own inbox/decision path. Founder keys are supplied
+    by the caller (no key custody in the shell).
+  recovery: Audit is hash-chained and re-verified; store drift after execution is detected by reconcile; forks are
+    content-addressed snapshots; promoted objects regress by versioned rollback.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 15:
   acceptance:
   - Durable workflows with approvals, retries, deadlines, compensation and recovery survive process death
@@ -236,16 +257,23 @@
   - A mutation passes spec -> tests -> historical replay -> adversarial -> simulation -> canary -> verification
     -> ratification before deploy
   - A failed stage blocks promotion
-  adopt:
-  - GitHub Actions environments
-  - Argo Rollouts
-  existing:
-  - .github/workflows/canonical-ci.yml
-  - scripts/ci/check_authority_singleton.py
-  - verifier/v2/verify.py
-  - tests/unit/test_required_schema_formats.py
-  gap: CI tests and verifies; no historical-replay, canary or ratified deployment stage.
-  state: PARTIAL
+  evidence: foundry/evidence/system-16.json
+  implementation:
+  - foundry/systems/promotion.py
+  - foundry/systems/dsl.py
+  - foundry/systems/versions.py
+  - greg/founder.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query dry_run|evidence_hash; foundry.apply promote (system 16)
+  limitations: Governs Foundry DSL rule artifacts; repository code still ships through GitHub CI and review. The
+    canary runs against an emulated market; a live canary needs founder-authorized traffic. The simulation's demand
+    model is declared, not measured.
+  recovery: A blocked stage stops promotion with its evidence recorded; a promoted rule is a new version with the
+    prior one as its rollback.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 17:
   acceptance:
   - Retrieves prior cases by relevance and measured outcome
@@ -400,15 +428,22 @@
   acceptance:
   - Organs publish typed capability manifests; others discover them
   - Discovery grants no access
-  adopt:
-  - A2A Agent Cards
-  - Consul
-  existing:
-  - organs/kernel.manifest.yaml
+  evidence: foundry/evidence/system-27.json
+  implementation:
+  - foundry/systems/discovery.py
+  - linker/manifest.py
   - linker/linker.py
-  - tests/integration/test_phase_zero_connection.py
-  gap: Organ manifests are static files; no live signed discovery service with health, cost or latency.
-  state: PARTIAL
+  - organs/kernel.manifest.yaml
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query discover; foundry.apply enroll|publish|seed_static (system 27)
+  limitations: Directory is a local file, not a network service; health, cost and latency are self-reported by organs
+    and not probed.
+  recovery: Stale entries drop out after their TTL; older or replayed sequences are refused; re-keying an organ
+    is refused (founder act).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 28:
   acceptance:
   - An MCP server's tools are reachable from GREG only through Kernel identity, authority and the Consequence Gate
@@ -589,13 +624,20 @@
   acceptance:
   - A live shadow model predicts a workflow/venture metric and is compared with reality continuously
   - Prediction error is recorded and drives recalibration
-  adopt:
-  - shadow-mode replay of the event spine
-  existing:
+  evidence: foundry/evidence/system-42.json
+  implementation:
+  - foundry/systems/twin.py
   - twins/twin.py
-  - tests/unit/test_twins.py
-  gap: Twins rehearse amendments; no live shadow model continuously compared with operations.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query predict|alerts; foundry.apply observe|replay_greg (system 42)
+  limitations: 'Models per-capability verified-rate and cost only. Negative evidence: the first design (hard refit,
+    no cooldown) lost to a static twin; the kept design costs ~0.006 Brier when there is no drift.'
+  recovery: Twin state persists across restarts; a drift alert refits to the recent window with a cooldown; shadow
+    only, never acts.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 43:
   acceptance:
   - Exhaustive explicit-state checking of declared state machines with invariants
@@ -616,29 +658,37 @@
   acceptance:
   - Logs, traces, costs, authority decisions and outcomes are correlated by one id
   - Answers why a metric changed
-  adopt:
-  - OpenTelemetry
-  - Grafana stack
-  existing:
-  - closure/whole_body.py
-  - tests/unit/test_whole_body.py
-  - DALEOBANKS:services/observability.py
-  gap: Open-loop detection and organ-local telemetry; no correlated traces, cost or outcome metrics.
-  state: PARTIAL
+  evidence: foundry/evidence/system-44.json
+  implementation:
+  - foundry/systems/observability.py
+  - greg/cli.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query correlate|metrics|why_changed|otel (system 44); greg foundry trace
+  limitations: OpenTelemetry-shaped export only; no collector is bundled or contacted. Attribution is by mission
+    and capability, not causal inference.
+  recovery: 'Stateless over the ledger: recomputed from the journal at any time.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 45:
   acceptance:
   - Detects abnormal identity, credential, spend, network and outcome behavior
   - Each incident yields a persistent detection rule
-  adopt:
-  - Wazuh
-  - Falco
-  existing:
-  - egregore/drift.py
-  - policy/consequence_gate.py
-  - tests/unit/test_egregore_runtime.py
-  - tests/security
-  gap: Gate refusals and drift telemetry exist; no correlation, alerting or incident-to-defense loop.
-  state: PARTIAL
+  evidence: foundry/evidence/system-45.json
+  implementation:
+  - foundry/systems/siem.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query detect|rules; foundry.apply confirm|dismiss (system 45)
+  limitations: 'Detects over GREG journal events only (no host or network sensors); detection reports and never
+    blocks: containment stays with GREG pause/stop and the founder.'
+  recovery: 'Rules and incidents are versioned objects; a bad derived rule rolls back via #3; false positives are
+    recorded, not deleted.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 46:
   acceptance:
   - Institutional Seed reconstructs UNIIMENTE (ledger, keys-by-reference, config, stores) on a fresh machine

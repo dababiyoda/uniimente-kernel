@@ -152,6 +152,10 @@ def main(argv=None) -> int:
     fdw = fds.add_parser("why", help="causal ancestry of a GREG event (knowledge graph over the ledger)")
     fdw.add_argument("event_id")
     fds.add_parser("reputation", help="capability reputation from appraised GREG closures")
+    fdt = fds.add_parser("trace", help="one correlated trace per mission: decisions, actions, costs, outcomes")
+    fdt.add_argument("--mission")
+    fdc = fds.add_parser("changed", help="why a GREG metric changed across a split time")
+    fdc.add_argument("metric"); fdc.add_argument("--split", required=True, help="ISO time dividing before/after")
     fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
     fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
@@ -237,7 +241,15 @@ def main(argv=None) -> int:
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                     events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
                                "at": e.payload.get("at") or e.occurred_at} for e in journal.replay("")]
-                if args.foundry_cmd == "why":
+                if args.foundry_cmd in ("trace", "changed"):
+                    from foundry.systems import observability
+                    if args.foundry_cmd == "trace":
+                        data = observability.correlate(events, args.mission)
+                        data["metrics"] = observability.metrics(events)
+                    else:
+                        data = observability.why_changed(events, args.metric, split=args.split)
+                    print(json.dumps(data, indent=1, default=str))
+                elif args.foundry_cmd == "why":
                     g = graph.from_greg(events)
                     node = next((n for n in g.nodes if n.endswith(args.event_id)), None)
                     if node is None:

@@ -1,0 +1,154 @@
+{
+ "command": "python -m foundry.completion --run 14",
+ "name": "Institutional shell and pipelines",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "audit": {
+   "head": "0addeb27f7884576c9316746b6a09ccfe4a832bd04cfb43362896b03b5350a37",
+   "records": 24,
+   "valid": true
+  },
+  "audit_outcomes": [
+   [
+    "propose",
+    "ok"
+   ],
+   [
+    "simulate",
+    "ok"
+   ],
+   [
+    "execute",
+    "refused"
+   ],
+   [
+    "inspect",
+    "ok"
+   ],
+   [
+    "authorize",
+    "refused"
+   ],
+   [
+    "authorize",
+    "refused"
+   ],
+   [
+    "authorize",
+    "ok"
+   ],
+   [
+    "execute",
+    "ok"
+   ],
+   [
+    "reconcile",
+    "ok"
+   ],
+   [
+    "propose",
+    "ok"
+   ],
+   [
+    "authorize",
+    "refused"
+   ],
+   [
+    "revoke",
+    "ok"
+   ],
+   [
+    "execute",
+    "refused"
+   ],
+   [
+    "propose",
+    "ok"
+   ],
+   [
+    "execute",
+    "ok"
+   ],
+   [
+    "fork",
+    "ok"
+   ],
+   [
+    "promote",
+    "refused"
+   ],
+   [
+    "promote",
+    "ok"
+   ],
+   [
+    "promote",
+    "ok"
+   ],
+   [
+    "regress",
+    "ok"
+   ],
+   [
+    "reconcile",
+    "ok"
+   ],
+   [
+    "terminate",
+    "ok"
+   ],
+   [
+    "propose",
+    "refused"
+   ],
+   [
+    "inspect",
+    "ok"
+   ]
+  ],
+  "drift_detected": true,
+  "executed": "EXECUTED",
+  "fork_snapshot": "sha256:cd5216012",
+  "promoted": [
+   1,
+   2
+  ],
+  "reconciled": true,
+  "refused": {
+   "after_terminate": "shell terminated; only inspect is available",
+   "execute_revoked": "execute refused: internal_write proposal needs founder authorization (status REVOKED)",
+   "execute_unauthorized_write": "execute refused: internal_write proposal needs founder authorization (status PROPOSED)",
+   "intruder_signature": "authorize refused: founder key not enrolled or revoked",
+   "promote_without_evidence": "promote refused: promotion evidence must name executed proposals; not executed: ['p-nope']",
+   "replayed_nonce": "authorize refused: replayed command nonce",
+   "wrong_hash": "authorize refused: signed decision does not name this proposal's exact hash"
+  },
+  "regressed_to": 3,
+  "simulated_changes": {
+   "only_b": [
+    "chart.json"
+   ]
+  },
+  "status": {
+   "p-358a6a8a99212fe6": "REVOKED",
+   "p-3b957e195f16a0c7": "EXECUTED",
+   "p-fbf18764c4305551": "EXECUTED"
+  },
+  "trial_balance": {
+   "balances": {
+    "revenue:quotes": 0
+   },
+   "currency": "USD",
+   "equation_holds": true,
+   "totals": {
+    "asset": 0,
+    "equity": 0,
+    "expense": 0,
+    "liability": 0,
+    "revenue": 0
+   }
+  }
+ },
+ "result_sha256": "sha256:b2e65f43b9858f1823c4581006ba918d94a8db45237c374adfca32fc70f3e81a",
+ "system": 14
+}

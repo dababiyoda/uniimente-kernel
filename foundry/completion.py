@@ -104,7 +104,8 @@ def audit(rows: dict[int, dict] | None = None, *, rerun: bool = True) -> list[st
         claimed = json.loads(evidence_path.read_text())
         if rerun:
             fresh = run(sid)
-            if fresh["result_sha256"] != claimed.get("result_sha256") or fresh["result"] != claimed.get("result"):
+            as_recorded = json.loads(json.dumps(fresh["result"], sort_keys=True, default=str))  # tuples -> lists
+            if fresh["result_sha256"] != claimed.get("result_sha256") or as_recorded != claimed.get("result"):
                 problems.append(f"{label}: evidence does not reproduce (re-run differs from the record)")
     return problems
 

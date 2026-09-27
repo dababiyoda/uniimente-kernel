@@ -383,3 +383,166 @@ def test_treasury_reconciles_to_the_books_and_debt_blocks_expansion(tmp_path):
     assert result["budget_expansion_blocked_by_debt"] and result["evidenceless_repayment_refused"]
     assert result["unblocked_after_evidenced_repair"] and result["unknown_tier_refused"]
     assert result["last_tier_starved_first"], "obligations are funded before the last tier"
+
+
+# -- increment 4: composition, command surface, discovery, observability, security, twin, promotion
+
+from foundry.systems import discovery, linking, observability, promotion, registry, shell, siem, twin
+
+
+def _journal(body):
+    return [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "at": e.payload.get("at") or e.occurred_at}
+            for e in body.journal.replay("")]
+
+
+def test_registry_lifecycle_refuses_unsafe_moves_and_is_reachable_from_greg(tmp_path):
+    result = registry.exercise(tmp_path / "ex")
+    assert all(isinstance(v, str) for v in result["refusals"].values()), result["refusals"]
+    assert "GenomeError" in result["refusals"]["invalid_genome"], "the Kernel's genome validator is the one owner"
+    assert result["migrated"] == {"name": "buyer-scoring", "active": "2.0", "rollback_to": "1.0"}
+    assert result["detached_keeps_versions"] == ["1.0", "2.0"]
+    spec = registry.spec("notes", "1.0", ["text"])
+    foundry_bridge.apply({"system": 12, "op": "install", "args": {"spec": spec, "code": "x", "tests_pass": True}},
+                         _ctx(tmp_path, "foundry.apply"))
+    report = foundry_bridge.query({"system": 12, "op": "report", "args": {"now": "2026-09-27T00:00:00Z"}},
+                                  _ctx(tmp_path, "foundry.query"))
+    assert report["result"]["genomes"]["notes"]["state"] == "INSTALLED"
+    with pytest.raises(CapabilityError, match="has no query op 'install'"):
+        foundry_bridge.query({"system": 12, "op": "install", "args": {}}, _ctx(tmp_path, "foundry.query"))
+
+
+def test_linker_types_compositions_caps_authority_and_runs_through_greg(tmp_path):
+    result = linking.exercise(tmp_path)
+    assert result["price"] > 300 and 0 < result["trust"] < 1
+    assert result["plan_authority"] == "read_only" and result["write_plan_authority"] == "internal_write"
+    assert "needs trust:list, earlier stage provides trust:float" in result["refusals"]["type_mismatch"]
+    assert all(result["refusals"].values())
+    out = foundry_bridge.query({"system": 13, "op": "run_read_only", "args": {"stages": linking.demo_stages()}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert [t["stage"] for t in out["result"]["trace"]] == ["rate", "price"]
+    with pytest.raises(CapabilityError, match="exceeds granted ceiling read_only"):
+        foundry_bridge.query({"system": 13, "op": "run_read_only", "args": {"stages": linking.demo_stages(post=True)}},
+                             _ctx(tmp_path, "foundry.query"))
+    lying = linking.demo_stages()
+    lying[0]["provides"]["trust"]["type"] = "str"
+    lying[1]["needs"]["trust"] = "str"
+    with pytest.raises(linking.LinkError, match="contract says str"):
+        linking.run(linking.link(lying), tmp_path / "lie", ceiling="read_only")
+
+
+def test_shell_needs_signed_authority_for_writes_and_its_audit_detects_tampering(tmp_path):
+    result = shell.exercise(tmp_path)
+    assert result["executed"] == "EXECUTED" and result["reconciled"] and result["drift_detected"]
+    assert set(result["refused"]) == {"execute_unauthorized_write", "intruder_signature", "wrong_hash", "replayed_nonce",
+                                      "execute_revoked", "promote_without_evidence", "after_terminate"}
+    assert all(result["refused"].values())
+    assert result["audit"]["valid"] and ("propose", "refused") in [tuple(x) for x in result["audit_outcomes"]]
+    assert result["promoted"] == [1, 2] and result["regressed_to"] == 3
+    sh = shell.Shell(tmp_path / "shell", body_id="body-a", enrolled={})
+    lines = (tmp_path / "shell" / "audit.jsonl").read_text().splitlines()
+    forged = json.loads(lines[2]); forged["outcome"] = "ok"
+    lines[2] = json.dumps(forged, sort_keys=True)
+    (tmp_path / "shell" / "audit.jsonl").write_text("\n".join(lines) + "\n")
+    assert sh.verify_audit() == {"valid": False, "broken_at": 2}, "rewriting a refusal into success is detected"
+
+
+def test_discovery_is_signed_typed_fresh_and_grants_nothing(tmp_path):
+    result = discovery.exercise(tmp_path)
+    assert result["ranked"] == [["dale.assess_fast", 200], ["wmi.assess", 900]] or \
+        result["ranked"] == [("dale.assess_fast", 200), ("wmi.assess", 900)]
+    assert result["down_excluded"] and result["stale_after_ttl"] == 0 and not result["grants_access"]
+    assert set(result["refusals"]) == {"unenrolled_organ", "forged_signature", "replayed_sequence", "untyped_contract",
+                                       "rekey_without_founder"}
+    assert len(result["static_seeded"]) == 3 and result["use_without_grant"] == "refused"
+
+
+def test_observability_explains_a_real_greg_mission_and_why_a_metric_moved(tmp_path, capsys):
+    result = observability.exercise(None)
+    why = result["why_closures_fell"]
+    assert why["direction"] == "down" and why["drivers"][0]["capability"] == "wmi.assess"
+    assert any(a["kind"] == "mission.blocked" for a in why["drivers"][0]["after_window_anomalies"])
+    assert result["why_latency_rose"][0]["delta"] == 1500.0
+    # a real GREG body: one signed mission that needs founder approval
+    home, key, body_id, _ = make_body(tmp_path)
+    strategy = {"action_id": "store", "capability": "foundry.apply", "target": "foundry:cas",
+                "params": {"system": 36, "op": "put", "args": {"text": "note"}}, "advances": ["stored"], "rationale": "r"}
+    check = {"check_id": "stored", "description": "stored", "sensor": {"capability": "foundry.query",
+             "params": {"system": 36, "op": "verify"}, "target": "foundry:cas"},
+             "predicate": {"op": "gte", "field": "result.objects", "value": 1}}
+    drop(home, signed(key, body_id, "MISSION", mission("m:obs", checks=[check], strategies=[strategy],
+                                                        capabilities=["foundry.query"], targets=("foundry:*",),
+                                                        ceiling="read_only")))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot(); clock.advance(30); body.tick()
+        body.engine.book.rebuild()
+        rid = body.engine.book.open_requests()[0]["request_id"]
+    drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        for _ in range(3):
+            clock.advance(30); body.tick()
+        events = _journal(body)
+    spans = observability.correlate(events, "m:obs")["missions"]["m:obs"]["spans"]
+    kinds = [s["kind"] for s in spans]
+    assert kinds.index("decision.requested") < kinds.index("decision.answered") < kinds.index("mission.action")
+    answered = next(s for s in spans if s["kind"] == "decision.answered")
+    assert answered["latency_s"] is not None and answered["latency_s"] >= 0
+    assert observability.metrics(events)["closures"] >= 1
+    from greg import cli
+    assert cli.main(["--home", str(home), "foundry", "trace", "--mission", "m:obs"]) == 0
+    assert "m:obs" in json.loads(capsys.readouterr().out)["missions"]
+
+
+def test_siem_learns_a_rule_from_a_confirmed_incident_on_a_real_body(tmp_path):
+    result = siem.exercise(tmp_path / "ex")
+    assert {c for c, _ in result["week1_alerts"]} == {"identity", "network", "credential", "spend", "outcome"}
+    assert result["week2_single_forgery_before_learning"] == []
+    assert result["week2_single_forgery_after_learning"] == [["derived.identity.1", ["e250"]]] or \
+        result["week2_single_forgery_after_learning"] == [("derived.identity.1", ["e250"])]
+    assert result["duplicate_rule_refused"]
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    (tmp_path / "real").mkdir()
+    home, key, body_id, _ = make_body(tmp_path / "real")
+    intruder = Ed25519PrivateKey.generate()
+    for n in range(3):
+        drop(home, signed(intruder, body_id, "BODY_STOP", {"reason": f"forged {n}"}))
+    with Body(home) as body:
+        body.boot()
+        body.ingest_inbox()
+        events = _journal(body)
+    alerts = siem.detect(events, siem.rules(tmp_path / "siem"))
+    assert [a["rule"] for a in alerts] == ["identity.burst"], "three forged founder commands are an identity incident"
+    siem.confirm(tmp_path / "siem", alerts[0], events, note="intruder key")
+    drop(home, signed(intruder, body_id, "BODY_STOP", {"reason": "forged again"}))
+    with Body(home) as body:
+        body.ingest_inbox()
+        later = [e for e in _journal(body) if e["event_id"] not in {x["event_id"] for x in events}]
+    assert any(a["rule"].startswith("derived.identity") for a in siem.detect(later, siem.rules(tmp_path / "siem")))
+
+
+def test_twin_detects_drift_recalibrates_and_records_its_negative_result(tmp_path):
+    result = twin.exercise(tmp_path)
+    assert result["drift_alerts"] and result["drift_alerts"][0]["index"] >= result["regime_change_at"]
+    assert result["recalibration_helps_under_drift"]
+    assert result["brier_after_drift"]["adaptive"] < result["brier_after_drift"]["static"] - 0.05
+    assert 0 <= result["cost_without_drift"] < 0.02, "recalibration's price when nothing drifts stays small"
+    assert result["prediction_after_restart"]["observations"] == 60
+    events = observability.sample_events()
+    replayed = foundry_bridge.apply({"system": 42, "op": "replay_greg", "args": {"events": events}},
+                                    _ctx(tmp_path, "foundry.apply"))
+    assert replayed["result"]["observed"] == 4
+
+
+def test_promotion_blocks_at_the_first_failed_stage_and_needs_ratified_evidence(tmp_path):
+    result = promotion.exercise(tmp_path)
+    assert {k: tuple(v) for k, v in result["blocked"].items()} == {
+        "wrong_test": ("BLOCKED", "tests"), "replay_regression": ("BLOCKED", "replay"),
+        "adversarial": ("BLOCKED", "adversarial"), "margin_floor": ("BLOCKED", "simulation"),
+        "canary_inelastic_market": ("BLOCKED", "canary")}
+    assert tuple(result["without_ratification"]) == ("BLOCKED", "ratification")
+    assert tuple(result["wrong_ratification"]) == ("BLOCKED", "ratification")
+    assert result["promoted"] == "PROMOTED" and result["stages_passed"] == list(promotion.STAGES)
+    assert result["stage_results"]["canary"]["market"] == "emulated"
+    good = promotion.candidate(result["committed"]["source"])
+    hacked = dict(good, source="base_price * units")
+    assert promotion.evidence_hash(hacked, []) != promotion.evidence_hash(good, [])

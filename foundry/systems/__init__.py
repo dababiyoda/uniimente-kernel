@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import importlib
 
-SYSTEMS = {2: "dsl", 3: "versions", 17: "search", 18: "graph", 19: "next_test", 20: "emulator",
-           21: "snapshots", 23: "distributed", 24: "queue", 36: "cas", 39: "accounting", 40: "mechanism",
-           41: "reputation", 43: "model_check", 46: "seed"}
+SYSTEMS = {2: "dsl", 3: "versions", 5: "event_sourcing", 6: "proofs", 7: "pki", 8: "capsec", 15: "workflows",
+           17: "search", 18: "graph", 19: "next_test", 20: "emulator", 21: "snapshots", 22: "scenarios",
+           23: "distributed", 24: "queue", 30: "gate", 36: "cas", 39: "accounting", 40: "mechanism",
+           41: "reputation", 43: "model_check", 46: "seed", 55: "treasury"}
 
 
 def module(system_id: int):

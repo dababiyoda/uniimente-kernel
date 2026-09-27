@@ -304,3 +304,82 @@ def test_dsl_runs_narrow_rules_and_rejects_code():
     for src in ("2 ** 10 ** 10", "[x for x in range(9)]", "units[0]", "open('/etc/passwd')"):
         with pytest.raises(dsl.RuleError):
             dsl.parse("pricing", src)
+
+
+# -- increment 3: the Kernel's own authority, events and proof under the contract -------
+
+from foundry.systems import capsec, event_sourcing, gate, pki, proofs, scenarios, treasury, workflows
+
+
+def test_event_sourcing_replays_after_restart_and_refuses_tampering(tmp_path):
+    result = event_sourcing.exercise(tmp_path)
+    assert result["replayed_history"][0] == "signal.observed" and result["replayed_history"][-1] == "outcome.measured"
+    assert all(v for k, v in result.items() if k != "replayed_history")
+
+
+def test_proofs_bind_membership_to_a_trusted_root_only(tmp_path):
+    result = proofs.exercise(tmp_path)
+    assert result["all_members_prove"] and result["tampered_sibling_fails"] and result["non_member_refused"]
+    assert result["forged_proof_self_consistent"], "negative evidence: a forger's proof is internally consistent"
+    assert result["forged_rejected_by_trusted_root"] and result["signed_root_substitution_detected"]
+
+
+def test_pki_limits_devices_to_delegated_kinds_and_lifetimes(tmp_path):
+    result = pki.exercise(tmp_path)
+    assert result["founder_mission"] == result["device_decision"] == "accepted"
+    for case in ("replayed_nonce", "other_body", "tampered_body", "device_mission", "device_after_expiry",
+                 "device_after_revocation"):
+        assert result[case].startswith("refused"), (case, result[case])
+    assert result["long_lived_delegation_refused"]
+
+
+def test_capability_grants_reach_nothing_but_their_own_proposal():
+    result = capsec.exercise(None)
+    assert result["first_use"] == "recorded"
+    for case in ("other_target", "overspend", "replay", "revoked"):
+        assert result[case] == "refused", case
+    assert not (result["other_target_executed"] or result["replay_executed"] or result["revoked_executed"])
+
+
+def test_consequence_gate_pipeline_witnesses_and_fails_closed():
+    result = gate.exercise(None)
+    assert result["pipeline"] == ["proposed", "evaluating", "granted", "executing", "committed", "recorded"]
+    assert result["witnessed"] and result["chain_ok"] and result["explosion_evidence_kept"]
+    assert result["explosion"] == "reconciliation_required", "an exploding executor never reads as success"
+    assert result["weak_evidence"] == result["no_identity"] == "refused"
+
+
+def test_workflows_resume_without_repeats_and_compensate_in_reverse(tmp_path):
+    result = workflows.exercise(tmp_path)
+    assert result["killed_mid_flight"] and result["resumed_status"] == "completed" and result["no_step_repeated"]
+    assert result["approval_blocks_without_approver"] and result["failure_compensated"]
+    assert result["compensation_order"] == ["draft", "research"]
+
+
+def test_composed_workflow_runs_foundry_systems_through_greg_and_resumes(tmp_path):
+    steps = [{"name": "store", "system": 36, "op": "put", "args": {"text": "evidence"}, "write": True},
+             {"name": "verify", "system": 36, "op": "verify"},
+             {"name": "boundary", "system": 43, "op": "check_approval_boundary"}]
+    out = foundry_bridge.apply({"system": 15, "op": "run", "args": {"workflow_id": "wf-a", "steps": steps}},
+                               _ctx(tmp_path, "foundry.apply"))
+    outputs = out["result"]["outputs"]
+    assert out["result"]["status"] == "completed" and outputs["verify"]["intact"] and outputs["boundary"]["holds"]
+    with pytest.raises(CapabilityError, match="refused run"):
+        foundry_bridge.apply({"system": 15, "op": "run", "args": {"workflow_id": "wf-b", "steps": [
+            {"name": "sneak", "system": 36, "op": "put", "args": {"text": "x"}}]}}, _ctx(tmp_path, "foundry.apply"))
+
+
+def test_scenario_tribunal_is_deterministic_and_writes_playbooks():
+    result = scenarios.exercise(None)
+    assert result["deterministic"] and result["dominance"] == [["owned_proof_rail", "rented_audience"]]
+    assert result["platform_loss"]["rented_audience"]["survival"] < result["platform_loss"]["owned_proof_rail"]["survival"]
+    assert "owned channels" in result["playbook_platform_loss"]["mitigations"][0]
+    assert len(result["scenarios_covered"]) == 6
+
+
+def test_treasury_reconciles_to_the_books_and_debt_blocks_expansion(tmp_path):
+    result = treasury.exercise(tmp_path)
+    assert result["reconciled_to_the_cent"] and result["books_balance"] and result["unallocated_cents"] == 0
+    assert result["budget_expansion_blocked_by_debt"] and result["evidenceless_repayment_refused"]
+    assert result["unblocked_after_evidenced_repair"] and result["unknown_tier_refused"]
+    assert result["last_tier_starved_first"], "obligations are funded before the last tier"

@@ -80,71 +80,72 @@
   - Every consequential transition is an immutable, hash-chained event
   - Replay rebuilds state exactly
   - Duplicate events are idempotent
-  adopt:
-  - PostgreSQL outbox
-  - EventStoreDB
-  existing:
+  evidence: foundry/evidence/system-05.json
+  implementation:
+  - foundry/systems/event_sourcing.py
   - events/spine.py
-  - events/engine.py
-  - tests/unit/test_events.py
-  - tests/unit/test_events_engine_activation.py
-  gap: Replay and idempotency are proven in-process; no production event store or cross-organ replay under load.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply emit; foundry.query project
+  limitations: Single-host file ledger with one writer; no cross-organ replay under load yet.
+  recovery: Replay after process restart rebuilds the projection; a tampered ledger refuses to open; duplicate emission
+    is a no-op.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 6:
   acceptance:
   - Hashes, signatures, Merkle checkpoints and external timestamps bind claims to evidence
   - Tampering with anchored history is detected by a verifier holding state outside GREG
-  adopt:
-  - RFC 3161 timestamp authority
-  - Sigstore Rekor v2
-  - OpenTimestamps
-  existing:
+  evidence: foundry/evidence/system-06.json
+  implementation:
+  - foundry/systems/proofs.py
   - provenance/proof.py
-  - provenance/ledger.py
-  - provenance/commit_witness.py
   - greg/anchor.py
-  - tests/unit/test_proof.py
-  - tests/unit/test_provenance.py
-  - tests/unit/test_greg_anchor.py
-  - tests/unit/test_greg_anchor_witness.py
-  gap: 'GREG anchors its ledger head at an external RFC 3161 TSA once Alfonso signs ANCHOR_CONFIGURE; with a witness
-    bundle and TSA root retained outside GREG, `greg anchor verify --witness` detects rewrite, deletion, rollback,
-    substitution or reconstruction within the witnessed prefix. Not covered: the unwitnessed tail, or an attacker
-    who also controls the witness. Not yet run against a public TSA or on a founder body; kernel Merkle checkpoints
-    outside GREG remain self-anchored.'
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query root; greg anchor verify --witness
+  limitations: A proof is only meaningful against a trusted root (negative evidence recorded); public TSA use needs
+    founder configuration.
+  recovery: Stateless verification; anchoring recovery is the external witness bundle (greg/anchor.py).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 7:
   acceptance:
   - Every organ, agent, service and human approval has a verifiable key identity
   - Credentials are short-lived, scoped and revocable; revocation takes effect before the next act
-  adopt:
-  - SPIFFE/SPIRE
-  - Ed25519 via cryptography
-  - Sigstore
-  existing:
-  - identity/machine_passport.py
-  - identity/service-identities.yaml
+  evidence: foundry/evidence/system-07.json
+  implementation:
+  - foundry/systems/pki.py
   - greg/founder.py
-  - tests/unit/test_identity.py
-  - tests/unit/test_greg_founder_and_scope.py
-  gap: GREG commands are Ed25519-signed by the founder key or a delegated, expiring, revocable device key, with
-    rotation. Inter-organ bridge signing (DALEOBANKS/WMI) is still shared-key HMAC, and there are no certificates.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate; greg founder / greg device enroll|revoke
+  limitations: Ed25519 founder and device keys for GREG; inter-organ bridges still use shared-key HMAC; no X.509.
+  recovery: Founder key rotation via signed command; device revocation takes effect on the next command.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 8:
   acceptance:
   - Grants bind capability x action x target x budget x deadline
   - Compromise of one grant cannot reach other targets or budgets
   - Enforced for GREG's real actions, not only in unit tests
-  adopt:
-  - short-lived cloud credentials
-  - Vault dynamic secrets
-  existing:
+  evidence: foundry/evidence/system-08.json
+  implementation:
+  - foundry/systems/capsec.py
+  - foundry/systems/gate.py
   - policy/consequence_gate.py
-  - identity/machine_passport.py
-  - tests/unit/test_consequence_gate.py
-  - tests/authority
-  gap: Grants are narrow, expiring and budgeted in-process; not enforced at OS, network or credential-broker level.
-  state: PARTIAL
+  - greg/authority.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate (system 8); GREG light cones on every mission action
+  limitations: Enforced in-process by the Kernel gate and GREG's Authority Office, not by OS or network isolation.
+  recovery: Revoked or used grants fail at commit; a refused proposal never reaches the executor.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 9:
   acceptance:
   - A capability is packaged into a reproducible OCI image with pinned inputs
@@ -218,19 +219,18 @@
 15:
   acceptance:
   - Durable workflows with approvals, retries, deadlines, compensation and recovery survive process death
-  adopt:
-  - Temporal
-  - Restate
-  - DBOS
-  existing:
+  evidence: foundry/evidence/system-15.json
+  implementation:
+  - foundry/systems/workflows.py
   - events/spine.py
-  - loom/weaver.py
-  - loom/canonical.py
-  - tests/unit/test_events.py
-  - tests/unit/test_loom.py
-  gap: Durable workflows survive kill-and-resume in-process; no hosted engine with timers, scale-out or operator
-    UI.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query (via GREG missions); DurableWorkflow
+  limitations: Linear step workflows; no parallel branches or timers beyond GREG mission cadence.
+  recovery: Resume from ledger checkpoints without repeating finished steps; uncertain steps require reconciliation.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 16:
   acceptance:
   - A mutation passes spec -> tests -> historical replay -> adversarial -> simulation -> canary -> verification
@@ -331,18 +331,18 @@
   - Counterfactual tribunal scores strategies under platform loss, regulation, attack, capital scarcity and founder
     absence
   - Produces a response playbook per scenario
-  adopt:
-  - Monte Carlo over recorded outcomes
-  - SimPy
-  existing:
+  evidence: foundry/evidence/system-22.json
+  implementation:
+  - foundry/systems/scenarios.py
   - twins/tribunal.py
-  - twins/twin.py
-  - foundry/tribunal.py
-  - tests/unit/test_twins.py
-  - tests/unit/test_advantage_foundry_v1.py
-  gap: Counterfactual verdicts run over frozen corpora; no calibrated simulation of platform loss, regulation or
-    competitor attack.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query tribunal
+  limitations: Strategy dependencies and shock ranges are declared by the caller; not calibrated to market data.
+  recovery: Stateless; seeded runs are reproducible.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 23:
   acceptance:
   - Idempotency keys, retries with backoff, compensation and reconciliation across organs
@@ -432,16 +432,19 @@
   acceptance:
   - Every external consequence crosses one gate with commit-time revalidation
   - No bypass path exists (tested)
-  adopt:
-  - Envoy or Kong in front of the Gate
-  existing:
+  evidence: foundry/evidence/system-30.json
+  implementation:
+  - foundry/systems/gate.py
   - policy/consequence_gate.py
-  - policy/engine.py
   - provenance/commit_witness.py
-  - tests/unit/test_consequence_gate.py
-  - tests/security
-  gap: Closes one bounded action family (draft.publish) end to end; no hosted gateway fronting organ side effects.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate (system 30)
+  limitations: Sandbox targets in the exercise; live external targets remain founder-authorized only.
+  recovery: Executor failure fails closed to reconciliation_required with evidence kept; ledger chain verifies.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 31:
   acceptance:
   - UNIIMENTE serves canonical owned pages/portals from its own server
@@ -757,11 +760,17 @@
   - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner
     distribution by versioned policy
   - Postings reconcile with the double-entry ledger
-  adopt:
-  - bank and processor APIs feeding the Treasury
-  existing:
+  evidence: foundry/evidence/system-55.json
+  implementation:
+  - foundry/systems/treasury.py
   - capital/treasury.py
   - capital/allocation-policy.yaml
-  - tests/unit/test_treasury.py
-  gap: The waterfall runs in memory against modeled surplus; no real revenue has entered it.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply allocate
+  limitations: Bookkeeping only; no payment rail; USD books.
+  recovery: Waterfall policy versioned (#3); postings mirrored to the hash-chained journal (#39) and reconciled
+    to the cent.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py

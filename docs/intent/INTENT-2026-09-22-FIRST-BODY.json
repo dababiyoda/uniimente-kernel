@@ -15,7 +15,16 @@
   "evidence_refs": ["docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md", "docs/SR001_ADOPTION_DECISION.md", "docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md in open #102 (prior embodied intent lineage)", "Kernel #98 (merged); #93, #97, #101 and #102 (draft)", "No Mac install, real founder authentication or real embodied mission closure verified"],
   "implementation_refs": ["docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md", "egregore/local_mission.py and egregore/morning_review.py in draft #101/#102", "egregore/goal_chase.py in draft #93/#97; experimental supervisor stacked separately on #97"],
   "owner": "Alfonso Lopez (founder authority); Kernel maintainers (implementation)",
-  "next_review_trigger": "Independent review of first-body ownership and first safe persistent mission closure against merged Kernel; founder adoption decision before merge/activation",
+  "next_review_trigger": "Founder checks Chromebook Linux availability; then verifies the first signed persistent mission on that device and reviews the result before any activation decision",
+  "hardware_correction_2026_09_26": {
+    "source_ref": "docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md",
+    "founder_owned": ["Chromebook", "iPhone 17"],
+    "linux_environment": "unavailable_or_unsure",
+    "first_body_candidate": "Chromebook Linux environment if available; not verified",
+    "future_body_selection": "GREG may research and recommend a Mac or other better hardware; Alfonso authorizes acquisition and migration",
+    "superseded_assumption": "Alfonso owns a Mac and must run his first mission on macOS",
+    "authority_change": "none"
+  },
   "unresolved_questions": ["Which runtime composition from draft #70/#87, if either, should be canonical after independent comparison?", "What authenticated founder enrollment and remote-channel design will be authorized for a live body?", "Which first real bounded mission and approval envelope does Alfonso choose for live graduation?"],
   "created_at": "2026-09-22T19:46:22Z",
   "updated_at": "2026-09-22T19:46:22Z"

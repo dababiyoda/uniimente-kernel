@@ -11,16 +11,18 @@ activity counts. A closure counts when EVERY condition holds for one mission:
   interruption_survived a body interruption was recovered between registration and closure
   appraised_verified    the separate-process appraiser returned VERIFIED (includes exactly-once)
   founder_accepted      Alfonso signed an accepting CRITIQUE of the closure (morning tribunal)
-  mac_body              it closed on macOS (the first body is the Mac)
+  founder_body          it ran on the body explicitly designated by a founder-signed command
 
-The last two require Alfonso and his Mac. A machine cannot award them to itself.
+The ledger can check key possession, designation, and process history. It cannot
+establish the physical owner's identity or verify hardware ownership by itself.
+Fixture results are structural tests, never external VEPMC evidence.
 """
 from __future__ import annotations
 
 from greg.journal import Journal
 
 CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
-              "approval_boundary", "interruption_survived", "appraised_verified", "founder_accepted", "mac_body")
+              "approval_boundary", "interruption_survived", "appraised_verified", "founder_accepted", "founder_body")
 
 
 def vepmc(journal: Journal) -> dict:
@@ -30,6 +32,10 @@ def vepmc(journal: Journal) -> dict:
     achieved = {e.payload["mission_id"]: (e, seq[e.event_id]) for e in journal.replay("mission.achieved")}
     appraised = {e.payload["mission_id"]: e for e in journal.replay("mission.appraised")}
     contexts = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.closure_context")}
+    accepted_designations = {e.payload["digest"]: seq[e.event_id] for e in journal.replay("command.accepted")
+                             if e.payload.get("kind") == "BODY_DESIGNATE" and e.payload.get("signer") == "founder"}
+    designations = [(e.payload, accepted_designations.get(e.payload.get("command_digest"), 1 << 60))
+                    for e in journal.replay("body.designated")]
     recoveries = [seq[e.event_id] for e in journal.replay("body.recovered")]
     accepted_targets = {e.payload["target_event_id"] for e in journal.replay("critique.recorded")
                         if e.payload["verdict"] == "accept"}
@@ -50,9 +56,14 @@ def vepmc(journal: Journal) -> dict:
             "interruption_survived": any(registered.get(mid, 1 << 60) < r < done_seq for r in recoveries),
             "appraised_verified": bool(appraisal) and appraisal.payload.get("verdict") == "VERIFIED",
             "founder_accepted": bool(accepted_targets & {event.event_id, appraisal.event_id if appraisal else None}),
-            "mac_body": context.get("platform") == "Darwin",
+            "founder_body": any(d.get("body_id") == context.get("body_id")
+                                and d.get("platform") == context.get("platform")
+                                and d.get("purpose") == "first_founder_body"
+                                and designation_seq < registered.get(mid, 0)
+                                for d, designation_seq in designations),
         }
         rows.append({"mission_id": mid, "closure_event_id": event.event_id, **row,
                      "counts": all(row[c] for c in CONDITIONS),
                      "missing": [c for c in CONDITIONS if not row[c]]})
-    return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS)}
+    return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
+            "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}

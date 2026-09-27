@@ -42,6 +42,7 @@ COMMAND_KINDS = (
     "CAPABILITY_ATTACH",  # attach a verified capability under a stated ceiling
     "CAPABILITY_DETACH",
     "BODY_PAUSE", "BODY_RESUME", "BODY_STOP",
+    "BODY_DESIGNATE",  # founder names this body as the intended first execution body
     "NODE_ENROLL",        # admit another compute node with its own bounded identity
     "SOP_RATIFY",         # promote an observed procedure into a reusable capability
     "ROTATE_FOUNDER_KEY",

@@ -131,7 +131,7 @@ def test_founder_product_path_survives_kill_and_torn_write_and_delivers_once(tmp
         http(port, "/accept", {"csrf": token, "event_id": event_id})
         wait_for(lambda: events(home, "critique.recorded"), what="acceptance")
         row = json.loads(greg(home, "vepmc").stdout)["missions"][0]
-        assert row["missing"] == ([] if os.uname().sysname == "Darwin" else ["mac_body"]), row
+        assert row["missing"] == ["founder_body"], row
         http(port, "/stop", {"csrf": token, "mode": "signed"})
         wait_for(lambda: heartbeat(home)["state"] == "STOPPED", what="signed stop")
         if os.environ.get("GREG_RECORD_EVIDENCE"):

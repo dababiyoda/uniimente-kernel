@@ -72,7 +72,7 @@ is the single tested translation. Dispositions for the rest of the project are i
 | Survive power loss | torn ledger tail quarantined to a sidecar, never replayed, never lost; observers ignore unacknowledged tails | `tests/unit/test_ledger_tail_recovery.py`, product-path test (SIGSTOP + torn write + SIGKILL) |
 | No crash loops | `Journal.record` is idempotent on type + key + payload (it hashed the per-boot envelope before) | `tests/unit/test_greg_continuity.py` |
 | Self-repair | a formed capability that faults twice in service (source/binary changed, or raises on live input) is quarantined with the failure as evidence and re-formed as a new deficit generation under the same signed contract and one shared build budget; the rebuild must also run cleanly on the live input that broke its predecessor (replayed locally; never sent to a model). Before: a tampered capability crash-looped the body (`EventError`), a failing one only escalated | `tests/unit/test_greg_self_repair.py`, `tests/evidence/greg-product/self-repair-summary.json` |
-| Any model vendor | `greg/models.py`: one router over the Anthropic API, the OpenAI API (Responses) and Claude Code; failover, demotion with cooldown, route health retained in the ledger (`greg.model.route`), the true author recorded on every draft and built capability. Refusals are final (never re-asked elsewhere); in a spending context an unpriced route is skipped and every priced route bounds its worst-case cost to the remaining signed budget | `tests/unit/test_greg_models.py` (SDK-shaped fakes; no live key used) |
+| Replaceable model routes | `greg/models.py`: one router over Anthropic API, OpenAI API, Claude Code and opt-in local Ollama; founder-signed route selection is replayed from the ledger after restart. Failover, route health and author provenance remain on the same spine. Refusals are final; unpriced spending routes are skipped and priced routes bound cost | `tests/unit/test_greg_models.py`, `tests/unit/test_greg_ollama.py` (local HTTP stub; no live model) |
 
 ## Externally detectable rewrite or rollback of witnessed history (2026-09-26)
 
@@ -96,7 +96,7 @@ python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # th
 python -m greg --home ~/.uniimente/greg mission new engineering-brief --local kernel=~/src/uniimente-kernel \
        --github dababiyoda/uniimente-kernel [--daily] --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg run --builder models          # Genesis builds/repairs via any reachable model
-                                                                     # (anthropic_api_key / openai_api_key handles, or Claude Code)
+                                                                     # (explicit local Ollama, API handles, or Claude Code)
 python -m greg founder keygen --key ~/.greg-founder.pem          # on a device Alfonso controls
 python -m greg --home ~/.uniimente/greg founder enroll --pubkey <printed hex>
 python -m greg --home ~/.uniimente/greg service install --platform macos [--builder models]   # writes, does not load
@@ -110,6 +110,56 @@ python -m greg --home ~/.uniimente/greg status | decisions | morning
 python -m greg --home ~/.uniimente/greg decide <request_id> approve --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg stop --local            # OS-level stop always works
 ```
+
+### Optional open-weight local cognition
+
+This uses the **same** `greg.models.ModelRouter` for mission proposals and
+Capability Genesis. A local model only drafts or generates source; the founder
+still signs missions and the Kernel retains the consequence boundary. Ollama
+is opt-in and must already be installed with a downloaded GGUF model. GREG does
+not install software, pull a model, sign into Ollama, enroll a key or spend money.
+
+Before creating a **new** body, disable Ollama's cloud features (Ollama's
+`~/.ollama/server.json`: `{"disable_ollama_cloud":true}`; restart Ollama).
+Confirm the model appears in `ollama list`, and that the local API is available
+on 127.0.0.1:11434. Choose a model that fits the actual hardware. Run:
+
+```bash
+python -m greg --home ~/.uniimente/greg init --read-root ~/src --deliver-root ~/GREG \
+  --local-model '<downloaded-model-name>'
+python -m greg --home ~/.uniimente/greg service install --platform linux --builder models
+python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem
+```
+
+Complete the other founder-key and supervisor steps in the Chromebook first
+mission guide before starting the service. The model must be in Ollama's local
+`/api/tags` inventory with positive disk size, a GGUF format and digest;
+`:cloud` models and uninstalled models are refused without a pull. The adapter
+only contacts the fixed loopback native API, caps output, records requested
+model, served model and artifact digest, and participates in the router's
+terminal-refusal and outage-failover rules. The Ollama server itself is an
+operator-controlled dependency; local inventory does not prove that an altered
+server cannot proxy requests elsewhere. A local inference uses no model API
+charge but still consumes device resources. No model performance or founder
+device run is claimed from the in-process HTTP acceptance tests.
+
+To **replace** the cognition route after GREG exists, queue a founder-signed
+selection (the body applies it and preserves its identity, missions and ledger):
+
+```bash
+python -m greg --home ~/.uniimente/greg model set --route ollama \
+  --local-model '<downloaded-model-name>' --key ~/.greg-founder.pem
+python -m greg --home ~/.uniimente/greg model set --off --key ~/.greg-founder.pem
+```
+
+`--route` can be repeated in founder preference order for registered adapters;
+this never grants credentials, money or external effects. A disabled route stays
+detached across process death. The supervised body's builder switches on ingest;
+an open founder console refreshes from the ledger before drafting or signing
+and discards pending drafts from a detached route.
+`--builder models` must be selected for Capability Genesis. A future stronger
+model needs one tested route adapter with this same interface; it cannot become
+a new Kernel, authority plane, mission ledger or autonomous policy selection.
 
 Mission contract: `contracts/greg-mission.schema.json`. Native macOS verification package:
 `greg/mac/verify_mac_body.sh` (must be run by Alfonso on the Mac; nothing here claims it ran).

@@ -357,7 +357,8 @@ class Genesis:
                 "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
                 "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
                 "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
-                "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried")},
+                "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
+                **({"model_digest": built["model_digest"]} if built.get("model_digest") else {})},
                 key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
             path = self.store / f"{digest}.py"
@@ -421,6 +422,7 @@ class Genesis:
             target_prefix="fs:", filesystem="read-scoped", retry_safe=True, tests=(f"founder-oracle:{deficit_id}",),
             strengthens=("capability_formation", "proof"),
             provenance={"source_sha256": digest, "builder": built["builder"], "prompt_sha256": built.get("prompt_sha256"),
+                        **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
                         "deficit_id": deficit_id, "oracle": "founder-signed held-out vectors",
                         "verification": report, "cost_usd": built.get("cost_usd"),
                         "license": "generated for this body by the named builder",

@@ -1,7 +1,7 @@
 """Provider-independent model routing: GREG is not married to one model vendor.
 
-One interface (``complete(system, user) -> text``) over every model route the body can
-reach: the Anthropic API, the OpenAI API, and the founder's installed Claude Code CLI.
+One interface over the Anthropic API, OpenAI API, the founder's installed Claude Code CLI,
+and an explicitly selected locally installed Ollama model.
 The router tries routes in preference order, demotes a route that keeps failing, and
 records which route actually produced each answer, so a planner draft or a built
 capability always names its true author.
@@ -29,7 +29,10 @@ Models propose; they never authorize. Nothing here grants authority.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import http.client
 import json
+import math
+import re
 import shutil
 import subprocess
 
@@ -222,6 +225,88 @@ class OpenAIRoute:
         return {"text": text, "cost_usd": cost, "served_model": getattr(response, "model", None) or self.model}
 
 
+class OllamaRoute:
+    """Only the fixed loopback Ollama native API; never discovers, pulls or selects a cloud model.
+
+    The local server is a trusted operator dependency. Its /api/tags response is local
+    inventory evidence, not proof that a malicious/reconfigured server cannot relay data.
+    Run Ollama with cloud features disabled for a genuinely offline installation.
+    """
+    provider = "ollama"
+    MAX_RESPONSE_BYTES = 1 << 20
+
+    def __init__(self, model: str, *, port: int = 11434):
+        if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}", model):
+            raise ValueError("an explicit Ollama model name is required")
+        if model.endswith(":cloud") or model.endswith("-cloud"):
+            raise ValueError("cloud model cannot be used as a local Ollama route")
+        if type(port) is not int or not 1 <= port <= 65535:
+            raise ValueError("invalid Ollama loopback port")
+        self.model, self.name, self.port = model, f"ollama:{model}", port
+
+    def _request(self, method: str, path: str, data=None) -> dict:
+        # HTTPConnection uses a fixed numeric loopback address: no DNS, redirects,
+        # proxy environment, remote base URL or inherited credentials.
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=120 if data is not None else 5)
+        try:
+            conn.request(method, path, body=json.dumps(data) if data is not None else None,
+                         headers={"Content-Type": "application/json"} if data is not None else {})
+            response = conn.getresponse()
+            raw = response.read(self.MAX_RESPONSE_BYTES + 1)
+            if len(raw) > self.MAX_RESPONSE_BYTES:
+                raise RouteError("Ollama response exceeds size limit", kind=BAD_OUTPUT)
+            try:
+                result = json.loads(raw)
+            except (UnicodeError, ValueError) as exc:
+                raise RouteError("Ollama returned invalid JSON", kind=BAD_OUTPUT) from exc
+            if not isinstance(result, dict):
+                raise RouteError("Ollama returned an invalid response", kind=BAD_OUTPUT)
+            if response.status >= 400:
+                error = result.get("error", "request failed")
+                if isinstance(error, dict):
+                    error = error.get("message", str(error))
+                failure = Exception(str(error)[:250])
+                failure.status_code = response.status
+                failure.body = result
+                raise _route_failure(failure)
+            return result
+        except (TimeoutError, OSError, http.client.HTTPException) as exc:
+            raise RouteError(f"Ollama unavailable: {type(exc).__name__}: {exc}"[:300], kind=TRANSIENT) from exc
+        finally:
+            conn.close()
+
+    def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
+        if budget_usd is not None and (not isinstance(budget_usd, (float, int)) or
+                                       not math.isfinite(budget_usd) or budget_usd < 0):
+            raise Unbounded("invalid local model budget")
+        inventory = self._request("GET", "/api/tags")
+        items = inventory.get("models")
+        if not isinstance(items, list):
+            raise RouteError("Ollama returned an invalid local model inventory", kind=BAD_OUTPUT)
+        installed = next((item for item in items if isinstance(item, dict)
+                          and self.model in (item.get("name"), item.get("model"))
+                          and type(item.get("size")) is int and item["size"] > 0
+                          and isinstance(item.get("details"), dict)
+                          and item["details"].get("format") == "gguf"), None)
+        if installed is None:
+            raise RouteError(f"{self.model} is not installed locally in Ollama", kind=UNAVAILABLE)
+        digest = installed.get("digest")
+        if not isinstance(digest, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", digest):
+            raise RouteError("local model has no valid artifact digest", kind=BAD_OUTPUT)
+        answer = self._request("POST", "/api/chat", {
+            "model": self.model, "stream": False,
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            "options": {"num_predict": 8192}})
+        served = answer.get("model")
+        if served != self.model:
+            raise RouteError("Ollama served a different model than requested", kind=BAD_OUTPUT)
+        message = answer.get("message")
+        content = message.get("content") if isinstance(message, dict) else None
+        if not answer.get("done") or not isinstance(content, str) or not content.strip():
+            raise RouteError("Ollama returned no completed text answer", kind=BAD_OUTPUT)
+        return {"text": content, "cost_usd": 0.0, "served_model": served, "model_digest": digest}
+
+
 class ClaudeCodeRoute:
     """The founder's installed Claude Code CLI, headless: no tools, no MCP, no disk, a spend cap."""
     provider = "claude-code"
@@ -325,9 +410,10 @@ class ModelRouter:
             tried.append({"route": route.name, "outcome": "ok"})
             self._note(route, "ok", at, None)
             served = result.get("served_model")
-            self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "served_model": served}
+            self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "served_model": served,
+                         "model_digest": result.get("model_digest")}
             return {"text": result["text"], "route": route.name, "served_model": served, "cost_usd": spent,
-                    "tried": tried}
+                    "tried": tried, "model_digest": result.get("model_digest")}
         self.last = {"route": None, "tried": tried, "cost_usd": spent}
         raise RouteError("every model route failed: " + "; ".join(f"{t['route']}: {t.get('why', '')}"
                                                                   for t in tried)[:600])
@@ -355,6 +441,7 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
                                       model=config.get("openai_model", "gpt-5.5"),
                                       price=config.get("openai_price_per_mtok")),
         "claude-code": lambda: ClaudeCodeRoute(max_budget_usd=claude_budget_usd),
+        "ollama": lambda: OllamaRoute(config.get("ollama_model")),
     }
     routes, unavailable = [], {}
     for name in config.get("order", ["anthropic", "openai", "claude-code"]):
@@ -368,3 +455,34 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
         except Exception as exc:   # missing key, SDK not installed, CLI absent
             unavailable[name] = f"{type(exc).__name__}: {exc}"[:160]
     return routes, unavailable
+
+
+MODEL_ROUTE_NAMES = frozenset(("ollama", "anthropic", "openai", "claude-code"))
+
+
+def validate_route_selection(body: dict) -> dict:
+    """A founder-signed cognition selection; no credentials, URLs, policies or grants."""
+    if not isinstance(body, dict) or set(body) - {"order", "ollama_model"} or "order" not in body:
+        raise ValueError("model route selection needs only order and optional ollama_model")
+    order = body["order"]
+    if not isinstance(order, list) or len(order) > len(MODEL_ROUTE_NAMES) or any(
+            not isinstance(name, str) or name not in MODEL_ROUTE_NAMES for name in order) or len(set(order)) != len(order):
+        raise ValueError("model route order must name distinct registered adapters")
+    if "ollama" in order:
+        if "ollama_model" not in body:
+            raise ValueError("selected Ollama route requires an explicit model")
+        OllamaRoute(body["ollama_model"])
+    elif "ollama_model" in body:
+        raise ValueError("cannot retain an Ollama model when its route is detached")
+    return {"order": list(order), **({"ollama_model": body["ollama_model"]} if "ollama" in order else {})}
+
+
+def effective_route_config(initial: dict | None, journal) -> dict:
+    """Rebuild current route selection from the canonical append-only body history."""
+    config = dict(initial or {})
+    changes = journal.replay("model.configured")
+    if changes:
+        selection = validate_route_selection(changes[-1].payload["selection"])
+        config.pop("ollama_model", None)
+        config.update(selection)
+    return config

@@ -41,6 +41,21 @@ greg founder keygen --key ~/.greg-founder.pem
 greg founder enroll --pubkey <paste the hex printed by keygen>
 ```
 
+**Optional, before `greg init`:** if Ollama is already running inside this
+Chromebook's Linux environment with a model downloaded locally, add
+`--local-model '<name-from-ollama-list>'` to `greg init`. Disable Ollama's cloud
+features before starting it; see [local cognition](README.md#optional-open-weight-local-cognition).
+To let Capability Genesis use that route later, install the service with
+`greg service install --platform linux --builder models` in place of the
+default service-install command below. The initial repository brief still
+works with `--no-model` and no Ollama at all. Do not install or download a
+model merely to count the first closure.
+After a body exists, use the founder-signed `greg model set --route ollama
+--local-model '<downloaded-name>' --key ~/.greg-founder.pem` to replace a
+model, or `greg model set --off --key ~/.greg-founder.pem` to detach cognition;
+the open console refreshes before the next draft/sign action. Mission state
+stays on the same ledger.
+
 Choose your own passphrase; do not give the private key to an agent. Make sure
 you recognize the new body ID and that this is the device you intend to use.
 The next command queues a founder-signed **designation**, which the body must

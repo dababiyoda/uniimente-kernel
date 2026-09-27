@@ -58,11 +58,14 @@ def _e(value) -> str:
 class Console:
     """State held by one console process: the unlocked key, CSRF token, pending proposals."""
 
-    def __init__(self, home: str | Path, *, key=None, transport=None, planner_context=None):
+    def __init__(self, home: str | Path, *, key=None, transport=None, planner_context=None,
+                 transport_factory=None):
         self.home = Path(home).expanduser().resolve()
         self.layout = Layout(self.home)
         self.key = key
         self.transport = transport
+        self.transport_factory = transport_factory
+        self._route_revision = None
         self.csrf = secrets.token_urlsafe(32)
         self.proposals: dict[str, dict] = {}
         self.lock = threading.Lock()
@@ -108,8 +111,31 @@ class Console:
             raise PermissionError("this console has no founder key; restart it with --key to sign")
         return send_signed(self.home, self.key, kind, body)
 
+    def _refresh_transport(self):
+        """A signed detach also invalidates drafts in an already open console."""
+        if self.transport_factory is None:
+            return
+        with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
+            from greg.models import effective_route_config
+            events = journal.replay("model.configured")
+            revision = events[-1].event_id if events else None
+            if revision == self._route_revision:
+                return
+            base = json.loads(self.layout.config.read_text()).get("models")
+            selected = effective_route_config(base, journal)
+        replacement = self.transport_factory(selected)
+        with self.lock:
+            self.transport = replacement
+            self.proposals.clear()
+            self._route_revision = revision
+
     def ask(self, text: str) -> str:
+        self._refresh_transport()
+        revision = self._route_revision
         proposal = planner.propose(text, self.context(), transport=self.transport)
+        self._refresh_transport()
+        if self._route_revision != revision:
+            proposal = {"status": "FAILED", "why": "model route changed during drafting; ask again"}
         pid = secrets.token_urlsafe(9)
         with self.lock:
             self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
@@ -118,6 +144,7 @@ class Console:
         return pid
 
     def sign_proposal(self, pid: str) -> Path:
+        self._refresh_transport()
         with self.lock:
             entry = self.proposals.get(pid)
         if entry is None or entry["proposal"].get("status") != "PROPOSED":

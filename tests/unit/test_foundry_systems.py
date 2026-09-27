@@ -216,3 +216,91 @@ def test_contract_rejects_missing_ids_unreproducible_evidence_and_untested_claim
     rows = completion.contract()
     rows[39] = dict(rows[39], evidence=str(fake))
     assert any("does not reproduce" in p for p in completion.audit({39: rows[39], **{i: r for i, r in completion.contract().items() if i != 39}}))
+
+
+# -- increment 2 -------------------------------------------------------------------------
+
+from foundry.systems import distributed, dsl, emulator, mechanism, next_test, queue, seed, snapshots
+
+
+def test_emulator_is_deterministic_and_exposes_the_naive_double_charge():
+    result = emulator.exercise(None)
+    assert result["deterministic"] and result["naive_client_double_charged"] and result["unknown_fault_refused"]
+    lazy = emulator.ProviderEmulator(["duplicate_delivery"], honours_idempotency=False)
+    lazy.charge("k", 1)
+    assert lazy.truth()["charges"] == 2, "a provider that ignores idempotency is reproduced faithfully"
+
+
+def test_distributed_controls_charge_exactly_once_resume_and_compensate(tmp_path):
+    result = distributed.exercise(tmp_path)
+    assert result["exactly_once"] and result["resumed_without_duplicate"] and result["compensated"]
+    assert result["retry_schedule"] == [0.5, 2.0], "exponential backoff raised to the provider's retry-after"
+    provider = emulator.ProviderEmulator(["timeout"] * 5)
+    out = distributed.run_saga("s", [{"name": "only", "amount": 5}], provider, distributed.Journal(tmp_path / "j.jsonl"))
+    assert out["status"] == "compensated" and provider.truth()["charges"] == 0, "unknown and absent: nothing assumed"
+    with pytest.raises(emulator.ProviderError):
+        distributed.with_retries(lambda: (_ for _ in ()).throw(emulator.ProviderError(400)))
+
+
+def test_queue_redelivers_dead_letters_and_survives_restart(tmp_path):
+    result = queue.exercise(tmp_path)
+    assert all(result.values()), result
+    q = queue.Queue(tmp_path / "q2", "t", visibility=5)
+    q.publish({"n": 1}, message_id="a")
+    assert q.receive(now=0)["id"] == "a" and q.receive(now=1) is None, "a leased message is invisible"
+
+
+def test_snapshots_fork_without_touching_production(tmp_path):
+    result = snapshots.exercise(tmp_path)
+    assert result["production_untouched"] and result["overwrite_refused"] and result["snapshot_reproducible"]
+    assert result["diff"] == {"only_a": [], "only_b": ["experiment.txt"], "changed": ["policy/pricing.json"]}
+
+
+def test_seed_restores_a_real_greg_body_that_verifies_and_reboots(tmp_path):
+    from provenance.ledger import EvidenceLedger
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.boot()
+        head = body.ledger.head
+        constitution = body.compiled.constitution_hash
+    made = seed.make_seed(home, tmp_path / "seed-store")
+    assert any(e.endswith("_ed25519.pem") for e in made["excluded"]), "private keys are never packed"
+    target = tmp_path / "new-mac" / "body"
+    restored = seed.restore(tmp_path / "seed-store", made["seed"], target)
+    ledger = EvidenceLedger(constitution, str(Layout(target).ledger), read_only=True)
+    try:
+        ok, why = ledger.verify_chain()
+        assert ok, why
+        assert ledger.head == head, "the restored institution holds exactly the pre-failure history"
+    finally:
+        ledger.close()
+    assert restored["needs_from_founder"], "recovery names what only the founder can supply"
+    with pytest.raises(FileExistsError):
+        seed.restore(tmp_path / "seed-store", made["seed"], target)
+
+
+def test_seed_cli_refuses_a_store_inside_the_body(tmp_path):
+    from greg import cli
+    home, *_ = make_body(tmp_path)
+    assert cli.main(["--home", str(home), "foundry", "seed", "--out", str(Path(home) / "seed")]) != 0
+    assert cli.main(["--home", str(home), "foundry", "seed", "--out", str(tmp_path / "offsite")]) == 0
+
+
+def test_next_best_test_ignores_near_certain_beliefs_and_prefers_information_per_cost():
+    assert next_test.value_of_information(99, 1, 0.9) < 0.01
+    result = next_test.exercise(None)
+    assert result["near_certain_belief_worth_little"] and result["one_lucky_transition_not_first"]
+
+
+def test_mechanisms_make_truth_the_best_response():
+    result = mechanism.exercise(None)
+    assert result["brier_truthful"] and result["vickrey_max_deviation_gain"] <= 0
+    assert result["procurement"] == {"winner": "b", "paid": 120}
+
+
+def test_dsl_runs_narrow_rules_and_rejects_code():
+    result = dsl.exercise(None)
+    assert result["price"] == 392.0 and result["budget"] == 800 and all(result["refused"].values())
+    for src in ("2 ** 10 ** 10", "[x for x in range(9)]", "units[0]", "open('/etc/passwd')"):
+        with pytest.raises(dsl.RuleError):
+            dsl.parse("pricing", src)

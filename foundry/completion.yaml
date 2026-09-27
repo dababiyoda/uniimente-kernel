@@ -26,19 +26,20 @@
 2:
   acceptance:
   - Restricted languages exist for pricing, budgets and capital rules, not only policy
-  - An out-of-grammar or over-budget statement is rejected before execution
-  - Programs are evaluated without arbitrary code execution
-  adopt:
-  - Cedar
-  - CUE
-  - JSON Schema
-  existing:
-  - compiler/ucl_parser.py
-  - constitution/constitution.ucl
-  - tests/unit/test_ucl_compiler.py
-  - DALEOBANKS:services/thought_dsl.py
-  gap: One policy DSL exists; no restricted languages for pricing, budgets or capital rules.
-  state: PARTIAL
+  - An out-of-grammar, undeclared or over-ceiling rule is rejected before or at execution
+  - Evaluation never executes arbitrary code
+  evidence: foundry/evidence/system-02.json
+  implementation:
+  - foundry/systems/dsl.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query run|check
+  limitations: 'Expression rules only (no loops, no state); three languages: pricing, budget, capital; no exponentiation
+    by design.'
+  recovery: Stateless; a refused rule never runs.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 3:
   acceptance:
   - Institutional objects are versioned with ancestry, reason and evidence per version
@@ -283,40 +284,48 @@
   acceptance:
   - Next-Best-Test router ranks experiments by expected information value per cost
   - Narrative next-depth router ranks next content by relationship-deepening evidence
-  adopt:
-  - Thompson sampling
-  - value-of-information scoring
-  existing:
-  - evolution/experiment.py
-  - evolution/spider_web.py
-  - tests/unit/test_evolution.py
-  - DALEOBANKS:services/bandit.py
-  gap: Decisive-unknown selection and a Thompson-sampling bandit exist; no Next-Best-Test router ranking experiments
-    by information value.
-  state: PARTIAL
+  evidence: foundry/evidence/system-19.json
+  implementation:
+  - foundry/systems/next_test.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query next_best_test|next_depth
+  limitations: Binary hypotheses with Beta beliefs and a single decision threshold; transition data supplied by
+    caller.
+  recovery: Stateless.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 20:
   acceptance:
   - Deterministic emulators reproduce external providers and their failures (timeouts, 429, partial writes)
   - GREG capabilities run against them in tests
-  adopt:
-  - LocalStack
-  - WireMock
-  - Toxiproxy
-  gap: No deterministic emulators of external providers or incident conditions.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-20.json
+  implementation:
+  - foundry/systems/emulator.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query replay
+  limitations: Payments-style provider only; faults are scripted, not sampled from production traces.
+  recovery: Stateless; each replay is deterministic.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 21:
   acceptance:
   - Institutional state can be forked into an isolated branch and run without touching production
   - Branches can be compared and discarded
-  adopt:
-  - database snapshots
-  - Dolt branches
-  existing:
-  - twins/twin.py
-  - tests/unit/test_twins.py
-  gap: Hermetic institutional forks exist in memory; no persisted state snapshots or branch-and-restore of real
-    stores.
-  state: PARTIAL
+  evidence: foundry/evidence/system-21.json
+  implementation:
+  - foundry/systems/snapshots.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply snapshot|fork; foundry.query compare
+  limitations: Directory state only; promotion is returned as a manifest, adoption is a separate authorized act.
+  recovery: Forks never overwrite; the source is read-only; branches are discardable.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 22:
   acceptance:
   - Counterfactual tribunal scores strategies under platform loss, regulation, attack, capital scarcity and founder
@@ -338,31 +347,34 @@
   acceptance:
   - Idempotency keys, retries with backoff, compensation and reconciliation across organs
   - Interrupted multi-step operations converge after restart
-  adopt:
-  - PostgreSQL outbox/inbox
-  - Temporal
-  existing:
-  - events/spine.py
-  - adapters/bridge_transport.py
-  - events/bridge_state.py
-  - tests/unit/test_shared_recovery.py
-  - tests/unit/test_shared_durable_boundary.py
-  gap: Idempotency, replay protection and compensation proven locally; no multi-node deployment.
-  state: PARTIAL
+  evidence: foundry/evidence/system-23.json
+  implementation:
+  - foundry/systems/distributed.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query retry_schedule
+  limitations: 'Sagas over the #20 provider interface; reconciliation requires the provider to expose its idempotency
+    record.'
+  recovery: Journaled steps resume after process death; permanent failure compensates completed steps in reverse.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 24:
   acceptance:
   - Durable queue between organs with at-least-once delivery, dead-letter and replay
   - Consumers are idempotent
-  adopt:
-  - PostgreSQL LISTEN/NOTIFY
-  - NATS JetStream
-  existing:
-  - events/spine.py
-  - adapters/bridge_transport.py
-  - tests/unit/test_events.py
-  - tests/unit/test_shared_compatibility.py
-  gap: Typed outbox and signed bridge transport; no broker.
-  state: PARTIAL
+  evidence: foundry/evidence/system-24.json
+  implementation:
+  - foundry/systems/queue.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply publish; foundry.query depth
+  limitations: Single-host file-backed queue; one state file per topic (not for high throughput).
+  recovery: Leases expire and redeliver; poison messages dead-letter with history; consumers are idempotent across
+    restarts.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 25:
   acceptance:
   - Router selects model/implementation by verified quality, price, privacy and latency
@@ -543,10 +555,17 @@
   acceptance:
   - Mechanisms (e.g. scoring rules, second-price, staking) are specified and simulated
   - Truthful reporting is shown to be the best response in simulation
-  adopt:
-  - published auction and scoring-rule designs
-  gap: No incentive or market-rule mechanisms are implemented.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-40.json
+  implementation:
+  - foundry/systems/mechanism.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query best_report|procure
+  limitations: Brier scoring and Vickrey procurement only; grid-checked best responses, not symbolic proofs.
+  recovery: Stateless; simulates, never pays.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 41:
   acceptance:
   - Reputation from evidenced outcomes only; conservative lower-bound ranking
@@ -621,12 +640,18 @@
   acceptance:
   - Institutional Seed reconstructs UNIIMENTE (ledger, keys-by-reference, config, stores) on a fresh machine
   - Recovery is rehearsed and verified against the pre-failure state
-  adopt:
-  - restic
-  - Litestream
-  - git mirrors
-  gap: No Institutional Seed, tested restore, or off-provider backup.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-46.json
+  implementation:
+  - foundry/systems/seed.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply seed; greg foundry seed --out DIR
+  limitations: Private keys are excluded by design; restore needs the founder's key backup. Local store only.
+  recovery: Restore refuses a non-empty target and any tampered object; a restored GREG body passes chain verification
+    and reboots.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 47:
   acceptance:
   - Compiles validated evidence into buyer, offer, workflow, pricing, delivery, compliance, economics, distribution

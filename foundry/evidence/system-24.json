@@ -1,0 +1,13 @@
+{
+ "command": "python -m foundry.completion --run 24",
+ "name": "Message queues",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "duplicate_publish_ignored": true,
+  "effect_once": true,
+  "poison_dead_lettered": true,
+  "redelivered_after_lease": true
+ },
+ "result_sha256": "sha256:7a2d5bf48d8afc7f4f0c9164ea5770c7c098a428710bbd765076f7900ed2d35a",
+ "system": 24
+}

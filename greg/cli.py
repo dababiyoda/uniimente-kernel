@@ -152,6 +152,8 @@ def main(argv=None) -> int:
     fdw = fds.add_parser("why", help="causal ancestry of a GREG event (knowledge graph over the ledger)")
     fdw.add_argument("event_id")
     fds.add_parser("reputation", help="capability reputation from appraised GREG closures")
+    fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
+    fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
@@ -224,6 +226,12 @@ def main(argv=None) -> int:
                 print(json.dumps(completion.status(), indent=1))
             elif args.foundry_cmd == "run":
                 print(json.dumps(completion.run(args.system), indent=1, default=str))
+            elif args.foundry_cmd == "seed":
+                from foundry.systems import seed
+                out = Path(args.out).expanduser().resolve()
+                if Path(home).resolve() in (out, *out.parents):
+                    raise BodyError("the seed must live outside the body it backs up")
+                print(json.dumps(seed.make_seed(Path(home), out), indent=1))
             else:
                 from foundry.systems import graph, reputation
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:

@@ -7,6 +7,10 @@ monitoring and the retry cool-down each count distinct briefs, and the briefs us
 decision phase are not reused as the evidence of the next.
 
 Harness: the real daily brief mission of test_greg_learning_gate (test key, fixture GitHub).
+
+Written on the #122 line (commit 6bf7687) against #122's copy of greg/improvement.py and run here
+against the canonical engine; the only change is that a regression closure keeps its evidence under
+``proof`` in this engine.
 """
 import os
 import subprocess
@@ -123,8 +127,8 @@ def test_5_three_labels_on_one_brief_cannot_close_a_regression(tmp_path, repo, g
         m.label(action, noise=[DRAFT])
     closed = m.events("critique.regression_closed")
     assert len(closed) == 1
-    evidence_briefs = {row["brief_event_id"] for row in closed[0]["held_out_evidence"]}
-    assert len(evidence_briefs) == 3 == len(closed[0]["held_out_evidence"])
+    evidence_briefs = {row["brief_event_id"] for row in closed[0]["proof"]["held_out_evidence"]}
+    assert len(evidence_briefs) == 3 == len(closed[0]["proof"]["held_out_evidence"])
     assert origin_brief.event_id not in evidence_briefs
     m.body.close()
 

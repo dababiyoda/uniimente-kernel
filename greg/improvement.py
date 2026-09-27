@@ -220,11 +220,15 @@ def _briefs(journal: Journal, ledger) -> list[dict]:
     return out
 
 
-def labelled_cases(journal: Journal, ledger) -> list[dict]:
-    """Founder-labelled briefs, oldest label first. Only the LATEST label on a brief counts."""
+def labelled_cases(journal: Journal, ledger, *, every_label: bool = False) -> list[dict]:
+    """Founder-labelled briefs, oldest label first. One brief is one case: only its LATEST label counts.
+
+    ``every_label`` returns every label instead (superseded ones included), to map case ids to
+    briefs and to keep a corrected label inspectable; it never feeds a decision.
+    """
     briefs_by_event = {b["event_id"]: b for b in _briefs(journal, ledger)}
     order = _order(journal)
-    latest = {}
+    latest, every = {}, []
     for event in journal.replay("critique.recorded"):
         data = event.payload
         brief = briefs_by_event.get(data["target_event_id"])
@@ -238,7 +242,8 @@ def labelled_cases(journal: Journal, ledger) -> list[dict]:
             "brief_seq": brief["seq"], "inputs": inputs, "labels": labels,
             "truth": sorted((delivered - set(labels["noise"])) | set(labels["missed"])),
             "delivered_policy": briefs.attention_policy(inputs), "regression": data.get("regression")}
-    return sorted(latest.values(), key=lambda c: c["seq"])
+        every.append(latest[brief["event_id"]])
+    return every if every_label else sorted(latest.values(), key=lambda c: c["seq"])
 
 
 def errors(policy: dict, case: dict) -> int:
@@ -423,7 +428,7 @@ def _learn_preferences(journal: Journal, ledger, now: datetime, written: list):
     candidate, stats = _derive(cases, current)
     if candidate is not None and _recently_lost(
             journal, lever, candidate, current,
-            lambda d: sum(c["seq"] > d["decided_after_seq"] for c in cases)):
+            lambda d: sum(c["brief_seq"] > d["decided_after_seq"] for c in cases)):   # new BRIEFS, not re-labels
         candidate, stats = None, {**stats, "suppressed": "this change lost its last held-out test; it may be "
                                                          f"proposed again after {HELD_OUT_MIN} new labelled briefs"}
     if candidate is None:
@@ -657,6 +662,7 @@ def claim_close_condition() -> str:
 def report(journal: Journal, ledger) -> dict:
     """Founder corrections per labelled brief by the policy that produced it, and every decision."""
     cases = labelled_cases(journal, ledger)
+    effective = {case["brief_event_id"]: case["case_id"] for case in cases}
     by_policy = {}
     for case in cases:
         pid = policy_id(case["delivered_policy"])
@@ -669,6 +675,10 @@ def report(journal: Journal, ledger) -> dict:
     return {"levers": {lever: {"kind": spec["kind"], "judged_by": spec["judged_by"],
                                "active_policy": active_policy(journal, lever)} for lever, spec in LEVERS.items()},
             "labelled_briefs": len(cases), "by_policy": by_policy,
+            "superseded_labels": [{"case_id": c["case_id"], "brief_event_id": c["brief_event_id"], "labels": c["labels"],
+                                   "superseded_by": effective[c["brief_event_id"]]}
+                                  for c in labelled_cases(journal, ledger, every_label=True)
+                                  if c["case_id"] != effective[c["brief_event_id"]]],
             "proposed": ids("proposed"), "retained": ids("retained"), "rejected": ids("rejected"),
             "reverted": ids("reverted"), "expired": ids("expired"),
             "claims": _payloads(journal, "improvement.claim_checked"),

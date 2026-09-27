@@ -6,6 +6,9 @@ claim that it has been run on his Chromebook. The iPhone can become a remote
 interface after its transport has been tested on these devices; it cannot
 replace the persistent Linux process. No model key, paid API, public posting or
 community data is required for this bounded local mission.
+Alfonso may later choose a Mac or hardware GREG researches and recommends;
+the first-body designation does not appoint that future hardware or authorize
+a purchase or migration.
 
 ## 0. Check the only hardware prerequisite
 
@@ -15,11 +18,13 @@ an administrator or absent, stop: this path has no verified execution body.
 Do not enable ChromeOS Developer Mode. Google's Linux setup instructions are
 at <https://support.google.com/chromebook/answer/9145439>.
 
-In the Linux Terminal, check `python3 --version` (at least 3.11),
-`git --version` and `systemctl --user status`. A missing Python venv package can
-be installed through the Debian package manager; a missing `systemd --user`
-session needs diagnosis before the service step. Keep the repository and
-`~/.uniimente` **inside Linux files**, not on a shared ChromeOS mount.
+In the Linux Terminal, check `python3 --version` (at least 3.11) and
+`git --version`. A missing Python venv package can be installed through the
+Debian package manager. Keep the repository and `~/.uniimente` **inside Linux
+files**, not on a shared ChromeOS mount. After cloning below, before creating
+any key or body, run `python3 -m greg doctor --chromebook` from the repository.
+If it reports `ready_for_linux_service: false`, stop and use its `missing`
+checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ## 1. Install the review branch and designate this body
 
@@ -30,6 +35,7 @@ git checkout codex/chromebook-first-body
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 alias greg='~/.uniimente/venv/bin/python -m greg'
+greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG
 greg founder keygen --key ~/.greg-founder.pem
 greg founder enroll --pubkey <paste the hex printed by keygen>

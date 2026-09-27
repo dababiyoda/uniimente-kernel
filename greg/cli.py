@@ -148,6 +148,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
+    doc.add_argument("--chromebook", action="store_true", required=True)
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
@@ -323,6 +325,11 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "doctor":
+            from greg.doctor import chromebook
+            report = chromebook()
+            print(json.dumps(report, indent=1))
+            return 0 if report["ready_for_linux_service"] else 2
         elif args.cmd == "decisions":
             print(json.dumps(status(home)["decisions_required"], indent=1))
         elif args.cmd == "morning":

@@ -14,8 +14,14 @@ In response to the Linux environment availability question, the founder selected
 
 > Unavailable/unsure
 
+The founder then clarified the long-term hardware choice:
+
+> It will eventually be Mac or whatever hardware Greg researches and figures is best for him
+
 Implementation consequence: the prior Mac-specific hardware criterion and runbook
 cannot govern Alfonso's first closure. Prepare a Chromebook Linux route, preserve
 the iPhone as a prospective interface, and keep actual ChromeOS Linux support,
 runtime persistence, physical ownership and founder acceptance unverified until
-Alfonso tests them. The destination and constitutional authority are unchanged.
+Alfonso tests them. Future hardware can be researched and recommended by GREG;
+acquisition, migration and any new device authority require Alfonso's decision.
+The destination and constitutional authority are unchanged.

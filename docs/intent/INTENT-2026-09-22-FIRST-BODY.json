@@ -21,6 +21,7 @@
     "founder_owned": ["Chromebook", "iPhone 17"],
     "linux_environment": "unavailable_or_unsure",
     "first_body_candidate": "Chromebook Linux environment if available; not verified",
+    "future_body_selection": "GREG may research and recommend a Mac or other better hardware; Alfonso authorizes acquisition and migration",
     "superseded_assumption": "Alfonso owns a Mac and must run his first mission on macOS",
     "authority_change": "none"
   },

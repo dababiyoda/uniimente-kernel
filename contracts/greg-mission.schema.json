@@ -317,6 +317,11 @@
           "maxLength": 200,
           "description": "Model the provider reported actually serving the answer; may differ from the route's requested model."
         },
+        "model_digest": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "description": "Local model artifact digest reported by the explicitly selected on-device provider."
+        },
         "routes_tried": {
           "type": "array",
           "maxItems": 10,

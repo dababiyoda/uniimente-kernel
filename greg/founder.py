@@ -45,6 +45,7 @@ COMMAND_KINDS = (
     "BODY_DESIGNATE",  # founder names this body as the intended first execution body
     "NODE_ENROLL",        # admit another compute node with its own bounded identity
     "SOP_RATIFY",         # promote an observed procedure into a reusable capability
+    "MODEL_ROUTE_SET",    # replace cognition routes, not authority; founder key only
     "ROTATE_FOUNDER_KEY",
     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
     "DEVICE_REVOKE",

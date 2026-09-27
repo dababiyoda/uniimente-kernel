@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, compute, dataplane, improvement, metrics, sop, tribunal
+from greg import anchor, compute, dataplane, improvement, metrics, models, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -89,13 +89,17 @@ def _private_write(path: Path, data: bytes):
         fh.write(data)
 
 
-def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None) -> dict:
+def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
+              local_model: str | None = None) -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
     reports) land; it defaults to ``<home>/deliveries``. GREG never writes
     anywhere else outside its own workspace.
     """
+    if local_model is not None:
+        from greg.models import OllamaRoute
+        OllamaRoute(local_model)  # validate before creating any body files or identity
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
@@ -114,6 +118,8 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
               "read_roots": [str(Path(r).expanduser().resolve()) for r in read_roots],
               "deliver_root": str(Path(deliver_root or layout.home / "deliveries").expanduser().resolve()),
               "version": BODY_VERSION}
+    if local_model is not None:
+        config["models"] = {"order": ["ollama"], "ollama_model": local_model}
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
 
@@ -127,6 +133,7 @@ class Body:
         # Bodies created before deliverables existed deliver inside their own home.
         self.deliver_root = Path(self.config.get("deliver_root") or self.layout.home / "deliveries")
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self._builder_factory = builder if callable(builder) and not hasattr(builder, "build") else None
         self.builder = builder
         self.stop_requested = False
         self.ledger = None
@@ -154,18 +161,7 @@ class Body:
             self.registry.register(manifest, adapter, state="ATTACHED")
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
-        if self.builder is not None and not hasattr(self.builder, "build"):
-            try:   # factory: needs this body's credentials. A missing route degrades; it never crash-loops.
-                self.builder = self.builder(self.secrets, self.config)
-            except Exception as exc:
-                why = f"{type(exc).__name__}: {exc}"[:300]
-                self.builder = None
-                self.journal.record("genesis.builder", {"available": False, "why": why}, key=["unavailable", why])
-        router = getattr(self.builder, "router", None)
-        if router is not None and hasattr(router, "observe"):
-            for event in self.journal.replay("model.route"):          # route health survives restarts
-                router.observe(event.payload)
-            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
+        self._refresh_builder()
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
                                builder=self.builder, read_roots=self.config["read_roots"])
         self.genesis.restore()
@@ -174,6 +170,24 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root)
         return self
+
+    def _refresh_builder(self):
+        """Replace the model adapter, never the mission engine, ledger or authority office."""
+        if self._builder_factory is not None:
+            try:
+                config = {**self.config, "models": models.effective_route_config(self.config.get("models"), self.journal)}
+                self.builder = self._builder_factory(self.secrets, config)
+            except Exception as exc:
+                why = f"{type(exc).__name__}: {exc}"[:300]
+                self.builder = None
+                self.journal.record("genesis.builder", {"available": False, "why": why}, key=["unavailable", why])
+        router = getattr(self.builder, "router", None)
+        if router is not None and hasattr(router, "observe"):
+            for event in self.journal.replay("model.route"):
+                router.observe(event.payload)
+            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
+        if hasattr(self, "genesis"):
+            self.genesis.builder = self.builder
 
     def close(self):
         if self.ledger is not None:
@@ -307,6 +321,12 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "MODEL_ROUTE_SET":
+            selection = models.validate_route_selection(body)
+            self.journal.record("model.configured", {"selection": selection, "command_digest": digest}, key=digest)
+            self._refresh_builder()
+            return {"selection": selection, "builder_configured": self.builder is not None,
+                    "console_refreshes_before_draft_or_sign": True, "authority_changed": False}
         if kind == "DEVICE_ENROLL":  # only the founder key can sign this kind (DEVICE_KINDS excludes it)
             grant = validate_device_grant(body, now=self.clock())
             if grant["device_key_id"] in self.enrolled_keys() or grant["device_key_id"] in self.device_keys():

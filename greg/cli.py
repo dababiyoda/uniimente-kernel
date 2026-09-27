@@ -71,6 +71,7 @@ def main(argv=None) -> int:
 
     s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
     s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
+    s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
@@ -78,6 +79,12 @@ def main(argv=None) -> int:
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
     bd.add_argument("--no-passphrase", action="store_true"); bd.add_argument("--ttl-hours", type=int, default=24)
+    ms = sub.add_parser("model", help="founder-signed cognition route swap on the one body ledger")
+    mss = ms.add_subparsers(dest="model_cmd", required=True)
+    select = mss.add_parser("set"); select.add_argument("--route", action="append", default=[],
+                                                        choices=["ollama", "anthropic", "openai", "claude-code"])
+    select.add_argument("--local-model"); select.add_argument("--off", action="store_true")
+    select.add_argument("--key", required=True); select.add_argument("--no-passphrase", action="store_true")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept"):
@@ -160,7 +167,7 @@ def main(argv=None) -> int:
     r.add_argument("--max-ticks", type=int)
     r.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
                    help="Capability Genesis builder: claude-code (local CLI) or models (every reachable route: "
-                        "Anthropic API, OpenAI API, Claude Code, with failover). Spends only a mission's signed "
+                        "local Ollama, Anthropic API, OpenAI API, Claude Code, with failover). Spends only a mission's signed "
                         "build budget")
     r.add_argument("--clear-stop", action="store_true",
                    help="remove a previous local STOP file (a deliberate human restart)")
@@ -176,7 +183,7 @@ def main(argv=None) -> int:
     try:
         if args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
-                                       deliver_root=args.deliver_root), indent=1))
+                                       deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
@@ -213,6 +220,16 @@ def main(argv=None) -> int:
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
         elif args.cmd == "body" and args.body_cmd == "designate":
             print(_drop(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args))
+        elif args.cmd == "model" and args.model_cmd == "set":
+            from greg.models import validate_route_selection
+            if args.off and (args.route or args.local_model):
+                raise BodyError("--off cannot be combined with --route or --local-model")
+            if not args.off and not args.route:
+                raise BodyError("name one or more --route, or use --off")
+            selection = validate_route_selection({"order": args.route,
+                                                  **({"ollama_model": args.local_model}
+                                                     if args.local_model is not None else {})})
+            print(_drop(home, "MODEL_ROUTE_SET", selection, args))
         elif args.cmd in ("vepmc", "routing"):
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
@@ -250,11 +267,16 @@ def main(argv=None) -> int:
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
-            models_config = (json.loads(layout.config.read_text()).get("models")
-                             if layout.config.is_file() else None)
+            models_config = None
+            if layout.config.is_file():
+                with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
+                    from greg.models import effective_route_config
+                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
                                                                             config=models_config)
-            server = serve(Console(home, key=key, transport=transport), port=args.port)
+            replacement = (None if args.no_model else
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
+            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
             print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
                   "Ctrl-C closes the console; the body keeps running.", flush=True)

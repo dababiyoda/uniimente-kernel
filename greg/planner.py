@@ -324,6 +324,9 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
             extra["routes_tried"] = tried
         if served:
             extra["served_model"] = served
+        digest = (getattr(transport, "last", None) or {}).get("model_digest")
+        if digest:
+            extra["model_digest"] = digest
         result = vet(draft, text, ctx, origin=origin, extra=extra)
         if result["status"] != "REJECTED" or round_number == repair_rounds:
             if attempts:
@@ -348,7 +351,7 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
         return {"status": "NO_ROUTE", "origin": "planner",
                 "why": "no template matches and no model route is configured",
                 "known_templates": sorted(templates.TEMPLATES),
-                "enable_model_route": "store an anthropic_api_key credential, or install Claude Code (claude)"}
+                "enable_model_route": "configure a local Ollama model, store a model API credential, or install Claude Code"}
     return model_route(text, ctx, transport)
 
 

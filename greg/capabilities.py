@@ -64,7 +64,7 @@ class CapabilityManifest:
     target_prefix: str                 # every target this capability touches starts with this
     network: str = "none"              # none | egress-allowlist
     egress_allowlist: tuple = ()
-    filesystem: str = "none"           # none | read-scoped | workspace-write | deliver-write (founder-visible)
+    filesystem: str = "none"           # none | read-scoped | workspace-write | artifact-write | deliver-write
     credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
     binaries: tuple = ()               # exact executables a CLI capability may run
     data_classes: tuple = ()
@@ -91,7 +91,7 @@ class CapabilityManifest:
             problems.append("target-host-only network requires target_from (and only it may use target_from)")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
-        if self.filesystem not in ("none", "read-scoped", "workspace-write", "deliver-write"):
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write"):
             problems.append("unknown filesystem class")
         if self.route == "cli" and not self.binaries:
             problems.append("cli capability must name exact binaries")
@@ -208,8 +208,9 @@ class InvocationContext:
     manifest: CapabilityManifest
     deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
     learned: dict | None = None        # held-out-verified presentation policies (greg.improvement); never authority
-    journal: object | None = None     # supplied only to the institutional memory sensor
+    journal: object | None = None     # canonical ledger for memory and receipt-bound artifacts
     target: str = ""                   # exact signed target set by the authority office
+    artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -492,6 +493,9 @@ STRENGTHENS = {
     "repo.integration_audit": ("proof", "eligibility", "reliability"),
     "browser.render": ("proof", "capability_formation"),
     "memory.precedents": ("proof", "routing", "compounding"),
+    "artifact.store": ("proof", "reliability", "compounding"),
+    "artifact.inspect": ("proof", "reliability"),
+    "artifact.materialize": ("proof", "reliability", "compounding"),
 }
 
 
@@ -507,14 +511,37 @@ def _lazy(module: str, name: str):
 def _builtin(capability_id, function, description, route, consequence, target_prefix, inputs, outputs, **kw):
     kw.setdefault("strengthens", STRENGTHENS[capability_id])
     kw.setdefault("provenance", {"source": "uniimente-kernel/greg/capabilities.py"})
+    kw.setdefault("tests", (f"tests/unit/test_greg_capabilities.py::{capability_id}",))
     return CapabilityManifest(capability_id=capability_id, version="1.0.0", provider="greg-builtin",
                               function=function, description=description, route=route,
                               consequence_class=consequence, inputs=inputs, outputs=outputs,
-                              target_prefix=target_prefix,
-                              tests=(f"tests/unit/test_greg_capabilities.py::{capability_id}",), **kw)
+                              target_prefix=target_prefix, **kw)
 
 
 BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
+    "artifact.store": (_builtin("artifact.store", "artifact.store",
+                                 "Retain one scoped file by SHA-256 for later missions", "api",
+                                 "internal_write", "artifact:", {"namespace": "str", "path": "str"},
+                                 {"namespace": "str", "address": "str", "bytes": "int", "created": "bool"},
+                                 filesystem="artifact-write", tests=("tests/unit/test_greg_artifacts.py",),
+                                 provenance={"source": "uniimente-kernel/greg/artifacts.py",
+                                             "mechanism_from": "greg/genesis.py built-source store"}),
+                       _lazy("greg.artifacts", "store")),
+    "artifact.inspect": (_builtin("artifact.inspect", "artifact.inspect",
+                                   "Rehash a retained artifact with namespace receipt", "api", "read_only",
+                                   "artifact:", {"namespace": "str", "address": "str"},
+                                   {"present": "bool", "address": "str", "import_receipt": "str?"},
+                                   retry_safe=True, tests=("tests/unit/test_greg_artifacts.py",),
+                                   provenance={"source": "uniimente-kernel/greg/artifacts.py"}),
+                         _lazy("greg.artifacts", "inspect")),
+    "artifact.materialize": (_builtin("artifact.materialize", "artifact.materialize",
+                                       "Restore receipt-bound bytes to the mission workspace", "api",
+                                       "internal_write", "workspace:",
+                                       {"namespace": "str", "address": "str", "relative_path": "str"},
+                                       {"path": "str", "address": "str", "created": "bool"},
+                                       filesystem="workspace-write", tests=("tests/unit/test_greg_artifacts.py",),
+                                       provenance={"source": "uniimente-kernel/greg/artifacts.py"}),
+                             _lazy("greg.artifacts", "materialize")),
     "memory.precedents": (_builtin("memory.precedents", "memory.precedents",
                                    "Retrieve bounded action precedents and separately appraised missions",
                                    "api", "read_only", "memory:", {"capability": "str"},

@@ -33,13 +33,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import random
+import stat
 import sys
 import tempfile
 
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
+from greg.artifacts import ArtifactStore
 from greg import builders
 from greg.journal import Journal, iso
 from provenance.ledger import sha256_json
@@ -148,6 +151,7 @@ class Genesis:
         self.read_roots = tuple(Path(r).resolve() for r in read_roots)
         self.builder_cap = getattr(builder, "max_budget_usd", None)   # the builder's own ceiling, never ratcheted
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
+        self.objects = ArtifactStore(self.store, legacy_source_suffix=".py")  # preserve existing bodies' paths
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -171,8 +175,13 @@ class Genesis:
             manifest = CapabilityManifest.from_dict(data["manifest"])
             origin = data["origin"]
             if origin.get("kind") == "built":
-                path = self.store / f"{origin['source_sha256']}.py"
-                intact = path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == origin["source_sha256"]
+                address = "sha256:" + origin["source_sha256"]
+                path = self.objects.path(address)
+                try:
+                    self.objects.read(address)
+                    intact = True
+                except CapabilityError:
+                    intact = False
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
                                        state=state if intact else "QUARANTINED")
                 if not intact and state != "QUARANTINED":
@@ -371,13 +380,22 @@ class Genesis:
                 **({"model_digest": built["model_digest"]} if built.get("model_digest") else {})},
                 key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
-            path = self.store / f"{digest}.py"
-            if not problems and path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-                # stored bytes no longer match their name: keep them as evidence, restore the verified bytes
-                actual = hashlib.sha256(path.read_bytes()).hexdigest()
-                path.rename(path.with_name(f"{path.name}.unverified-{actual[:16]}"))
-            if not problems and not path.exists():
-                path.write_text(source)
+            path = self.objects.path("sha256:" + digest)
+            if not problems:
+                try:
+                    self.objects.put(source.encode())
+                except CapabilityError:
+                    # Preserve the corrupt previous bytes as negative evidence,
+                    # then restore only this candidate's independently screened bytes.
+                    info = path.lstat()
+                    if stat.S_ISLNK(info.st_mode):
+                        actual = hashlib.sha256(os.readlink(path).encode()).hexdigest()
+                    elif stat.S_ISREG(info.st_mode):
+                        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                    else:
+                        raise CapabilityError("built-source path is not a regular file or symlink")
+                    path.rename(path.with_name(f"{path.name}.unverified-{actual[:16]}"))
+                    self.objects.put(source.encode())
             public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
             passed, report = (False, {"screen": problems}) if problems else builders.verify(
                 path, contract["examples"] + contract["held_out"])

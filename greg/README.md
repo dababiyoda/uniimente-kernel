@@ -47,6 +47,31 @@ founder light cone must include this capability and exact target. It can be deta
 with the same signed founder command as other built-ins. Item 17 of the Foundry's
 55-system obligation remains partial pending broader, outcome-ranked retrieval.
 
+`artifact.store`, `artifact.inspect` and `artifact.materialize` form one small
+content-addressed tool family for item 36. A founder-signed mission imports a file
+from an allowed read root or its own workspace at `artifact:<namespace>`; the Gate
+receipts the SHA-256 address. A later signed mission can inspect the exact bytes
+under that namespace or materialize them once under its own signed
+`workspace:<relative_path>`. The source bytes, not just the address, survive body
+process death. `greg mission submit mission.json --key ...` invokes these tools by
+name like any other mission strategy or sensor; `greg status` lists them and
+signed `greg detach artifact.store` disables imports across restarts. See
+`tests/integration/test_greg_artifact_process.py` for two complete mission
+contracts and real process replacement, and `tests/unit/test_greg_artifacts.py`
+for corruption, traversal, wrong namespace, duplicate and scope refusals.
+
+The store is body-local, capped at 256 KiB per object, 512 objects and 64 MiB
+total; it is not backed up here.
+An orphaned object written before an interrupted Gate receipt is not readable
+through the tool; the mission waits for reconciliation, never blindly repeats
+the action. Tampered bytes are refused and an earlier local appraisal becomes
+refuted on recheck. Genesis built sources use the same storage primitive while
+retaining their historical `.py` paths and quarantine evidence. The canonical
+ledger remains the only authority/evidence history. A hash shows byte integrity,
+not a truthful claim, external attribution, causality or independent witness.
+Item 36 remains partial: no large-object streaming, portable off-body artifact
+backup, multi-body custody or media distribution has been demonstrated.
+
 | Control point | Mechanism | Evidence |
 |---|---|---|
 | Eligibility | `CapabilityRegistry.register` refuses a capability that strengthens none of the seven super-nodes; light cones; Ed25519 founder envelopes | `test_spider_web_rule_rejects_capabilities_that_strengthen_nothing` |

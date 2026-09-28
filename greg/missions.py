@@ -249,10 +249,12 @@ class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
     def __init__(self, *, journal: Journal, office: AuthorityOffice, registry, secrets, workspace_root: Path,
-                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1, deliver_root: Path | None = None):
+                 read_roots: tuple, genesis=None, max_actions_per_tick: int = 1, deliver_root: Path | None = None,
+                 artifact_root: Path | None = None):
         self.journal, self.office, self.registry, self.secrets = journal, office, registry, secrets
         self.workspace_root, self.read_roots = Path(workspace_root), tuple(Path(p) for p in read_roots)
         self.deliver_root = Path(deliver_root) if deliver_root else None
+        self.artifact_root = Path(artifact_root) if artifact_root else None
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
 
@@ -325,7 +327,9 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" else None)
+                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
+                                 manifest.capability_id.startswith("artifact.") else None,
+                                 artifact_root=self.artifact_root)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:

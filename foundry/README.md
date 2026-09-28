@@ -4,6 +4,17 @@
 
 **Productized substrate for item 17:** `memory/causal.py` now supplies `greg/capabilities.py`'s `memory.precedents` sensor, which a signed GREG mission can invoke with the exact target `memory:<capability_id>`. It returns bounded Kernel action precedents and separately labeled locally appraised mission references from the same ledger; test: `tests/unit/test_greg_precedents.py`. This gives GREG a real precedent lookup and supports composition with other mission capabilities. Full item 17 remains **partial**: no ranked cross-domain search, external truth guarantee or measured improvement in later decisions. Detach uses the existing founder capability state; recovery reconstructs the same history from the existing ledger.
 
+**Productized substrate for item 36:** `greg/artifacts.py` supplies Gate-mediated
+`artifact.store` / `artifact.inspect` / `artifact.materialize` capabilities. A
+signed mission can retain one bounded byte object and a later mission on a new
+process can verify and restore it under the same receipt-bound namespace. The
+existing Genesis built-source storage now uses the same checked byte-store
+primitive without migrating or discarding historical source paths. Integration
+and adversarial tests are in `tests/integration/test_greg_artifact_process.py`
+and `tests/unit/test_greg_artifacts.py`. Item 36 is **partial**, not 55/55
+completion: body-local storage and internal Gate receipts do not constitute
+independent custody, large media storage, off-body recovery or factual proof.
+
 > **Founder-effect rule (INTENT-0030):** Foundry work begins from the desired transformation, not from a favored metaphor, repository, technology catalog, or existing subsystem. Preserve the founder's target effect, search reality, extract causal mechanisms, and build only what remains missing. See `docs/FOUNDER_EFFECT_COMPILER.md`.
 
 The package contains bounded institutional foundries with different jobs. These are tools inside UNIIMENTE's broader Capability Genesis process; they do not define the complete process.

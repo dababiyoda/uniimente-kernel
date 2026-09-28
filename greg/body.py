@@ -77,6 +77,7 @@ class Layout:
         self.rejected = self.inbox / "rejected"
         self.outbox = self.home / "outbox"
         self.workspace = self.home / "workspace"
+        self.artifacts = self.home / "artifacts"
         self.secrets = self.home / "secrets.json"
         self.heartbeat = self.home / "heartbeat.json"
         self.stop_file = self.home / "STOP"
@@ -168,7 +169,7 @@ class Body:
         self.engine = MissionEngine(journal=self.journal, office=self.office, registry=self.registry,
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
-                                    deliver_root=self.deliver_root)
+                                    deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         return self
 
     def _refresh_builder(self):
@@ -439,6 +440,7 @@ class Body:
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
+                   "artifact_root": str(self.layout.artifacts),
                    "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}

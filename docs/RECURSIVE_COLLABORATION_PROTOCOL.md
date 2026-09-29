@@ -191,6 +191,8 @@ Provider documentation establishes what the provider claims. It is not evidence 
 14. A new compliance, audit, transcript, browser-session, or data-export surface is a data-scope change even when it reuses an existing key. Before access, require separate authorization, least privilege, data classification, retention/residency mapping, consent or notice where applicable, and deletion/reconciliation tests. Provider transcripts are evidence, not canonical task or effect state.
 15. A scheduled reviewer may read official sources and repositories, and may prepare documentation, fixtures, tests, or adapter changes on a dedicated branch and draft pull request when current human authorization permits. It may not write to a default branch, merge, change production routing or credentials, expand authority, inspect billing accounts, or create a parallel runtime.
 16. Use the protocol's existing decision states: `retain`, `regress`, `kill`, `defer`, or `experiment`. Vendor urgency is evidence for the decision; it is not a new authority state.
+17. Bind provider-originated replay artifacts—including thinking/reasoning blocks, compaction blocks, fallback markers, and tool results—to the observed provider, opaque account or organization binding, model, conversation or checked prefix, material headers, effective tool manifest, and canonical cursor. Account-binding metadata is compatibility metadata, not a credential, passport, legal principal, or authority grant. A request that succeeds after a provider drops, strips, transforms, or ignores a bound artifact is a semantic migration, not equivalent replay; preserve the transformation and require an explicitly tested migration path and independent evaluation.
+18. Record every provider attempt, including pre-output refusal, mid-stream refusal, provider-internal retry, sticky route, and fallback iteration, as a distinct subordinate attempt under the canonical attempt and idempotency identity. Preserve the requested and serving models, stop category, usage iteration, rate-limit effect, billed usage, credits, and adjustment lineage when supplied. HTTP success, empty output, provider recovery, or top-level usage alone does not prove zero execution, zero cost, or one attempt.
 
 ### 7.4 Incident and recovery discipline
 
@@ -200,7 +202,8 @@ When an official status communication reports degradation:
 - distinguish failure before dispatch, ambiguous completion, and completion with a valid receipt;
 - keep canonical work replayable without issuing a second external effect;
 - degrade only to a pre-approved provider or deterministic fallback, preserving provider and evaluator lineage;
-- treat provider recovery as permission for a canary, not automatic promotion; and
+- treat provider recovery as permission for a canary, not automatic promotion;
+- treat missing, unsaved, or truncated provider session/transcript history as ambiguous state, never proof that an attempt or effect was absent; reconcile canonical commits, events, receipts, and idempotency records before resuming or retrying; and
 - record negative and zero results, including disconnected sessions and failed retries.
 
 If an emergency response would alter authority, production routing, external-effect policy, credentials, billing accounts, or the protected runtime, stop at `NEEDS_FOUNDER_DECISION`.

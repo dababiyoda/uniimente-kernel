@@ -7,7 +7,8 @@ name: Canonical CI
 # produces one run, not two. `workflow_dispatch` exists so an unchanged commit
 # can be re-run in a clean environment for release evidence.
 #
-# The four jobs below are the required checks named in the Package 1 order.
+# The first four jobs are the required Package 1 checks. A fifth verifies
+# the research assembly against pinned real consumer source checkouts.
 # The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
 # preserved but reduced to manual dispatch so they cannot double-execute.
 # They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
@@ -90,3 +91,50 @@ jobs:
           path: target_form_001_report.json
           if-no-files-found: error
           retention-days: 90
+
+  research_line:
+    name: "5 · Connected open-source research assembly"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: kernel
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/WealthMachineIntelligence
+          ref: ec82b8027d987c865dc123215afb53d20916908f
+          path: consumers/wmi
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/DALEOBANKS
+          ref: a8341ba81622dbd1180583bc6660fa1e7ed707b8
+          path: consumers/dale
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install local compute dependencies
+        run: python -m pip install -r kernel/requirements-research-line.txt pytest
+      - name: Verify workflow controls and real consumer composition
+        working-directory: kernel
+        env:
+          WMI_SOURCE: "${{ github.workspace }}/consumers/wmi"
+          DALEOBANKS_SOURCE: "${{ github.workspace }}/consumers/dale"
+        run: python -m pytest -q tests/unit/test_research_line.py -k "real_consumer or local_report"
+      - name: Produce reviewable offline assembly output
+        working-directory: kernel
+        run: >-
+          python -m foundry.research_line --mode preview
+          --job examples/research-line/job.json
+          --wmi-source ../consumers/wmi --dale-source ../consumers/dale
+          --fixture-results examples/research-line/search-fixture.json
+          --template-analysis --out ../research-preview.json
+      - name: Upload synthetic preview evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-line-synthetic-preview
+          path: research-preview.json
+          retention-days: 14

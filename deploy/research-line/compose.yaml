@@ -1,0 +1,22 @@
+name: egregore-research
+services:
+  ollama:
+    image: ollama/ollama:0.35.0
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+  searxng:
+    image: ghcr.io/searxng/searxng@sha256:a07a5cd2da2c63d66e559f9e4d3a3db106cfc6c32fb0ac70abe91cc28bcd7350
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+    restart: unless-stopped
+volumes:
+  ollama-models:
+  searxng-cache:

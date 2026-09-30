@@ -1,6 +1,6 @@
 # Egregore: open-source-first AI and software
 
-Development candidate, 2026-09-30. Applies across UNIIMENTE Kernel,
+Open-source directive and local protocol adapters, 2026-09-30. Applies across UNIIMENTE Kernel,
 DALEOBANKS, WealthMachineIntelligence and attached tools. This records the current
 request as a software-selection directive, not a runtime grant or deployment.
 
@@ -213,3 +213,13 @@ zero resource budget correctly hibernated. A positive ceiling corrected that
 test; zero token fees do not mean unlimited resource permission. This negative
 result remains in the branch history. No real model, microphone, GPU workload,
 Docker image, full default-branch suite or external business outcome was tested.
+
+## Connected research assembly
+
+The approved local-AI PRs Kernel #135, DALEOBANKS #82 and God's Eye #2 were merged
+on 2026-09-30. The [research assembly](OPEN_SOURCE_RESEARCH_LINE.md) extends that
+work with SearXNG discovery, local hypotheses, existing WMI assessment,
+DALEOBANKS drafts, durable checkpoints and optional DuckDB reporting.
+The [review record](OPEN_SOURCE_RESEARCH_LINE_REVIEW.md) preserves alternatives,
+dissent, residual capabilities and two strengthening passes. Catalogue entries
+for browser/PDF/audio/vector/automation tools do not imply deployed integrations.

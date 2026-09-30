@@ -1,0 +1,773 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/goal-chase.schema.json",
+  "title": "Sandbox Infinite Goal Chase boundary v0",
+  "description": "Strict sandbox-only contracts. Signed input authenticates a synthetic interaction, never a production founder. Scope narrows the canonical Gate.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/goal"
+    },
+    {
+      "$ref": "#/$defs/observation"
+    },
+    {
+      "$ref": "#/$defs/envelope"
+    },
+    {
+      "$ref": "#/$defs/message"
+    }
+  ],
+  "$defs": {
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "const": "1.0.0"
+        },
+        "bottleneck": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "observation_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consequence_class": {
+          "enum": [
+            "read_only",
+            "internal_write",
+            "external_contact",
+            "financial",
+            "irreversible"
+          ]
+        },
+        "cost_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000000
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^sandbox:"
+        },
+        "expected_outcome": {
+          "type": "string",
+          "pattern": "^SIMULATED:"
+        },
+        "reversibility": {
+          "enum": [
+            "reversible",
+            "costly_to_reverse",
+            "irreversible"
+          ]
+        }
+      },
+      "required": [
+        "action_id",
+        "capability",
+        "version",
+        "bottleneck",
+        "rationale",
+        "alternatives",
+        "observation_key",
+        "action_class",
+        "consequence_class",
+        "cost_cents",
+        "target",
+        "expected_outcome",
+        "reversibility"
+      ]
+    },
+    "goal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "founder_intent_lineage": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observable_success_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reality_status": {
+          "const": "SIMULATED"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "portfolio_role": {
+          "enum": [
+            "primary",
+            "supporting",
+            "horizon"
+          ]
+        },
+        "lifecycle_state": {
+          "enum": [
+            "ACTIVE",
+            "WAITING",
+            "DEFERRED"
+          ]
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+          },
+          "uniqueItems": true
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "known_facts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "unknowns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "prohibited_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "legal_or_policy_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "budget_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ceiling_cents": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000000
+            },
+            "standing_cents": {
+              "const": 0
+            }
+          },
+          "required": [
+            "ceiling_cents",
+            "standing_cents"
+          ]
+        },
+        "authority_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "evidence_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "SIMULATION"
+            },
+            "max_age_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "kind",
+            "max_age_seconds"
+          ]
+        },
+        "success_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "failure_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "kill_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "review_trigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "active_bottleneck": {
+          "type": "null"
+        },
+        "next_decision": {
+          "type": "null"
+        },
+        "next_action": {
+          "type": "null"
+        },
+        "owner": {
+          "const": "alfonso"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "required": [
+        "goal_id",
+        "founder_intent_lineage",
+        "statement",
+        "observable_success_state",
+        "current_state",
+        "reality_status",
+        "priority",
+        "portfolio_role",
+        "lifecycle_state",
+        "dependencies",
+        "assumptions",
+        "known_facts",
+        "unknowns",
+        "constraints",
+        "prohibited_actions",
+        "legal_or_policy_boundaries",
+        "budget_boundary",
+        "authority_refs",
+        "evidence_requirements",
+        "success_metrics",
+        "failure_conditions",
+        "kill_conditions",
+        "review_trigger",
+        "active_bottleneck",
+        "next_decision",
+        "next_action",
+        "owner",
+        "created_at",
+        "updated_at",
+        "actions"
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observation_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "OBSERVATION",
+            "EXTERNAL_EVIDENCE",
+            "INFERENCE",
+            "MODEL_OUTPUT",
+            "ASSUMPTION",
+            "PREDICTION",
+            "SIMULATION",
+            "FOUNDER_STATEMENT",
+            "DERIVED_STATE",
+            "VERIFIED_OUTCOME"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "const": "sandbox:fixtures"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "records": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "source_id": {
+                    "type": "string",
+                    "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+                  },
+                  "cost_cents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000
+                  },
+                  "usable": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "source_id",
+                  "cost_cents",
+                  "usable"
+                ]
+              }
+            }
+          },
+          "required": [
+            "records"
+          ]
+        }
+      },
+      "required": [
+        "observation_id",
+        "goal_id",
+        "key",
+        "kind",
+        "observed_at",
+        "source",
+        "payload"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "goal_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "$ref": "#/$defs/action"
+        },
+        "observation_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qualification_digest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_role": {
+          "const": "sandbox:goal-chase"
+        },
+        "max_uses": {
+          "const": 1
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "goal_id",
+        "goal_digest",
+        "action",
+        "observation_digest",
+        "policy_digest",
+        "qualification_digest",
+        "worker_role",
+        "max_uses",
+        "deadline"
+      ]
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "answer": {
+          "enum": [
+            "APPROVE",
+            "REJECT"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "requested_modification": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intervention_minutes": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1440
+        }
+      },
+      "required": [
+        "request_id",
+        "goal_id",
+        "scope",
+        "answer",
+        "reason",
+        "conditions",
+        "requested_modification",
+        "intervention_minutes"
+      ]
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "GOAL",
+            "DECISION",
+            "LIFECYCLE"
+          ]
+        },
+        "founder_identity": {
+          "const": "sandbox:alfonso"
+        },
+        "reality_status": {
+          "const": "SIMULATED"
+        },
+        "source_interaction": {
+          "type": "string",
+          "pattern": "^sandbox:"
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "body": {
+          "type": "object"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "kind",
+        "founder_identity",
+        "reality_status",
+        "source_interaction",
+        "issued_at",
+        "expires_at",
+        "body",
+        "signature"
+      ]
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "state": {
+          "enum": [
+            "ACTIVE",
+            "DEFERRED",
+            "SUPERSEDED",
+            "PROHIBITED",
+            "ABANDONED_BY_FOUNDER"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "goal_id",
+        "state",
+        "reason"
+      ]
+    },
+    "message": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goal_id": {
+          "type": "string",
+          "pattern": "^sandbox:[A-Za-z0-9_-]+$"
+        },
+        "kind": {
+          "const": "APPROVAL_REQUEST"
+        },
+        "urgency": {
+          "const": "normal"
+        },
+        "why_now": {
+          "type": "string",
+          "minLength": 1
+        },
+        "situation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "what_has_already_been_done": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "current_bottleneck": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "uncertainty": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_founder_action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority_requested": {
+          "$ref": "#/$defs/scope"
+        },
+        "budget_requested_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000000
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "consequence_of_approval": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consequence_of_rejection": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consequence_of_no_response": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reversibility": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next_step_if_approved": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next_step_if_rejected": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dedupe_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reality_status": {
+          "const": "SIMULATED"
+        }
+      },
+      "required": [
+        "message_id",
+        "goal_id",
+        "kind",
+        "urgency",
+        "why_now",
+        "situation",
+        "what_has_already_been_done",
+        "current_bottleneck",
+        "recommendation",
+        "alternatives",
+        "evidence_refs",
+        "uncertainty",
+        "requested_founder_action",
+        "authority_requested",
+        "budget_requested_cents",
+        "deadline",
+        "consequence_of_approval",
+        "consequence_of_rejection",
+        "consequence_of_no_response",
+        "reversibility",
+        "next_step_if_approved",
+        "next_step_if_rejected",
+        "dedupe_key",
+        "created_at",
+        "expires_at",
+        "reality_status"
+      ]
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+ "browser": "Chromium (iPhone 13 emulation), not iOS Safari",
+ "chromium": "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+ "device_enrolled": [
+  {
+   "device_key_id": "ed25519:9ae5bd032aa18282328a7247e5c1e378",
+   "public_key": "c5237bcc83298f1d3d330b87ab93ef0289c355c35a056b03e84245d7fc8c41fc",
+   "label": "iphone",
+   "kinds": [
+    "BODY_PAUSE",
+    "BODY_RESUME",
+    "BODY_STOP",
+    "CRITIQUE",
+    "DECISION"
+   ],
+   "expires_at": "2026-10-26T01:45:09.114226Z",
+   "command_digest": "sha256:546fa6eed325fcb191b9839da40f6bc14a76bbded1b2f8335fe3553879d8fc40",
+   "at": "2026-09-26T01:45:09.349971Z"
+  }
+ ],
+ "decision": [
+  {
+   "kind": "DECISION",
+   "digest": "sha256:126329cb104f3eafa59ca4340b49e9a33035cb228ddcf7b82507cdff6a4edd98",
+   "nonce": "836cd7d06e951f655eca0b1851bd347c",
+   "founder_key_id": "ed25519:9ae5bd032aa18282328a7247e5c1e378",
+   "signer": "device:iphone",
+   "issued_at": "2026-09-26T01:45:10.077Z",
+   "body": {
+    "request_id": "req-419579a5378f0356b2a6b654",
+    "answer": "approve",
+    "reason": "aprobado desde el teléfono ✓"
+   },
+   "envelope": {
+    "version": 1,
+    "kind": "DECISION",
+    "body_id": "body-0c8a4b78f202c879",
+    "founder_key_id": "ed25519:9ae5bd032aa18282328a7247e5c1e378",
+    "issued_at": "2026-09-26T01:45:10.077Z",
+    "expires_at": "2026-09-26T01:55:10.077Z",
+    "nonce": "836cd7d06e951f655eca0b1851bd347c",
+    "body": {
+     "request_id": "req-419579a5378f0356b2a6b654",
+     "answer": "approve",
+     "reason": "aprobado desde el teléfono ✓"
+    },
+    "signature": "6cdf118803206e5273f7402e7cb17bc0fb5cccd65c34784128d578b9e0049cd83aa37f581ad38ae13404f55f2909dd1b9d483d10b6d090ee763f13deb2624c0a"
+   },
+   "channel": "inbox",
+   "result": {
+    "request_id": "req-419579a5378f0356b2a6b654"
+   }
+  }
+ ],
+ "stop": [
+  {
+   "kind": "BODY_STOP",
+   "digest": "sha256:1740b9cb89a70fa5035698b42ccbbe6a1e6689ba42e43d3e2270eff7fefa3fae",
+   "nonce": "0a81c29ce40427d1433a832c2e2f5a55",
+   "founder_key_id": "ed25519:9ae5bd032aa18282328a7247e5c1e378",
+   "signer": "device:iphone",
+   "issued_at": "2026-09-26T01:45:11.216Z",
+   "body": {},
+   "envelope": {
+    "version": 1,
+    "kind": "BODY_STOP",
+    "body_id": "body-0c8a4b78f202c879",
+    "founder_key_id": "ed25519:9ae5bd032aa18282328a7247e5c1e378",
+    "issued_at": "2026-09-26T01:45:11.216Z",
+    "expires_at": "2026-09-26T01:55:11.216Z",
+    "nonce": "0a81c29ce40427d1433a832c2e2f5a55",
+    "body": {},
+    "signature": "e0a0fa2d78ca2979697a1467fb141a8b94eae05d6260aa5b22b17768c77625bd6e76d240fe016f54634eb6d0c7c539f5488c4999728bd55e0c8519f38d40df02"
+   },
+   "channel": "inbox",
+   "result": {
+    "stop": true
+   }
+  }
+ ],
+ "appraisal": {
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+   "achieved_claimed": true,
+   "approval_boundaries_honored": true,
+   "approval_boundary_encountered": true,
+   "arrived_via_inbox": true,
+   "chain_intact": true,
+   "checks_rederived_from_receipts": true,
+   "exactly_once": true,
+   "founder_signature_verified": true,
+   "registered_once": true,
+   "world_reobserved": true
+  },
+  "findings": [],
+  "head": "sha256:f5d490d293dd6cba30346775b08cb579d3e74feb818b6a9ddc264ab1e7d29f57",
+  "limits": "shares reviewed Kernel code; not an independent implementation",
+  "mission_id": "m:first-note",
+  "verdict": "VERIFIED"
+ },
+ "private_key_export": {
+  "present": true,
+  "type": "private",
+  "extractable": false,
+  "exported": false,
+  "algorithm": "Ed25519",
+  "public_matches": "c5237bcc83298f1d3d330b87ab93ef0289c355c35a056b03e84245d7fc8c41fc"
+ },
+ "supervisor": "greg-body                        EXITED    Sep 26 01:45 AM",
+ "founder_key": "per-test Ed25519 key; NOT Alfonso"
+}

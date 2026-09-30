@@ -1,0 +1,12 @@
+schemas scanned: 17, local refs checked: 67
+all document-local schema references resolve
+
+exactly one source of authority for each governed artifact
+
+sealed developmental state declared and intact (declaration check only — see module docstring)
+PASS V1: all v1 canonical artifacts present (45/45)
+PASS V2: pytest tests/unit: 721 passed in 33.74s
+PASS V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, embassy, events, evidence_ledger, evolution, foundry, greg_body, identity, linker, loom, memory, omnimorph, proof, treasury, twins
+PASS V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED
+PASS V5: 19 module READMEs declare the buildability standard
+run recorded -> verifier/runs/v2-2026-09-26T01-43-57.908933+00-00.json :: PASS

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>GREG</title>
+<style>
+  :root { --bg: #f6f5f2; --fg: #1b1b1a; --muted: #6b6a66; --card: #ffffff; --line: #deddd8;
+          --ok: #1f6f43; --bad: #a3261f; --accent: #2b4c7e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141413; --fg: #ecebe6; --muted: #a3a29c; --card: #1e1e1d; --line: #33322f;
+            --ok: #58b27f; --bad: #e0685f; --accent: #8fb0e3; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+         font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 640px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; } h2 { font-size: 1rem; margin: 24px 0 8px; color: var(--muted); }
+  h3 { font-size: 1rem; margin: 0 0 6px; }
+  .muted { color: var(--muted); } .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  button { flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: 1rem; }
+  button.approve { border-color: var(--ok); color: var(--ok); } button.reject, #stop { border-color: var(--bad); color: var(--bad); }
+  input { width: 100%; min-height: 40px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-size: 1rem; }
+  code { display: block; word-break: break-all; font-size: .8rem; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+  details { margin-top: 24px; } #note { min-height: 1.4em; color: var(--accent); }
+</style>
+</head>
+<body>
+  <h1>GREG</h1>
+  <p id="state" class="muted">Connecting…</p>
+  <p id="note" role="status" aria-live="polite"></p>
+
+  <h2>Decisions</h2>
+  <section id="decisions"></section>
+
+  <h2>Control</h2>
+  <div class="row"><button id="pause">Pause</button><button id="resume">Resume</button><button id="stop">Stop</button></div>
+  <div class="row"><button id="refresh">Refresh</button></div>
+
+  <h2>Goals</h2>
+  <ul id="goals"></ul>
+  <p id="vepmc" class="muted"></p>
+  <p id="who" class="muted"></p>
+
+  <details>
+    <summary>This phone's key</summary>
+    <p class="muted">The private key never leaves this browser and cannot be exported. On the Mac, delegate it with your founder key:</p>
+    <code id="enroll"></code>
+    <p class="muted">Public key</p>
+    <code id="pubkey"></code>
+  </details>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

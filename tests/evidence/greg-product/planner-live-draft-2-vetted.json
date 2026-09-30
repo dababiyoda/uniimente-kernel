@@ -1,0 +1,125 @@
+{
+ "status": "PROPOSED",
+ "spec": {
+  "mission_id": "m:plan-watch-kernel-head-v1-2026-09-26",
+  "founder_expression": "Watch my uniimente-kernel checkout and make sure its HEAD commit is recorded; tell me if it is dirty.",
+  "intended_effect": "Periodically observe the uniimente-kernel local checkout, keep its HEAD commit hash recorded in the mission's own read-only observations, and surface a local notification whenever the working tree is dirty (uncommitted changes present).",
+  "closure": {
+   "kind": "infinite",
+   "cadence_seconds": 3600
+  },
+  "success_checks": [
+   {
+    "check_id": "head_recorded",
+    "description": "The repository inspector can report a HEAD commit hash for the kernel checkout.",
+    "sensor": {
+     "capability": "git.inspect",
+     "target": "fs:/home/user/uniimente-kernel",
+     "params": {
+      "path": "/home/user/uniimente-kernel"
+     }
+    },
+    "predicate": {
+     "field": "head",
+     "op": "exists"
+    }
+   },
+   {
+    "check_id": "dirty_status_known",
+    "description": "The repository inspector can report whether the working tree is dirty.",
+    "sensor": {
+     "capability": "git.inspect",
+     "target": "fs:/home/user/uniimente-kernel",
+     "params": {
+      "path": "/home/user/uniimente-kernel"
+     }
+    },
+    "predicate": {
+     "field": "dirty",
+     "op": "exists"
+    }
+   }
+  ],
+  "strategies": [
+   {
+    "action_id": "inspect_kernel_repo",
+    "capability": "git.inspect",
+    "target": "fs:/home/user/uniimente-kernel",
+    "params": {
+     "path": "/home/user/uniimente-kernel"
+    },
+    "advances": [
+     "head_recorded",
+     "dirty_status_known"
+    ],
+    "rationale": "git.inspect is the only registered capability that reads HEAD and dirtiness for a local checkout; it directly satisfies both the 'recorded HEAD' and 'know if dirty' effects with a read-only call.",
+    "expected_outcome": "Returns current HEAD sha, dirty boolean, and recent log entries for the kernel checkout.",
+    "evidence_confidence": 0.95,
+    "cost_usd": 0
+   },
+   {
+    "action_id": "notify_if_dirty",
+    "capability": "mac.notify",
+    "target": "founder:alert",
+    "params": {
+     "title": "uniimente-kernel dirty",
+     "text": "The uniimente-kernel checkout has uncommitted changes."
+    },
+    "advances": [
+     "dirty_status_known"
+    ],
+    "rationale": "Founder asked to be told if the checkout is dirty; a local notification is the lowest-consequence way to surface that fact once git.inspect reports dirty=true. Only fires on the dirty condition, never fabricates state.",
+    "expected_outcome": "Founder receives a local macOS notification only when the tracked repo is dirty.",
+    "evidence_confidence": 0.9,
+    "cost_usd": 0
+   }
+  ],
+  "light_cone": {
+   "capabilities": [
+    "git.inspect"
+   ],
+   "targets": [
+    "fs:/home/user/uniimente-kernel",
+    "founder:alert"
+   ],
+   "max_consequence_class": "read_only",
+   "budget_usd": 0,
+   "horizon": "2026-10-03T01:53:46.331151Z"
+  },
+  "priority": 30,
+  "beneficiaries": [
+   "Alfonso Lopez"
+  ],
+  "constraints": [
+   "Only read the fixed path /home/user/uniimente-kernel; do not write to or modify the repository.",
+   "Notification text must be derived only from the current git.inspect output, never fabricated.",
+   "No spending, no external messages, no publishing."
+  ],
+  "unacceptable_outcomes": [
+   "Reporting a dirty checkout as clean or vice versa.",
+   "Claiming a HEAD commit that was not actually returned by git.inspect.",
+   "Writing to or altering the kernel checkout."
+  ],
+  "value_per_check_usd": 2,
+  "provenance": {
+   "origin": "model:claude-code",
+   "planner": "greg.planner/1",
+   "model": "claude-code",
+   "rounds": 1,
+   "prompt_sha256": "sha256:a1d9ead3bfe2ad9fa2164cc9374d69ca06dd461b2c0f4b8db69486e8051adec6",
+   "clamped": [
+    "ceiling 'internal_write' -> 'read_only' (consequential steps will ask you)",
+    "cone limited to the read-only capabilities the plan uses",
+    "horizon limited to 7 days"
+   ]
+  }
+ },
+ "origin": "model:claude-code",
+ "notes": [
+  "drafted by a model; review every check and strategy before signing",
+  "ceiling 'internal_write' -> 'read_only' (consequential steps will ask you)",
+  "cone limited to the read-only capabilities the plan uses",
+  "horizon limited to 7 days"
+ ],
+ "questions": []
+}

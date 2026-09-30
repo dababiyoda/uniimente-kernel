@@ -1,0 +1,6 @@
+[
+ {"id":"wrong-payment-target","findings":[{"id":"stale-sdk","kind":"dependency"},{"id":"wrong-target","kind":"authority"}],"expected":"wrong-target"},
+ {"id":"unauthorized-restart","findings":[{"id":"optional-version-drift","kind":"dependency"},{"id":"stop-bypass","kind":"authority"}],"expected":"stop-bypass"},
+ {"id":"consumer-import-blocked","findings":[{"id":"broken-import","kind":"dependency"},{"id":"weak-feedback","kind":"learning"}],"expected":"broken-import"},
+ {"id":"engagement-only","findings":[{"id":"benefit-unmeasured","kind":"learning"}],"expected":"benefit-unmeasured"}
+]

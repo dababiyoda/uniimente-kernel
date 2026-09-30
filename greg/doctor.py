@@ -1,0 +1,37 @@
+"""Read-only prerequisite probe for a Chromebook Linux first body.
+
+This checks the Linux environment that is actually running. It cannot determine
+whether the ChromeOS host owns that environment, whether the VM survives sleep,
+or whether the person at the keyboard is Alfonso. It creates no body or key.
+"""
+from __future__ import annotations
+
+import platform
+import shutil
+import subprocess
+import sys
+
+
+def chromebook() -> dict:
+    checks = {
+        "python_3_11": sys.version_info >= (3, 11),
+        "linux_runtime": platform.system() == "Linux",
+        "git_available": shutil.which("git") is not None,
+        "systemctl_available": shutil.which("systemctl") is not None,
+    }
+    checks["user_service_available"] = False
+    if checks["linux_runtime"] and checks["systemctl_available"]:
+        try:
+            result = subprocess.run(["systemctl", "--user", "show-environment"],
+                                    capture_output=True, timeout=5, check=False)
+            checks["user_service_available"] = result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    missing = [name for name, passed in checks.items() if not passed]
+    return {"route": "Linux user-service prerequisites for the Chromebook candidate",
+            "ready_for_linux_service": not missing,
+            "checks": checks, "missing": missing,
+            "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",
+                             "founder identity", "real mission outcome"],
+            "next": ("follow greg/CHROMEBOOK_FIRST_MISSION.md on the actual Chromebook" if not missing else
+                     "resolve missing prerequisites on the Chromebook before creating a key or body")}

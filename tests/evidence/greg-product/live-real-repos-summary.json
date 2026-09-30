@@ -1,0 +1,45 @@
+{
+ "seconds": 17.3,
+ "verdict": "VERIFIED",
+ "checks": {
+  "achieved_claimed": true,
+  "approval_boundaries_honored": true,
+  "approval_boundary_encountered": true,
+  "arrived_via_inbox": true,
+  "chain_intact": true,
+  "checks_rederived_from_receipts": true,
+  "deliveries_bound_to_evidence": true,
+  "exactly_once": true,
+  "founder_signature_verified": true,
+  "registered_once": true,
+  "world_reobserved": true
+ },
+ "vepmc_row": {
+  "mission_id": "m:engineering-brief-2026-09-26",
+  "closure_event_id": "862eac81-9aec-5efe-96b2-d4f8e24b935f",
+  "founder_signed": true,
+  "interface_detached": true,
+  "persistent_runtime": true,
+  "real_capability": true,
+  "approval_boundary": true,
+  "interruption_survived": true,
+  "appraised_verified": true,
+  "founder_accepted": false,
+  "mac_body": false,
+  "counts": false,
+  "missing": [
+   "founder_accepted",
+   "mac_body"
+  ]
+ },
+ "recoveries": 1,
+ "actions": [
+  {
+   "action_id": "deliver-engineering-brief",
+   "capability": "brief.engineering",
+   "status": "DONE",
+   "receipt": "sha256:456c44fc5f679ddf4263612418175f01561ce14ec0d23edc351c75be212af83a"
+  }
+ ],
+ "sources": "real /home/user checkouts; live api.github.com through this container's proxy"
+}

@@ -1,0 +1,291 @@
+{
+  "decision_id": "IGC-SANDBOX-V0",
+  "title": "First founder-facing Infinite Goal Chase closure on canonical main",
+  "problem": "Canonical main has work, authority and evidence primitives but lacks the complete persistent goal-to-founder-decision-to-resume loop.",
+  "founder_intent_refs": [
+    "INTENT-IGC-2026-09-05",
+    "Current Alfonso master coding directive sections 0-53",
+    "Current clarification: first goal chase includes Infinite Goal Chase and far-future sci-fi goals"
+  ],
+  "baseline": "main@bcbb1ab4: DurableWorkflow + EventSpine + ConsequenceGate + EvidenceLedger + GenomeRegistry",
+  "alternatives": [
+    {
+      "name": "Thin sandbox composition",
+      "description": "Add only goal projection, signed synthetic inbox and deterministic communication over canonical owners.",
+      "advantages": [
+        "Complete bounded loop",
+        "No unmerged runtime dependency"
+      ],
+      "disadvantages": [
+        "New domain contracts",
+        "Trusted-process limits"
+      ],
+      "revival_evidence": "All acceptance and adversarial gates pass."
+    },
+    {
+      "name": "Single checkpoint script",
+      "description": "Smallest viable script wrapping the existing workflow.",
+      "advantages": [
+        "Low initial code cost"
+      ],
+      "disadvantages": [
+        "Ad hoc scope and replay semantics"
+      ],
+      "revival_evidence": "A simpler script passes the same frozen acceptance suite."
+    },
+    {
+      "name": "Draft runtime and Task Fabric stack",
+      "description": "Strongest competing architecture uses #87/#90 machinery.",
+      "advantages": [
+        "More advanced identity and replay primitives"
+      ],
+      "disadvantages": [
+        "Unmerged dependency",
+        "Runtime ownership unresolved against #70"
+      ],
+      "revival_evidence": "Founder resolves runtime ownership and ratifies the relevant stack."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Persistent founder-facing closures stay zero.",
+    "advantages": [
+      "No new maintenance cost"
+    ],
+    "disadvantages": [
+      "No demonstrated end-to-end founder loop"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Protect the founder-facing closed loop and complete far-future horizon.",
+      "material_concerns": [
+        "Do not substitute a backend module or retire later generations."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-V0.md",
+        "goal-chase-v0-inspection.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Compose canonical main owners; preserve all unmerged runtime competitors.",
+      "material_concerns": [
+        "No parallel authority, event, task or workflow truth."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-V0.md",
+        "goal-chase-v0-inspection.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Only the bounded sandbox experiment is admissible.",
+      "material_concerns": [
+        "Synthetic authentication and local locks are not production custody or hostile-process isolation."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-V0.md",
+        "goal-chase-v0-inspection.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Use callable triggers and canonical durable workflow with explicit reconciliation.",
+      "material_concerns": [
+        "An ambiguous dispatch must stop even if it reduces completion rate."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-V0.md",
+        "goal-chase-v0-inspection.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Count only conjunctive sandbox proof; retain negative evidence and distinguish real metrics.",
+      "material_concerns": [
+        "Passing fixtures cannot prove external results or attention savings."
+      ],
+      "evidence_refs": [
+        "GOAL-CHASE-V0.md",
+        "goal-chase-v0-inspection.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Canonical owners exist and can be composed.",
+      "tier": "primary_source",
+      "reference": "main@bcbb1ab4 events/, policy/, provenance/, capabilities/",
+      "finding": "Source inspected; base test suite 495 passed."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The baseline needs no agent hierarchy.",
+      "tier": "primary_source",
+      "reference": "PR #66/#68 and canonical events/spine.py",
+      "finding": "Static durable workflow remains the protected execution baseline."
+    },
+    {
+      "claim": "Sandbox authentication is not production founder identity.",
+      "tier": "other",
+      "reference": "egregore/goal_chase_sandbox.py",
+      "finding": "Public demo key and trusted-process only; no real authorization is claimed."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "One durable goal performs internal work, requests one necessary founder decision, resumes under exact bounded approval, reconciles and preserves horizon.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Reuse one canonical substrate.",
+        "amplified_value": "Interchangeable models and capabilities can improve without rewriting authority or losing evidence."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "New goal records could become duplicate truth.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Replay EventSpine projections; workflow cursors and Gate receipts keep canonical ownership."
+      },
+      {
+        "id": "D2",
+        "statement": "Approval callback is not authenticated founder authority.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Inject synthetic exact-scope verification, bind expiry and context, then supply existing Gate callback; real identity deferred."
+      },
+      {
+        "id": "D3",
+        "statement": "Dispatch and checkpoint are not atomic.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Recover against canonical receipts; ambiguous dispatch stops for reconciliation."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Existing DurableWorkflow is retained as the execution provider.",
+      "do_nothing": "No new surface but closure stays zero.",
+      "simplest_viable_alternative": "A script is simpler but must satisfy the same scope/replay requirements.",
+      "strongest_competing_architecture": "#87/#90 offers richer primitives but unresolved runtime ownership and unmerged dependency.",
+      "reversible_experiment": "Dedicated main-based sandbox branch, fixed functions and no real adapters."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Single checkpoint script",
+        "rejection_reason": "Would recreate authentication and replay informally.",
+        "revival_evidence": "Pass identical frozen gates with demonstrably less machinery."
+      },
+      {
+        "name": "Draft runtime and Task Fabric stack",
+        "rejection_reason": "Would silently depend on an unresolved runtime-owner choice.",
+        "revival_evidence": "Founder-ratified ownership and stack adoption."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack duplicate truth, races, approval replay/spam, false evidence, candidate control of evaluation, founder overload and simulated closure inflation.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "Concurrent JSONL sessions race.",
+        "strengthening_response": "Nonblocking local session lock; no distributed guarantee."
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "Candidate sees its evaluator or labels itself verified.",
+        "strengthening_response": "Freeze evaluator before runtime; pure snapshot-only built-ins; independently check before Gate records positive outcome."
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "Quiet metrics conceal needed decisions.",
+        "strengthening_response": "Count requests and delivered messages separately; preserve failures/denials; real attention metrics remain null."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "experiment",
+        "rationale": "No separate store or scheduler; projections are rebuilt from canonical records.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any inconsistent replay or duplicate owner"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Only synthetic founder identity is exercised; real identity remains blocked.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any proposed real adapter or broader authority"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "A proof-complete action recovers; uncertain dispatch stops.",
+        "owner": "Kernel maintainer",
+        "review_trigger": "Any ambiguous dispatch or repeated effect"
+      }
+    ],
+    "final_design": "Thin sandbox goal composition on canonical main; deterministic observation/capability/authority checks, exact durable decisions, canonical workflow and receipts, quiet communication projection, frozen evaluation and fresh-process proof.",
+    "residual_risks": [
+      {
+        "risk": "In-process trust, public demo key, local locking and unanchored hash chain do not withstand a privileged host attacker.",
+        "mitigation": "No untrusted code or real effects; independent review, production identity/custody, anti-rollback and dispatch reconciliation before broader use.",
+        "owner": "Alfonso and security reviewer",
+        "review_trigger": "Any proposal to promote beyond this deterministic sandbox"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Five roles analyzed separately by one coding agent. Dissent remains explicit; no independent human review or consensus is claimed.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not promote this trusted-process experiment to live founder authority.",
+        "rationale": "Main primitives and synthetic key/lock boundary do not prove production security.",
+        "evidence_threshold": "Independent review plus production identity/custody and failure-safe dispatch proof.",
+        "owner": "Alfonso and security reviewer",
+        "review_trigger": "Broader runtime integration or external adapter proposal"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso: current explicit sandbox/branch/draft-PR directive only"
+  },
+  "migration_plan": "No production migration; add sandbox composition on dedicated main-based branch. No changes to draft runtime owners or protected execution primitives.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Close draft before merge, or revert only this experiment changes.",
+      "Retain branch, tests, failures and evidence history."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any unauthorized external effect",
+    "Any duplicated simulated consequence",
+    "Forged/widened/expired approval accepted",
+    "Missing lineage or negative evidence",
+    "Frozen evaluator altered without a new explicit decision",
+    "A new authority/event/task owner or false closure claim"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez (bounded experiment authorized; promotion not authorized)",
+  "review_trigger": "All sandbox gates complete, then independent draft review before integration."
+}

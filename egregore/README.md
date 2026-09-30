@@ -26,6 +26,51 @@ The invariant is simple:
   `ConsequenceGate.run` path.
 - Five-closure checks, an output schema, and adversarial unit tests.
 
+## Detachable parts (`parts.py`, `model_parts.py`)
+
+Every proposer and evaluator sits in a named slot (`proposer:<role>`,
+`evaluator:<role>`). Any implementation (rules, a local open-weight model, a
+hosted model, whatever comes next) is a registered *part* for a slot.
+
+| Operation | Effect | Authority |
+|---|---|---|
+| `register(spec, fn)` | Describe a part; hold its code | None granted |
+| `change(..., mode="shadow")` | Trial: runs on the same inputs, compared and recorded, never selected | Gate + single-action grant |
+| `change(..., mode="active")` | Make it the slot's live part | Gate + single-action grant |
+| `change(..., part_id=None)` | Detach an optional slot | Gate + grant; Guardian/Treasury can be replaced, never emptied |
+| `rollback_target(slot)` then `change` | Re-bind the previous part | Gate + grant |
+| `runtime()` | Rebuild standing cognition from the live parts | Refuses gaps |
+| `shadow_run(cycle, ...)` | Record shadow vs. active comparisons | Own resource budget |
+
+Each grant is bound to the slot's current ledger head, so an approval
+cannot be replayed after the slot moves. Code is never stored in the
+ledger: after a restart, bound parts must be registered again or the board
+reports them as unresolved instead of guessing.
+
+`openai_compatible_proposer` turns any OpenAI-compatible chat endpoint
+(Ollama, llama.cpp, vLLM, LM Studio, Groq, OpenRouter, Together, Gemini's
+compatibility endpoint) into a proposer part. The model drafts objective,
+outcome, payload and cited signals; action class, capability, target and
+consequence class are fixed by the code that builds the part. Model
+confidence is capped (default 0.5); the raw value is kept in the payload.
+
+```python
+board = PartsBoard(ledger=ledger)
+spec, fn = openai_compatible_proposer(
+    role="strategist", base_url="http://localhost:11434/v1", model="qwen3.6",
+    envelope=Envelope(action_class="community_update",
+                      requested_capability="social.publish.draft",
+                      target="discord://community/main",
+                      consequence_class="external_contact"),
+    open_weights=True,
+)
+part = board.register(spec, fn)
+grant = issuer.issue_single_action(
+    proposal=board.change_proposal(actor=actor, slot=spec.slot, part_id=part, mode="shadow"),
+    policy_version="1.0.0")
+board.change(actor=actor, slot=spec.slot, part_id=part, mode="shadow", gate=gate, grant=grant)
+```
+
 ## What is intentionally absent
 
 - Private keys, wallet signing, swaps, transfers, staking, or treasury control.

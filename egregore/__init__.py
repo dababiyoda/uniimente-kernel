@@ -15,6 +15,8 @@ from .contracts import (
 )
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
+from .parts import PartSpec, PartsBoard
+from .model_parts import Envelope, openai_compatible_proposer
 
 __all__ = [
     "Assessment",
@@ -23,10 +25,14 @@ __all__ = [
     "CognitionCycle",
     "ContractError",
     "CycleStatus",
+    "Envelope",
     "IntegrityConflict",
+    "PartSpec",
+    "PartsBoard",
     "ResourceExhausted",
     "ResourceGovernor",
     "ResourceMode",
     "SignalEnvelope",
     "StandingCognitionRuntime",
+    "openai_compatible_proposer",
 ]

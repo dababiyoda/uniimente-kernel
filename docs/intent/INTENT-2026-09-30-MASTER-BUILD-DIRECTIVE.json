@@ -1,0 +1,127 @@
+{
+  "intent_id": "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE",
+  "title": "GREG may ask for resources, never by pressure; business grows one verified loop at a time; reality judges; obsolete implementations may leave the active path while their intent stays on the horizon",
+  "statement": "Every request GREG makes of Alfonso for resources (account access, compute, software, a build, a licensed professional, a human worker, money, availability, a longer mandate) must contain evidence, alternatives, costs, expected effect, uncertainty and authority requirements, and must never use emotional manipulation, manufactured urgency, or frame denial as harm to GREG. Business capability grows ONE BUSINESS -> ONE VERIFIED LOOP -> REPEATABLE COMPETENCE -> REUSABLE CAPABILITIES -> SECOND VENTURE -> MEASURE TRANSFER ADVANTAGE; new organizations only for recurring bottlenecks; regenerative advantage through evidence, coordination, capability and incentives rather than dependency or exploitation. External reality (restart survival, authority, recovery, customers, settlement, predictions vs outcomes) is the final judge. When an implementation is obsolete, kill or archive it if justified; when a founder capability remains intended, keep it on the horizon.",
+  "source": "Direct founder message (third) in Claude Code session session_01Wy6qJuxKgeiYK3xXXAE6QD, 2026-09-30: 'UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE', sections 47, 48, 59-64, 70, 76",
+  "source_location": "docs/intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md",
+  "source_date_or_version": "2026-09-30",
+  "source_refs": [
+    "docs/intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md"
+  ],
+  "owner": "Alfonso Lopez (founder authority); Kernel/GREG maintainers implement",
+  "state": "active",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "architectural",
+  "binding_scope": "How GREG asks the founder for anything; business and organization sequencing; evidence standard; disposition of obsolete implementations. Reversible implementation, tests and draft review only. No merge to main, deployment, spending, publishing, credential or external-contact authority.",
+  "constitutional_constraints": [
+    "Asking grants nothing: an answer is a signed founder command, and a purchase, account grant or hire is a separate act by Alfonso outside GREG",
+    "The institution does not possess a right to survive (section 47); GREG's continuation is never an argument for a resource",
+    "No intelligence threshold produces sovereignty (section 59)",
+    "Do not create legal entities because organizational complexity feels sophisticated (section 62)"
+  ],
+  "extends": [
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+    "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
+    "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING",
+    "INTENT-2026-09-26-REAL-PRODUCT-METABOLISM"
+  ],
+  "clauses": [
+    {
+      "section": 60,
+      "clause": "GREG may ask for resources; every request carries evidence, alternatives, costs, expected effect, uncertainty, authority requirements; no emotional manipulation, no manufactured urgency, no framing denial as harming GREG",
+      "state": "implemented",
+      "implementation_refs": [
+        "greg/asks.py",
+        "greg/compute.py",
+        "greg/presence.py",
+        "greg/missions.py",
+        "greg/body.py",
+        "greg/tribunal.py",
+        "greg/console.py",
+        "greg/phone/app.js",
+        "greg/briefs.py",
+        "greg/cli.py"
+      ],
+      "tests": [
+        "tests/unit/test_greg_founder_asks.py",
+        "tests/integration/test_greg_phone_asks.py",
+        "tests/unit/test_greg_account_access.py"
+      ],
+      "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence)"
+    },
+    {
+      "section": 61,
+      "clause": "ONE BUSINESS -> ONE VERIFIED LOOP -> REPEATABLE COMPETENCE -> REUSABLE CAPABILITIES -> SECOND VENTURE -> MEASURE TRANSFER ADVANTAGE; no portfolio system before one business loop works",
+      "state": "active",
+      "path_nodes": [
+        "N3",
+        "N4",
+        "N7"
+      ],
+      "reality_status": "PROPOSED on greg/path.json; no business loop has run"
+    },
+    {
+      "section": 62,
+      "clause": "New organizations only for a recurring bottleneck that blocks the core mission, after comparing process, software, provider, partnership, service, company, nonprofit, shared infrastructure and institution",
+      "state": "active",
+      "path_nodes": [
+        "N6",
+        "N7"
+      ],
+      "reality_status": "PROPOSED; no entity exists or is authorized"
+    },
+    {
+      "section": 63,
+      "clause": "Regenerative business doctrine: recurring value trapped behind broken proof/trust/eligibility/routing/coordination/settlement -> narrow wedge -> service -> process -> proof -> trust -> default -> infrastructure; improve participants",
+      "state": "active",
+      "path_nodes": [
+        "N3",
+        "N7"
+      ],
+      "reality_status": "PROPOSED; PumpStation rail horizon remains the nearest precursor"
+    },
+    {
+      "section": 64,
+      "clause": "External reality is the final judge: software (worked, survived restart, stayed inside authority, recovery worked, evidence matched reality), business (bought, remained, benefited, trust improved, revenue settled, costs improved, labor saved), strategy (predictions matched outcomes)",
+      "state": "active",
+      "implementation_refs": [
+        "greg/metrics.py",
+        "greg/appraisal.py",
+        "greg/presence.py"
+      ],
+      "reality_status": "software questions measured by VEPMC conditions and presence; business and strategy questions not yet measurable"
+    },
+    {
+      "section": 76,
+      "clause": "Do not keep obsolete implementations merely to preserve history; KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED; KEEP THE INTENDED CAPABILITY ON THE HORIZON",
+      "state": "active",
+      "reality_status": "recorded; no implementation removed in this session (candidate listed under next_review_trigger)"
+    }
+  ],
+  "success_evidence": [
+    "tests/unit/test_greg_founder_asks.py: every decision.requested is recorded only by greg/asks.py; each of the founder's six example asks is expressible; an ask missing any section-60 element is refused with nothing recorded; pressure wording is withheld from every founder surface while facts and costs stay and the attempt is kept as evidence; the founder's own signed words are never screened; paid approvals, missing capabilities and expired mandates are full resource asks; console, phone, status and morning report show costs, expected effect and uncertainty",
+    "Twenty deliberate defects (mutations) were each caught by these tests, including an empty policy explanation that would otherwise have crash-looped the body",
+    "tests/integration/test_greg_phone_asks.py: the real phone page shows each option's cost, the expected effect and uncertainty, never the withheld plea, and no longer tells the founder the body is 'the Mac'"
+  ],
+  "failure_evidence": [
+    "The wording screen is lexical: a paraphrase that pressures without trigger words ('it would be wise to decide within the hour') passes. Structural guards (mandatory no-cost option with its effect, mandatory consequence of no response, evidenced deadlines) are the stronger defence; the screen is a floor, not proof of non-manipulation",
+    "Asks for a licensed professional or a human worker are expressible and validated but no GREG producer emits them yet; build-versus-buy asks carry no priced comparison yet. Account-access asks are produced by the brief (tests/unit/test_greg_account_access.py)",
+    "The phone page rendered costed options and a withheld plea in Chromium with an iPhone profile (tests/integration/test_greg_phone_asks.py); it has not run in iOS Safari on Alfonso's iPhone"
+  ],
+  "dependencies": [
+    "Founder review of the draft PR before any merge to main"
+  ],
+  "conflicts": [
+    "UNIIMENTE_FINAL_BUILD_ORDER.md section 2 'Absolute Preservation Rule' and section 12 ('Code may stop being active. It must not stop being institutional memory') vs section 76 'Do not keep obsolete implementations merely to preserve history... KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED'. Resolution: the later explicit instruction controls the active tree; both stand for memory. An implementation may leave the active tree when a placement justifies it (GENUINELY_OBSOLETE with a founder-given basis, or SUPERSEDED_IMPLEMENTATION_ASSUMPTION whose effect a stronger canonical mechanism carries); the removing commit names the lineage and the last commit containing it, so git history and the placement record remain the institutional memory; the intended capability stays on greg/path.json. A correction banner records this in UNIIMENTE_FINAL_BUILD_ORDER.md.",
+    "Earlier GREG decision requests carried only why_now, recommendation and string alternatives (compute, presence, missions). Resolution: section 60 controls; the fields are added through one contract, and the older fields remain for compatibility."
+  ],
+  "next_review_trigger": "Founder answers a GREG resource ask on Body 1, or reviews the proposed archive of egregore/local_console.py (superseded by greg/console.py; its test fails whenever the sibling repositories are present and is skipped in CI)",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "greg/asks.py",
+    "tests/unit/test_greg_founder_asks.py"
+  ],
+  "reality_status": "active; section 60 UNIT-TESTED and INTEGRATION-TESTED in this container; not FOUNDER-USED; VEPMC = 0"
+}

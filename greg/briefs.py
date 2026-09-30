@@ -188,6 +188,24 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
     return out
 
 
+def access_gap(github: dict) -> dict | None:
+    """GitHub refused reads that a credential would allow: the evidence for a section-60 access ask.
+
+    Only unauthenticated refusals count: 403/429 (rate limit or access) and 404 (a private
+    repository reads as absent without a token). Offline is not an access problem."""
+    if github.get("authenticated"):
+        return None
+    refused = {repo: data["gap"] for repo, data in sorted(github.get("repos", {}).items())
+               if not data.get("fetched") and (data["gap"].startswith("GitHub refused")
+                                               or data["gap"] == "GitHub returned 404"
+                                               or data["gap"].startswith("not fetched: GitHub rate limit"))}
+    if not refused and not github.get("rate_limited"):
+        return None
+    return {"credential": "github_token", "service": f"GitHub REST ({API})",
+            "evidence": {"api_calls": github.get("api_calls"), "rate_limited": bool(github.get("rate_limited")),
+                         "refused": refused, "authenticated": False}}
+
+
 def shadow_gather(production: dict, shadows: list[dict], *, token: str | None) -> dict:
     """Held-out evidence for acquisition candidates, inside the same approved read-only action.
 
@@ -454,7 +472,8 @@ def _repos(params) -> list[str]:
 
 
 def github_pulls(params, ctx: InvocationContext) -> dict:
-    return gather_github(_repos(params), token=_token(ctx))
+    data = gather_github(_repos(params), token=_token(ctx))
+    return {**data, "access_gap": gap} if (gap := access_gap(data)) else data
 
 
 def engineering_brief(params, ctx: InvocationContext) -> dict:
@@ -475,6 +494,8 @@ def engineering_brief(params, ctx: InvocationContext) -> dict:
     path = deliver(text, ctx, kind="engineering", day=inputs["generated_at"][:10])
     output = {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
               "inputs": inputs, "inputs_digest": inputs_digest(inputs), "attention": len(attention(inputs))}
+    if gap := access_gap(inputs["github"]):  # section 60: the mission engine turns this into one founder ask
+        output["access_gap"] = gap
     if learned.get("shadow"):              # an acquisition change under test: evidence only, never rendered
         output["shadow"] = shadow_gather(inputs["github"], learned["shadow"], token=token)
     return output

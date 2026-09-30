@@ -32,7 +32,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
-from greg import improvement, routing
+from greg import asks, improvement, routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -332,7 +332,13 @@ class MissionEngine:
                                  artifact_root=self.artifact_root)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
-                 recommendation: str, alternatives: list, requested: dict, now: datetime) -> str:
+                 recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
+                 resource: dict | None = None, evidence: dict | None = None) -> str:
+        """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
+
+        ``resource`` makes it a section-60 resource ask: evidence, costed options with their
+        expected effects, the recommendation's expected effect and uncertainty. Everything
+        Alfonso signed in the mission is exempt from the wording screen."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
@@ -342,12 +348,20 @@ class MissionEngine:
             epoch += 1  # the same discrepancy returned after healing: a new escalation
         if rid in self.book.requests:
             return rid  # one escalation per exact scope; waiting creates no spam
-        self.journal.record("decision.requested", {
-            "request_id": rid, "mission_id": m.mission_id, "kind": kind, "action_id": action_id,
-            "scope_digest": scope_digest, "why_now": why, "recommendation": recommendation,
-            "alternatives": alternatives, "authority_requested": requested,
-            "consequence_of_no_response": "the mission waits; no action is taken",
-            "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}, key=rid)
+        why = why.strip() or f"{kind.lower().replace('_', ' ')} needs your decision"   # never an empty ask
+        message = {"request_id": rid, "mission_id": m.mission_id, "kind": kind, "action_id": action_id,
+                   "scope_digest": scope_digest, "why_now": why, "recommendation": recommendation,
+                   "alternatives": alternatives, "authority_requested": requested,
+                   "consequence_of_no_response": "the mission waits; no action is taken",
+                   "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
+        if evidence is not None:
+            message["evidence"] = evidence
+        if resource is not None:
+            message.update(resource)
+            message["alternatives"] = [o["option"] for o in resource["options"]]
+        founder_words = [a.get("reason", "") for a in self.book.answers.values() if a.get("mission_id") == m.mission_id]
+        asks.record(self.journal, message, quoted=asks.founder_text([m.spec, m.mission_id, founder_words,
+                                                                     list(m.excluded.values())]))
         return rid
 
     def _block(self, m: MissionState, blocker: dict):
@@ -391,7 +405,20 @@ class MissionEngine:
             self._block(m, {"type": "decision", "request_id": self._request(
                 m, kind="SCOPE_RENEWAL", scope_digest=sha256_json({"horizon": m.cone.horizon}), action_id=None,
                 why="the mission mandate horizon expired", recommendation="renew with a new signed MISSION",
-                alternatives=["abandon", "renew with narrower scope"], requested={"horizon": "extend"}, now=now),
+                requested={"horizon": "extend", "spend": "none beyond the renewed mission's own budget"}, now=now,
+                resource={"resource": "mandate", "evidence": {"horizon": m.cone.horizon, "observed_at": iso(now),
+                                                             "spent_usd": m.spent_usd,
+                                                             "budget_usd": m.cone.budget_usd},
+                          "expected_effect": "the mission resumes inside a renewed, founder-signed mandate",
+                          "uncertainty": "GREG cannot know whether this goal still matters to you; its value is "
+                                         "not re-measured here",
+                          "options": [
+                              {"option": "renew with a new signed MISSION", "cost": "none in money; your signature",
+                               "expected_effect": "the mission resumes with the scope and budget you sign"},
+                              {"option": "renew with narrower scope", "cost": "none in money; your signature",
+                               "expected_effect": "the mission resumes with less authority"},
+                              {"option": "abandon", "cost": "none",
+                               "expected_effect": "the mission ends; nothing further runs for it"}]}),
                 "why": "mandate expired", "reconsider": "founder renews or abandons"})
             return {"state": "BLOCKED", "blocker": m.blocker}
         if m.blocker and m.blocker.get("failing_checks") and not self._blocker_resolved(m)[0]:
@@ -614,12 +641,97 @@ class MissionEngine:
         rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}),
                             action_id=None, why=f"missing capability for {purpose}",
                             recommendation="attach a verified capability for this function, or revise the mission",
-                            alternatives=["provide an API key/connector", "revise the strategy", "abandon"],
-                            requested={"function": function}, now=now)
+                            requested={"function": function,
+                                       "spend": "none requested; any account, license or purchase is yours to make"},
+                            now=now, resource=self._capability_ask(m, function, purpose))
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
                         "reconsider": "a verified capability for this function is attached"})
         return None
+
+    def _capability_ask(self, m: MissionState, function: str, purpose: str) -> dict:
+        """Section 60 for a missing capability: what was searched, what each route costs."""
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == m.mission_id and e.payload["function"] == function]
+        deficit_id = opened[-1]["deficit_id"] if opened else None
+        routes = [{"route": e.payload["route"], "result": e.payload["result"]}
+                  for e in self.journal.replay("genesis.route") if deficit_id and e.payload["deficit_id"] == deficit_id]
+        evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
+                    "searched": routes or [{"route": "genesis", "result": "not available on this body"
+                                            if self.genesis is None else "no route recorded"}],
+                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id]}
+                                   for c in self.registry.by_function(function)]}
+        return {"resource": "capability", "evidence": evidence,
+                "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
+                                   f"{function} is attached",
+                "uncertainty": "whether a service, tool or build passes the frozen verification is unknown until "
+                               "it is tried; no provider price was looked up",
+                "options": [
+                    {"option": "provide an API key/connector for a service that performs this function (held by "
+                               "the secret broker, never written to the ledger)",
+                     "cost": "the provider's price, if any; the credential is exposed to that provider",
+                     "expected_effect": "a capability using it can be verified and attached; the mission resumes"},
+                    {"option": "install software that performs this function; genesis verifies it before attaching",
+                     "cost": "your installation time; the software's license",
+                     "expected_effect": "attached only if it passes the frozen verification; the mission resumes"},
+                    {"option": "add a capability contract (examples and held-out cases) so a bounded adapter can be "
+                               "built and verified",
+                     "cost": "none in money; model time if you selected a model route",
+                     "expected_effect": "a built capability attaches only after it passes the held-out cases"},
+                    {"option": "revise the strategy", "cost": "none",
+                     "expected_effect": "the mission continues on strategies that do not need this function"},
+                    {"option": "abandon", "cost": "none",
+                     "expected_effect": "the mission ends; nothing further runs for it"}]}
+
+    def _access_ask(self, m: MissionState, aid: str, manifest, gap: dict, now: datetime) -> str | None:
+        """Section 60, "I need access to this account to answer reliably": the action worked,
+        but a service refused reads a credential would allow. Informational, never a blocker;
+        one ask per credential per mission. Asking grants nothing: only Alfonso stores a
+        credential, on the body, with `greg secret set`."""
+        handle = gap.get("credential")
+        if handle not in manifest.credentials:
+            return None                     # a capability may only ask for a handle it declares
+        refused = gap["evidence"].get("refused", {})
+        return self._request(
+            m, kind="ACCOUNT_ACCESS", scope_digest=sha256_json({"credential": handle}), action_id=aid,
+            why=f"{gap['service']} refused {len(refused) or 'some'} read(s) this mission needed; "
+                "the result was delivered with those gaps listed",
+            recommendation=f"if you want complete answers, create a read-only token for these repositories and "
+                           f"store it on this body with: greg secret set {handle}",
+            requested={"credential": f"{handle}: read-only; held by the secret broker on this body, never in the "
+                                     "ledger, revocable by you at any time",
+                       "spend": "none requested"},
+            now=now,
+            resource={"resource": "account_access", "evidence": gap["evidence"],
+                      "expected_effect": "later runs read what was refused, so the gaps listed in the result close",
+                      "uncertainty": "GitHub does not say which refusals were rate limits and which were missing "
+                                     "access; some may clear on their own, and a token only helps for repositories "
+                                     "it is granted",
+                      "options": [
+                          {"option": f"store a read-only token with: greg secret set {handle}",
+                           "cost": "none in money; the token can read what you grant it until you revoke it",
+                           "expected_effect": "authenticated reads; the refused repositories are read on the next run"},
+                          {"option": "narrow the mission to fewer repositories", "cost": "none",
+                           "expected_effect": "fewer calls; the remaining repositories are more likely to be read"},
+                          {"option": "do nothing: keep results with their gaps listed", "cost": "none",
+                           "expected_effect": "results stay partial; every gap stays visible in each result"}]})
+
+    def _spend_ask(self, m: MissionState, s: dict, outcome, routing_decision: dict) -> dict:
+        """Section 60 for money: an approval that spends is a resource ask with its own evidence."""
+        cost = float(s["cost_usd"])
+        others = [x["action_id"] for x in m.spec["strategies"] if x["action_id"] != s["action_id"]][:5]
+        return {"resource": "spend",
+                "evidence": {"policy": [str(r)[:300] for r in outcome.reasons], "routing": routing_decision,
+                             "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}},
+                "expected_effect": f"advances {sorted(s['advances'])} if the action succeeds",
+                "uncertainty": f"estimated reliability {routing_decision['reliability']:.2f} from this body's "
+                               "record of the capability; the outcome is re-observed, never assumed",
+                "options": [
+                    {"option": f"approve {s['action_id']}", "cost": f"${cost:.2f} from this mission's budget",
+                     "expected_effect": f"runs once; advances {sorted(s['advances'])} if it succeeds"},
+                    {"option": "reject: the mission will try alternatives or ask again", "cost": "none",
+                     "expected_effect": "no money is spent; the mission tries " + (", ".join(others) or
+                                                                                 "no other strategy") + " or asks again"}]}
 
     def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list) -> dict:
         candidates = []
@@ -642,8 +754,11 @@ class MissionEngine:
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
                                 why="every strategy for the failing checks is exhausted, refused or excluded",
                                 recommendation="add or revise strategies, widen scope, or abandon the mission",
-                                alternatives=[f"{a}: {r}" for a, r in sorted({**m.failed, **m.excluded}.items())][:10],
-                                requested={"failing_checks": sorted(failing)}, now=now)
+                                alternatives=["add or revise strategies for the failing checks", "widen the scope",
+                                              "abandon the mission"],
+                                requested={"failing_checks": sorted(failing)}, now=now,
+                                evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
+                                          "excluded": dict(sorted(m.excluded.items()))})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
@@ -687,7 +802,11 @@ class MissionEngine:
                                 + ["reject: the mission will try alternatives or ask again"],
                                 requested={"capability": manifest.capability_id, "target": s["target"],
                                            "consequence_class": manifest.consequence_class,
-                                           "cost_usd": s.get("cost_usd", 0.0)}, now=now)
+                                           "cost_usd": s.get("cost_usd", 0.0),
+                                           **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
+                                              if float(s.get("cost_usd", 0.0)) > 0 else {})},
+                                now=now, resource=self._spend_ask(m, s, outcome, routing_decision)
+                                if float(s.get("cost_usd", 0.0)) > 0 else None)
             self._block(m, {"type": "decision", "request_id": rid, "action_id": aid, "why": record["reasons"][:3],
                             "reconsider": "founder approves or rejects this exact scope"})
             return {"state": "WAITING", "blocker": m.blocker}
@@ -704,6 +823,8 @@ class MissionEngine:
                             "why": "uncertain completion; no blind retry",
                             "reconsider": "founder reconciliation decision"})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
+            self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

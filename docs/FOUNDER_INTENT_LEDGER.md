@@ -2,6 +2,8 @@
 
 # Founder Intent Ledger
 
+The two September 30 master-directive records below describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.
+
 ## Master build directive and current gate repair — 2026-09-30
 
 `INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
@@ -23,6 +25,9 @@ one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
 The Chromebook is the candidate under the preserved September 26 hardware
 correction; actual Linux availability, founder key custody, installation and
 acceptance still require a real run. No local test increments that milestone.
+## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
+
+`INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.
 
 ## Developmental inheritance — 2026-09-30
 

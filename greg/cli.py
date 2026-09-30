@@ -49,6 +49,22 @@ def _passphrase(args) -> bytes | None:
     return getpass.getpass("founder key passphrase: ").encode() or None
 
 
+def _known_handles() -> set:
+    """Credential handles something in GREG declares; a typo must not store an unused secret."""
+    from greg.capabilities import BUILTINS
+    return {h for manifest, _ in BUILTINS.values() for h in manifest.credentials} | {"anthropic_api_key",
+                                                                                    "openai_api_key"}
+
+
+def _secret_value(name: str) -> str:
+    """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
+    value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
+    value = value.strip()
+    if not value:
+        raise BodyError("no value given; nothing stored")
+    return value
+
+
 def _drop(home: str, kind: str, body: dict, args) -> Path:
     key = load_founder_key(args.key, _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
@@ -162,6 +178,11 @@ def main(argv=None) -> int:
     ae.add_argument("--out", required=True, help="witness bundle path outside GREG's home; extended append-only")
     sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
+    se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
+    ses = se.add_subparsers(dest="secret_cmd", required=True)
+    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    ses.add_parser("remove").add_argument("name")
+    ses.add_parser("list", help="handle names only; values are never printed")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
@@ -382,12 +403,26 @@ def main(argv=None) -> int:
             print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "
                   f"tailscale serve --bg --https=443 http://{args.host}:{args.port}", flush=True)
             return serve(home, args.host, args.port)
+        elif args.cmd == "secret":
+            from greg.capabilities import SecretBroker
+            broker, known = SecretBroker(Layout(home).secrets), _known_handles()
+            if args.secret_cmd == "list":
+                print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
+            elif args.name not in known:
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.secret_cmd == "set":
+                broker.put(args.name, _secret_value(args.name))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
+                                  "never the ledger", "read_by": "only capabilities that declare this handle"}, indent=1))
+            else:
+                print(json.dumps({"removed": args.name if broker.remove(args.name) else None}, indent=1))
         elif args.cmd == "start":
             stop = Layout(home).stop_file
             prior = stop.read_text() if stop.exists() else None
             stop.unlink(missing_ok=True)
-            print(json.dumps({"cleared_stop": prior, "next": "launchctl kickstart gui/$(id -u)/"
-                              + service.LABEL + "  (or start the supervisor unit)"}, indent=1))
+            restart = ("launchctl kickstart gui/$(id -u)/" + service.LABEL if sys.platform == "darwin"
+                       else "systemctl --user start greg-body.service")
+            print(json.dumps({"cleared_stop": prior, "next": restart + "  (or start the supervisor unit)"}, indent=1))
         elif args.cmd == "learning":
             from greg import improvement
             with observe(home, actor="spiffe://uniimente.internal/greg/cli") as journal:

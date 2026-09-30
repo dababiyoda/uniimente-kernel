@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
+from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -616,8 +616,7 @@ def status(home: str | Path) -> dict:
             "goals": [{"mission_id": mid, "intended_effect": spec["intended_effect"],
                        "closure": spec["closure"]["kind"], "achieved": mid in achieved}
                       for mid, spec in registered.items()],
-            "decisions_required": [{"request_id": r["request_id"], "kind": r["kind"], "why_now": r["why_now"],
-                                    "recommendation": r["recommendation"]} for r in requests],
+            "decisions_required": [asks.surface(r) for r in requests],
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from greg import asks
 from greg.journal import Journal, iso
 from provenance.ledger import sha256_json
 
@@ -201,28 +202,38 @@ def recommend(journal: Journal, *, now: datetime, platform_hint: str | None = No
                     "open the Linux terminal after every restart or login (no spend)"
                     if platform_hint == "chromeos" else
                     "keep this computer signed in, powered and awake during mission hours (no spend)")
-    message = {
-        "request_id": request_id, "mission_id": None, "kind": "BODY_AVAILABILITY", "action_id": None,
-        "scope_digest": sha256_json({"window": found["window"], "availability": found["availability"]}),
-        "why_now": (f"the body was present {found['availability']:.0%} of the last "
-                    f"{int(REVIEW_WINDOW.total_seconds() // 3600)}h outside deliberate stops; "
-                    f"{len(found['late_observations'])} due observation(s) ran late, worst "
-                    f"{worst['late_seconds'] / 3600:.1f}h ({worst['mission_id']})"),
-        "recommendation": "first try the two no-spend options; if availability stays below "
-                          f"{AVAILABILITY_THRESHOLD:.0%} with late observations, ask GREG for a bounded "
-                          "read-only research mission comparing always-on hardware you would own",
-        "alternatives": [keep_present,
-                         "match mission cadence to measured availability; missions stay durable and run late (no spend)",
-                         "an always-on computer you own, enrolled as its own body (capital purchase; your installation)",
-                         "a rented always-on host (metered; not hardware you own; data and credentials leave this computer)",
-                         "do nothing: missions resume late when the body returns"],
-        "authority_requested": {"spend": "none requested; any purchase, rental or enrollment is a separate founder decision"},
-        "argued_from": "mission lateness measured from retained history; never the body's own continuation",
-        "consequence_of_no_response": "missions stay durable and resume late; nothing is bought, rented or enrolled",
-        "evidence": {"availability": found["availability"], "absences": found["absences"][-10:],
-                     "late_observations": found["late_observations"][-10:]},
-        "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE",
-        "uncertainty": "availability is measured on this body only; future use patterns may differ",
-    }
-    journal.record("decision.requested", message, key=request_id)
-    return message
+    message = asks.resource_request(
+        request_id=request_id, kind="BODY_AVAILABILITY", resource="availability",
+        scope_digest=sha256_json({"window": found["window"], "availability": found["availability"]}),
+        why_now=(f"the body was present {found['availability']:.0%} of the last "
+                 f"{int(REVIEW_WINDOW.total_seconds() // 3600)}h outside deliberate stops; "
+                 f"{len(found['late_observations'])} due observation(s) ran late, worst "
+                 f"{worst['late_seconds'] / 3600:.1f}h ({worst['mission_id']})"),
+        recommendation="first try the two no-spend options; if availability stays below "
+                       f"{AVAILABILITY_THRESHOLD:.0%} with late observations, ask GREG for a bounded "
+                       "read-only research mission comparing always-on hardware you would own",
+        expected_effect=f"due mission observations run on time; availability measured above "
+                        f"{AVAILABILITY_THRESHOLD:.0%} over the next {int(REVIEW_WINDOW.total_seconds() // 3600)}h",
+        options=[
+            {"option": keep_present, "cost": "none in money; your routine",
+             "expected_effect": "the body is present during mission hours; measured by greg presence"},
+            {"option": "match mission cadence to measured availability; missions stay durable and run late (no spend)",
+             "cost": "none", "expected_effect": "fewer observations fall due while the body is away"},
+            {"option": "an always-on computer you own, enrolled as its own body (capital purchase; your installation)",
+             "cost": "hardware price and your installation time",
+             "expected_effect": "missions run while this computer sleeps; the new body has its own bounded identity"},
+            {"option": "a rented always-on host (metered; not hardware you own; data and credentials leave this "
+                       "computer)",
+             "cost": "metered rental; data and credential exposure to the host",
+             "expected_effect": "missions run around the clock on hardware you do not own"},
+            {"option": "do nothing: missions resume late when the body returns", "cost": "none",
+             "expected_effect": "missions stay durable and finish later"}],
+        evidence={"availability": found["availability"], "absences": found["absences"][-10:],
+                  "late_observations": found["late_observations"][-10:]},
+        uncertainty="availability is measured on this body only; future use patterns may differ",
+        authority_requested={"spend": "none requested; any purchase, rental or enrollment is a separate founder "
+                                      "decision"},
+        consequence_of_no_response="missions stay durable and resume late; nothing is bought, rented or enrolled",
+        created_at=iso(now),
+        argued_from="mission lateness measured from retained history; never the body's own continuation")
+    return asks.record(journal, message, quoted=[o["mission_id"] for o in found["late_observations"]])

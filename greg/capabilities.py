@@ -180,6 +180,16 @@ class SecretBroker:
         with os.fdopen(fd, "w") as fh:
             json.dump(data, fh)
 
+    def remove(self, name: str) -> bool:
+        data = self._file()
+        if name not in data:
+            return False
+        del data[name]
+        fd = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            json.dump(data, fh)
+        return True
+
     def names(self) -> list[str]:
         return sorted(self._file())
 

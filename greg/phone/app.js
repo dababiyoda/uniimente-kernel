@@ -56,7 +56,11 @@ function renderDecisions(list) {
   for (const r of list) {
     const card = el("article", null, "card");
     card.dataset.requestId = r.request_id;
-    card.append(el("h3", `${r.kind} · ${r.mission_id}`), el("p", r.why_now), el("p", "Recommendation: " + r.recommendation, "muted"));
+    card.append(el("h3", r.mission_id ? `${r.kind} · ${r.mission_id}` : r.kind), el("p", r.why_now), el("p", "Recommendation: " + r.recommendation, "muted"));
+    if (r.wording_withheld) card.append(el("p", "GREG's wording was withheld (" + r.wording_withheld.rules.join(", ") + "); the facts and options are unchanged."));
+    if (r.expected_effect) card.append(el("p", "Expected effect: " + r.expected_effect));
+    for (const o of r.options || []) card.append(el("p", `• ${o.option} — ${o.cost} — ${o.expected_effect}`, "muted"));
+    if (r.uncertainty) card.append(el("p", "Uncertainty: " + r.uncertainty, "muted"));
     const reason = el("input"); reason.placeholder = "reason (optional)"; reason.setAttribute("aria-label", "reason");
     const approve = el("button", "Approve"); approve.className = "approve";
     const reject = el("button", "Reject"); reject.className = "reject";
@@ -90,7 +94,7 @@ async function main() {
   $("enroll").textContent = `greg device enroll --pubkey ${device.publicHex} --label phone --key ~/.greg-founder.pem`;
   $("pause").onclick = () => send("BODY_PAUSE", {});
   $("resume").onclick = () => send("BODY_RESUME", {});
-  $("stop").onclick = () => { if (confirm("Stop GREG? It stays stopped until restarted on the Mac.")) send("BODY_STOP", {}); };
+  $("stop").onclick = () => { if (confirm("Stop GREG? It stays stopped until someone at the body's computer runs greg start.")) send("BODY_STOP", {}); };
   $("refresh").onclick = refresh;
   document.body.dataset.ready = "true";
   await refresh();

@@ -1,0 +1,32 @@
+{
+ "command": "python -m foundry.completion --run 30",
+ "name": "API gateway and Consequence Gate",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "chain_ok": true,
+  "explosion": "reconciliation_required",
+  "explosion_evidence_kept": true,
+  "ledger_record_types": [
+   "event",
+   "genesis",
+   "grant_dispatch",
+   "outcome",
+   "receipt",
+   "witness"
+  ],
+  "no_identity": "refused",
+  "pipeline": [
+   "proposed",
+   "evaluating",
+   "granted",
+   "executing",
+   "committed",
+   "recorded"
+  ],
+  "recorded": "recorded",
+  "weak_evidence": "refused",
+  "witnessed": true
+ },
+ "result_sha256": "sha256:3a8d57350e108f5d92411cbdd6cf6579407873265969eeb730233f90a077f2d9",
+ "system": 30
+}

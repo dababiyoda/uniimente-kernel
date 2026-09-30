@@ -1,0 +1,40 @@
+{
+ "command": "python -m foundry.completion --run 13",
+ "name": "Linkers and component composition",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "linked_with_attached_genome": "ca1090f0b18f92e8",
+  "plan_authority": "read_only",
+  "price": 391.39500000000004,
+  "refusals": {
+   "authority_ceiling": "composite authority internal_write exceeds granted ceiling read_only",
+   "genome_not_attached": "price uses genome 'pricing', which is not attached in the registry",
+   "missing_provider": "price needs trust:float but no earlier stage provides it",
+   "tampered_plan": "plan changed after linking",
+   "type_mismatch": "type mismatch at price: needs trust:list, earlier stage provides trust:float",
+   "unknown_op": "system 41 has no op 'rewrite_history'"
+  },
+  "trace": [
+   {
+    "op": "score",
+    "provided": [
+     "trust"
+    ],
+    "stage": "rate",
+    "system": 41
+   },
+   {
+    "op": "run",
+    "provided": [
+     "price"
+    ],
+    "stage": "price",
+    "system": 2
+   }
+  ],
+  "trust": 0.6093,
+  "write_plan_authority": "internal_write"
+ },
+ "result_sha256": "sha256:830499a53e4dfa301bbc7343d139fcaaf1a503fa2bb5f5e51aa160472aa6f957",
+ "system": 13
+}

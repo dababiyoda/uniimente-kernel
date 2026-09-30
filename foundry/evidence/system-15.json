@@ -1,0 +1,19 @@
+{
+ "command": "python -m foundry.completion --run 15",
+ "name": "Workflow engines",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "approval_blocks_without_approver": true,
+  "compensation_order": [
+   "draft",
+   "research"
+  ],
+  "deliver_attempts": 2,
+  "failure_compensated": true,
+  "killed_mid_flight": true,
+  "no_step_repeated": true,
+  "resumed_status": "completed"
+ },
+ "result_sha256": "sha256:d0b8ee4a6db10619d86a7ee6b202afc6b3a999b340fa4b7a88f62dbe34045ada",
+ "system": 15
+}

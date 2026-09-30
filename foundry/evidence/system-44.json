@@ -1,0 +1,131 @@
+{
+ "command": "python -m foundry.completion --run 44",
+ "name": "Observability systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "otel_first": "mission.registered",
+  "otel_span_count": 24,
+  "trace_m_quotes": [
+   "mission.registered",
+   "decision.requested",
+   "decision.answered",
+   "mission.action",
+   "mission.achieved",
+   "mission.appraised"
+  ],
+  "week1": {
+   "actions": 2.0,
+   "blocks": 0,
+   "closures": 2.0,
+   "cost_usd": 0.04,
+   "decision_latency_s": 300.0,
+   "verified_rate": 1.0
+  },
+  "week2": {
+   "actions": 2.0,
+   "blocks": 1.0,
+   "closures": 1.0,
+   "cost_usd": 0.04,
+   "decision_latency_s": 1050.0,
+   "verified_rate": 0.5
+  },
+  "why_closures_fell": {
+   "after": 1.0,
+   "before": 2.0,
+   "direction": "down",
+   "drivers": [
+    {
+     "after": [
+      0,
+      0
+     ],
+     "after_window_anomalies": [
+      {
+       "event_id": "ev-017",
+       "kind": "mission.blocked",
+       "reason": "assessment contract violation"
+      },
+      {
+       "event_id": "ev-018",
+       "kind": "mission.appraised",
+       "verdict": "REFUTED"
+      }
+     ],
+     "before": [
+      1.0,
+      1
+     ],
+     "capability": "wmi.assess",
+     "delta": -1.0,
+     "events": [
+      "ev-005"
+     ],
+     "mission_id": "m:quotes"
+    }
+   ],
+   "metric": "closures"
+  },
+  "why_latency_rose": [
+   {
+    "after": [
+     1800.0,
+     1.0
+    ],
+    "after_window_anomalies": [
+     {
+      "event_id": "ev-017",
+      "kind": "mission.blocked",
+      "reason": "assessment contract violation"
+     },
+     {
+      "event_id": "ev-018",
+      "kind": "mission.appraised",
+      "verdict": "REFUTED"
+     }
+    ],
+    "before": [
+     300.0,
+     1.0
+    ],
+    "capability": "-",
+    "delta": 1500.0,
+    "events": [
+     "ev-015"
+    ],
+    "mission_id": "m:quotes"
+   }
+  ],
+  "why_verified_rate_fell": [
+   {
+    "after": [
+     0.0,
+     1.0
+    ],
+    "after_window_anomalies": [
+     {
+      "event_id": "ev-017",
+      "kind": "mission.blocked",
+      "reason": "assessment contract violation"
+     },
+     {
+      "event_id": "ev-018",
+      "kind": "mission.appraised",
+      "verdict": "REFUTED"
+     }
+    ],
+    "before": [
+     1.0,
+     1.0
+    ],
+    "capability": "wmi.assess",
+    "delta": -1.0,
+    "events": [
+     "ev-018"
+    ],
+    "mission_id": "m:quotes"
+   }
+  ]
+ },
+ "result_sha256": "sha256:a6519c86bd468097644e5e549be3812608cb0a0fec7f66e58a9b4fca53f25b5a",
+ "system": 44
+}

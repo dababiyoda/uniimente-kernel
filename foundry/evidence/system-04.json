@@ -1,0 +1,51 @@
+{
+ "command": "python -m foundry.completion --run 4",
+ "name": "Databases",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "backup_written": true,
+  "down": [
+   "down 3",
+   "down 2"
+  ],
+  "lossless_round_trip": true,
+  "migrations": [
+   "up 1",
+   "up 2",
+   "up 3"
+  ],
+  "mission_ledger": [
+   {
+    "actions_done": 2,
+    "authority": "approve,approve",
+    "cost_usd": 0.04,
+    "expression": "m:quotes",
+    "last_verdict": "REFUTED",
+    "mission_id": "m:quotes",
+    "revenue_cents": 0
+   },
+   {
+    "actions_done": 2,
+    "authority": "approve,approve",
+    "cost_usd": 0.04,
+    "expression": "m:research",
+    "last_verdict": "VERIFIED",
+    "mission_id": "m:research",
+    "revenue_cents": 90000
+   }
+  ],
+  "refusals": {
+   "duplicate": "money record refused: UNIQUE constraint failed: money.id",
+   "float_money": "money is integer cents",
+   "no_evidence": "money without evidence is not recorded"
+  },
+  "rows_first_ingest": 18,
+  "rows_second_ingest": 0,
+  "up_again": [
+   "up 2",
+   "up 3"
+  ]
+ },
+ "result_sha256": "sha256:4997565f4a501cb8ca3b6e71254ad96b8d6c3891e1075e4ceebe45a0f12e0ad8",
+ "system": 4
+}

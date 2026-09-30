@@ -1,0 +1,28 @@
+{
+  "check": "PR #83 branch round-trip integrity",
+  "subject": "branch kimi/independent-verification-8cb3074a (draft PR #83)",
+  "verified_by": "kimi independent audit session",
+  "method": "re-fetched via GitHub API at refs/heads/kimi/independent-verification-8cb3074a; API-reported blob SHAs compared against local byte-computed blob SHAs (and the SHAs recorded at push time)",
+  "results": [
+    {
+      "path": "docs/audit/INDEPENDENT_VERIFICATION_8cb3074a.md",
+      "remote_sha": "7897cc51bd82b3181f374c3622393dffa48eacb7",
+      "local_sha": "7897cc51bd82b3181f374c3622393dffa48eacb7",
+      "match": true
+    },
+    {
+      "path": "docs/audit/runs-8cb3074a/pytest-full.txt",
+      "remote_sha": "584f50fbce3bdb4e1d63783c78887619c2bcdaca",
+      "local_sha": "584f50fbce3bdb4e1d63783c78887619c2bcdaca",
+      "match": true
+    },
+    {
+      "path": "verifier/verify.py (patched C2 == 13)",
+      "remote_sha": "b4a89d30f6068ab01e635f2c3e338a7c99982299",
+      "local_sha": "b4a89d30f6068ab01e635f2c3e338a7c99982299 (recorded at push)",
+      "match": true
+    }
+  ],
+  "conclusion": "Published branch content is byte-identical to the artifacts this session produced and measured. No drift between local evidence and published evidence.",
+  "recorded_at_utc": "2026-08-21T19:33:55.574775+00:00"
+}

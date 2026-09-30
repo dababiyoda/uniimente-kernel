@@ -1,0 +1,14 @@
+ts_utc: 2026-08-21T18:57:02.834602+00:00
+command: python3 scripts/ci/check_authority_singleton.py
+---
+artifact             found  paths
+Constitution         1      constitution/constitution.ucl
+Consequence Gate     1      policy/consequence_gate.py
+Authority matrix     1      authority/authority-matrix.yaml
+Legal principals     1      authority/legal-principals.yaml
+Organ registry       1      identity/organ-registry.yaml
+Agent registry       1      identity/agent-registry.yaml
+
+exactly one source of authority for each governed artifact
+---
+exit_code: 0

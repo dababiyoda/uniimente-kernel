@@ -88,5 +88,21 @@
     "exact_commit_published": true,
     "ci": "No run observed; manual Canonical CI dispatch rejected HTTP401 Bad credentials",
     "merged": false
+  },
+  "convergence_continuation": {
+    "claude_base": "a4eeb70820117f9a0f74f1496173e3af0f770afa",
+    "measured_code_commit": "673726ae70726009435dcf364cdfb286b123cf31",
+    "tracked_tree": "clean",
+    "verifier_record": "verifier/runs/v2-2026-09-30T20-13-47.051018+00-00.json",
+    "verifier": "PASS V1-V5; 1098 unit tests passed, 14 skipped, 292.02s",
+    "integration": "102 passed, 53.96s",
+    "focused": "105 passed, 43.23s",
+    "pre_correction_combined_audit": "87 passed, 36.58s",
+    "remote_ci": {
+      "url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36770727029",
+      "observed_at_recording": "Four jobs successful, Kernel/organ full tests+verifier in progress. Final status reported in PR body and session response."
+    },
+    "negative_evidence": "Claude rehearsal advanced N1->N2 using test key/container; preserved as useful structural evidence, now refuses external gate advancement",
+    "reality": "UNIT/INTEGRATION-TESTED; no externally verified VEPMC; no physical founder-body proof"
   }
 }

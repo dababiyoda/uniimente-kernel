@@ -41,10 +41,13 @@ FOUNDER_HORIZONS = [
     "multiple physical computing bodies", "sensors", "actuators", "future robotics or physical capabilities",
     "future technologies not currently known",
 ]
-# Every kernel PR open when this session began (2026-09-30), verified via the GitHub API.
-OPEN_KERNEL_PRS = {63, 64, 66, 68, 70, 71, 72, 73, 76, 77, 78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101,
-                   102, 105, 108, 109, 110, 111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129,
-                   130, 131, 132, 133, 134}
+# Every kernel PR open on 2026-09-30 except this one (#137), read from the GitHub API with pagination.
+# Negative evidence: the first pass read one page and missed the 30 July PRs (#11-#62); they were
+# found and placed later the same day (placements kernel_sdk_extraction_11_16 ... pr58_62_developmental_substrate).
+OPEN_KERNEL_PRS = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 35, 44, 46, 51,
+                   52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 66, 68, 70, 71, 72, 73, 76, 77,
+                   78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101, 102, 105, 108, 109, 110,
+                   111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134}
 # The founder's worked example: a Mac-first lineage after the Chromebook correction.
 FOUNDER_MAC_EXAMPLE = {
     "mac.first_body_assumption": {"SUPERSEDED_IMPLEMENTATION_ASSUMPTION"},

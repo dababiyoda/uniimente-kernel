@@ -1036,6 +1036,297 @@
       ],
       "activation_evidence": "Cited as a source in a Genesis search record",
       "adaptation": "Add it to Genesis's documented search sources as a mechanism index, never as a cloning roadmap"
+    },
+    {
+      "id": "kernel_sdk_extraction_11_16",
+      "lineage": [
+        "#11",
+        "#12",
+        "#13",
+        "#14",
+        "#15",
+        "#16",
+        "DALEOBANKS#58",
+        "DALEOBANKS#59"
+      ],
+      "intended_effect": "One canonical implementation of each governance module (decision ledger, raw vault, capability service, prompt firewall, ContextPacket builders, constitution guard, heartbeat, approval queue) that organs import instead of carrying their own",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "adapters/bridge_transport.py",
+        "provenance/ledger.py"
+      ],
+      "adaptation": "The kernel converged on top-level canonical modules and a pinned boundary package (4999acf), not sdk-python/uniimente_kernel, so these PRs conflict with main (140+ commits behind). None of the eight modules exists on kernel main; DALEOBANKS main still carries its own ledger.py, raw_vault.py, heartbeat.py, constitution.py and prompt_firewall.py, and DALEOBANKS #58/#59 pin this unmerged branch (phase2/sdk-package-absorption). Re-extract onto main's layout, then retarget #58/#59 to the pinned boundary.",
+      "activation_evidence": "DALEOBANKS imports each governance module from the pinned kernel boundary and its suite passes; no organ-local copy stays active",
+      "measured_2026_09_30": "ahead 3-23, behind 143, conflicts; DALEOBANKS #58+#59 merge cleanly onto DALEOBANKS main but require the unmerged kernel branch"
+    },
+    {
+      "id": "kernel_phase_stack_landed_canonically",
+      "lineage": [
+        "#17",
+        "#18",
+        "#19",
+        "#21",
+        "#22",
+        "#23",
+        "#24",
+        "#25",
+        "#26"
+      ],
+      "intended_effect": "Wire contracts, a durable event spine, commit witness, a Consequence Gate, a UCL constitutional compiler, evolution cycles and a real adapter loop",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "policy/consequence_gate.py",
+        "events/spine.py",
+        "provenance/commit_witness.py",
+        "compiler/ucl_compiler.py",
+        "evolution",
+        "contracts/wire-opportunity-packet.schema.json",
+        "contracts/wire-venture-assessment.schema.json"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "The governed consequence path: typed contracts, event spine, witness, gate, compiled constitution, evolution",
+        "q2_still_in_destination": "Yes: GREG's body imports compile_constitution, EventSpine and WitnessSigner from these canonical modules",
+        "q3_assumption_that_became_false": "That the kernel ships as an SDK package (sdk-python/uniimente_kernel) versioned per phase",
+        "q4_replace_without_discarding": "Yes: each mechanism exists on main at its canonical top-level home",
+        "q5_portable_parts": "Their tests and run records as regression evidence",
+        "q6_later_node_parts": "None beyond what main carries",
+        "q7_extract_into_current_path": "Already on main; #17's venture-signal/signal-assessment schemas became the wire v1.1 contracts",
+        "q8_incompatible_with_corrected_destination": "A second packaging of the same authority modules",
+        "q9_cheapest_distinguishing_test": "For each module, compare main's implementation with the PR's; open a follow-up only where the PR has a behavior main lacks"
+      },
+      "measured_2026_09_30": "ahead 12-49, behind 140-143, all conflict; canonical modules present on main"
+    },
+    {
+      "id": "pr20_egregore_vision_55",
+      "lineage": [
+        "#20"
+      ],
+      "intended_effect": "The grand egregore vision and the complete 55-technology asymmetric arsenal",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "docs/intent/INTENT-2026-09-27-FOUNDRY-55.json",
+        "foundry"
+      ],
+      "activation_evidence": "FOUNDRY-55 carries all 55 systems as active obligations sequenced after VEPMC"
+    },
+    {
+      "id": "pr35_proof_to_settlement_rail",
+      "lineage": [
+        "#35"
+      ],
+      "intended_effect": "Verified outcome credentials that settle through a proof-to-settlement trust rail",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "provenance/ledger.py"
+      ],
+      "activation_evidence": "One real transaction settles against a verified outcome credential under founder authority"
+    },
+    {
+      "id": "pr44_morphogenetic_runtime",
+      "lineage": [
+        "#44"
+      ],
+      "intended_effect": "Functional capability formation (read literally as cells and gene-regulatory networks)",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "morphogenesis",
+        "developmental",
+        "greg/genesis.py"
+      ],
+      "activation_evidence": "INTENT-0030 regressed the literal framing; greg/genesis.py carries the effect"
+    },
+    {
+      "id": "pr46_pumpstation_venture_cell",
+      "lineage": [
+        "#46"
+      ],
+      "intended_effect": "PumpStation registered as an inactive, governed Venture Cell",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [],
+      "activation_evidence": "Founder registers the cell after a first verified business loop (N3); merges cleanly today"
+    },
+    {
+      "id": "pr51_cognitive_kingmaker",
+      "lineage": [
+        "#51"
+      ],
+      "intended_effect": "Route each cognitive task to the model or worker most likely to produce a novel, verified result",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N5",
+      "changed_axes": [
+        "sequence",
+        "provider"
+      ],
+      "surviving_mechanisms": [
+        "greg/models.py",
+        "greg/routing.py"
+      ],
+      "adaptation": "Port its routing-decision contract into greg/models.py only when a measured routing deficit exists; open-source-first applies to every route",
+      "activation_evidence": "A recorded routing decision beats the current router on held-out tasks"
+    },
+    {
+      "id": "pr52_founder_command_ordering",
+      "lineage": [
+        "#52"
+      ],
+      "intended_effect": "Founder commands cannot be replayed or applied out of order",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/founder.py",
+        "greg/body.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Ordered, non-replayable founder commands",
+        "q2_still_in_destination": "Yes",
+        "q3_assumption_that_became_false": "That ordering needs a separate guard design before any runtime",
+        "q4_replace_without_discarding": "Yes: GREG envelopes bind body, kind, window and nonce; nonces are retained; the inbox is processed in issue order",
+        "q5_portable_parts": "The CVO-001 readiness checklist in the same PR",
+        "q6_later_node_parts": "The readiness packet moves to N3 with #53",
+        "q7_extract_into_current_path": "Already enforced in greg/founder.py and greg/body.py",
+        "q8_incompatible_with_corrected_destination": "None",
+        "q9_cheapest_distinguishing_test": "Replay a signed envelope and reorder two envelopes against a body; both must be refused or ordered"
+      }
+    },
+    {
+      "id": "pr53_cvo001_venture_selection",
+      "lineage": [
+        "#53"
+      ],
+      "intended_effect": "Select the first venture (candidate C9) on evidence",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [],
+      "activation_evidence": "Founder chooses the first business for N3; merges cleanly today"
+    },
+    {
+      "id": "pr54_sbm_and_intent_schema",
+      "lineage": [
+        "#54"
+      ],
+      "intended_effect": "A single bottleneck metric, PumpStation as fourth organ, and machine-readable intent records",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/metrics.py",
+        "docs/FOUNDER_INTENT_LEDGER.md"
+      ],
+      "adaptation": "VEPMC became the metric; its contracts/intent.schema.json (absent on main) can validate docs/intent records in CI",
+      "activation_evidence": "Every docs/intent record validates against one schema in CI"
+    },
+    {
+      "id": "pr55_merge_train_recovery",
+      "lineage": [
+        "#55"
+      ],
+      "intended_effect": "Recover the July integration merge train",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md"
+      ],
+      "activation_evidence": "Superseded as an operation by this convergence; its analysis is evidence"
+    },
+    {
+      "id": "pr56_reality_aperture",
+      "lineage": [
+        "#56",
+        "DALEOBANKS#66"
+      ],
+      "intended_effect": "Proof-carrying authorization: nothing reaches the world without a certificate a verifier can check",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "changed_axes": [
+        "sequence",
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "policy/consequence_gate.py"
+      ],
+      "adaptation": "Rebuild the aperture certificate on the canonical Consequence Gate before DALEOBANKS publishes anything (its #66 is the companion)",
+      "activation_evidence": "A shadow publication carries a certificate the gate verifies; zero real publications without founder authority"
+    },
+    {
+      "id": "pr57_governed_functional_regeneration",
+      "lineage": [
+        "#57"
+      ],
+      "intended_effect": "A function identity that outlives any one implementation, restored under governance",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/genesis.py"
+      ],
+      "adaptation": "greg/genesis.py already repairs a lost function (quarantine, rebuild, reverify); port Gate E's identity checks where they are stronger",
+      "activation_evidence": "A repaired capability keeps its function identity across replacement in a real mission"
+    },
+    {
+      "id": "pr58_62_developmental_substrate",
+      "lineage": [
+        "#58",
+        "#59",
+        "#60",
+        "#62"
+      ],
+      "intended_effect": "Local competency and regeneration mechanisms (Gate F/G diffusion, causal escape, motif channels, multi-branch substrate)",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "developmental"
+      ],
+      "activation_evidence": "Research lineage under INTENT-0030; gates recorded OPEN/CLOSED as negative and positive evidence"
     }
   ]
 }

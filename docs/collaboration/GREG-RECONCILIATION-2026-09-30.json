@@ -32,70 +32,251 @@
   "intent_conflicts": [
     {
       "earlier": "#114/#122 and greg/FIRST_MISSION.md: first body is a founder-owned Mac; #122 titled 'first Mac mission path'",
-      "later": "Founder, 2026-09-26: 'I don't own a Mac… I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
+      "later": "Founder, 2026-09-26: 'I don't own a Mac\u2026 I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
       "same_scope": true,
       "resolution": "Later correction controls the first body. Mac runbook retained for other environments and a future recommended body. Converged branch follows the Chromebook route.",
-      "affected": ["greg/CHROMEBOOK_FIRST_MISSION.md", "greg/FIRST_MISSION.md", "#122 frontier record"]
+      "affected": [
+        "greg/CHROMEBOOK_FIRST_MISSION.md",
+        "greg/FIRST_MISSION.md",
+        "#122 frontier record"
+      ]
     },
     {
       "earlier": "greg/models.py available_routes default order ['anthropic','openai','claude-code']",
       "later": "INTENT-20260930-open-source-first: 'Normal AI routing must not select a paid provider merely because an API key exists'",
       "same_scope": true,
       "resolution": "Default route order is now empty; paid routes only when named by a founder selection (commit 476d6cc).",
-      "affected": ["greg/models.py", "greg/planner.py"]
+      "affected": [
+        "greg/models.py",
+        "greg/planner.py"
+      ]
     },
     {
       "earlier": "INTENT-2026-09-27-FOUNDRY-55: all 55 numbered systems are active obligations",
       "later": "2026-09-30 directive: cathedral detector ('STOP HORIZONTAL EXPANSION. Converge.') and VEPMC-first build order",
       "same_scope": false,
       "resolution": "Both stand. FOUNDRY-55 itself calls VEPMC-first 'a sequencing rule, not a license to delete'. #132 is STACKED NEXT on the converged base, not merged in this session.",
-      "affected": ["#132"]
+      "affected": [
+        "#132"
+      ]
     },
     {
       "earlier": "ONE-GREG-FRONTIER-2026-09-27: '#122 is the canonical frontier; no two canonical frontiers'",
       "later": "Chromebook line (#125..#134) forked from #122 at 73355d0 the same day and was also treated as the founder path (runbook pointed at codex/chromebook-first-body)",
       "same_scope": true,
       "resolution": "Both merged into one branch; the frontier record's rule is honored by convergence rather than by picking a side.",
-      "affected": ["docs/collaboration/ONE-GREG-FRONTIER-2026-09-27.md"]
+      "affected": [
+        "docs/collaboration/ONE-GREG-FRONTIER-2026-09-27.md"
+      ]
     }
   ],
   "lineages": [
-    {"pr": 113, "disposition": "PRODUCTIZE (converged)", "detail": "Body 1, Spider-Web, phone and browser; ancestor of this branch"},
-    {"pr": 114, "disposition": "PRODUCTIZE (converged)", "detail": "GREG product path; ancestor"},
-    {"pr": 101, "disposition": "SUPERSEDED (converged)", "detail": "first bounded local mission proof; ancestor via #113"},
-    {"pr": 102, "disposition": "SUPERSEDED (converged)", "detail": "embodied intent + morning review; ancestor via #113"},
-    {"pr": 108, "disposition": "SUPERSEDED (converged)", "detail": "first-body intent; ancestor"},
-    {"pr": 109, "disposition": "SUPERSEDED (converged)", "detail": "sandbox GoalChase integration; greg/missions.py is the canonical goal chase"},
-    {"pr": 110, "disposition": "SUPERSEDED (converged)", "detail": "host startup failures as blockers; ancestor"},
-    {"pr": 111, "disposition": "SUPERSEDED (converged)", "detail": "institutional leverage paths; ancestor"},
-    {"pr": 118, "disposition": "ABSORBED (converged)", "detail": "routing integrity; byte-identical in #122"},
-    {"pr": 120, "disposition": "ABSORBED (converged)", "detail": "learning gate; canonical learning engine greg/improvement.py"},
-    {"pr": 122, "disposition": "PRODUCTIZE (converged)", "detail": "11 post-fork repairs incl. held-out independence and unreachable-GitHub-as-gap; its 'canonical frontier' label is superseded by this branch"},
-    {"pr": 125, "disposition": "PRODUCTIZE (converged)", "detail": "Chromebook first body + honest VEPMC gate"},
-    {"pr": 126, "disposition": "PRODUCTIZE (converged)", "detail": "SOP promotion requires appraised closures"},
-    {"pr": 127, "disposition": "PRODUCTIZE (converged)", "detail": "UCL duplicate-assignment refusal"},
-    {"pr": 130, "disposition": "PRODUCTIZE (converged)", "detail": "founder-swappable local model route (Ollama)"},
-    {"pr": 131, "disposition": "PRODUCTIZE (converged)", "detail": "founder detachment respected during discovery"},
-    {"pr": 133, "disposition": "PRODUCTIZE (converged)", "detail": "institutional precedents usable by signed missions"},
-    {"pr": 134, "disposition": "PRODUCTIZE (converged)", "detail": "receipt-bound content-addressed artifacts"},
-    {"pr": 128, "disposition": "PRODUCTIZE (converged)", "detail": "per-closure appraisal of standing missions (fixes: daily briefs were never appraised); venture.assess. Conflicts resolved by union"},
-    {"pr": 132, "disposition": "STACKED NEXT", "detail": "Foundry-55 (active founder obligation); stacks on this branch with additive conflicts in greg/capabilities.py and greg/cli.py only; see stack_trial"},
-    {"pr": 124, "disposition": "EVIDENCE", "detail": "mechanisms ported to #128; revision-lineage sidecar deferred (would be a second evidence store)"},
-    {"pr": 121, "disposition": "DEFERRED until VEPMC = 1", "detail": "second learning engine; weaker retention rule; founder decision per ONE-GREG-FRONTIER 'unresolved 1'"},
-    {"pr": 119, "disposition": "SUPERSEDED", "detail": "mechanisms dispositioned in PR119-METABOLISM.md; durability falsifier ported"},
-    {"pr": 115, "disposition": "EXTRACTED", "detail": "RFC 3161 anchor is byte-identical on this branch; 55-technology arsenal docs remain in its history (Foundry-55 lineage continues in #132)"},
-    {"pr": 129, "disposition": "PORT MECHANISM later (not merged)", "detail": "egregore/parts.py duplicates GREG's attach/detach/quarantine lifecycle; shadow-trial-before-swap is the portable mechanism"},
-    {"pr": 105, "disposition": "NEEDS REVIEW against open-source-first", "detail": "weekly model-provider change intake; 13 commits on an older base; not inspected in depth"},
-    {"pr": 93, "disposition": "EVIDENCE", "detail": "sandbox goal chase; the founder-loop entry gate P1-P7 map onto greg/ mechanisms (supervised trigger, recovery, blockers, genesis), but this session did not re-verify each P item"},
-    {"pr": 94, "disposition": "EVIDENCE", "detail": "protected appraisal lineage; canonical appraiser is greg/appraisal.py (separate process)"},
-    {"pr": 97, "disposition": "EVIDENCE", "detail": "goal-chase duplicate-interruption fix on the sandbox lineage"},
-    {"pr": [63, 64, 66, 68, 88, 90, 92], "disposition": "ARCHIVE / EVIDENCE", "detail": "literal developmental and organizational-morphogenesis lineage; regressed by INTENT-0030, preserved as mechanism research"},
-    {"pr": [70, 73], "disposition": "EVIDENCE; EXTRACT later", "detail": "#70 runtime ownership superseded by greg/body.py; #73 MCP/A2A boundary mechanisms are a future-technology-absorption source"},
-    {"pr": [71, 86, 87], "disposition": "HISTORICAL; founder rulings to be verified", "detail": "contain founder rulings (2026-08-22/23); this session did not verify each ruling is carried on main"},
-    {"pr": [72, 76, 77], "disposition": "DEFERRED", "detail": "RailScout canonization; RAILSCOUT repository holds instructions only"},
-    {"pr": [78, 79, 81], "disposition": "NEEDS REVIEW (stale open)", "detail": "WP-04/05/06 heads are not ancestors of main; evolution/ packages exist on main; possible stale duplicates"},
-    {"pr": [83, 85], "disposition": "EVIDENCE", "detail": "independent verification records"},
-    {"pr": 95, "disposition": "SUPERSEDED", "detail": "collaboration bootstrap; PROJECT_COGNITION_SOP is the current entry procedure"}
+    {
+      "pr": 113,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "Body 1, Spider-Web, phone and browser; ancestor of this branch"
+    },
+    {
+      "pr": 114,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "GREG product path; ancestor"
+    },
+    {
+      "pr": 101,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "first bounded local mission proof; ancestor via #113"
+    },
+    {
+      "pr": 102,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "embodied intent + morning review; ancestor via #113"
+    },
+    {
+      "pr": 108,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "first-body intent; ancestor"
+    },
+    {
+      "pr": 109,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "sandbox GoalChase integration; greg/missions.py is the canonical goal chase"
+    },
+    {
+      "pr": 110,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "host startup failures as blockers; ancestor"
+    },
+    {
+      "pr": 111,
+      "disposition": "SUPERSEDED (converged)",
+      "detail": "institutional leverage paths; ancestor"
+    },
+    {
+      "pr": 118,
+      "disposition": "ABSORBED (converged)",
+      "detail": "routing integrity; byte-identical in #122"
+    },
+    {
+      "pr": 120,
+      "disposition": "ABSORBED (converged)",
+      "detail": "learning gate; canonical learning engine greg/improvement.py"
+    },
+    {
+      "pr": 122,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "11 post-fork repairs incl. held-out independence and unreachable-GitHub-as-gap; its 'canonical frontier' label is superseded by this branch"
+    },
+    {
+      "pr": 125,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "Chromebook first body + honest VEPMC gate"
+    },
+    {
+      "pr": 126,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "SOP promotion requires appraised closures"
+    },
+    {
+      "pr": 127,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "UCL duplicate-assignment refusal"
+    },
+    {
+      "pr": 130,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "founder-swappable local model route (Ollama)"
+    },
+    {
+      "pr": 131,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "founder detachment respected during discovery"
+    },
+    {
+      "pr": 133,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "institutional precedents usable by signed missions"
+    },
+    {
+      "pr": 134,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "receipt-bound content-addressed artifacts"
+    },
+    {
+      "pr": 128,
+      "disposition": "PRODUCTIZE (converged)",
+      "detail": "per-closure appraisal of standing missions (fixes: daily briefs were never appraised); venture.assess. Conflicts resolved by union"
+    },
+    {
+      "pr": 132,
+      "disposition": "STACKED NEXT",
+      "detail": "Foundry-55 (active founder obligation); stacks on this branch with additive conflicts in greg/capabilities.py and greg/cli.py only; see stack_trial"
+    },
+    {
+      "pr": 124,
+      "disposition": "EVIDENCE",
+      "detail": "mechanisms ported to #128; revision-lineage sidecar deferred (would be a second evidence store)"
+    },
+    {
+      "pr": 121,
+      "disposition": "DEFERRED until VEPMC = 1",
+      "detail": "second learning engine; weaker retention rule; founder decision per ONE-GREG-FRONTIER 'unresolved 1'"
+    },
+    {
+      "pr": 119,
+      "disposition": "SUPERSEDED",
+      "detail": "mechanisms dispositioned in PR119-METABOLISM.md; durability falsifier ported"
+    },
+    {
+      "pr": 115,
+      "disposition": "EXTRACTED",
+      "detail": "RFC 3161 anchor is byte-identical on this branch; 55-technology arsenal docs remain in its history (Foundry-55 lineage continues in #132)"
+    },
+    {
+      "pr": 129,
+      "disposition": "PORT MECHANISM later (not merged)",
+      "detail": "egregore/parts.py duplicates GREG's attach/detach/quarantine lifecycle; shadow-trial-before-swap is the portable mechanism"
+    },
+    {
+      "pr": 105,
+      "disposition": "NEEDS REVIEW against open-source-first",
+      "detail": "weekly model-provider change intake; 13 commits on an older base; not inspected in depth"
+    },
+    {
+      "pr": 93,
+      "disposition": "EVIDENCE",
+      "detail": "sandbox goal chase; the founder-loop entry gate P1-P7 map onto greg/ mechanisms (supervised trigger, recovery, blockers, genesis), but this session did not re-verify each P item"
+    },
+    {
+      "pr": 94,
+      "disposition": "EVIDENCE",
+      "detail": "protected appraisal lineage; canonical appraiser is greg/appraisal.py (separate process)"
+    },
+    {
+      "pr": 97,
+      "disposition": "EVIDENCE",
+      "detail": "goal-chase duplicate-interruption fix on the sandbox lineage"
+    },
+    {
+      "pr": [
+        63,
+        64,
+        66,
+        68,
+        88,
+        90,
+        92
+      ],
+      "disposition": "ARCHIVE / EVIDENCE",
+      "detail": "literal developmental and organizational-morphogenesis lineage; regressed by INTENT-0030, preserved as mechanism research"
+    },
+    {
+      "pr": [
+        70,
+        73
+      ],
+      "disposition": "EVIDENCE; EXTRACT later",
+      "detail": "#70 runtime ownership superseded by greg/body.py; #73 MCP/A2A boundary mechanisms are a future-technology-absorption source"
+    },
+    {
+      "pr": [
+        71,
+        86,
+        87
+      ],
+      "disposition": "HISTORICAL; founder rulings to be verified",
+      "detail": "contain founder rulings (2026-08-22/23); this session did not verify each ruling is carried on main"
+    },
+    {
+      "pr": [
+        72,
+        76,
+        77
+      ],
+      "disposition": "DEFERRED",
+      "detail": "RailScout canonization; RAILSCOUT repository holds instructions only"
+    },
+    {
+      "pr": [
+        78,
+        79,
+        81
+      ],
+      "disposition": "NEEDS REVIEW (stale open)",
+      "detail": "WP-04/05/06 heads are not ancestors of main; evolution/ packages exist on main; possible stale duplicates"
+    },
+    {
+      "pr": [
+        83,
+        85
+      ],
+      "disposition": "EVIDENCE",
+      "detail": "independent verification records"
+    },
+    {
+      "pr": 95,
+      "disposition": "SUPERSEDED",
+      "detail": "collaboration bootstrap; PROJECT_COGNITION_SOP is the current entry procedure"
+    }
   ],
   "canonical_owners": {
     "persistent body / lifecycle": "greg/body.py + greg/service.py",
@@ -108,11 +289,28 @@
     "presence / availability": "greg/presence.py (new)",
     "standing multi-organ deliberation": "egregore/runtime.py (ADE-1; proposal-only; not wired to GREG missions)"
   },
-  "stack_trial": {"pr": 132, "method": "scratch worktree: merge origin/claude/foundry-55 onto bda3c0e, union-resolve the two additive conflicts, run the full suite", "result": "see GREG-RECONCILIATION-2026-09-30.md"},
+  "stack_trial": {
+    "pr": 132,
+    "method": "scratch worktree: merge origin/claude/foundry-55 onto bda3c0e, union-resolve the two additive conflicts, run the full suite",
+    "result": "#132 merges onto bda3c0e with two additive conflicts (greg/capabilities.py builtins, greg/cli.py subcommands), union-resolved. Full suite 1129 passed / 4 failed / 12 skipped; the 4 failures (tests/unit/test_foundry_systems.py) reproduce identically on #132's own head da3d4ac and are missing optional modules it declares (wasmtime, mcp). With those installed, test_foundry_systems.py passes 47/47 on the stacked tree."
+  },
   "negative_evidence": [
     "tests/unit/test_greg_console.py::test_review_comparison_changes_later_task_and_regression_reverts fails identically on untouched #134 and #122 heads whenever sibling daleobanks/ and wmi/ checkouts exist; CI never sees it because it skips without them. Superseded egregore.local_console path; asserts an 'authority' blocker that current DALEOBANKS/WMI state no longer produces ('learning').",
     "For four days two branches each served as 'the' GREG path and the founder runbook pointed at a stale branch lacking nine later commits of its own line and the #122 repairs.",
     "git reset --hard and the first merge attempt were refused by the session's safety classifier; convergence proceeded by additive merges only after a read-only check showed nothing losable."
   ],
-  "vepmc": {"value": 0, "why": "no founder-owned body has run a signed mission; every remaining condition needs Alfonso"}
+  "vepmc": {
+    "value": 0,
+    "why": "no founder-owned body has run a signed mission; every remaining condition needs Alfonso"
+  },
+  "test_evidence": {
+    "main_19fa33c": "626 passed, 4 skipped",
+    "chromebook_head_1391e04": "951 passed, 8 skipped",
+    "frontier_head_3edbcfe": "974 passed, 8 skipped",
+    "this_branch_full_suite": "1096 passed, 6 skipped, 1 failed (the sibling-dependent console test; present only because sibling daleobanks/ and wmi/ checkouts existed)",
+    "verifier_v2_ci_equivalent": "PASS V1-V5 (V2: 991 passed, 12 skipped): verifier/runs/v2-2026-09-30T12-32-35.681840+00-00.json",
+    "verifier_v2_with_siblings": "FAIL V2 (the console test only): verifier/runs/v2-2026-09-30T12-26-15.056585+00-00.json, retained as negative evidence",
+    "ci_scripts": "check_schema_refs, check_authority_singleton, check_sealed_developmental: pass",
+    "phone_e2e": "tests/integration/test_greg_phone_e2e.py passes with playwright + preinstalled Chromium (iPhone profile)"
+  }
 }

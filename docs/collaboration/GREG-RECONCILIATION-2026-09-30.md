@@ -52,7 +52,7 @@ continuous operation; and it cannot bill a paid model unless Alfonso's own signe
 ## Lineage dispositions (summary; full list in the JSON)
 
 - **Converged (ancestors of this branch):** #101 #102 #108 #109 #110 #111 #113 #114 #118 #120 #122 #125 #126 #127 #128 #130 #131 #133 #134.
-- **Stacked next:** #132 Foundry-55 (active founder obligation; see stack trial below).
+- **Stacked next:** #132 Foundry-55 (active founder obligation). Stack trial: merges onto this branch with two additive conflicts (union-resolved); with its declared `wasmtime`/`mcp` installed, its foundry suite passes 47/47 on the stacked tree; the rest of the suite is unchanged.
 - **Deferred:** #121 (second learning engine) until VEPMC = 1; #72/#76/#77 RailScout.
 - **Port later:** #129 shadow trials; #73 MCP/A2A boundaries.
 - **Evidence / archive:** #93 #94 #97 #115 (anchor extracted) #119 #124 #63 #64 #66 #68 #88 #90 #92 #83 #85 #95.
@@ -64,7 +64,7 @@ No PR was closed, retargeted or merged to main. Those are founder decisions.
 
 | Claim | Strongest truthful level |
 |---|---|
-| One converged branch, suite green | INTEGRATION-TESTED in a Linux container (see PR for exact counts) |
+| One converged branch, suite green | INTEGRATION-TESTED in a Linux container: 1096 passed / 6 skipped / 1 known sibling-dependent failure; verifier V1–V5 PASS under CI-equivalent conditions |
 | No paid route without founder selection | UNIT-TESTED, mutation-tested |
 | Presence: process death bounded by heartbeat | INTEGRATION-TESTED (real SIGKILLed body process) |
 | Presence: host sleep detection | UNIT-TESTED with injected clocks; not observed on a suspending Chromebook |
@@ -92,5 +92,5 @@ non-gameable by agent activity. Every remaining VEPMC condition requires Alfonso
    decide on another body. GREG may research candidates; purchase or migration is your call.
 2. **Alfonso:** review this draft PR; decide whether it becomes the base for #132 and whether the converged
    PRs listed above may be closed as merged-into-this-branch.
-3. **Next agent:** stack #132 on this branch and fix the failures recorded in the stack trial; port #129's
+3. **Next agent:** stack #132 on this branch (union-resolve `greg/capabilities.py` and `greg/cli.py`); port #129's
    shadow trial into Genesis replacement; converge `egregore/local_model.py` transport onto `greg/models.OllamaRoute`.

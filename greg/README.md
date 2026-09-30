@@ -33,6 +33,7 @@ Constitution and one Gate — not from a hierarchy of personas.
 | Night shift → morning tribunal | `tribunal.py`: 13-question report from evidence; signed critique becomes exclusions and regression obligations without rewriting history | `test_founder_critique_excludes_strategy…` |
 | SOP compounding | `sop.py`: repeated verified procedures → proposal → founder ratification; per-outcome metrics | `test_repeated_verified_procedure…` |
 | House of compute | `compute.py`: telemetry → sustained bottleneck → one recommendation with alternatives; nodes join with bounded identity | `test_compute_bottleneck…`, `test_new_compute_node…` |
+| Founder asks (directive §60) | `asks.py`: the one path for every `decision.requested`. A resource ask (account, compute, software, build, professional, human worker, availability, spend, mandate) must carry measured evidence, costed options each with its expected effect, one option that costs nothing, uncertainty and the authority it needs, including spend; a missing element raises and records nothing. Wording that presses (urgency without an evidenced deadline), pleads, or frames refusal as harm to GREG is withheld from every founder surface, and the attempt is kept as `ask.wording_withheld`; text Alfonso signed is never screened. Asking grants nothing | `test_greg_founder_asks.py` (50 tests), `test_greg_phone_asks.py` (Chromium, iPhone profile); 20 mutations caught |
 
 ## Spider-Web compounding (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING)
 

@@ -2,6 +2,10 @@
 
 # Founder Intent Ledger
 
+## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
+
+`INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.
+
 ## Developmental inheritance — 2026-09-30
 
 `INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE` ([record](intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json), [verbatim source](intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md)): corrections reroute rather than delete; identify the changed axis; place every lineage on one Backcast GPS (`greg/path.json`) with one of ten classes; keep every founder-intended capability horizon at its node, classified by present feasibility; exactly one operationally primary node; genuine obsolescence only when the effect is no longer wanted, a demonstrably stronger canonical mechanism replaced it, or continuing would violate constraints. It restates PR #68's `intent.aspirations.are_destinations` and `meta.intent_conservation_test` and corrects this day's first reconciliation record. State: active. Authority delta: none.

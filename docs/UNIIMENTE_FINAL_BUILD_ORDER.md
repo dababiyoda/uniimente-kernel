@@ -1,5 +1,17 @@
 # UNIIMENTE FINAL BUILD ORDER
 
+## Preservation correction — 2026-09-30
+
+`INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` (section 76): "Do not keep obsolete implementations
+merely to preserve history... KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED. When an intended
+founder capability remains: KEEP IT ON THE HORIZON." The later instruction controls the active
+tree; the rules below still control memory. An implementation may leave the active tree only when
+its placement justifies it (`GENUINELY_OBSOLETE` with a founder-given basis, or a superseded
+assumption whose effect a stronger canonical mechanism now carries,
+`docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json`), and the removing commit names
+the lineage and the last commit that contained it. Git history and the placement record are the
+institutional memory; the intended capability stays on `greg/path.json`.
+
 ## Current sequencing correction — 2026-09-11
 
 `INTENT-GREG-EMBODIED-2026-09-11` and `collaboration/OPUS-RECONCILIATION.md`

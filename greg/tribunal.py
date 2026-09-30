@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor
+from greg import anchor, asks
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -113,15 +113,12 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                        "critiques_applied": [c["critique_id"] for c in critiques]},
         "q10_retain": sorted({a["capability"] for a in done}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
-        "q12_decisions_required": [{"request_id": r["request_id"], "kind": r["kind"], "mission_id": r["mission_id"],
-                                    "why_now": r["why_now"], "recommendation": r["recommendation"],
-                                    "alternatives": r["alternatives"],
-                                    "consequence_of_no_response": r["consequence_of_no_response"]}
-                                   for r in open_requests],
+        "q12_decisions_required": [asks.surface(r) for r in open_requests],
         "q13_tonight": [{"mission_id": mid, **st} for mid, st in status.items()
                         if st["status"] not in ("ACHIEVED", "ABANDONED", "SUPERSEDED")],
         "metrics": {"actions_done": len(done), "actions_failed": len(failures),
                     "founder_decisions_requested": len(by("decision.requested")),
+                    "asks_with_wording_withheld": len(by("ask.wording_withheld")),
                     "founder_commands_accepted": len(by("command.accepted")),
                     "model_calls": 0, "verified_mission_closures": len(by("mission.achieved")),
                     "spend_usd": round(sum(a.get("cost_usd", 0.0) for a in done), 6)},

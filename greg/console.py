@@ -172,6 +172,26 @@ def _page(title: str, body: str, *, refresh: bool = False) -> bytes:
             ).encode()
 
 
+def _ask_details(r: dict) -> str:
+    """Section 60 on the page: what each option costs and does, how sure GREG is, what it needs."""
+    parts = []
+    if r.get("wording_withheld"):
+        parts.append("<br><b>GREG's wording was withheld</b> (" + _e(", ".join(r["wording_withheld"]["rules"]))
+                     + "); the facts and options below are unchanged.")
+    if r.get("expected_effect"):
+        parts.append("<br>Expected effect: " + _e(r["expected_effect"]))
+    if r.get("options"):
+        parts.append("<table>" + "".join(f"<tr><td>{_e(o['option'])}</td><td>{_e(o['cost'])}</td>"
+                                         f"<td class=muted>{_e(o['expected_effect'])}</td></tr>"
+                                         for o in r["options"]) + "</table>")
+    if r.get("uncertainty"):
+        parts.append("<span class=muted>Uncertainty: " + _e(r["uncertainty"]) + "</span>")
+    if r.get("resource"):
+        parts.append("<br><span class=muted>Authority needed: "
+                     + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
+    return "".join(parts)
+
+
 def _form(console: Console, action: str, fields: dict, label: str, *, cls: str = "", disabled=False,
           confirm: str | None = None) -> str:
     hidden = "".join(f"<input type=hidden name='{_e(k)}' value='{_e(v)}'>" for k, v in fields.items())
@@ -223,7 +243,8 @@ def render_home(console: Console) -> bytes:
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_not_executed"},
                              "It did not happen", cls="secondary", disabled=not can))
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
-                        f"<span class=muted>{_e(r['recommendation'])}</span></td><td>{actions}</td></tr>")
+                        f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
+                        f"<td>{actions}</td></tr>")
         out.append("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
     closures = [r for r in vepmc["missions"]]
     if closures:

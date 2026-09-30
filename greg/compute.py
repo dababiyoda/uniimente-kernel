@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 
+from greg import asks
 from greg.journal import Journal, iso, utcnow
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -74,20 +75,31 @@ def recommend(journal: Journal) -> dict | None:
     request_id = "req-compute-" + sha256_json({"resource": found["resource"]})[7:23]
     if any(e.payload["request_id"] == request_id for e in journal.replay("decision.requested")):
         return None
-    message = {
-        "request_id": request_id, "mission_id": None, "kind": "COMPUTE", "action_id": None,
-        "scope_digest": sha256_json(found), "why_now": found["measure"],
-        "recommendation": "optimize the heaviest mission workload first; if still constrained, price cloud burst "
-                          "versus an additional enrolled node and decide on measured ROI",
-        "alternatives": ["software/workload optimization (no spend)", "temporary cloud compute (metered)",
-                         "additional local node (capital purchase; human installation)", "do nothing: missions wait"],
-        "authority_requested": {"spend": "none requested; any purchase is a separate founder decision"},
-        "consequence_of_no_response": "missions continue at current capacity; nothing is bought",
-        "created_at": iso(utcnow()), "reality_status": "RECORDED_LOCAL_MESSAGE",
-        "uncertainty": "prices and workload growth are not yet measured; no ROI claim is made",
-    }
-    journal.record("decision.requested", message, key=request_id)
-    return message
+    samples = [e.payload for e in journal.replay("compute.telemetry")][-SUSTAINED_SAMPLES:]
+    message = asks.resource_request(
+        request_id=request_id, kind="COMPUTE", resource="compute", scope_digest=sha256_json(found),
+        why_now=found["measure"],
+        recommendation="optimize the heaviest mission workload first; if still constrained, price cloud burst "
+                       "versus an additional enrolled node and decide on measured ROI",
+        expected_effect="missions stop queueing behind a saturated " + found["resource"] + "; the improvement is "
+                        "benchmarked on the same missions before any growth is kept",
+        options=[
+            {"option": "software/workload optimization (no spend)", "cost": "none in money; engineering time",
+             "expected_effect": "lower load from the same missions; measured by the next telemetry window"},
+            {"option": "temporary cloud compute (metered)", "cost": "metered provider price; data leaves this body",
+             "expected_effect": "burst capacity for the heaviest missions while it runs"},
+            {"option": "additional local node (capital purchase; human installation)",
+             "cost": "hardware price and your installation time",
+             "expected_effect": "durable capacity as a separately enrolled body with its own bounded identity"},
+            {"option": "do nothing: missions wait", "cost": "none",
+             "expected_effect": "missions continue at current capacity and finish later"}],
+        evidence={"bottleneck": found, "samples": [{k: s.get(k) for k in ("at", "cores", "load_ratio",
+                                                                          "disk_free_ratio")} for s in samples]},
+        uncertainty="prices and workload growth are not yet measured; no ROI claim is made",
+        authority_requested={"spend": "none requested; any purchase is a separate founder decision"},
+        consequence_of_no_response="missions continue at current capacity; nothing is bought",
+        created_at=iso(utcnow()))
+    return asks.record(journal, message)
 
 
 def enroll_node(journal: Journal, body: dict, command_digest: str) -> dict:

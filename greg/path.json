@@ -415,6 +415,28 @@
       ]
     },
     {
+      "id": "resource_requests",
+      "covers": [
+        "GREG may ask for resources",
+        "account access requests",
+        "licensed professional requests",
+        "build-versus-buy requests"
+      ],
+      "intended_effect": "GREG asks Alfonso for what a goal needs (an account, compute, software, a build, a professional, a human worker) with evidence, costed alternatives, expected effect, uncertainty and the authority required, never by pressure",
+      "node": "N2",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED contract (greg/asks.py) used by compute, availability, missing-capability, mandate and paid-approval asks; account, professional, human-worker and priced build-versus-buy asks are validated but not yet produced",
+      "nearest_precursor": [
+        "greg/asks.py",
+        "greg/genesis.py",
+        "greg/compute.py"
+      ],
+      "activation_evidence": "a founder-answered resource ask on Body 1 whose stated expected effect is later measured",
+      "founder_sources": [
+        "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
+      ]
+    },
+    {
       "id": "computer_use",
       "covers": [
         "richer computer use",
@@ -538,7 +560,8 @@
       "prerequisite": "a lawful working relationship and consent",
       "activation_evidence": "N6 exit",
       "founder_sources": [
-        "INTENT-2026-09-22-FIRST-BODY"
+        "INTENT-2026-09-22-FIRST-BODY",
+        "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
       ]
     },
     {
@@ -560,7 +583,8 @@
       "prerequisite": "N1 and N2 exits; founder-supplied legal operator and publication authority",
       "activation_evidence": "N3 exit",
       "founder_sources": [
-        "INTENT-2026-09-22-FIRST-BODY"
+        "INTENT-2026-09-22-FIRST-BODY",
+        "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
       ]
     },
     {
@@ -655,7 +679,8 @@
       "prerequisite": "N3 revenue",
       "activation_evidence": "N7 exit",
       "founder_sources": [
-        "PR #68 intent.economic_research_flywheel (founder upload section 23)"
+        "PR #68 intent.economic_research_flywheel (founder upload section 23)",
+        "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
       ]
     },
     {

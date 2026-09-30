@@ -19,7 +19,9 @@ from events.spine import resume_workflow
 from loom.pattern import StepSpec, WorkflowPattern
 from loom.ratify import Ratifier
 from loom.weaver import Operation, Weaver, LoomRefused
-from provenance.ledger import EvidenceLedger, sha256_json
+from provenance.ledger import EvidenceLedger, ReconciliationRequired, sha256_json
+from policy.consequence_gate import ConsequenceGate
+from policy.engine import Proposal
 from events.spine import EventSpine
 from .research_consumers import SourceConsumer
 from .research_sources import MAX_JSON, SearxSearch, normalize_results, source_record, text
@@ -85,13 +87,18 @@ def validate_analysis(data, sources):
 
 class ResearchLine:
     def __init__(self, job, *, wmi, dale, search=None, model=None,
-                 fixture_results=None, fixture_analysis=None):
+                 fixture_results=None, fixture_analysis=None, observations=None):
         self.job = job_spec(job)
         self.wmi, self.dale = wmi, dale
         self.search = search or SearxSearch()
         self.model = model or LocalModelClient()
         self.fixture_results = fixture_results
         self.fixture_analysis = fixture_analysis
+        self.observations = observations
+        if fixture_results is not None and observations is not None:
+            raise ValueError('choose synthetic fixtures or supplied observations')
+        if observations is not None:
+            normalize_results(observations, self.search.limit)
         if fixture_results is not None:
             normalize_results(fixture_results, self.search.limit)
 
@@ -103,15 +110,19 @@ class ResearchLine:
                 "source_limit": self.search.limit, "search_timeout": self.search.timeout,
                 "model": asdict(self.model.config), "wmi": self.wmi.binding(),
                 "dale": self.dale.binding(), "fixture_results": self.fixture_results,
-                "fixture_analysis": self.fixture_analysis, "line_version": 1,
+                "fixture_analysis": self.fixture_analysis, "observations": self.observations, "line_version": 2,
                 "implementation": {path: hashlib.sha256((root / path).read_bytes()).hexdigest()
                                    for path in code_paths}}
 
     def pattern(self, *, actor, legal_principal):
         # Hash binds exact query, source/model settings, fixtures, code and consumer revisions.
         bindings = json.loads(json.dumps(self._bindings(), allow_nan=False))
+        external_search = self.fixture_results is None and self.observations is None
         steps = [
-            StepSpec("sources", "research.sources", "research.read", "read_only", bindings, max_retries=0),
+            StepSpec("sources", "research.sources", "research.read",
+                     "external_contact" if external_search else "read_only", bindings,
+                     compensation="research.note_disclosure" if external_search else None,
+                     approval_required=external_search, max_retries=0),
             StepSpec("hypothesis", "research.hypothesis", "draft.prepare", "read_only", max_retries=0),
             StepSpec("packet", "research.packet", "draft.prepare", "read_only", max_retries=0),
             StepSpec("assessment", "research.assess", "venture.assess", "read_only", max_retries=0),
@@ -125,12 +136,52 @@ class ResearchLine:
             authored_by=actor, legal_principal=legal_principal, steps=steps,
             required_capabilities=["research.read", "venture.assess", "draft.prepare"])
 
-    def _sources(self, state, params):
+    def _search_effect(self):
+        return {"query": self.job["query"], "service_url": self.search.base_url,
+                "source_limit": self.search.limit, "timeout": self.search.timeout,
+                "disclosure": "SearXNG forwards this query to configured external engines"}
+
+    def propose_search(self, *, actor, legal_principal, evidence_confidence, evidence_refs):
+        """Prepare data for upstream authorization; never issue a grant or passport."""
+        return Proposal(
+            actor=actor, legal_principal=legal_principal, action_class="research.search",
+            objective="research-line:" + sha256_json(self.job), payload=self._search_effect(),
+            target=self.search.base_url + "/search", consequence_class="external_contact",
+            evidence_confidence=evidence_confidence, evidence_refs=list(evidence_refs),
+            estimated_cost_usd=0.0, requested_capability="research.read",
+            expected_outcome="search results captured for review")
+
+    def _sources(self, state, params, *, gate=None, proposal=None, grant=None, approver=None):
         if self.fixture_results is not None:
             result = {"sources": normalize_results(self.fixture_results, self.search.limit),
                       "search_warnings": [], "search_mode": "fixture"}
+        elif self.observations is not None:
+            result = {"sources": normalize_results(self.observations, self.search.limit),
+                      "search_warnings": [], "search_mode": "operator_observations"}
         else:
-            result = self.search.search(self.job["query"])
+            if not isinstance(gate, ConsequenceGate) or not isinstance(proposal, Proposal):
+                raise LoomRefused("live search requires the canonical gate and an upstream proposal")
+            expected = self.propose_search(
+                actor=proposal.actor, legal_principal=proposal.legal_principal,
+                evidence_confidence=proposal.evidence_confidence, evidence_refs=proposal.evidence_refs)
+            exact = ("action_class", "objective", "payload", "target", "consequence_class",
+                     "estimated_cost_usd", "requested_capability", "expected_outcome")
+            if any(getattr(proposal, key) != getattr(expected, key) for key in exact):
+                raise LoomRefused("search proposal differs from the exact configured disclosure")
+            captured = {}
+            def dispatch(authorized):
+                if authorized.payload != expected.payload or self._search_effect() != expected.payload:
+                    raise LoomRefused("search effect changed before dispatch")
+                result = self.search.search(authorized.payload["query"])
+                captured.update(result)
+                return {"observed_outcome": expected.expected_outcome, "result_class": "inconclusive",
+                        "search": result}
+            record = gate.run(proposal, executor=dispatch, standing_grant=grant, approver=approver)
+            if record.state != "recorded" or not record.receipt_hash or not captured:
+                raise ReconciliationRequired(f"search gate ended {record.state}; inspect retained action {record.action_id}")
+            result = {**captured, "search_authorization": {
+                "action_id": record.action_id, "grant_id": record.grant_id,
+                "witness_id": record.witness_id, "receipt_hash": record.receipt_hash}}
         documents = [source_record(d["title"], d["text"], kind="local_document")
                      for d in self.job["documents"]]
         seen = set()
@@ -179,7 +230,8 @@ class ResearchLine:
             "market_validation": "unproven", "paid_api_cost_usd": 0,
             "query": self.job["query"], "sources": state["sources"],
             "search_mode": state["search_mode"], "inference_mode": state["inference_mode"],
-            "search_warnings": state["search_warnings"], "analysis": state["analysis"],
+            "search_warnings": state["search_warnings"],
+            "search_authorization": state.get("search_authorization"), "analysis": state["analysis"],
             "opportunity_packet": state["opportunity_packet"], "assessment": state["assessment"],
             "drafts": state["drafts"], "consumer_decisions": state["consumer_decisions"],
             "consumer_bindings": {
@@ -195,10 +247,13 @@ class ResearchLine:
         }
         return {"review_bundle": bundle, "review_bundle_hash": sha256_json(bundle)}
 
-    def operations(self):
+    def operations(self, *, gate=None, proposal=None, grant=None, approver=None):
         baseline = sha256_json(self._bindings())
         operations = {
-            "research.sources": Operation(self._sources),
+            "research.sources": Operation(lambda state, params: self._sources(
+                state, params, gate=gate, proposal=proposal, grant=grant, approver=approver)),
+            "research.note_disclosure": Operation(lambda state, params: state.update(
+                search_disclosure_note="Retain search receipts; a disclosed query cannot be recalled")),
             "research.hypothesis": Operation(self._hypothesis),
             "research.packet": Operation(self._packet),
             "research.assess": Operation(lambda state, params: {
@@ -219,7 +274,8 @@ class ResearchLine:
             return Operation(run)
         return {name: guarded(operation) for name, operation in operations.items()}
 
-    def workflow(self, spine, ratifier, pattern, *, workflow_id, resume=False):
+    def workflow(self, spine, ratifier, pattern, *, workflow_id, resume=False,
+                 gate=None, proposal=None, grant=None, approver=None):
         if ratifier.ledger is not spine.ledger:
             raise LoomRefused("ratifier must use the workflow ledger")
         expected = self.pattern(actor=pattern.authored_by, legal_principal=pattern.legal_principal)
@@ -227,6 +283,13 @@ class ResearchLine:
             raise LoomRefused("pattern differs from the configured assembly")
         if not ratifier.is_ratified(pattern.hash()):
             raise LoomRefused("assembly pattern is not ratified")
+        external_search = self.fixture_results is None and self.observations is None
+        if external_search:
+            if not isinstance(gate, ConsequenceGate) or gate.ledger is not spine.ledger:
+                raise LoomRefused("live search requires the existing canonical gate on the workflow ledger")
+            if (not isinstance(proposal, Proposal) or proposal.actor != pattern.authored_by
+                    or proposal.legal_principal != pattern.legal_principal):
+                raise LoomRefused("search proposal identity must match the ratified workflow")
         retained = [r.payload for r in spine.ledger.by_type("event")
                     if r.payload.get("type") == "loom.pattern_woven"
                     and r.payload.get("workflow_id") == workflow_id]
@@ -234,7 +297,8 @@ class ResearchLine:
             raise LoomRefused("workflow ID already belongs to another pattern")
         if bool(retained) != resume:
             raise LoomRefused("use resume for a retained workflow; use a new ID for a new workflow")
-        wf = Weaver(spine, ratifier, self.operations()).weave(pattern, workflow_id=workflow_id)
+        wf = Weaver(spine, ratifier, self.operations(
+            gate=gate, proposal=proposal, grant=grant, approver=approver)).weave(pattern, workflow_id=workflow_id)
         return resume_workflow(spine, workflow_id, wf.steps) if resume else wf
 
 
@@ -251,7 +315,9 @@ def main():
     parser.add_argument("--anchor")
     parser.add_argument("--search-url", default="http://127.0.0.1:8080")
     parser.add_argument("--source-limit", type=int, default=5)
-    parser.add_argument("--fixture-results")
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument("--fixture-results")
+    source_group.add_argument("--observations", help="supplied search observations; no network search")
     analysis_group = parser.add_mutually_exclusive_group()
     analysis_group.add_argument("--fixture-analysis")
     analysis_group.add_argument("--template-analysis", action="store_true")
@@ -264,12 +330,15 @@ def main():
             parser.error("execution requires the existing ledger and constitutional anchor")
         if args.fixture_results or args.fixture_analysis or args.template_analysis:
             parser.error("fixtures are only for sandbox previews and plans")
+    if args.mode != "plan" and not (args.fixture_results or args.observations):
+        parser.error("CLI requires --observations or preview fixtures; live search uses the existing gate via the Python runtime API")
     line = ResearchLine(
         read_json(args.job), wmi=SourceConsumer(args.wmi_source, role="wmi"),
         dale=SourceConsumer(args.dale_source, role="dale"),
         search=SearxSearch(args.search_url, limit=args.source_limit),
         model=LocalModelClient(LocalModelConfig.from_env()),
         fixture_results=read_json(args.fixture_results) if args.fixture_results else None,
+        observations=read_json(args.observations) if args.observations else None,
         fixture_analysis=("template-preview" if args.template_analysis else
                           read_json(args.fixture_analysis) if args.fixture_analysis else None))
     sandbox = args.mode == "preview"

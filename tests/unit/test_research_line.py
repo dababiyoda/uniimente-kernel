@@ -316,8 +316,10 @@ def test_real_consumer_composition_with_loopback_protocols(local_server, monkeyp
     line = ResearchLine(JOB, wmi=wmi, dale=dale, search=SearxSearch(local_server["url"]),
                         model=LocalModelClient(LocalModelConfig(
                             base_url=local_server["url"] + "/v1")))
-    ledger, _, _, _, workflow = stack(line)
-    workflow.execute()
+    ledger, spine, ratifier, pattern, gate, proposal, grant = governed_stack(line)
+    workflow = line.workflow(spine, ratifier, pattern, workflow_id="real-consumers",
+                             gate=gate, proposal=proposal, grant=grant)
+    workflow.execute(approver=lambda step: True)  # synthetic test approval only
     bundle = workflow.state["review_bundle"]
     assert {method for method, path in local_server["requests"]} == {"GET", "POST"}
     assert bundle["inference_mode"] == "local_model" and bundle["search_mode"] == "searxng"
@@ -360,3 +362,116 @@ def test_unsupported_env_loader_stops_before_consumer_execution(monkeypatch):
     consumer = object.__new__(SourceConsumer)
     with pytest.raises(ValueError, match="python-dotenv==1.2.3"):
         consumer._call("raise AssertionError('must never execute')", {})
+
+
+def governed_stack(line):
+    from compiler.ucl_compiler import compile_constitution
+    from identity.machine_passport import PassportRegistry
+    from policy.consequence_gate import ConsequenceGate
+    from provenance.commit_witness import WitnessSigner
+    compiled = compile_constitution(str(Path(__file__).resolve().parents[2]))
+    ledger = EvidenceLedger(compiled.constitution_hash)
+    passports = PassportRegistry()
+    actor = passports.issue(kind="agent", creator="synthetic-test",
+                            owner_organ="uniimente-kernel", legal_principal="alfonso_lopez",
+                            declared_capabilities=["research.read"], budget_ceiling_usd=0,
+                            consequence_class="external_contact")
+    gate = ConsequenceGate(compiled=compiled, passports=passports, ledger=ledger,
+                           signer=WitnessSigner(env="development"))
+    pattern = line.pattern(actor=actor.passport_id, legal_principal="alfonso_lopez")
+    ratifier = Ratifier(ledger)
+    ratifier.decide(ratifier.submit(pattern), ratified=True,
+                    ratifier="synthetic-test", reason="Synthetic test only")
+    proposal = line.propose_search(actor=actor.passport_id, legal_principal="alfonso_lopez",
+                                   evidence_confidence=0.9,
+                                   evidence_refs=["sha256:" + "a" * 64])
+    # Synthetic fixture only. The production line has no grant-issuing operation.
+    grant = gate.grants.issue_single_action(proposal=proposal, policy_version=gate.policy_version)
+    return ledger, EventSpine(ledger), ratifier, pattern, gate, proposal, grant
+
+
+def live_line(local_server):
+    return ResearchLine(JOB, wmi=Consumer("wmi"), dale=Consumer("dale"),
+                        search=SearxSearch(local_server["url"]),
+                        fixture_analysis="template-preview")
+
+
+def test_live_search_cannot_weave_without_existing_gate(local_server):
+    line = live_line(local_server)
+    ledger, spine, ratifier, pattern, _, _, _ = governed_stack(line)
+    with pytest.raises(LoomRefused, match="canonical gate"):
+        line.workflow(spine, ratifier, pattern, workflow_id="blocked")
+    assert local_server["requests"] == []
+    ledger.close()
+
+
+def test_gate_refuses_missing_search_grant_before_http(local_server):
+    line = live_line(local_server)
+    ledger, spine, ratifier, pattern, gate, proposal, _ = governed_stack(line)
+    workflow = line.workflow(spine, ratifier, pattern, workflow_id="missing",
+                             gate=gate, proposal=proposal, grant=None)
+    with pytest.raises(ReconciliationRequired):
+        workflow.execute(approver=lambda step: True)
+    assert local_server["requests"] == []
+    assert not ledger.by_type("receipt")
+    assert any(r.payload.get("type") == "action.refused" for r in ledger.by_type("event"))
+    ledger.close()
+
+
+def test_search_grant_revocation_at_commit_blocks_http(local_server, monkeypatch):
+    line = live_line(local_server)
+    ledger, spine, ratifier, pattern, gate, proposal, grant = governed_stack(line)
+    original = gate.signer.sign
+    def revoke_after_signing(witness):
+        result = original(witness)
+        gate.grants.revoke(grant["grant_id"], reason="synthetic commit race", revoker="synthetic-test")
+        return result
+    monkeypatch.setattr(gate.signer, "sign", revoke_after_signing)
+    workflow = line.workflow(spine, ratifier, pattern, workflow_id="revoked",
+                             gate=gate, proposal=proposal, grant=grant)
+    with pytest.raises(ReconciliationRequired):
+        workflow.execute(approver=lambda step: True)
+    assert local_server["requests"] == []
+    assert ledger.by_type("witness") and not ledger.by_type("receipt")
+    ledger.close()
+
+
+def test_changed_authorized_query_cannot_dispatch(local_server):
+    line = live_line(local_server)
+    ledger, spine, ratifier, pattern, gate, proposal, grant = governed_stack(line)
+    proposal.payload["query"] = "Different disclosure"
+    workflow = line.workflow(spine, ratifier, pattern, workflow_id="mismatch",
+                             gate=gate, proposal=proposal, grant=grant)
+    with pytest.raises(ReconciliationRequired):
+        workflow.execute(approver=lambda step: True)
+    assert local_server["requests"] == []
+    ledger.close()
+
+
+def test_governed_search_records_witness_receipt_and_review_link(local_server):
+    line = live_line(local_server)
+    ledger, spine, ratifier, pattern, gate, proposal, grant = governed_stack(line)
+    workflow = line.workflow(spine, ratifier, pattern, workflow_id="allowed",
+                             gate=gate, proposal=proposal, grant=grant)
+    workflow.execute(approver=lambda step: True)
+    assert len(local_server["requests"]) == 1
+    authorization = workflow.state["review_bundle"]["search_authorization"]
+    assert authorization["witness_id"] and authorization["grant_id"] == grant["grant_id"]
+    receipt = ledger.find(authorization["receipt_hash"])
+    assert receipt.record_type == "receipt"
+    assert receipt.payload["result"]["search"]["sources"]
+    assert ledger.by_type("outcome")
+    assert ledger.verify_chain()[0]
+    ledger.close()
+
+
+def test_supplied_observations_need_no_network_authority(local_server):
+    line = ResearchLine(JOB, wmi=Consumer("wmi"), dale=Consumer("dale"),
+                        search=SearxSearch(local_server["url"]), observations=RESULTS,
+                        fixture_analysis="template-preview")
+    ledger, _, _, _, workflow = stack(line)
+    workflow.execute()
+    assert local_server["requests"] == []
+    assert workflow.state["review_bundle"]["search_mode"] == "operator_observations"
+    assert workflow.state["review_bundle"]["search_authorization"] is None
+    ledger.close()

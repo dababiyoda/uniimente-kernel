@@ -136,3 +136,19 @@ manual baseline. Name and measure that baseline on the actual target machine.
 
 Decision: experiment. Merge tested composition as an available capability; do not
 equate installed code or synthetic success with production effects or market proof.
+
+
+## Automated review correction before merge
+
+The initial review classified SearXNG as a direct read-only stage. Automated PR
+review correctly identified that the service forwards queries externally, so
+successful tests and pattern ratification did not authorize that disclosure.
+The corrected live step is external_contact with Loom approval, and its exact
+query dispatch occurs only inside the existing ConsequenceGate executor.
+The operator supplies the recognized identity, proposal, pre-existing grant and
+canonical gate; the line manufactures none. Missing authority and commit-time
+revocation are tested for zero network dispatch; the allowed path retains the
+actual witness, receipt and outcome. The CLI consumes supplied observations
+instead of constructing a fake runtime authority stack. Search disclosure cannot
+be undone; compensation preserves the audit record. This addresses review
+thread PRRT_kwDOTdTFV86nfTEX and the original Pass-2 authority concern.

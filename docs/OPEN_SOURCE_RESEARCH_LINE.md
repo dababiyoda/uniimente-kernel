@@ -11,8 +11,10 @@ Kernel's Loom, ratification, durable workflow checkpoints, and evidence ledger.
 
 Software installation and successful tests do not grant permission to publish,
 contact prospects, spend money, or qualify a Foundry opportunity. The CLI's
-sandbox preview works without a production ratification record. Production
-execution consumes existing, hash-bound Loom ratification.
+sandbox preview of supplied data works without a production ratification record.
+Production execution consumes existing, hash-bound Loom ratification. A live
+SearXNG query is external contact, and additionally consumes an exact pre-existing
+grant through the canonical ConsequenceGate, with a witness and receipt.
 
 ## Sources actually examined
 
@@ -45,7 +47,7 @@ model, and its framework was not copied.
 
 ## Repeatable offline preview
 
-Use clean source checkouts beside the Kernel checkout. Python 3.11+ is required.
+Use clean source checkouts beside the Kernel checkout. Python 3.11+ on Linux/macOS is required by the existing POSIX ledger. Use WSL on Windows.
 This uses synthetic search data, a deterministic preview hypothesis, the real
 WMI evaluator and the real DALEOBANKS refinery. It calls no model or search service.
 
@@ -98,8 +100,15 @@ docker compose -f deploy/research-line/compose.yaml exec ollama ollama pull qwen
 python -m foundry.research_line --mode preview \
   --job examples/research-line/job.json \
   --wmi-source ../WealthMachineIntelligence --dale-source ../DALEOBANKS \
-  --out local-research-preview.json
+  --fixture-results examples/research-line/search-fixture.json \
+  --out local-model-synthetic-preview.json
 ~~~
+
+That command previews real local inference over synthetic source observations;
+it does not issue a SearXNG query. Replace --fixture-results with --observations
+/path/to/research-observations.json to use operator-supplied observations instead.
+Both files contain a list of SearXNG-shaped title/url/content objects. Supplied
+observations remain unverified; their content is bound into the workflow pattern.
 
 SearXNG forwards search queries to its configured external search engines.
 It removes a paid search API dependency; it does not make searches offline or
@@ -108,6 +117,20 @@ search queries. Local document excerpts can be supplied in the job JSON without
 a remote document service: each requires exactly title and text (4,000 characters
 maximum). Search snippets are observations, not full-page captures, verified
 facts, paid commitments or buyer interviews.
+
+Live search uses the Python runtime API with the already configured canonical gate,
+not a self-authorizing CLI. ResearchLine.propose_search prepares a request using an
+existing actor/legal principal and upstream-reviewed evidence references/confidence.
+It issues no grant. The existing authorization path must approve the exact query,
+loopback endpoint, source limit and disclosure. Pass gate, proposal, grant and any
+existing gate approver into line.workflow; the gate must use the workflow ledger.
+Loom also requires its existing human step approval for this external_contact step.
+Missing, revoked, changed or mismatched authority refuses before an HTTP request.
+The receipt and witness IDs are linked in the review bundle. A disclosed query cannot
+be recalled; compensation retains an audit note rather than claiming to undo it.
+The CLI's execute/resume path requires --observations, so it never creates its own
+gate/passport/grant stack or silently forwards a query. The runtime adapter enables
+the interconnected live path while preserving the existing owner of authority.
 
 The JSON job supports query, audience, buyer_type, risk_flags and documents.
 Leave buyer_type empty unless supplied by the operator; models cannot fill it.
@@ -123,7 +146,7 @@ consumer revisions. A human/operator decision through the existing Loom Ratifier
 must already exist on the canonical ledger before --mode execute can weave it.
 The CLI deliberately has no command that invents a founder approval record.
 
-Use --ledger, --anchor and a unique --workflow-id with execute. The anchor must
+Use --observations, --ledger, --anchor and a unique --workflow-id with execute. The anchor must
 match the existing constitution-bound ledger; no invented anchor is a production
 substitute. Resume the same job/configuration/revisions with --mode resume.
 The line refuses a changed pattern, revoked ratification, mismatched ratifier
@@ -152,7 +175,8 @@ small uniimente-kernel-boundaries wheel.
 ## Verification and practical limits
 
 Core tests exercise citation/authority-field rejection, empty evidence,
-configuration drift, ratification withdrawal, persistent restart, source
+configuration drift, ratification withdrawal, missing/revoked search grants,
+commit-time revalidation with zero HTTP requests, persistent restart, source
 deduplication, local HTTP search, redirects, response limits and reporting.
 The canonical CI keeps its four original checks and adds one connected-composition
 job with pinned real WMI/DALEOBANKS sources. That job exercises actual loopback HTTP

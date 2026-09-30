@@ -1,0 +1,51 @@
+{
+  "intent_id": "INTENT-20260930-open-source-first",
+  "statement": "Use freely licensed local AI models and mature open-source projects throughout egregore, replacing paid commodity capabilities where practical.",
+  "source_refs": [
+    "Current user chat, 2026-09-30; exact wording in docs/OPEN_SOURCE_STACK.md",
+    "INTENT-0030; this source records manual development intent and does not authenticate a runtime principal"
+  ],
+  "owner": "Alfonso Lopez; repository maintainers implement",
+  "state": "active",
+  "binding_scope": "Software/model selection across Kernel, DALEOBANKS, WMI and attached tools; changes in this candidate are draft development only.",
+  "constitutional_constraints": [
+    "Models and tools acquire no execution authority",
+    "Kernel Consequence Gate remains owner",
+    "Retain history and dissent",
+    "No deployment, credentials or automatic activation"
+  ],
+  "success_evidence": [
+    "tests/unit/test_local_model.py",
+    "DALEOBANKS tests/test_local_models.py",
+    "God’s Eye src/localAiProvider.test.mjs",
+    "These tests use controlled protocol responses, not real model quality evidence"
+  ],
+  "failure_evidence": [
+    "Attached cloud executor startup failed",
+    "Kernel initial integration test: 37 passed and 1 failed because zero resource ceiling correctly hibernated; corrected fixture retained in branch history",
+    "Local realtime voice remains unimplemented",
+    "No target hardware/live model quality measurement"
+  ],
+  "dependencies": [
+    "Existing local hardware and model files",
+    "Ollama/llama.cpp/vLLM/LocalAI server",
+    "Model-specific licenses",
+    "Existing runtime contracts and resource bounds"
+  ],
+  "conflicts": [
+    "Full proprietary realtime speech and exclusive data have no automatic drop-in free substitute",
+    "Historical paid providers remain explicit legacy alternatives, not free defaults"
+  ],
+  "next_review_trigger": "Target hardware specification and a local inference quality/resource benchmark before runtime activation.",
+  "supersedes": [
+    "Implicit paid provider routing based solely on an existing API key"
+  ],
+  "superseded_by": [],
+  "implementation_refs": [
+    "egregore/local_model.py",
+    "docs/OPEN_SOURCE_STACK.md",
+    "docs/open-source/repositories-2026-09-30.json",
+    "DALEOBANKS services/model_settings.py and local chat/embedding adapters",
+    "God’s Eye local HUD and paid-realtime opt-in candidate"
+  ]
+}

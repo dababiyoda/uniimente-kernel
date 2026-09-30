@@ -41,10 +41,10 @@ FOUNDER_HORIZONS = [
     "multiple physical computing bodies", "sensors", "actuators", "future robotics or physical capabilities",
     "future technologies not currently known",
 ]
-# Every kernel PR open when this session began (2026-09-30), verified via the GitHub API.
-OPEN_KERNEL_PRS = {63, 64, 66, 68, 70, 71, 72, 73, 76, 77, 78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101,
-                   102, 105, 108, 109, 110, 111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129,
-                   130, 131, 132, 133, 134}
+# All open Kernel PRs in the named API snapshot. The old hardcoded 50-item
+# subset omitted older lineages; this is snapshot coverage, not a live API claim.
+LINEAGE_AUDIT = ROOT / "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+OPEN_KERNEL_PRS = {pr["number"] for pr in json.loads(LINEAGE_AUDIT.read_text())["prs"]}
 # The founder's worked example: a Mac-first lineage after the Chromebook correction.
 FOUNDER_MAC_EXAMPLE = {
     "mac.first_body_assumption": {"SUPERSEDED_IMPLEMENTATION_ASSUMPTION"},

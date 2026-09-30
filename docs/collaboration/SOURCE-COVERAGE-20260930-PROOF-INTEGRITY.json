@@ -1,0 +1,316 @@
+{
+  "manifest_version": 1,
+  "inspected_at": "2026-09-30",
+  "complete_project_inspection": false,
+  "base_commit": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+  "main_commit": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+  "source_count_scope": "Grouped source families, not unique artifact total",
+  "sources": [
+    {
+      "source": "Current master build directive",
+      "stable_reference": "Current user message, UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE, sections 1-77",
+      "date_or_version": "2026-09-30 session",
+      "inspection_status": "inspected",
+      "relevance": "Governing scope, permanent horizon, backcast, one-GREG authority and 40-item report",
+      "founder_intent": "Preserve destination; build active gate; exactly two passes; capability never creates sovereignty",
+      "implementation_claims": "Requirements, not implementation evidence",
+      "contradictions": [],
+      "evidence_tier": "DOCUMENTED",
+      "unresolved_questions": [
+        "Stable conversation/message ID unavailable"
+      ]
+    },
+    {
+      "source": "Kernel main",
+      "stable_reference": "https://github.com/dababiyoda/uniimente-kernel/tree/19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+      "date_or_version": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+      "inspection_status": "partially_inspected",
+      "relevance": "Default-branch baseline and source ancestry",
+      "founder_intent": "One constitutional control plane; open-source-first correction",
+      "implementation_claims": "Main has ADE-1 and shared boundaries; greg product is on unmerged convergence branch",
+      "contradictions": [],
+      "evidence_tier": "IMPLEMENTED; relevant paths inspected",
+      "unresolved_questions": []
+    },
+    {
+      "source": "Convergence candidate PR137",
+      "stable_reference": "https://github.com/dababiyoda/uniimente-kernel/pull/137",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "partially_inspected",
+      "relevance": "Chosen base, body/missions/proof/installer and history",
+      "founder_intent": "One GREG; portable body and retained horizon",
+      "implementation_claims": "19 prior PR heads plus PR137; anchor port verified separately; all main ancestors retained",
+      "contradictions": [
+        "50-open-PR coverage claim is incomplete at current 81 snapshot",
+        "Independent appraisal falsely verifies empty evidence",
+        "Installer public companion not bound to signing key"
+      ],
+      "evidence_tier": "IMPLEMENTED; baseline tests recorded",
+      "unresolved_questions": [
+        "Whole branch has not been exhaustively reviewed or founder-ratified"
+      ]
+    },
+    {
+      "source": "Agent entry and constitutional interpretation",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: AGENTS.md, CLAUDE.md, docs/FOUNDER_EFFECT_COMPILER.md, docs/FOUNDER_INTENT_LEDGER.md, docs/RECURSIVE_COLLABORATION_PROTOCOL.md, docs/UNIIMENTE_FINAL_BUILD_ORDER.md, docs/CANONICAL_EXECUTION_ORDER.md",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "partially_inspected",
+      "relevance": "Required entry, intent retention, ownership and two-pass comparison",
+      "founder_intent": "Effects outrank metaphor; acquire before building; shutdown legitimate",
+      "implementation_claims": "Documentation specifies governance, not installed product",
+      "contradictions": [
+        "Some prior owner/build-order records point to older egregore path; convergence record names greg/"
+      ],
+      "evidence_tier": "DOCUMENTED",
+      "unresolved_questions": [
+        "Long historical documents inspected for relevant sections, not every byte"
+      ]
+    },
+    {
+      "source": "Project cognition and 93-source census",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: docs/PROJECT_COGNITION_SOP.md, docs/PROJECT_COGNITION_CONTINUITY.md, docs/PROJECT_SOURCE_CENSUS_2026-09-26.md",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "partially_inspected",
+      "relevance": "Source discovery and anti-context-loss",
+      "founder_intent": "No complete-inspection claim from a summary",
+      "implementation_claims": "93 named Project source entries are an inventory",
+      "contradictions": [
+        "Inventory is not raw-source access"
+      ],
+      "evidence_tier": "DOCUMENTED",
+      "unresolved_questions": [
+        "All93 original uploads and full original conversations unavailable"
+      ]
+    },
+    {
+      "source": "First-body correction",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md; INTENT-2026-09-22-FIRST-BODY.json",
+      "date_or_version": "2026-09-26 source at f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "inspected",
+      "relevance": "Current body sequence",
+      "founder_intent": "Chromebook and iPhone17 owned; Linux unavailable/unsure; future hardware chosen by evidence",
+      "implementation_claims": "Chromebook is candidate, not verified hardware",
+      "contradictions": [
+        "Old first-Mac requirement is superseded in current sequence only"
+      ],
+      "evidence_tier": "DOCUMENTED",
+      "unresolved_questions": [
+        "Actual Linux availability and legitimate founder operation unverified"
+      ]
+    },
+    {
+      "source": "Permanent capability horizon",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: greg/path.json, greg/path.py, docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "partially_inspected",
+      "relevance": "34 horizons; one operational node; temporal placements",
+      "founder_intent": "Future effects remain intended; implementation status separate",
+      "implementation_claims": "N1 VEPMC; predicates do not prove physical ownership",
+      "contradictions": [
+        "Node placements are proposals; N0 repository attestation is not founder-body proof"
+      ],
+      "evidence_tier": "DOCUMENTED registry + IMPLEMENTED projections",
+      "unresolved_questions": [
+        "Future node order requires founder review"
+      ]
+    },
+    {
+      "source": "GREG closure proof",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: greg/appraisal.py, greg/metrics.py, greg/missions.py, greg/body.py, greg/authority.py, provenance/ledger.py, policy/consequence_gate.py",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "partially_inspected",
+      "relevance": "Executable evidence semantics and narrow residual deficit",
+      "founder_intent": "Builder is not sole verifier; receipt and outcome truth",
+      "implementation_claims": "Separate-process, read-only head-pinned appraiser",
+      "contradictions": [
+        "Signed mission with no observations and absent file returned VERIFIED"
+      ],
+      "evidence_tier": "LOCAL-REAL reproduced defect; relevant paths inspected",
+      "unresolved_questions": [
+        "Host-rewriting compromise and independent codebase appraisal not established"
+      ]
+    },
+    {
+      "source": "GREG installer and supervision",
+      "stable_reference": "Kernel f617db99b74354808cfa3f5a0b26ee4a9d794c73: greg/chromebook/install.sh, greg/cli.py, greg/founder.py, greg/service.py, greg/doctor.py, greg/CHROMEBOOK_FIRST_MISSION.md",
+      "date_or_version": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+      "inspection_status": "inspected",
+      "relevance": "First-body setup and current signer",
+      "founder_intent": "Founder key custody; enrollment explicit; persistent stop respected",
+      "implementation_claims": "Composition of existing commands and commodity supervisors",
+      "contradictions": [
+        "Wrong companion pub key can enroll unrelated key then fail designation",
+        "Service rerun resets optional builder; argument whitespace limitations remain"
+      ],
+      "evidence_tier": "LOCAL-REAL temporary install reproduction; not physical-body verification",
+      "unresolved_questions": [
+        "Real Chromebook/systemd/lid/reboot lifecycle unavailable"
+      ]
+    },
+    {
+      "source": "Current open PR universe",
+      "stable_reference": "https://github.com/dababiyoda/uniimente-kernel/pulls; docs/collaboration/LINEAGE-AUDIT-20260930.json",
+      "date_or_version": "2026-09-30 snapshot",
+      "inspection_status": "partially_inspected",
+      "relevance": "81 live open PR metadata/head ancestry; selected mechanisms",
+      "founder_intent": "Closing a PR never closes intent",
+      "implementation_claims": "Public API metadata and git graph inspected for every listed head",
+      "contradictions": [
+        "Earlier50 count incomplete; #95 executable receipt not ported"
+      ],
+      "evidence_tier": "Repository/API metadata and ancestry",
+      "unresolved_questions": [
+        "Not all81 patches/comments/reviews/tests inspected"
+      ]
+    },
+    {
+      "source": "Historical branches",
+      "stable_reference": "https://github.com/dababiyoda/uniimente-kernel/branches; docs/collaboration/LINEAGE-AUDIT-20260930.json",
+      "date_or_version": "2026-09-30 snapshot",
+      "inspection_status": "partially_inspected",
+      "relevance": "Remote graph and implementation alternatives",
+      "founder_intent": "Preserve history; choose canonical owners",
+      "implementation_claims": "Branch metadata and ancestry; materially relevant body/proof mechanisms inspected",
+      "contradictions": [
+        "Branch existence is not runtime capability or authority"
+      ],
+      "evidence_tier": "Repository metadata",
+      "unresolved_questions": [
+        "Not every historical branch body fully inspected"
+      ]
+    },
+    {
+      "source": "Connected Drive and Notion source discovery",
+      "stable_reference": "Private connected-app source appendix retained locally; 8 stable source references",
+      "date_or_version": "2026-05 through 2026-08 documents; read 2026-09-30",
+      "inspection_status": "partially_inspected",
+      "relevance": "Historical proposals and independent-evaluation correction",
+      "founder_intent": "Persistence, repair, proof, welfare, salvage, bounded recursive loop",
+      "implementation_claims": "Two Drive proposals and six Notion sources read; documentary status only",
+      "contradictions": [
+        "Old sovereign/self-preservation/literal-biology interpretations conflict with current directive",
+        "OAuth author identity does not independently prove human approval",
+        "One comment-count mismatch limits completeness"
+      ],
+      "evidence_tier": "DOCUMENTED historical sources",
+      "unresolved_questions": [
+        "Original conversations/revisions, linked artifacts and archived source universe not fully accessible"
+      ]
+    },
+    {
+      "source": "Unavailable real-body sources",
+      "stable_reference": "Alfonso-designated Chromebook/iPhone, runtime key, live supervisor and acceptance",
+      "date_or_version": "2026-09-30",
+      "inspection_status": "unavailable",
+      "relevance": "Required VEPMC external proof",
+      "founder_intent": "Install; authenticate; delegate bounded mission; close UI; recover; inspect and accept",
+      "implementation_claims": "No physical-body, personal identity, reboot or real founder acceptance evidence",
+      "contradictions": [],
+      "evidence_tier": "UNMEASURED",
+      "unresolved_questions": [
+        "Founder must establish device availability and supply real run evidence"
+      ]
+    },
+    {
+      "source": "DALEOBANKS",
+      "stable_reference": "https://github.com/dababiyoda/DALEOBANKS/tree/a8341ba81622dbd1180583bc6660fa1e7ed707b8",
+      "date_or_version": "a8341ba81622dbd1180583bc6660fa1e7ed707b8",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "PumpStation",
+      "stable_reference": "https://github.com/dababiyoda/PumpStation/tree/db6758dfa8621a4f6fb0504c20343e60db5336c1",
+      "date_or_version": "db6758dfa8621a4f6fb0504c20343e60db5336c1",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "RAILSCOUT",
+      "stable_reference": "https://github.com/dababiyoda/RAILSCOUT/tree/017d9f32f9ad8f194854de1c4207f2daa0653b59",
+      "date_or_version": "017d9f32f9ad8f194854de1c4207f2daa0653b59",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "RESEARCH-IN",
+      "stable_reference": "https://github.com/dababiyoda/RESEARCH-IN/tree/15ceb62c40941f6915c8b8ce8ce40915d4e7b01c",
+      "date_or_version": "15ceb62c40941f6915c8b8ce8ce40915d4e7b01c",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "WealthMachineIntelligence",
+      "stable_reference": "https://github.com/dababiyoda/WealthMachineIntelligence/tree/ec82b8027d987c865dc123215afb53d20916908f",
+      "date_or_version": "ec82b8027d987c865dc123215afb53d20916908f",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "build-your-own-x",
+      "stable_reference": "https://github.com/dababiyoda/build-your-own-x/tree/7141ae657b7c89a91a3ae59f5559487f27898b0a",
+      "date_or_version": "7141ae657b7c89a91a3ae59f5559487f27898b0a",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    },
+    {
+      "source": "gods-eye-view-EGGREGORE-TOOL",
+      "stable_reference": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/tree/f3282e8ecad501d0a47b38c4f6449021343f96f3",
+      "date_or_version": "f3282e8ecad501d0a47b38c4f6449021343f96f3",
+      "inspection_status": "partially_inspected",
+      "relevance": "Specialist behavior/substrate/alternative mechanisms",
+      "founder_intent": "Specialist competence under canonical Kernel; intended effects retained",
+      "implementation_claims": "Entry docs and relevant executable paths inspected; no operational/business verification",
+      "contradictions": [],
+      "evidence_tier": "Repository inspection; no deployment claim",
+      "unresolved_questions": [
+        "Whole historical repository/PR universe not exhaustively inspected"
+      ]
+    }
+  ],
+  "external_raw_source_publication": false,
+  "private_appendix": "Connected-app references and snapshots retained in local workspace; not included in public repository",
+  "follow_up": "On new access, inspect missing sources and reconcile conflicts without shrinking horizons"
+}

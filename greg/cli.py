@@ -33,7 +33,7 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key
+from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
@@ -74,6 +74,8 @@ def main(argv=None) -> int:
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
+    fp = fs.add_parser("public", help="read the public half of your founder key; writes no body state")
+    fp.add_argument("--key", required=True); fp.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
@@ -197,6 +199,9 @@ def main(argv=None) -> int:
                                        deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
+        elif args.cmd == "founder" and args.founder_cmd == "public":
+            key = load_founder_key(args.key, _passphrase(args))
+            print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
                 print(json.dumps(body.enroll_founder(args.pubkey), indent=1))

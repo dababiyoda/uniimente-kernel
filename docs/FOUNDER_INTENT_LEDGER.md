@@ -2,6 +2,28 @@
 
 # Founder Intent Ledger
 
+## Master build directive and current gate repair — 2026-09-30
+
+`INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
+effect horizon and extends the existing convergence/inheritance records. It
+does not replace the 34 horizons in `greg/path.json`, the 55 Foundry obligations,
+or the founder's authority. [Normalized record](intent/INTENT-20260930-MASTER-BUILD-GATE.json),
+[source coverage](collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json),
+and [build/evidence report](collaboration/GREG-GATE-REPAIR-20260930.md).
+
+The independent appraiser's earlier VERIFIED claim is falsified for a signed
+mission with no observations and a missing required file. Its intended effect
+remains active; the current repair requires complete, correctly bound closure
+evidence. The installer's earlier success claim is falsified when a public
+companion file names a different key from the actual signer. The current repair
+checks correspondence and active enrollment, including signed key rotation.
+
+These are implementation/evidence corrections, not destination changes. Exactly
+one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
+The Chromebook is the candidate under the preserved September 26 hardware
+correction; actual Linux availability, founder key custody, installation and
+acceptance still require a real run. No local test increments that milestone.
+
 ## Developmental inheritance — 2026-09-30
 
 `INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE` ([record](intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json), [verbatim source](intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md)): corrections reroute rather than delete; identify the changed axis; place every lineage on one Backcast GPS (`greg/path.json`) with one of ten classes; keep every founder-intended capability horizon at its node, classified by present feasibility; exactly one operationally primary node; genuine obsolescence only when the effect is no longer wanted, a demonstrably stronger canonical mechanism replaced it, or continuing would violate constraints. It restates PR #68's `intent.aspirations.are_destinations` and `meta.intent_conservation_test` and corrects this day's first reconciliation record. State: active. Authority delta: none.

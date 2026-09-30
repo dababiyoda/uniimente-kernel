@@ -58,7 +58,7 @@
       "inheritance_test": {
         "q1_original_capability": "VEPMC 0 -> 1 on the founder's own computer",
         "q2_still_in_destination": "Yes: it is the active node's exit",
-        "q3_assumption_that_became_false": "'Alfonso owns a Mac' (2026-09-26: 'I don't own a Mac … I own a Chromebook. And an iPhone 17')",
+        "q3_assumption_that_became_false": "'Alfonso owns a Mac' (2026-09-26: 'I don't own a Mac \u2026 I own a Chromebook. And an iPhone 17')",
         "q4_replace_without_discarding": "Yes: service install and doctor are platform-parameterized (--platform linux, doctor --chromebook)",
         "q5_portable_parts": "Body lifecycle, signed commands, missions, appraisal, VEPMC, console: all device-independent",
         "q6_later_node_parts": "launchd agent, sandbox-exec, Keychain backend, mac.* capabilities, verify_mac_body.sh -> N8 Mac body",
@@ -793,13 +793,28 @@
       ],
       "intended_effect": "Every agent starts from the same work-start protocol",
       "intended_effect_status": "active",
-      "classification": "ALREADY_ACHIEVED_NODE",
+      "classification": "REQUIRES_ADAPTATION",
       "node": "N0",
-      "changed_axes": [],
+      "changed_axes": [
+        "maturity_level"
+      ],
       "surviving_mechanisms": [
         "docs/PROJECT_COGNITION_SOP.md"
       ],
-      "activation_evidence": "The SOP is on the converged base"
+      "activation_evidence": "A new worker follows the current canonical entry path and a current receipt is independently validated; a SOP file alone does not prove #95 receipt-workflow adoption",
+      "prior_claims": [
+        {
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "activation_evidence": "The SOP is on the converged base",
+          "source_ref": "PR137 f617db9 before proof-integrity audit",
+          "resolution": "superseded evidence claim; intended effect remains active"
+        }
+      ],
+      "adaptation": "PROJECT_COGNITION_SOP.md realizes only part of the work-start effect. #95 START_HERE.md, collaboration-receipt.yml and test_collaboration_receipt.py are absent from main19fa33c and f617db9. Port a missing receipt/entry primitive only if an active context-continuity deficit requires it, behind current cognition owners.",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Direct exact-head ancestry and selected path/blob absence checks; full PR code/tests not rerun"
     },
     {
       "id": "kernel.local_console",
@@ -1036,6 +1051,592 @@
       ],
       "activation_evidence": "Cited as a source in a Genesis search record",
       "adaptation": "Add it to Genesis's documented search sources as a mechanism index, never as a cloning roadmap"
+    },
+    {
+      "id": "pr137_coverage_20260930",
+      "lineage": [
+        "#137"
+      ],
+      "intended_effect": "One converged product path reports developmental position and actual presence while preserving founder authority",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "VEPMC N1 exit evidence on a genuinely founder-designated physical body; ancestry/integration tests alone do not close it",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "surviving_mechanisms": [
+        "greg/"
+      ]
+    },
+    {
+      "id": "pr62_coverage_20260930",
+      "lineage": [
+        "#62"
+      ],
+      "intended_effect": "Handle dependency fan-in, enforce candidate constraints and report actual recovery",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Biological/local-cell or mandatory-organization geometry is an optional research assumption; its underlying functional effect stays active. Failed or reopened gates remain negative evidence.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr60_coverage_20260930",
+      "lineage": [
+        "#60"
+      ],
+      "intended_effect": "Separate causal prohibition from capability demand and qualify real structural novelty",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Biological/local-cell or mandatory-organization geometry is an optional research assumption; its underlying functional effect stays active. Failed or reopened gates remain negative evidence.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr59_coverage_20260930",
+      "lineage": [
+        "#59"
+      ],
+      "intended_effect": "Reject causally defective candidates instead of rewarding decorative novelty",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Biological/local-cell or mandatory-organization geometry is an optional research assumption; its underlying functional effect stays active. Failed or reopened gates remain negative evidence.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr58_coverage_20260930",
+      "lineage": [
+        "#58"
+      ],
+      "intended_effect": "Recover lost function with admissible candidate formation and retained failed comparisons",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Biological/local-cell or mandatory-organization geometry is an optional research assumption; its underlying functional effect stays active. Failed or reopened gates remain negative evidence.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr57_coverage_20260930",
+      "lineage": [
+        "#57"
+      ],
+      "intended_effect": "Restore function and carry obligations across replacement without authority inheritance",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr56_coverage_20260930",
+      "lineage": [
+        "#56"
+      ],
+      "intended_effect": "Portable action-bound signed permission with local refusal and revocation",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Portable proof is a mechanism candidate only; issuer/revocation semantics require current Kernel comparison before adoption.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr55_coverage_20260930",
+      "lineage": [
+        "#55"
+      ],
+      "intended_effect": "Converge stranded integration mechanisms without adding parallel canonical owners",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr54_coverage_20260930",
+      "lineage": [
+        "#54"
+      ],
+      "intended_effect": "Compute explicit founder-intent-to-outcome traceability and preserve PumpStation horizon",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr53_coverage_20260930",
+      "lineage": [
+        "#53"
+      ],
+      "intended_effect": "Choose a narrow legitimate first paid business outcome with preserved alternative evidence",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. No verified buyer, paid outcome, live settlement or business whole-loop closure follows from this PR.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr52_coverage_20260930",
+      "lineage": [
+        "#52"
+      ],
+      "intended_effect": "Refuse superseded founder instructions and stale world assumptions before consequences",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr51_coverage_20260930",
+      "lineage": [
+        "#51"
+      ],
+      "intended_effect": "Replaceable cognition selected by measured task fit and independent dissent",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr46_coverage_20260930",
+      "lineage": [
+        "#46"
+      ],
+      "intended_effect": "Governed inactive PumpStation venture proposal with no inherited capital or authority",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. No verified buyer, paid outcome, live settlement or business whole-loop closure follows from this PR.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr44_coverage_20260930",
+      "lineage": [
+        "#44"
+      ],
+      "intended_effect": "Useful developmental mechanisms selected against simpler conventional baselines",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Biological/local-cell or mandatory-organization geometry is an optional research assumption; its underlying functional effect stays active. Failed or reopened gates remain negative evidence.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr35_coverage_20260930",
+      "lineage": [
+        "#35"
+      ],
+      "intended_effect": "Independent outcome proof, bounded settlement, dispute handling and scoped reputation",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. No verified buyer, paid outcome, live settlement or business whole-loop closure follows from this PR.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr26_coverage_20260930",
+      "lineage": [
+        "#26"
+      ],
+      "intended_effect": "Actual bounded HTTPS research through consequence controls with receipted outcome",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr25_coverage_20260930",
+      "lineage": [
+        "#25"
+      ],
+      "intended_effect": "Bounded candidate generation and isolated comparison with founder-ratified adoption",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N4",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr24_coverage_20260930",
+      "lineage": [
+        "#24"
+      ],
+      "intended_effect": "Compile constitutional rules into deterministic fail-closed consequence policy",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr23_coverage_20260930",
+      "lineage": [
+        "#23"
+      ],
+      "intended_effect": "Evidence-tested improvement with strict baselines and retained losing alternatives",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N4",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr22_coverage_20260930",
+      "lineage": [
+        "#22"
+      ],
+      "intended_effect": "Commit-time authority, witnessed execution and independently observable outcome recording",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr21_coverage_20260930",
+      "lineage": [
+        "#21"
+      ],
+      "intended_effect": "Fail-closed signed consequences through one attributable authority path",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr20_coverage_20260930",
+      "lineage": [
+        "#20"
+      ],
+      "intended_effect": "Permanent 55-system capability horizon and verified compounding ambition",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr19_coverage_20260930",
+      "lineage": [
+        "#19"
+      ],
+      "intended_effect": "Action-bound commit witnesses, deduplication and postcondition reconciliation",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr18_coverage_20260930",
+      "lineage": [
+        "#18"
+      ],
+      "intended_effect": "Durable causally linked event history and faithful verifier records",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr17_coverage_20260930",
+      "lineage": [
+        "#17"
+      ],
+      "intended_effect": "Stable truthful DALEOBANKS/WMI wire contracts without fabricated institutional fields",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr16_coverage_20260930",
+      "lineage": [
+        "#16"
+      ],
+      "intended_effect": "One complete packaged governance surface for organ consumers",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr15_coverage_20260930",
+      "lineage": [
+        "#15"
+      ],
+      "intended_effect": "Installable shared governance dependency instead of copied organ semantics",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
+    },
+    {
+      "id": "pr14_coverage_20260930",
+      "lineage": [
+        "#14"
+      ],
+      "intended_effect": "Constitution drift detection, bounded heartbeat recovery and non-consenting approval queue",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr13_coverage_20260930",
+      "lineage": [
+        "#13"
+      ],
+      "intended_effect": "Treat instruction-shaped external content as data and form provenance-bearing context",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr12_coverage_20260930",
+      "lineage": [
+        "#12"
+      ],
+      "intended_effect": "Raw source preservation and narrow, verified capability grants",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized",
+      "adaptation": "Extract only a deficit-relevant causal primitive into the current canonical owner after comparison against existing implementation and simplest commodity alternative; preserve branch, counterevidence and intended effect"
+    },
+    {
+      "id": "pr11_coverage_20260930",
+      "lineage": [
+        "#11"
+      ],
+      "intended_effect": "Organ-neutral tamper-evident decisions, pause and rate controls",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "activation_evidence": "Named deficit resolved through the existing canonical owner with consequence-appropriate independent evidence; this metadata classification alone establishes no delivery or authority",
+      "evidence_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+      ],
+      "source_scope": "Live metadata/graph; title, existing placement and extracted PR-author evidence lines; selected description/source excerpts; NOT_FULL_CODE_AUDIT",
+      "caveats": "PR description and selected source surfaces inspected; full diff, tests and CI not independently rerun. Ancestry proves inclusion only, never deployment or founder-used closure. Historical SDK/WP generations are alternatives to current policy/events/provenance/evolution owners; do not restore a parallel authority or ledger.",
+      "authority_change": "none; no merge/closure/installation/activation authorized"
     }
-  ]
+  ],
+  "coverage_audit": {
+    "record": "LINEAGE-AUDIT-20260930",
+    "refs": [
+      "docs/collaboration/LINEAGE-AUDIT-20260930.json",
+      "docs/collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json"
+    ],
+    "open_prs": 81,
+    "live_branches": 135,
+    "scope": "Complete current metadata/ancestry enumeration with partial code/source inspection; placements are provisional development dispositions, not completion or founder ratification",
+    "previous_coverage": "50 PR identifiers in the earlier snapshot; retained in git f617db9 and audit coverage correction"
+  }
 }

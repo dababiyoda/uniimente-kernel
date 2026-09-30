@@ -11,7 +11,7 @@
   },
   "source_coverage": {
     "inspected": [
-      "uniimente-kernel: main 19fa33c, all 49 open PRs listed with heads; GREG lineages #113..#134 diffed, ancestry computed, test suites run on #134 head (951 passed/8 skipped), #122 head (974/8), main (626/4) and the converged branch",
+      "uniimente-kernel main19fa33c and converged f617db9;81 open PRs and135 live branches enumerated and ancestry-classified in LINEAGE-AUDIT-20260930.json. This proves metadata coverage, not all-PR code/review/test inspection. Earlier GREG suites below remain retained evidence at their named trees.",
       "uniimente-kernel docs: AGENTS, CLAUDE, FOUNDER_EFFECT_COMPILER, FOUNDER_INTENT_LEDGER, RECURSIVE_COLLABORATION_PROTOCOL, UNIIMENTE_FINAL_BUILD_ORDER, CANONICAL_EXECUTION_ORDER, PROJECT_COGNITION_SOP, PROJECT_SOURCE_CENSUS_2026-09-26, founder-loop-entry-gate.json, SR001_MERGE_STATUS, OPEN_SOURCE_STACK, ONE-GREG-FRONTIER-2026-09-27, REPOSITORY-METABOLISM-2026-09-25 (head), intent records FIRST-BODY (+ 2026-09-26 hardware source), REAL-PRODUCT-METABOLISM, FOUNDRY-55, open-source-first",
       "greg/: README, CHROMEBOOK_FIRST_MISSION, body, missions (header), metrics, models, compute, tribunal, doctor, journal, appraisal (delivery section), capabilities (strengthens/builtins)",
       "DALEOBANKS, WealthMachineIntelligence, gods-eye-view-EGGREGORE-TOOL, RAILSCOUT, PumpStation, RESEARCH-IN, build-your-own-x: default-branch layout, AGENTS.md entry, commit counts; open PR lists for DALEOBANKS, WMI, gods-eye",
@@ -20,7 +20,8 @@
     "partially_inspected": [
       "organ repositories: not line-by-line; DALEOBANKS/WMI main used as live inputs to the console test only",
       "older kernel PRs #63..#97: titles, heads and ancestry only",
-      "#105 provider-change intake, #121 correction loop, #129 egregore parts: summaries/diffstats only"
+      "#105 provider-change intake, #121 correction loop, #129 egregore parts: summaries/diffstats only",
+      "Current all81 Kernel PR bodies/diffs/reviews, non-PR branch content and71 organ open PR contents: titles/heads/bases/evidence excerpts plus selected source only; no exhaustive code audit claimed"
     ],
     "unavailable": [
       "the 93 ChatGPT Project source files and project conversations listed in PROJECT_SOURCE_CENSUS_2026-09-26 (not in any repository)",
@@ -32,7 +33,7 @@
   "intent_conflicts": [
     {
       "earlier": "#114/#122 and greg/FIRST_MISSION.md: first body is a founder-owned Mac; #122 titled 'first Mac mission path'",
-      "later": "Founder, 2026-09-26: 'I don't own a Mac… I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
+      "later": "Founder, 2026-09-26: 'I don't own a Mac\u2026 I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
       "same_scope": true,
       "resolution": "Later correction controls the first body. The first-Mac assumption is superseded for N1 only; body mechanisms are current, Mac-specific mechanisms move to the Mac body node N8 (see placements mac.*). Converged branch follows the Chromebook route.",
       "affected": [
@@ -71,7 +72,7 @@
     }
   ],
   "lineages": {
-    "note": "Re-expressed under INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE. The first-pass list (commit 2d602bf) used terminal labels; each lineage is now a placement on greg/path.json with class, node and changed axes. Source of truth: DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "note": "Effect-preserving placements in DEVELOPMENTAL-INHERITANCE-2026-09-30.json. Current81 PRs are metadata-classified with explicit source scope; full code inspection is partial. #95 earlier achieved assertion is refuted by missing executable surfaces and preserved as prior claim. No PR closed, retargeted or merged.",
     "by_pr": {
       "#63": [
         {
@@ -230,7 +231,7 @@
       "#95": [
         {
           "placement": "pr95_collaboration_bootstrap",
-          "classification": "ALREADY_ACHIEVED_NODE",
+          "classification": "REQUIRES_ADAPTATION",
           "node": "N0"
         }
       ],
@@ -442,6 +443,223 @@
           "classification": "ALREADY_ACHIEVED_NODE",
           "node": "N0"
         }
+      ],
+      "#137": [
+        {
+          "placement": "pr137_coverage_20260930",
+          "classification": "CURRENT_NODE_IMPLEMENTATION",
+          "node": "N1"
+        }
+      ],
+      "#62": [
+        {
+          "placement": "pr62_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#60": [
+        {
+          "placement": "pr60_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#59": [
+        {
+          "placement": "pr59_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N2"
+        }
+      ],
+      "#58": [
+        {
+          "placement": "pr58_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#57": [
+        {
+          "placement": "pr57_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N2"
+        }
+      ],
+      "#56": [
+        {
+          "placement": "pr56_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N2"
+        }
+      ],
+      "#55": [
+        {
+          "placement": "pr55_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#54": [
+        {
+          "placement": "pr54_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N1"
+        }
+      ],
+      "#53": [
+        {
+          "placement": "pr53_coverage_20260930",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#52": [
+        {
+          "placement": "pr52_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#51": [
+        {
+          "placement": "pr51_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N2"
+        }
+      ],
+      "#46": [
+        {
+          "placement": "pr46_coverage_20260930",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N7"
+        }
+      ],
+      "#44": [
+        {
+          "placement": "pr44_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#35": [
+        {
+          "placement": "pr35_coverage_20260930",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N7"
+        }
+      ],
+      "#26": [
+        {
+          "placement": "pr26_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#25": [
+        {
+          "placement": "pr25_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#24": [
+        {
+          "placement": "pr24_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#23": [
+        {
+          "placement": "pr23_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#22": [
+        {
+          "placement": "pr22_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#21": [
+        {
+          "placement": "pr21_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#20": [
+        {
+          "placement": "pr20_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#19": [
+        {
+          "placement": "pr19_coverage_20260930",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N1"
+        }
+      ],
+      "#18": [
+        {
+          "placement": "pr18_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#17": [
+        {
+          "placement": "pr17_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N0"
+        }
+      ],
+      "#16": [
+        {
+          "placement": "pr16_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#15": [
+        {
+          "placement": "pr15_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#14": [
+        {
+          "placement": "pr14_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#13": [
+        {
+          "placement": "pr13_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#12": [
+        {
+          "placement": "pr12_coverage_20260930",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N0"
+        }
+      ],
+      "#11": [
+        {
+          "placement": "pr11_coverage_20260930",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
       ]
     }
   },
@@ -479,5 +697,18 @@
     "verifier_v2_with_siblings": "FAIL V2 (the console test only): verifier/runs/v2-2026-09-30T12-26-15.056585+00-00.json, retained as negative evidence",
     "ci_scripts": "check_schema_refs, check_authority_singleton, check_sealed_developmental: pass",
     "phone_e2e": "tests/integration/test_greg_phone_e2e.py passes with playwright + preinstalled Chromium (iPhone profile)"
-  }
+  },
+  "coverage_corrections": [
+    {
+      "as_of": "2026-09-30",
+      "prior_claim_preserved": "uniimente-kernel: main 19fa33c, all 49 open PRs listed with heads; GREG lineages #113..#134 diffed, ancestry computed, test suites run on #134 head (951 passed/8 skipped), #122 head (974/8), main (626/4) and the converged branch",
+      "prior_scope": "Earlier49/50-source subset, not full current open-PR enumeration",
+      "current_observation": "81 current open Kernel PRs and135 live branches enumerated; metadata/ancestry scope for all, selected code inspection only",
+      "source_refs": [
+        "docs/collaboration/LINEAGE-AUDIT-20260930.json",
+        "docs/collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json",
+        "docs/collaboration/GREG-GATE-REPAIR-20260930.md"
+      ]
+    }
+  ]
 }

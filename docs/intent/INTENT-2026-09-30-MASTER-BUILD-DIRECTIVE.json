@@ -95,8 +95,16 @@
     {
       "section": 76,
       "clause": "Do not keep obsolete implementations merely to preserve history; KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED; KEEP THE INTENDED CAPABILITY ON THE HORIZON",
-      "state": "active",
-      "reality_status": "recorded; no implementation removed in this session (candidate listed under next_review_trigger)"
+      "state": "implemented",
+      "reality_status": "egregore/local_console.py and its synthetic development session, tests, driver and fixture left the active tree (last commit 6e0533f); its intended effect (founder reviews and corrects local GREG work) stays active at N1, carried by greg/console.py; each of its six tested behaviours maps to a named canonical test; the rule is enforced for any later archive",
+      "implementation_refs": [
+        "greg/path.py (validate_placements: an archive names its last commit, every path removed, and the canonical tests carrying each behaviour)",
+        "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json (placement kernel.local_console, archived)"
+      ],
+      "tests": [
+        "tests/unit/test_developmental_inheritance.py::test_an_archived_implementation_left_the_tree_and_its_behaviours_are_still_tested",
+        "tests/unit/test_developmental_inheritance.py::test_an_archive_without_its_lineage_is_refused"
+      ]
     }
   ],
   "success_evidence": [
@@ -116,7 +124,7 @@
     "UNIIMENTE_FINAL_BUILD_ORDER.md section 2 'Absolute Preservation Rule' and section 12 ('Code may stop being active. It must not stop being institutional memory') vs section 76 'Do not keep obsolete implementations merely to preserve history... KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED'. Resolution: the later explicit instruction controls the active tree; both stand for memory. An implementation may leave the active tree when a placement justifies it (GENUINELY_OBSOLETE with a founder-given basis, or SUPERSEDED_IMPLEMENTATION_ASSUMPTION whose effect a stronger canonical mechanism carries); the removing commit names the lineage and the last commit containing it, so git history and the placement record remain the institutional memory; the intended capability stays on greg/path.json. A correction banner records this in UNIIMENTE_FINAL_BUILD_ORDER.md.",
     "Earlier GREG decision requests carried only why_now, recommendation and string alternatives (compute, presence, missions). Resolution: section 60 controls; the fields are added through one contract, and the older fields remain for compatibility."
   ],
-  "next_review_trigger": "Founder answers a GREG resource ask on Body 1, or reviews the proposed archive of egregore/local_console.py (superseded by greg/console.py; its test fails whenever the sibling repositories are present and is skipped in CI)",
+  "next_review_trigger": "Founder answers a GREG resource ask on Body 1, or restores the archived local console with the recorded command if its removal was wrong",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [

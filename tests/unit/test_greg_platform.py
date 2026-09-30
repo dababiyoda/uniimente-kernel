@@ -215,6 +215,10 @@ def test_guardrail_repository_metabolism_is_classified_without_destroying_histor
     record = json.loads((ROOT / "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json").read_text())
     assert record["intent"] == "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING" and "PROPOSED" in record["status"]
     labels = set(record["reality_labels"])
+    # Directive section 76 (2026-09-30): a named path may leave the active tree only through a placement
+    # that records its archive (last commit, every path, the tests now carrying it). Silent deletion still fails.
+    placements = json.loads((ROOT / "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json").read_text())
+    archived = {path for p in placements["placements"] if p.get("archived") for path in p["archived"]["paths"]}
     for entry in record["entries"]:
         assert entry["bucket"] in record["buckets"], entry["path"]
         assert set(entry["super_nodes"]) <= set(SUPER_NODES), entry["path"]
@@ -227,7 +231,7 @@ def test_guardrail_repository_metabolism_is_classified_without_destroying_histor
             for part in re.sub(r"\(.*?\)", "", entry["path"]).replace(" + ", ",").split(","):
                 path = part.strip().split(" ")[0]
                 if path and "*" not in path:
-                    assert (ROOT / path).exists(), path
+                    assert (ROOT / path).exists() or path in archived, path
     assert {e["bucket"] for e in record["entries"]} == set(record["buckets"])
 
 

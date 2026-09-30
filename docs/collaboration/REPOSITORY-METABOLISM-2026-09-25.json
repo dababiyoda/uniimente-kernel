@@ -618,7 +618,8 @@
    "evidence": "#112; 6 tests pass against real sibling repositories on the converged tree",
    "extracted_mechanism": "loopback page with Host check, CSRF, head-bound review; interface closes while a host continues",
    "disposition": "MECHANISM_EXTRACTED_INTO greg/console.py (real Ed25519 signing replaces synthetic authority); retained runnable as #112 lineage",
-   "reality": "TESTED"
+   "reality": "TESTED",
+   "later_2026_09_30": "Archived from the active tree under directive section 76 (last commit 6e0533f); see placement kernel.local_console in DEVELOPMENTAL-INHERITANCE-2026-09-30.json for the restore command and the canonical tests that carry each behaviour. Correction to 'evidence' above: the review-comparison test failed whenever sibling daleobanks/ and wmi/ checkouts existed (GREG-RECONCILIATION-2026-09-30.json)."
   },
   {
    "repo": "uniimente-kernel",
@@ -628,7 +629,8 @@
    "evidence": "#112; labels itself SYNTHETIC_DEVELOPMENT_ONLY_NOT_FOUNDER_AUTHENTICATION",
    "extracted_mechanism": "explicit synthetic-authority label so fixtures can never pass as founder authority",
    "disposition": "RETAIN_HISTORICAL; superseded for product use by greg/founder.py enrolment",
-   "reality": "TESTED"
+   "reality": "TESTED",
+   "later_2026_09_30": "Archived from the active tree under directive section 76 (last commit 6e0533f); see placement kernel.local_console in DEVELOPMENTAL-INHERITANCE-2026-09-30.json for the restore command and the canonical tests that carry each behaviour. Correction to 'evidence' above: the review-comparison test failed whenever sibling daleobanks/ and wmi/ checkouts existed (GREG-RECONCILIATION-2026-09-30.json)."
   },
   {
    "repo": "uniimente-kernel",

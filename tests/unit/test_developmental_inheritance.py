@@ -12,6 +12,7 @@ import copy
 import json
 from pathlib import Path
 import re
+import subprocess
 
 import pytest
 
@@ -153,6 +154,40 @@ def test_genuine_obsolescence_needs_a_founder_given_basis():
         devpath.validate_placements(record)
     target["obsolescence_basis"] = {"kind": "effect_no_longer_wanted", "refs": ["x"]}
     with pytest.raises(devpath.PathError, match="founder's own words"):
+        devpath.validate_placements(record)
+
+
+def test_an_archived_implementation_left_the_tree_and_its_behaviours_are_still_tested():
+    """Directive section 76: archive only when justified; the intent and the behaviours stay."""
+    archived = [p for p in placements()["placements"] if p.get("archived")]
+    assert archived, "section 76 names egregore/local_console.py; its archive must stay recorded"
+    shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT, capture_output=True,
+                             text=True).stdout.strip() != "false"
+    for p in archived:
+        record = p["archived"]
+        assert p["intended_effect_status"] == "active", p["id"]       # the implementation leaves; the intent stays
+        for path in record["paths"]:
+            assert not (ROOT / path).exists(), f"{path} is archived but still in the active tree"
+            if not shallow:                                              # CI checks out one commit; locally, prove restorability
+                assert subprocess.run(["git", "cat-file", "-e", f"{record['last_commit']}:{path}"], cwd=ROOT).returncode == 0
+        for old, carriers in record["behaviours_carried"].items():
+            assert carriers, old
+            for carrier in carriers:
+                file, name = carrier.split("::")
+                assert re.search(rf"^def {re.escape(name)}\(", (ROOT / file).read_text(), re.M), carrier
+
+
+@pytest.mark.parametrize("mutate, message", [
+    (lambda p: p.update(classification="PORTABLE_MECHANISM"), "only a superseded or genuinely obsolete"),
+    (lambda p: p["archived"].pop("last_commit"), "last commit"),
+    (lambda p: p["archived"].update(paths=[]), "every path removed"),
+    (lambda p: p["archived"].pop("behaviours_carried"), "canonical mechanism and tests"),
+])
+def test_an_archive_without_its_lineage_is_refused(mutate, message):
+    record = copy.deepcopy(placements())
+    target = next(p for p in record["placements"] if p.get("archived"))
+    mutate(target)
+    with pytest.raises(devpath.PathError, match=message):
         devpath.validate_placements(record)
 
 

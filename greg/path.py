@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 
 from greg import metrics
 from greg.journal import Journal
@@ -226,6 +227,14 @@ def validate_placements(record: dict, path: dict | None = None) -> None:
                 raise PathError(f"{pid}: genuine obsolescence needs one of {OBSOLESCENCE_BASES} with references")
             if basis["kind"] == "effect_no_longer_wanted" and not p.get("founder_source_for_destination_change"):
                 raise PathError(f"{pid}: 'effect no longer wanted' requires the founder's own words")
+        archived = p.get("archived")
+        if archived is not None:                  # directive section 76: leave the active tree only when justified
+            if cls not in ("SUPERSEDED_IMPLEMENTATION_ASSUMPTION", "GENUINELY_OBSOLETE"):
+                raise PathError(f"{pid}: only a superseded or genuinely obsolete implementation leaves the active tree")
+            if not re.fullmatch(r"[0-9a-f]{7,40}", str(archived.get("last_commit", ""))) or not archived.get("paths"):
+                raise PathError(f"{pid}: an archive names the last commit that contained it and every path removed")
+            if not p.get("surviving_mechanisms") or not archived.get("behaviours_carried"):
+                raise PathError(f"{pid}: an archive names the canonical mechanism and tests that now carry its effect")
         if cls in ("REQUIRES_ADAPTATION", "TEMPORARILY_DEFERRED", "PORTABLE_MECHANISM",
                    "SUPERSEDED_IMPLEMENTATION_ASSUMPTION") and not (p.get("adaptation") or p.get("inheritance_test")):
             raise PathError(f"{pid}: say what adapts, ports or reroutes")

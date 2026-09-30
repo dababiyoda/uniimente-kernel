@@ -331,8 +331,8 @@
       "surviving_mechanisms": [
         "branch claude/foundry-55"
       ],
-      "adaptation": "Stacks on the converged base with two additive conflicts; its systems attach when a mission pulls them",
-      "activation_evidence": "Stack trial green (47/47 foundry tests with declared deps); each system's integration evidence per FOUNDRY-55"
+      "adaptation": "Stacks on the converged base with two additive conflicts (greg/capabilities.py: foundry.query/apply beside venture.assess/status; greg/cli.py: the foundry subcommand beside path/presence/doctor); keep both sides. Its systems attach when a mission pulls them; not merged ahead of VEPMC per its own body",
+      "activation_evidence": "Stack trial 2026-09-30 of #132 head da3d4ac (39/55) onto 6e0533f (N2 reached agent-side): `python -m foundry.completion --audit` PASS 39/55, 0 problems; 75 foundry tests pass; every GREG unit and integration suite passes on the stack (380 passed, 8 skipped). Earlier trial at 31/55: 47/47. Merging stays a founder decision after VEPMC"
     },
     {
       "id": "pr121_correction_loop",
@@ -805,7 +805,11 @@
       "id": "kernel.local_console",
       "lineage": [
         "egregore/local_console.py",
-        "tests/unit/test_greg_console.py"
+        "egregore/development_session.py",
+        "tests/unit/test_greg_console.py",
+        "tests/greg_acceptance_driver.py",
+        "tests/fixtures/greg_held_out.json",
+        "#112"
       ],
       "intended_effect": "A founder console over local GREG proof",
       "intended_effect_status": "active",
@@ -816,7 +820,8 @@
       ],
       "surviving_mechanisms": [
         "greg/console.py",
-        "egregore/repository_audit.py"
+        "egregore/repository_audit.py",
+        "egregore/brief_learning.py"
       ],
       "inheritance_test": {
         "q1_original_capability": "Founder reviews and corrects local GREG work",
@@ -827,7 +832,53 @@
         "q6_later_node_parts": "None",
         "q7_extract_into_current_path": "Already used by greg/briefs.py and greg/capabilities.py",
         "q8_incompatible_with_corrected_destination": "A second founder console",
-        "q9_cheapest_distinguishing_test": "Its hidden test fails whenever sibling repos exist (asserts on live organ state); pin fixtures or retire the assertion"
+        "q9_cheapest_distinguishing_test": "Its hidden test failed whenever sibling repos existed (it asserted live organ state); each of its six behaviours is carried by a canonical founder-signed test listed under archived.behaviours_carried"
+      },
+      "archived": {
+        "directive": "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE section 76: 'KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED'",
+        "justification": "A second founder console whose CSRF token is explicitly not identity; greg/console.py carries the effect with founder-signed commands, the same loopback Host check and CSRF. Kept only as history since 2026-09-26 (docs/GREG_LOCAL_START.md banner), which section 76 says is not a reason to keep it active.",
+        "last_commit": "6e0533f",
+        "paths": [
+          "egregore/local_console.py",
+          "egregore/development_session.py",
+          "tests/unit/test_greg_console.py",
+          "tests/greg_acceptance_driver.py",
+          "tests/fixtures/greg_held_out.json"
+        ],
+        "restore": "git checkout 6e0533f -- egregore/local_console.py egregore/development_session.py tests/unit/test_greg_console.py tests/greg_acceptance_driver.py tests/fixtures/greg_held_out.json",
+        "kept": [
+          "docs/GREG_LOCAL_START.md (provenance, with restore command)",
+          "tests/evidence/greg-usable/ (its recorded runs)",
+          "egregore/brief_learning.py (still used by tests/unit/test_resume_authority.py)",
+          "egregore/repository_audit.py (used by greg/briefs.py)"
+        ],
+        "behaviours_carried": {
+          "test_intentional_stop_survives_process_restart_and_blocks_dispatch": [
+            "tests/unit/test_greg_remote.py::test_a_founder_stop_survives_restart_until_a_human_clears_it",
+            "tests/unit/test_greg_continuity.py::test_stop_arriving_mid_tick_admits_no_further_dispatch"
+          ],
+          "test_budget_wait_cannot_be_overridden_by_restart": [
+            "tests/unit/test_greg_founder_asks.py::test_a_paid_approval_is_a_full_resource_ask_and_every_surface_shows_its_costs",
+            "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+            "tests/unit/test_greg_genesis_builder.py::test_no_signed_build_budget_means_no_build"
+          ],
+          "test_killed_host_reconstructs_claim_and_refuses_redispatch": [
+            "tests/unit/test_greg_capabilities.py::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused",
+            "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once"
+          ],
+          "test_http_client_closure_and_ui_server_restart": [
+            "tests/unit/test_greg_interface.py::test_founder_asks_reviews_signs_and_the_body_applies_it",
+            "tests/unit/test_greg_interface.py::test_console_refuses_foreign_hosts_origins_and_missing_tokens"
+          ],
+          "test_stop_terminates_inflight_worker_and_retains_uncertain_dispatch": [
+            "tests/unit/test_greg_capabilities.py::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused",
+            "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command"
+          ],
+          "test_review_comparison_changes_later_task_and_regression_reverts": [
+            "tests/unit/test_resume_authority.py::test_comparison_retains_ties_and_regressions"
+          ]
+        },
+        "negative_evidence": "test_review_comparison_changes_later_task_and_regression_reverts failed identically on untouched #134 and #122 heads whenever sibling daleobanks/ and wmi/ checkouts existed (docs/collaboration/GREG-RECONCILIATION-2026-09-30.json); CI never saw it because it skipped without them. The budget-wait behaviour is carried by composition (a paid action waits for a signed decision; a pending decision survives a hard kill), not by one test."
       }
     },
     {

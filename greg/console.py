@@ -15,7 +15,8 @@ working under its supervisor. The console is not the body and not a second Kerne
 
 Mechanism lineage: #112 egregore/local_console.py (loopback page, Host check, CSRF,
 head-bound review), now driving the canonical #113 body with real Ed25519 signatures
-instead of synthetic development authority.
+instead of synthetic development authority. That module left the active tree on 2026-09-30
+(directive section 76; last in commit 6e0533f).
 """
 from __future__ import annotations
 

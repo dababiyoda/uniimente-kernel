@@ -118,6 +118,8 @@ def main(argv=None) -> int:
                            help="brief label: a key the brief should have flagged (owner/repo#N or local:NAME)")
             q.add_argument("--noise", action="append", default=None,
                            help="brief label: a flagged key that was not worth your attention")
+            q.add_argument("--claim-failing", action="append", default=None,
+                           help="failure claim: owner/repo#N was failing and the brief missed it (GREG verifies it)")
         if name == "stop":
             q.add_argument("--local", action="store_true")
         if name in ("attach", "detach"):
@@ -247,6 +249,8 @@ def main(argv=None) -> int:
                 body["regression"] = args.regression
             if args.missed is not None or args.noise is not None:
                 body["attention"] = {"missed": args.missed or [], "noise": args.noise or []}
+            if args.claim_failing:
+                body["failure_claim"] = {"missed_failing": args.claim_failing}
             print(_drop(home, "CRITIQUE", body, args))
         elif args.cmd in ("pause", "resume"):
             print(_drop(home, "BODY_" + args.cmd.upper(), {}, args))

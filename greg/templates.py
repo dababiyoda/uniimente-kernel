@@ -270,6 +270,41 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
     }
 
 
+def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable: str = "deliverable.pdf",
+               horizon_days: float = 30) -> dict:
+    """A step only a person may do (directive section 60: "I need a licensed professional for this decision").
+
+    ``function`` is ``professional.<field>`` (an attorney's review, a CPA's return, an engineer's
+    stamp) or ``human.<task>``. GREG never searches for, builds or attaches software for it: the
+    engine raises one costed ``professional`` / ``human_worker`` ask, contacts and pays no one, and
+    keeps observing the mission's own check. When the deliverable exists where the check reads it,
+    the ask is withdrawn and the mission closes without GREG acting. GREG checks that the
+    deliverable exists, never its professional quality.
+    """
+    if not function.startswith(("professional.", "human.")) or not re.fullmatch(r"[a-z0-9_.-]{3,80}", function):
+        raise ValueError("function must be professional.<field> or human.<task> (lowercase, 3-80 characters)")
+    name = Path(deliverable).name
+    if not name or name != deliverable or name.startswith("."):
+        raise ValueError("deliverable is a plain file name placed in this mission's workspace folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", f"{function.split('.', 1)[1]}-{name}".lower()).strip("-")[:50]
+    mission_id = f"m:work-{slug}"
+    path = Path(workspace_root) / mission_id.replace(":", "_") / name
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"{purpose.strip()} ({function}; deliverable at {path}).",
+        "intended_effect": f"the deliverable of {function} exists where GREG observes it; GREG does not perform it",
+        "priority": 50, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            {"check_id": "deliverable_present", "description": f"{name} is placed by whoever did {function}",
+             "sensor": {"capability": "fs.read", "params": {"path": str(path)}, "target": f"fs:{name}"},
+             "predicate": {"op": "equals", "field": "exists", "value": True}}],
+        "strategies": [{"action_id": "arrange-the-person", "function": function, "target": f"person:{function}",
+                        "advances": ["deliverable_present"], "rationale": purpose.strip()}],
+        "light_cone": {"capabilities": ["fs.read"], "targets": ["fs:*", "person:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
-             "verify-download": verify_download, "word-limit": word_limit}
+             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}

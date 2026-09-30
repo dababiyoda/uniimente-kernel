@@ -58,6 +58,7 @@ function renderDecisions(list) {
     card.dataset.requestId = r.request_id;
     card.append(el("h3", r.mission_id ? `${r.kind} · ${r.mission_id}` : r.kind), el("p", r.why_now), el("p", "Recommendation: " + r.recommendation, "muted"));
     if (r.wording_withheld) card.append(el("p", "GREG's wording was withheld (" + r.wording_withheld.rules.join(", ") + "); the facts and options are unchanged."));
+    if (r.answer_effect) card.append(el("p", "What your answer does: " + r.answer_effect));
     if (r.expected_effect) card.append(el("p", "Expected effect: " + r.expected_effect));
     for (const o of r.options || []) card.append(el("p", `• ${o.option} — ${o.cost} — ${o.expected_effect}`, "muted"));
     if (r.uncertainty) card.append(el("p", "Uncertainty: " + r.uncertainty, "muted"));

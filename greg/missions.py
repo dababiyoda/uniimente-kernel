@@ -393,6 +393,8 @@ class MissionEngine:
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
+        if b["type"] == "human_work":            # an answer is not the work; only observing the deliverable is
+            return False, f"awaiting the deliverable for {b['function']}; GREG does not perform or fake it"
         return False, "unknown blocker"
 
     def _schedule(self, m: MissionState, now: datetime, seconds: int):
@@ -580,15 +582,20 @@ class MissionEngine:
         failing, evidence = self._observe(m, now)
         if failing is None:
             return {"state": "BLOCKED", "blocker": m.blocker}
-        if failing:
+        human = m.blocker["type"] == "human_work"   # it waits only on the checks the person's work advances
+        waiting_on = failing & set(m.blocker["failing_checks"]) if human else failing
+        if waiting_on:
             self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))
             return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
         rid = m.blocker["request_id"]
-        why = "world re-observed: every failing check now passes without any GREG action"
+        why = ("the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
+               if human else "world re-observed: every failing check now passes without any GREG action")
         self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
                                                    "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
         self._unblock(m, why)
         self.book.rebuild()
+        if failing:                                  # other checks remain: pursue them from the next step
+            return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
 
     def _setpoint_reached(self, m: MissionState, now: datetime, evidence: list) -> dict:
@@ -636,6 +643,9 @@ class MissionEngine:
     def _deficit(self, m: MissionState, spec: dict, now: datetime, *, purpose: str):
         function = spec.get("function") or self.registry.manifests.get(spec.get("capability"), None)
         function = function.function if hasattr(function, "function") else (function or spec.get("capability"))
+        resource = asks.human_work(function)
+        if resource is not None:                  # never searched, built or attached: a person does this work
+            return self._escalate_human(m, spec, function, resource, purpose, now)
         if self.genesis is not None:
             capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now)
             if capability is not None:
@@ -652,6 +662,53 @@ class MissionEngine:
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
                         "reconsider": "a verified capability for this function is attached"})
+        return None
+
+    def _escalate_human(self, m: MissionState, spec: dict, function: str, resource: str, purpose: str,
+                        now: datetime):
+        """Section 60, "I need a licensed professional for this decision": work only a person
+        may do. GREG contacts, hires and pays no one; it asks once, with what the work is for,
+        what each route costs and what it cannot know, then keeps observing the mission's own
+        checks and closes the ask when the deliverable exists."""
+        who = "a licensed professional" if resource == "professional" else "a person"
+        watched = sorted(set(spec.get("advances", [])))
+        checks = [{"check_id": c["check_id"], "description": c["description"],
+                   "observed_by": c["sensor"].get("capability") or c["sensor"].get("function"),
+                   "params": c["sensor"].get("params", {})} for c in m.spec["success_checks"] if c["check_id"] in watched]
+        rid = self._request(
+            m, kind="HUMAN_WORK", scope_digest=sha256_json({"function": function, "purpose": purpose}), action_id=None,
+            why=f"{purpose} needs {function}, which only {who} may do; GREG will not substitute software for it",
+            recommendation=(f"arrange {function} yourself or through {who} you choose, and put the deliverable where "
+                            "the mission's check reads it; GREG closes this ask when it observes it"),
+            requested={"function": function, "spend": "none requested; any engagement or payment is yours to make",
+                       "contact": "none; GREG contacts no one"},
+            now=now, resource={
+                "resource": resource,
+                "evidence": {"function": function, "required_by": purpose, "rationale": spec.get("rationale", ""),
+                             "deliverable_observed_by": checks,
+                             "not_attempted": "no software search, build or attachment: this function is reserved "
+                                              "for a person (greg/asks.py HUMAN_WORK)"},
+                "expected_effect": ("the mission's check observes the deliverable, the ask is withdrawn, and the "
+                                    "mission continues without GREG acting for this step") if checks else
+                                   "the mission continues once you revise how this step is observed",
+                "uncertainty": ("how long the work takes, what it costs and whether its result is right are unknown "
+                                "to GREG; no price was looked up and no one was contacted; GREG checks only that the "
+                                "deliverable exists where the mission says, not its professional quality"),
+                "options": [
+                    {"option": f"do {function} yourself and place the deliverable", "cost": "your time",
+                     "expected_effect": "observed at the next check; the ask is withdrawn and the mission continues"},
+                    {"option": f"engage {who} you choose and place their deliverable",
+                     "cost": "their fee, unknown to GREG; you contract and pay them directly",
+                     "expected_effect": "observed at the next check; the ask is withdrawn and the mission continues"},
+                    {"option": "revise the mission so this step is not needed", "cost": "none",
+                     "expected_effect": "a new signed MISSION replaces this one; nothing runs for this step"},
+                    {"option": "abandon", "cost": "none",
+                     "expected_effect": "the mission ends; nothing further runs for it"}]})
+        self._block(m, {"type": "human_work", "request_id": rid, "function": function, "resource": resource,
+                        "why": f"{function} is work only {who} may do",
+                        **({"failing_checks": watched} if watched else {}),
+                        "reconsider": "the deliverable is observed by the mission's own checks, or you revise or "
+                                      "abandon the mission"})
         return None
 
     def _capability_ask(self, m: MissionState, function: str, purpose: str) -> dict:

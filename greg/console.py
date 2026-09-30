@@ -179,6 +179,8 @@ def _ask_details(r: dict) -> str:
     if r.get("wording_withheld"):
         parts.append("<br><b>GREG's wording was withheld</b> (" + _e(", ".join(r["wording_withheld"]["rules"]))
                      + "); the facts and options below are unchanged.")
+    if r.get("answer_effect"):
+        parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):
         parts.append("<br>Expected effect: " + _e(r["expected_effect"]))
     if r.get("options"):

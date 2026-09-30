@@ -51,6 +51,17 @@ RESOURCES = {
     "mandate": "a longer or wider mission mandate",
     "capability": "a missing capability (installed software, an account, or a verified build)",
 }
+# Work only a person can do ("I need a licensed professional for this decision."). A function
+# in these namespaces is never searched for, built, registered or attached as software: GREG
+# asks for the person, contacts and pays no one, and observes the deliverable when it exists.
+HUMAN_WORK = {"professional.": "professional", "human.": "human_worker"}
+
+
+def human_work(function: str | None) -> str | None:
+    """The resource a function needs when only a person may perform it, else None."""
+    return next((resource for prefix, resource in HUMAN_WORK.items() if str(function or "").startswith(prefix)), None)
+
+
 BASE_FIELDS = ("request_id", "kind", "mission_id", "action_id", "scope_digest", "why_now", "recommendation",
                "alternatives", "authority_requested", "consequence_of_no_response", "created_at", "reality_status")
 RESOURCE_FIELDS = ("resource", "evidence", "options", "expected_effect", "uncertainty")
@@ -283,9 +294,22 @@ def record(journal: Journal, message: dict, *, quoted=()) -> dict:
     return shown
 
 
+# Asks where an answer is only a record: GREG does not act on "approve". Every surface says so,
+# so a button is never mistaken for hiring someone or handing over a credential.
+ANSWER_ONLY_RECORDS = {
+    "HUMAN_WORK": "Your answer is only recorded; GREG contacts, hires and pays no one. The mission continues "
+                  "when the deliverable is observed.",
+    "ACCOUNT_ACCESS": "Your answer is only recorded; it grants nothing. Only `greg secret set` on the body gives "
+                      "GREG a credential.",
+}
+
+
 def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
             "options", "alternatives", "uncertainty", "authority_requested", "evidence",
             "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld")
-    return {k: request[k] for k in keys if k in request}
+    shown = {k: request[k] for k in keys if k in request}
+    if request.get("kind") in ANSWER_ONLY_RECORDS:
+        shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]
+    return shown

@@ -40,6 +40,17 @@ def _asks(tmp_path):
             authority_requested={"spend": "none requested"}, consequence_of_no_response="the mission waits",
             created_at="2026-09-30T00:10:00Z")
         asks.record(body.journal, plea)
+        asks.record(body.journal, asks.resource_request(
+            request_id="req-lawyer", kind="HUMAN_WORK", resource="professional",
+            why_now="strategy review needs professional.legal_review, which only a licensed professional may do",
+            recommendation="arrange the review and place the deliverable", evidence={"function": "professional.legal_review"},
+            options=[{"option": "engage a licensed professional you choose",
+                      "cost": "their fee, unknown to GREG; you contract and pay them directly",
+                      "expected_effect": "observed at the next check"},
+                     {"option": "abandon", "cost": "none", "expected_effect": "the mission ends"}],
+            expected_effect="the ask is withdrawn when the deliverable is observed", uncertainty="no price looked up",
+            authority_requested={"spend": "none requested", "contact": "none; GREG contacts no one"},
+            consequence_of_no_response="the mission waits", created_at="2026-09-30T00:11:00Z"))
     return status(home)
 
 
@@ -79,3 +90,5 @@ def test_the_phone_shows_what_each_option_costs_and_never_the_withheld_plea(tmp_
     assert "Please, I need you" not in plea_card and "wording was withheld (emotional_manipulation)" in plea_card
     assert "the account's exposure to GREG" in plea_card                        # the facts and costs remain
     assert "on the Mac" not in stop_text                                          # Body 1 is a Chromebook
+    assert "What your answer does: Your answer is only recorded; GREG contacts, hires and pays no one" in cards["req-lawyer"]
+    assert "What your answer does" not in compute_card                            # only where an answer is a record

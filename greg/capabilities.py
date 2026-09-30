@@ -695,6 +695,11 @@ class CapabilityRegistry:
         problems = manifest.validate()
         if problems:
             raise CapabilityError(f"invalid manifest {manifest.capability_id}: {problems}")
+        from greg.asks import human_work
+        if human_work(manifest.function):
+            raise CapabilityError(f"{manifest.capability_id}: {manifest.function} is work only a person may do; "
+                                  "GREG asks for that person and observes the deliverable, and never registers "
+                                  "software in their place")
         self.genomes.register(manifest.genome())
         self.manifests[manifest.capability_id] = manifest
         self.adapters[manifest.capability_id] = adapter

@@ -426,11 +426,12 @@
       "intended_effect": "GREG asks Alfonso for what a goal needs (an account, compute, software, a build, a professional, a human worker) with evidence, costed alternatives, expected effect, uncertainty and the authority required, never by pressure",
       "node": "N2",
       "feasibility": "CURRENTLY_BUILDABLE",
-      "current_reality": "INTEGRATION-TESTED contract (greg/asks.py) used by compute, availability, missing-capability, mandate, paid-approval and account-access asks (the brief, with greg secret set to answer); professional, human-worker and priced build-versus-buy asks are validated but not yet produced",
+      "current_reality": "INTEGRATION-TESTED contract (greg/asks.py) used by compute, availability, missing-capability, mandate, paid-approval, account-access (the brief; `greg secret set` answers it) and human-work asks (a professional.* or human.* step: one costed professional/human_worker ask, no software substitute, closed when the deliverable is observed); priced build-versus-buy asks are validated but not yet produced (no real provider price is available to cite)",
       "nearest_precursor": [
         "greg/asks.py",
         "greg/genesis.py",
-        "greg/compute.py"
+        "greg/compute.py",
+        "greg/missions.py"
       ],
       "activation_evidence": "a founder-answered resource ask on Body 1 whose stated expected effect is later measured",
       "founder_sources": [

@@ -41,12 +41,15 @@
         "greg/console.py",
         "greg/phone/app.js",
         "greg/briefs.py",
-        "greg/cli.py"
+        "greg/cli.py",
+        "greg/templates.py",
+        "greg/capabilities.py"
       ],
       "tests": [
         "tests/unit/test_greg_founder_asks.py",
         "tests/integration/test_greg_phone_asks.py",
-        "tests/unit/test_greg_account_access.py"
+        "tests/unit/test_greg_account_access.py",
+        "tests/unit/test_greg_human_work.py"
       ],
       "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence)"
     },
@@ -110,11 +113,12 @@
   "success_evidence": [
     "tests/unit/test_greg_founder_asks.py: every decision.requested is recorded only by greg/asks.py; each of the founder's six example asks is expressible; an ask missing any section-60 element is refused with nothing recorded; pressure wording is withheld from every founder surface while facts and costs stay and the attempt is kept as evidence; the founder's own signed words are never screened; paid approvals, missing capabilities and expired mandates are full resource asks; console, phone, status and morning report show costs, expected effect and uncertainty",
     "Twenty deliberate defects (mutations) were each caught by these tests, including an empty policy explanation that would otherwise have crash-looped the body",
-    "tests/integration/test_greg_phone_asks.py: the real phone page shows each option's cost, the expected effect and uncertainty, never the withheld plea, and no longer tells the founder the body is 'the Mac'"
+    "tests/integration/test_greg_phone_asks.py: the real phone page shows each option's cost, the expected effect and uncertainty, never the withheld plea, and no longer tells the founder the body is 'the Mac'",
+    "tests/unit/test_greg_human_work.py: a professional.* or human.* step becomes one HUMAN_WORK ask (resource professional or human_worker) with evidence, costed options including no-cost ones, uncertainty, and authority stating no spend and no contact; genesis never searches or builds for it and the registry refuses any software registered in a person's place; an answer is not the work; the ask is withdrawn and the mission continues only when the deliverable is observed; every surface (console, phone in Chromium, status) says an answer to it is only a record; ten deliberate defects caught (an eleventh, dropping one of two no-cost options, is equivalent)"
   ],
   "failure_evidence": [
     "The wording screen is lexical: a paraphrase that pressures without trigger words ('it would be wise to decide within the hour') passes. Structural guards (mandatory no-cost option with its effect, mandatory consequence of no response, evidenced deadlines) are the stronger defence; the screen is a floor, not proof of non-manipulation",
-    "Asks for a licensed professional or a human worker are expressible and validated but no GREG producer emits them yet; build-versus-buy asks carry no priced comparison yet. Account-access asks are produced by the brief (tests/unit/test_greg_account_access.py)",
+    "Build-versus-buy asks carry no priced comparison yet: no real provider price is available on the body to cite, and GREG must not quote one from memory. Licensed-professional and human-worker asks are now produced for professional.* and human.* steps (tests/unit/test_greg_human_work.py); GREG verifies only that the deliverable exists, never its professional quality. Account-access asks are produced by the brief (tests/unit/test_greg_account_access.py)",
     "The phone page rendered costed options and a withheld plea in Chromium with an iPhone profile (tests/integration/test_greg_phone_asks.py); it has not run in iOS Safari on Alfonso's iPhone"
   ],
   "dependencies": [

@@ -130,6 +130,10 @@ def main(argv=None) -> int:
             q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
             q.add_argument("--sha256", help="verify-download: the published SHA-256 (64 hex)")
             q.add_argument("--max-words", type=int, help="word-limit: the most words the file may have")
+            q.add_argument("--function", help="human-work: professional.<field> or human.<task>")
+            q.add_argument("--purpose", help="human-work: what the work is for, in your words")
+            q.add_argument("--deliverable", default="deliverable.pdf",
+                           help="human-work: file name the person's deliverable is saved as in the mission folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -243,6 +247,11 @@ def main(argv=None) -> int:
                 elif args.target == "word-limit":
                     spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
                                                 workspace_root=Layout(home).workspace)
+                elif args.target == "human-work":
+                    if not (args.function and args.purpose):
+                        raise BodyError("human-work needs --function and --purpose")
+                    spec = templates.human_work(function=args.function, purpose=args.purpose,
+                                                deliverable=args.deliverable, workspace_root=Layout(home).workspace)
                 elif args.target == "engineering-brief":
                     spec = templates.engineering_brief(local=dict(r.split("=", 1) for r in args.local),
                                                        github=args.github, daily=args.daily,

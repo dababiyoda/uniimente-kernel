@@ -118,6 +118,35 @@ is the single tested translation. Dispositions for the rest of the project are i
 On the Mac (not yet exercised against a public TSA: this build container's network policy blocks every public TSA): fetch Sigstore's chain from `https://timestamp.sigstore.dev/api/v1/timestamp/certchain`, keep only its last (root) certificate, then
 `greg anchor configure --tsa-url https://timestamp.sigstore.dev/api/v1/timestamp --roots ROOT.pem --key ~/.greg-founder.pem`, and periodically `greg anchor export --roots ROOT.pem --out /Volumes/<elsewhere>/greg-witness.json`.
 
+## Standing missions are appraised per closure; signal → venture memo (2026-09-27)
+
+**Standing missions.** Before this, a standing (infinite) mission never reached `mission.achieved`, so the separate-process appraiser never judged it. Every `--daily` brief went unverified. Now:
+- each hold reached after new action is recorded once as `mission.held`;
+- it is appraised in the separate process;
+- the verdict is bound to that closure (`closure_event`);
+- the appraisal is scoped to the actions since the previous hold, so superseded evidence is never re-judged as a present claim.
+
+VEPMC is unchanged: it still counts only bounded `mission.achieved` closures.
+
+**`venture.assess` / `venture.status`** (`greg/ventures.py`). The flow:
+1. RailScout `appraise` on sha256-pinned sources.
+2. A deterministic wire packet. A buyer or budget owner is included only if evidenced, and sourced counterevidence is carried as `risk_flags`.
+3. WealthMachine `evaluate_packet`.
+4. The Kernel canonical adapters, where a contract violation becomes `CapabilityError`.
+5. One write-once memo.
+
+Organ execution:
+- Each organ runs in its own process with a stripped environment and a fresh bytecode cache.
+- Organs hold no authority.
+
+The verdict may not outrun the evidence: the engine's verdict is capped at `needs_more_evidence` unless RailScout says `READY_FOR_HUMAN_REVIEW`. The memo names what would change the verdict. The appraiser re-renders the memo and re-runs both organs.
+
+`--standing` reuses the canonical infinite-mission machinery: one approval, and a re-assessment whenever the evidence changes.
+
+    greg mission new venture-assessment --railscout RS --wmi WMI --manifest M.json --source-root DIR [--standing]
+
+Reality: IMPLEMENTED / TESTED / LOCAL-REAL (Linux, test key; developmental evidence in #124). It is not Mac-verified, not founder-used, and no real buyer is evidenced. WealthMachine's score is insensitive to evidence meaning; that defect belongs to WealthMachine and is not corrected here.
+
 ## Using it (developer mode today)
 
 **Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**

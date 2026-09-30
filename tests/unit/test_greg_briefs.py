@@ -243,3 +243,27 @@ def test_daily_mission_asks_once_then_delivers_every_morning(tmp_path, repo, git
     assert len(delivered) == 2                                                 # a second brief, nothing overwritten
     assert len([e for e in body.journal.replay("decision.requested")]) == 1   # approved once, reused
     body.close()
+
+
+def test_every_daily_delivery_is_independently_appraised_at_its_own_hold(tmp_path, repo, github):
+    """Before: a standing mission never reached 'achieved', so no daily brief was ever appraised."""
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _brief_mission(repo, daily=True, preauthorize_delivery=True)))
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    assert [t["missions"][0]["state"] for t in _run(body, clock, 2)] == ["ACTED", "HOLDING"]
+    folder = Layout(home).home / "deliveries" / "briefs"
+    first = next(folder.glob("*.md"))
+    aged = (datetime.now(timezone.utc) - timedelta(hours=21)).timestamp()
+    os.utime(first, (aged, aged))
+    clock.advance(21 * 3600)
+    assert _run(body, clock)[0]["missions"][0]["state"] == "ACTED"
+    second = next(p for p in folder.glob("*.md") if p != first)
+    second.write_text(second.read_text().replace("Nothing flagged.", "All green!").replace("FAIL", "pass"))
+    assert _run(body, clock)[0]["missions"][0]["state"] == "HOLDING"
+    judged = [e.payload for e in body.journal.replay("mission.appraised")]
+    assert [j["verdict"] for j in judged] == ["VERIFIED", "REFUTED"], "morning 2's altered brief is caught"
+    assert any("differs from the render" in f for f in judged[1]["findings"])
+    assert len({j["closure_event"] for j in judged}) == 2
+    body.close()

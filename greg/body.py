@@ -441,8 +441,14 @@ class Body:
             if mid not in appraised:
                 verdict = self.appraise(mid)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
+        judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
+        for event in self.journal.replay("mission.held"):
+            if event.event_id not in judged:
+                mid = event.payload["mission_id"]
+                verdict = self.appraise(mid, closure_event=event.event_id)
+                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", event.event_id])
 
-    def appraise(self, mission_id: str) -> dict:
+    def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
         import subprocess
         import sys
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
@@ -450,13 +456,16 @@ class Body:
                    "deliver_root": str(self.deliver_root),
                    "artifact_root": str(self.layout.artifacts),
                    "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+        if closure_event:
+            request["closure_event"] = closure_event
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
         child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
                                capture_output=True, text=True, timeout=120, env=env, cwd=KERNEL_ROOT)
         if child.returncode:
             return {"mission_id": mission_id, "head": request["head"], "verdict": "APPRAISAL_FAILED",
-                    "checks": {}, "findings": [child.stderr[-500:]], "appraiser": "separate process"}
+                    "checks": {}, "findings": [child.stderr[-500:]], "appraiser": "separate process",
+                    **({"closure_event": closure_event} if closure_event else {})}
         return json.loads(child.stdout)
 
     def next_wake(self, tick_seconds: float) -> float:

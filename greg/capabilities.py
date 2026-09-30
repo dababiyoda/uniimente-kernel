@@ -496,6 +496,8 @@ STRENGTHENS = {
     "artifact.store": ("proof", "reliability", "compounding"),
     "artifact.inspect": ("proof", "reliability"),
     "artifact.materialize": ("proof", "reliability", "compounding"),
+    "venture.assess": ("proof", "routing", "settlement", "compounding"),
+    "venture.status": ("proof",),
 }
 
 
@@ -643,6 +645,28 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                         provenance={"source": "uniimente-kernel/greg/capabilities.py",
                                                     "mechanism_from": "PR #112 egregore/repository_audit.py integration-v1"}),
                                repo_integration_audit),
+    "venture.assess": (_builtin("venture.assess", "venture.assessment",
+                                "Run RailScout (source-bound evidence) and the WealthMachine venture engine on one "
+                                "signal manifest; deliver one decision memo whose verdict may not outrun the "
+                                "evidence", "cli", "internal_write", "deliver:",
+                                {"railscout_root": "path", "wmi_root": "path", "manifest": "path",
+                                 "source_root": "path"},
+                                {"path": "str", "sha256": "str", "verdict": "str", "railscout_status": "str",
+                                 "engine_verdict": "str", "inputs": "dict", "inputs_digest": "str"},
+                                filesystem="deliver-write", binaries=(sys.executable,),
+                                data_classes=("project_sources",),
+                                provenance={"source": "uniimente-kernel/greg/ventures.py",
+                                            "mechanism_from": "RailScout railscout/appraise.py; WMI "
+                                                              "src/services/opportunity_intake.py; kernel "
+                                                              "adapters/daleobanks_opportunity + "
+                                                              "wealthmachine_assessment (Bridge A)"}),
+                       _lazy("greg.ventures", "assess")),
+    "venture.status": (_builtin("venture.status", "venture.assessment_status",
+                                "Has a decision memo been delivered for this signal manifest, and with what "
+                                "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},
+                                {"assessed": "bool", "verdict": "str|null", "path": "str|null",
+                                 "manifest_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
+                       _lazy("greg.ventures", "status")),
 }
 
 

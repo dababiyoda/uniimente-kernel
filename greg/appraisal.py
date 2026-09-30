@@ -33,7 +33,7 @@ from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect"}
-DELIVERING = {"brief.engineering"}   # deliverables re-rendered from their receipts
+DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
@@ -61,7 +61,11 @@ def appraise(request: dict) -> dict:
         mid = request["mission_id"]
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
-        achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
+        if request.get("closure_event"):  # a standing mission's hold after new action
+            achieved = [e for e in journal.replay("mission.held")
+                        if e.event_id == request["closure_event"] and e.payload["mission_id"] == mid]
+        else:
+            achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
         checks["registered_once"] = len(registered) == 1
         checks["achieved_claimed"] = len(achieved) == 1
         if not (registered and achieved):
@@ -142,13 +146,25 @@ def appraise(request: dict) -> dict:
             findings.append("duplicate receipt or dispatch claim")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
-        from greg.briefs import verify_delivery
+        # A standing mission's closure covers only the actions since its previous closure:
+        # earlier deliveries were judged at their own closure against the evidence of that
+        # time, and their superseded inputs are history, not a present-tense claim.
+        window = actions
+        if request.get("closure_event"):
+            holds = sorted(seq[e.event_id] for e in journal.replay("mission.held")
+                           if e.payload["mission_id"] == mid and seq[e.event_id] < achieved_seq)
+            since = holds[-1] if holds else -1
+            window = [e.payload for e in journal.replay("mission.action")
+                      if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
+                      and since < seq[e.event_id] < achieved_seq]
+        import importlib
         delivered_ok = True
-        for action in actions:
+        for action in window:
             if action.get("capability") not in DELIVERING:
                 continue
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
+            verify_delivery = importlib.import_module(DELIVERING[action["capability"]]).verify_delivery
             ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None)
             if not ok:
                 delivered_ok = False
@@ -185,7 +201,8 @@ def _verdict(request, checks, findings, required=()):
     return {"mission_id": request["mission_id"], "head": request["head"],
             "verdict": "VERIFIED" if verified else "REFUTED", "checks": checks, "findings": findings,
             "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
-            "limits": "shares reviewed Kernel code; not an independent implementation"}
+            "limits": "shares reviewed Kernel code; not an independent implementation",
+            **({"closure_event": request["closure_event"]} if request.get("closure_event") else {})}
 
 
 if __name__ == "__main__":

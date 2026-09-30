@@ -134,7 +134,11 @@ def test_the_chromebook_runbook_as_written_yields_a_structurally_complete_first_
         presence = json.loads(greg("presence", "--hours", "2"))
         assert "process_lost" in {a["cause"] for a in presence["absences"]}   # the kill -9, bounded by a heartbeat
         path = json.loads(greg("path"))
-        assert "N1" in path["achieved"] and path["active"]["id"] == "N2"     # the GPS moves on ledger evidence
+        assert path["achieved"] == ["N0"] and path["active"]["id"] == "N1"
+        assert path["active"]["measurement"]["structurally_met"]
+        assert not path["active"]["measurement"]["met"]    # a rehearsal cannot clear the external gate
+        assert vepmc["structural_candidate_count"] == 1
+        assert vepmc["evidence_level"] == "STRUCTURAL_CANDIDATE"
 
         # To stop: greg stop --local (a deliberate stop stays stopped).
         greg("stop", "--local")

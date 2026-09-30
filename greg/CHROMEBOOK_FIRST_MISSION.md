@@ -175,3 +175,5 @@ To stop: `greg stop --local`, then
 
 The original Mac instructions are retained in [`FIRST_MISSION.md`](FIRST_MISSION.md)
 for other environments and historical evidence; no Mac is required here.
+
+`greg vepmc` retains `VEPMC` as a compatibility alias for `structural_candidate_count`, labelled `STRUCTURAL_CANDIDATE`. It is not an externally verified closure count. `greg path` stays at N1 even when the rehearsal satisfies all nine ledger checks. Actual founder/body verification still needs appraisal outside this projection; no authenticated import of that external result is implemented yet. This does not stop the signed mission runtime or delete later capability nodes.

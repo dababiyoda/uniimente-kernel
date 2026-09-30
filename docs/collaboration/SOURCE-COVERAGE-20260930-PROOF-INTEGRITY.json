@@ -308,6 +308,38 @@
       "unresolved_questions": [
         "Whole historical repository/PR universe not exhaustively inspected"
       ]
+    },
+    {
+      "source": "Claude latest GREG reconciliation and duplicate audit",
+      "stable_reference": "https://github.com/dababiyoda/uniimente-kernel/pull/137; a4eeb70820117f9a0f74f1496173e3af0f770afa; range f617db9..a4eeb70",
+      "date_or_version": "2026-09-30 continuation",
+      "inspection_status": "partially inspected",
+      "relevance": "Concurrent base changes, complementary asks/account access, rehearsal and stale child conflict",
+      "founder_intent": "One GREG; preserve both sources and mechanisms; tests cannot substitute for VEPMC",
+      "implementation_claims": "Four new commits/24 changed files; duplicate audit read diffs, targeted runtime and tests; 87 combined tests passed before new correction",
+      "contradictions": [
+        "Appraisal and installer blobs unchanged from f617: our repairs are not duplicates",
+        "Rehearsal acknowledged external proof missing but advanced GPS to N2"
+      ],
+      "evidence_tier": "INSPECTED + INTEGRATION-TESTED",
+      "unresolved_questions": [
+        "No exhaustive reread of all files or historical Claude sources",
+        "No founder body or external verification contract"
+      ]
+    },
+    {
+      "source": "Repeated current master directive",
+      "stable_reference": "Current user message repeating UNIIMENTE / GREG OPUS MAXIMUS MASTER BUILD DIRECTIVE sections 1-77",
+      "date_or_version": "2026-09-30 continuation",
+      "inspection_status": "inspected",
+      "relevance": "Resume convergence and build nearest truthful prerequisite",
+      "founder_intent": "Unchanged destination, no permission to merge main or deploy",
+      "implementation_claims": "None",
+      "contradictions": [],
+      "evidence_tier": "DOCUMENTED",
+      "unresolved_questions": [
+        "Stable message ID unavailable"
+      ]
     }
   ],
   "external_raw_source_publication": false,

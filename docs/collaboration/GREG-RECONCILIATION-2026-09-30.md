@@ -49,14 +49,22 @@ continuous operation; and it cannot bill a paid model unless Alfonso's own signe
 | Presence / availability | `greg/presence.py` | new |
 | Multi-organ standing deliberation | `egregore/runtime.py` (ADE-1, proposal-only) | not wired to GREG missions |
 
-## Lineage dispositions (summary; full list in the JSON)
+## Lineage placements (re-expressed under developmental inheritance)
 
-- **Converged (ancestors of this branch):** #101 #102 #108 #109 #110 #111 #113 #114 #118 #120 #122 #125 #126 #127 #128 #130 #131 #133 #134.
-- **Stacked next:** #132 Foundry-55 (active founder obligation). Stack trial: merges onto this branch with two additive conflicts (union-resolved); with its declared `wasmtime`/`mcp` installed, its foundry suite passes 47/47 on the stacked tree; the rest of the suite is unchanged.
-- **Deferred:** #121 (second learning engine) until VEPMC = 1; #72/#76/#77 RailScout.
-- **Port later:** #129 shadow trials; #73 MCP/A2A boundaries.
-- **Evidence / archive:** #93 #94 #97 #115 (anchor extracted) #119 #124 #63 #64 #66 #68 #88 #90 #92 #83 #85 #95.
-- **Needs review:** #105 (against open-source-first); #78 #79 #81 (stale open, not ancestors of main); #71 #86 #87 founder rulings not re-verified.
+Each lineage is placed on the developmental path in `greg/path.json` with one of ten classes, a node and the axis
+that changed: [`DEVELOPMENTAL-INHERITANCE-2026-09-30.json`](DEVELOPMENTAL-INHERITANCE-2026-09-30.json), enforced by
+`tests/unit/test_developmental_inheritance.py`. The first pass of this record (commit `2d602bf`) used terminal labels
+such as "superseded" and "archive"; the founder's 2026-09-30 correction replaced them.
+
+- **ALREADY_ACHIEVED_NODE (N0):** #101 #102 #108 #109 #110 #111 #113 #114 #118 #120 #122 #125 #126 #127 #128 #130 #131 #133 #134, #115's anchor, #95.
+- **NEXT_NODE_INPUT (N2/N3):** #132 Foundry-55 (stacks next), #94 protected evaluation, WMI.
+- **PORTABLE_MECHANISM:** #85 run-record binding (ported now), #129 shadow trial, #122's Mac runbook repairs (ported into the Chromebook installer), build-your-own-x.
+- **REQUIRES_ADAPTATION:** mac.notify to Body 1, Body 1 credential store, #105, #124, #86's 198-item backlog, #79/#81, `egregore/local_model.py`.
+- **TEMPORARILY_DEFERRED:** #121 until N1 exits.
+- **FUTURE_NODE_CAPABILITY:** Mac body mechanisms and multi-body (N8), #71's canary (N3), RailScout/DALEOBANKS/RESEARCH-IN (N3), PumpStation (N7), gods-eye-view (N9), #73 (N2), #78 (N8), #88–#92 mechanisms (N5).
+- **SUPERSEDED_IMPLEMENTATION_ASSUMPTION** (with the nine-question test): the first-Mac assumption (hardware, sequence), #63/#64/#66 and #88/#90/#92 literal framing, #68's node order, #70's runtime ownership, the synthetic local console.
+- **GENUINELY_OBSOLETE** (only two, each with a founder-given basis): #119's second learning engine (replaced by the stronger canonical engine) and GREG's paid default route order (violates open-source-first). Both intended effects remain active.
+- **HISTORICAL_EVIDENCE:** #83, #87 (rulings still to be verified as carried), #93/#97, #115's arsenal docs.
 
 No PR was closed, retargeted or merged to main. Those are founder decisions.
 

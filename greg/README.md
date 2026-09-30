@@ -161,6 +161,15 @@ restarts it at sign-in, and suspends it with the lid. Missions stay durable; the
 Limits: host sleep is detected from clock divergence and tested with injected clocks, not yet observed on a
 suspending Chromebook; the heartbeat file is unsigned local evidence; nothing here proves who used the computer.
 
+## Where GREG stands, and the one-command Body 1 install (2026-09-30)
+
+| Effect | Mechanism | Evidence |
+|---|---|---|
+| "Greg, where are we?" answered from evidence | `greg/path.json` (nodes N0-N10 with gate, bottleneck metric, exit evidence, pivot, kill; 34 founder-intended capability horizons classified by present feasibility) and `greg/path.py`: the active node is the first whose exit evidence does not hold in the body's own ledger; a node without a ledger predicate never counts as passed. Surfaces: `greg path`, `status()["developmental_position"]`, morning `developmental_position` | `tests/unit/test_developmental_inheritance.py` |
+| Corrections reroute, never delete | `greg.path.validate_placements`: ten classes, changed axes, nine-question inheritance test, three founder-given bases for genuine obsolescence; every open PR and the Mac lineage placed in `docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json` | same file (rules rejected by negative controls) |
+| One command from a fresh clone to a designated, supervised Body 1 | `greg/chromebook/install.sh` composes doctor, init, keygen, enroll, service install and designate; idempotent; never sees the passphrase; ports #122's Python 3.11+ selection and durable `greg` command | `tests/unit/test_greg_chromebook_install.py` (container, no systemd; not run on ChromeOS) |
+| Verifier evidence names the tree it measured | `verifier/run_binding.py` (ported from #85) adds `head_commit` and `tracked_tree` to every run record | `tests/unit/test_run_record_head_binding.py` |
+
 ## Using it (developer mode today)
 
 **Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**

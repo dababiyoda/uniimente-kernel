@@ -2,6 +2,10 @@
 
 # Founder Intent Ledger
 
+## Developmental inheritance — 2026-09-30
+
+`INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE` ([record](intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json), [verbatim source](intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md)): corrections reroute rather than delete; identify the changed axis; place every lineage on one Backcast GPS (`greg/path.json`) with one of ten classes; keep every founder-intended capability horizon at its node, classified by present feasibility; exactly one operationally primary node; genuine obsolescence only when the effect is no longer wanted, a demonstrably stronger canonical mechanism replaced it, or continuing would violate constraints. It restates PR #68's `intent.aspirations.are_destinations` and `meta.intent_conservation_test` and corrects this day's first reconciliation record. State: active. Authority delta: none.
+
 ## One GREG convergence — 2026-09-30
 
 `INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE` ([record](intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json), [verbatim source](intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md)) directs convergence of competing branch futures into one GREG path, verification of the designated body, truthful persistence, and growth only from measured bottlenecks with founder decision. Conflicts resolved: the 2026-09-26 Chromebook correction controls the first body over Mac-first runbooks; open-source-first controls GREG's model default; FOUNDRY-55 stays an active obligation sequenced after VEPMC (#132 stacked next). Dispositions: [`collaboration/GREG-RECONCILIATION-2026-09-30.md`](collaboration/GREG-RECONCILIATION-2026-09-30.md). State: active. Authority delta: none. VEPMC: 0.

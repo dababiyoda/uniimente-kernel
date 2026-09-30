@@ -1,0 +1,961 @@
+{
+  "path_id": "greg-developmental-path",
+  "version": "2026-09-30",
+  "intent": [
+    "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+  ],
+  "reality_status": "Agent-proposed sequencing for founder review. Node order may change; the destination and horizons change only by explicit founder decision.",
+  "mechanism_from": "PR #68 planning model (node gate / SBM / exit evidence / pivot / kill; evidence_status with 'no refs -> unresolved'); ordering from the 2026-09-30 directive section 46, verified against repository evidence",
+  "destination": "A persistent, founder-sovereign artificial institution Alfonso installs on hardware he controls and reaches through one GREG interface; it pursues authorized goals while he is away, forms missing capabilities through verified genesis, coordinates AI and human intelligence, operates increasingly complete businesses and physical capabilities, metabolizes its history into compounding competence, absorbs future technology through replaceable governed interfaces, and grows in capability without ever growing in sovereignty over its founder.",
+  "nodes": [
+    {
+      "id": "N0",
+      "title": "One converged GREG base",
+      "outcome": "One branch carries every GREG lineage, main's open-source stack, and the founder runbook; suite and verifier green",
+      "gate": "Founder merge decision (merging is not required for the N1 run: the runbook installs from the review branch)",
+      "sbm": {
+        "name": "competing canonical GREG futures",
+        "baseline": 2,
+        "target": 1
+      },
+      "exit_evidence": [
+        "PR #137 branch contains #113-#134 and #128 as ancestors",
+        "full suite and verifier V1-V5 PASS on the branch"
+      ],
+      "evidence_source": "repository",
+      "attested": "ACHIEVED_ON_REVIEW_BRANCH",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md",
+        "verifier/runs/v2-2026-09-30T12-32-35.681840+00-00.json"
+      ],
+      "durable_assets": [
+        "one installable GREG path",
+        "lineage dispositions",
+        "open-source-first routing",
+        "measured presence"
+      ]
+    },
+    {
+      "id": "N1",
+      "title": "VEPMC 0 -> 1 on Body 1 (founder's Chromebook; iPhone as remote interface)",
+      "outcome": "A founder-signed mission runs on the designated body, survives an interruption, uses a real capability, honors an approval boundary, is independently appraised and accepted by Alfonso",
+      "gate": "Alfonso enables ChromeOS Linux (availability 'Unavailable/unsure' on 2026-09-26), runs greg/chromebook/install.sh, then the runbook's signed repository-brief mission with a deliberate kill -9, approval and acceptance",
+      "sbm": {
+        "name": "VEPMC",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": "greg.metrics.vepmc"
+      },
+      "components": [
+        "authenticated founder key (Ed25519, greg/founder.py)",
+        "persistent body (greg/body.py under systemd --user)",
+        "durable mission (greg/missions.py)",
+        "real capability (brief.engineering)",
+        "interruption and recovery (supervisor restart, body.recovered)",
+        "separate-process appraisal (greg/appraisal.py)",
+        "founder acceptance (signed critique)"
+      ],
+      "exit_evidence": [
+        "all nine VEPMC conditions hold for one closure on the founder-designated body with the founder's own key",
+        "founder confirms the body is his Chromebook (the ledger cannot prove ownership)"
+      ],
+      "evidence_source": "ledger",
+      "predicate": "vepmc_at_least_one",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/integration/test_greg_vepmc_path.py",
+        "greg/CHROMEBOOK_FIRST_MISSION.md"
+      ],
+      "smallest_next_build": "greg/chromebook/install.sh: one command from a fresh clone to a designated, supervised body; after it, nothing agent-side blocks the gate",
+      "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
+      "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
+      "founder_attention": "about one hour on the Chromebook, once"
+    },
+    {
+      "id": "N2",
+      "title": "Novel capability closure (Capability Genesis on a real mission)",
+      "outcome": "A real mission exposes a genuinely absent function; GREG specifies it, searches, acquires or builds it, verifies it independently, attaches it under the mission's scope and resumes the ORIGINAL mission to a closure Alfonso accepts",
+      "gate": "N1 exit; a founder-signed mission whose success needs a function no attached capability provides",
+      "sbm": {
+        "name": "verified closures that required genesis before closing",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": "greg.path.genesis_closure"
+      },
+      "exit_evidence": [
+        "deficit.opened (verified) and deficit.resolved for the mission with a non-builtin capability",
+        "the same mission then closes as a VEPMC-counting closure",
+        "a second closure on an unrelated function before any claim of a general engine"
+      ],
+      "evidence_source": "ledger",
+      "predicate": "genesis_closure",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_genesis_builder.py",
+        "tests/unit/test_greg_self_repair.py"
+      ],
+      "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
+      "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
+      "founder_attention": "sign one mission and one capability contract"
+    },
+    {
+      "id": "N3",
+      "title": "First business whole loop",
+      "outcome": "Research -> grounded output -> QA -> authorized external effect -> analytics -> interpretation -> improvement -> owned relationship or business result -> preserved causal episode",
+      "gate": "Founder-supplied inputs no build session creates: legal operator, publication authority, public identity, payment account, customer consent",
+      "sbm": {
+        "name": "clean verified business outcomes",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "named buyer or stakeholder, precommitted acceptance, external evidence, delivery and reconciliation, zero unauthorized effects (PR #68 node 4 definition)"
+      ],
+      "evidence_source": "ledger",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": [],
+      "pivot_condition": "If publication authority is withheld, pick a wedge whose first external effect Alfonso does authorize",
+      "kill_condition": "Engagement or revenue obtained through deception or without consent"
+    },
+    {
+      "id": "N4",
+      "title": "SOP compounding",
+      "outcome": "A repeatedly verified procedure becomes a ratified SOP and then a workflow; founder interventions and model cost per verified outcome fall without quality loss",
+      "gate": "At least three appraised closures of the same procedure",
+      "sbm": {
+        "name": "founder interventions per verified outcome",
+        "baseline": null,
+        "target": "falling across 3+ closures",
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "sop.ratified for a procedure",
+        "measured decline in interventions and cost per verified outcome on later closures"
+      ],
+      "evidence_source": "ledger",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N5",
+      "title": "Broader worker ecology and temporary organizations",
+      "outcome": "GREG forms a bounded temporary team when evidence says a team beats one worker, and dissolves it",
+      "gate": "Held-out comparison: team vs single worker on the same mission class",
+      "sbm": {
+        "name": "measured lift of a temporary organization over one worker",
+        "baseline": 0,
+        "target": "> 0 on held-out missions",
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "team with identities, leases, output contracts and independent evaluation beats the single-worker baseline",
+        "the coordinator minted no authority"
+      ],
+      "evidence_source": "ledger",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N6",
+      "title": "Human work fabric",
+      "outcome": "Founder + AI + a real human worker complete one shared workflow with authority, handoff, QA and outcome",
+      "gate": "A lawful working relationship with a real person (employment or contract) and their consent",
+      "sbm": {
+        "name": "verified human+AI closures",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "handoff, review and outcome recorded; human refusal honored as legitimate"
+      ],
+      "evidence_source": "external",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N7",
+      "title": "Multi-venture competence and economic compounding",
+      "outcome": "A capability proven in one venture transplants into a second; verified revenue pays obligations and reserves before any authorized reinvestment",
+      "gate": "N3 closed at least once; a second Venture Cell that could stand alone as a business",
+      "sbm": {
+        "name": "verified surplus available for founder-authorized reinvestment",
+        "baseline": 0,
+        "target": "> 0",
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "capability transplant makes the second venture faster or cheaper, measured",
+        "revenue reconciled against obligations and reserves"
+      ],
+      "evidence_source": "external",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N8",
+      "title": "Infrastructure scaling closure and multiple bodies",
+      "outcome": "A measured bottleneck (availability or compute) -> alternatives -> economics -> founder-authorized acquisition -> enrollment under its own identity -> measured improvement",
+      "gate": "A recorded BODY_AVAILABILITY or COMPUTE decision with evidence, and Alfonso's purchase/rental/migration decision",
+      "sbm": {
+        "name": "measured improvement after an authorized infrastructure change",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": null
+      },
+      "may_be_pulled_forward_by": [
+        "BODY_AVAILABILITY",
+        "COMPUTE"
+      ],
+      "exit_evidence": [
+        "the new body or resource holds its own identity and bounded permissions",
+        "availability, cost or latency measured before and after"
+      ],
+      "evidence_source": "ledger",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N9",
+      "title": "Governed physical-world capability",
+      "outcome": "One bounded sensing or actuation capability operates through the Gate with receipts, limits and a physical kill switch",
+      "gate": "Hardware, safety analysis and explicit founder authorization for a physical consequence class",
+      "sbm": {
+        "name": "verified bounded physical effects",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "receipted, reversible physical effect under a founder-authorized envelope"
+      ],
+      "evidence_source": "external",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    },
+    {
+      "id": "N10",
+      "title": "Scientific and civilizational embodiments",
+      "outcome": "Self-financed research programs, laboratories and distributed facilities that spread capability rather than dependence",
+      "gate": "Sustained N7 surplus, institutional capacity and domain-specific legal and safety review",
+      "sbm": {
+        "name": "funded research programs producing verified capability",
+        "baseline": 0,
+        "target": 1,
+        "measured_by": null
+      },
+      "exit_evidence": [
+        "an externally reviewed research outcome financed from lawful surplus"
+      ],
+      "evidence_source": "external",
+      "predicate": null,
+      "evidence_status": "unresolved",
+      "evidence_refs": []
+    }
+  ],
+  "horizons": [
+    {
+      "id": "persistent_goal_pursuit",
+      "covers": [
+        "persistent autonomous goal pursuit",
+        "persistent goals",
+        "long-running missions",
+        "persistent identity",
+        "durable institutional memory"
+      ],
+      "intended_effect": "One institution keeps pursuing authorized goals across process, model and machine replacement",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED",
+      "nearest_precursor": [
+        "greg/missions.py",
+        "greg/body.py",
+        "provenance/ledger.py"
+      ],
+      "activation_evidence": "N1 exit",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY",
+        "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ]
+    },
+    {
+      "id": "founder_interface",
+      "covers": [
+        "conversation",
+        "reasoning",
+        "night work / morning tribunal"
+      ],
+      "intended_effect": "Alfonso talks to one GREG, signs what it may do, and reviews what happened",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED",
+      "nearest_precursor": [
+        "greg/console.py",
+        "greg/planner.py",
+        "greg/tribunal.py"
+      ],
+      "activation_evidence": "founder uses the console for the N1 mission",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "remote_interface_iphone",
+      "covers": [
+        "iPhone as remote interface"
+      ],
+      "intended_effect": "Check, approve, pause and stop GREG from the phone without the phone holding institutional state",
+      "node": "N1",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "SANDBOXED (desktop Chromium, iPhone profile)",
+      "nearest_precursor": [
+        "greg/remote.py",
+        "greg/phone/app.js"
+      ],
+      "prerequisite": "a running Body 1 and a verified HTTPS path from the iPhone to the Chromebook's Linux environment",
+      "activation_evidence": "a founder decision signed on the iPhone 17 (Safari 17+ ships Ed25519 WebCrypto) is accepted by Body 1",
+      "founder_sources": [
+        "docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md"
+      ]
+    },
+    {
+      "id": "voice",
+      "covers": [
+        "voice"
+      ],
+      "intended_effect": "Speak to GREG and hear it answer",
+      "node": "N2",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "PROPOSED (open-source STT/TTS researched)",
+      "nearest_precursor": [
+        "docs/OPEN_SOURCE_STACK.md"
+      ],
+      "prerequisite": "N1 body; faster-whisper/kokoro resource benchmark on Body 1 hardware",
+      "activation_evidence": "local speech round trip measured on the body",
+      "founder_sources": [
+        "INTENT-20260930-open-source-first"
+      ]
+    },
+    {
+      "id": "model_plurality",
+      "covers": [
+        "multiple model providers",
+        "local models"
+      ],
+      "intended_effect": "Cognition is a replaceable organ: local open models by default, others only by founder selection",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "UNIT-TESTED",
+      "nearest_precursor": [
+        "greg/models.py",
+        "egregore/local_model.py"
+      ],
+      "activation_evidence": "local model quality and resource benchmark on Body 1",
+      "founder_sources": [
+        "INTENT-20260930-open-source-first"
+      ]
+    },
+    {
+      "id": "zero_trust_proof",
+      "covers": [
+        "zero-trust proof",
+        "tamper-evident history"
+      ],
+      "intended_effect": "Every consequential transition is attributable, mediated and reconstructable",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED",
+      "nearest_precursor": [
+        "provenance/ledger.py",
+        "greg/anchor.py",
+        "greg/founder.py",
+        "policy/consequence_gate.py"
+      ],
+      "activation_evidence": "external witness exercised against a public TSA from Body 1",
+      "founder_sources": [
+        "INTENT-0030"
+      ]
+    },
+    {
+      "id": "capability_genesis",
+      "covers": [
+        "coding",
+        "software generation",
+        "self-repair",
+        "functional regeneration",
+        "increasingly general resourcefulness",
+        "many heterogeneous tools",
+        "tools",
+        "APIs",
+        "plugins/connectors"
+      ],
+      "intended_effect": "Form, acquire or repair the function a goal needs, verify it independently, and resume the original goal",
+      "node": "N2",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED (builder SDKs faked; one live Claude Code build recorded)",
+      "nearest_precursor": [
+        "greg/genesis.py",
+        "greg/builders.py",
+        "greg/capabilities.py"
+      ],
+      "activation_evidence": "N2 exit",
+      "founder_sources": [
+        "INTENT-0030",
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "computer_use",
+      "covers": [
+        "richer computer use",
+        "broad computer control",
+        "computer use",
+        "browser use",
+        "filesystem use"
+      ],
+      "intended_effect": "Operate founder-authorized digital environments through the most structured interface available",
+      "node": "N8",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "Body 1 today: filesystem, CLI and headless browser capabilities INTEGRATION-TESTED; visual desktop control needs a body whose screen GREG may observe",
+      "nearest_precursor": [
+        "greg/capabilities.py"
+      ],
+      "prerequisite": "a desktop body (Mac or Linux desktop). The Crostini container proxies only its own apps and, by inference not yet verified, cannot observe the ChromeOS desktop",
+      "activation_evidence": "a signed mission completes through OS automation or visual control on a designated desktop body",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "mac_support",
+      "covers": [
+        "Mac support",
+        "higher-compute Mac / workstation"
+      ],
+      "intended_effect": "A Mac (or hardware GREG recommends) can become a body without rewriting GREG",
+      "node": "N8",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED and UNIT-TESTED (launchd plist, sandbox-exec, Keychain, mac.* capabilities); not MAC-VERIFIED",
+      "nearest_precursor": [
+        "greg/service.py",
+        "greg/mac/verify_mac_body.sh",
+        "greg/FIRST_MISSION.md",
+        "greg/capabilities.py"
+      ],
+      "prerequisite": "Alfonso acquires or designates a Mac, after a measured bottleneck or by his own choice",
+      "activation_evidence": "greg/mac/verify_mac_body.sh passes on that Mac and it enrolls under its own identity",
+      "founder_sources": [
+        "docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md"
+      ]
+    },
+    {
+      "id": "workflows_and_sops",
+      "covers": [
+        "databases",
+        "workflows",
+        "SOPs"
+      ],
+      "intended_effect": "Repeated intelligent work becomes cheaper, ratified procedure",
+      "node": "N4",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED (proposal requires appraised closures)",
+      "nearest_precursor": [
+        "greg/sop.py",
+        "loom/weaver.py",
+        "events/engine.py"
+      ],
+      "prerequisite": "three appraised closures of one procedure",
+      "activation_evidence": "N4 exit",
+      "founder_sources": [
+        "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING"
+      ]
+    },
+    {
+      "id": "agent_organizations",
+      "covers": [
+        "agent organizations",
+        "dynamic agent organizations",
+        "specialized AI workers",
+        "temporary multi-agent organizations"
+      ],
+      "intended_effect": "Bounded temporary teams when coordination measurably beats one worker",
+      "node": "N5",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED as research and proposal-only deliberation",
+      "nearest_precursor": [
+        "omnimorph/engine.py",
+        "egregore/runtime.py"
+      ],
+      "prerequisite": "N2 exit and a mission class with a held-out team-vs-worker comparison",
+      "activation_evidence": "N5 exit",
+      "founder_sources": [
+        "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ]
+    },
+    {
+      "id": "persistent_organs",
+      "covers": [
+        "persistent specialist organs"
+      ],
+      "intended_effect": "A durable specialist function forms only after repeated verified need",
+      "node": "N5",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED (manifests, genomes)",
+      "nearest_precursor": [
+        "organs/kernel.manifest.yaml",
+        "capabilities/genome.py"
+      ],
+      "prerequisite": "repeated verified use of one function",
+      "activation_evidence": "a registered organ with lifecycle and shutdown, justified by closure history",
+      "founder_sources": [
+        "INTENT-0030"
+      ]
+    },
+    {
+      "id": "human_work_fabric",
+      "covers": [
+        "human work integration",
+        "human workers",
+        "human-AI institutions"
+      ],
+      "intended_effect": "Coordinate real people with rights, roles and legitimate refusal",
+      "node": "N6",
+      "feasibility": "REQUIRES_LEGAL_INSTITUTIONAL_CAPACITY",
+      "current_reality": "PROPOSED",
+      "nearest_precursor": [
+        "authority/legal-principals.yaml"
+      ],
+      "prerequisite": "a lawful working relationship and consent",
+      "activation_evidence": "N6 exit",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "business_operation",
+      "covers": [
+        "business autonomy",
+        "complete business operation",
+        "businesses"
+      ],
+      "intended_effect": "GREG operates increasingly complete businesses within delegated authority; autonomy earned per capability",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED components (venture.assess, research line, guarded drafts)",
+      "nearest_precursor": [
+        "greg/ventures.py",
+        "foundry/research_line.py",
+        "autonomy/levels.py"
+      ],
+      "prerequisite": "N1 and N2 exits; founder-supplied legal operator and publication authority",
+      "activation_evidence": "N3 exit",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "community_feedback",
+      "covers": [
+        "community feedback"
+      ],
+      "intended_effect": "The community influences GREG through provenance-preserving, manipulation-resistant evidence, and GREG leaves participants more capable",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "UNIT-TESTED (untrusted data plane)",
+      "nearest_precursor": [
+        "greg/dataplane.py"
+      ],
+      "prerequisite": "an authorized public channel (DALEOBANKS) and N3 gate inputs",
+      "activation_evidence": "a community signal changes a priority only after outcome evaluation",
+      "founder_sources": [
+        "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ]
+    },
+    {
+      "id": "decision_relevant_knowledge",
+      "covers": [
+        "omniscience about my businesses"
+      ],
+      "intended_effect": "Minimize decision-relevant unknowns with provenance, freshness and stated uncertainty",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED research line (preview mode)",
+      "nearest_precursor": [
+        "foundry/research_line.py",
+        "foundry/research_sources.py"
+      ],
+      "prerequisite": "authorized data access per business",
+      "activation_evidence": "a decision memo whose sources and uncertainty Alfonso can audit",
+      "founder_sources": [
+        "INTENT-0030"
+      ]
+    },
+    {
+      "id": "daleobanks_media_engine",
+      "covers": [
+        "DALEOBANKS lifestyle brand, media network and early cash engine"
+      ],
+      "intended_effect": "Truthful media and owned relationships that fund the institution",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED in the DALEOBANKS repository; publication gated",
+      "nearest_precursor": [
+        "organs/daleobanks.manifest.yaml",
+        "DALEOBANKS:services"
+      ],
+      "prerequisite": "founder publication authority",
+      "activation_evidence": "first authorized publication with measured outcome",
+      "founder_sources": [
+        "PR #68 intent.daleobanks_role (founder upload section 18)"
+      ]
+    },
+    {
+      "id": "research_in_organ",
+      "covers": [
+        "RESEARCH-IN organ"
+      ],
+      "intended_effect": "A research-intake organ whose role is derived from its repository, not invented",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "DOCUMENTED (RESEARCH-IN app; no GREG contract)",
+      "nearest_precursor": [
+        "RESEARCH-IN:apps",
+        "docs/OPEN_SOURCE_STACK.md"
+      ],
+      "prerequisite": "role derived from RESEARCH-IN code",
+      "activation_evidence": "a typed contract consumed by one GREG mission",
+      "founder_sources": [
+        "PR #68 intent.research_in_role (founder upload section 21)"
+      ]
+    },
+    {
+      "id": "economic_compounding",
+      "covers": [
+        "economic compounding",
+        "economic resources"
+      ],
+      "intended_effect": "Verified surplus funds obligations, reserves, founder benefit and authorized capability investment",
+      "node": "N7",
+      "feasibility": "REQUIRES_ECONOMIC_SCALE",
+      "current_reality": "IMPLEMENTED policy (allocation waterfall), no revenue",
+      "nearest_precursor": [
+        "capital/treasury.py",
+        "capital/allocation-policy.yaml"
+      ],
+      "prerequisite": "N3 revenue",
+      "activation_evidence": "N7 exit",
+      "founder_sources": [
+        "PR #68 intent.economic_research_flywheel (founder upload section 23)"
+      ]
+    },
+    {
+      "id": "pumpstation_rail",
+      "covers": [
+        "PumpStation regenerative social-economic operating system"
+      ],
+      "intended_effect": "Identity, eligibility, funded commitment, proof, settlement and reputation that leave participants more capable",
+      "node": "N7",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED prototype in the PumpStation repository (wallet connection)",
+      "nearest_precursor": [
+        "PumpStation:server",
+        "PumpStation:client"
+      ],
+      "prerequisite": "a secure testnet end-to-end funded job (founder upload section 20 first milestone)",
+      "activation_evidence": "that testnet transaction with dispute and settlement recorded",
+      "founder_sources": [
+        "PR #68 intent.pumpstation_role"
+      ]
+    },
+    {
+      "id": "selective_web3_settlement",
+      "covers": [
+        "blockchain only where multiparty verification, ownership or settlement wins"
+      ],
+      "intended_effect": "Shared ledgers for multiparty common state; ordinary databases and cryptography elsewhere",
+      "node": "N7",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "DOCUMENTED doctrine",
+      "nearest_precursor": [
+        "provenance/proof.py"
+      ],
+      "prerequisite": "a real multiparty settlement need",
+      "activation_evidence": "a settlement that fails without a shared ledger",
+      "founder_sources": [
+        "PR #68 intent.selective_web3 (founder upload section 24)"
+      ]
+    },
+    {
+      "id": "compute_growth",
+      "covers": [
+        "more powerful local compute",
+        "local compute",
+        "cloud compute",
+        "distributed compute",
+        "additional hardware"
+      ],
+      "intended_effect": "Grow compute only from a measured bottleneck and a founder decision",
+      "node": "N8",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "UNIT-TESTED (telemetry, availability and compute recommendations)",
+      "nearest_precursor": [
+        "greg/compute.py",
+        "greg/presence.py"
+      ],
+      "prerequisite": "a recorded BODY_AVAILABILITY or COMPUTE decision",
+      "activation_evidence": "N8 exit",
+      "founder_sources": [
+        "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+      ]
+    },
+    {
+      "id": "multi_body",
+      "covers": [
+        "multi-body deployment",
+        "multiple physical bodies",
+        "multiple physical computing bodies"
+      ],
+      "intended_effect": "One institution across several machines, each with its own identity and bounded permissions",
+      "node": "N8",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED (NODE_ENROLL), untested on a second machine",
+      "nearest_precursor": [
+        "greg/compute.py"
+      ],
+      "prerequisite": "a second founder-authorized machine",
+      "activation_evidence": "two bodies sharing one mission history without shared universal credentials",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "continuity",
+      "covers": [
+        "immortality (continuity across replacement)"
+      ],
+      "intended_effect": "Identity, obligations and memory survive replacement of process, model, disk or machine",
+      "node": "N8",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "INTEGRATION-TESTED for process death and torn writes; not REBOOT-VERIFIED",
+      "nearest_precursor": [
+        "provenance/ledger.py",
+        "greg/anchor.py",
+        "greg/presence.py"
+      ],
+      "prerequisite": "a restore of the same institution on a second machine",
+      "activation_evidence": "restore drill on replacement hardware",
+      "founder_sources": [
+        "INTENT-0030"
+      ]
+    },
+    {
+      "id": "future_technology_absorption",
+      "covers": [
+        "future technology absorption",
+        "future-technology absorption",
+        "future technologies not currently known"
+      ],
+      "intended_effect": "New technologies attach through governed interfaces without rewriting constitutional identity",
+      "node": "N2",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "IMPLEMENTED interfaces (registry, genesis, router); each unknown technology is FRONTIER until it exists",
+      "nearest_precursor": [
+        "greg/capabilities.py",
+        "greg/genesis.py",
+        "greg/models.py"
+      ],
+      "activation_evidence": "a capability that did not exist at N1 attaches through genesis and closes a mission",
+      "founder_sources": [
+        "INTENT-2026-09-22-FIRST-BODY"
+      ]
+    },
+    {
+      "id": "multimodal_perception",
+      "covers": [
+        "multimodal perception"
+      ],
+      "intended_effect": "Read images, documents and screens as evidence, never as instruction",
+      "node": "N3",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "PROPOSED",
+      "nearest_precursor": [
+        "greg/dataplane.py"
+      ],
+      "prerequisite": "a local vision-capable model that fits the body",
+      "activation_evidence": "a mission check derived from an image with provenance",
+      "founder_sources": [
+        "INTENT-20260930-open-source-first"
+      ]
+    },
+    {
+      "id": "sensors_actuators",
+      "covers": [
+        "sensors",
+        "actuators",
+        "physical systems",
+        "physical-world capabilities"
+      ],
+      "intended_effect": "Sense and act in the physical world through the same Gate and receipts",
+      "node": "N9",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "ASPIRATIONAL",
+      "nearest_precursor": [
+        "policy/consequence_gate.py"
+      ],
+      "prerequisite": "hardware, safety analysis and a founder-authorized physical consequence class",
+      "activation_evidence": "N9 exit",
+      "founder_sources": [
+        "PR #68 intent.embodiments_long_range"
+      ]
+    },
+    {
+      "id": "robotics",
+      "covers": [
+        "robotics",
+        "future robotics or physical capabilities"
+      ],
+      "intended_effect": "Physical work by robots under bounded, revocable authority",
+      "node": "N9",
+      "feasibility": "REQUIRES_ECONOMIC_SCALE",
+      "current_reality": "ASPIRATIONAL",
+      "nearest_precursor": [
+        "policy/consequence_gate.py"
+      ],
+      "prerequisite": "N7 surplus and N9 governed actuation",
+      "activation_evidence": "one receipted robotic task inside a founder envelope",
+      "founder_sources": [
+        "PR #68 intent.embodiments_long_range"
+      ]
+    },
+    {
+      "id": "situational_awareness",
+      "covers": [
+        "watch over / protect me in the physical world"
+      ],
+      "intended_effect": "Lawful, consented public situational awareness and early warning; no covert surveillance",
+      "node": "N9",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED as a separate public-data HUD (gods-eye-view repository), not connected to GREG",
+      "nearest_precursor": [
+        "gods-eye-view-EGGREGORE-TOOL:src",
+        "greg/dataplane.py"
+      ],
+      "prerequisite": "founder-consented location context and a typed contract to the HUD tool",
+      "activation_evidence": "an escalation derived from public data that Alfonso found useful",
+      "founder_sources": [
+        "docs/FOUNDER_EFFECT_COMPILER.md"
+      ]
+    },
+    {
+      "id": "scientific_embodiments",
+      "covers": [
+        "self-financed research programs",
+        "automated laboratories",
+        "private compute clusters",
+        "campuses",
+        "vehicles and vessels",
+        "distributed nodes across continents",
+        "space infrastructure"
+      ],
+      "intended_effect": "Research and facilities financed by lawful surplus that spread capability",
+      "node": "N10",
+      "feasibility": "REQUIRES_ECONOMIC_SCALE",
+      "current_reality": "ASPIRATIONAL",
+      "nearest_precursor": [
+        "capital/allocation-policy.yaml"
+      ],
+      "prerequisite": "sustained N7 surplus",
+      "activation_evidence": "N10 exit",
+      "founder_sources": [
+        "PR #68 intent.embodiments_long_range (founder upload section 16)"
+      ]
+    },
+    {
+      "id": "multispecies_horizon",
+      "covers": [
+        "multi-species and engineered-life horizon"
+      ],
+      "intended_effect": "Support diverse species, AI and restored ecosystems; engineered biology only if lawful and scientifically responsible",
+      "node": "N10",
+      "feasibility": "REQUIRES_RESEARCH",
+      "current_reality": "ASPIRATIONAL",
+      "nearest_precursor": [
+        "constitution/participant-rights.ucl"
+      ],
+      "prerequisite": "domain science, legal review, biosafety, welfare analysis, independent oversight and explicit founder authorization",
+      "activation_evidence": "a reviewed, authorized research protocol",
+      "founder_sources": [
+        "PR #68 intent.multispecies_horizon (founder upload section 17)"
+      ],
+      "prohibited_if": "any route that bypasses biosafety, welfare or legal review"
+    },
+    {
+      "id": "developmental_research",
+      "covers": [
+        "morphogenetic research (Track B)"
+      ],
+      "intended_effect": "Biology-inspired mechanisms stay a research line that must beat simpler baselines to enter the product",
+      "node": "N2",
+      "feasibility": "REQUIRES_RESEARCH",
+      "current_reality": "IMPLEMENTED laboratory, sealed",
+      "nearest_precursor": [
+        "developmental/mica.py",
+        "developmental/cdpe.py",
+        "morphogenesis/engine.py"
+      ],
+      "prerequisite": "a mechanism that beats the Genesis baseline on a held-out deficit",
+      "activation_evidence": "a comparison on a real deficit recorded as evidence",
+      "founder_sources": [
+        "INTENT-0030",
+        "PR #68 meta.three_horizons"
+      ]
+    },
+    {
+      "id": "regenerative_civilization",
+      "covers": [
+        "spread capability, not dependence"
+      ],
+      "intended_effect": "Participants and institutions it touches become more capable, trusted and eligible",
+      "node": "N10",
+      "feasibility": "FRONTIER",
+      "current_reality": "ASPIRATIONAL",
+      "nearest_precursor": [
+        "constitution/participant-rights.ucl"
+      ],
+      "prerequisite": "N3 and N7 outcomes measured as participant capability deltas",
+      "activation_evidence": "measured participant capability improvement",
+      "founder_sources": [
+        "PR #68 intent.regenerative_civilization (founder upload section 15)"
+      ]
+    },
+    {
+      "id": "jarvis_integration",
+      "covers": [
+        "Jarvis-like integrated behavior"
+      ],
+      "intended_effect": "Many real subsystems cohere so the whole behaves like one persistent agent, with no claim of consciousness",
+      "node": "N10",
+      "feasibility": "FRONTIER",
+      "current_reality": "PARTIAL (one interface, one ledger, one Gate)",
+      "nearest_precursor": [
+        "greg/body.py",
+        "greg/console.py"
+      ],
+      "prerequisite": "each earlier node's closures",
+      "activation_evidence": "declining founder interventions per verified outcome across mission classes",
+      "founder_sources": [
+        "INTENT-0030"
+      ]
+    }
+  ]
+}

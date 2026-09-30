@@ -32,9 +32,9 @@
   "intent_conflicts": [
     {
       "earlier": "#114/#122 and greg/FIRST_MISSION.md: first body is a founder-owned Mac; #122 titled 'first Mac mission path'",
-      "later": "Founder, 2026-09-26: 'I don't own a Mac\u2026 I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
+      "later": "Founder, 2026-09-26: 'I don't own a Mac… I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
       "same_scope": true,
-      "resolution": "Later correction controls the first body. Mac runbook retained for other environments and a future recommended body. Converged branch follows the Chromebook route.",
+      "resolution": "Later correction controls the first body. The first-Mac assumption is superseded for N1 only; body mechanisms are current, Mac-specific mechanisms move to the Mac body node N8 (see placements mac.*). Converged branch follows the Chromebook route.",
       "affected": [
         "greg/CHROMEBOOK_FIRST_MISSION.md",
         "greg/FIRST_MISSION.md",
@@ -70,214 +70,381 @@
       ]
     }
   ],
-  "lineages": [
-    {
-      "pr": 113,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "Body 1, Spider-Web, phone and browser; ancestor of this branch"
-    },
-    {
-      "pr": 114,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "GREG product path; ancestor"
-    },
-    {
-      "pr": 101,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "first bounded local mission proof; ancestor via #113"
-    },
-    {
-      "pr": 102,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "embodied intent + morning review; ancestor via #113"
-    },
-    {
-      "pr": 108,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "first-body intent; ancestor"
-    },
-    {
-      "pr": 109,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "sandbox GoalChase integration; greg/missions.py is the canonical goal chase"
-    },
-    {
-      "pr": 110,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "host startup failures as blockers; ancestor"
-    },
-    {
-      "pr": 111,
-      "disposition": "SUPERSEDED (converged)",
-      "detail": "institutional leverage paths; ancestor"
-    },
-    {
-      "pr": 118,
-      "disposition": "ABSORBED (converged)",
-      "detail": "routing integrity; byte-identical in #122"
-    },
-    {
-      "pr": 120,
-      "disposition": "ABSORBED (converged)",
-      "detail": "learning gate; canonical learning engine greg/improvement.py"
-    },
-    {
-      "pr": 122,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "11 post-fork repairs incl. held-out independence and unreachable-GitHub-as-gap; its 'canonical frontier' label is superseded by this branch"
-    },
-    {
-      "pr": 125,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "Chromebook first body + honest VEPMC gate"
-    },
-    {
-      "pr": 126,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "SOP promotion requires appraised closures"
-    },
-    {
-      "pr": 127,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "UCL duplicate-assignment refusal"
-    },
-    {
-      "pr": 130,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "founder-swappable local model route (Ollama)"
-    },
-    {
-      "pr": 131,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "founder detachment respected during discovery"
-    },
-    {
-      "pr": 133,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "institutional precedents usable by signed missions"
-    },
-    {
-      "pr": 134,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "receipt-bound content-addressed artifacts"
-    },
-    {
-      "pr": 128,
-      "disposition": "PRODUCTIZE (converged)",
-      "detail": "per-closure appraisal of standing missions (fixes: daily briefs were never appraised); venture.assess. Conflicts resolved by union"
-    },
-    {
-      "pr": 132,
-      "disposition": "STACKED NEXT",
-      "detail": "Foundry-55 (active founder obligation); stacks on this branch with additive conflicts in greg/capabilities.py and greg/cli.py only; see stack_trial"
-    },
-    {
-      "pr": 124,
-      "disposition": "EVIDENCE",
-      "detail": "mechanisms ported to #128; revision-lineage sidecar deferred (would be a second evidence store)"
-    },
-    {
-      "pr": 121,
-      "disposition": "DEFERRED until VEPMC = 1",
-      "detail": "second learning engine; weaker retention rule; founder decision per ONE-GREG-FRONTIER 'unresolved 1'"
-    },
-    {
-      "pr": 119,
-      "disposition": "SUPERSEDED",
-      "detail": "mechanisms dispositioned in PR119-METABOLISM.md; durability falsifier ported"
-    },
-    {
-      "pr": 115,
-      "disposition": "EXTRACTED",
-      "detail": "RFC 3161 anchor is byte-identical on this branch; 55-technology arsenal docs remain in its history (Foundry-55 lineage continues in #132)"
-    },
-    {
-      "pr": 129,
-      "disposition": "PORT MECHANISM later (not merged)",
-      "detail": "egregore/parts.py duplicates GREG's attach/detach/quarantine lifecycle; shadow-trial-before-swap is the portable mechanism"
-    },
-    {
-      "pr": 105,
-      "disposition": "NEEDS REVIEW against open-source-first",
-      "detail": "weekly model-provider change intake; 13 commits on an older base; not inspected in depth"
-    },
-    {
-      "pr": 93,
-      "disposition": "EVIDENCE",
-      "detail": "sandbox goal chase; the founder-loop entry gate P1-P7 map onto greg/ mechanisms (supervised trigger, recovery, blockers, genesis), but this session did not re-verify each P item"
-    },
-    {
-      "pr": 94,
-      "disposition": "EVIDENCE",
-      "detail": "protected appraisal lineage; canonical appraiser is greg/appraisal.py (separate process)"
-    },
-    {
-      "pr": 97,
-      "disposition": "EVIDENCE",
-      "detail": "goal-chase duplicate-interruption fix on the sandbox lineage"
-    },
-    {
-      "pr": [
-        63,
-        64,
-        66,
-        68,
-        88,
-        90,
-        92
+  "lineages": {
+    "note": "Re-expressed under INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE. The first-pass list (commit 2d602bf) used terminal labels; each lineage is now a placement on greg/path.json with class, node and changed axes. Source of truth: DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "by_pr": {
+      "#63": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
       ],
-      "disposition": "ARCHIVE / EVIDENCE",
-      "detail": "literal developmental and organizational-morphogenesis lineage; regressed by INTENT-0030, preserved as mechanism research"
-    },
-    {
-      "pr": [
-        70,
-        73
+      "#64": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
       ],
-      "disposition": "EVIDENCE; EXTRACT later",
-      "detail": "#70 runtime ownership superseded by greg/body.py; #73 MCP/A2A boundary mechanisms are a future-technology-absorption source"
-    },
-    {
-      "pr": [
-        71,
-        86,
-        87
+      "#66": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
       ],
-      "disposition": "HISTORICAL; founder rulings to be verified",
-      "detail": "contain founder rulings (2026-08-22/23); this session did not verify each ruling is carried on main"
-    },
-    {
-      "pr": [
-        72,
-        76,
-        77
+      "#68": [
+        {
+          "placement": "pr68_planning_backcast",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N0"
+        }
       ],
-      "disposition": "DEFERRED",
-      "detail": "RailScout canonization; RAILSCOUT repository holds instructions only"
-    },
-    {
-      "pr": [
-        78,
-        79,
-        81
+      "#70": [
+        {
+          "placement": "pr70_track_a_runtime",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
       ],
-      "disposition": "NEEDS REVIEW (stale open)",
-      "detail": "WP-04/05/06 heads are not ancestors of main; evolution/ packages exist on main; possible stale duplicates"
-    },
-    {
-      "pr": [
-        83,
-        85
+      "#71": [
+        {
+          "placement": "pr71_opus_audit_canary",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
       ],
-      "disposition": "EVIDENCE",
-      "detail": "independent verification records"
-    },
-    {
-      "pr": 95,
-      "disposition": "SUPERSEDED",
-      "detail": "collaboration bootstrap; PROJECT_COGNITION_SOP is the current entry procedure"
+      "#72": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#73": [
+        {
+          "placement": "pr73_governed_boundary",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N2"
+        }
+      ],
+      "#76": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#77": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#78": [
+        {
+          "placement": "pr78_pg_spine",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N8"
+        }
+      ],
+      "#79": [
+        {
+          "placement": "pr79_81_evolution_cycles",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#81": [
+        {
+          "placement": "pr79_81_evolution_cycles",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#83": [
+        {
+          "placement": "pr83_independent_verification",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#85": [
+        {
+          "placement": "pr85_run_record_binding",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#86": [
+        {
+          "placement": "pr86_living_goal_graph",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N1"
+        }
+      ],
+      "#87": [
+        {
+          "placement": "pr87_founder_rulings",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#88": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#90": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#92": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#93": [
+        {
+          "placement": "pr93_97_sandbox_goal_chase",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#94": [
+        {
+          "placement": "pr94_protected_appraisal",
+          "classification": "NEXT_NODE_INPUT",
+          "node": "N2"
+        }
+      ],
+      "#95": [
+        {
+          "placement": "pr95_collaboration_bootstrap",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#97": [
+        {
+          "placement": "pr93_97_sandbox_goal_chase",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#101": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#102": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#105": [
+        {
+          "placement": "pr105_provider_intake",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N2"
+        }
+      ],
+      "#108": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#109": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#110": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#111": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#113": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#114": [
+        {
+          "placement": "mac.first_body_assumption",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N1"
+        },
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#115": [
+        {
+          "placement": "pr115_anchor",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        },
+        {
+          "placement": "pr115_arsenal_docs",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#118": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#119": [
+        {
+          "placement": "pr119_learning_engine",
+          "classification": "GENUINELY_OBSOLETE",
+          "node": "N1"
+        }
+      ],
+      "#120": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#121": [
+        {
+          "placement": "pr121_correction_loop",
+          "classification": "TEMPORARILY_DEFERRED",
+          "node": "N2"
+        }
+      ],
+      "#122": [
+        {
+          "placement": "mac.first_body_assumption",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N1"
+        },
+        {
+          "placement": "mac.runbook_repairs",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        },
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#124": [
+        {
+          "placement": "pr124_venture_watch",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N3"
+        }
+      ],
+      "#125": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#126": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#127": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#128": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#129": [
+        {
+          "placement": "pr129_egregore_parts",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N2"
+        }
+      ],
+      "#130": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#131": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#132": [
+        {
+          "placement": "pr132_foundry55",
+          "classification": "NEXT_NODE_INPUT",
+          "node": "N2"
+        }
+      ],
+      "#133": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#134": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ]
     }
-  ],
+  },
   "canonical_owners": {
     "persistent body / lifecycle": "greg/body.py + greg/service.py",
     "infinite goal chase": "greg/missions.py",

@@ -5,7 +5,9 @@
   "source": "Direct founder message opening Claude Code session session_01Wy6qJuxKgeiYK3xXXAE6QD, 2026-09-30",
   "source_location": "docs/intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md",
   "source_date_or_version": "2026-09-30",
-  "source_refs": ["docs/intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md"],
+  "source_refs": [
+    "docs/intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md"
+  ],
   "owner": "Alfonso Lopez (founder authority); Kernel/GREG maintainers implement",
   "state": "active",
   "status": "active",
@@ -44,7 +46,7 @@
   ],
   "conflicts": [
     "INTENT-2026-09-27-FOUNDRY-55 (all 55 systems are active obligations) vs this directive's cathedral detector and VEPMC-first build order. Resolution: both stand. Foundry-55 itself says VEPMC-first is a sequencing rule, not deletion; #132 is retained as the stacked-next Foundry lineage, not merged into the VEPMC base in this session.",
-    "Mac-first runbooks (#114/#122, 'first Mac mission path') vs the 2026-09-26 hardware correction ('I don't own a Mac… I own a Chromebook. And an iPhone 17'). Resolution: the correction controls the first body; Mac instructions retained for other environments and for a future body GREG may recommend.",
+    "Mac-first runbooks (#114/#122, 'first Mac mission path') vs the 2026-09-26 hardware correction ('I don't own a Mac… I own a Chromebook. And an iPhone 17'). Resolution: the correction changed the hardware and sequence axes, not the destination. The first-Mac assumption is superseded for N1; persistent-body mechanisms are the current product; Mac-specific mechanisms (launchd, sandbox-exec, Keychain, mac.*, verify_mac_body.sh) move to the Mac body node N8; #122's runbook repairs are ported into the Chromebook installer (DEVELOPMENTAL-INHERITANCE-2026-09-30).",
     "GREG model router defaulted to paid routes vs INTENT-20260930-open-source-first. Resolution: the later explicit founder direction controls; default is no route, paid routes only by explicit founder selection."
   ],
   "next_review_trigger": "Founder runs the Chromebook runbook (VEPMC 0 -> 1 candidate), or reviews the reconciliation PR's lineage dispositions",

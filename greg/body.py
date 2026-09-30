@@ -622,9 +622,20 @@ def status(home: str | Path) -> dict:
             "external_anchor": anchor.summary(journal),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),
+            "designation": [e.payload for e in journal.replay("body.designated")],
+            "developmental_position": _path_summary(journal),
         }
     finally:
         ledger.close()
+
+
+def _path_summary(journal: Journal) -> dict:
+    from greg import path as devpath
+    where = devpath.position(journal)
+    active = where["active"] or {}
+    return {"achieved": where["achieved"], "active": active.get("id"), "title": active.get("title"),
+            "gate": active.get("gate"), "measurement": active.get("measurement"),
+            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"]}
 
 
 def ingest_external(home: str | Path, *, source: str, content: str, channel: str) -> dict:

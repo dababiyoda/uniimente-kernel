@@ -163,6 +163,7 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -253,6 +254,14 @@ def main(argv=None) -> int:
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "path":
+            from greg import path as devpath
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = devpath.position(journal)
+            else:
+                data = devpath.position(None)
             print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
             from datetime import datetime, timezone

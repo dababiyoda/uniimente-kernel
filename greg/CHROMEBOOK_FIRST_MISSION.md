@@ -29,6 +29,24 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ## 1. Install the review branch and designate this body
 
+**One command (recommended).** In the Linux terminal:
+
+```bash
+sudo apt install -y python3 python3-venv git          # once; skip if already installed
+mkdir -p ~/src && cd ~/src
+git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+cd uniimente-kernel && bash greg/chromebook/install.sh
+```
+
+`install.sh` checks that this is ChromeOS Linux, picks Python 3.11+, builds the
+venv, writes a `greg` command to `~/.local/bin`, runs the doctor, creates the
+body, creates your key (you type the passphrase; the script never sees it),
+enrolls it, enables `greg-body.service`, and asks you to sign the designation of
+this machine as your first body. Re-running it changes nothing that is already
+done. Then skip to step 2. The manual steps below do the same thing by hand.
+
+**Manual install (equivalent):**
+
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel

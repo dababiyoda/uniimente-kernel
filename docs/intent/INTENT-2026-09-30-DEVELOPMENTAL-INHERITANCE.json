@@ -1,0 +1,55 @@
+{
+  "intent_id": "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
+  "title": "Corrections reroute; they do not delete. Backcast every lineage onto one developmental path and never shrink the founder's capability horizon",
+  "statement": "When a founder correction conflicts with an earlier implementation assumption, identify which axis changed (hardware, sequence, timing, provider, interface, implementation mechanism, scale, maturity, budget, authority, immediate priority, or final intended effect) and reroute: preserve the destination, recompute the current position, port validated capability, and assign future work to its developmental node. Place every material artifact on one Backcast GPS timeline with one of ten classes. Keep every founder-intended capability horizon, classified by present feasibility, at the node where it becomes buildable. Keep exactly one operationally primary node. Classify an implementation as genuinely obsolete only when its intended effect is no longer wanted, a demonstrably stronger canonical mechanism replaced it, or continuing it would violate current constraints or authority.",
+  "source": "Direct founder message, second turn of Claude Code session session_01Wy6qJuxKgeiYK3xXXAE6QD, 2026-09-30",
+  "source_location": "docs/intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md",
+  "source_date_or_version": "2026-09-30",
+  "source_refs": [
+    "docs/intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md",
+    "PR #68 artifacts/planning/uniimente_v1/FOUNDER_INTENT_LEDGER.json: intent.aspirations.are_destinations, meta.intent_conservation_test (earlier founder rules this restates)"
+  ],
+  "owner": "Alfonso Lopez (founder authority); Kernel/GREG maintainers and every coding agent implement",
+  "state": "active",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "architectural",
+  "binding_scope": "Interpretation of corrections, lineage disposition, roadmap sequencing and repository cleanup across Kernel, GREG and connected organs. Creates no runtime, merge, deployment, spending or external-consequence authority.",
+  "constitutional_constraints": [
+    "Founder sovereignty and shutdown authority are unchanged",
+    "Preserving a future capability horizon is not a claim that it exists or is authorized",
+    "Ambition is not a rejection criterion; neither is it evidence",
+    "Historical evidence may not pollute the live runtime merely because it is preserved"
+  ],
+  "extends": [
+    "INTENT-0030",
+    "INTENT-2026-09-26-REAL-PRODUCT-METABOLISM",
+    "INTENT-2026-09-27-FOUNDRY-55",
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+  ],
+  "success_evidence": [
+    "greg/path.json + greg/path.py: one developmental path; the active node is computed from the body's own ledger evidence (`greg path`, morning report, status)",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json: every material lineage placed with one of ten classes, changed axes and the nine-question inheritance test",
+    "tests/unit/test_developmental_inheritance.py: CI rejects terminal outdated/obsolete labels without decomposition, missing horizons, unjustified obsolescence and more than one active node"
+  ],
+  "failure_evidence": [
+    "GREG-RECONCILIATION-2026-09-30 (first pass, commit 2d602bf) used terminal labels such as SUPERSEDED and ARCHIVE and treated the Mac lineage as 'retained for other environments' without decomposition",
+    "PR #68's Backcast GPS placed a developmental-closure node first; later founder corrections (2026-09-10, -11, -22) changed the sequence without the timeline being re-expressed until now"
+  ],
+  "dependencies": ["Founder review of the placements and horizon registry"],
+  "conflicts": [
+    "Earlier session language that labeled lineages SUPERSEDED/ARCHIVE is re-expressed under this vocabulary; its history remains in git",
+    "Cathedral detector (INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE) vs horizon preservation: resolved by keeping horizons as data at future nodes, not as active builds"
+  ],
+  "next_review_trigger": "Each node exit (starting with VEPMC 0 -> 1), or any founder correction; each correction must be placed as a changed axis before code is removed",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "greg/path.json",
+    "greg/path.py",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "tests/unit/test_developmental_inheritance.py",
+    "greg/chromebook/install.sh"
+  ],
+  "reality_status": "active; implementation UNIT-TESTED in this container; node placements are agent proposals for founder review"
+}

@@ -131,6 +131,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     }
     from greg import metrics, routing
     report["single_bottleneck_metric"] = metrics.vepmc(journal)
+    from greg import path as devpath
+    where = devpath.position(journal)
+    report["developmental_position"] = {"achieved": where["achieved"], "active": where["active"],
+                                        "next": where["next"], "pull_forward_seams": where["pull_forward_seams"]}
     report["appraisals"] = [e.payload for e in journal.replay("mission.appraised")]
     report["routing_knowledge"] = routing.routing_knowledge(journal)
     from greg import improvement

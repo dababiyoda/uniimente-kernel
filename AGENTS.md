@@ -84,6 +84,10 @@ OMNIMORPH is an optional organization-design/composition mechanism, not the mean
 
 For any material PR, explicitly state the target effect, metaphor/literal split, simplest viable mechanism, existing mechanisms searched, residual CapabilityDeficit, verification plan, and why added complexity is warranted.
 
+## Developmental inheritance (founder correction 2026-09-30)
+
+A founder correction reroutes; it does not delete. Before superseding, closing or archiving anything material, name the axis that changed (hardware, sequence, timing, provider, interface, implementation mechanism, scale, maturity, budget, authority, immediate priority, or final intended effect), answer the nine-question inheritance test, and place it on `greg/path.json` with one of ten classes in `docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json`. Never use "outdated" as a terminal label. Not now is not never; wrong implementation is not wrong destination. Exactly one node is operationally primary (`greg path`). Enforced by `tests/unit/test_developmental_inheritance.py`; intent `docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json`.
+
 ## Open-source-first models and software
 
 Current founder direction (2026-09-30): use locally served, freely licensed AI

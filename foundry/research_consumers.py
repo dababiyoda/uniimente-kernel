@@ -41,6 +41,8 @@ with contextlib.redirect_stdout(sys.stderr):
         draft.source_opportunity_packet_id = data['packet_id']
         draft.approval_status = 'pending'
         drafts.append(asdict(draft))
+    if not refinery.ledger.verify_chain()[0]:
+        raise ValueError('consumer decision chain failed verification')
     records = refinery.ledger.entries()
 print(json.dumps({'drafts': drafts, 'consumer_decisions': records}, default=str))
 """

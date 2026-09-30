@@ -109,7 +109,7 @@ class ResearchLine:
 
     def pattern(self, *, actor, legal_principal):
         # Hash binds exact query, source/model settings, fixtures, code and consumer revisions.
-        bindings = self._bindings()
+        bindings = json.loads(json.dumps(self._bindings(), allow_nan=False))
         steps = [
             StepSpec("sources", "research.sources", "research.read", "read_only", bindings, max_retries=0),
             StepSpec("hypothesis", "research.hypothesis", "draft.prepare", "read_only", max_retries=0),
@@ -181,7 +181,8 @@ class ResearchLine:
             "search_mode": state["search_mode"], "inference_mode": state["inference_mode"],
             "search_warnings": state["search_warnings"], "analysis": state["analysis"],
             "opportunity_packet": state["opportunity_packet"], "assessment": state["assessment"],
-            "drafts": state["drafts"], "consumer_bindings": {
+            "drafts": state["drafts"], "consumer_decisions": state["consumer_decisions"],
+            "consumer_bindings": {
                 "wmi": self.wmi.binding(), "dale": self.dale.binding()},
             "limits": [
                 "Search snippets and supplied documents are unverified observations.",

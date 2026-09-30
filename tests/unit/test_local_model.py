@@ -73,7 +73,7 @@ def test_real_loopback_protocol_is_proposal_only_and_retry_is_idempotent(monkeyp
         item = signal()
         runtime.ingest(item)
         kwargs = dict(trigger_id="local-1", signal_ids=(item.signal_id,),
-                      resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0))
+                      resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0.1))
         cycle = runtime.tick(**kwargs)
         candidate = cycle.candidates[0]
         assert candidate.execution_authority == "none"

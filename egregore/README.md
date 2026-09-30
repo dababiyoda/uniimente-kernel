@@ -70,3 +70,21 @@ active-inference organ must declare a generative probabilistic model, latent
 states, observations, preferences, posterior approximation, and a testable
 free-energy objective. Until then, this implementation is accurately described
 as bounded deliberation.
+
+## Local open-source draft model
+
+`egregore.local_model.LocalDraftProposer` supplies an optional local Qwen
+proposer through the existing constructor's proposer mapping. It uses Ollama,
+llama.cpp, vLLM or LocalAI's loopback /v1 protocol, rejects hosted URLs and
+redirects, and makes no paid fallback calls. A legacy OpenAI key is ignored.
+
+The model supplies only draft objective/text; source/evidence references and
+fixed internal proposal scope come from the adapter. Confidence is zero pending
+the existing required evaluators. Call limits, suspension, idempotent replay and
+the Consequence Gate remain owned by the existing runtime.
+
+See [the researched stack and setup](../docs/OPEN_SOURCE_STACK.md).
+Use a positive existing resource cost ceiling even for zero-token-fee local
+inference: a zero ceiling means hibernation in ResourceGovernor. Hardware and
+electricity are real costs; zero provider token fees are not unlimited resources.
+No server, scheduler or production activity starts by importing this adapter.

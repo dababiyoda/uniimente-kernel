@@ -123,7 +123,7 @@ jobs:
         env:
           WMI_SOURCE: "${{ github.workspace }}/consumers/wmi"
           DALEOBANKS_SOURCE: "${{ github.workspace }}/consumers/dale"
-        run: python -m pytest -q tests/unit/test_research_line.py -k real_consumer
+        run: python -m pytest -q tests/unit/test_research_line.py -k "real_consumer or local_report"
       - name: Produce reviewable offline assembly output
         working-directory: kernel
         run: >-

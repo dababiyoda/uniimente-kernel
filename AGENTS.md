@@ -98,4 +98,6 @@ This changes implementation selection, not Kernel consequence authority.
 
 ## GREG body (2026-09-25)
 
+Converged GREG path (2026-09-30): `claude/uniimente-greg-reconciliation-39syff` until merged; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on it, not on #122 or the Chromebook line separately.
+
 The product runtime is `greg/` (persistent body, signed founder commands, missions, Capability Genesis, morning tribunal) under `INTENT-2026-09-25-EGREGORE-ECOLOGY`. It composes the canonical Gate, ledger and spine and owns no policy. Read `greg/README.md` and `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md` before changing it.

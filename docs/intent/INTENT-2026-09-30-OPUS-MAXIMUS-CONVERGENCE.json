@@ -1,0 +1,64 @@
+{
+  "intent_id": "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+  "title": "One GREG: converge competing branch futures, verify the real body, measure persistence truthfully, grow only from measured bottlenecks",
+  "statement": "Reconstruct the founder's intended system from project history, compare it with executable reality, and converge competing active architectures into one canonical GREG product path. Preserve every useful mechanism and all negative evidence; give every material lineage an explicit disposition. Verify the designated body instead of assuming hardware. Keep persistence claims truthful. Grow compute or physical capability only through telemetry -> bottleneck -> alternatives -> recommendation -> founder decision. Capability growth never becomes sovereignty; shutdown wins.",
+  "source": "Direct founder message opening Claude Code session session_01Wy6qJuxKgeiYK3xXXAE6QD, 2026-09-30",
+  "source_location": "docs/intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md",
+  "source_date_or_version": "2026-09-30",
+  "source_refs": ["docs/intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md"],
+  "owner": "Alfonso Lopez (founder authority); Kernel/GREG maintainers implement",
+  "state": "active",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "architectural",
+  "binding_scope": "Repository interpretation, branch convergence, reversible implementation, tests and draft review. No merge to main, deployment, credential, spending, publishing or external-consequence authority.",
+  "constitutional_constraints": [
+    "Alfonso remains root human authority; no agent, model, organ or generated capability manufactures authority",
+    "capability growth != authority growth; building != installation != activation != consequence authority",
+    "shutdown, pause, replacement and removal remain legitimate; functional continuity creates no right to survive",
+    "effect-not-metaphor (INTENT-0030) remains the interpretation rule"
+  ],
+  "extends": [
+    "INTENT-0030",
+    "INTENT-2026-09-22-FIRST-BODY",
+    "INTENT-2026-09-25-EGREGORE-ECOLOGY",
+    "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING",
+    "INTENT-2026-09-26-REAL-PRODUCT-METABOLISM",
+    "INTENT-2026-09-27-FOUNDRY-55",
+    "INTENT-20260930-open-source-first"
+  ],
+  "success_evidence": [
+    "One branch (claude/uniimente-greg-reconciliation-39syff) contains main, the Chromebook-first GREG line and the #122 frontier repairs; full suite green except one environment-dependent superseded-path test recorded as negative evidence",
+    "tests/unit/test_greg_open_source_first_routing.py: no paid model route without a founder selection naming it (mutation-tested)",
+    "tests/unit/test_greg_presence.py: measured body presence, bounded absences, late mission work, one bounded availability decision (six mutations caught; one real SIGKILL process test)"
+  ],
+  "failure_evidence": [
+    "VEPMC remains 0: no founder-owned body has run a signed mission",
+    "Host-sleep detection is unit-tested with injected clocks, not observed on a suspending Chromebook",
+    "The iPhone interface has only run in desktop Chromium with an iPhone profile, never on iOS Safari",
+    "Two GREG lines each declared themselves canonical for four days (2026-09-26..09-30) while the founder runbook pointed at a stale branch"
+  ],
+  "dependencies": [
+    "Founder runs greg/CHROMEBOOK_FIRST_MISSION.md on the Chromebook (Linux availability is 'unavailable/unsure' per the 2026-09-26 correction)",
+    "Founder review of the draft PR before any merge to main"
+  ],
+  "conflicts": [
+    "INTENT-2026-09-27-FOUNDRY-55 (all 55 systems are active obligations) vs this directive's cathedral detector and VEPMC-first build order. Resolution: both stand. Foundry-55 itself says VEPMC-first is a sequencing rule, not deletion; #132 is retained as the stacked-next Foundry lineage, not merged into the VEPMC base in this session.",
+    "Mac-first runbooks (#114/#122, 'first Mac mission path') vs the 2026-09-26 hardware correction ('I don't own a Mac… I own a Chromebook. And an iPhone 17'). Resolution: the correction controls the first body; Mac instructions retained for other environments and for a future body GREG may recommend.",
+    "GREG model router defaulted to paid routes vs INTENT-20260930-open-source-first. Resolution: the later explicit founder direction controls; default is no route, paid routes only by explicit founder selection."
+  ],
+  "next_review_trigger": "Founder runs the Chromebook runbook (VEPMC 0 -> 1 candidate), or reviews the reconciliation PR's lineage dispositions",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md",
+    "docs/collaboration/GREG-RECONCILIATION-2026-09-30.json",
+    "greg/models.py",
+    "greg/presence.py",
+    "greg/body.py",
+    "greg/tribunal.py",
+    "greg/doctor.py",
+    "greg/CHROMEBOOK_FIRST_MISSION.md"
+  ],
+  "reality_status": "active; implementation UNIT-TESTED and INTEGRATION-TESTED in this container; not FOUNDER-USED; VEPMC = 0"
+}

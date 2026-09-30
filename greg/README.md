@@ -147,6 +147,20 @@ The verdict may not outrun the evidence: the engine's verdict is capped at `need
 
 Reality: IMPLEMENTED / TESTED / LOCAL-REAL (Linux, test key; developmental evidence in #124). It is not Mac-verified, not founder-used, and no real buyer is evidenced. WealthMachine's score is insensitive to evidence meaning; that defect belongs to WealthMachine and is not corrected here.
 
+## Truthful persistence on a part-time body; open-source-first cognition (2026-09-30)
+
+The first body is a Chromebook (founder correction 2026-09-26). ChromeOS stops Linux at sign-out, never
+restarts it at sign-in, and suspends it with the lid. Missions stay durable; the body is not always present.
+
+| Effect | Mechanism | Evidence |
+|---|---|---|
+| GREG says whether it was actually running | `greg/presence.py`: `body.booted.previous_heartbeat` bounds the absence between processes to one tick (the heartbeat file survives SIGKILL and a killed VM); `body.gap_observed` records host sleep (wall clock ran, monotonic clock did not) or a stalled process; founder stops are excluded from availability; due observations that fell in an absence are reported late. Surfaces: `greg presence`, `status()["presence"]`, morning `q0_was_i_present` (asked first) | `tests/unit/test_greg_presence.py` (12 tests incl. a real SIGKILLed body process; six mutations each caught) |
+| Growth from a measured bottleneck, not self-preservation | `presence.recommend`: availability below 75% over 72h **and** late mission work -> ONE `BODY_AVAILABILITY` decision, no-spend options first, argued from mission lateness; nothing bought, rented or enrolled | same file |
+| No paid model by default | `greg/models.py` `DEFAULT_ROUTE_ORDER = ()`: with no founder selection there is no model route (templates still work); a local open model when selected; paid routes only when a signed selection names them (INTENT-20260930-open-source-first) | `tests/unit/test_greg_open_source_first_routing.py` (restoring the old paid default fails 5 of 6) |
+
+Limits: host sleep is detected from clock divergence and tested with injected clocks, not yet observed on a
+suspending Chromebook; the heartbeat file is unsigned local evidence; nothing here proves who used the computer.
+
 ## Using it (developer mode today)
 
 **Alfonso's Chromebook first-body route: [`CHROMEBOOK_FIRST_MISSION.md`](CHROMEBOOK_FIRST_MISSION.md).**
@@ -267,4 +281,5 @@ no external business outcome. **Externally verified VEPMC = 0**: Linux fixtures 
 ledger conditions, but they use test keys and test machines. Alfonso's Chromebook Linux availability, his own key,
 physical first-body designation and acceptance remain untested. Self-repair and the model router are TESTED on the product path (real body, real
 isolated interpreters; model SDKs faked, no live key used); a live OpenAI/Anthropic API route awaits Alfonso's own keys.
-Human work fabric and business runtime are PROPOSED.
+Human work fabric and business runtime are PROPOSED. Presence accounting and open-source-first routing are
+UNIT/INTEGRATION TESTED in a Linux container (2026-09-30), not observed on the founder's Chromebook.

@@ -1,3 +1,7 @@
+> **2026-09-30:** this frontier and the Chromebook-first line (#125 → #134) forked at `73355d0` and were
+> converged, with #128 and main, into `claude/uniimente-greg-reconciliation-39syff`. See
+> [`GREG-RECONCILIATION-2026-09-30.md`](GREG-RECONCILIATION-2026-09-30.md). The record below is unchanged history.
+
 # One GREG frontier — convergence record (2026-09-27)
 
 Founder direction (2026-09-26/27): one canonical GREG frontier; exactly one executable implementation per

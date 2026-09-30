@@ -19,8 +19,9 @@ Do not enable ChromeOS Developer Mode. Google's Linux setup instructions are
 at <https://support.google.com/chromebook/answer/9145439>.
 
 In the Linux Terminal, check `python3 --version` (at least 3.11) and
-`git --version`. A missing Python venv package can be installed through the
-Debian package manager. Keep the repository and `~/.uniimente` **inside Linux
+`git --version`. Debian in the Linux environment ships without the Python venv
+package: install it with `sudo apt install python3-venv` (the doctor below reports
+it as `python_venv_available`). Keep the repository and `~/.uniimente` **inside Linux
 files**, not on a shared ChromeOS mount. After cloning below, before creating
 any key or body, run `python3 -m greg doctor --chromebook` from the repository.
 If it reports `ready_for_linux_service: false`, stop and use its `missing`
@@ -31,7 +32,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout codex/chromebook-first-body
+git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 alias greg='~/.uniimente/venv/bin/python -m greg'
@@ -101,6 +102,7 @@ then choose **Accept result** or reject it truthfully. Run:
 ```bash
 greg vepmc
 greg morning
+greg presence --hours 2
 ```
 
 Keep the outputs and the brief for review. A ledger row with all nine
@@ -108,6 +110,31 @@ conditions is only a **structural candidate**: the ledger cannot prove this
 Chromebook is Alfonso's or that Alfonso was physically present. A real founder
 run and inspection are required before anyone reports an externally verified
 VEPMC increase. A fixture with a test key never counts.
+
+## 3. What "persistent" means on this Chromebook
+
+ChromeOS stops the Linux environment when you sign out and, by Google's design,
+does not start it again at sign-in; closing the lid suspends it. GREG's missions,
+blockers and evidence survive all of that, and the service restarts a crashed
+process while Linux runs, but GREG is **not working** while Linux is stopped or
+asleep. It does not pretend otherwise:
+
+- `greg presence` (and the first question of `greg morning`, `q0_was_i_present`)
+  reports measured availability, every absence with its cause (`process_lost`,
+  `os_stop_or_shutdown`, `host_suspended`, `deliberate_stop`) and the due mission
+  observations that ran late because of it. Your deliberate stops are not counted
+  against availability. The `kill -9` in step 2 appears as one `process_lost`
+  absence bounded by the last heartbeat.
+- If availability stays below 75% while missions run late, GREG raises **one**
+  `BODY_AVAILABILITY` decision with no-spend options first (keep the Chromebook
+  signed in and charging; match mission cadence) and, only after that, the option
+  of researching always-on hardware you would own. It buys, rents or enrolls
+  nothing, and argues from mission lateness, never from its own continuation.
+
+Model cognition is open-source-first: with no selection GREG uses no model at all
+(the repository brief needs none). A stored API key or an installed Claude Code
+never turns on a paid model; only a route you name in a signed `greg model set`
+does.
 
 To stop: `greg stop --local`, then
 `systemctl --user stop greg-body.service`. A deliberate stop remains stopped.

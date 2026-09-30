@@ -1,0 +1,2 @@
+# Optional source-checkout seed; MIT-licensed mature SMT solver, no hosted backend.
+z3-solver==4.16.0.0

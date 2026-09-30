@@ -121,3 +121,19 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Polyintelligence Seed — 2026-09-30
+
+[INTENT-20260930-polyintelligence-seed](intent/INTENT-20260930-polyintelligence-seed.json)
+preserves the exact current approval to begin the build and the governing correction:
+hard constraints eliminate unlawful, rights-violating, unauthorized, insufficiently
+evidenced or unacceptably harmful routes before ranking eligible advantage.
+State: **active** development direction; decision: **experiment, unpromoted**.
+The [effect-compilation and review record](POLYINTELLIGENCE_SEED.md) preserves the
+latest five layers, alternatives, dissent, two strengthening passes, existing
+owners, backcast and evidence limits. Build evidence: full suite 797 passed,
+4 skipped; final v2 verifier V1–V5 PASS. The frozen 32-case router scores 29/32
+with the unavailable local service and 32/32 with explicitly synthetic semantic
+replay. Always-LLM/committee quality baselines remain NOT_RUN; no routing gain or
+external protection/leverage outcome is established. This entry neither authenticates a runtime
+principal nor grants installation, activation or external consequence authority.

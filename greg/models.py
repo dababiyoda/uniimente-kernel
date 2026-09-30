@@ -23,6 +23,12 @@ What routing never does:
   bounded and is skipped. The CLI route enforces its own ``--max-budget-usd``.
 * **Take credentials from the environment.** Keys come only from declared credential
   handles (``anthropic_api_key``, ``openai_api_key``); base URLs are pinned.
+* **Select a paid route by default.** Open-source-first (INTENT-20260930-open-source-first):
+  with no founder selection there is no model route at all; the template route still works.
+  A local open model is used when the founder selects it (``greg init --local-model`` or a
+  signed ``greg model set --route ollama``). A paid route (``anthropic``, ``openai``,
+  ``claude-code``) is used only when the founder's own selection names it; a stored API key
+  or an installed CLI never selects one.
 
 Models propose; they never authorize. Nothing here grants authority.
 """
@@ -428,6 +434,11 @@ class ModelRouter:
             self.record(event)
 
 
+# INTENT-20260930-open-source-first: no route unless the founder selects one; paid routes only by name.
+DEFAULT_ROUTE_ORDER: tuple = ()
+PAID_ROUTE_NAMES = frozenset(("anthropic", "openai", "claude-code"))
+
+
 def available_routes(secrets=None, *, config: dict | None = None, claude_budget_usd: float = 0.50) -> tuple:
     """Every model route this body can reach, in the founder's preference order.
 
@@ -444,7 +455,7 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
         "ollama": lambda: OllamaRoute(config.get("ollama_model")),
     }
     routes, unavailable = [], {}
-    for name in config.get("order", ["anthropic", "openai", "claude-code"]):
+    for name in config.get("order", DEFAULT_ROUTE_ORDER):
         if name in ("anthropic", "openai") and secrets is None:
             unavailable[name] = "no credential store"
             continue

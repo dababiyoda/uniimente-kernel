@@ -6,9 +6,10 @@ Two routes behind one interface (governed pluralism, cheapest first):
 1. **Template route** (deterministic, zero model calls, always available): recognizes
    the missions GREG already knows how to run and fills their parameters from what
    the body can see (Git repositories under its read roots, their GitHub remotes).
-2. **Model route** (optional): a Claude model drafts a mission against the real
-   capability inventory. Transports: the Anthropic API (official SDK, key from the
-   ``anthropic_api_key`` credential handle) or the locally installed Claude Code CLI.
+2. **Model route** (optional): a model drafts a mission against the real capability
+   inventory through the one ``greg.models`` router. Open-source-first: only a route the
+   founder selected is used, normally a locally served open model (Ollama); paid APIs or
+   the Claude Code CLI are used only when the founder's own selection names them.
 
 Every model draft is vetted before Alfonso sees it: it must satisfy the mission
 contract, name only registered capabilities (or a function, which Capability Genesis
@@ -351,7 +352,9 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
         return {"status": "NO_ROUTE", "origin": "planner",
                 "why": "no template matches and no model route is configured",
                 "known_templates": sorted(templates.TEMPLATES),
-                "enable_model_route": "configure a local Ollama model, store a model API credential, or install Claude Code"}
+                "enable_model_route": "select a locally installed open model: greg model set --route ollama "
+                                      "--local-model <name> --key <founder key>; a paid route is used only "
+                                      "if your own signed selection names it"}
     return model_route(text, ctx, transport)
 
 

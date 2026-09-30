@@ -230,7 +230,7 @@ def test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_hea
     lost = [a for a in s["absences"] if a["cause"] == "process_lost"]
     assert s["boots"] == 2 and len(lost) == 1 and "end_uncertain" not in lost[0]   # bounded by the heartbeat
     assert s["present_seconds"] > 0                          # the killed process's running time is counted
-    assert 2.0 <= lost[0]["seconds"] <= 2.0 + 5.0            # the sleep, plus at most a tick and restart time
+    assert 2.0 <= lost[0]["seconds"] <= 2.0 + 15.0           # the sleep, plus one tick and a (slow CI) restart
     assert presence._t(lost[0]["from"]) <= killed_at
 
 

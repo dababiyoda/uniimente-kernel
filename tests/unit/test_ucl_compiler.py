@@ -49,6 +49,20 @@ def test_parser_fails_closed_on_malformed_input():
         parse('block { = 3 }')
 
 
+def test_repeated_constitutional_assignment_is_rejected_not_silently_overwritten(tmp_path):
+    import shutil
+    shutil.copytree(os.path.join(ROOT, "constitution"), tmp_path / "constitution")
+    shutil.copytree(os.path.join(ROOT, "authority"), tmp_path / "authority")
+    source = tmp_path / "constitution" / "constitution.ucl"
+    doctrine = source.read_text()
+    tampered = doctrine.replace('status         = "unratified"',
+                                'status = "draft"\n    status = "unratified"', 1)
+    assert tampered != doctrine
+    source.write_text(tampered)
+    with pytest.raises(UCLSyntaxError, match="duplicate field 'status'"):
+        compile_constitution(str(tmp_path))
+
+
 def test_parser_no_side_effects():
     # UCL is declarative: parsing the same text twice yields equal trees, no I/O.
     t = 'a { b = "c" }'

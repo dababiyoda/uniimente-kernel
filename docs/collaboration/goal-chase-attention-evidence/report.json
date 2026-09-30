@@ -1,0 +1,272 @@
+{
+  "INSPECTED_SCOPE": {
+    "repositories": {
+      "uniimente-kernel": {
+        "default_ref": "origin/main",
+        "sha": "bcbb1ab4a0c42cda4a97aec42a11125753962762"
+      },
+      "DALEOBANKS": {
+        "default_ref": "origin/main",
+        "sha": "ed5e95d7f48e006d180b972efe138179325c31d2"
+      },
+      "WealthMachineIntelligence": {
+        "default_ref": "origin/main",
+        "sha": "ec84b6a2eec4efbc07bed7f167da81f5e25d890c"
+      },
+      "PumpStation": {
+        "default_ref": "origin/main",
+        "sha": "df6a732f44412c626098ee9591b9d19f420d02dd"
+      },
+      "RAILSCOUT": {
+        "default_ref": "origin/main",
+        "sha": "c255ff323aa889ec198962a7bac47d21b6074422"
+      },
+      "RESEARCH-IN": {
+        "default_ref": "origin/main",
+        "sha": "576913809432fc1dd47a245a14184988607e27eb"
+      },
+      "build-your-own-x": {
+        "default_ref": "origin/master",
+        "sha": "aa17439b62f384511a5561ce308e9598b94d8989"
+      }
+    },
+    "deep_read": "PR #93 source, contracts, tests, frozen evaluator, evidence and handoff; canonical main workflow/Gate/evidence; original seven-repository inspection retained.",
+    "refreshed_pr_metadata": [
+      90,
+      92,
+      93,
+      94,
+      95
+    ],
+    "exclusions": "No line-by-line re-audit of every historical branch, no organ test suites because organ code is unchanged; no full original named source documents."
+  },
+  "REPOSITORY_TRUTH": "main remains canonical. PR #93 supplies the existing complete candidate loop. This repair depends on unmerged #93 and does not adopt #70/#87 runtime ownership, #90 TaskFabric, #92 compiler, #94 CMC or #95 bootstrap.",
+  "FOUNDER_INTENT_ADVANCED": "INTENT-IGC-2026-09-05 and current 2026-09-08 continuation: preserve one actionable exact founder decision across unchanged observation intake and restart; retain the full capability horizon.",
+  "ARCHITECTURAL_OWNER": "Existing Kernel egregore GoalChase projection; institutional owners remain unchanged.",
+  "FILES_CHANGED": [
+    "egregore/goal_chase.py",
+    "tests/integration/test_goal_chase.py",
+    "tests/integration/test_goal_chase_attention.py",
+    "docs/collaboration/GOAL-CHASE-ATTENTION-REPAIR.md",
+    "docs/collaboration/deliberation-goal-chase-attention.json",
+    "docs/collaboration/GOAL-CHASE-V0.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/goal-chase-attention-evidence/*",
+    "verifier/runs/v2-2026-09-08T02-06-17.640798+00-00.json"
+  ],
+  "COMPONENTS_REUSED": [
+    "EventSpine",
+    "EvidenceLedger",
+    "DurableWorkflow/resume_workflow",
+    "ConsequenceGate/PolicyEngine",
+    "GrantIssuer",
+    "BudgetOffice",
+    "PassportRegistry",
+    "GenomeRegistry",
+    "CausalMemory",
+    "PR #93 GoalChase, CommunicationRouter, CLI and frozen evaluator"
+  ],
+  "NEW_COMPONENTS_CREATED": [],
+  "WHY_NEW_COMPONENTS_WERE_NECESSARY": "None. One additive basis-bound goal.observation_reconfirmed event uses the existing observation schema and EventSpine; intake identity/time maps are disposable projections.",
+  "TESTS_RUN": [
+    {
+      "command": "python -m pytest -q at PR #93 head",
+      "result": "569 passed in 11.73s",
+      "environment": "Python 3.12; declared requirements-dev.txt"
+    },
+    {
+      "command": "python -m pytest -q tests/integration/test_goal_chase_attention.py before repair",
+      "result": "8 failed / 4 passed; one test fixture violated the fixed source constant",
+      "evidence": "pre-repair.log"
+    },
+    {
+      "command": "same command after correcting source fixture to source_id, before implementation",
+      "result": "7 failed / 5 passed in 1.24s",
+      "evidence": "pre-repair-corrected-fixture.log"
+    },
+    {
+      "command": "python -m pytest -q tests/integration/test_goal_chase_attention.py tests/integration/test_goal_chase.py tests/unit/test_goal_chase_contracts.py",
+      "result": "86 passed in 7.23s before two extra replay-identity controls",
+      "evidence": "focused.log"
+    },
+    {
+      "command": "python -m pytest -q",
+      "result": "583 passed in 12.79s; zero failures/skips",
+      "evidence": "full-suite.log"
+    },
+    {
+      "command": "python verifier/v2/verify.py",
+      "result": "V1-V5 PASS; 492 unit tests, 45 canonical artifacts, false closure rejected",
+      "evidence": "verifier.log"
+    },
+    {
+      "command": "python scripts/ci/check_schema_refs.py",
+      "result": "14 schemas; 20 references resolve",
+      "evidence": "schemas.log"
+    },
+    {
+      "command": "python scripts/ci/check_authority_singleton.py",
+      "result": "One each of six governed authority artifacts",
+      "evidence": "authority.log"
+    },
+    {
+      "command": "python scripts/ci/check_sealed_developmental.py",
+      "result": "PASS declarations only; not proof of production enforcement",
+      "evidence": "sealed.log"
+    },
+    {
+      "command": "skill validate_deliberation.py docs/collaboration/deliberation-goal-chase-attention.json",
+      "result": "VALID; five-role analyses and exactly two passes"
+    },
+    {
+      "command": "fresh-process begin -> unchanged intake -> inspect -> approve; final retained-trace assertions",
+      "result": "PASS",
+      "evidence": "replay-result.json"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "TEST_RESULTS": {
+    "baseline_passed": 569,
+    "final_passed": 583,
+    "new_cases": 14,
+    "final_failures": 0,
+    "final_skips": 0,
+    "unchanged_frozen_evaluator": true
+  },
+  "NEGATIVE_CONTROLS": "Original hostile controls all pass, including forged/expired/widened/different-goal approvals, denial, duplicates, capability/authority mismatch, stale/model evidence, intent conflicts, crash, tamper, evaluator leakage and external channel refusal. New controls cover unchanged intake, changed negative/source/quote/eligibility data, exact identity across variants, late intake, false reconfirmation and expired transport recovery.",
+  "REPLAY_RESULT": {
+    "result": "PASS",
+    "fresh_child_processes": 4,
+    "pending_state_equal": true,
+    "question_equal": true,
+    "completed_task_not_repeated": true,
+    "ledger_chain_valid": true,
+    "evidence": "replay-result.json"
+  },
+  "SIMULATED_GOAL_CHASE_RESULT": "One goal performs internal research, awaits a reserved decision, retains that exact question through repeated unchanged intake and process restart, resumes after synthetic approval, reconciles and becomes ACHIEVED.",
+  "FOUNDER_ESCALATION_RESULT": "One request and one simulated delivery; no reserved execution before approval. Material facts still invalidate old authority. Rejection remains enforceable. Expired requests are not delivered.",
+  "CAPABILITY_DEFICIT_RESULT": "Second demo goal remains BLOCKED with durable NEEDED deficit; no claimed implementation, authority or founder escalation.",
+  "UNAUTHORIZED_EXTERNAL_EFFECTS": 0,
+  "DUPLICATE_CONSEQUENCES": 0,
+  "UNTRACEABLE_TRANSITIONS": 0,
+  "VERIFIED_PERSISTENT_GOAL_CHASE_CLOSURES": 1,
+  "CLOSURE_SCOPE": "SIMULATED / SANDBOX ONLY; this re-verifies the same v0 target, not a second production closure.",
+  "FOUNDER_INTERVENTION_METRICS": {
+    "reality_status": "SIMULATED",
+    "founder_interruptions": 1,
+    "decision_requests": 1,
+    "duplicate_suppressed": 2,
+    "sandbox_intervention_minutes": 2.0,
+    "sandbox_verified_outcomes": 1,
+    "sandbox_intervention_minutes_per_verified_outcome": 2.0,
+    "founder_intervention_minutes_per_verified_outcome": null,
+    "real_verified_outcomes": 0,
+    "unauthorized_external_effects": 0,
+    "time_waiting_on_founder_seconds": 300.0,
+    "time_to_resume_after_decision_seconds": [
+      0
+    ],
+    "work_started_under_standing_authority_fraction": 0.5,
+    "avoidable_escalations": null,
+    "unreconciled_actions": 0,
+    "persistent_closure_requires": "all acceptance gates plus separate fresh-process proof"
+  },
+  "KNOWN": [
+    "All 583 repository tests pass locally.",
+    "One new saved four-process sandbox episode closes with one founder interruption.",
+    "Exactly two Gate dispatches: research plus approved prototype.",
+    "Real-world verified outcomes are zero."
+  ],
+  "INFERRED": [
+    "Retaining a fresh exact decision basis should reduce intake-driven founder noise; actual attention savings are unmeasured."
+  ],
+  "UNCERTAIN": [
+    "Production identity/custody, arbitrary code isolation, live efficacy, distributed exactly-once behavior and canonical runtime integration remain unproven."
+  ],
+  "IMPLEMENTED": [
+    "Basis-preserving reconfirmation with full raw input retention",
+    "Replay validation and intake high-water checks",
+    "Expired-message suppression"
+  ],
+  "SIMULATED": [
+    "Founder authentication/decision",
+    "Prototype consequence and dollar cap",
+    "Two intervention minutes"
+  ],
+  "PROPOSED": [
+    "Integration with founder application/inbox and founder-ratified runtime owner",
+    "Broad tools, organization and later-generation horizon remain deferred"
+  ],
+  "BLOCKED": [
+    "Production promotion, merge, deployment and external operations remain outside authorization; independent review remains pending."
+  ],
+  "STRONGEST_COUNTEREVIDENCE": "Trusted in-process fixed functions, a public synthetic signer and a local lock are sufficient for this fixture only. The initial passing baseline still concealed attention-policy defects. A repeated confirmation intentionally does not refresh the decision basis.",
+  "RESIDUAL_RISKS": [
+    "Older readers silently lack the new event variant; do not use them on repair-era histories.",
+    "Original basis expiry can conservatively require new intake despite a retained earlier confirmation.",
+    "Schemas/equality/hashes do not prove source truth or production authority."
+  ],
+  "ROLLBACK": "Leave the stacked draft unmerged or revert its additive commits, preserving branch, negatives and pre-repair evidence. Keep the matching reader for any repair-era history.",
+  "KILL_CRITERIA": [
+    "Authority expansion",
+    "Expired/changed-scope approval executes",
+    "Duplicate consequence",
+    "Hidden changed/negative evidence",
+    "Repeat notification for unchanged fresh evidence",
+    "Second authority/event/workflow truth"
+  ],
+  "NEXT_NAMED_BOTTLENECK": "Independent review of #93 plus this repair; then founder application/inbox integration with the ratified runtime owner.",
+  "FINAL_DECISION": "EXPERIMENT",
+  "CODE_COMMIT": "be7df4a8a922f323d68f73e1c90e57781f0ca074",
+  "BASE_PR": 93,
+  "BASE_SHA": "21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
+  "ENVIRONMENT": {
+    "python": "3.12.13",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.39",
+    "dependencies": {
+      "pytest": "9.1.1",
+      "PyYAML": "6.0.3",
+      "jsonschema": "4.26.0"
+    }
+  },
+  "SOURCE_SHA256": {
+    "egregore/goal_chase.py": "d9522d033b407bfbf2e6eae93b71eac855066da470e1a9cf9c3ba4ac65d44959",
+    "egregore/goal_chase_evaluator.py": "cfbaefb9206d0ca3921c80d135d53709cab60de4b1de70c3c4b065e1025cddb9",
+    "egregore/goal_chase_spec.json": "aa148771709d590a51d8529e49fc81ca767302f2a152456688583ab62ebd712c",
+    "tests/fixtures/goal_chase_v0_seal.json": "d60ea896c06c3de264fa6c539c4f766fffc688b6ae422ddb706413e289e89937",
+    "tests/integration/test_goal_chase.py": "aa6522ac6e301f4cbfc149c6f909ce33fb2509549a248dafdadde7327292a256",
+    "tests/integration/test_goal_chase_attention.py": "9ffadbc67d4719d90589a8c816bac29fd2fba78a75b9262c395929ca34589695"
+  },
+  "ACCEPTANCE_GATES": {
+    "count": 23,
+    "mapping_source": "../goal-chase-v0-evidence/report.json#/acceptance_evidence",
+    "reverification": "Every mapped original test was rerun; the material-change fixture correction is justified in GOAL-CHASE-ATTENTION-REPAIR.md. Fourteen additional attention and replay controls passed.",
+    "current_result": "PASS / SANDBOX ONLY",
+    "current_suite": "full-suite.log",
+    "current_process_proof": "replay-result.json"
+  },
+  "EVIDENCE_SHA256": {
+    "approve.json": "8616b5923331f5fddee52e531df432cd17e8d01615a238fb38c0b3cedc55d177",
+    "approve.txt": "13826d99b423a7e28134d06130b2de1f48c2679d010ce4003ee9fdb856811e4c",
+    "authority.log": "16c96796f9e6e6df11cc9f2ded8de13c4a367ea0ec077aad206419d8ecf85026",
+    "begin.json": "2de1aab96c6148e9943ecd4961fcd59210781310b66593d351182718d3f2aa0d",
+    "begin.txt": "897beb8012bb69ea7ffb6ad885f6ff890d9a004a14817f3065189ba5e456a71d",
+    "focused.log": "28cc8e507e0e0e85c634b8bc65d34764cd9873a22c532192bcdc118008300860",
+    "full-suite.log": "46f1a022ce11c9d9962e97784c5bb534d4e5a7c13863f550577fa0d59f686e4e",
+    "inspect.json": "85ee72a2d9f6c444073627af66054466db2c456b5dad8fbae89090ddcd797d30",
+    "inspect.txt": "34a6fb04644c7686512fb518b87a5caab464d56e27f4c36e69dcc4ba54474b93",
+    "pre-repair-corrected-fixture.log": "c9009c54b2b85ebddcabde4ba021e516d895e4c24b477d04c9471ff1fe586250",
+    "pre-repair.log": "1f3d12b89f5d5355b95f8651c51449ac8b736be901040efaf4197b5ba176ad66",
+    "reconfirm.json": "85ee72a2d9f6c444073627af66054466db2c456b5dad8fbae89090ddcd797d30",
+    "reconfirm.txt": "84696399d916f09fab37cd70b85f4de3372b2b41412f6f74535a975c33220b09",
+    "replay-result.json": "ba7f4a1205f8ba19342e30d3a2bcf3412229a11e777c4f6de8a8770599af8690",
+    "sandbox.jsonl": "e5a6fb5b43f6927b83a9d99106a903c32b9395ebc6f17bc41e8a4dbabf98f070",
+    "schemas.log": "7be7f3725a6e26400aee359b7afcd0fc86bd575863fbd1cac12a56cc7d701079",
+    "sealed.log": "c6f5311fc4ae782a4051fa2a38b05044996e015a41f3d3acc2f0e92e94e5a2f1",
+    "verifier.log": "85db4c203a44fc3ec348fb8ee1998fbdfe11be9686c67706c7720cc50f646014"
+  },
+  "LIMITATION": "Claims refer to local tested source hashes and saved synthetic trace. Remote CI status is separate evidence; no real founder authorization, operational service, external effect or HARDENED state is claimed."
+}

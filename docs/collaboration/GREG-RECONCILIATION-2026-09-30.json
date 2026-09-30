@@ -1,0 +1,483 @@
+{
+  "record": "GREG-RECONCILIATION-2026-09-30",
+  "intent": "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+  "status": "PROPOSED dispositions on a draft branch for founder review; nothing deleted; no PR closed, retargeted or merged to main",
+  "canonical_branch": "claude/uniimente-greg-reconciliation-39syff",
+  "canonical_branch_contains": {
+    "main": "19fa33c (#135 open-source-first Qwen draft inference, #136 research line)",
+    "chromebook_line_head": "1391e04 (#134; ancestors #113 #114 #125 #126 #127 #130 #131 #133)",
+    "one_greg_frontier_head": "3edbcfe (#122; ancestors #101 #102 #108 #109 #110 #111 #118 #120)",
+    "venture_bridge_head": "03217e4 (#128)"
+  },
+  "source_coverage": {
+    "inspected": [
+      "uniimente-kernel: main 19fa33c, all 49 open PRs listed with heads; GREG lineages #113..#134 diffed, ancestry computed, test suites run on #134 head (951 passed/8 skipped), #122 head (974/8), main (626/4) and the converged branch",
+      "uniimente-kernel docs: AGENTS, CLAUDE, FOUNDER_EFFECT_COMPILER, FOUNDER_INTENT_LEDGER, RECURSIVE_COLLABORATION_PROTOCOL, UNIIMENTE_FINAL_BUILD_ORDER, CANONICAL_EXECUTION_ORDER, PROJECT_COGNITION_SOP, PROJECT_SOURCE_CENSUS_2026-09-26, founder-loop-entry-gate.json, SR001_MERGE_STATUS, OPEN_SOURCE_STACK, ONE-GREG-FRONTIER-2026-09-27, REPOSITORY-METABOLISM-2026-09-25 (head), intent records FIRST-BODY (+ 2026-09-26 hardware source), REAL-PRODUCT-METABOLISM, FOUNDRY-55, open-source-first",
+      "greg/: README, CHROMEBOOK_FIRST_MISSION, body, missions (header), metrics, models, compute, tribunal, doctor, journal, appraisal (delivery section), capabilities (strengthens/builtins)",
+      "DALEOBANKS, WealthMachineIntelligence, gods-eye-view-EGGREGORE-TOOL, RAILSCOUT, PumpStation, RESEARCH-IN, build-your-own-x: default-branch layout, AGENTS.md entry, commit counts; open PR lists for DALEOBANKS, WMI, gods-eye",
+      "external: Google Linux-on-ChromeOS FAQ via search excerpt (no autostart at login; processes do not survive logout); supechicken/ChromeOS-AutoStart README; WebKit/MDN evidence that Safari 17+ ships Ed25519 WebCrypto"
+    ],
+    "partially_inspected": [
+      "organ repositories: not line-by-line; DALEOBANKS/WMI main used as live inputs to the console test only",
+      "older kernel PRs #63..#97: titles, heads and ancestry only",
+      "#105 provider-change intake, #121 correction loop, #129 egregore parts: summaries/diffstats only"
+    ],
+    "unavailable": [
+      "the 93 ChatGPT Project source files and project conversations listed in PROJECT_SOURCE_CENSUS_2026-09-26 (not in any repository)",
+      "Alfonso's Chromebook, iPhone 17, founder key and any real founder run",
+      "developers.google.com (egress-blocked here; FAQ quoted from a search excerpt)",
+      "public RFC 3161 TSAs (blocked in this container, per prior records)"
+    ]
+  },
+  "intent_conflicts": [
+    {
+      "earlier": "#114/#122 and greg/FIRST_MISSION.md: first body is a founder-owned Mac; #122 titled 'first Mac mission path'",
+      "later": "Founder, 2026-09-26: 'I don't own a Mac… I own a Chromebook. And an iPhone 17'; Linux environment 'Unavailable/unsure'; future hardware 'Mac or whatever hardware Greg researches'",
+      "same_scope": true,
+      "resolution": "Later correction controls the first body. The first-Mac assumption is superseded for N1 only; body mechanisms are current, Mac-specific mechanisms move to the Mac body node N8 (see placements mac.*). Converged branch follows the Chromebook route.",
+      "affected": [
+        "greg/CHROMEBOOK_FIRST_MISSION.md",
+        "greg/FIRST_MISSION.md",
+        "#122 frontier record"
+      ]
+    },
+    {
+      "earlier": "greg/models.py available_routes default order ['anthropic','openai','claude-code']",
+      "later": "INTENT-20260930-open-source-first: 'Normal AI routing must not select a paid provider merely because an API key exists'",
+      "same_scope": true,
+      "resolution": "Default route order is now empty; paid routes only when named by a founder selection (commit 476d6cc).",
+      "affected": [
+        "greg/models.py",
+        "greg/planner.py"
+      ]
+    },
+    {
+      "earlier": "INTENT-2026-09-27-FOUNDRY-55: all 55 numbered systems are active obligations",
+      "later": "2026-09-30 directive: cathedral detector ('STOP HORIZONTAL EXPANSION. Converge.') and VEPMC-first build order",
+      "same_scope": false,
+      "resolution": "Both stand. FOUNDRY-55 itself calls VEPMC-first 'a sequencing rule, not a license to delete'. #132 is STACKED NEXT on the converged base, not merged in this session.",
+      "affected": [
+        "#132"
+      ]
+    },
+    {
+      "earlier": "ONE-GREG-FRONTIER-2026-09-27: '#122 is the canonical frontier; no two canonical frontiers'",
+      "later": "Chromebook line (#125..#134) forked from #122 at 73355d0 the same day and was also treated as the founder path (runbook pointed at codex/chromebook-first-body)",
+      "same_scope": true,
+      "resolution": "Both merged into one branch; the frontier record's rule is honored by convergence rather than by picking a side.",
+      "affected": [
+        "docs/collaboration/ONE-GREG-FRONTIER-2026-09-27.md"
+      ]
+    }
+  ],
+  "lineages": {
+    "note": "Re-expressed under INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE. The first-pass list (commit 2d602bf) used terminal labels; each lineage is now a placement on greg/path.json with class, node and changed axes. Source of truth: DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "by_pr": {
+      "#63": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
+      ],
+      "#64": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
+      ],
+      "#66": [
+        {
+          "placement": "pr63_64_66_developmental_lineage",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
+      ],
+      "#68": [
+        {
+          "placement": "pr68_planning_backcast",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N0"
+        }
+      ],
+      "#70": [
+        {
+          "placement": "pr70_track_a_runtime",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N2"
+        }
+      ],
+      "#71": [
+        {
+          "placement": "pr71_opus_audit_canary",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#72": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#73": [
+        {
+          "placement": "pr73_governed_boundary",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N2"
+        }
+      ],
+      "#76": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#77": [
+        {
+          "placement": "pr72_76_77_railscout",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N3"
+        }
+      ],
+      "#78": [
+        {
+          "placement": "pr78_pg_spine",
+          "classification": "FUTURE_NODE_CAPABILITY",
+          "node": "N8"
+        }
+      ],
+      "#79": [
+        {
+          "placement": "pr79_81_evolution_cycles",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#81": [
+        {
+          "placement": "pr79_81_evolution_cycles",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N4"
+        }
+      ],
+      "#83": [
+        {
+          "placement": "pr83_independent_verification",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N0"
+        }
+      ],
+      "#85": [
+        {
+          "placement": "pr85_run_record_binding",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        }
+      ],
+      "#86": [
+        {
+          "placement": "pr86_living_goal_graph",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N1"
+        }
+      ],
+      "#87": [
+        {
+          "placement": "pr87_founder_rulings",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#88": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#90": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#92": [
+        {
+          "placement": "pr88_90_92_organizational",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N5"
+        }
+      ],
+      "#93": [
+        {
+          "placement": "pr93_97_sandbox_goal_chase",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#94": [
+        {
+          "placement": "pr94_protected_appraisal",
+          "classification": "NEXT_NODE_INPUT",
+          "node": "N2"
+        }
+      ],
+      "#95": [
+        {
+          "placement": "pr95_collaboration_bootstrap",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#97": [
+        {
+          "placement": "pr93_97_sandbox_goal_chase",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N1"
+        }
+      ],
+      "#101": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#102": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#105": [
+        {
+          "placement": "pr105_provider_intake",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N2"
+        }
+      ],
+      "#108": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#109": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#110": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#111": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#113": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#114": [
+        {
+          "placement": "mac.first_body_assumption",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N1"
+        },
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#115": [
+        {
+          "placement": "pr115_anchor",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        },
+        {
+          "placement": "pr115_arsenal_docs",
+          "classification": "HISTORICAL_EVIDENCE",
+          "node": "N2"
+        }
+      ],
+      "#118": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#119": [
+        {
+          "placement": "pr119_learning_engine",
+          "classification": "GENUINELY_OBSOLETE",
+          "node": "N1"
+        }
+      ],
+      "#120": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#121": [
+        {
+          "placement": "pr121_correction_loop",
+          "classification": "TEMPORARILY_DEFERRED",
+          "node": "N2"
+        }
+      ],
+      "#122": [
+        {
+          "placement": "mac.first_body_assumption",
+          "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+          "node": "N1"
+        },
+        {
+          "placement": "mac.runbook_repairs",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N1"
+        },
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#124": [
+        {
+          "placement": "pr124_venture_watch",
+          "classification": "REQUIRES_ADAPTATION",
+          "node": "N3"
+        }
+      ],
+      "#125": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#126": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#127": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#128": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#129": [
+        {
+          "placement": "pr129_egregore_parts",
+          "classification": "PORTABLE_MECHANISM",
+          "node": "N2"
+        }
+      ],
+      "#130": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#131": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#132": [
+        {
+          "placement": "pr132_foundry55",
+          "classification": "NEXT_NODE_INPUT",
+          "node": "N2"
+        }
+      ],
+      "#133": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ],
+      "#134": [
+        {
+          "placement": "one_greg_converged_lineages",
+          "classification": "ALREADY_ACHIEVED_NODE",
+          "node": "N0"
+        }
+      ]
+    }
+  },
+  "canonical_owners": {
+    "persistent body / lifecycle": "greg/body.py + greg/service.py",
+    "infinite goal chase": "greg/missions.py",
+    "authority / effects": "greg/authority.py over policy/consequence_gate.py (Kernel)",
+    "model routing": "greg/models.py ModelRouter (egregore/local_model.py LocalDraftProposer is ADE-1's loopback proposer adapter; transport convergence is a PORT candidate)",
+    "capability genesis / repair": "greg/genesis.py + greg/builders.py",
+    "independent proof": "greg/appraisal.py (separate process) + greg/anchor.py",
+    "learning": "greg/improvement.py",
+    "presence / availability": "greg/presence.py (new)",
+    "standing multi-organ deliberation": "egregore/runtime.py (ADE-1; proposal-only; not wired to GREG missions)"
+  },
+  "stack_trial": {
+    "pr": 132,
+    "method": "scratch worktree: merge origin/claude/foundry-55 onto bda3c0e, union-resolve the two additive conflicts, run the full suite",
+    "result": "#132 merges onto bda3c0e with two additive conflicts (greg/capabilities.py builtins, greg/cli.py subcommands), union-resolved. Full suite 1129 passed / 4 failed / 12 skipped; the 4 failures (tests/unit/test_foundry_systems.py) reproduce identically on #132's own head da3d4ac and are missing optional modules it declares (wasmtime, mcp). With those installed, test_foundry_systems.py passes 47/47 on the stacked tree."
+  },
+  "negative_evidence": [
+    "tests/unit/test_greg_console.py::test_review_comparison_changes_later_task_and_regression_reverts fails identically on untouched #134 and #122 heads whenever sibling daleobanks/ and wmi/ checkouts exist; CI never sees it because it skips without them. Superseded egregore.local_console path; asserts an 'authority' blocker that current DALEOBANKS/WMI state no longer produces ('learning').",
+    "For four days two branches each served as 'the' GREG path and the founder runbook pointed at a stale branch lacking nine later commits of its own line and the #122 repairs.",
+    "git reset --hard and the first merge attempt were refused by the session's safety classifier; convergence proceeded by additive merges only after a read-only check showed nothing losable."
+  ],
+  "vepmc": {
+    "value": 0,
+    "why": "no founder-owned body has run a signed mission; every remaining condition needs Alfonso"
+  },
+  "test_evidence": {
+    "main_19fa33c": "626 passed, 4 skipped",
+    "chromebook_head_1391e04": "951 passed, 8 skipped",
+    "frontier_head_3edbcfe": "974 passed, 8 skipped",
+    "this_branch_full_suite": "1096 passed, 6 skipped, 1 failed (the sibling-dependent console test; present only because sibling daleobanks/ and wmi/ checkouts existed)",
+    "verifier_v2_ci_equivalent": "PASS V1-V5 (V2: 991 passed, 12 skipped): verifier/runs/v2-2026-09-30T12-32-35.681840+00-00.json",
+    "verifier_v2_with_siblings": "FAIL V2 (the console test only): verifier/runs/v2-2026-09-30T12-26-15.056585+00-00.json, retained as negative evidence",
+    "ci_scripts": "check_schema_refs, check_authority_singleton, check_sealed_developmental: pass",
+    "phone_e2e": "tests/integration/test_greg_phone_e2e.py passes with playwright + preinstalled Chromium (iPhone profile)"
+  }
+}

@@ -1,12 +1,34 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 # UNIIMENTE Permanent Operating Order
 
+**Foundry delivery scope (2026-09-27):** `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json` keeps all 55 numbered systems as active obligations; each needs executable GREG/Foundry integration, tests and reproducible evidence before completion can be claimed. Catalog status and a plan do not suffice. Hardware for the first founder-owned body remains open because Alfonso owns no Mac. This changes no constitutional or external-effect authority.
+
+## Latest founder correction — BUILD THE REAL PRODUCT
+
+Before selecting work, read `@docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and `@docs/intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`.
+
+Alfonso's repeated correction is that experiments, simulations, architecture documents and test counts must stop masquerading as the deliverable. They remain valid **verification instruments around real integrated product code**.
+
+Treat the entire historical repository as mechanism substrate. Extract what works, preserve negative evidence, recombine complementary mechanisms, retire duplicate active paths, acquire commodity capabilities before rebuilding them, and attach the residual capability to the canonical GREG path.
+
+**Required end-of-session proof:** state the concrete new thing the actual GREG can do now that it could not do before. If there is no product delta, explain the external blocker; do not substitute another cathedral of plans.
+
+
 Read and obey, in this order:
+
+- @docs/PROJECT_COGNITION_SOP.md
+- @docs/PROJECT_SOURCE_CENSUS_2026-09-26.md
 
 - @docs/FOUNDER_EFFECT_COMPILER.md
 - @docs/FOUNDER_INTENT_LEDGER.md
 - @docs/RECURSIVE_COLLABORATION_PROTOCOL.md
 - @docs/UNIIMENTE_FINAL_BUILD_ORDER.md
 - @docs/CANONICAL_EXECUTION_ORDER.md
+
+## Developmental inheritance (founder correction 2026-09-30)
+
+A founder correction reroutes; it does not delete. Before superseding, closing or archiving anything material, name the axis that changed (hardware, sequence, timing, provider, interface, implementation mechanism, scale, maturity, budget, authority, immediate priority, or final intended effect), answer the nine-question inheritance test, and place it on `greg/path.json` with one of ten classes in `docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json`. Never use "outdated" as a terminal label. Not now is not never; wrong implementation is not wrong destination. Exactly one node is operationally primary (`greg path`). Enforced by `tests/unit/test_developmental_inheritance.py`; intent `docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json`.
 
 ## Founder-effect interpretation — mandatory
 

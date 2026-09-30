@@ -1,0 +1,1383 @@
+{
+  "record": "DEVELOPMENTAL-INHERITANCE-2026-09-30",
+  "intent": "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
+  "path": "greg/path.json",
+  "status": "Agent placements on the Backcast GPS for founder review. Nothing deleted, closed or archived by this record.",
+  "replaces_vocabulary_of": "docs/collaboration/GREG-RECONCILIATION-2026-09-30.json first-pass lineage list (commit 2d602bf), which used terminal labels",
+  "classes": [
+    "ALREADY_ACHIEVED_NODE",
+    "CURRENT_NODE_IMPLEMENTATION",
+    "NEXT_NODE_INPUT",
+    "FUTURE_NODE_CAPABILITY",
+    "PORTABLE_MECHANISM",
+    "REQUIRES_ADAPTATION",
+    "TEMPORARILY_DEFERRED",
+    "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+    "GENUINELY_OBSOLETE",
+    "HISTORICAL_EVIDENCE"
+  ],
+  "axes": [
+    "current_hardware",
+    "sequence",
+    "timing",
+    "provider",
+    "interface",
+    "implementation_mechanism",
+    "scale",
+    "maturity_level",
+    "budget",
+    "authority",
+    "immediate_priority",
+    "final_intended_effect"
+  ],
+  "placements": [
+    {
+      "id": "mac.first_body_assumption",
+      "lineage": [
+        "#114",
+        "#122",
+        "greg/FIRST_MISSION.md"
+      ],
+      "intended_effect": "A first verified persistent mission closure on a computer Alfonso owns",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N1",
+      "changed_axes": [
+        "current_hardware",
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "greg/body.py",
+        "greg/founder.py",
+        "greg/missions.py",
+        "greg/appraisal.py",
+        "greg/metrics.py"
+      ],
+      "adaptation": "The N1 route runs on the Chromebook; the Mac runbook stays for the Mac body node",
+      "activation_evidence": "greg/mac/verify_mac_body.sh passes on a Mac Alfonso designates",
+      "inheritance_test": {
+        "q1_original_capability": "VEPMC 0 -> 1 on the founder's own computer",
+        "q2_still_in_destination": "Yes: it is the active node's exit",
+        "q3_assumption_that_became_false": "'Alfonso owns a Mac' (2026-09-26: 'I don't own a Mac … I own a Chromebook. And an iPhone 17')",
+        "q4_replace_without_discarding": "Yes: service install and doctor are platform-parameterized (--platform linux, doctor --chromebook)",
+        "q5_portable_parts": "Body lifecycle, signed commands, missions, appraisal, VEPMC, console: all device-independent",
+        "q6_later_node_parts": "launchd agent, sandbox-exec, Keychain backend, mac.* capabilities, verify_mac_body.sh -> N8 Mac body",
+        "q7_extract_into_current_path": "Python >= 3.11 interpreter selection and a persistent greg command (#122 ea95ebb) -> greg/chromebook/install.sh",
+        "q8_incompatible_with_corrected_destination": "None. Only 'first body = Mac' conflicts, and only for N1",
+        "q9_cheapest_distinguishing_test": "Run verify_mac_body.sh on a Mac once one is designated; the Chromebook route needs none of it"
+      }
+    },
+    {
+      "id": "mac.persistent_body_mechanisms",
+      "lineage": [
+        "greg/body.py",
+        "greg/service.py",
+        "greg/presence.py"
+      ],
+      "intended_effect": "The body keeps running, restarts after a crash, stays stopped after a founder stop, and reports its presence",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/body.py",
+        "greg/service.py",
+        "greg/presence.py"
+      ],
+      "activation_evidence": "N1 exit"
+    },
+    {
+      "id": "mac.device_independent_runtime",
+      "lineage": [
+        "greg/"
+      ],
+      "intended_effect": "One GREG runtime above any supported operating system",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/cli.py",
+        "greg/console.py",
+        "greg/missions.py"
+      ],
+      "activation_evidence": "N1 exit"
+    },
+    {
+      "id": "mac.launchd_agent",
+      "lineage": [
+        "greg/service.py launchd_plist, launchd_remote_plist"
+      ],
+      "intended_effect": "Supervise the body on macOS",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/service.py",
+        "tests/unit/test_greg_platform.py"
+      ],
+      "activation_evidence": "A Mac body is designated; the plist loads and restarts the body after kill -9"
+    },
+    {
+      "id": "mac.sandbox_exec_isolation",
+      "lineage": [
+        "greg/capabilities.py (sandbox-exec no-network profile)"
+      ],
+      "intended_effect": "Run untrusted candidate code without network on macOS",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/capabilities.py"
+      ],
+      "activation_evidence": "Genesis candidate isolation test on a Mac body"
+    },
+    {
+      "id": "mac.keychain_backend",
+      "lineage": [
+        "greg/capabilities.py SecretBroker (macOS Keychain)"
+      ],
+      "intended_effect": "Platform-secure credential storage with per-handle resolution",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/capabilities.py"
+      ],
+      "activation_evidence": "A credentialed mission on a Mac body resolves a handle from Keychain"
+    },
+    {
+      "id": "body1.secure_credential_store",
+      "lineage": [
+        "greg/capabilities.py SecretBroker (0600 file on Linux)"
+      ],
+      "intended_effect": "The same platform-secure credential boundary on Body 1",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N2",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/capabilities.py"
+      ],
+      "adaptation": "libsecret (secret-tool) backend when a keyring daemon runs in ChromeOS Linux; the first N1 mission needs no credential",
+      "activation_evidence": "The first credentialed mission on Body 1"
+    },
+    {
+      "id": "mac.notify",
+      "lineage": [
+        "greg/capabilities.py mac.notify (osascript)"
+      ],
+      "intended_effect": "Tell the founder something, such as a decision waiting, without an open interface",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N1",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/capabilities.py"
+      ],
+      "adaptation": "A freedesktop-notification backend for function founder.notify: ChromeOS vm_tools notificationd forwards container notifications to the tray; counterevidence: Signal-Desktop issue #6815 reports missing notifications on Crostini. The macOS backend stays.",
+      "activation_evidence": "A test notification from Body 1 appears in the ChromeOS tray on Alfonso's Chromebook"
+    },
+    {
+      "id": "mac.visual_computer_use",
+      "lineage": [
+        "greg/capabilities.py mac.screenshot, mac.frontmost_app"
+      ],
+      "intended_effect": "Observe and operate a desktop through screen and accessibility",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/capabilities.py"
+      ],
+      "adaptation": "Needs a body whose screen GREG may observe; the Crostini container proxies only its own apps (inference, not verified)",
+      "activation_evidence": "A signed mission completes through desktop observation on a designated desktop body"
+    },
+    {
+      "id": "mac.verification_package",
+      "lineage": [
+        "greg/mac/verify_mac_body.sh"
+      ],
+      "intended_effect": "Native verification of a Mac body",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/mac/verify_mac_body.sh"
+      ],
+      "activation_evidence": "Alfonso runs it on a Mac"
+    },
+    {
+      "id": "mac.runbook_repairs",
+      "lineage": [
+        "#122 ea95ebb"
+      ],
+      "intended_effect": "A founder install that picks a working Python and keeps a durable greg command",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [
+        "current_hardware"
+      ],
+      "surviving_mechanisms": [
+        "greg/chromebook/install.sh",
+        "greg/FIRST_MISSION.md"
+      ],
+      "adaptation": "Ported into the Chromebook installer on 2026-09-30",
+      "activation_evidence": "tests/unit/test_greg_chromebook_install.py"
+    },
+    {
+      "id": "mac.higher_compute_workstation",
+      "lineage": [
+        "INTENT-2026-09-22-FIRST-BODY hardware correction: 'Mac or whatever hardware Greg researches'"
+      ],
+      "intended_effect": "More capable hardware when evidence justifies it",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "timing"
+      ],
+      "surviving_mechanisms": [
+        "greg/presence.py",
+        "greg/compute.py"
+      ],
+      "activation_evidence": "A BODY_AVAILABILITY or COMPUTE decision answered by Alfonso"
+    },
+    {
+      "id": "mac.multi_body",
+      "lineage": [
+        "greg/compute.py enroll_node (NODE_ENROLL)"
+      ],
+      "intended_effect": "One institution across several machines with bounded per-machine identity",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "timing"
+      ],
+      "surviving_mechanisms": [
+        "greg/compute.py"
+      ],
+      "activation_evidence": "A second enrolled machine shares mission history without universal credentials"
+    },
+    {
+      "id": "one_greg_converged_lineages",
+      "lineage": [
+        "#101",
+        "#102",
+        "#108",
+        "#109",
+        "#110",
+        "#111",
+        "#113",
+        "#114",
+        "#118",
+        "#120",
+        "#122",
+        "#125",
+        "#126",
+        "#127",
+        "#128",
+        "#130",
+        "#131",
+        "#133",
+        "#134"
+      ],
+      "intended_effect": "The GREG product path: body, missions, genesis, appraisal, learning, phone, Chromebook route, precedents, artifacts, standing-mission appraisal",
+      "intended_effect_status": "active",
+      "classification": "ALREADY_ACHIEVED_NODE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/"
+      ],
+      "activation_evidence": "PR #137 ancestry; suite and verifier runs",
+      "evidence_refs": [
+        "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md"
+      ]
+    },
+    {
+      "id": "pr132_foundry55",
+      "lineage": [
+        "#132"
+      ],
+      "intended_effect": "All 55 Foundry systems as usable, composable GREG capabilities (INTENT-2026-09-27-FOUNDRY-55)",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N2",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "branch claude/foundry-55"
+      ],
+      "adaptation": "Stacks on the converged base with two additive conflicts (greg/capabilities.py: foundry.query/apply beside venture.assess/status; greg/cli.py: the foundry subcommand beside path/presence/doctor); keep both sides. Its systems attach when a mission pulls them; not merged ahead of VEPMC per its own body",
+      "activation_evidence": "Stack trial 2026-09-30 of #132 head da3d4ac (39/55) onto 6e0533f (N2 reached agent-side): `python -m foundry.completion --audit` PASS 39/55, 0 problems; 75 foundry tests pass; every GREG unit and integration suite passes on the stack (380 passed, 8 skipped). Earlier trial at 31/55: 47/47. Merging stays a founder decision after VEPMC"
+    },
+    {
+      "id": "pr121_correction_loop",
+      "lineage": [
+        "#121"
+      ],
+      "intended_effect": "Founder corrections re-rank already-authorized strategies across missions",
+      "intended_effect_status": "active",
+      "classification": "TEMPORARILY_DEFERRED",
+      "node": "N2",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "branch claude/greg-correction-loop"
+      ],
+      "adaptation": "Enter as a third lever inside greg/improvement.py under its held-out verdict, not as a second engine",
+      "activation_evidence": "N1 exit, then a held-out comparison against the canonical learning rule"
+    },
+    {
+      "id": "pr119_learning_engine",
+      "lineage": [
+        "#119",
+        "greg/learning.py (branch)"
+      ],
+      "intended_effect": "GREG learns from founder corrections only when later held-out cases prove it",
+      "intended_effect_status": "active",
+      "classification": "GENUINELY_OBSOLETE",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "obsolescence_basis": {
+        "kind": "replaced_by_stronger_canonical",
+        "refs": [
+          "greg/improvement.py",
+          "docs/collaboration/PR119-METABOLISM.md",
+          "tests/unit/test_greg_learning_heldout_independence.py"
+        ]
+      },
+      "surviving_mechanisms": [
+        "tests/unit/test_greg_improvement_attacks.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Learning from founder corrections that survives process death",
+        "q2_still_in_destination": "Yes, served by greg/improvement.py",
+        "q3_assumption_that_became_false": "That one-case decisions and a CONFLICTED state were an adequate retention rule",
+        "q4_replace_without_discarding": "Done: its durability falsifier was ported to the canonical engine",
+        "q5_portable_parts": "Process-death learning falsifier; labelled-case evidence lever",
+        "q6_later_node_parts": "None beyond what the canonical engine already carries",
+        "q7_extract_into_current_path": "Already extracted (PR119-METABOLISM.md)",
+        "q8_incompatible_with_corrected_destination": "Running a second learning engine beside the canonical one",
+        "q9_cheapest_distinguishing_test": "Run #119's falsifiers against greg/improvement.py (done: they pass)"
+      }
+    },
+    {
+      "id": "pr115_anchor",
+      "lineage": [
+        "#115 greg/anchor.py"
+      ],
+      "intended_effect": "Externally detectable rewrite or rollback of witnessed history",
+      "intended_effect_status": "active",
+      "classification": "ALREADY_ACHIEVED_NODE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/anchor.py",
+        "tests/unit/test_greg_anchor_witness.py"
+      ],
+      "activation_evidence": "byte-identical on the converged base"
+    },
+    {
+      "id": "pr115_arsenal_docs",
+      "lineage": [
+        "#115 55-technology arsenal documents"
+      ],
+      "intended_effect": "A catalog of technologies to absorb",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "branch claude/55-tech-arsenal-docs-ne5v2b"
+      ],
+      "activation_evidence": "Continued as executable systems in #132"
+    },
+    {
+      "id": "pr124_venture_watch",
+      "lineage": [
+        "#124"
+      ],
+      "intended_effect": "Standing venture assessment that re-evaluates when evidence changes",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/ventures.py"
+      ],
+      "adaptation": "Per-closure appraisal and venture.assess already ported via #128; its revision-lineage sidecar must use ledger receipts, not a second store",
+      "activation_evidence": "A standing venture mission re-assesses after a source change, receipts only"
+    },
+    {
+      "id": "pr129_egregore_parts",
+      "lineage": [
+        "#129 egregore/parts.py"
+      ],
+      "intended_effect": "Swap parts safely: shadow trial before replacement, then rollback if worse",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "branch claude/opensource-llm-integration-rkr14o"
+      ],
+      "adaptation": "Port shadow-trial-before-swap into Genesis replacement; do not add a second lifecycle",
+      "activation_evidence": "A replacement capability runs in shadow on live inputs before attach"
+    },
+    {
+      "id": "pr105_provider_intake",
+      "lineage": [
+        "#105"
+      ],
+      "intended_effect": "Govern changes of model provider on a schedule",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N2",
+      "changed_axes": [
+        "provider"
+      ],
+      "surviving_mechanisms": [
+        "branch codex/provider-change-intake-2026-09-15"
+      ],
+      "adaptation": "Rebase onto the converged base; intake local open models first per INTENT-20260930-open-source-first",
+      "activation_evidence": "A provider change recorded and routed through greg/models.py"
+    },
+    {
+      "id": "pr93_97_sandbox_goal_chase",
+      "lineage": [
+        "#93",
+        "#97"
+      ],
+      "intended_effect": "Persistent discrepancy-reducing missions",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/missions.py"
+      ],
+      "activation_evidence": "Mechanisms absorbed through #109 into greg/missions.py"
+    },
+    {
+      "id": "pr94_protected_appraisal",
+      "lineage": [
+        "#94"
+      ],
+      "intended_effect": "Evaluation that the builder cannot influence",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N2",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "greg/appraisal.py",
+        "branch agent/cathedral-metabolism-closure-phase4"
+      ],
+      "adaptation": "PR #68 meta-rule: a separate subprocess is not sufficient evaluator isolation for generated capabilities; N2 must show a candidate cannot read or alter its evaluator",
+      "activation_evidence": "N2 kill-condition test"
+    },
+    {
+      "id": "pr63_64_66_developmental_lineage",
+      "lineage": [
+        "#63",
+        "#64",
+        "#66"
+      ],
+      "intended_effect": "Restore lost function, re-initiate interior work and govern the graduation of effects",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism",
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "branch agent/autonomous-interior-reinitiation-v1",
+        "branch claude/uniimente-repo-audit-jpytcy"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Developmental closure: detect, localize and restore function; graduate effects from shadow to real through an aperture",
+        "q2_still_in_destination": "Yes: self-repair (N2) and governed effect graduation (N3)",
+        "q3_assumption_that_became_false": "That literal developmental framing defines morphogenesis (regressed by INTENT-0030) and that it must come before an embodied mission (rerouted 2026-09-10/-22)",
+        "q4_replace_without_discarding": "Yes: keep the mechanisms, drop the framing",
+        "q5_portable_parts": "Provenance-fenced local reopening (#64); blind diagnosis naming the bottleneck (#63); aperture certificate/dispositions/effector (#63-#66)",
+        "q6_later_node_parts": "Aperture effect graduation -> N3 (SHADOW -> CANARY); reopening and diagnosis -> N2 self-repair",
+        "q7_extract_into_current_path": "Nothing for N1",
+        "q8_incompatible_with_corrected_destination": "Treating the biological framing as the product definition",
+        "q9_cheapest_distinguishing_test": "Run #64's restoration case against greg/genesis self-repair; if Genesis restores it, extract only the fence's failure as a regression case"
+      }
+    },
+    {
+      "id": "pr68_planning_backcast",
+      "lineage": [
+        "#68 planning/ compiler and WHOLE_SYSTEM_BACKCAST_GPS"
+      ],
+      "intended_effect": "Backcast from the destination to one active node with gates, metrics and exit evidence",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "changed_axes": [
+        "sequence",
+        "immediate_priority"
+      ],
+      "surviving_mechanisms": [
+        "greg/path.json",
+        "greg/path.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "One developmental path with an evidence-honest active node",
+        "q2_still_in_destination": "Yes",
+        "q3_assumption_that_became_false": "Its node order: developmental closure first, before an embodied mission",
+        "q4_replace_without_discarding": "Yes: its Node 1 is now N2, its Nodes 3-5 are N3 and N7",
+        "q5_portable_parts": "Node fields (gate, SBM baseline/target, exit evidence, pivot, kill); evidence_status with 'no refs -> unresolved'; aspiration registry",
+        "q6_later_node_parts": "Its economic closure and flywheel definitions -> N3 and N7",
+        "q7_extract_into_current_path": "Extracted into greg/path.json and greg/path.py on 2026-09-30",
+        "q8_incompatible_with_corrected_destination": "A second planning compiler generating forty documents beside GREG's own path",
+        "q9_cheapest_distinguishing_test": "greg path reproduces an active node from ledger evidence; #68's projections cannot"
+      }
+    },
+    {
+      "id": "pr70_track_a_runtime",
+      "lineage": [
+        "#70"
+      ],
+      "intended_effect": "A runtime spine and a capability router that requires a verified deficit",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "branch claude/track-a-runtime-spine (capabilities/router.py, capabilities/deficit.py)"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Runtime ownership and deficit-gated capability routing",
+        "q2_still_in_destination": "Yes",
+        "q3_assumption_that_became_false": "That this spine would own the runtime; greg/body.py owns it now",
+        "q4_replace_without_discarding": "Yes: port the router comparison into Genesis",
+        "q5_portable_parts": "Run the conventional route against the challenger; require a verified deficit before building",
+        "q6_later_node_parts": "Router comparison -> N2",
+        "q7_extract_into_current_path": "Nothing for N1 (Genesis already requires a verified deficit)",
+        "q8_incompatible_with_corrected_destination": "A second runtime spine",
+        "q9_cheapest_distinguishing_test": "Replay its challenger comparison on one Genesis deficit"
+      }
+    },
+    {
+      "id": "pr71_opus_audit_canary",
+      "lineage": [
+        "#71"
+      ],
+      "intended_effect": "Founder rulings of 2026-08-22 and a preregistered first external canary (CANARY-0001)",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "branch claude/opus-maximus-audit-eay0ek"
+      ],
+      "adaptation": "The canary packet becomes the first N3 external effect candidate; each founder ruling must be verified as carried",
+      "activation_evidence": "Founder rulings listed against current code; canary rerun under the Gate"
+    },
+    {
+      "id": "pr72_76_77_railscout",
+      "lineage": [
+        "#72",
+        "#76",
+        "#77"
+      ],
+      "intended_effect": "RailScout as the research and evidence refinery organ",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "greg/ventures.py",
+        "RAILSCOUT:README.md"
+      ],
+      "activation_evidence": "RailScout code on its default branch consumed by venture.assess"
+    },
+    {
+      "id": "pr73_governed_boundary",
+      "lineage": [
+        "#73"
+      ],
+      "intended_effect": "Absorb external agents and protocols (MCP/A2A) inside containment",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N2",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "branch agent/opus-part2-governed-boundary"
+      ],
+      "activation_evidence": "An MCP tool attached through Genesis under containment"
+    },
+    {
+      "id": "pr78_pg_spine",
+      "lineage": [
+        "#78"
+      ],
+      "intended_effect": "A Postgres event spine and rebuild-from-spine drill",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N8",
+      "changed_axes": [
+        "scale"
+      ],
+      "surviving_mechanisms": [
+        "branch build/pg-spine"
+      ],
+      "activation_evidence": "Multi-body shared state needs a server database"
+    },
+    {
+      "id": "pr79_81_evolution_cycles",
+      "lineage": [
+        "#79",
+        "#81"
+      ],
+      "intended_effect": "Governed improvement cycles that must beat a baseline",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N4",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "evolution/loop.py",
+        "evolution/auto_cycle.py"
+      ],
+      "adaptation": "Compare the WP-05/06 branches with evolution/ on main before porting any difference",
+      "activation_evidence": "A diff report of mechanisms not on main"
+    },
+    {
+      "id": "pr83_independent_verification",
+      "lineage": [
+        "#83"
+      ],
+      "intended_effect": "Independent verification of a release",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "branch kimi/independent-verification-8cb3074a"
+      ],
+      "activation_evidence": "Its Finding 3 repaired by the #85 port"
+    },
+    {
+      "id": "pr85_run_record_binding",
+      "lineage": [
+        "#85"
+      ],
+      "intended_effect": "Verifier run records name the tree they measured",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "verifier/run_binding.py",
+        "tests/unit/test_run_record_head_binding.py"
+      ],
+      "adaptation": "Ported 2026-09-30 and extended with tracked_tree so a record measured on uncommitted changes says so",
+      "activation_evidence": "New verifier runs carry head_commit and tracked_tree"
+    },
+    {
+      "id": "pr86_living_goal_graph",
+      "lineage": [
+        "#86"
+      ],
+      "intended_effect": "Infinite Goal Chase as a living goal graph with a 198-item backlog",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/missions.py",
+        "branch chatgpt/infinite-goal-chase-protocol-2026-08-22"
+      ],
+      "adaptation": "The mechanism lives in greg/missions.py; the 198 backlog items are not yet placed on nodes (open work)",
+      "activation_evidence": "Each backlog item placed on greg/path.json or recorded as a mission"
+    },
+    {
+      "id": "pr87_founder_rulings",
+      "lineage": [
+        "#87"
+      ],
+      "intended_effect": "Founder rulings of 2026-08-23 and the gap 'the institution cannot tell Alfonso from a caller'",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N1",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/founder.py"
+      ],
+      "activation_evidence": "The caller gap is addressed by Ed25519 founder envelopes; each ruling still to be verified as carried"
+    },
+    {
+      "id": "pr88_90_92_organizational",
+      "lineage": [
+        "#88",
+        "#90",
+        "#92"
+      ],
+      "intended_effect": "Form temporary organizations when a goal needs them",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N5",
+      "changed_axes": [
+        "implementation_mechanism",
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "omnimorph/engine.py",
+        "branch agent/omnimorph-zero-trust-compiler-phase3"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Organizational morphogenesis: genomes, task fabric, zero-trust organization hypotheses",
+        "q2_still_in_destination": "Yes: temporary teams at N5",
+        "q3_assumption_that_became_false": "That morphogenesis means organizational self-assembly (INTENT-0030) and that it precedes the embodied mission",
+        "q4_replace_without_discarding": "Yes: keep the mechanisms as N5 inputs",
+        "q5_portable_parts": "Capability vs orchestration genome separation; role-separated task transitions; compiled zero-trust team hypotheses",
+        "q6_later_node_parts": "All -> N5",
+        "q7_extract_into_current_path": "Nothing for N1",
+        "q8_incompatible_with_corrected_destination": "A mandatory organization per mission",
+        "q9_cheapest_distinguishing_test": "N5 held-out team-vs-worker comparison"
+      }
+    },
+    {
+      "id": "pr95_collaboration_bootstrap",
+      "lineage": [
+        "#95"
+      ],
+      "intended_effect": "Every agent starts from the same work-start protocol",
+      "intended_effect_status": "active",
+      "classification": "ALREADY_ACHIEVED_NODE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "docs/PROJECT_COGNITION_SOP.md"
+      ],
+      "activation_evidence": "The SOP is on the converged base"
+    },
+    {
+      "id": "kernel.local_console",
+      "lineage": [
+        "egregore/local_console.py",
+        "egregore/development_session.py",
+        "tests/unit/test_greg_console.py",
+        "tests/greg_acceptance_driver.py",
+        "tests/fixtures/greg_held_out.json",
+        "#112"
+      ],
+      "intended_effect": "A founder console over local GREG proof",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N1",
+      "changed_axes": [
+        "interface"
+      ],
+      "surviving_mechanisms": [
+        "greg/console.py",
+        "egregore/repository_audit.py",
+        "egregore/brief_learning.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Founder reviews and corrects local GREG work",
+        "q2_still_in_destination": "Yes: greg/console.py and the tribunal",
+        "q3_assumption_that_became_false": "That a synthetic session console is the founder interface",
+        "q4_replace_without_discarding": "Yes: repository_audit is used by the canonical brief",
+        "q5_portable_parts": "egregore/repository_audit.py (capture, derive, git_read)",
+        "q6_later_node_parts": "None",
+        "q7_extract_into_current_path": "Already used by greg/briefs.py and greg/capabilities.py",
+        "q8_incompatible_with_corrected_destination": "A second founder console",
+        "q9_cheapest_distinguishing_test": "Its hidden test failed whenever sibling repos existed (it asserted live organ state); each of its six behaviours is carried by a canonical founder-signed test listed under archived.behaviours_carried"
+      },
+      "archived": {
+        "directive": "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE section 76: 'KILL OR ARCHIVE THE IMPLEMENTATION IF JUSTIFIED'",
+        "justification": "A second founder console whose CSRF token is explicitly not identity; greg/console.py carries the effect with founder-signed commands, the same loopback Host check and CSRF. Kept only as history since 2026-09-26 (docs/GREG_LOCAL_START.md banner), which section 76 says is not a reason to keep it active.",
+        "last_commit": "6e0533f",
+        "paths": [
+          "egregore/local_console.py",
+          "egregore/development_session.py",
+          "tests/unit/test_greg_console.py",
+          "tests/greg_acceptance_driver.py",
+          "tests/fixtures/greg_held_out.json"
+        ],
+        "restore": "git checkout 6e0533f -- egregore/local_console.py egregore/development_session.py tests/unit/test_greg_console.py tests/greg_acceptance_driver.py tests/fixtures/greg_held_out.json",
+        "kept": [
+          "docs/GREG_LOCAL_START.md (provenance, with restore command)",
+          "tests/evidence/greg-usable/ (its recorded runs)",
+          "egregore/brief_learning.py (still used by tests/unit/test_resume_authority.py)",
+          "egregore/repository_audit.py (used by greg/briefs.py)"
+        ],
+        "behaviours_carried": {
+          "test_intentional_stop_survives_process_restart_and_blocks_dispatch": [
+            "tests/unit/test_greg_remote.py::test_a_founder_stop_survives_restart_until_a_human_clears_it",
+            "tests/unit/test_greg_continuity.py::test_stop_arriving_mid_tick_admits_no_further_dispatch"
+          ],
+          "test_budget_wait_cannot_be_overridden_by_restart": [
+            "tests/unit/test_greg_founder_asks.py::test_a_paid_approval_is_a_full_resource_ask_and_every_surface_shows_its_costs",
+            "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+            "tests/unit/test_greg_genesis_builder.py::test_no_signed_build_budget_means_no_build"
+          ],
+          "test_killed_host_reconstructs_claim_and_refuses_redispatch": [
+            "tests/unit/test_greg_capabilities.py::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused",
+            "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once"
+          ],
+          "test_http_client_closure_and_ui_server_restart": [
+            "tests/unit/test_greg_interface.py::test_founder_asks_reviews_signs_and_the_body_applies_it",
+            "tests/unit/test_greg_interface.py::test_console_refuses_foreign_hosts_origins_and_missing_tokens"
+          ],
+          "test_stop_terminates_inflight_worker_and_retains_uncertain_dispatch": [
+            "tests/unit/test_greg_capabilities.py::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused",
+            "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command"
+          ],
+          "test_review_comparison_changes_later_task_and_regression_reverts": [
+            "tests/unit/test_resume_authority.py::test_comparison_retains_ties_and_regressions"
+          ]
+        },
+        "negative_evidence": "test_review_comparison_changes_later_task_and_regression_reverts failed identically on untouched #134 and #122 heads whenever sibling daleobanks/ and wmi/ checkouts existed (docs/collaboration/GREG-RECONCILIATION-2026-09-30.json); CI never saw it because it skipped without them. The budget-wait behaviour is carried by composition (a paid action waits for a signed decision; a pending decision survives a hard kill), not by one test."
+      }
+    },
+    {
+      "id": "kernel.paid_default_route_order",
+      "lineage": [
+        "greg/models.py DEFAULT order before 476d6cc"
+      ],
+      "intended_effect": "Cognition available when the founder wants it",
+      "intended_effect_status": "active",
+      "classification": "GENUINELY_OBSOLETE",
+      "node": "N1",
+      "changed_axes": [
+        "provider"
+      ],
+      "obsolescence_basis": {
+        "kind": "violates_current_constraints",
+        "refs": [
+          "docs/intent/INTENT-20260930-open-source-first.json"
+        ]
+      },
+      "surviving_mechanisms": [
+        "greg/models.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Reach any model vendor without configuration",
+        "q2_still_in_destination": "Multiple providers yes; paid-by-default no",
+        "q3_assumption_that_became_false": "That an existing key may select a paid route",
+        "q4_replace_without_discarding": "Yes: paid adapters stay, selectable by name",
+        "q5_portable_parts": "Anthropic, OpenAI and Claude Code routes; refusal and budget semantics",
+        "q6_later_node_parts": "None",
+        "q7_extract_into_current_path": "Explicit founder selection",
+        "q8_incompatible_with_corrected_destination": "Only the default order",
+        "q9_cheapest_distinguishing_test": "tests/unit/test_greg_open_source_first_routing.py"
+      }
+    },
+    {
+      "id": "kernel.ade1_standing_cognition",
+      "lineage": [
+        "egregore/runtime.py"
+      ],
+      "intended_effect": "Proposal-only multi-organ deliberation with required guardian and treasury assessments",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N5",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "egregore/runtime.py"
+      ],
+      "activation_evidence": "A GREG mission uses deliberation where held-out evidence shows lift"
+    },
+    {
+      "id": "kernel.local_model_adapter",
+      "lineage": [
+        "egregore/local_model.py"
+      ],
+      "intended_effect": "Local open-model drafts for standing cognition",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "egregore/local_model.py",
+        "greg/models.py"
+      ],
+      "adaptation": "Converge its loopback transport onto greg.models.OllamaRoute so there is one local-model adapter",
+      "activation_evidence": "Both callers pass through one tested transport"
+    },
+    {
+      "id": "kernel.developmental_research",
+      "lineage": [
+        "developmental/",
+        "morphogenesis/"
+      ],
+      "intended_effect": "Biology-inspired mechanisms that must beat simpler baselines",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "developmental/mica.py",
+        "morphogenesis/engine.py"
+      ],
+      "activation_evidence": "A comparison against Genesis on a real deficit"
+    },
+    {
+      "id": "organ.daleobanks",
+      "lineage": [
+        "DALEOBANKS"
+      ],
+      "intended_effect": "Media, owned relationships and early cash engine",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "DALEOBANKS:services",
+        "organs/daleobanks.manifest.yaml"
+      ],
+      "activation_evidence": "First founder-authorized publication through the Gate"
+    },
+    {
+      "id": "organ.wealthmachine",
+      "lineage": [
+        "WealthMachineIntelligence"
+      ],
+      "intended_effect": "Commercial cognition and venture assessment",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N3",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "greg/ventures.py",
+        "organs/wealthmachine.manifest.yaml"
+      ],
+      "activation_evidence": "venture.assess on real sources in a signed mission"
+    },
+    {
+      "id": "organ.railscout",
+      "lineage": [
+        "RAILSCOUT"
+      ],
+      "intended_effect": "Research and evidence refinery",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "RAILSCOUT:README.md"
+      ],
+      "activation_evidence": "RailScout code on its default branch"
+    },
+    {
+      "id": "organ.pumpstation",
+      "lineage": [
+        "PumpStation"
+      ],
+      "intended_effect": "Regenerative social-economic transaction rail",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "PumpStation:server",
+        "PumpStation:client"
+      ],
+      "activation_evidence": "A secure testnet end-to-end funded job"
+    },
+    {
+      "id": "organ.research_in",
+      "lineage": [
+        "RESEARCH-IN"
+      ],
+      "intended_effect": "Research intake organ whose role is derived from its code",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "RESEARCH-IN:apps"
+      ],
+      "activation_evidence": "A typed contract consumed by one mission"
+    },
+    {
+      "id": "organ.gods_eye_view",
+      "lineage": [
+        "gods-eye-view-EGGREGORE-TOOL"
+      ],
+      "intended_effect": "Lawful public situational awareness",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N9",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "gods-eye-view-EGGREGORE-TOOL:src"
+      ],
+      "activation_evidence": "A consented escalation derived from public data"
+    },
+    {
+      "id": "atlas.build_your_own_x",
+      "lineage": [
+        "build-your-own-x"
+      ],
+      "intended_effect": "Mechanism atlas for acquiring before inventing",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "build-your-own-x:README.md"
+      ],
+      "activation_evidence": "Cited as a source in a Genesis search record",
+      "adaptation": "Add it to Genesis's documented search sources as a mechanism index, never as a cloning roadmap"
+    },
+    {
+      "id": "kernel_sdk_extraction_11_16",
+      "lineage": [
+        "#11",
+        "#12",
+        "#13",
+        "#14",
+        "#15",
+        "#16",
+        "DALEOBANKS#58",
+        "DALEOBANKS#59"
+      ],
+      "intended_effect": "One canonical implementation of each governance module (decision ledger, raw vault, capability service, prompt firewall, ContextPacket builders, constitution guard, heartbeat, approval queue) that organs import instead of carrying their own",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "adapters/bridge_transport.py",
+        "provenance/ledger.py"
+      ],
+      "adaptation": "The kernel converged on top-level canonical modules and a pinned boundary package (4999acf), not sdk-python/uniimente_kernel, so these PRs conflict with main (140+ commits behind). None of the eight modules exists on kernel main; DALEOBANKS main still carries its own ledger.py, raw_vault.py, heartbeat.py, constitution.py and prompt_firewall.py, and DALEOBANKS #58/#59 pin this unmerged branch (phase2/sdk-package-absorption). Re-extract onto main's layout, then retarget #58/#59 to the pinned boundary.",
+      "activation_evidence": "DALEOBANKS imports each governance module from the pinned kernel boundary and its suite passes; no organ-local copy stays active",
+      "measured_2026_09_30": "ahead 3-23, behind 143, conflicts; DALEOBANKS #58+#59 merge cleanly onto DALEOBANKS main but require the unmerged kernel branch"
+    },
+    {
+      "id": "kernel_phase_stack_landed_canonically",
+      "lineage": [
+        "#17",
+        "#18",
+        "#19",
+        "#21",
+        "#22",
+        "#23",
+        "#24",
+        "#25",
+        "#26"
+      ],
+      "intended_effect": "Wire contracts, a durable event spine, commit witness, a Consequence Gate, a UCL constitutional compiler, evolution cycles and a real adapter loop",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "policy/consequence_gate.py",
+        "events/spine.py",
+        "provenance/commit_witness.py",
+        "compiler/ucl_compiler.py",
+        "evolution",
+        "contracts/wire-opportunity-packet.schema.json",
+        "contracts/wire-venture-assessment.schema.json"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "The governed consequence path: typed contracts, event spine, witness, gate, compiled constitution, evolution",
+        "q2_still_in_destination": "Yes: GREG's body imports compile_constitution, EventSpine and WitnessSigner from these canonical modules",
+        "q3_assumption_that_became_false": "That the kernel ships as an SDK package (sdk-python/uniimente_kernel) versioned per phase",
+        "q4_replace_without_discarding": "Yes: each mechanism exists on main at its canonical top-level home",
+        "q5_portable_parts": "Their tests and run records as regression evidence",
+        "q6_later_node_parts": "None beyond what main carries",
+        "q7_extract_into_current_path": "Already on main; #17's venture-signal/signal-assessment schemas became the wire v1.1 contracts",
+        "q8_incompatible_with_corrected_destination": "A second packaging of the same authority modules",
+        "q9_cheapest_distinguishing_test": "For each module, compare main's implementation with the PR's; open a follow-up only where the PR has a behavior main lacks"
+      },
+      "measured_2026_09_30": "ahead 12-49, behind 140-143, all conflict; canonical modules present on main"
+    },
+    {
+      "id": "pr20_egregore_vision_55",
+      "lineage": [
+        "#20"
+      ],
+      "intended_effect": "The grand egregore vision and the complete 55-technology asymmetric arsenal",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "docs/intent/INTENT-2026-09-27-FOUNDRY-55.json",
+        "foundry"
+      ],
+      "activation_evidence": "FOUNDRY-55 carries all 55 systems as active obligations sequenced after VEPMC"
+    },
+    {
+      "id": "pr35_proof_to_settlement_rail",
+      "lineage": [
+        "#35"
+      ],
+      "intended_effect": "Verified outcome credentials that settle through a proof-to-settlement trust rail",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "provenance/ledger.py"
+      ],
+      "activation_evidence": "One real transaction settles against a verified outcome credential under founder authority"
+    },
+    {
+      "id": "pr44_morphogenetic_runtime",
+      "lineage": [
+        "#44"
+      ],
+      "intended_effect": "Functional capability formation (read literally as cells and gene-regulatory networks)",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "morphogenesis",
+        "developmental",
+        "greg/genesis.py"
+      ],
+      "activation_evidence": "INTENT-0030 regressed the literal framing; greg/genesis.py carries the effect"
+    },
+    {
+      "id": "pr46_pumpstation_venture_cell",
+      "lineage": [
+        "#46"
+      ],
+      "intended_effect": "PumpStation registered as an inactive, governed Venture Cell",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [],
+      "activation_evidence": "Founder registers the cell after a first verified business loop (N3); merges cleanly today"
+    },
+    {
+      "id": "pr51_cognitive_kingmaker",
+      "lineage": [
+        "#51"
+      ],
+      "intended_effect": "Route each cognitive task to the model or worker most likely to produce a novel, verified result",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N5",
+      "changed_axes": [
+        "sequence",
+        "provider"
+      ],
+      "surviving_mechanisms": [
+        "greg/models.py",
+        "greg/routing.py"
+      ],
+      "adaptation": "Port its routing-decision contract into greg/models.py only when a measured routing deficit exists; open-source-first applies to every route",
+      "activation_evidence": "A recorded routing decision beats the current router on held-out tasks"
+    },
+    {
+      "id": "pr52_founder_command_ordering",
+      "lineage": [
+        "#52"
+      ],
+      "intended_effect": "Founder commands cannot be replayed or applied out of order",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/founder.py",
+        "greg/body.py"
+      ],
+      "inheritance_test": {
+        "q1_original_capability": "Ordered, non-replayable founder commands",
+        "q2_still_in_destination": "Yes",
+        "q3_assumption_that_became_false": "That ordering needs a separate guard design before any runtime",
+        "q4_replace_without_discarding": "Yes: GREG envelopes bind body, kind, window and nonce; nonces are retained; the inbox is processed in issue order",
+        "q5_portable_parts": "The CVO-001 readiness checklist in the same PR",
+        "q6_later_node_parts": "The readiness packet moves to N3 with #53",
+        "q7_extract_into_current_path": "Already enforced in greg/founder.py and greg/body.py",
+        "q8_incompatible_with_corrected_destination": "None",
+        "q9_cheapest_distinguishing_test": "Replay a signed envelope and reorder two envelopes against a body; both must be refused or ordered"
+      }
+    },
+    {
+      "id": "pr53_cvo001_venture_selection",
+      "lineage": [
+        "#53"
+      ],
+      "intended_effect": "Select the first venture (candidate C9) on evidence",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N3",
+      "changed_axes": [
+        "sequence"
+      ],
+      "surviving_mechanisms": [],
+      "activation_evidence": "Founder chooses the first business for N3; merges cleanly today"
+    },
+    {
+      "id": "pr54_sbm_and_intent_schema",
+      "lineage": [
+        "#54"
+      ],
+      "intended_effect": "A single bottleneck metric, PumpStation as fourth organ, and machine-readable intent records",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/metrics.py",
+        "docs/FOUNDER_INTENT_LEDGER.md"
+      ],
+      "adaptation": "VEPMC became the metric; its contracts/intent.schema.json (absent on main) can validate docs/intent records in CI",
+      "activation_evidence": "Every docs/intent record validates against one schema in CI"
+    },
+    {
+      "id": "pr55_merge_train_recovery",
+      "lineage": [
+        "#55"
+      ],
+      "intended_effect": "Recover the July integration merge train",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N0",
+      "changed_axes": [],
+      "surviving_mechanisms": [
+        "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md"
+      ],
+      "activation_evidence": "Superseded as an operation by this convergence; its analysis is evidence"
+    },
+    {
+      "id": "pr56_reality_aperture",
+      "lineage": [
+        "#56",
+        "DALEOBANKS#66"
+      ],
+      "intended_effect": "Proof-carrying authorization: nothing reaches the world without a certificate a verifier can check",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "changed_axes": [
+        "sequence",
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "policy/consequence_gate.py"
+      ],
+      "adaptation": "Rebuild the aperture certificate on the canonical Consequence Gate before DALEOBANKS publishes anything (its #66 is the companion)",
+      "activation_evidence": "A shadow publication carries a certificate the gate verifies; zero real publications without founder authority"
+    },
+    {
+      "id": "pr57_governed_functional_regeneration",
+      "lineage": [
+        "#57"
+      ],
+      "intended_effect": "A function identity that outlives any one implementation, restored under governance",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/genesis.py"
+      ],
+      "adaptation": "greg/genesis.py already repairs a lost function (quarantine, rebuild, reverify); port Gate E's identity checks where they are stronger",
+      "activation_evidence": "A repaired capability keeps its function identity across replacement in a real mission"
+    },
+    {
+      "id": "pr58_62_developmental_substrate",
+      "lineage": [
+        "#58",
+        "#59",
+        "#60",
+        "#62"
+      ],
+      "intended_effect": "Local competency and regeneration mechanisms (Gate F/G diffusion, causal escape, motif channels, multi-branch substrate)",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N2",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "developmental"
+      ],
+      "activation_evidence": "Research lineage under INTENT-0030; gates recorded OPEN/CLOSED as negative and positive evidence"
+    }
+  ]
+}

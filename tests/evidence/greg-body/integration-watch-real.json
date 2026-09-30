@@ -1,0 +1,65 @@
+{
+ "mission": "m:integration-watch",
+ "repositories": "real local clones (origin/main refs, no fetch)",
+ "observations": [
+  {
+   "check_id": "pins-consistent",
+   "passed": true,
+   "detail": "True == True",
+   "receipt": "sha256:065c117cc3d1d69ac15f56dd617906c7aec3eebf5117a3c26c569d002f0dd38d"
+  },
+  {
+   "check_id": "no-authority-blockers",
+   "passed": false,
+   "detail": "['resume-authority'] == []",
+   "receipt": "sha256:2bd8e282e2f7d37a03a552d9f8ba887c8693de08be3a8ad622e3d6e19e527912"
+  }
+ ],
+ "decisions": [
+  {
+   "request_id": "req-4bc2beabdc3339d655a77fd1",
+   "kind": "NO_STRATEGY",
+   "why_now": "every strategy for the failing checks is exhausted, refused or excluded",
+   "authority_requested": {
+    "failing_checks": [
+     "no-authority-blockers"
+    ]
+   }
+  }
+ ],
+ "source_evidence": {
+  "commits": {
+   "dale": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+   "kernel": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+   "wmi": "ec82b8027d987c865dc123215afb53d20916908f"
+  },
+  "findings": [
+   {
+    "id": "reflection-outcome-gap",
+    "kind": "learning",
+    "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit",
+    "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+    "evidence": {
+     "role": "dale",
+     "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+     "file": "services/reflection.py",
+     "blob": "2ff300188d75392693800f546a81ce0d234d3af9"
+    }
+   },
+   {
+    "id": "resume-authority",
+    "kind": "authority",
+    "summary": "Standing cognition resume checks hash format without issuer verification in this method",
+    "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+    "evidence": {
+     "role": "kernel",
+     "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+     "file": "egregore/runtime.py",
+     "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+     "line": 496
+    }
+   }
+  ]
+ },
+ "founder_key": "per-run Ed25519 key; NOT Alfonso"
+}

@@ -1,0 +1,1506 @@
+{
+  "record": "ORGAN-PR-PLACEMENTS-2026-09-30",
+  "intent": [
+    "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
+    "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
+  ],
+  "method": "Every open PR in the seven organ repositories, read from the GitHub API with pagination on 2026-09-30. Per PR: commits ahead/behind the default branch, git merge-tree conflict check, and the PR body. Claims that main already carries an effect cite the file checked on main.",
+  "coverage": "PR bodies summarized, not every diff reviewed line by line; a disposition is a proposal for founder review, never a merge or close",
+  "dispositions": [
+    "CANONICAL ACTIVE",
+    "STACKED NEXT",
+    "PORT MECHANISM",
+    "REBASE",
+    "RESTACK",
+    "MERGE CANDIDATE",
+    "FUTURE NODE",
+    "EVIDENCE ONLY",
+    "SUPERSEDED IMPLEMENTATION",
+    "DEFERRED",
+    "HISTORICAL",
+    "NEEDS FOUNDER DECISION"
+  ],
+  "findings": [
+    "SECURITY: PumpStation main accepts a replayable wallet login (constant signed message, no nonce or expiry); the fix is PumpStation #16 (clean merge)",
+    "One-spine gap: DALEOBANKS main still carries local ledger, heartbeat, raw vault and constitution modules; the swap PRs (#58/#59) depend on an unmerged kernel branch (kernel #16)",
+    "WMI's July control-plane stack (#17-#24) would be a second authority plane if merged as is",
+    "Four overlapping RailScout founder-intent installs (#2-#5) of the same 2026-08-19 conversation"
+  ],
+  "propagation_receipt": {
+    "canonical_source": [
+      "docs/intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json",
+      "docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json",
+      "docs/intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json",
+      "greg/path.json"
+    ],
+    "surfaces": {
+      "DALEOBANKS": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/DALEOBANKS/pull/83",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "WealthMachineIntelligence": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/40",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "RAILSCOUT": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/RAILSCOUT/pull/11",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "RESEARCH-IN": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/RESEARCH-IN/pull/22",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "PumpStation": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/PumpStation/pull/20",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "gods-eye-view-EGGREGORE-TOOL": {
+        "updated": [
+          "AGENTS.md",
+          "CLAUDE.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/3",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      },
+      "build-your-own-x": {
+        "updated": [
+          "AGENTS.md"
+        ],
+        "draft_pr": "https://github.com/dababiyoda/build-your-own-x/pull/3",
+        "branch": "claude/uniimente-greg-reconciliation-39syff",
+        "merged": false
+      }
+    },
+    "blocked": [],
+    "contracts_changed": false,
+    "runtime_integration": "none; instruction surfaces only",
+    "follow_up_owner": "founder merges or declines each draft; next agent reruns the anti-context-loss test"
+  },
+  "placements": [
+    {
+      "id": "DALEOBANKS#83",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "DALEOBANKS#81",
+      "title": "LLM adapter: ordered provider chain for open-weight and free endpoints",
+      "created": "2026-09-27",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 5,
+        "files": 6,
+        "conflicts": true
+      },
+      "intended_effect": "Run without a paid model budget, with an ordered chain of free/open-weight providers",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "PORT MECHANISM",
+      "basis": "Local-by-default is already on main (#82 merged 2026-09-30: model_settings defaults to Ollama); the ordered provider chain is the residual mechanism; conflicts"
+    },
+    {
+      "id": "DALEOBANKS#80",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 5,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    },
+    {
+      "id": "DALEOBANKS#79",
+      "title": "Demonstrate bounded community correction through existing feedback and generation",
+      "created": "2026-09-25",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 5,
+        "files": 8,
+        "conflicts": false
+      },
+      "intended_effect": "Community correction that changes later behavior only when source-supported, not merely popular",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "FUTURE NODE",
+      "basis": "Simulated offline demonstration; merges cleanly; community_feedback horizon"
+    },
+    {
+      "id": "DALEOBANKS#76",
+      "title": "Stage shared AI work-start protocol pointer",
+      "created": "2026-09-07",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 5,
+        "conflicts": true
+      },
+      "intended_effect": "Every agent starts from the shared work-start protocol (pinned receipt check)",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N0",
+      "disposition": "REBASE",
+      "basis": "Kernel #95's bootstrap is achieved (N0); this organ pointer conflicts with main; its pinned receipt check is the portable part"
+    },
+    {
+      "id": "DALEOBANKS#75",
+      "title": "Define voluntary recurring relationship as DALEOBANKS' scarce asset",
+      "created": "2026-08-29",
+      "draft": true,
+      "measured": {
+        "ahead": 10,
+        "behind": 8,
+        "files": 5,
+        "conflicts": false
+      },
+      "intended_effect": "Voluntary recurring relationship as DALEOBANKS' scarce asset",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Founder attention-economy intent recorded as documentation; merges cleanly; not yet in the kernel ledger"
+    },
+    {
+      "id": "DALEOBANKS#74",
+      "title": "Transport parity with the kernel mirror: fail closed, never claim isolation",
+      "created": "2026-08-23",
+      "draft": true,
+      "measured": {
+        "ahead": 2,
+        "behind": 7,
+        "files": 2,
+        "conflicts": true
+      },
+      "intended_effect": "The DALEOBANKS/WMI/kernel bridge transport fails closed and never claims isolation",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "disposition": "SUPERSEDED IMPLEMENTATION",
+      "basis": "SR-001 replaced the mirrors: services/bridge_security.py on main re-exports the kernel's adapters/bridge_transport.py ('never an unsigned or in-process fallback', verified 2026-09-30); the effect is active on main"
+    },
+    {
+      "id": "DALEOBANKS#73",
+      "title": "Phase 1 organ side, completion: every X write family routed through the ConsequenceGate",
+      "created": "2026-08-21",
+      "draft": false,
+      "measured": {
+        "ahead": 9,
+        "behind": 13,
+        "files": 15,
+        "conflicts": true
+      },
+      "intended_effect": "Every X write family is routed through the Consequence Gate",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Non-draft; conflicts (13 behind); required before any real publishing; stacked on #61"
+    },
+    {
+      "id": "DALEOBANKS#71",
+      "title": "Bridge transport: recognise \"kernel\", and fail closed instead of auto-downgrading",
+      "created": "2026-08-12",
+      "draft": true,
+      "measured": {
+        "ahead": 2,
+        "behind": 8,
+        "files": 3,
+        "conflicts": true
+      },
+      "intended_effect": "The DALEOBANKS/WMI/kernel bridge transport fails closed and never claims isolation",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "disposition": "SUPERSEDED IMPLEMENTATION",
+      "basis": "SR-001 replaced the mirrors: services/bridge_security.py on main re-exports the kernel's adapters/bridge_transport.py ('never an unsigned or in-process fallback', verified 2026-09-30); the effect is active on main"
+    },
+    {
+      "id": "DALEOBANKS#70",
+      "title": "Add continuous construction and hardening doctrine",
+      "created": "2026-08-10",
+      "draft": true,
+      "measured": {
+        "ahead": 12,
+        "behind": 8,
+        "files": 7,
+        "conflicts": false
+      },
+      "intended_effect": "DALEOBANKS is built continuously, never a finished monument",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Founder-intent correction recorded as doctrine; merges cleanly; carry into the kernel ledger or retire by founder decision"
+    },
+    {
+      "id": "DALEOBANKS#69",
+      "title": "Record JARVIS-like developmental cognitive ecology",
+      "created": "2026-08-10",
+      "draft": true,
+      "measured": {
+        "ahead": 12,
+        "behind": 8,
+        "files": 6,
+        "conflicts": false
+      },
+      "intended_effect": "A JARVIS-like developmental cognitive ecology, not a scheduler",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "EVIDENCE ONLY",
+      "basis": "Carried by the kernel horizon 'Jarvis-like integrated behavior'; the document stays as founder-intent evidence"
+    },
+    {
+      "id": "DALEOBANKS#68",
+      "title": "A runnable DALEOBANKS, and a ledger that refuses to call it progress",
+      "created": "2026-08-09",
+      "draft": true,
+      "measured": {
+        "ahead": 34,
+        "behind": 8,
+        "files": 67,
+        "conflicts": true
+      },
+      "intended_effect": "A runnable DALEOBANKS whose ledger refuses to call activity progress (606 tests)",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Conflicts (34 ahead, 8 behind); restack when N3 is active"
+    },
+    {
+      "id": "DALEOBANKS#67",
+      "title": "feat: install governed Phase 0 media operating substrate",
+      "created": "2026-08-08",
+      "draft": true,
+      "measured": {
+        "ahead": 3,
+        "behind": 8,
+        "files": 18,
+        "conflicts": true
+      },
+      "intended_effect": "A governed Phase 0 media operating substrate",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Conflicts; base of #68"
+    },
+    {
+      "id": "DALEOBANKS#66",
+      "title": "Shadow-mode publication governed by the Reality Aperture (zero real publications)",
+      "created": "2026-07-28",
+      "draft": true,
+      "measured": {
+        "ahead": 4,
+        "behind": 8,
+        "files": 7,
+        "conflicts": false
+      },
+      "intended_effect": "Shadow-mode publication under proof-carrying authorization (zero real publications)",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "FUTURE NODE",
+      "basis": "Merges cleanly; companion of kernel #56 (placement pr56_reality_aperture), which must be rebuilt on the canonical gate first"
+    },
+    {
+      "id": "DALEOBANKS#65",
+      "title": "Record canonical DALEOBANKS lifestyle brand and founder-intent lineage",
+      "created": "2026-07-26",
+      "draft": true,
+      "measured": {
+        "ahead": 8,
+        "behind": 8,
+        "files": 5,
+        "conflicts": false
+      },
+      "intended_effect": "The canonical DALEOBANKS lifestyle brand and its founder-intent lineage",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Documentation of founder intent; merges cleanly"
+    },
+    {
+      "id": "DALEOBANKS#62",
+      "title": "Add proposal-only Foundry signal envelope",
+      "created": "2026-07-20",
+      "draft": true,
+      "measured": {
+        "ahead": 11,
+        "behind": 13,
+        "files": 7,
+        "conflicts": false
+      },
+      "intended_effect": "Media and market signals reach the Foundry without fabricated commercial readiness",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "FUTURE NODE",
+      "basis": "Merges cleanly; sequenced with the Foundry-55 obligation (kernel #132)"
+    },
+    {
+      "id": "DALEOBANKS#61",
+      "title": "Phase 1 organ side: publishing family routed through the ConsequenceGate",
+      "created": "2026-07-19",
+      "draft": false,
+      "measured": {
+        "ahead": 5,
+        "behind": 13,
+        "files": 12,
+        "conflicts": true
+      },
+      "intended_effect": "The publishing family is routed through the Consequence Gate",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Non-draft; conflicts (13 behind); base of #73"
+    },
+    {
+      "id": "DALEOBANKS#60",
+      "title": "Phase 3: protocol swap — venture_protocol imports the kernel contracts module",
+      "created": "2026-07-19",
+      "draft": false,
+      "measured": {
+        "ahead": 3,
+        "behind": 13,
+        "files": 7,
+        "conflicts": true
+      },
+      "intended_effect": "One module defines the DALEOBANKS-WMI wire for both repositories",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "REBASE",
+      "basis": "Main keeps a local venture_protocol.py validated against the pinned v1.1 schemas (DALEOBANKS #57 merged); deleting the local copy waits on the SDK re-extraction"
+    },
+    {
+      "id": "DALEOBANKS#59",
+      "title": "Phase 2 swap (2/2, part A): heartbeat + constitution from the kernel SDK",
+      "created": "2026-07-19",
+      "draft": false,
+      "measured": {
+        "ahead": 2,
+        "behind": 13,
+        "files": 6,
+        "conflicts": false
+      },
+      "intended_effect": "The organ imports kernel governance modules instead of carrying its own",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "REBASE",
+      "basis": "Depends on the unmerged kernel branch phase2/sdk-package-absorption (kernel #16); DALEOBANKS main still carries local ledger.py, heartbeat.py, raw_vault.py, constitution.py (verified 2026-09-30). Rebase onto the re-extraction recorded as placement kernel_sdk_extraction_11_16"
+    },
+    {
+      "id": "DALEOBANKS#58",
+      "title": "Phase 2 swap (1/2): ledger, raw vault, firewall from the kernel SDK",
+      "created": "2026-07-19",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 13,
+        "files": 4,
+        "conflicts": false
+      },
+      "intended_effect": "The organ imports kernel governance modules instead of carrying its own",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "REBASE",
+      "basis": "Depends on the unmerged kernel branch phase2/sdk-package-absorption (kernel #16); DALEOBANKS main still carries local ledger.py, heartbeat.py, raw_vault.py, constitution.py (verified 2026-09-30). Rebase onto the re-extraction recorded as placement kernel_sdk_extraction_11_16"
+    },
+    {
+      "id": "DALEOBANKS#53",
+      "title": "Harden DALEOBANKS for UAT sibling-service integration",
+      "created": "2026-07-18",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 34,
+        "files": 20,
+        "conflicts": true
+      },
+      "intended_effect": "DALEOBANKS as an independently deployable sibling service",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "DEFERRED",
+      "basis": "UAT lineage; 34 behind; conflicts"
+    },
+    {
+      "id": "DALEOBANKS#1",
+      "title": "Add persona preview and fix tests",
+      "created": "2025-08-07",
+      "draft": false,
+      "measured": {
+        "ahead": 7,
+        "behind": 126,
+        "files": 0,
+        "conflicts": false
+      },
+      "intended_effect": "Persona preview and test fixes",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "Net diff against main is empty: its changes are already on main"
+    },
+    {
+      "id": "WealthMachineIntelligence#40",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "WealthMachineIntelligence#38",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    },
+    {
+      "id": "WealthMachineIntelligence#37",
+      "title": "docs: add evidence-gated regenerative transaction infrastructure doctrine",
+      "created": "2026-09-18",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 3,
+        "conflicts": false
+      },
+      "intended_effect": "Evidence-gated regenerative transaction infrastructure (founder request 2026-09-17)",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Merges cleanly; directive section 63 restates the doctrine; carry into the kernel ledger"
+    },
+    {
+      "id": "WealthMachineIntelligence#34",
+      "title": "Stage shared AI work-start protocol pointer",
+      "created": "2026-09-07",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 9,
+        "files": 5,
+        "conflicts": true
+      },
+      "intended_effect": "Every agent starts from the shared work-start protocol (pinned receipt check)",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N0",
+      "disposition": "REBASE",
+      "basis": "Kernel #95's bootstrap is achieved (N0); this organ pointer conflicts with main; its pinned receipt check is the portable part"
+    },
+    {
+      "id": "WealthMachineIntelligence#32",
+      "title": "Transport parity with the kernel mirror: fail closed, never claim isolation",
+      "created": "2026-08-23",
+      "draft": true,
+      "measured": {
+        "ahead": 3,
+        "behind": 9,
+        "files": 4,
+        "conflicts": true
+      },
+      "intended_effect": "The DALEOBANKS/WMI/kernel bridge transport fails closed and never claims isolation",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "disposition": "SUPERSEDED IMPLEMENTATION",
+      "basis": "SR-001 replaced the mirrors: services/bridge_security.py on main re-exports the kernel's adapters/bridge_transport.py ('never an unsigned or in-process fallback', verified 2026-09-30); the effect is active on main"
+    },
+    {
+      "id": "WealthMachineIntelligence#31",
+      "title": "Intake fails closed: an unsigned POST no longer returns 200 without a signing key",
+      "created": "2026-08-12",
+      "draft": true,
+      "measured": {
+        "ahead": 6,
+        "behind": 12,
+        "files": 83,
+        "conflicts": true
+      },
+      "intended_effect": "WMI intake refuses unsigned requests",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N0",
+      "disposition": "SUPERSEDED IMPLEMENTATION",
+      "basis": "Main now refuses to start without WEALTHMACHINE_SIGNING_KEY (src/api/main.py, verified 2026-09-30); the effect is active on main"
+    },
+    {
+      "id": "WealthMachineIntelligence#30",
+      "title": "Add Constitutional Control Layer (Phase 0 doctrine foundation)",
+      "created": "2026-07-25",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 16,
+        "files": 15,
+        "conflicts": true
+      },
+      "intended_effect": "A control layer that decides what any WMI agent may do, with reconstructable memory",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "A WMI-local constitutional layer risks a second authority plane; keep its mechanisms behind kernel authority"
+    },
+    {
+      "id": "WealthMachineIntelligence#29",
+      "title": "Add proposal-only Foundry underwriting envelope",
+      "created": "2026-07-20",
+      "draft": true,
+      "measured": {
+        "ahead": 13,
+        "behind": 12,
+        "files": 8,
+        "conflicts": true
+      },
+      "intended_effect": "A Foundry underwriting envelope that never fabricates readiness",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "FUTURE NODE",
+      "basis": "Conflicts; sequenced with the Foundry-55 obligation"
+    },
+    {
+      "id": "WealthMachineIntelligence#28",
+      "title": "Phase 3: protocol swap — venture_protocol imports the kernel contracts module",
+      "created": "2026-07-19",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 12,
+        "files": 2,
+        "conflicts": true
+      },
+      "intended_effect": "One module defines the DALEOBANKS-WMI wire",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "REBASE",
+      "basis": "Waits on the SDK re-extraction; conflicts"
+    },
+    {
+      "id": "WealthMachineIntelligence#24",
+      "title": "Add authenticated durable control administration",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 9,
+        "behind": 16,
+        "files": 62,
+        "conflicts": true
+      },
+      "intended_effect": "Add authenticated durable control administration",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#23",
+      "title": "Replace JWT stub with verified identity claims",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 8,
+        "behind": 16,
+        "files": 58,
+        "conflicts": true
+      },
+      "intended_effect": "Replace JWT stub with verified identity claims",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#22",
+      "title": "Add commercial owner beta and service-context boundaries",
+      "created": "2026-07-18",
+      "draft": true,
+      "measured": {
+        "ahead": 6,
+        "behind": 16,
+        "files": 85,
+        "conflicts": true
+      },
+      "intended_effect": "Add commercial owner beta and service-context boundaries",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "DEFERRED",
+      "basis": "UAT lineage (July); conflicts with main; defer until the first business loop (N3) is active"
+    },
+    {
+      "id": "WealthMachineIntelligence#21",
+      "title": "Add restart-safe control state recovery",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 7,
+        "behind": 16,
+        "files": 56,
+        "conflicts": true
+      },
+      "intended_effect": "Add restart-safe control state recovery",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#20",
+      "title": "Harden human admin and AI persistence boundaries",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 5,
+        "behind": 16,
+        "files": 54,
+        "conflicts": true
+      },
+      "intended_effect": "Harden human admin and AI persistence boundaries",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#19",
+      "title": "Enforce gateway-only knowledge graph mutations",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 3,
+        "behind": 16,
+        "files": 43,
+        "conflicts": true
+      },
+      "intended_effect": "Enforce gateway-only knowledge graph mutations",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#18",
+      "title": "Prepare UAT governed preview release candidate",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 5,
+        "behind": 16,
+        "files": 79,
+        "conflicts": true
+      },
+      "intended_effect": "Prepare UAT governed preview release candidate",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "DEFERRED",
+      "basis": "UAT lineage (July); conflicts with main; defer until the first business loop (N3) is active"
+    },
+    {
+      "id": "WealthMachineIntelligence#17",
+      "title": "Add capability-leased Venture Cell autonomy control plane",
+      "created": "2026-07-18",
+      "draft": false,
+      "measured": {
+        "ahead": 2,
+        "behind": 16,
+        "files": 35,
+        "conflicts": true
+      },
+      "intended_effect": "Add capability-leased Venture Cell autonomy control plane",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "RESTACK",
+      "basis": "Valuable security mechanisms, but as a WMI-local control plane they would be a second authority plane; restack behind kernel authority (leases become kernel capability grants). Conflicts with main (16 behind)"
+    },
+    {
+      "id": "WealthMachineIntelligence#16",
+      "title": "Implement UAT AG0 credibility boundary",
+      "created": "2026-07-18",
+      "draft": true,
+      "measured": {
+        "ahead": 2,
+        "behind": 16,
+        "files": 52,
+        "conflicts": true
+      },
+      "intended_effect": "Implement UAT AG0 credibility boundary",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "DEFERRED",
+      "basis": "UAT lineage (July); conflicts with main; defer until the first business loop (N3) is active"
+    },
+    {
+      "id": "WealthMachineIntelligence#15",
+      "title": "Add UAT enterprise system specification",
+      "created": "2026-07-18",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 16,
+        "files": 15,
+        "conflicts": false
+      },
+      "intended_effect": "A normative UAT enterprise specification for WMI",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N3",
+      "disposition": "DEFERRED",
+      "basis": "Merges cleanly; UAT lineage deferred to N3"
+    },
+    {
+      "id": "RAILSCOUT#11",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "RAILSCOUT#10",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    },
+    {
+      "id": "RAILSCOUT#9",
+      "title": "Build source-bound RailScout appraiser and preserve founder intent",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 10,
+        "behind": 0,
+        "files": 15,
+        "conflicts": false
+      },
+      "intended_effect": "Source-bound appraisal: exact byte spans and digests, adverse claims kept, contradictions flagged",
+      "intended_effect_status": "active",
+      "classification": "NEXT_NODE_INPUT",
+      "node": "N3",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "Runnable standard-library Python; 0 behind; merges cleanly; feeds GREG's venture.assess"
+    },
+    {
+      "id": "RAILSCOUT#6",
+      "title": "Stage shared AI work-start protocol pointer",
+      "created": "2026-09-07",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 1,
+        "files": 5,
+        "conflicts": true
+      },
+      "intended_effect": "Every agent starts from the shared work-start protocol (pinned receipt check)",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N0",
+      "disposition": "REBASE",
+      "basis": "Kernel #95's bootstrap is achieved (N0); this organ pointer conflicts with main; its pinned receipt check is the portable part"
+    },
+    {
+      "id": "RAILSCOUT#5",
+      "title": "Install RailScout LIVE PLAYER doctrine and founder-intent protocol",
+      "created": "2026-08-20",
+      "draft": true,
+      "measured": {
+        "ahead": 8,
+        "behind": 1,
+        "files": 8,
+        "conflicts": false
+      },
+      "intended_effect": "RailScout as a LIVE PLAYER research organ (founder conversation 2026-08-19)",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "One of four overlapping installs of the same conversation (#2-#5); merges cleanly; choose one"
+    },
+    {
+      "id": "RAILSCOUT#4",
+      "title": "Install RailScout founder-intent and recurring cognition system",
+      "created": "2026-08-20",
+      "draft": true,
+      "measured": {
+        "ahead": 8,
+        "behind": 1,
+        "files": 8,
+        "conflicts": false
+      },
+      "intended_effect": "RailScout founder intent and recurring cognition (2026-08-19)",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N3",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Overlaps #2, #3 and #5; merges cleanly; choose one"
+    },
+    {
+      "id": "RAILSCOUT#3",
+      "title": "Install RailScout founder-intent protocol and workstation doctrine",
+      "created": "2026-08-20",
+      "draft": true,
+      "measured": {
+        "ahead": 6,
+        "behind": 1,
+        "files": 6,
+        "conflicts": true
+      },
+      "intended_effect": "RailScout founder-intent protocol and workstation doctrine",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "Overlaps #4/#5; conflicts"
+    },
+    {
+      "id": "RAILSCOUT#2",
+      "title": "Install RailScout egregore and founder-intent governance",
+      "created": "2026-08-20",
+      "draft": true,
+      "measured": {
+        "ahead": 12,
+        "behind": 1,
+        "files": 9,
+        "conflicts": true
+      },
+      "intended_effect": "RailScout egregore connection map and governance",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "Overlaps #4/#5; conflicts"
+    },
+    {
+      "id": "RESEARCH-IN#22",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "RESEARCH-IN#21",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    },
+    {
+      "id": "RESEARCH-IN#15",
+      "title": "Add PWA config and IPFS route",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 3,
+        "conflicts": true
+      },
+      "intended_effect": "Fetch research objects through an IPFS gateway route",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N3",
+      "disposition": "PORT MECHANISM",
+      "basis": "Conflicts; the content-addressed fetch is portable"
+    },
+    {
+      "id": "RESEARCH-IN#14",
+      "title": "Add CI/CD workflows",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 2,
+        "conflicts": true
+      },
+      "intended_effect": "Add CI/CD workflows",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#13",
+      "title": "Add Lighthouse CI and OWASP ZAP checks",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 1,
+        "conflicts": true
+      },
+      "intended_effect": "Add Lighthouse CI and OWASP ZAP checks",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#12",
+      "title": "Add nightly crawl action with seed data",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 2,
+        "conflicts": false
+      },
+      "intended_effect": "Add nightly crawl action with seed data",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#11",
+      "title": "Add flowith oracle manifest",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Add flowith oracle manifest",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#10",
+      "title": "Add karma triggers and badges",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Add karma triggers and badges",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#9",
+      "title": "Scaffold ingest service in Rust",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 6,
+        "conflicts": true
+      },
+      "intended_effect": "Scaffold ingest service in Rust",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#8",
+      "title": "Add command palette and search API",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 8,
+        "conflicts": true
+      },
+      "intended_effect": "Hybrid search merging Typesense and Qdrant by reciprocal rank fusion",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N3",
+      "disposition": "PORT MECHANISM",
+      "basis": "Conflicts; RRF fusion is portable"
+    },
+    {
+      "id": "RESEARCH-IN#7",
+      "title": "Implement Typesense indexing in ingest service",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 7,
+        "files": 2,
+        "conflicts": true
+      },
+      "intended_effect": "Index paper metadata in Typesense",
+      "intended_effect_status": "active",
+      "classification": "PORTABLE_MECHANISM",
+      "node": "N3",
+      "disposition": "PORT MECHANISM",
+      "basis": "Conflicts"
+    },
+    {
+      "id": "RESEARCH-IN#6",
+      "title": "Initialize Next.js web app",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 15,
+        "files": 17,
+        "conflicts": true
+      },
+      "intended_effect": "Initialize Next.js web app",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "RESEARCH-IN#3",
+      "title": "Add Supabase auth context and navbar",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 15,
+        "files": 11,
+        "conflicts": true
+      },
+      "intended_effect": "Add Supabase auth context and navbar",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N3",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 Codex scaffold; conflicts or failing checks recorded in its own body; kept as evidence for the research_in_organ horizon"
+    },
+    {
+      "id": "PumpStation#20",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "PumpStation#17",
+      "title": "Stage shared AI work-start protocol pointer",
+      "created": "2026-09-07",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 1,
+        "files": 5,
+        "conflicts": true
+      },
+      "intended_effect": "Every agent starts from the shared work-start protocol (pinned receipt check)",
+      "intended_effect_status": "active",
+      "classification": "REQUIRES_ADAPTATION",
+      "node": "N0",
+      "disposition": "REBASE",
+      "basis": "Kernel #95's bootstrap is achieved (N0); this organ pointer conflicts with main; its pinned receipt check is the portable part"
+    },
+    {
+      "id": "PumpStation#16",
+      "title": "Fix wallet authentication bypass; add the executable admission gate",
+      "created": "2026-07-27",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 1,
+        "files": 21,
+        "conflicts": false
+      },
+      "intended_effect": "Wallet login that cannot be replayed, plus an executable admission gate",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "SECURITY: main verifies a signature over the constant 'Connect PumpStation' with no nonce or expiry, so a captured signature logs in forever (verified on main 2026-09-30). This PR fixes it and merges cleanly; merge the authentication fix regardless of node"
+    },
+    {
+      "id": "PumpStation#15",
+      "title": "Phase 3: bind PumpStation to pinned UNIIMENTE Kernel contracts",
+      "created": "2026-07-26",
+      "draft": true,
+      "measured": {
+        "ahead": 69,
+        "behind": 1,
+        "files": 94,
+        "conflicts": false
+      },
+      "intended_effect": "PumpStation bound to pinned kernel contracts as a deny-all proposal-only cell",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Merges cleanly; stacked on #14"
+    },
+    {
+      "id": "PumpStation#14",
+      "title": "Phase 2: add semantic input firewall and human quarantine boundary",
+      "created": "2026-07-26",
+      "draft": true,
+      "measured": {
+        "ahead": 52,
+        "behind": 1,
+        "files": 80,
+        "conflicts": false
+      },
+      "intended_effect": "Participant and model content stays data behind a semantic firewall and human quarantine",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Merges cleanly; stacked on #13"
+    },
+    {
+      "id": "PumpStation#13",
+      "title": "Phase 1: regress full-swarm review into a tiered benchmarked institution",
+      "created": "2026-07-26",
+      "draft": true,
+      "measured": {
+        "ahead": 22,
+        "behind": 1,
+        "files": 64,
+        "conflicts": false
+      },
+      "intended_effect": "Tiered, benchmarked review instead of a full swarm for every case",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Merges cleanly; stacked on #7"
+    },
+    {
+      "id": "PumpStation#7",
+      "title": "Build PumpStation Labs as a simulation-only community capital institution",
+      "created": "2026-07-26",
+      "draft": true,
+      "measured": {
+        "ahead": 8,
+        "behind": 1,
+        "files": 57,
+        "conflicts": false
+      },
+      "intended_effect": "PumpStation Labs: a simulation-only community capital institution",
+      "intended_effect_status": "active",
+      "classification": "FUTURE_NODE_CAPABILITY",
+      "node": "N7",
+      "disposition": "NEEDS FOUNDER DECISION",
+      "basis": "Merges cleanly; reframes the memecoin concept, which only the founder can decide"
+    },
+    {
+      "id": "PumpStation#6",
+      "title": "Initialize Next.js project with API",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 25,
+        "conflicts": true
+      },
+      "intended_effect": "Real-time memecoin coordination: transparent buy-ins, voting and exits",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N7",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 scaffold of the original memecoin concept; conflicts with main. The concept is not declared abandoned; whether PumpStation Labs (#7) replaces it is a founder decision"
+    },
+    {
+      "id": "PumpStation#5",
+      "title": "Add interactive coin price tracker",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 9,
+        "conflicts": true
+      },
+      "intended_effect": "Real-time memecoin coordination: transparent buy-ins, voting and exits",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N7",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 scaffold of the original memecoin concept; conflicts with main. The concept is not declared abandoned; whether PumpStation Labs (#7) replaces it is a founder decision"
+    },
+    {
+      "id": "PumpStation#4",
+      "title": "Improve voting demo",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 8,
+        "conflicts": true
+      },
+      "intended_effect": "Real-time memecoin coordination: transparent buy-ins, voting and exits",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N7",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 scaffold of the original memecoin concept; conflicts with main. The concept is not declared abandoned; whether PumpStation Labs (#7) replaces it is a founder decision"
+    },
+    {
+      "id": "PumpStation#2",
+      "title": "Add basic wallet connection workflow",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 4,
+        "conflicts": true
+      },
+      "intended_effect": "Real-time memecoin coordination: transparent buy-ins, voting and exits",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N7",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 scaffold of the original memecoin concept; conflicts with main. The concept is not declared abandoned; whether PumpStation Labs (#7) replaces it is a founder decision"
+    },
+    {
+      "id": "PumpStation#1",
+      "title": "Initialize Next.js project with API",
+      "created": "2025-06-11",
+      "draft": false,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 25,
+        "conflicts": true
+      },
+      "intended_effect": "Real-time memecoin coordination: transparent buy-ins, voting and exits",
+      "intended_effect_status": "active",
+      "classification": "HISTORICAL_EVIDENCE",
+      "node": "N7",
+      "disposition": "HISTORICAL",
+      "basis": "2025-06 scaffold of the original memecoin concept; conflicts with main. The concept is not declared abandoned; whether PumpStation Labs (#7) replaces it is a founder decision"
+    },
+    {
+      "id": "gods-eye-view-EGGREGORE-TOOL#3",
+      "title": "Add the missing agent entry contract (AGENTS.md, CLAUDE.md)",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 2,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "gods-eye-view-EGGREGORE-TOOL#1",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 3,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    },
+    {
+      "id": "build-your-own-x#3",
+      "title": "Point agents at where UNIIMENTE stands on 2026-09-30",
+      "created": "2026-09-30",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the current UNIIMENTE position",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "CANONICAL ACTIVE",
+      "basis": "Opened in this session; one file; merges cleanly"
+    },
+    {
+      "id": "build-your-own-x#2",
+      "title": "docs: add UNIIMENTE project cognition handoff",
+      "created": "2026-09-26",
+      "draft": true,
+      "measured": {
+        "ahead": 1,
+        "behind": 0,
+        "files": 1,
+        "conflicts": false
+      },
+      "intended_effect": "Agents entering this repository find the cognition SOP and source census",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "disposition": "MERGE CANDIDATE",
+      "basis": "09-26 propagation; one file; merges cleanly; complements the 09-30 pointer"
+    }
+  ]
+}

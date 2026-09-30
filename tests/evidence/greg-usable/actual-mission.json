@@ -1,0 +1,682 @@
+{
+  "classification": "ACTUAL_LOCAL_SOURCE_WORK_WITH_SYNTHETIC_AUTHORITY_AND_REVIEW",
+  "comparison": {
+    "authority_change": false,
+    "baseline_accuracy": 0.5,
+    "candidate_accuracy": 1.0,
+    "decision": "retain",
+    "external_cost_usd": 0,
+    "model_calls": 0,
+    "participant_benefit": "not measured",
+    "ref": "sha256:3adf97b1043b2bb136f3f9921d7b54e6263ff078e6368f32705919eaf0564b7d",
+    "rows": [
+      {
+        "baseline": "stale-sdk",
+        "candidate": "wrong-target",
+        "case": "wrong-payment-target",
+        "expected": "wrong-target"
+      },
+      {
+        "baseline": "optional-version-drift",
+        "candidate": "stop-bypass",
+        "case": "unauthorized-restart",
+        "expected": "stop-bypass"
+      },
+      {
+        "baseline": "broken-import",
+        "candidate": "broken-import",
+        "case": "consumer-import-blocked",
+        "expected": "broken-import"
+      },
+      {
+        "baseline": "benefit-unmeasured",
+        "candidate": "benefit-unmeasured",
+        "case": "engagement-only",
+        "expected": "benefit-unmeasured"
+      }
+    ],
+    "scope": "brief ordering only"
+  },
+  "control_head": "sha256:29aca4204557f87a0b3cac9d1526a61dfaca5363c65c222628015bed85e359ad",
+  "first": {
+    "classification": "SYNTHETIC_DEVELOPMENT_ONLY_NOT_FOUNDER_AUTHENTICATION",
+    "host_pid": 16,
+    "mission": "d4d575b2bd2a4dfe95527a76e1769107"
+  },
+  "first_report": {
+    "actions": {
+      "dispatch_claims": 1,
+      "outcomes": 1,
+      "receipts": 1
+    },
+    "as_of_head": "sha256:56acace6353837621d413c2d31cf2ff80562d983f3cf7d31b482fe112d8a3804",
+    "blocker": null,
+    "brief": [
+      {
+        "brief": {
+          "blocker": {
+            "evidence": {
+              "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+              "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+              "file": "egregore/runtime.py",
+              "line": 496,
+              "role": "kernel"
+            },
+            "id": "resume-authority",
+            "kind": "authority",
+            "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+            "summary": "Standing cognition resume checks hash format without issuer verification in this method"
+          },
+          "change_meaning": "commit/file binding changes; not a claim that every file changed bytes",
+          "goal": "Inspect approved snapshots and identify the highest-priority evidenced integration blocker",
+          "limits": "Bounded static source checks; not a complete integration diagnosis or fresh remote state.",
+          "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+          "ordering": "unchanged baseline",
+          "other_findings": [
+            {
+              "evidence": {
+                "blob": "2ff300188d75392693800f546a81ce0d234d3af9",
+                "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+                "file": "services/reflection.py",
+                "role": "dale"
+              },
+              "id": "reflection-outcome-gap",
+              "kind": "learning",
+              "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+              "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit"
+            }
+          ],
+          "source_scope": "cached local Git snapshots",
+          "what_changed": [
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:pyproject.toml",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:requirements.txt",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/generator.py",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/reflection.py",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:egregore/runtime.py",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:policy/consequence_gate.py",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:pyproject.toml",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:pyproject.toml",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:requirements.txt",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:src/services/bridge_security.py"
+          ]
+        },
+        "previous_report": null,
+        "security_first": false,
+        "source_review_head": "sha256:93961fba1afca04502ce2485caecea87c6a79467703287f04ca34bfa900f2ec3",
+        "verified": true
+      }
+    ],
+    "evidence_refs": [
+      "sha256:98e050794293bcb42d65059b0f404009bf7fa1d830c975e91ab1bfc0d5af9604",
+      "sha256:3103e03f680b66c821d3fa38887c1d4cbf8804df41ac9fe69a18bc11d9472f9a",
+      "sha256:106f95f2ed53445b5895988f376cc7284401545291f1c76222d45878869a81f0",
+      "sha256:05385bf51dc508447c5b201df80e3862ce3f8a63a95909ee3df27e746ce8e93b",
+      "sha256:9eb6143a2b9e6111cc9b175501d765c2b4c6d98d7e265ab28ce199944c54fa06",
+      "sha256:93961fba1afca04502ce2485caecea87c6a79467703287f04ca34bfa900f2ec3",
+      "sha256:d972f67dcc99abff0ee21c5855bb2744d887f14dc8ba2bdf54574dd35f50f0e3",
+      "sha256:26916cf924d1f98bee0c84e352093e47036b112260529e26232a56ac596cad1f",
+      "sha256:ebeaee8b380711b524aa7c6a1d65a4e8673144e96abfadb536174ea0e7e1e536",
+      "sha256:477f0c066b5b85050f3400efa280a98c40709510462be9f47a7796fa73dcda2b",
+      "sha256:492adaadd621ae5064e9e98ed3647bcfa1a6f5c89737a45226409ad2feed5747",
+      "sha256:fc807ef39317745084dd5fd3c7b90ba9b38a3d0e45f26fe9b2f6a487c2bd7d4f",
+      "sha256:1c5e76d3d0f4d8cbd7e20225c206e8a887deec5c1be9d6e4f51d8014bf014f11",
+      "sha256:cef15b0a1f0be88a8158a4c4999646c33145e144cb6581f657a3ba0787b1eb67",
+      "sha256:4591c2bcab43697bfb8b1c79984b4d3f55c68d36c6f53356882f1c0fa031628f",
+      "sha256:f6da7b1cdf7af8920a5f09339861fb91d404affa4033052c7c5fd7e4f5e23c8d"
+    ],
+    "evidence_tier": "RETAINED_LOCAL_EVIDENCE_REVIEW",
+    "goal": {
+      "deadline": 1790363401.5743656,
+      "due": 1790363361.5743656,
+      "expected_pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+      "expected_version": "0.1.2",
+      "mission_id": "greg-proof:d4d575b2bd2a4dfe95527a76e1769107"
+    },
+    "host_observation": {
+      "attempt_limit": 3,
+      "host_cpu_seconds": 0.022129999999999983,
+      "host_elapsed_seconds": 0.5610640750001039,
+      "next_reconsideration": null,
+      "status": "COMPLETE",
+      "worker_exits": [
+        0
+      ],
+      "worker_pids": [
+        17
+      ]
+    },
+    "learning": "No critique or retained result has been promoted into policy, tests or causal truth.",
+    "limits": {
+      "CMC": 0,
+      "VDM": 0,
+      "current_source_freshness_verified": false,
+      "founder_authenticated": false,
+      "native_mac_verified": false,
+      "verified_embodied_persistent_mission_closures": 0
+    },
+    "mission_id": "greg-proof:d4d575b2bd2a4dfe95527a76e1769107",
+    "next_reconsideration": null,
+    "next_step": "Review evidence and unresolved gates; any mission or authority change uses its canonical owner.",
+    "result": {
+      "compatible": true,
+      "coverage": [
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:pyproject.toml",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:requirements.txt",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/reflection.py",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/generator.py",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:pyproject.toml",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:egregore/runtime.py",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:policy/consequence_gate.py",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:pyproject.toml",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:requirements.txt",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:src/services/bridge_security.py"
+      ],
+      "findings": [
+        {
+          "evidence": {
+            "blob": "2ff300188d75392693800f546a81ce0d234d3af9",
+            "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+            "file": "services/reflection.py",
+            "role": "dale"
+          },
+          "id": "reflection-outcome-gap",
+          "kind": "learning",
+          "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+          "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit"
+        },
+        {
+          "evidence": {
+            "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+            "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+            "file": "egregore/runtime.py",
+            "line": 496,
+            "role": "kernel"
+          },
+          "id": "resume-authority",
+          "kind": "authority",
+          "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+          "summary": "Standing cognition resume checks hash format without issuer verification in this method"
+        }
+      ],
+      "limits": "Bounded static source checks; not a complete integration diagnosis or fresh remote state.",
+      "rows": [
+        {
+          "blob": "79b88d15ce352ae97e25964446d406b92c839bb3",
+          "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+          "file": "pyproject.toml",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "dale"
+        },
+        {
+          "blob": "97de7a4bebd8179979478b8509fcab117f17ebbb",
+          "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+          "file": "requirements.txt",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "dale"
+        },
+        {
+          "blob": "f89429bd840c0ce496b0022c4942fb37eb22be6b",
+          "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+          "file": "pyproject.toml",
+          "matches": true,
+          "role": "kernel",
+          "version": "0.1.2"
+        },
+        {
+          "blob": "9a7f9743a023b7cc1f3492e2764cf420aeea0904",
+          "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+          "file": "pyproject.toml",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "wmi"
+        },
+        {
+          "blob": "65ac54b19b76e675d94d588df927fe819a8010af",
+          "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+          "file": "requirements.txt",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "wmi"
+        }
+      ],
+      "source_scope": "cached local Git snapshots"
+    },
+    "result_reviews": [],
+    "review_notes": [],
+    "schema_version": 1,
+    "status": "RETAINED_AUDIT_COMPLETE",
+    "why": "Retained fixed mission: audit the three approved cached repository snapshots.",
+    "workflow_history": [
+      {
+        "note": "execute_enter",
+        "ref": "sha256:492adaadd621ae5064e9e98ed3647bcfa1a6f5c89737a45226409ad2feed5747",
+        "status": "running"
+      },
+      {
+        "note": "step_started:audit",
+        "ref": "sha256:fc807ef39317745084dd5fd3c7b90ba9b38a3d0e45f26fe9b2f6a487c2bd7d4f",
+        "status": "running"
+      },
+      {
+        "note": "step_completed:audit",
+        "ref": "sha256:1c5e76d3d0f4d8cbd7e20225c206e8a887deec5c1be9d6e4f51d8014bf014f11",
+        "status": "running"
+      },
+      {
+        "note": "step_started:appraise",
+        "ref": "sha256:cef15b0a1f0be88a8158a4c4999646c33145e144cb6581f657a3ba0787b1eb67",
+        "status": "running"
+      },
+      {
+        "note": "step_completed:appraise",
+        "ref": "sha256:4591c2bcab43697bfb8b1c79984b4d3f55c68d36c6f53356882f1c0fa031628f",
+        "status": "running"
+      },
+      {
+        "note": "completed",
+        "ref": "sha256:f6da7b1cdf7af8920a5f09339861fb91d404affa4033052c7c5fd7e4f5e23c8d",
+        "status": "completed"
+      }
+    ]
+  },
+  "freshness": "cached local refs; no mission-time network fetch",
+  "implementation_commit": "7d64ae35dc2abbb58ef1205112f87902e98d7bab",
+  "inspected_sources": [
+    {
+      "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+      "path": "/workspace/scratch/242854d06306/kernel",
+      "role": "kernel"
+    },
+    {
+      "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+      "path": "/workspace/scratch/242854d06306/daleobanks",
+      "role": "dale"
+    },
+    {
+      "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+      "path": "/workspace/scratch/242854d06306/wmi",
+      "role": "wmi"
+    }
+  ],
+  "later": {
+    "classification": "SYNTHETIC_DEVELOPMENT_ONLY_NOT_FOUNDER_AUTHENTICATION",
+    "host_pid": 65,
+    "mission": "a6914452b19a45cdb742b078913121e7"
+  },
+  "later_report": {
+    "actions": {
+      "dispatch_claims": 1,
+      "outcomes": 1,
+      "receipts": 1
+    },
+    "as_of_head": "sha256:1f98d9a42775df0a2b0a5566a2b1b0b1f0ebac66a16986d870ee5860b1c6468a",
+    "blocker": null,
+    "brief": [
+      {
+        "brief": {
+          "blocker": {
+            "evidence": {
+              "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+              "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+              "file": "egregore/runtime.py",
+              "line": 496,
+              "role": "kernel"
+            },
+            "id": "resume-authority",
+            "kind": "authority",
+            "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+            "summary": "Standing cognition resume checks hash format without issuer verification in this method"
+          },
+          "change_meaning": "commit/file binding changes; not a claim that every file changed bytes",
+          "goal": "Inspect approved snapshots and identify the highest-priority evidenced integration blocker",
+          "limits": "Bounded static source checks; not a complete integration diagnosis or fresh remote state.",
+          "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+          "ordering": "security-first",
+          "other_findings": [
+            {
+              "evidence": {
+                "blob": "2ff300188d75392693800f546a81ce0d234d3af9",
+                "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+                "file": "services/reflection.py",
+                "role": "dale"
+              },
+              "id": "reflection-outcome-gap",
+              "kind": "learning",
+              "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+              "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit"
+            }
+          ],
+          "source_scope": "cached local Git snapshots",
+          "what_changed": []
+        },
+        "previous_report": {
+          "compatible": true,
+          "coverage": [
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:pyproject.toml",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:requirements.txt",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/reflection.py",
+            "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/generator.py",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:pyproject.toml",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:egregore/runtime.py",
+            "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:policy/consequence_gate.py",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:pyproject.toml",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:requirements.txt",
+            "wmi:ec82b8027d987c865dc123215afb53d20916908f:src/services/bridge_security.py"
+          ],
+          "findings": [
+            {
+              "evidence": {
+                "blob": "2ff300188d75392693800f546a81ce0d234d3af9",
+                "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+                "file": "services/reflection.py",
+                "role": "dale"
+              },
+              "id": "reflection-outcome-gap",
+              "kind": "learning",
+              "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+              "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit"
+            },
+            {
+              "evidence": {
+                "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+                "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+                "file": "egregore/runtime.py",
+                "line": 496,
+                "role": "kernel"
+              },
+              "id": "resume-authority",
+              "kind": "authority",
+              "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+              "summary": "Standing cognition resume checks hash format without issuer verification in this method"
+            }
+          ],
+          "limits": "Bounded static source checks; not a complete integration diagnosis or fresh remote state.",
+          "rows": [
+            {
+              "blob": "79b88d15ce352ae97e25964446d406b92c839bb3",
+              "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+              "file": "pyproject.toml",
+              "matches": true,
+              "pins": [
+                [
+                  "4999acff1a69502c05af455fbccfca380cad18ee"
+                ]
+              ],
+              "role": "dale"
+            },
+            {
+              "blob": "97de7a4bebd8179979478b8509fcab117f17ebbb",
+              "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+              "file": "requirements.txt",
+              "matches": true,
+              "pins": [
+                [
+                  "4999acff1a69502c05af455fbccfca380cad18ee"
+                ]
+              ],
+              "role": "dale"
+            },
+            {
+              "blob": "f89429bd840c0ce496b0022c4942fb37eb22be6b",
+              "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+              "file": "pyproject.toml",
+              "matches": true,
+              "role": "kernel",
+              "version": "0.1.2"
+            },
+            {
+              "blob": "9a7f9743a023b7cc1f3492e2764cf420aeea0904",
+              "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+              "file": "pyproject.toml",
+              "matches": true,
+              "pins": [
+                [
+                  "4999acff1a69502c05af455fbccfca380cad18ee"
+                ]
+              ],
+              "role": "wmi"
+            },
+            {
+              "blob": "65ac54b19b76e675d94d588df927fe819a8010af",
+              "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+              "file": "requirements.txt",
+              "matches": true,
+              "pins": [
+                [
+                  "4999acff1a69502c05af455fbccfca380cad18ee"
+                ]
+              ],
+              "role": "wmi"
+            }
+          ],
+          "source_scope": "cached local Git snapshots"
+        },
+        "security_first": true,
+        "source_review_head": "sha256:ba148dc936f5e0dff993919a1f71c03affe7a5c52c6b9455c2d53b6c242e3c9f",
+        "verified": true
+      }
+    ],
+    "evidence_refs": [
+      "sha256:7cb9b8a4a897d369480995e5bfe2a1c991c688a338053f5fc13c4eb5a44559ed",
+      "sha256:bb465f5d0926eb09085aa562410c603700f1b68c0e2cf74bf37f036602fba324",
+      "sha256:61e4eebee04078fa4e622160012f97293f2d1c6ec3c235a405aa4a506b4b2d5d",
+      "sha256:5d1960c7595039b9115c9bb849b5fd53e10544ca15925fe34588a4b2974019c4",
+      "sha256:6ab5832c67c3bc6b9575239632cda09b941e76b92a290a52335d15e38caffc8a",
+      "sha256:ba148dc936f5e0dff993919a1f71c03affe7a5c52c6b9455c2d53b6c242e3c9f",
+      "sha256:88da72194d7d38faca443615af101c6d4f6211d9a49c88faaad6853f914cbffb",
+      "sha256:a12070513c465aa03e573c3f5e20071094c28503f300f6de8a9144ab83929940",
+      "sha256:eabe280f70843605861fb9ff92e39d11db34d9d2c20778df010f3d74a0998c04",
+      "sha256:c0be13e9efb257063c80445cf3d83fb9fdf86f734a8bebf03c0a597971b85bfe",
+      "sha256:c663bd3ef9968a51da4e1e8b82cadf50bd31ec1437d41fa027fe4576459f2c95",
+      "sha256:21b7221912b804c6ac5447369ac0e40bdce2123e2695a9ccf559785b83f5722b",
+      "sha256:403e7608d4139c4b2dd1ea3d5ec34a2c46063aefb3e0cbf85ec322ad1cc4d5f0",
+      "sha256:be15c6b997c6c712a99bcf2f676f59b93a053c34d7aa9ab908a1f6afc9723369",
+      "sha256:bb71816834bce5010cdee9c9820bb4482cbae239e500a2190e9749600cc41363",
+      "sha256:c04dc4d3ddfabe3d17ceb71d61b70f60630d5c833cb55c6d921e1056679c88ca"
+    ],
+    "evidence_tier": "RETAINED_LOCAL_EVIDENCE_REVIEW",
+    "goal": {
+      "deadline": 1790363402.6122067,
+      "due": 1790363362.6122067,
+      "expected_pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+      "expected_version": "0.1.2",
+      "mission_id": "greg-proof:a6914452b19a45cdb742b078913121e7"
+    },
+    "host_observation": {
+      "attempt_limit": 3,
+      "host_cpu_seconds": 0.021691000000000016,
+      "host_elapsed_seconds": 0.5783498029999237,
+      "next_reconsideration": null,
+      "status": "COMPLETE",
+      "worker_exits": [
+        0
+      ],
+      "worker_pids": [
+        66
+      ]
+    },
+    "learning": "No critique or retained result has been promoted into policy, tests or causal truth.",
+    "limits": {
+      "CMC": 0,
+      "VDM": 0,
+      "current_source_freshness_verified": false,
+      "founder_authenticated": false,
+      "native_mac_verified": false,
+      "verified_embodied_persistent_mission_closures": 0
+    },
+    "mission_id": "greg-proof:a6914452b19a45cdb742b078913121e7",
+    "next_reconsideration": null,
+    "next_step": "Review evidence and unresolved gates; any mission or authority change uses its canonical owner.",
+    "result": {
+      "compatible": true,
+      "coverage": [
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:pyproject.toml",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:requirements.txt",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/reflection.py",
+        "dale:e2f1ebed37407b06ea70cbffb404fd39858e13b5:services/generator.py",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:pyproject.toml",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:egregore/runtime.py",
+        "kernel:04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a:policy/consequence_gate.py",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:pyproject.toml",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:requirements.txt",
+        "wmi:ec82b8027d987c865dc123215afb53d20916908f:src/services/bridge_security.py"
+      ],
+      "findings": [
+        {
+          "evidence": {
+            "blob": "2ff300188d75392693800f546a81ce0d234d3af9",
+            "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+            "file": "services/reflection.py",
+            "role": "dale"
+          },
+          "id": "reflection-outcome-gap",
+          "kind": "learning",
+          "next_action": "Compare a bounded correction on a held-out participant task before retaining a lesson.",
+          "summary": "Reflection consumes engagement/follower signals; these alone do not establish participant benefit"
+        },
+        {
+          "evidence": {
+            "blob": "2350b973b18074ea7e0c99889485cb690e2384c7",
+            "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+            "file": "egregore/runtime.py",
+            "line": 496,
+            "role": "kernel"
+          },
+          "id": "resume-authority",
+          "kind": "authority",
+          "next_action": "Trace trusted callers; require a pre-existing exact-scope Kernel grant before resume.",
+          "summary": "Standing cognition resume checks hash format without issuer verification in this method"
+        }
+      ],
+      "limits": "Bounded static source checks; not a complete integration diagnosis or fresh remote state.",
+      "rows": [
+        {
+          "blob": "79b88d15ce352ae97e25964446d406b92c839bb3",
+          "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+          "file": "pyproject.toml",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "dale"
+        },
+        {
+          "blob": "97de7a4bebd8179979478b8509fcab117f17ebbb",
+          "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+          "file": "requirements.txt",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "dale"
+        },
+        {
+          "blob": "f89429bd840c0ce496b0022c4942fb37eb22be6b",
+          "commit": "04b1b7e3bce5fd8ea6fbaf978719249cae8ef90a",
+          "file": "pyproject.toml",
+          "matches": true,
+          "role": "kernel",
+          "version": "0.1.2"
+        },
+        {
+          "blob": "9a7f9743a023b7cc1f3492e2764cf420aeea0904",
+          "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+          "file": "pyproject.toml",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "wmi"
+        },
+        {
+          "blob": "65ac54b19b76e675d94d588df927fe819a8010af",
+          "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+          "file": "requirements.txt",
+          "matches": true,
+          "pins": [
+            [
+              "4999acff1a69502c05af455fbccfca380cad18ee"
+            ]
+          ],
+          "role": "wmi"
+        }
+      ],
+      "source_scope": "cached local Git snapshots"
+    },
+    "result_reviews": [],
+    "review_notes": [],
+    "schema_version": 1,
+    "status": "RETAINED_AUDIT_COMPLETE",
+    "why": "Retained fixed mission: audit the three approved cached repository snapshots.",
+    "workflow_history": [
+      {
+        "note": "execute_enter",
+        "ref": "sha256:c663bd3ef9968a51da4e1e8b82cadf50bd31ec1437d41fa027fe4576459f2c95",
+        "status": "running"
+      },
+      {
+        "note": "step_started:audit",
+        "ref": "sha256:21b7221912b804c6ac5447369ac0e40bdce2123e2695a9ccf559785b83f5722b",
+        "status": "running"
+      },
+      {
+        "note": "step_completed:audit",
+        "ref": "sha256:403e7608d4139c4b2dd1ea3d5ec34a2c46063aefb3e0cbf85ec322ad1cc4d5f0",
+        "status": "running"
+      },
+      {
+        "note": "step_started:appraise",
+        "ref": "sha256:be15c6b997c6c712a99bcf2f676f59b93a053c34d7aa9ab908a1f6afc9723369",
+        "status": "running"
+      },
+      {
+        "note": "step_completed:appraise",
+        "ref": "sha256:bb71816834bce5010cdee9c9820bb4482cbae239e500a2190e9749600cc41363",
+        "status": "running"
+      },
+      {
+        "note": "completed",
+        "ref": "sha256:c04dc4d3ddfabe3d17ceb71d61b70f60630d5c833cb55c6d921e1056679c88ca",
+        "status": "completed"
+      }
+    ]
+  },
+  "limits": [
+    "Alfonso not authenticated",
+    "No Mac or reboot test",
+    "No community contact",
+    "Synthetic author-labeled held-out cases; independent review absent",
+    "Same-user filesystem is not a hostile-worker sandbox"
+  ],
+  "review_ref": "sha256:34b0dce95c3299388232e05e6deca5482cecc1b11319ee58bb871e4cecfd8e65",
+  "stop": {
+    "authentication": "SYNTHETIC_DEVELOPMENT_ONLY_NOT_FOUNDER_AUTHENTICATION",
+    "in_flight": "terminate owned active worker on next bounded host check; inspect retained evidence",
+    "ref": "sha256:29aca4204557f87a0b3cac9d1526a61dfaca5363c65c222628015bed85e359ad",
+    "status": "STOPPED"
+  }
+}

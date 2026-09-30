@@ -1,14 +1,41 @@
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 # UNIIMENTE Agent Entry Contract
+
+**Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
+
+## Latest founder correction — real product over laboratory output
+
+Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and its verbatim source **before choosing new work**.
+
+The repository is developmental substrate for the real GREG product. Mine experiments, simulations, failures, duplicates and superseded architectures for mechanisms; then PRODUCTIZE, EXTRACT, RECOMBINE, RETAIN_AS_EVIDENCE, ARCHIVE, or KILL_ACTIVE_COMPLEXITY. Historical work does not earn canonical ownership from sunk cost.
+
+A substantial coding session must answer: **What can the actual GREG now do that it could not do before?** Tests, sandboxes, simulations, benchmarks and documents verify product work; they are not the product milestone. Until evidence changes the bottleneck, optimize VEPMC 0 -> 1 and the vertical product path that makes that closure real.
+
+Do not create another framework to implement this rule. Apply it to `greg/` and the existing canonical owners.
+
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
+Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
+GREG's interface belongs to a persistent operating layer above the founder's
+computer OS. Background mission continuity and authorized computer use are core
+requirements. Human collaborators and replaceable cloud mechanics remain valid.
+Advance one verified embodied mission before expanding infrastructure. Preserve
+history while choosing one active semantic owner; autonomy never creates authority.
+
 Before substantive work, read:
+
+0. `docs/PROJECT_COGNITION_SOP.md`
+0a. `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`
 
 1. `docs/FOUNDER_EFFECT_COMPILER.md`
 2. `docs/FOUNDER_INTENT_LEDGER.md`
 3. `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`
 4. `docs/UNIIMENTE_FINAL_BUILD_ORDER.md`
 5. `docs/CANONICAL_EXECUTION_ORDER.md`
+
+For the first owned-computer body, persistent GREG product effect and its current experimental boundary, read `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. A shell, host, agent or organ may not create a second authority plane.
 
 ## Non-negotiable interpretation rule
 
@@ -57,6 +84,10 @@ OMNIMORPH is an optional organization-design/composition mechanism, not the mean
 
 For any material PR, explicitly state the target effect, metaphor/literal split, simplest viable mechanism, existing mechanisms searched, residual CapabilityDeficit, verification plan, and why added complexity is warranted.
 
+## Developmental inheritance (founder correction 2026-09-30)
+
+A founder correction reroutes; it does not delete. Before superseding, closing or archiving anything material, name the axis that changed (hardware, sequence, timing, provider, interface, implementation mechanism, scale, maturity, budget, authority, immediate priority, or final intended effect), answer the nine-question inheritance test, and place it on `greg/path.json` with one of ten classes in `docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json`. Never use "outdated" as a terminal label. Not now is not never; wrong implementation is not wrong destination. Exactly one node is operationally primary (`greg path`). Enforced by `tests/unit/test_developmental_inheritance.py`; intent `docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json`.
+
 ## Open-source-first models and software
 
 Current founder direction (2026-09-30): use locally served, freely licensed AI
@@ -68,3 +99,9 @@ an API key exists. Search popular repositories, then verify the actual license,
 maintainer activity, hardware fit and whether examples call paid backends.
 Local model weights do not make rented hardware or exclusive data free.
 This changes implementation selection, not Kernel consequence authority.
+
+## GREG body (2026-09-25)
+
+Converged GREG path (2026-09-30): `claude/uniimente-greg-reconciliation-39syff` until merged; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on it, not on #122 or the Chromebook line separately.
+
+The product runtime is `greg/` (persistent body, signed founder commands, missions, Capability Genesis, morning tribunal) under `INTENT-2026-09-25-EGREGORE-ECOLOGY`. It composes the canonical Gate, ledger and spine and owns no policy. Read `greg/README.md` and `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md` before changing it.

@@ -16,6 +16,9 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 
+from verifier.run_binding import head_commit, tree_state  # PR #85 Finding 3, ported
+BINDING = {"head_commit": head_commit(), "tracked_tree": tree_state()}  # before anything runs
+
 failures, passes, skips = [], [], []
 
 
@@ -97,6 +100,7 @@ run = {
     "verifier": "v2",
     "ts_utc": datetime.datetime.now(datetime.UTC).isoformat(),
     "command": "python3 verifier/v2/verify.py",
+    **BINDING,
     "exit_code": 0 if not failures else 1,
     "passes": passes, "skips": skips, "failures": failures,
 }

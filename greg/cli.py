@@ -127,6 +127,9 @@ def main(argv=None) -> int:
             q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
             q.add_argument("--standing", action="store_true",
                            help="venture-assessment: keep watching; re-assess whenever the evidence changes")
+            q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
+            q.add_argument("--sha256", help="verify-download: the published SHA-256 (64 hex)")
+            q.add_argument("--max-words", type=int, help="word-limit: the most words the file may have")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -234,6 +237,12 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target == "verify-download":
+                    spec = templates.verify_download(file=Path(args.file), sha256=args.sha256,
+                                                     workspace_root=Layout(home).workspace)
+                elif args.target == "word-limit":
+                    spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
+                                                workspace_root=Layout(home).workspace)
                 elif args.target == "engineering-brief":
                     spec = templates.engineering_brief(local=dict(r.split("=", 1) for r in args.local),
                                                        github=args.github, daily=args.daily,

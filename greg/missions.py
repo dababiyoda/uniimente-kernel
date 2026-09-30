@@ -66,6 +66,11 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError(f"strategy {strategy['action_id']} advances unknown checks {sorted(unknown)}")
         if ("capability" in strategy) == ("function" in strategy):
             raise MissionError("each strategy names exactly one of capability or function")
+        requires = set(strategy.get("requires", []))
+        if requires - checks:
+            raise MissionError(f"strategy {strategy['action_id']} requires unknown checks {sorted(requires - checks)}")
+        if requires & set(strategy["advances"]):
+            raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -737,9 +742,13 @@ class MissionEngine:
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
+        held = {}                            # strategies waiting on a precondition observation says fails
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
+                continue
+            if set(s.get("requires", [])) & failing:
+                held[s["action_id"]] = sorted(set(s["requires"]) & failing)
                 continue
             manifest = self.registry.manifests.get(s.get("capability"))
             if manifest is None and s.get("function") and self.genesis is not None:
@@ -752,13 +761,16 @@ class MissionEngine:
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
-                                why="every strategy for the failing checks is exhausted, refused or excluded",
+                                why=("the remaining strategies wait on checks that observation says fail: "
+                                     + ", ".join(sorted({c for cs in held.values() for c in cs})))
+                                if held else "every strategy for the failing checks is exhausted, refused or excluded",
                                 recommendation="add or revise strategies, widen scope, or abandon the mission",
                                 alternatives=["add or revise strategies for the failing checks", "widen the scope",
                                               "abandon the mission"],
                                 requested={"failing_checks": sorted(failing)}, now=now,
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
-                                          "excluded": dict(sorted(m.excluded.items()))})
+                                          "excluded": dict(sorted(m.excluded.items())),
+                                          **({"held_by_precondition": held} if held else {})})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

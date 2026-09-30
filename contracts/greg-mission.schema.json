@@ -200,6 +200,16 @@
             "type": "number",
             "minimum": 0,
             "maximum": 1
+          },
+          "requires": {
+            "type": "array",
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]{1,80}$"
+            },
+            "description": "check_ids that must be observed passing before this strategy may act (e.g. file a verification record only after the digest matched)"
           }
         }
       }

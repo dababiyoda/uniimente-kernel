@@ -38,6 +38,9 @@ BRIEF = re.compile(r"\b(brief|pull requests?|prs?|ci|checks?|failing|stale|state
                    r"what needs my (attention|decision))\b", re.I)
 GUARD = re.compile(r"\b(pins?|pinned|consisten\w*|drift|boundary package|guard)\b", re.I)
 NOTE = re.compile(r"\b(note|write down|remember)\b", re.I)
+SHA256 = re.compile(r"\b([0-9a-fA-F]{64})\b")
+WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{1,7})\s+words?\b", re.I)
+FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
 
 
@@ -96,8 +99,54 @@ def _proposal(spec: dict, origin: str, *, notes=(), questions=(), status="PROPOS
     return {"status": status, "spec": spec, "origin": origin, "notes": list(notes), "questions": list(questions)}
 
 
+def _readable_file(text: str, ctx: PlannerContext, origin: str):
+    """The one file a request names, if GREG may read it here; otherwise the question to ask."""
+    path = FILE_PATH.search(text)
+    if not path or ctx.workspace is None:
+        return None, {"status": "NEEDS_INPUT", "origin": origin,
+                      "questions": ["Which file? Give its full path, e.g. ~/src/downloads/tool.tar.gz"]}
+    file = Path(path.group(1).rstrip(".,;")).expanduser().resolve()
+    roots = [Path(r).expanduser().resolve() for r in ctx.read_roots]
+    if not any(file == r or r in file.parents for r in roots):
+        return None, {"status": "NEEDS_INPUT", "origin": origin,
+                      "questions": [f"GREG may only read under {', '.join(map(str, roots))}. Copy the file there, "
+                                    "or re-create the body with another --read-root."]}
+    if not file.is_file():
+        return None, {"status": "NEEDS_INPUT", "origin": origin, "questions": [f"{file} does not exist on this body."]}
+    return file, None
+
+
+def _words_route(text: str, ctx: PlannerContext, match) -> dict:
+    file, question = _readable_file(text, ctx, "template:word-limit")
+    if question:
+        return question
+    limit = int(match.group(2)) - (1 if match.group(1).lower() in ("under", "fewer than", "below") else 0)
+    spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace))
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:word-limit",
+                     notes=["GREG has no word-count capability yet: it will acquire and verify one (read-only)",
+                            "filing the record asks you first, and happens only within the limit"])
+
+
+def _verify_route(text: str, ctx: PlannerContext) -> dict:
+    digest = SHA256.search(text)
+    file, question = _readable_file(text, ctx, "template:verify-download")
+    if question:
+        return question
+    spec = templates.verify_download(file=file, sha256=digest.group(1), workspace_root=Path(ctx.workspace))
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:verify-download",
+                     notes=["GREG has no hashing capability yet: it will acquire and verify one (read-only) before "
+                            "it can check the digest", "filing the record asks you first, and happens only if the "
+                            "digest matches"])
+
+
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
     lowered = text.lower()
+    if SHA256.search(text):                 # a published digest: verification, never a repository brief
+        return _verify_route(text, ctx)
+    if (limit := WORD_LIMIT.search(text)) and FILE_PATH.search(text):
+        return _words_route(text, ctx, limit)
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

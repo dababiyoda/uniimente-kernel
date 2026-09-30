@@ -135,6 +135,17 @@ Chromebook is Alfonso's or that Alfonso was physically present. A real founder
 run and inspection are required before anyone reports an externally verified
 VEPMC increase. A fixture with a test key never counts.
 
+## After the first closure: the second node (N2), still without a model
+
+`greg path` now shows N2: a closure that needed a capability GREG did not have. Put a file you
+downloaded (with its published SHA-256) under `~/src`, then ask in the console:
+**"Verify ~/src/<file> against sha256 <the 64 hex characters>"**. GREG has no hashing
+capability, so it finds the installed `sha256sum`, checks it against a frozen oracle before
+using it, and verifies the file. Filing the verification record stops for your approval, and
+happens only if the digest matches. Interrupt it once with `kill -9` while it waits, approve,
+accept the result, then run `greg path` again. A second closure on an unrelated function, e.g.
+**"Confirm ~/src/<draft> is at most 1500 words"**, shows the acquisition is not a one-off.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

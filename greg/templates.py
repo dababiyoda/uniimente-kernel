@@ -6,6 +6,8 @@ light cone explicitly (capabilities, targets, ceiling, budget, horizon).
 """
 from __future__ import annotations
 
+import re
+
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -192,5 +194,82 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     }
 
 
+def verify_download(*, file: Path, sha256: str, workspace_root: Path, horizon_days: float = 2) -> dict:
+    """Verify a file against its published SHA-256, then file a record: the first no-model genesis mission.
+
+    GREG has no built-in hashing capability, so observing the digest opens a verified
+    CapabilityDeficit that Capability Genesis closes by acquiring an installed tool
+    (sha256sum/shasum/openssl), checked against a frozen oracle before it may attach
+    (read-only auto-attach is signed here). Filing the record is a write outside the
+    read-only cone, so it stops for founder approval, and it ``requires`` the digest check:
+    a file that does not match is never recorded as verified (developmental node N2).
+    """
+    digest = sha256.lower()
+    if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+        raise ValueError("sha256 must be 64 hex characters")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    mission_id = f"m:verify-{slug}"
+    record = Path(workspace_root) / mission_id.replace(":", "_") / f"{file.name}.sha256"
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"Verify {file} against SHA-256 {digest} and file a verification record.",
+        "intended_effect": "the file is proven to match its published digest, and a record is filed only if it does",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "digest_matches", "description": f"SHA-256 of {file.name} equals the published digest",
+             "sensor": {"function": "hash.sha256", "params": {"path": str(file)}, "target": f"fs:{file.name}"},
+             "predicate": {"op": "equals", "field": "sha256", "value": digest}},
+            {"check_id": "recorded", "description": "a verification record names the digest",
+             "sensor": {"capability": "fs.read", "params": {"path": str(record)}, "target": f"fs:{record.name}"},
+             "predicate": {"op": "contains", "field": "text", "value": digest}}],
+        "strategies": [{"action_id": "file-record", "capability": "fs.write",
+                        "params": {"relative_path": record.name, "content": f"{digest}  {file.name}\n"},
+                        "target": f"workspace:{record.name}", "advances": ["recorded"], "requires": ["digest_matches"],
+                        "rationale": "file the record only after the digest matched (outside the read-only cone: "
+                                     "asks Alfonso first)"}],
+        "light_cone": {"capabilities": ["fs.read", "acquired.hash.sha256.*"], "targets": ["fs:*", "workspace:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
+def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days: float = 2) -> dict:
+    """Confirm a draft is within a word limit, then file a record: a second, unrelated genesis function.
+
+    Word counting is not built in either; genesis acquires and verifies an installed tool
+    (wc). The record ``requires`` the limit check, so a draft over the limit is never
+    recorded as within it. Filing stops for founder approval (outside the read-only cone).
+    """
+    if not isinstance(max_words, int) or max_words < 1:
+        raise ValueError("max_words must be a positive integer")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    mission_id = f"m:words-{slug}"
+    record = Path(workspace_root) / mission_id.replace(":", "_") / f"{file.name}.words"
+    statement = f"{file.name}: at most {max_words} words"
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"Confirm {file} has at most {max_words} words and file a record.",
+        "intended_effect": "the draft is proven within the word limit, and a record is filed only if it is",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "within_limit", "description": f"{file.name} has at most {max_words} words",
+             "sensor": {"function": "text.wordcount", "params": {"path": str(file)}, "target": f"fs:{file.name}"},
+             "predicate": {"op": "lte", "field": "words", "value": max_words}},
+            {"check_id": "recorded", "description": "a record states the limit was met",
+             "sensor": {"capability": "fs.read", "params": {"path": str(record)}, "target": f"fs:{record.name}"},
+             "predicate": {"op": "contains", "field": "text", "value": statement}}],
+        "strategies": [{"action_id": "file-record", "capability": "fs.write",
+                        "params": {"relative_path": record.name, "content": statement + " (checked by GREG)\n"},
+                        "target": f"workspace:{record.name}", "advances": ["recorded"], "requires": ["within_limit"],
+                        "rationale": "file the record only after the count is within the limit (asks Alfonso first)"}],
+        "light_cone": {"capabilities": ["fs.read", "acquired.text.wordcount.*"], "targets": ["fs:*", "workspace:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
-             "engineering-brief": engineering_brief, "venture-assessment": venture_assessment}
+             "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
+             "verify-download": verify_download, "word-limit": word_limit}

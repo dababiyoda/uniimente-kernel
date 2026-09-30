@@ -99,7 +99,7 @@
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
       "founder_attention": "sign one mission and one capability contract",
-      "smallest_next_build": "a no-model mission template whose success needs a function no built-in provides and that still meets a real APPROVAL boundary; today N2 can start only through a model route or a hand-written mission. Never count an attach decision as the approval boundary: that would loosen the metric"
+      "smallest_next_build": "done agent-side: strategy preconditions (`requires`) and two no-model genesis missions (`verify-download`, `word-limit`), rehearsed on one body to N3 (tests/integration/test_greg_chromebook_rehearsal.py); remains: the founder's run on Body 1"
     },
     {
       "id": "N3",
@@ -403,7 +403,7 @@
       "intended_effect": "Form, acquire or repair the function a goal needs, verify it independently, and resume the original goal",
       "node": "N2",
       "feasibility": "CURRENTLY_BUILDABLE",
-      "current_reality": "INTEGRATION-TESTED (builder SDKs faked; one live Claude Code build recorded)",
+      "current_reality": "INTEGRATION-TESTED: installed-software acquisition for two unrelated functions reached from plain words without a model and rehearsed to VEPMC-counting closures; builder route faked in tests (one live Claude Code build recorded); not founder-used",
       "nearest_precursor": [
         "greg/genesis.py",
         "greg/builders.py",

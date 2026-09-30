@@ -188,9 +188,30 @@ def appraise(request: dict) -> dict:
                     findings.append(f"{e.payload['action_id']}: executed without a prior founder approval")
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
+
+        # 6. preconditions honored: a gated action ran only while every check it requires was
+        # last observed passing, and that observation's receipt satisfies the predicate
+        requires = {s["action_id"]: s.get("requires", []) for s in spec["strategies"]}
+        predicates = {c["check_id"]: c["predicate"] for c in spec["success_checks"]}
+        preconditions_ok = True
+        for e in journal.replay("mission.action"):
+            action = e.payload
+            if action["mission_id"] != mid or action["status"] != "DONE" or not requires.get(action["action_id"]):
+                continue
+            for check_id in requires[action["action_id"]]:
+                before = [o.payload for o in journal.replay("mission.observed") if o.payload["mission_id"] == mid
+                          and o.payload["check_id"] == check_id and seq[o.event_id] < seq[e.event_id]]
+                last = before[-1] if before else None
+                receipt = ledger.find(last["receipt"]) if last and last.get("receipt") else None
+                held = bool(last and last.get("passed") and receipt is not None and evaluate_predicate(
+                    predicates[check_id], receipt.payload["result"].get("output"))[0])
+                if not held:
+                    preconditions_ok = False
+                    findings.append(f"{action['action_id']}: ran before {check_id} was observed passing")
+        checks["preconditions_honored"] = preconditions_ok
         required = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
-                    "approval_boundaries_honored")
+                    "approval_boundaries_honored", "preconditions_honored")
         return _verdict(request, checks, findings, required=required)
     finally:
         ledger.close()

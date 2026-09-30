@@ -28,7 +28,9 @@ existing contracts/guards, and license/resource information is reviewable.
 | WMI current main | Deterministic/heuristic assessment, plus explicitly labeled simulated market code | No paid LLM calls discovered; preserve these checks instead of inserting an unnecessary model or claiming trained forecasting |
 | God's Eye tool | Optional paid HUD summaries and proprietary realtime WebRTC | Separate local HUD candidate; realtime voice needs a distinct STT → local model/tools → TTS integration |
 | RailScout | Only agent instructions and README on main | No executable model call to migrate yet |
-| Other historical/research organs | Not exhaustively migrated in this candidate | Apply this selection rule to each active call site; don't claim whole-project operational completion |
+| PumpStation main | Express/Mongoose with local MongoDB default; no paid AI calls in server source | No model rewrite needed; storage licensing and any blockchain/RPC costs remain separate |
+| RESEARCH-IN main | Research/community app plus Supabase endpoint configuration; no paid AI call found in inspected source | No model rewrite needed; database hosting is not provisioned by this candidate |
+| Historical branches/research variants | Not exhaustively migrated | Apply this selection rule to active call sites; do not claim whole-project operational completion |
 
 Sources are default branches inspected on this date, not every historical branch.
 The attached cloud environment failed; a separate MarcoPolo shell cloned public
@@ -142,7 +144,7 @@ make its configured backend free.
 | Zapier-style workflow tooling | Activepieces MIT community core | Researched; enterprise-only directories excluded |
 
 Nomic model reference: [nomic-embed-text-v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5).
-Check the exact downloaded weights' license independently from the inference
+The Nomic model card's Apache 2.0 license was also verified. Check the exact downloaded weights' license independently from the inference
 server's license. Keep model IDs/versions and notices with deployment artifacts.
 
 n8n was checked (206,325 stars) but uses Sustainable Use/enterprise terms, so it
@@ -197,3 +199,17 @@ or unacceptable quality/resource use. Owner: repository maintainers; Alfonso ret
 consequence authority. Attach by supplying the proposer to the existing runtime;
 detach by removing that binding. Revert provider configuration to offline
 template/hash without deleting ledgers, vectors, evidence or historical code.
+
+## Validation evidence
+
+Focused unique checks: Kernel 38, DALEOBANKS 44, God's Eye 14: **96 passed**.
+Python 3.11.16; Node 22.23.3 in the alternate workspace. God's Eye documents
+Node 24.14+ or 26 as supported; these focused Node tests do not establish a full
+supported-runtime build. Each candidate preserves commands and limits in
+tests/evidence/open-source-20260930/results.md (God's Eye: docs/LOCAL_AI_VALIDATION.md).
+
+The Kernel's first added integration fixture produced 37 passes and one failure:
+zero resource budget correctly hibernated. A positive ceiling corrected that
+test; zero token fees do not mean unlimited resource permission. This negative
+result remains in the branch history. No real model, microphone, GPU workload,
+Docker image, full default-branch suite or external business outcome was tested.

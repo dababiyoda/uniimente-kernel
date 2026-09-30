@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, compute, dataplane, improvement, metrics, models, sop, tribunal
+from greg import anchor, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -126,8 +126,9 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
 
 
 class Body:
-    def __init__(self, home: str | Path, *, clock=None, builder=None):
+    def __init__(self, home: str | Path, *, clock=None, builder=None, monotonic=None):
         self.layout = Layout(home)
+        self.monotonic = monotonic or time.monotonic   # excludes host sleep: presence.note_gap compares it
         if not self.layout.config.exists():
             raise BodyError("no body here; run `greg init` first")
         self.config = json.loads(self.layout.config.read_text())
@@ -395,6 +396,12 @@ class Body:
                   "platform": os.uname().sysname, "ledger_head_at_boot": self.ledger.head}
         if self.ledger.unacknowledged_tail:
             record["ledger_recovery"] = dict(self.ledger.unacknowledged_tail)
+        try:   # read before this process overwrites it: bounds the absence since the previous process
+            last = presence.previous_heartbeat(json.loads(self.layout.heartbeat.read_text()))
+        except (OSError, ValueError):
+            last = None
+        if last is not None:
+            record["previous_heartbeat"] = last
         self.journal.record("body.booted", record, key=boot_id)
         if unfinished:
             self.journal.record("body.recovered", {"boot_id": boot_id, "previous_unfinished_boots": unfinished,
@@ -482,10 +489,15 @@ class Body:
         try:
             self.boot()
             ticks = 0
+            last_seen = None
             while True:
                 if self.layout.stop_file.exists():
                     reason = "local STOP file"
                     break
+                seen = (self.clock(), self.monotonic())
+                if last_seen is not None:
+                    presence.note_gap(self.journal, self.boot_id, last_seen, seen)
+                last_seen = seen
                 result = self.tick()
                 if self.stop_requested:
                     reason = "founder BODY_STOP or signal"
@@ -494,6 +506,8 @@ class Body:
                 if ticks % telemetry_every == 1:
                     compute.record_telemetry(self.journal, self.layout.home)
                     compute.recommend(self.journal)
+                    presence.recommend(self.journal, now=self.clock(),
+                                       platform_hint="chromeos" if doctor.is_crostini() else None)
                 self._heartbeat("PAUSED" if result.get("paused") else "RUNNING", result.get("missions", []))
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
@@ -545,8 +559,13 @@ def morning_projection(home: str | Path) -> dict:
     """The morning report from a read-only view; works while the body runs."""
     from types import SimpleNamespace
     from greg.missions import MissionBook
+    layout = Layout(home)
+    try:
+        heartbeat = json.loads(layout.heartbeat.read_text())
+    except (OSError, ValueError):
+        heartbeat = None
     with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
-        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)))
+        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
 
 
 def status(home: str | Path) -> dict:
@@ -592,6 +611,8 @@ def status(home: str | Path) -> dict:
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
             "external_anchor": anchor.summary(journal),
+            "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
+                                         heartbeat=heartbeat),
         }
     finally:
         ledger.close()

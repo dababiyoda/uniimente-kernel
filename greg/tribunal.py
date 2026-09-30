@@ -38,7 +38,7 @@ def _window(journal: Journal):
     return (events[ids.index(start) + 1:] if start in ids else events), start
 
 
-def morning_report(journal: Journal, engine=None) -> dict:
+def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict | None = None) -> dict:
     events, previous = _window(journal)
     by = lambda kind: [e.payload for e in events if e.type == "greg." + kind]
     all_events = journal.replay()
@@ -82,9 +82,14 @@ def morning_report(journal: Journal, engine=None) -> dict:
         for mid, m in engine.book.missions.items():
             status[mid] = {"status": m.status, "paused": m.paused, "rung": m.rung, "blocker": m.blocker,
                            "next_observe_at": m.next_observe_at, "spent_usd": m.spent_usd}
+    from greg import presence
+    reviews = [e.payload for e in all_events if e.type == "greg.tribunal.reported"]
+    since = presence._t(reviews[-1]["at"]) if reviews and reviews[-1].get("at") else None
     report = {
         "reality_status": "RETAINED_EVIDENCE_PROJECTION",
         "window": {"after_event": previous, "events": len(events)},
+        # Asked first: a quiet night means nothing unless GREG was actually running.
+        "q0_was_i_present": presence.summary(journal, now=now or utcnow(), since=since, heartbeat=heartbeat),
         "q1_goals_worked_on": [{"mission_id": mid, "intended_effect": missions[mid]["intended_effect"],
                                  "state": status.get(mid)} for mid in touched],
         "q2_why": {mid: missions[mid]["founder_expression"][:300] for mid in touched},
@@ -121,7 +126,8 @@ def morning_report(journal: Journal, engine=None) -> dict:
                     "model_calls": 0, "verified_mission_closures": len(by("mission.achieved")),
                     "spend_usd": round(sum(a.get("cost_usd", 0.0) for a in done), 6)},
         "claims_not_made": ["no external business outcome", "no Mac verification unless recorded by the Mac package",
-                            "no model output treated as evidence"],
+                            "no model output treated as evidence",
+                            "no continuous operation beyond the presence measured in q0"],
     }
     from greg import metrics, routing
     report["single_bottleneck_metric"] = metrics.vepmc(journal)

@@ -6,15 +6,26 @@ or whether the person at the keyboard is Alfonso. It creates no body or key.
 """
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
 import platform
 import shutil
 import subprocess
 import sys
 
+# Present inside ChromeOS's Linux (Crostini) container; informational, never an identity claim.
+CROSTINI_MARKERS = ("/dev/.cros_milestone", "/opt/google/cros-containers")
+
+
+def is_crostini(markers=CROSTINI_MARKERS) -> bool:
+    return any(Path(marker).exists() for marker in markers)
+
 
 def chromebook() -> dict:
     checks = {
         "python_3_11": sys.version_info >= (3, 11),
+        # Debian in Crostini ships python3 without python3-venv; `python3 -m venv` then fails.
+        "python_venv_available": importlib.util.find_spec("ensurepip") is not None,
         "linux_runtime": platform.system() == "Linux",
         "git_available": shutil.which("git") is not None,
         "systemctl_available": shutil.which("systemctl") is not None,
@@ -31,6 +42,9 @@ def chromebook() -> dict:
     return {"route": "Linux user-service prerequisites for the Chromebook candidate",
             "ready_for_linux_service": not missing,
             "checks": checks, "missing": missing,
+            "crostini_detected": is_crostini(),
+            **({"fix": {"python_venv_available": "sudo apt install python3-venv"}}
+               if "python_venv_available" in missing else {}),
             "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",
                              "founder identity", "real mission outcome"],
             "next": ("follow greg/CHROMEBOOK_FIRST_MISSION.md on the actual Chromebook" if not missing else

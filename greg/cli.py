@@ -157,6 +157,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
+    pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
@@ -236,6 +238,18 @@ def main(argv=None) -> int:
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "presence":
+            from datetime import datetime, timezone
+            from greg import presence
+            now = datetime.now(timezone.utc)
+            try:
+                heartbeat = json.loads(Layout(home).heartbeat.read_text())
+            except (OSError, ValueError):
+                heartbeat = None
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                data = presence.summary(journal, now=now, since=now - timedelta(hours=args.hours),
+                                        heartbeat=heartbeat)
             print(json.dumps(data, indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,

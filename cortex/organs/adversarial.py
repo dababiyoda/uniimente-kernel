@@ -24,7 +24,8 @@ _INJECTION = re.compile(r"(ignore (all|previous|prior) instructions|system:|mark
 
 
 def verify(problem, geometry, results: list, *, proposed_disposition: str,
-           gate_reports: Mapping[str, Any] | None = None, ranking: Mapping[str, Any] | None = None) -> dict:
+           gate_reports: Mapping[str, Any] | None = None, ranking: Mapping[str, Any] | None = None,
+           protection: Any = None) -> dict:
     findings: list[dict] = []
 
     def add(severity, kind, detail, target=None):
@@ -97,6 +98,10 @@ def verify(problem, geometry, results: list, *, proposed_disposition: str,
         if geometry.epistemic_class in HUMAN_AUTHORITY_CLASSES:
             add("critical", "authority_boundary",
                 f"{geometry.epistemic_class} questions belong to legitimate human or institutional authority")
+    if protection is not None and getattr(protection, "relevant", False) and proposed_disposition == "recommend" \
+            and set(protection.required_actions) & {"immediate_protection", "safe_contact", "escalation"}:
+        add("critical", "victim_protection_boundary",
+            "protective actions are human-led; cognition may not recommend in their place")
     if ranking and ranking.get("chosen") and gate_reports:
         rep = gate_reports.get(ranking["chosen"])
         if rep is not None and not rep.all_pass:

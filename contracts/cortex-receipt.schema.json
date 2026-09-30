@@ -27,6 +27,7 @@
     "expenditure",
     "disposition",
     "truth",
+    "protection",
     "outcome_link",
     "authority_created",
     "execution_authority"
@@ -284,6 +285,72 @@
     },
     "execution_authority": {
       "const": "none"
+    },
+    "protection": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "relevant",
+            "required_actions",
+            "evidence_access",
+            "disclosure_controls",
+            "evidence_handling",
+            "human_led_actions"
+          ],
+          "properties": {
+            "relevant": {
+              "const": true
+            },
+            "required_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "containment",
+                  "evidence_preservation",
+                  "safe_contact",
+                  "escalation",
+                  "restitution",
+                  "recurrence_prevention"
+                ]
+              }
+            },
+            "evidence_access": {
+              "enum": [
+                "restricted",
+                "need_to_know",
+                "internal",
+                "unknown"
+              ]
+            },
+            "disclosure_controls": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "evidence_handling": {
+              "const": "receipt carries evidence identifiers and digests only, never content"
+            },
+            "human_led_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "safe_contact",
+                  "escalation"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

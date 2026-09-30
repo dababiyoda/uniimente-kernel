@@ -29,7 +29,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SUITES = {"smoke": HERE / "suites" / "smoke-v0.1.json", "dev": HERE / "suites" / "dev-v0.1.json",
           "heldout": HERE / "suites" / "heldout-v0.1.json"}
-MANIFEST = HERE / "freeze-v0.1.json"
+# One manifest per cortex version; earlier manifests and their results are kept.
+MANIFEST = HERE / f"freeze-v{CORTEX_VERSION}.json"
 FROZEN_CODE = ["cortex/evaluation/scoring.py", "cortex/evaluation/arms.py", "cortex/evaluation/generators.py",
                "cortex/evaluation/run.py", "cortex/routing.py", "cortex/gates.py", "cortex/genome.py",
                "cortex/contracts.py", "cortex/memory.py", "cortex/organs/formal.py",
@@ -126,7 +127,7 @@ def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
     client, reason = (None, None)
     if any(a in arm_names for a in ("always_llm", "llm_committee")):
         client, reason = A.model_client_or_reason(client_factory)
-    results = {"schema": "cortex-seed-results/0.1", "partition": partition,
+    results = {"schema": "cortex-seed-results/0.1", "partition": partition, "cortex_version": CORTEX_VERSION,
                "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                "freeze_manifest_sha256": _sha(MANIFEST) if manifest else None,
                "frozen_at": manifest.get("frozen_at") if manifest else None,

@@ -21,8 +21,8 @@ from typing import Any, Callable, Mapping
 
 from .contracts import (CLAIM_TYPE_TO_EPISTEMIC, CORTEX_VERSION, EPISTEMIC_CLASSES,
                         HUMAN_AUTHORITY_CLASSES, ConsequenceVector, CortexError, Expenditure,
-                        OrganResult, Problem, ProblemGeometry, ResourceLimits, consequence_rank,
-                        digest)
+                        OrganResult, Problem, ProblemGeometry, ResourceLimits, VictimProtection,
+                        consequence_rank, digest)
 from .gates import AuthorityRecord, Option, evaluate_gates, rank_after_gates
 from .genome import IntelligenceRegistry, seed_registry
 from .organs import adversarial
@@ -62,6 +62,8 @@ STATE_DISPOSITION = {
     "REQUIRES_HUMAN_AUTHORITY": "handoff",
 }
 _ORDER = ("recommend", "bounded_test", "handoff", "abstain")
+# Protective actions that are human-led by nature (build prompt item 8).
+HUMAN_LED_PROTECTION = ("immediate_protection", "safe_contact", "escalation")
 
 
 def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
@@ -207,6 +209,7 @@ class Cortex:
                 return self._malformed(problem, str(exc), started)
         try:
             geometry = derive_geometry(problem, proposer=proposer)
+            protection = VictimProtection.from_dict(problem.payload.get("victim_protection"))
         except CortexError as exc:
             return self._malformed(problem.to_dict(), str(exc), started)
 
@@ -272,8 +275,15 @@ class Cortex:
 
         state, disposition, reason, next_step = self._dispose(
             geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options)
+        if protection.relevant and set(protection.required_actions) & set(HUMAN_LED_PROTECTION):
+            human_led = [a for a in protection.required_actions if a in HUMAN_LED_PROTECTION]
+            if disposition != "handoff":
+                disposition = "handoff"
+                reason = f"victim protection requires human-led action {human_led}; {reason}"
+            next_step = (f"human-led protective response ({', '.join(protection.required_actions)}); "
+                         f"evidence access {protection.evidence_access}")
         verifier = adversarial.verify(problem, geometry, results, proposed_disposition=disposition,
-                                      gate_reports=gate_reports, ranking=ranking)
+                                      gate_reports=gate_reports, ranking=ranking, protection=protection)
         if verifier["blocking"] and disposition == "recommend":
             kinds = {f["kind"] for f in verifier["findings"] if f["severity"] == "critical"}
             disposition = "handoff" if kinds & {"authority_boundary", "consequence_boundary"} else "abstain"
@@ -281,7 +291,7 @@ class Cortex:
             next_step = "resolve the findings before relying on this result"
         spent = spent.plus(Expenditure(seconds=time.perf_counter() - started - spent.seconds))
         return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
-                             gate_reports, ranking, state, disposition, reason, next_step, spent)
+                             gate_reports, ranking, state, disposition, reason, next_step, spent, protection)
 
     # ------------------------------------------------------------------ disposition
     def _dispose(self, geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options):
@@ -370,7 +380,7 @@ class Cortex:
                 "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"}
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
-                 ranking, state, disposition, reason, next_step, spent) -> dict:
+                 ranking, state, disposition, reason, next_step, spent, protection=None) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -413,6 +423,10 @@ class Cortex:
             "expenditure": spent.to_dict(),
             "disposition": {"kind": disposition, "reason": reason, "next_step": next_step},
             "truth": self._truth(results),
+            "protection": None if protection is None or not protection.relevant else {
+                **protection.to_dict(),
+                "evidence_handling": "receipt carries evidence identifiers and digests only, never content",
+                "human_led_actions": [a for a in protection.required_actions if a in HUMAN_LED_PROTECTION]},
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
                              "memory_keys": [f"{k}|{geometry.epistemic_class}" for k in selected]},
             "authority_created": False,
@@ -449,6 +463,7 @@ class Cortex:
             "truth": {"formal_validity": "not_applicable", "empirical_validity": "unknown",
                       "legitimate_authority": "not_granted_by_cortex",
                       "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"},
+            "protection": None,
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None, "memory_keys": []},
             "authority_created": False, "execution_authority": "none",
         }

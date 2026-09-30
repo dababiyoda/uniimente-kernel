@@ -126,6 +126,66 @@ class TestAuthorityBoundary:
         assert r["disposition"]["kind"] in ("recommend", "abstain", "handoff", "bounded_test")
 
 
+# ------------------------------------------------------------------ victim protection (item 8)
+PROTECTION = {"relevant": True, "required_actions": ["immediate_protection", "evidence_preservation", "escalation"],
+              "evidence_access": "need_to_know", "disclosure_controls": ["no public disclosure without consent"]}
+
+
+def protected(problem, protection=PROTECTION):
+    problem = copy.deepcopy(problem)
+    problem["payload"]["victim_protection"] = copy.deepcopy(protection)
+    return problem
+
+
+class TestVictimProtection:
+    @needs_z3
+    def test_human_led_protection_hands_off_even_when_the_proof_holds(self):
+        base = cortex().run(formal_problem())
+        r = cortex().run(protected(formal_problem()))
+        validate(r, "cortex-receipt")
+        assert base["disposition"]["kind"] == "recommend" and base["protection"] is None
+        assert r["truth"]["formal_validity"] == "valid_given_encoding"
+        assert r["disposition"]["kind"] == "handoff"
+        assert r["disposition"]["next_step"].startswith("human-led protective response")
+        assert r["protection"]["human_led_actions"] == ["immediate_protection", "escalation"]
+        assert r["protection"]["evidence_access"] == "need_to_know"
+        assert r["authority_created"] is False and r["execution_authority"] == "none"
+
+    def test_receipt_never_carries_evidence_content(self):
+        secret = "witness statement: private detail 7731"
+        r = cortex().run(protected({"problem_id": "vp", "question": "q", "payload": {
+            "claim": {"id": "C", "type": "factual_support", "statement": "incident occurred"},
+            "evidence": [{"id": "E1", "kind": "document", "text": secret, "stance": "supports",
+                          "observed_at": "2026-09-01"}]}}))
+        validate(r, "cortex-receipt")
+        assert secret not in json.dumps(r)
+        assert "E1" in r["inputs"]["evidence_refs"]
+
+    @pytest.mark.parametrize("access", ["internal", "unknown"])
+    def test_preserved_evidence_requires_restricted_access(self, access):
+        r = cortex().run(protected(formal_problem(), {**PROTECTION, "evidence_access": access}))
+        validate(r, "cortex-receipt")
+        assert r["disposition"]["kind"] == "abstain" and r["output"]["state"] == "MALFORMED_INPUT"
+        assert r["route"]["selected"] == []
+
+    def test_containment_only_is_not_forced_to_hand_off(self):
+        v = cortex().run(protected(formal_problem(), {"relevant": True, "required_actions": ["containment"],
+                                                      "evidence_access": "restricted"}))
+        assert v["protection"]["human_led_actions"] == []
+        assert "human-led" not in v["disposition"]["reason"]
+
+    def test_verifier_independently_blocks_recommend_in_place_of_protection(self):
+        from cortex.contracts import VictimProtection
+        from cortex.organs import adversarial
+        p = Problem.from_dict(formal_problem())
+        v = adversarial.verify(p, derive_geometry(p), [], proposed_disposition="recommend",
+                               protection=VictimProtection.from_dict(PROTECTION))
+        assert v["blocking"] and any(f["kind"] == "victim_protection_boundary" for f in v["findings"])
+        quiet = adversarial.verify(p, derive_geometry(p), [], proposed_disposition="handoff",
+                                   protection=VictimProtection.from_dict(PROTECTION))
+        assert not any(f["kind"] == "victim_protection_boundary" for f in quiet["findings"])
+
+
 # ------------------------------------------------------------------ geometry
 class TestGeometry:
     def test_semantic_proposals_need_structural_support(self):

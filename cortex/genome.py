@@ -254,7 +254,8 @@ def _profile(key: str, *, role: str, layer: str, geometries: tuple, proofs: tupl
              contraindications: tuple = (), abstain: tuple = ("required input absent",),
              failures: tuple = ("mechanism unavailable",), lineage: tuple = (),
              bio: Mapping[str, Any] | None = None, cost: float = 0.0, latency: float = 30.0,
-             inputs: Mapping | None = None, outputs: Mapping | None = None) -> CognitiveProfile:
+             inputs: Mapping | None = None, outputs: Mapping | None = None,
+             benchmarks: tuple = ()) -> CognitiveProfile:
     return CognitiveProfile(
         role=role, layer=layer, supported_geometries=geometries,
         input_contract=inputs or {"problem": "cortex-problem-geometry"},
@@ -266,7 +267,7 @@ def _profile(key: str, *, role: str, layer: str, geometries: tuple, proofs: tupl
         cognitive_light_cone={"observes": list(observations), "modifies": [],
                               "max_informed_consequence": ceiling, "horizon": "single problem"},
         authority_ref=key, contraindications=contraindications, abstention_conditions=abstain,
-        failure_modes=failures, lineage=lineage, benchmark_history=(),
+        failure_modes=failures, lineage=lineage, benchmark_history=tuple(benchmarks),
         failure_diversity_key=diversity, shared_dependencies=deps, lifecycle=lifecycle,
         enabled=enabled, biological_concept=bio,
     )
@@ -286,7 +287,8 @@ SEED_ORGANS = {
         enabled=True, abstain=("no sources", "model unavailable", "no claim survives source check"),
         failures=("hallucinated quote", "prompt injection in sources", "model outage"),
         lineage=("egregore/local_model.py", "docs/OPEN_SOURCE_STACK.md"),
-        acceptance=["every returned claim quotes an exact span of a cited source"]),
+        acceptance=["every returned claim quotes an exact span of a cited source"],
+        benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.estimation.fermi": dict(
         description="Explicit decomposition with units, ranges, dependencies, sensitivity.",
         role="solver", layer="solver_macro_cognitive", geometries=("estimate",),
@@ -297,7 +299,8 @@ SEED_ORGANS = {
         diversity="monte_carlo_decomposition", deps=("python-stdlib",), lifecycle="SANDBOXED",
         enabled=True, abstain=("dimension mismatch", "malformed dependency matrix"),
         failures=("anchored ranges", "missing driver", "wrong independence assumption"),
-        acceptance=["result unit equals the declared target unit"]),
+        acceptance=["result unit equals the declared target unit"],
+        benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.formal.z3": dict(
         description="Formal feasibility and entailment on an inspectable model via Z3.",
         role="solver", layer="solver_macro_cognitive",
@@ -310,7 +313,8 @@ SEED_ORGANS = {
         diversity="smt", deps=("solver:z3",), lifecycle="SANDBOXED", enabled=True,
         abstain=("formalization incomplete", "solver unavailable", "timeout"),
         failures=("unfaithful encoding", "unverified premises", "solver outage"),
-        acceptance=["SAT/UNSAT agrees with requester witnesses; UNSAT carries a core"]),
+        acceptance=["SAT/UNSAT agrees with requester witnesses; UNSAT carries a core"],
+        benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.evidence_causal": dict(
         description="Evidence assessment and gated causal estimation.",
         role="solver", layer="solver_macro_cognitive",
@@ -324,7 +328,8 @@ SEED_ORGANS = {
         diversity="evidence_rules_and_adjustment", deps=("python-stdlib",), lifecycle="SANDBOXED",
         enabled=True, abstain=("not identified", "insufficient evidence", "contested"),
         failures=("unmeasured confounding", "stale evidence", "model output as evidence"),
-        acceptance=["no causal estimate without estimand, assumptions, data, adjustment, method"]),
+        acceptance=["no causal estimate without estimand, assumptions, data, adjustment, method"],
+        benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.verifier.adversarial": dict(
         description="Rule-based adversarial verification of artifacts and evidence.",
         role="verifier", layer="meta_polyintelligence_cortex", geometries=EPISTEMIC_CLASSES,
@@ -334,7 +339,8 @@ SEED_ORGANS = {
         evidence=("the artifact under attack",), ceiling="external_contact",
         diversity="rule_based_attack", deps=("python-stdlib",), lifecycle="SANDBOXED", enabled=True,
         abstain=("artifact missing",), failures=("rule blind spot",),
-        acceptance=["a critical finding always blocks recommend"]),
+        acceptance=["a critical finding always blocks recommend"],
+        benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
 }
 
 _BIO = lambda mech, state, iface, loop, measure, test, fail: {  # noqa: E731

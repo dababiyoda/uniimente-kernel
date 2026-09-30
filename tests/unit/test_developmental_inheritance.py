@@ -41,10 +41,10 @@ FOUNDER_HORIZONS = [
     "multiple physical computing bodies", "sensors", "actuators", "future robotics or physical capabilities",
     "future technologies not currently known",
 ]
-# Every kernel PR open when this session began (2026-09-30), verified via the GitHub API.
-OPEN_KERNEL_PRS = {63, 64, 66, 68, 70, 71, 72, 73, 76, 77, 78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101,
-                   102, 105, 108, 109, 110, 111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129,
-                   130, 131, 132, 133, 134}
+# All open Kernel PRs in the named API snapshot. The old hardcoded 50-item
+# subset omitted older lineages; this is snapshot coverage, not a live API claim.
+LINEAGE_AUDIT = ROOT / "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+OPEN_KERNEL_PRS = {pr["number"] for pr in json.loads(LINEAGE_AUDIT.read_text())["prs"]}
 # The founder's worked example: a Mac-first lineage after the Chromebook correction.
 FOUNDER_MAC_EXAMPLE = {
     "mac.first_body_assumption": {"SUPERSEDED_IMPLEMENTATION_ASSUMPTION"},
@@ -166,7 +166,7 @@ def test_evidence_without_refs_is_unresolved_and_later_horizons_name_prerequisit
         devpath.validate(bad)
 
 
-def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path, monkeypatch):
+def test_structural_closures_cannot_advance_the_external_primary_gate(tmp_path, monkeypatch):
     home, *_ = make_body(tmp_path)
     with Body(home) as body:
         journal = body.journal
@@ -178,7 +178,10 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
                    "missions": [{"mission_id": "m:brief", "counts": True, "missing": []}]}
         monkeypatch.setattr(metrics, "vepmc", lambda j: counted)
         where = devpath.position(journal)
-        assert where["active"]["id"] == "N2" and where["achieved"] == ["N0", "N1"]
+        assert where["active"]["id"] == "N1" and where["achieved"] == ["N0"]
+        assert where["active"]["measurement"]["structurally_met"]
+        assert not where["active"]["measurement"]["met"]
+        assert "external" in where["active"]["measurement"]["blocker"]
 
         # A deficit resolved by a BUILTIN, or after the closure, is not a novel-capability closure.
         journal.record("deficit.opened", {"deficit_id": "d1", "mission_id": "m:brief", "function": "f"}, key="d1")
@@ -188,7 +191,8 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
         journal.record("deficit.opened", {"deficit_id": "d2", "mission_id": "m:brief", "function": "g"}, key="d2")
         journal.record("deficit.resolved", {"deficit_id": "d2", "capability_id": "built:late", "mission_id": "m:brief"},
                        key=["d2", "resolved"])
-        assert devpath.position(journal)["active"]["id"] == "N2"
+        assert devpath.position(journal)["active"]["id"] == "N1"
+        assert not devpath.genesis_closure(journal)["structurally_met"]
 
         counted["missions"].append({"mission_id": "m:genesis", "counts": True, "missing": []})
         journal.record("deficit.opened", {"deficit_id": "d3", "mission_id": "m:genesis", "function": "h"}, key="d3")
@@ -196,8 +200,14 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
                        key=["d3", "resolved"])
         journal.record("mission.achieved", {"mission_id": "m:genesis"}, key=["m:genesis", "achieved"])
         where = devpath.position(journal)
-        assert where["achieved"] == ["N0", "N1", "N2"] and where["active"]["id"] == "N3"
-        assert where["active"]["measurement"]["not_yet_measurable"]          # never counted as passed
+        assert where["achieved"] == ["N0"] and where["active"]["id"] == "N1"
+        novel = devpath.genesis_closure(journal)
+        assert novel["structurally_met"] and not novel["met"]
+        assert novel["closures"] == [{"mission_id": "m:genesis", "capability_id": "built:abc"}]
+        # Neither an erased warning nor a model-supplied verification flag supplies external evidence.
+        counted["external_confirmation_required"] = ""
+        counted["externally_verified"] = True
+        assert devpath.position(journal)["active"]["id"] == "N1"
 
 
 def test_an_availability_decision_opens_a_pull_forward_seam_without_changing_the_primary_node(tmp_path):

@@ -25,7 +25,8 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from events.spine import EventSpine
-from greg.capabilities import BUILTINS, InvocationContext
+from greg.authority import AuthorityOffice
+from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.missions import evaluate_predicate
@@ -50,6 +51,68 @@ def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
     return keys
 
 
+def _invocation_receipt_bound(ledger, journal, receipt, invocation, *, mission_id, command_digest,
+                              closure_seq, since_seq, observation=True, claimed_scope=None,
+                              claimed_capability=None) -> bool:
+    """Match a receipt to the exact signed invocation via existing Gate lineage.
+
+    Hash-chain integrity alone does not make an unrelated receipt evidence for
+    this check. No signer secret enters the appraiser; the reviewed Gate's
+    retained scope, witness and dispatch must agree on the invocation.
+    """
+    data = receipt.payload
+    witnesses = [r for r in ledger.by_type("witness")
+                 if r.seq < closure_seq and r.payload.get("witness_id") == data.get("witness_id")]
+    dispatches = [r for r in ledger.by_type("grant_dispatch")
+                  if r.seq < closure_seq and r.payload.get("grant_id") == data.get("grant_id")]
+    grants = [r for r in ledger.by_type("event")
+              if r.seq < closure_seq and r.payload.get("type") == "greg.authority.grant_issued"
+              and r.payload.get("grant_id") == data.get("grant_id")]
+    if not (len(witnesses) == len(dispatches) == len(grants) == 1):
+        return False
+    witness, dispatch, grant = witnesses[0], dispatches[0], grants[0]
+    wd, dd, gd = witness.payload, dispatch.payload, grant.payload
+    cid = wd.get("capability")
+    manifest = BUILTINS[cid][0] if cid in BUILTINS else None
+    if manifest is None:
+        registrations = [e for e in journal.replay("capability.registered")
+                         if e.payload.get("manifest", {}).get("capability_id") == cid
+                         and next(r.seq for r in ledger.by_type("event")
+                                  if r.payload.get("event_id") == e.event_id) < witness.seq]
+        if registrations:
+            manifest = CapabilityManifest.from_dict(registrations[-1].payload["manifest"])
+    if manifest is None or (observation and manifest.consequence_class != "read_only"):
+        return False
+    if invocation.get("capability") != cid and not (invocation.get("capability") is None
+                                                    and invocation.get("function") == manifest.function):
+        return False
+    target, params = invocation["target"], invocation.get("params", {})
+    scope = AuthorityOffice.scope_digest(mission_id=mission_id, capability_id=cid, params=params,
+                                         target=target, consequence_class=manifest.consequence_class,
+                                         cost_usd=float(invocation.get("cost_usd", 0.0)))
+    payload = {"capability": cid, "params": params, "manifest_digest": manifest.digest()}
+    proposal_dispatches = [r for r in ledger.by_type("grant_dispatch")
+                          if r.seq < closure_seq and r.payload.get("proposal_id") == dd.get("proposal_id")]
+    granted_receipts = [r for r in ledger.by_type("receipt")
+                        if r.seq < closure_seq and r.payload.get("grant_id") == data.get("grant_id")]
+    return (grant.seq < witness.seq < dispatch.seq < receipt.seq
+            and since_seq < dispatch.seq
+            and len(proposal_dispatches) == len(granted_receipts) == 1
+            and (claimed_scope is None or claimed_scope == scope)
+            and (claimed_capability is None or claimed_capability == cid)
+            and wd.get("grant_id") == data.get("grant_id")
+            and dd.get("witness_id") == data.get("witness_id")
+            and dd.get("proposal_id") == gd.get("proposal_id")
+            and gd.get("scope_digest") == scope and gd.get("authority_ref") == command_digest
+            and wd.get("target") == target and wd.get("action_class") == "greg." + cid
+            and wd.get("payload_hash") == sha256_json(payload)
+            and dd.get("effect_digest") == sha256_json({"payload": payload, "target": target,
+                                                        "action_class": "greg." + cid})
+            and wd.get("expected_outcome") == ("observation captured" if observation else
+                                               invocation.get("expected_outcome", "strategy executed"))
+            and command_digest in wd.get("evidence_refs", []))
+
+
 def appraise(request: dict) -> dict:
     ledger = EvidenceLedger(request["constitution"], request["ledger"], read_only=True,
                             expected_head=request["head"], tail="ignore")
@@ -68,9 +131,15 @@ def appraise(request: dict) -> dict:
             achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
         checks["registered_once"] = len(registered) == 1
         checks["achieved_claimed"] = len(achieved) == 1
-        if not (registered and achieved):
-            return _verdict(request, checks, ["mission not registered or not claimed achieved"])
+        if not (checks["registered_once"] and checks["achieved_claimed"]):
+            return _verdict(request, checks, ["mission requires exactly one registration and selected closure"])
         spec, digest = registered[0].payload["spec"], registered[0].payload["command_digest"]
+        registered_seq, achieved_seq = seq[registered[0].event_id], seq[achieved[0].event_id]
+        expected_kind = "infinite" if request.get("closure_event") else "bounded"
+        checks["closure_matches_signed_rule"] = (spec["closure"]["kind"] == expected_kind
+                                                 and registered_seq < achieved_seq)
+        if not checks["closure_matches_signed_rule"]:
+            return _verdict(request, checks, ["selected closure does not match the signed mission closure rule"])
 
         # 1. founder signature, re-verified independently of the body's acceptance
         accepted = [e.payload for e in journal.replay("command.accepted") if e.payload["digest"] == digest]
@@ -92,22 +161,48 @@ def appraise(request: dict) -> dict:
         checks["arrived_via_inbox"] = bool(accepted) and accepted[0].get("channel") == "inbox"
 
         # 2. success checks re-derived from receipt bytes
-        achieved_seq = seq[achieved[0].event_id]
+        # Holds exist only at the highest rung; earlier setpoints are not
+        # closures. A ladder may intentionally leave other declared checks
+        # inactive, so derive its cumulative required set from the signed spec.
+        ladder = spec["closure"].get("ladder") or []
+        wanted = set().union(*ladder) if expected_kind == "infinite" and ladder else {
+            c["check_id"] for c in spec["success_checks"]}
+        required_checks = [c for c in spec["success_checks"] if c["check_id"] in wanted]
+        previous_holds = [seq[e.event_id] for e in journal.replay("mission.held")
+                          if e.payload["mission_id"] == mid and seq[e.event_id] < achieved_seq]
+        since = max([registered_seq, *previous_holds]) if expected_kind == "infinite" else registered_seq
+        completed = [e for e in journal.replay("mission.action")
+                     if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
+                     and since < seq[e.event_id] < achieved_seq]
+        if expected_kind == "infinite" and not completed:
+            checks["closure_matches_signed_rule"] = False
+            findings.append("standing closure requires a new completed action since its previous hold")
+        after = max([since, *(seq[e.event_id] for e in completed)])
         observations = [e for e in journal.replay("mission.observed")
-                        if e.payload["mission_id"] == mid and seq[e.event_id] < achieved_seq]
-        rederived, reobserved = True, True
-        for check in spec["success_checks"]:
-            latest = [o.payload for o in observations if o.payload["check_id"] == check["check_id"]]
+                        if e.payload["mission_id"] == mid and after < seq[e.event_id] < achieved_seq]
+        evidence = achieved[0].payload.get("evidence", [])
+        rederived, reobserved, bound = True, True, bool(required_checks)
+        for check in required_checks:
+            latest = [o for o in observations if o.payload["check_id"] == check["check_id"]]
             if not latest:
-                continue  # checks outside the achieved rung are not required for this closure
-            last = latest[-1]
+                rederived, reobserved, bound = False, False, False
+                findings.append(f"{check['check_id']}: no fresh observation for selected closure")
+                continue
+            observation = latest[-1]
+            last = observation.payload
             receipt = ledger.find(last["receipt"]) if last.get("receipt") else None
             if receipt is None or receipt.record_type != "receipt":
-                rederived = False
+                rederived, bound = False, False
                 findings.append(f"{check['check_id']}: no retained receipt")
                 continue
+            if (receipt.hash not in evidence or not after < receipt.seq < seq[observation.event_id]
+                    or not _invocation_receipt_bound(ledger, journal, receipt, check["sensor"],
+                                                    mission_id=mid, command_digest=digest,
+                                                    closure_seq=achieved_seq, since_seq=after)):
+                bound = False
+                findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
             passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
-            if not passed:
+            if not passed or receipt.payload["result"].get("result_class") != "positive":
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes do not satisfy predicate ({detail})")
             # 3. re-observe the world now where a reviewed read-only sensor exists
@@ -133,15 +228,31 @@ def appraise(request: dict) -> dict:
                     findings.append(f"{check['check_id']}: world no longer matches ({now_detail})")
         checks["checks_rederived_from_receipts"] = rederived
         checks["world_reobserved"] = reobserved
+        checks["closure_evidence_bound"] = bound
 
         # 4. exactly-once consequences
-        actions = [e.payload for e in journal.replay("mission.action")
-                   if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"]
+        action_events = [e for e in journal.replay("mission.action")
+                         if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
+                         and registered_seq < seq[e.event_id] < achieved_seq]
+        actions = [e.payload for e in action_events]
         receipts = [a["receipt"] for a in actions if a.get("receipt")]
-        dispatch = {}
-        for r in ledger.by_type("grant_dispatch"):
-            dispatch[r.payload["proposal_id"]] = dispatch.get(r.payload["proposal_id"], 0) + 1
-        checks["exactly_once"] = len(receipts) == len(set(receipts)) and all(n == 1 for n in dispatch.values())
+        once = len(receipts) == len(actions) == len(set(receipts))
+        for event in action_events:
+            action = event.payload
+            receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
+            strategy = next((s for s in spec["strategies"] if s["action_id"] == action["action_id"]), None)
+            if (receipt is None or receipt.record_type != "receipt" or strategy is None
+                    or action.get("scope_digest") is None or action.get("capability") is None
+                    or not registered_seq < receipt.seq < seq[event.event_id]
+                    or receipt.payload.get("result", {}).get("result_class") != "positive"
+                    or not _invocation_receipt_bound(ledger, journal, receipt, strategy, mission_id=mid,
+                                                    command_digest=digest, closure_seq=achieved_seq,
+                                                    since_seq=since if seq[event.event_id] > since else registered_seq,
+                                                    observation=False, claimed_scope=action["scope_digest"],
+                                                    claimed_capability=action["capability"])):
+                once = False
+                findings.append(f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
+        checks["exactly_once"] = once
         if not checks["exactly_once"]:
             findings.append("duplicate receipt or dispatch claim")
 
@@ -172,15 +283,18 @@ def appraise(request: dict) -> dict:
         checks["deliveries_bound_to_evidence"] = delivered_ok
 
         # 5. approval boundaries honored
-        answered = {e.payload["request_id"]: (e.payload, seq[e.event_id]) for e in journal.replay("decision.answered")}
+        answered = {e.payload["request_id"]: (e.payload, seq[e.event_id]) for e in journal.replay("decision.answered")
+                    if registered_seq < seq[e.event_id] < achieved_seq}
         approvals_ok, approvals_seen = True, 0
         for req in journal.replay("decision.requested"):
             data = req.payload
-            if data.get("mission_id") != mid or data["kind"] != "APPROVAL":
+            if (data.get("mission_id") != mid or data["kind"] != "APPROVAL"
+                    or not registered_seq < seq[req.event_id] < achieved_seq):
                 continue
             approvals_seen += 1
             executed = [e for e in journal.replay("mission.action") if e.payload["mission_id"] == mid
-                        and e.payload.get("scope_digest") == data["scope_digest"] and e.payload["status"] == "DONE"]
+                        and e.payload.get("scope_digest") == data["scope_digest"] and e.payload["status"] == "DONE"
+                        and registered_seq < seq[e.event_id] < achieved_seq]
             for e in executed:
                 ans = answered.get(data["request_id"])
                 if ans is None or ans[0]["answer"] != "approve" or ans[1] > seq[e.event_id]:
@@ -188,7 +302,8 @@ def appraise(request: dict) -> dict:
                     findings.append(f"{e.payload['action_id']}: executed without a prior founder approval")
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
-        required = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
+        required = ("chain_intact", "registered_once", "achieved_claimed", "closure_matches_signed_rule",
+                    "founder_signature_verified", "closure_evidence_bound", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
                     "approval_boundaries_honored")
         return _verdict(request, checks, findings, required=required)

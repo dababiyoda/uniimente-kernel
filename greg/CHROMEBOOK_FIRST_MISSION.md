@@ -36,7 +36,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
 mkdir -p ~/src && cd ~/src
-git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+git clone -b codex/greg-vepmc-proof-integrity-20260930 https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
 ```
 
@@ -44,15 +44,25 @@ cd uniimente-kernel && bash greg/chromebook/install.sh
 venv, writes a `greg` command to `~/.local/bin`, runs the doctor, creates the
 body, creates your key (you type the passphrase; the script never sees it),
 enrolls it, enables `greg-body.service`, and asks you to sign the designation of
-this machine as your first body. Re-running it changes nothing that is already
-done. Then skip to step 2. The manual steps below do the same thing by hand.
+this machine as your first body. Re-running preserves your body, keys, enrollment
+and accepted designation. It rewrites the command wrapper and default service
+configuration; review any customized service before rerunning. Then skip to step
+2. The manual steps below do the same thing by hand.
+
+The installer derives the public key from your actual signing key and checks it
+against any companion `.pub` file and the body's current enrollment. A mismatch
+stops before service installation or designation; it keeps existing keys and
+enrollment intact. To inspect your public key locally, use
+`greg founder public --key ~/.greg-founder.pem` (GREG asks for the passphrase).
+After an authorized key rotation, use the newly enrolled key. An enabled service
+and a queued designation are setup states; inspect `greg status` before a mission.
 
 **Manual install (equivalent):**
 
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
+git checkout codex/greg-vepmc-proof-integrity-20260930    # proof repairs stacked on #137; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 alias greg='~/.uniimente/venv/bin/python -m greg'
@@ -165,3 +175,5 @@ To stop: `greg stop --local`, then
 
 The original Mac instructions are retained in [`FIRST_MISSION.md`](FIRST_MISSION.md)
 for other environments and historical evidence; no Mac is required here.
+
+`greg vepmc` retains `VEPMC` as a compatibility alias for `structural_candidate_count`, labelled `STRUCTURAL_CANDIDATE`. It is not an externally verified closure count. `greg path` stays at N1 even when the rehearsal satisfies all nine ledger checks. Actual founder/body verification still needs appraisal outside this projection; no authenticated import of that external result is implemented yet. This does not stop the signed mission runtime or delete later capability nodes.

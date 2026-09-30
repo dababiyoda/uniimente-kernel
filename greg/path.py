@@ -6,7 +6,8 @@ INHERITANCE). Every founder-intended capability horizon stays on it at the node 
 it becomes buildable, classified by present feasibility, never claimed as present.
 
 Exactly one node is operationally primary: the first whose exit evidence does not
-hold. Exit evidence comes from the body's ledger where a predicate exists; a node
+hold. A ledger predicate reports structural evidence, not external founder/body verification.
+Exit evidence comes from the body's ledger where a predicate exists; a node
 without a predicate is never counted as passed, however much code exists for it.
 Repository-attested nodes (N0) are labeled as such. Nothing here writes history,
 grants authority or changes the destination.
@@ -84,7 +85,13 @@ def vepmc_at_least_one(journal: Journal) -> dict:
     result = metrics.vepmc(journal)
     rows = result["missions"]
     best = min(rows, key=lambda r: len(r["missing"])) if rows else None
-    return {"met": result["VEPMC"] >= 1, "value": result["VEPMC"],
+    # Even all nine ledger conditions cannot prove whose body/key this is.
+    # There is currently no authenticated external-verification contract here.
+    # Keep the candidate useful without inventing an authority-bearing flag.
+    return {"met": False, "value": result["VEPMC"],
+            "structurally_met": result["VEPMC"] >= 1,
+            "evidence_level": "STRUCTURAL_CANDIDATE",
+            "blocker": "external founder/body verification is not represented by this ledger predicate",
             "closest_closure": ({"mission_id": best["mission_id"], "missing": best["missing"]} if best else None),
             "external_confirmation_required": result["external_confirmation_required"]}
 
@@ -105,7 +112,10 @@ def genesis_closure(journal: Journal) -> dict:
                 and seq[event.event_id] < achieved.get(mid, -1)):
             closures.append({"mission_id": mid, "capability_id": data["capability_id"]})
     functions = {c["capability_id"] for c in closures}
-    return {"met": bool(closures), "value": len(closures), "closures": closures,
+    return {"met": False, "structurally_met": bool(closures),
+            "evidence_level": "STRUCTURAL_CANDIDATE",
+            "blocker": "novel capability requires an externally verified embodied mission closure",
+            "value": len(closures), "closures": closures,
             "distinct_capabilities": len(functions),
             "generality": "unproven until a second closure on an unrelated function"}
 

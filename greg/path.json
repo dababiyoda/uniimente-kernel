@@ -68,7 +68,7 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
-      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row and greg path moving to N2); only the founder's run remains",
+      "smallest_next_build": "Run the signed first-body mission and preserve actual device/identity/outcome evidence for founder appraisal. The rehearsal produces a structural candidate; authenticated external-verification ingestion is not implemented, so greg path stays at N1.",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
       "founder_attention": "about one hour on the Chromebook, once"

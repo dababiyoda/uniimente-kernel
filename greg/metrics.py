@@ -65,5 +65,9 @@ def vepmc(journal: Journal) -> dict:
         rows.append({"mission_id": mid, "closure_event_id": event.event_id, **row,
                      "counts": all(row[c] for c in CONDITIONS),
                      "missing": [c for c in CONDITIONS if not row[c]]})
-    return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
+    candidates = sum(r["counts"] for r in rows)
+    return {"VEPMC": candidates,  # compatibility alias; not an externally verified count
+            "structural_candidate_count": candidates,
+            "evidence_level": "STRUCTURAL_CANDIDATE",
+            "missions": rows, "conditions": list(CONDITIONS),
             "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}

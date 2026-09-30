@@ -546,3 +546,106 @@ def test_promotion_blocks_at_the_first_failed_stage_and_needs_ratified_evidence(
     good = promotion.candidate(result["committed"]["source"])
     hacked = dict(good, source="base_price * units")
     assert promotion.evidence_hash(hacked, []) != promotion.evidence_hash(good, [])
+
+
+# -- increment 5: compilers, data model, portable components, MCP, teams, repair, owned build
+
+from foundry.systems import build as owned_build
+from foundry.systems import business_compiler, compiler, datamodel, mcp_gateway, repair, teams, wasm
+
+
+def test_compiler_compiles_six_kinds_deterministically_and_locates_errors(tmp_path):
+    result = compiler.exercise(tmp_path)
+    assert result["kinds"] == ["business", "experiment", "organ_charter", "policy", "swarm_contract", "workflow"]
+    assert result["deterministic"] and result["compiled_workflow_ran"] == "completed" and result["workflow_verified"]
+    for name, errors in result["located_errors"].items():
+        assert errors and all(e.startswith(f"{name}:") and e.split(":")[1].isdigit() for e in errors), (name, errors)
+    assert "6:12" in result["located_errors"]["business-bad.yaml"][0], "the error points at price_usd"
+    checked = foundry_bridge.query({"system": 1, "op": "compile", "args": {"source": "kind: nonsense\n"}},
+                                   _ctx(tmp_path, "foundry.query"))
+    assert checked["result"]["ok"] is False and "unknown kind" in checked["result"]["errors"][0]
+
+
+def test_datamodel_joins_intent_authority_action_outcome_money_and_migrates_losslessly(tmp_path):
+    result = datamodel.exercise(tmp_path)
+    assert result["rows_second_ingest"] == 0, "re-ingesting the journal changes nothing"
+    assert result["lossless_round_trip"] and result["backup_written"]
+    research = next(m for m in result["mission_ledger"] if m["mission_id"] == "m:research")
+    assert research["revenue_cents"] == 90000 and research["last_verdict"] == "VERIFIED"
+    assert all(result["refusals"].values())
+    with pytest.raises(datamodel.ModelError, match="unknown schema version"):
+        datamodel.migrate(tmp_path / "x", 9)
+    datamodel.migrate(tmp_path / "y", 1)
+    import sqlite3
+    db = sqlite3.connect(tmp_path / "y" / "institution.sqlite")
+    db.execute("UPDATE schema_migrations SET checksum = 'edited' WHERE version = 1"); db.commit(); db.close()
+    with pytest.raises(datamodel.ModelError, match="changed after it was applied"):
+        datamodel.migrate(tmp_path / "y", 3)
+
+
+def test_wasm_components_match_the_interpreter_and_the_host_grants_only_declared_imports(tmp_path):
+    result = wasm.exercise(tmp_path)
+    assert result["value"]["value"] == 270.0
+    for key in ("pricing_differential", "budget_differential"):
+        assert result[key]["disagree"] == 0 and result[key]["agree"] + result[key]["both_refused"] == 200
+    assert set(result["refusals"]) == {"undeclared_wasi_import", "declared_but_host_forbids", "runaway_loop_out_of_fuel",
+                                       "tampered_bytes"} and all(result["refusals"].values())
+    assert result["declared_wasi_instantiates"]
+    with pytest.raises(dsl.RuleError):
+        wasm.compile_rule("pricing", "__import__('os')")
+
+
+def test_mcp_tools_run_behind_kernel_identity_policy_and_gate(tmp_path):
+    result = mcp_gateway.exercise(tmp_path)
+    assert result["quote"] == 270.0 and result["failed_over_from"] == ["eco-a"]
+    assert result["cross_checked_with"] == "uniimente-foundry", "two independent providers agree"
+    assert result["provider_claims_send_is_read_only"] is True, "the provider lies; the policy decides"
+    assert result["provider_calls_before_grant"] == 0 and result["provider_calls_after"] == 1
+    assert set(result["refusals"]) == {"unknown_caller", "unlisted_tool", "send_without_grant", "grant_replayed"}
+    assert all(result["refusals"].values()) and result["chain_ok"]
+    out = foundry_bridge.query({"system": 28, "op": "foundry_tool", "args": {
+        "tool": "foundry_query", "args": {"system": 43, "op": "check_approval_boundary", "args_json": "{}"}}},
+        _ctx(tmp_path, "foundry.query"))
+    assert json.loads(out["result"]["value"])["holds"] is True
+    tools = {t["name"] for t in mcp_gateway.list_tools(mcp_gateway.FOUNDRY)}
+    assert tools == {"foundry_query", "price_quote"}, "no write op is exposed over MCP"
+
+
+def test_business_compiler_needs_admissible_verified_evidence_for_every_field(tmp_path):
+    result = business_compiler.exercise(tmp_path)
+    assert result["compiled_objects"] == ["business", "delivery", "experiment", "pricing"]
+    assert result["economics"]["unit_margin_usd"] == 760.0, "price is the lowest evidenced acceptance, cost the worst"
+    assert result["kill_rule"] == "fewer than 1 paid of 20 offers in 90 days"
+    assert result["citations"]["price_usd"] == ["pay-1", "quote-1"]
+    assert all(result["refusals"].values())
+    assert "not admissible for price_usd" in result["refusals"]["interview_claims_price"][0]
+
+
+def test_teams_intersect_authority_spend_nothing_extra_and_dissolve(tmp_path):
+    result = teams.exercise(tmp_path)
+    assert result["writer_wrote_and_dissolved"] == [True, "DISSOLVED"]
+    assert result["narrow_grant_members"]["writer"]["max_consequence"] == "read_only"
+    assert set(result["refusals"]) == {"competence_not_registered", "analyst_writes", "over_budget",
+                                       "after_dissolution", "grant_caps_writer", "grant_without_role_capability"}
+    assert all(result["refusals"].values())
+    assert result["journal"][-1].startswith("refused: team offer-sprint is DISSOLVED")
+
+
+def test_repair_writes_a_failing_test_finds_the_minimal_patch_and_records_the_procedure(tmp_path):
+    result = repair.exercise(tmp_path)
+    assert result["regression_before"] == "1 failed" and result["after_passed"]
+    assert result["chosen"] == "line 7: drop '- 1'" and "range(remainder)" in result["diff"]
+    assert result["tied"], "localization could not separate the lines; the tie was searched, not truncated"
+    procedure = versions.content(tmp_path / "procedures", "recovery:split_invoice")
+    assert procedure["fix"] == result["chosen"] and procedure["rejected"]
+    with pytest.raises(repair.RepairError, match="does not reproduce"):
+        repair.repair(tmp_path / "b", source=repair.TARGET, func="split_invoice",
+                      failing={"id": "ok", "args": [90, 3], "expect": [30, 30, 30]}, passing=[{"args": [10, 1]}],
+                      existing_tests=repair.EXISTING)
+
+
+def test_owned_build_is_reproducible_and_runs_from_the_bundle(tmp_path):
+    result = owned_build.exercise(tmp_path)
+    assert result["identical_across_processes"] and result["verify"] and result["one_byte_changes_hash"]
+    assert result["smoke"]["ran_from_bundle"], result["smoke"]
+    assert result["toolchain_pins"] == ["PyYAML", "cryptography", "jsonschema", "pytest"]

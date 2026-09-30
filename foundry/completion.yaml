@@ -13,16 +13,22 @@
   - Compiles policy, workflow, experiment and business-genome source into executable objects
   - Rejects invalid source with located errors before execution
   - Compiled output is deterministic (same source, same hash)
-  adopt:
-  - OPA/Rego
-  - Cedar
-  existing:
+  evidence: foundry/evidence/system-01.json
+  implementation:
+  - foundry/systems/compiler.py
   - compiler/ucl_compiler.py
-  - compiler/ucl_parser.py
-  - evolution/experiment.py
-  - tests/unit/test_ucl_compiler.py
-  gap: UCL compiles constitutional policy and experiments; no Business, Organ Charter or Swarm Contract compilers.
-  state: PARTIAL
+  - business/genome.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query compile; foundry.apply compile_and_store (system 1)
+  limitations: Six kinds (workflow, policy, experiment, business, organ_charter, swarm_contract) over YAML sources;
+    the constitution itself stays with compiler/ucl_compiler.py. Business errors are located at the field the genome
+    owner names.
+  recovery: Stateless and deterministic; compiled objects are content-addressed (#36) and recompile identically
+    from source.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 2:
   acceptance:
   - Restricted languages exist for pricing, budgets and capital rules, not only policy
@@ -64,17 +70,19 @@
     across restarts
   - Schema migrations are versioned and reversible
   - Queries join intelligence, action and outcome
-  adopt:
-  - PostgreSQL
-  - SQLite
-  existing:
-  - provenance/ledger.py
-  - tests/unit/test_provenance.py
-  - DALEOBANKS:db/models.py
-  - WealthMachineIntelligence:src/database
-  gap: Kernel state is a single-writer POSIX ledger plus in-memory objects; no shared institutional data model across
-    organs.
-  state: PARTIAL
+  evidence: foundry/evidence/system-04.json
+  implementation:
+  - foundry/systems/datamodel.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query mission_ledger|version; foundry.apply migrate|ingest_greg|record_money (system 4)
+  limitations: SQLite single-file store (local, one writer at a time); a projection of the GREG ledger, not a second
+    source of truth. No cross-organ replication.
+  recovery: Migrations are checksummed and reversible; down migrations export removed rows and the next up restores
+    them; the projection rebuilds from the journal.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 5:
   acceptance:
   - Every consequential transition is an immutable, hash-chained event
@@ -172,11 +180,20 @@
   acceptance:
   - A narrow capability compiles to a WebAssembly component with declared imports/exports
   - It executes from UNIIMENTE under a WASI host with only declared imports
-  adopt:
-  - WASI component model
-  - Wasmtime
-  gap: No portable component packaging.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-11.json
+  implementation:
+  - foundry/systems/wasm.py
+  - foundry/systems/dsl.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply compile; foundry.query run|differential (system 11)
+  limitations: Core WebAssembly modules with a declared manifest, not Component Model/WIT; only DSL rules compile
+    to wasm today. wasmtime is adopted from the Bytecode Alliance.
+  recovery: Modules are content-addressed by hash; tampered bytes, undeclared or forbidden imports and runaway loops
+    (fuel) are refused or trapped.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 12:
   acceptance:
   - Registry installs, attaches, measures, migrates and detaches a capability genome
@@ -448,10 +465,22 @@
   acceptance:
   - An MCP server's tools are reachable from GREG only through Kernel identity, authority and the Consequence Gate
   - Tool providers are swappable
-  adopt:
-  - MCP Python SDK
-  gap: No MCP server or client behind Kernel identity and the Consequence Gate.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-28.json
+  implementation:
+  - foundry/systems/mcp_gateway.py
+  - foundry/mcp/foundry_server.py
+  - foundry/mcp/ecosystem_server.py
+  - policy/consequence_gate.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
+  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in tests is
+    a local stand-in. Uses the official MCP Python SDK 2.x.
+  recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused;
+    ungranted consequential calls never reach a provider (gate refuses first).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy
@@ -710,26 +739,38 @@
   - Compiles validated evidence into buyer, offer, workflow, pricing, delivery, compliance, economics, distribution
     and kill rules
   - Refuses to compile unevidenced fields
-  adopt:
-  - existing Loom and UCL compilers
-  existing:
+  evidence: foundry/evidence/system-47.json
+  implementation:
+  - foundry/systems/business_compiler.py
+  - foundry/systems/compiler.py
   - business/genome.py
-  - foundry/intake.py
-  - tests/unit/test_business.py
-  - tests/unit/test_foundry_intake_v1.py
-  gap: Business Genomes validate; no compiler from validated evidence to offer, workflow and pricing.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query compile (system 47)
+  limitations: Admissibility table (which evidence kind may support which field) is a draft for founder ratification;
+    the demand model behind the kill threshold is the observed channel conversion rate only.
+  recovery: Stateless; refuses rather than guesses (missing, inadmissible, conflicting or unprofitable evidence).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 48:
   acceptance:
   - Forms a temporary specialist team for one bounded objective from registered competences
   - Team authority is the intersection of its grants; dissolves on completion
-  adopt:
-  - Claude Agent SDK subagents under grants
-  existing:
-  - omnimorph/engine.py
-  - tests/unit/test_omnimorph_v1.py
-  gap: Temporary organ manifests are simulated; no live agents run under them.
-  state: PARTIAL
+  evidence: foundry/evidence/system-48.json
+  implementation:
+  - foundry/systems/teams.py
+  - foundry/systems/registry.py
+  - foundry/systems/compiler.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply form|act|dissolve; foundry.query report (system 48)
+  limitations: Members are deterministic role actors over Foundry ops, not LLM agents; team authority covers Foundry
+    ops only.
+  recovery: Team state and journal persist atomically; dissolution is final and every later act is refused and journaled.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 49:
   acceptance:
   - 'Synthetic media company loop: identity, canon, production, distribution, products, community, finance, performance
@@ -771,30 +812,37 @@
   acceptance:
   - A failure yields diagnosis, competing patches, regression test and updated recovery procedure
   - The regression test fails before and passes after
-  adopt:
-  - coding agents generating candidates into the repair harness
-  existing:
-  - evolution/repair/harness.py
-  - evolution/repair/detector.py
-  - evolution/failure_analysis.py
-  - tests/unit/test_repair_harness.py
-  - tests/unit/test_repair_candidates.py
-  gap: Candidate repairs are compared over a fixed candidate set; no generated patches.
-  state: PARTIAL
+  evidence: foundry/evidence/system-52.json
+  implementation:
+  - foundry/systems/repair.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query localize; foundry.apply repair (system 52)
+  limitations: 'Mutation operators are small (integer +-1, drop constant term, swap +/-, flip comparison). Negative
+    evidence: Ochiai cannot discriminate when failing and passing runs share coverage; ties are all searched (bounded
+    at 8 lines). A pytest collection error is not accepted as failing-before evidence.'
+  recovery: Original source is never modified; the chosen patch, regression test and rejected candidates are a versioned
+    recovery procedure.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 53:
   acceptance:
   - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains
   - Build is reproducible
-  adopt:
-  - own only the control plane; rent commodity runtime
-  existing:
-  - compiler/ucl_compiler.py
-  - contracts/__init__.py
-  - provenance/proof.py
-  - tests/unit/test_ucl_compiler.py
-  - tests/unit/test_proof.py
-  gap: Policy compiler, schemas and proof system are owned; registries and deploy tooling are not.
-  state: PARTIAL
+  evidence: foundry/evidence/system-53.json
+  implementation:
+  - foundry/systems/build.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query toolchain; foundry.apply build|verify (system 53)
+  limitations: Source bundle of the owned Python packages and data, not a wheel or OCI image; third-party packages
+    are pinned by version in the manifest, not vendored.
+  recovery: Rebuilds in a separate process must be byte-identical; the bundle runs from an empty directory.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 54:
   acceptance:
   - Capabilities are published as machine-readable offers other agents can discover and purchase (test mode)

@@ -5,3 +5,5 @@ rfc3339-validator==0.1.4
 cryptography>=41
 rfc3161-client>=1.0,<2
 supervisor>=4.2
+wasmtime>=49,<50
+mcp>=2.2,<3

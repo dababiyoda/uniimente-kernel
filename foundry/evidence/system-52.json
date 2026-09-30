@@ -1,0 +1,35 @@
+{
+ "command": "python -m foundry.completion --run 52",
+ "name": "Failure-driven program repair",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "after": "5 passed",
+  "after_passed": true,
+  "candidates": 8,
+  "chosen": "line 7: drop '- 1'",
+  "diff": "--- a/target.py\n+++ b/target.py\n@@ -4,6 +4,6 @@\n     base = total_cents // parts\n     shares = [base] * parts\n     remainder = total_cents - base * parts\n-    for i in range(remainder - 1):\n+    for i in range(remainder):\n         shares[i] += 1\n     return shares\n",
+  "procedure_version": 1,
+  "regression_before": "1 failed",
+  "rejected_that_broke_existing_tests": [],
+  "survivors": [
+   "line 7: drop '- 1'",
+   "line 7: 1 -> 0"
+  ],
+  "suspects": [
+   2,
+   4,
+   5,
+   6,
+   7,
+   9
+  ],
+  "symptom": [
+   33,
+   33,
+   33
+  ],
+  "tied": true
+ },
+ "result_sha256": "sha256:5cf4419e01018305668ed1c85b702e45f69530d22be145f2a83837aa176d0d5f",
+ "system": 52
+}

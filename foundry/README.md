@@ -66,3 +66,11 @@ The strongest route may be boring. A mature external tool that closes the target
 ## Anti-waste invariant
 
 > **Do not build because the metaphor sounds advanced. Build because the mechanism measurably closes the founder's effect better than the alternatives.**
+## Open-source research and draft assembly
+
+`python -m foundry.research_line` composes SearXNG discovery, local Qwen hypotheses,
+existing WMI assessment and guarded DALEOBANKS drafts through Loom checkpoints.
+A synthetic preview exercises the line without model/search services. The
+[runbook](../docs/OPEN_SOURCE_RESEARCH_LINE.md) lists setup, provenance,
+ratification, recovery and limits. This utility prepares review bundles; it does
+not qualify Foundry intake or authorize external actions.

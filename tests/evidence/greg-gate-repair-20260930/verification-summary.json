@@ -55,7 +55,8 @@
     "Wrong public companion key enrolled different public key, installer exited0, designation then rejected",
     "PASS2 receiptless DONE, relabeled capability/scope, and prior-held Gate receipt attacks exposed remaining proof gaps; repaired and regression-covered",
     "Initial lineage validation2 failures, fixed; prior labels/claims retained",
-    "Initial research-consumer checks3 failed because python-dotenv1.2.3 was not installed; separate research requirements environment4 passed"
+    "Initial research-consumer checks3 failed because python-dotenv1.2.3 was not installed; separate research requirements environment4 passed",
+    "Normal git HTTPS push rejected credentials; authenticated Git Data API published exact commit/tree instead. Actions manual dispatch rejected HTTP401; no GitHub CI pass claimed."
   ],
   "claims": {
     "repair": "IMPLEMENTED + UNIT/INTEGRATION-TESTED including separate processes and real temporary filesystem effects",
@@ -70,5 +71,22 @@
     "Generated/non-reobservable sensors use retained receipt evaluation rather than independent world rerun",
     "TOFU enrollment cannot establish personal identity or hardware ownership",
     "Installer refreshes default service config; custom builder and whitespace-path handling remain follow-up constraints"
-  ]
+  ],
+  "clean_committed_tree_verifier": {
+    "record": "verifier/runs/v2-2026-09-30T19-53-55.030919+00-00.json",
+    "head_commit": "b8a0ccd4534bae5635e6acec12b385463a5052bf",
+    "tracked_tree": "clean",
+    "exit_code": 0,
+    "result": "PASS V1-V5",
+    "unit_tests": "1041 passed, 14 skipped, 284.48 seconds"
+  },
+  "github": {
+    "pr": "https://github.com/dababiyoda/uniimente-kernel/pull/138",
+    "draft": true,
+    "base": "claude/uniimente-greg-reconciliation-39syff",
+    "code_commit": "b8a0ccd4534bae5635e6acec12b385463a5052bf",
+    "exact_commit_published": true,
+    "ci": "No run observed; manual Canonical CI dispatch rejected HTTP401 Bad credentials",
+    "merged": false
+  }
 }

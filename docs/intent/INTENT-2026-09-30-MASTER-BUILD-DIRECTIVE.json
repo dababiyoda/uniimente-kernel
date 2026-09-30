@@ -39,11 +39,14 @@
         "greg/body.py",
         "greg/tribunal.py",
         "greg/console.py",
-        "greg/phone/app.js"
+        "greg/phone/app.js",
+        "greg/briefs.py",
+        "greg/cli.py"
       ],
       "tests": [
         "tests/unit/test_greg_founder_asks.py",
-        "tests/integration/test_greg_phone_asks.py"
+        "tests/integration/test_greg_phone_asks.py",
+        "tests/unit/test_greg_account_access.py"
       ],
       "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence)"
     },
@@ -103,7 +106,7 @@
   ],
   "failure_evidence": [
     "The wording screen is lexical: a paraphrase that pressures without trigger words ('it would be wise to decide within the hour') passes. Structural guards (mandatory no-cost option with its effect, mandatory consequence of no response, evidenced deadlines) are the stronger defence; the screen is a floor, not proof of non-manipulation",
-    "Asks for account access, a licensed professional or a human worker are expressible and validated but no GREG producer emits them yet; build-versus-buy asks carry no priced comparison yet",
+    "Asks for a licensed professional or a human worker are expressible and validated but no GREG producer emits them yet; build-versus-buy asks carry no priced comparison yet. Account-access asks are produced by the brief (tests/unit/test_greg_account_access.py)",
     "The phone page rendered costed options and a withheld plea in Chromium with an iPhone profile (tests/integration/test_greg_phone_asks.py); it has not run in iOS Safari on Alfonso's iPhone"
   ],
   "dependencies": [

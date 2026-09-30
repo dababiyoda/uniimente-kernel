@@ -683,6 +683,39 @@ class MissionEngine:
                     {"option": "abandon", "cost": "none",
                      "expected_effect": "the mission ends; nothing further runs for it"}]}
 
+    def _access_ask(self, m: MissionState, aid: str, manifest, gap: dict, now: datetime) -> str | None:
+        """Section 60, "I need access to this account to answer reliably": the action worked,
+        but a service refused reads a credential would allow. Informational, never a blocker;
+        one ask per credential per mission. Asking grants nothing: only Alfonso stores a
+        credential, on the body, with `greg secret set`."""
+        handle = gap.get("credential")
+        if handle not in manifest.credentials:
+            return None                     # a capability may only ask for a handle it declares
+        refused = gap["evidence"].get("refused", {})
+        return self._request(
+            m, kind="ACCOUNT_ACCESS", scope_digest=sha256_json({"credential": handle}), action_id=aid,
+            why=f"{gap['service']} refused {len(refused) or 'some'} read(s) this mission needed; "
+                "the result was delivered with those gaps listed",
+            recommendation=f"if you want complete answers, create a read-only token for these repositories and "
+                           f"store it on this body with: greg secret set {handle}",
+            requested={"credential": f"{handle}: read-only; held by the secret broker on this body, never in the "
+                                     "ledger, revocable by you at any time",
+                       "spend": "none requested"},
+            now=now,
+            resource={"resource": "account_access", "evidence": gap["evidence"],
+                      "expected_effect": "later runs read what was refused, so the gaps listed in the result close",
+                      "uncertainty": "GitHub does not say which refusals were rate limits and which were missing "
+                                     "access; some may clear on their own, and a token only helps for repositories "
+                                     "it is granted",
+                      "options": [
+                          {"option": f"store a read-only token with: greg secret set {handle}",
+                           "cost": "none in money; the token can read what you grant it until you revoke it",
+                           "expected_effect": "authenticated reads; the refused repositories are read on the next run"},
+                          {"option": "narrow the mission to fewer repositories", "cost": "none",
+                           "expected_effect": "fewer calls; the remaining repositories are more likely to be read"},
+                          {"option": "do nothing: keep results with their gaps listed", "cost": "none",
+                           "expected_effect": "results stay partial; every gap stays visible in each result"}]})
+
     def _spend_ask(self, m: MissionState, s: dict, outcome, routing_decision: dict) -> dict:
         """Section 60 for money: an approval that spends is a resource ask with its own evidence."""
         cost = float(s["cost_usd"])
@@ -790,6 +823,8 @@ class MissionEngine:
                             "why": "uncertain completion; no blind retry",
                             "reconsider": "founder reconciliation decision"})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
+            self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

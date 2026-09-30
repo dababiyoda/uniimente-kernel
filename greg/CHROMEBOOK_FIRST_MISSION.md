@@ -21,7 +21,9 @@ at <https://support.google.com/chromebook/answer/9145439>.
 In the Linux Terminal, check `python3 --version` (at least 3.11) and
 `git --version`. Debian in the Linux environment ships without the Python venv
 package: install it with `sudo apt install python3-venv` (the doctor below reports
-it as `python_venv_available`). Keep the repository and `~/.uniimente` **inside Linux
+it as `python_venv_available`). ARM and Intel Chromebooks both work: every compiled dependency publishes Linux ARM64
+and x86-64 wheels for Python 3.11 (checked on PyPI 2026-09-30), so no compiler is needed.
+Keep the repository and `~/.uniimente` **inside Linux
 files**, not on a shared ChromeOS mount. After cloning below, before creating
 any key or body, run `python3 -m greg doctor --chromebook` from the repository.
 If it reports `ready_for_linux_service: false`, stop and use its `missing`
@@ -123,7 +125,11 @@ greg morning
 greg presence --hours 2
 ```
 
-Keep the outputs and the brief for review. A ledger row with all nine
+If GitHub refused some reads (rate limit, or a private repository), the brief lists
+those gaps and GREG asks **once** for access, with the evidence and a no-cost option.
+To give it a read-only token: `greg secret set github_token` (you paste it at a hidden
+prompt; it stays on this body, never in the ledger; `greg secret remove github_token`
+takes it back). Keep the outputs and the brief for review. A ledger row with all nine
 conditions is only a **structural candidate**: the ledger cannot prove this
 Chromebook is Alfonso's or that Alfonso was physically present. A real founder
 run and inspection are required before anyone reports an externally verified

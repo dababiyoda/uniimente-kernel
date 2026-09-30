@@ -68,7 +68,7 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
-      "smallest_next_build": "greg/chromebook/install.sh: one command from a fresh clone to a designated, supervised body; after it, nothing agent-side blocks the gate",
+      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row and greg path moving to N2); only the founder's run remains",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
       "founder_attention": "about one hour on the Chromebook, once"
@@ -98,7 +98,8 @@
       ],
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
-      "founder_attention": "sign one mission and one capability contract"
+      "founder_attention": "sign one mission and one capability contract",
+      "smallest_next_build": "a no-model mission template whose success needs a function no built-in provides and that still meets a real APPROVAL boundary; today N2 can start only through a model route or a hand-written mission. Never count an attach decision as the approval boundary: that would loosen the metric"
     },
     {
       "id": "N3",
@@ -425,7 +426,7 @@
       "intended_effect": "GREG asks Alfonso for what a goal needs (an account, compute, software, a build, a professional, a human worker) with evidence, costed alternatives, expected effect, uncertainty and the authority required, never by pressure",
       "node": "N2",
       "feasibility": "CURRENTLY_BUILDABLE",
-      "current_reality": "INTEGRATION-TESTED contract (greg/asks.py) used by compute, availability, missing-capability, mandate and paid-approval asks; account, professional, human-worker and priced build-versus-buy asks are validated but not yet produced",
+      "current_reality": "INTEGRATION-TESTED contract (greg/asks.py) used by compute, availability, missing-capability, mandate, paid-approval and account-access asks (the brief, with greg secret set to answer); professional, human-worker and priced build-versus-buy asks are validated but not yet produced",
       "nearest_precursor": [
         "greg/asks.py",
         "greg/genesis.py",

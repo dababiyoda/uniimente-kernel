@@ -339,3 +339,24 @@ def test_real_consumer_changes_after_planning_are_refused(monkeypatch):
     with pytest.raises(ValueError, match="changed after planning"):
         wmi.assess({"id": "p", "schema_version": "1.1", "created_at": "2026-09-30T00:00:00Z",
                     "core_thesis": "Synthetic hypothesis"})
+
+
+def test_real_consumer_cannot_load_env_file(tmp_path):
+    wmi, _ = real_consumers()
+    path = tmp_path / "untrusted.env"
+    path.write_text("UNEXPECTED_MODEL_KEY=synthetic-env-value\n")
+    result = wmi._call(
+        "import json, os, sys\n"
+        "from dotenv import load_dotenv\n"
+        "loaded = load_dotenv(json.load(sys.stdin)['path'])\n"
+        "print(json.dumps({'loaded': loaded, 'unexpected': os.getenv('UNEXPECTED_MODEL_KEY')}))\n",
+        {"path": str(path)})
+    assert result == {"loaded": False, "unexpected": None}
+
+
+def test_unsupported_env_loader_stops_before_consumer_execution(monkeypatch):
+    import foundry.research_consumers as consumers
+    monkeypatch.setattr(consumers, "version", lambda package: "1.1.1")
+    consumer = object.__new__(SourceConsumer)
+    with pytest.raises(ValueError, match="python-dotenv==1.2.3"):
+        consumer._call("raise AssertionError('must never execute')", {})

@@ -1,6 +1,6 @@
 jsonschema>=4.20,<5
 rfc3339-validator==0.1.4
-python-dotenv==1.1.1
+python-dotenv==1.2.3
 PyYAML>=6,<7
 # Optional local reporting, tested separately from inference.
 duckdb==1.5.1

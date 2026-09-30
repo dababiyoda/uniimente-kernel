@@ -112,6 +112,10 @@ Required implementation evidence: core boundary tests, persistent interruption/
 resume, real WMI/DALEOBANKS computation under mocked local HTTP, and an exported
 synthetic preview. Existing canonical schema/authority/sealed checks remain.
 Actual Actions results are recorded in the PR, including failures and fixes.
+Counterevidence from upstream source review: python-dotenv v1.1.1 does not honor
+PYTHON_DOTENV_DISABLED. The initial composition checks passed without an env file,
+which did not prove that isolation boundary. Pin v1.2.3, refuse unsupported loaders,
+and add a real-child env-file test before accepting the boundary.
 
 Unresolved dissent: neither popularity nor local execution proves factual accuracy,
 a buyer, adoption, willingness to pay or business advantage. Browser capture,

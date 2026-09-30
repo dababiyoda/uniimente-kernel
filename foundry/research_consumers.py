@@ -5,6 +5,7 @@ The authenticated production bridge remains the sole cross-service ingress.
 """
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 import json
 import os
 from pathlib import Path
@@ -70,6 +71,12 @@ class SourceConsumer:
         return {"role": self.role, "path": str(self.path), "commit": self.commit}
 
     def _call(self, code, payload):
+        try:
+            supported_dotenv = version("python-dotenv") == "1.2.3"
+        except PackageNotFoundError:
+            supported_dotenv = False
+        if not supported_dotenv:
+            raise ValueError("isolated computation requires python-dotenv==1.2.3; install requirements-research-line.txt")
         if self._git("rev-parse", "HEAD") != self.commit or self._git("status", "--porcelain"):
             raise ValueError("consumer source changed after planning")
         raw = json.dumps(payload)

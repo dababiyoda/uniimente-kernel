@@ -41,7 +41,10 @@ DELIBERATE = "deliberate_stop"
 
 
 def _t(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:   # a naive time cannot be compared with the body's clock
+        raise ValueError(f"timestamp without a timezone: {value!r}")
+    return parsed
 
 
 def note_gap(journal: Journal, boot_id: str, previous: tuple[datetime, float], current: tuple[datetime, float]):
@@ -86,6 +89,7 @@ def summary(journal: Journal, *, now: datetime, since: datetime | None = None,
     ``heartbeat`` is the current heartbeat file, used only to end an unfinished last
     boot whose process is no longer reporting (e.g. read after a crash).
     """
+    heartbeat = previous_heartbeat(heartbeat)   # an unreadable or naive heartbeat is not evidence
     boots = [e.payload for e in journal.replay("body.booted")]
     if not boots:
         return {"reality_status": "RETAINED_EVIDENCE_PROJECTION", "boots": 0, "state": "NEVER_STARTED",

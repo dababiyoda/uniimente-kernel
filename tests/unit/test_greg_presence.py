@@ -232,3 +232,17 @@ def test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_hea
     assert s["present_seconds"] > 0                          # the killed process's running time is counted
     assert 2.0 <= lost[0]["seconds"] <= 2.0 + 5.0            # the sleep, plus at most a tick and restart time
     assert presence._t(lost[0]["from"]) <= killed_at
+
+
+@pytest.mark.parametrize("garbage", [{"boot_id": "b1", "at": "2026-10-01T09:00:00", "state": "RUNNING"},
+                                     {"boot_id": "b1", "at": "not a time"}, ["b1"], {"boot_id": "b1"}, None])
+def test_a_corrupt_heartbeat_file_is_ignored_never_crashes_the_body_or_its_readers(tmp_path, garbage):
+    home, *_ = make_body(tmp_path)
+    (home / "heartbeat.json").write_text(json.dumps(garbage))
+    body = Body(home).open()
+    record = body.boot()                                       # a naive or malformed time is not evidence
+    assert "previous_heartbeat" not in record
+    s = presence.summary(body.journal, now=datetime.now(timezone.utc), heartbeat=garbage)
+    assert s["boots"] == 1 and s["state"] == "RUNNING"
+    body.close()
+    assert status(home)["presence"]["boots"] == 1               # the founder's status view still works

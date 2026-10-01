@@ -190,3 +190,14 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Polyintelligence Seed Genome — 2026-10-01
+
+Controlling source: [founder quotations and execution lineage](intent/sources/POLYINTELLIGENCE-SEED-DIRECTIVE-20261001.md).
+Requirement states now also include `conflicted` and `needs_evidence`; these are intent states, separate from implementation maturity.
+The [seed trace](intent/INTENT-20261001-cognition-seed-trace.json) retains every A/B section anchor and expands executable seed gates. The [decision](collaboration/COGNITION-SEED-20261001.md) records two strengthening passes, source coverage and limitations.
+Semantic, Estimation, Formal/Optimization and Evidence/Causal plus a separate verifier control this delivery. Later repertoire and Foundry-55 remain binding horizons. One canonical path remains `greg/path.json`; cognition metrics do not displace VEPMC. Metaphors compile to bounded prevention, recovery and evidence, never invulnerability, coercion or scientific consciousness.
+
+## Full-machine completion correction — 2026-10-01
+
+[Controlling intent](intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) preserves the exact correction. Body + Organs + Mind is the fixed product boundary. Seed and VEPMC scopes sequence proofs; they never permanently defer feasible machinery. After each integration, continue the parent objective automatically. Founder-use, external effects and technology limits remain separately evidenced item-specific gates.

@@ -223,3 +223,10 @@ DALEOBANKS drafts, durable checkpoints and optional DuckDB reporting.
 The [review record](OPEN_SOURCE_RESEARCH_LINE_REVIEW.md) preserves alternatives,
 dissent, residual capabilities and two strengthening passes. Catalogue entries
 for browser/PDF/audio/vector/automation tools do not imply deployed integrations.
+
+The bounded cognition seed explicitly installs only the pinned dependencies in
+`requirements-cognition.txt`; future research families remain dependency gated.
+Exact tested packages, licenses, weight digest, isolated local server provenance
+and the reported protobuf dependency correction are recorded in
+`tests/evidence/cognition-seed-20261001/dependencies.json`. See
+`greg/cognition/README.md` for installation, limits, migration and rollback.

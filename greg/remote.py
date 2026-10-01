@@ -100,6 +100,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                 principal = reader.verifier.verify_read(headers, method=method, path=path, now=now)
             except (FounderAuthError, ValueError) as exc:
                 raise RemoteError(401, str(exc))
+            from greg.presentation import cognitive_summaries
+            cognitive = cognitive_summaries(reader.journal) if path == "/api/status" else []
             if path == "/api/vepmc":
                 from greg import metrics
                 return _json(200, {"principal": principal, **metrics.vepmc(reader.journal)})
@@ -110,6 +112,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                                    "rejected": [{"file": e.payload["file"], "reason": e.payload["reason"]}
                                                 for e in reader.journal.replay("command.rejected")][-10:]})
         full = status(home)
+        if path == "/api/status":
+            full["cognitive"] = cognitive
         data = full["decisions_required"] if path == "/api/decisions" else full
         return _json(200, {"principal": principal, "data": data})
     if method == "POST" and path == "/api/command":

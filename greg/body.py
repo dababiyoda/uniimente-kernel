@@ -159,8 +159,9 @@ class Body:
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)
         self.registry = CapabilityRegistry()
+        from greg.cognition.catalog import initial_state
         for manifest, adapter in BUILTINS.values():
-            self.registry.register(manifest, adapter, state="ATTACHED")
+            self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
         self._refresh_builder()

@@ -13,6 +13,7 @@ class CognitionError(ValueError):
 
 
 class EpistemicClass(StrEnum):
+    UNKNOWN = "unknown"
     DEDUCTIVE = "deductive"
     ARITHMETIC = "arithmetic"
     FEASIBILITY = "constraint_feasibility"
@@ -29,6 +30,7 @@ class EpistemicClass(StrEnum):
 
 
 class ProofClass(StrEnum):
+    EVIDENCE = "evidence_binding"
     EXACT = "exact_calculation"
     FORMAL = "formal_model"
     OPTIMIZATION = "optimization_certificate"
@@ -130,9 +132,13 @@ class ConsequenceVector:
     discrimination: float = 0.0
     lawful: bool | None = None
     consent: bool | None = None
+    exposure_details: dict = field(default_factory=dict)
 
     def __post_init__(self):
         for name, value in asdict(self).items():
+            if name == "exposure_details":
+                strict_data(value)
+                continue
             if name in ("lawful", "consent"):
                 if value is not None and type(value) is not bool:
                     raise CognitionError(f"{name} must be boolean or unknown")
@@ -141,7 +147,7 @@ class ConsequenceVector:
 
     @property
     def high(self):
-        return any(v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent"))
+        return any(v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent", "exposure_details"))
 
     @property
     def prohibited(self):
@@ -185,6 +191,18 @@ class ProblemGeometry:
     rights_impact: bool = False
     legal_content: bool = False
     human_value_content: bool = False
+    classification_uncertainty: float = 0.0
+    unknown_geometry: bool = False
+    out_of_distribution: bool = False
+    success_criteria: tuple = ()
+    failure_criteria: tuple = ()
+    subclaims: tuple = ()
+    assumptions: tuple = ()
+    omitted_conditions: tuple = ()
+    data_provenance: tuple = ()
+    data_missingness: str = "unknown"
+    deadline: str | None = None
+    attention_ceiling_seconds: float = 0.0
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -194,7 +212,7 @@ class ProblemGeometry:
             if isinstance(spec.default, str) and (not isinstance(getattr(self, name), str) or
                                                  not 1 <= len(getattr(self, name)) <= 128):
                 raise CognitionError(f"{name} requires a bounded string")
-        for name in ("semantic_ambiguity", "constraint_density", "adversariality", "evidence_quality"):
+        for name in ("semantic_ambiguity", "constraint_density", "adversariality", "evidence_quality", "classification_uncertainty"):
             number(getattr(self, name), low=0, high=1)
         number(self.time_horizon, low=0)
         number(self.latency_limit, low=.01, high=30)
@@ -243,6 +261,14 @@ class CognitiveCapabilityProfile:
     rollback: str = "detach, retain canonical receipts"
     shutdown: str = "bounded worker termination; existing body stop always wins"
     lineage: tuple[str, ...] = ("INTENT-20260930-polyintelligence",)
+    owner: str = "Kernel capability maintainers; Alfonso root authority"
+    implementation_ref: str = "greg/cognition/solvers.py"
+    competence_limits: str = "bounded declarative native workload only; not general field mastery"
+    permission_limits: str = "current enclosing canonical mission grant; competence creates no rights"
+    resource_fit: str = "two isolated CPU processes, 2 GiB worker ceiling, local model measured separately"
+    license_evidence: str = "tests/evidence/cognition-seed-20261001/dependencies.json"
+    export_import: str = "retained canonical journal and existing body restoration; no authority resurrection"
+    recovery: str = "existing mission reconciliation; detached/revoked grants remain ineffective"
 
     def validate(self):
         if not self.family or not self.operations or not self.lineage:
@@ -265,6 +291,7 @@ class CognitiveCapabilityProfile:
 
 
 PROOF_FIELDS = {
+    "evidence_binding": ("claim", "sources", "bindings", "contradictions", "limitations"),
     "exact_calculation": ("expression", "result"),
     "formal_model": ("model", "constraints", "solver_version", "solver_status", "reverse_translation"),
     "optimization_certificate": ("objective", "constraints", "solution", "solver_status", "bound"),
@@ -282,6 +309,18 @@ PROOF_FIELDS = {
     "collective_trace": ("participants", "independence", "dissent", "trace", "baseline_status"),
 }
 
+# Payload schema rules only; executable method metadata remains in the existing
+# catalog, reused lazily when a receipt is validated after module loading.
+SEED_ARTIFACT_TYPES = {
+    "evidence_binding": {"claim": str, "sources": list, "bindings": list, "contradictions": list, "limitations": list},
+    "exact_calculation": {"expression": (str, dict), "result": dict},
+    "formal_model": {"model": dict, "constraints": list, "solver_version": str, "solver_status": str, "reverse_translation": list},
+    "optimization_certificate": {"objective": dict, "constraints": list, "solution": dict, "solver_status": str, "bound": (int, float, type(None))},
+    "bounded_estimate": {"decomposition": list, "assumptions": list, "range": dict, "sensitivity": dict, "dominant_variable": str},
+    "causal_identification": {"dag": list, "identification_assumptions": list, "estimand": str, "estimate": (int, float, type(None)), "confounders": list, "refutations": dict},
+    "sourced_claims": {"sources": list, "claims": list, "contradictions": list, "uncertainty": str},
+}
+
 
 @dataclass(frozen=True)
 class ProofArtifact:
@@ -290,8 +329,16 @@ class ProofArtifact:
 
     def validate(self):
         required = PROOF_FIELDS.get(self.proof_class)
-        if not required or any(key not in self.payload for key in required):
+        if not isinstance(self.payload, dict) or not required or any(key not in self.payload for key in required):
             raise CognitionError("proof artifact does not satisfy its epistemic contract")
+        for name, expected in SEED_ARTIFACT_TYPES.get(self.proof_class, {}).items():
+            allowed = expected if isinstance(expected, tuple) else (expected,)
+            if type(self.payload[name]) not in allowed:
+                raise CognitionError(f"proof field {name} has the wrong type")
+        statuses = {"formal_model": {"SAT", "UNSAT", "UNKNOWN"},
+                    "optimization_certificate": {"OPTIMAL", "FEASIBLE", "INFEASIBLE", "MODEL_INVALID", "UNKNOWN"}}
+        if self.proof_class in statuses and self.payload["solver_status"] not in statuses[self.proof_class]:
+            raise CognitionError("unsupported native solver status")
         strict_data(self.payload)
 
 
@@ -330,11 +377,23 @@ class CognitiveReceipt:
     calibration_error: float | None = None
     causal_credit: list = field(default_factory=list)
     authority_created: bool = False
+    schema_version: str = "greg-cognition/0.2"
+    policy_version: str = "seed-static/0.2"
+    execution_mode: str = "consequence_inert"
+    reason_code: str | None = None
+    outcome_state: str = "ANSWERED_WITHIN_SCOPE"
+    model_provenance: dict | None = None
+    stopping_reason: str = "smallest sufficient bounded calculation; mandatory verification retained"
+    formalization_coverage: dict = field(default_factory=dict)
+    authority_refs: dict = field(default_factory=lambda: {"scope": "enclosing canonical Kernel witness/grant/receipt", "new_authority": False})
+    contribution_attribution: list = field(default_factory=list)
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
         AbstentionClass(self.abstention_state)
-        ProblemGeometry(**self.geometry)
+        geometry = ProblemGeometry(**self.geometry)
+        if geometry.epistemic_class != self.epistemic_class or geometry.consequence_class != self.consequence_class:
+            raise CognitionError("receipt geometry and claim classification disagree")
         ConsequenceVector(**self.consequence_vector)
         number(self.money_cost, low=0, high=0)
         number(self.latency, low=0)
@@ -343,7 +402,47 @@ class CognitiveReceipt:
         if self.empirical_validity != "WORLD_UNVERIFIED":
             raise CognitionError("these bounded solvers cannot certify world validity")
         if self.proof_type is not None:
+            from .catalog import FAMILIES
+            family = self.method.removeprefix("cognition.") if isinstance(self.method, str) else None
+            metadata = FAMILIES.get(family) if isinstance(self.method, str) and self.method.startswith("cognition.") else None
+            expected = metadata[3] if metadata else None
+            if expected != self.proof_type:
+                raise CognitionError("receipt method and proof class disagree")
+            if self.epistemic_class not in metadata[2]:
+                raise CognitionError("proof class cannot establish this epistemic claim")
             ProofArtifact(self.proof_type, self.proof_artifact).validate()
+            artifact, output = self.proof_artifact, self.output
+            if not isinstance(output, dict):
+                raise CognitionError("proof artifact requires its bounded output")
+            # Bind the exported artifact to the result it accompanies. Numeric
+            # truth and original-input checks remain the independent verifier's
+            # job; this envelope prevents a verified result carrying another proof.
+            coherent = True
+            if self.proof_type == "exact_calculation":
+                coherent = artifact["result"] == output
+            elif self.proof_type == "bounded_estimate":
+                coherent = artifact["range"] == output
+            elif self.proof_type == "causal_identification":
+                coherent = artifact["estimate"] == output.get("effect")
+                if "uncertainty" in artifact:
+                    coherent &= artifact["uncertainty"] == output.get("uncertainty")
+            elif self.proof_type == "sourced_claims":
+                coherent = artifact["claims"] == output.get("claims")
+            elif self.proof_type in ("formal_model", "optimization_certificate"):
+                coherent = artifact["solver_status"] == output.get("solver_status")
+                if self.proof_type == "optimization_certificate":
+                    coherent &= artifact["solution"] == output.get("solution")
+            elif self.proof_type == "evidence_binding":
+                coherent = artifact["claim"] == output.get("claim")
+            # Retain explicitly refuted artifacts for challenge/correction; they
+            # cannot be consumed as an answered result or settled as competence.
+            refuted = self.abstention_state == "REFUTED" and self.evaluator_result.get("verdict") == "REFUTED"
+            if not coherent and not refuted:
+                raise CognitionError("receipt artifact and output disagree")
+        elif self.proof_artifact is not None:
+            raise CognitionError("proof artifact requires its typed proof class")
+        elif isinstance(self.method, str) and self.method.startswith("cognition.") and self.output is not None:
+            raise CognitionError("native cognitive output requires its proof artifact")
         retained_data(asdict(self))
 
     def to_dict(self):

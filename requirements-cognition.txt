@@ -1,7 +1,6 @@
-# Optional local cognition engines. No paid provider or new background service.
-# Tested versions are retained in tests/evidence/cognition-2026-09-30/verification.json.
-sympy>=1.13,<2
-networkx>=3.4,<4
-z3-solver>=4.13,<6
-ortools>=9.11,<10
-scipy>=1.14,<2
+# Current bounded seed; install explicitly in a development environment.
+# Future families remain catalogued and dependency gated; no automatic installation.
+z3-solver==4.15.4.0
+ortools==9.15.6755
+# Patched compatible protobuf; 9.14 restricts protobuf below its security fix.
+protobuf==6.33.5

@@ -83,6 +83,8 @@ class Console:
                          "next_observe_at": m.next_observe_at, "actions_done": m.actions_done,
                          "intended_effect": m.spec["intended_effect"], "closure": m.spec["closure"]["kind"]}
                         for mid, m in sorted(book.missions.items())]
+            from greg.presentation import cognitive_summaries
+            cognitive = cognitive_summaries(journal)
             vepmc = metrics.vepmc(journal)
             recent = [{"type": e.type[len("greg."):], "at": e.occurred_at,
                        "mission_id": e.payload.get("mission_id"), "summary": _summary(e)}
@@ -92,7 +94,7 @@ class Console:
         if folder.is_dir():
             deliveries = [p.name for p in sorted(folder.glob("*.md"), key=lambda p: p.stat().st_mtime,
                                                    reverse=True)[:10]]
-        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries}
+        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries, "cognitive": cognitive}
 
     def deliver_root(self) -> Path:
         config = json.loads(self.layout.config.read_text())
@@ -259,7 +261,7 @@ def render_home(console: Console) -> bytes:
                         f"</td><td>{accept}</td></tr>")
         out.append("<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
                    "<p class=muted>A closure counts only when every condition holds, including your acceptance "
-                   "and a Mac body.</p></section>")
+                   "and the designated founder body.</p></section>")
     if snap["missions"]:
         rows = "".join(
             f"<tr><td>{_e(m['mission_id'])}<br><span class=muted>{_e(m['intended_effect'])}</span></td>"
@@ -268,6 +270,17 @@ def render_home(console: Console) -> bytes:
             f"<td>{m['actions_done']}</td></tr>" for m in snap["missions"])
         out.append("<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
                    "</th><th>Actions</th></tr>" + rows + "</table></section>")
+    if snap.get("cognitive"):
+        cards = []
+        for answer in snap["cognitive"]:
+            cards.append("<section><h2>" + _e(answer["problem_id"]) + "</h2><p>Method: " + _e(answer["method"]) +
+                         " · Result: " + _e(answer["outcome_state"]) + "</p><p>" + _e(answer["selection_rationale"]) +
+                         "</p><pre>" + _e(json.dumps(answer["output"], ensure_ascii=False)) + "</pre><p>Evidence: " +
+                         _e(answer["proof_class"]) + " · Receipt: " + _e(answer["receipt_id"]) + "</p><p>Uncertainty: " +
+                         _e(answer["uncertainty"]) + "</p><p>Time: " + _e(answer["latency"]) + " seconds · Cost: $" +
+                         _e(answer["money_cost"]) + "</p><p>Next permitted step: " +
+                         _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p></section>")
+        out.extend(cards)
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
         out.append(f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")

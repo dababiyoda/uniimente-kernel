@@ -101,3 +101,20 @@ A competent new coding agent entering through a normal repository instruction su
 9. handoff procedure.
 
 If not, propagation for that repository is incomplete.
+
+## Context checksum — cognition delivery, 2026-10-01
+
+Product: one persistent founder-facing GREG, shared authority and memory, replaceable bounded competencies.
+Current runtime: `greg/` on PR #137's convergence, reused via PR #140; main is still 19fa33c22684a8953e3607e3aaf0e5fbd926bd88 at inspection.
+Root: Alfonso; authenticated decisions, not model scores. First body: Chromebook with phone interface; Mac retained behind a separate gate.
+Operational bottleneck: VEPMC 0 -> 1; no founder hardware/key available here. Subordinate cognition experiment: Verified Cross-Geometry Routing Gain.
+Owners: CapabilityGenome/CapabilityRegistry own metadata; MissionEngine owns missions; AuthorityOffice/Kernel Gate own invocation; EventSpine/EvidenceLedger own durable truth; appraiser owns closure; GREG settlement projects competence.
+Reuse: #140 real adapters and mission integration; #141 source exports and research design; #139 scoped implementation inspected as an alternative, no duplicate runtime imported.
+Dependencies: pinned Z3/OR-Tools in a separate test environment; locally served free weights for semantic tests, with exact artifact/license evidence.
+Coverage: entry instructions, effect compiler, founder ledger, build orders, source census, #117, all pages of open kernel PR/issues inventories; relevant #137/#139/#140/#141 source and #140/#141 file inventories. Full corpus, all branch diffs and every organ implementation were not audited. Organ deployment and ChatGPT Project originals remain evidence gaps.
+Named requested skills absent: install-recursive-founder-intent-collaboration-protocol, spider-web-hegemony, mechanism-recombination-foundry, writing-style. Equivalent explicit directive and repository protocols applied; no skill execution fabricated. Acumen skill was read for dependency freshness, but its research_brief tool was unavailable; exact primary release/license records were used.
+No new identity, authority, registry, scheduler, memory database or external deployment. See the seed trace and tested evidence for narrower reality states.
+
+## Controlling checksum correction — full machine, 2026-10-01
+
+Body + Organs + Mind is the parent completion boundary; seed/P0–P3 and VEPMC are subordinate sequencing/evidence units. Complete currently achievable machinery before sustained founder use. After each verified integration continue the next unblocked requirement automatically. Existing effect authority remains unchanged. Canonical source: `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json`. Cross-repository/PR propagation and precise external blockers are recorded in `docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md`; do not infer universal propagation.

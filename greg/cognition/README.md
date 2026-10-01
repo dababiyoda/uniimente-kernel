@@ -1,8 +1,6 @@
-# GREG bounded cognition
+# GREG bounded cognition seed
 
-GREG can now run structured mathematical and review tasks through its existing signed mission lifecycle. It selects an eligible specialized method, retains a typed receipt and proof, reobserves supported computations through the separate appraiser, and derives local competence and computational cell state from the canonical journal.
-
-Install the optional numerical dependencies and inspect or prepare a mission:
+The existing signed GREG mission path can execute exact arithmetic, nonnegative product scenario estimates, bounded linear-real SMT feasibility (Z3), bounded integer optimization (CP-SAT), randomized two-arm difference-in-means, exact source-span evidence binding and explicitly selected local-model extraction/proposals. A separate network-denied worker verifies numerical assignments, units and source bindings. Native SAT/UNSAT/UNKNOWN and CP-SAT statuses remain distinct. Future adapters remain catalogued, disabled by default and dependency gated; their existence does not establish qualification.
 
 ```sh
 python -m pip install -r requirements-cognition.txt
@@ -10,35 +8,21 @@ python -m greg cognition inventory
 python -m greg cognition mission --request examples/cognition/request.json --id m:exact --field output.exact --equals '"3"' --print-only
 ```
 
-On an initialized and enrolled body, submit the ordinary mission with the existing founder key:
+On an already initialized, enrolled body, use the existing founder key to submit the same command without `--print-only`, adding `--key /path/to/founder.pem`; run `python -m greg run`. Use `python -m greg cognition knowledge` or the existing read-only `python -m greg console` to inspect results. No paid provider is selected by an API key. No model is downloaded or server launched by GREG. A founder-selected installed local model is required for semantic execution; missing resources abstain. Source extraction is exact quotation and provisional proposal, not a general truth/entailment oracle.
+
+Receipts preserve encoded validity, world applicability and authority separately. Source quote/hash/signature cannot prove truth. Randomization, source quality and model completeness supplied by the caller are assumptions. Causal evidence is narrow and synthetic tests do not establish real-world effects; normal intervals are approximate. UNSAT cores are not claimed minimal certificates. FEASIBLE does not mean OPTIMAL. Independence is separate execution and different numerical checks with shared reviewed source/specification dependencies disclosed.
+
+Settlement replays existing native witnesses, exact signed sensor inputs and current verified appraisals; corrections append superseding records and invalidate prior local credit. The router remains deterministic: learned competence never changes eligibility or authority. Optional decision-value comparisons cannot spend the mandatory verification reserve. Older receipt digests are verified on their original bytes; new optional fields have read defaults. New built-in method version is 0.2.0; old version outcomes do not become qualification for the new version. No database migration or constitutional change is required.
+
+Reproduce the automated tests, frozen assessment and fresh laboratory CLI rehearsal:
 
 ```sh
-python -m greg cognition mission --request examples/cognition/request.json --id m:exact --field output.exact --equals '"3"' --key /path/to/founder.pem
-python -m greg run
-python -m greg cognition knowledge
+python -m pytest -q tests/unit/test_cognition_seed_gates.py tests/integration/test_greg_cognition_mission.py
+python scripts/ci/check_seed_mutants.py /tmp/seed-mutations.json
+python -m greg.cognition.seed_evaluation --model YOUR_ALREADY_AUTHORIZED_LOCAL_MODEL
+python scripts/rehearse_cognition_seed.py /tmp/new-unused-seed-rehearsal
 ```
 
-The implementation includes 20 families: set-point micro rules; rational arithmetic and degree-at-most-four real polynomial roots; nonnegative product interval estimates; linear real-variable Z3 feasibility; bounded integer CP-SAT optimization; explicit graph and state search; Beta-Bernoulli updates; declared randomized differences in means; bounded PID; finite information value; seeded Bernoulli simulation; finite zero-sum minimax; protection review packets; population z-score anomalies; finite-horizon fully observed MDPs; local semantic interpretation; human review packets; independent-group quorums; and fixed-quadratic differential evolution. Every family has a declared scope and abstention boundary. Examples and the frozen assessment supply bounded inputs.
+The frozen v2 suite contains 320 cases, 20 in each of 16 strata. Code/input digests must match its freeze. Static and proposed policies are deliberately identical; the experiment cannot show gain over that baseline. Template correlation, semantic rubric limitations and incomplete strongest-model workflow comparison require an inconclusive superiority finding. All results and failed attempts remain in `tests/evidence/cognition-seed-20261001/`.
 
-`cognition.solve` compiles an explicit typed operation, checks dependency and registry eligibility, selects among eligible methods using appraised local competence and cost/latency estimates, executes a fixed reviewed worker, and checks the returned artifact. Unknown, detached, unavailable, expired, prohibited, unidentified, incomplete and high-consequence world-unverified requests abstain.
-
-`cognition.compose` performs one to four independent first passes within a shared declared budget. It preserves question identity, epistemic jurisdiction, assumptions and dissent. It does not vote truth or claim a measured composition advantage.
-
-`cognition.knowledge` returns current competence and bounded cell state replayed from the existing journal. Cell identity and credit survive restart; later appraisal refutation removes current credit. Native producer witnesses must match a signed mission's sensor, exact input digest, method version and fully verified current appraisal before settlement can earn routing credit.
-
-Receipts distinguish supplied-model formal validity, empirical validity and legitimate authority. Empirical validity remains `WORLD_UNVERIFIED`; authority remains `EXISTING_KERNEL_GATE_REQUIRED`; `authority_created` is false. Supplied completeness and randomization flags are assumptions rather than independent findings. High-consequence requests cannot acquire action authority from solver success. Law, consent and rights constraints cannot be traded for upside. Oversized proof abstains so retained receipts preserve all proof bytes.
-
-Workers enforce bounded input/output, time, CPU and memory on supported POSIX hosts using the existing isolation mechanism. Supplied code is never evaluated. Numerical extras and bounded synthetic cases do not establish general cognition, calibrated real-world predictions, identified real-world causality, autonomous homeostasis, optimality beyond declared solver/model limits or an external product outcome. Compute limits are domain-specific ceilings; actual operations and energy are not generally measured.
-
-The semantic seam reuses the existing local-model client only when GREG's effective configuration explicitly selects an installed local Ollama model. Hosted-provider fallback is disabled. Live local inference and comparative LLM baselines were unavailable in the development environment; missing local model evidence abstains.
-
-This change adds capabilities to the existing manifests and genomes, signed inbox, Gate, body, appraiser and event journal. It creates no second service, identity, ledger or consequence authority. Existing detach, stop, pause and lifecycle controls apply. Rollback detaches the added capabilities and reverts the patch while retaining history.
-
-Run the focused checks and frozen assessment:
-
-```sh
-python -m pytest -q tests/unit/test_greg_cognition.py tests/integration/test_greg_cognition_mission.py
-python -m greg.cognition.benchmark
-```
-
-The frozen assessment contains 22 structured operation and abstention cases. It exits unsuccessfully on a contract failure. Comparative scoring requires callable baselines with compatible answer/abstention structure and reported cost. Without all required baselines and an acceptance/utility policy, superiority and cross-geometry regret remain unmeasured. Local evidence is in `tests/evidence/cognition-2026-09-30/verification.json`; GitHub CI is separate evidence.
+Rollback: use existing signed `greg detach cognition.solve --key ...` and detach any directly attached seed methods, then revert the patch while retaining protected history. Restoring source or restarting cannot renew revoked attachment/grants. Never delete a live body's retained authority state to simulate rollback. Laboratory keys and Linux recovery evidence do not count as Alfonso's Chromebook VEPMC. Existing founder runbook and `greg/path.json` retain that gate and the complete future horizon.

@@ -134,6 +134,7 @@ def formal(data, geometry):
     variables, constraints = _model(data)
     solver = z3.Solver()
     solver.set(timeout=max(1, int(geometry["latency_limit"] * 800)))
+    solver.set(rlimit=geometry["compute_limit"])
     vs = {n: z3.Real(n) for n in variables}
     for n, (low, high) in variables.items():
         solver.add(vs[n] >= z3.RealVal(str(low)), vs[n] <= z3.RealVal(str(high)))
@@ -182,7 +183,7 @@ def optimization(data, geometry):
     else:
         raise CognitionError("objective sense must be min or max")
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = geometry["latency_limit"] * .8
+    solver.parameters.max_time_in_seconds = min(geometry["latency_limit"] * .8, number(data.get("solver_budget_seconds", geometry["latency_limit"] * .8), low=0, high=30))
     solver.parameters.num_search_workers = 1
     solver.parameters.random_seed = 0
     status = solver.solve(model)
@@ -193,8 +194,8 @@ def optimization(data, geometry):
              "solver_status": out["solver_status"], "bound": solver.best_objective_bound if feasible else None,
              "optimality_gap": abs(solver.objective_value - solver.best_objective_bound) if feasible else None,
              "solver_version": importlib.metadata.version("ortools")}
-    return result(out, proof, status="UNKNOWN" if status in (cp_model.UNKNOWN, cp_model.MODEL_INVALID) else "ANSWER",
-                  formal="VALID_CONDITIONAL_ON_MODEL" if status != cp_model.UNKNOWN else "UNKNOWN")
+    return result(out, proof, status="ABSTAIN" if status == cp_model.MODEL_INVALID else "UNKNOWN" if status == cp_model.UNKNOWN else "ANSWER",
+                  formal="VALID_CONDITIONAL_ON_MODEL" if status in (cp_model.OPTIMAL, cp_model.FEASIBLE, cp_model.INFEASIBLE) else "UNKNOWN")
 
 
 def graph(data, geometry):
@@ -229,18 +230,39 @@ def bayesian(data, geometry):
 
 
 def causal(data, geometry):
-    # Conditional randomized difference in means. Observational identification is a separate obligation.
+    # Checked Welch uncertainty for a declared randomized two-arm sample. The
+    # randomization claim remains an assumption, never inferred from outcomes.
+    from statistics import mean, variance
     treated, control = data.get("treated", []), data.get("control", [])
-    identified = data.get("design") == "randomized" and bool(treated) and bool(control)
-    effect = (sum(number(x) for x in treated) / len(treated) -
-              sum(number(x) for x in control) / len(control)) if identified else None
-    proof = {"dag": data.get("dag", []), "identification_assumptions": ["randomization", "consistency", "no interference", "complete observations"],
-             "estimand": "average treatment effect in supplied randomized sample", "estimate": effect,
-             "confounders": data.get("confounders", []), "refutations": {"sample_sizes": [len(treated), len(control)],
-             "randomization_verified": False, "placebo_test": "not supplied", "unmeasured_confounding": "unknown"}}
-    return result({"effect": effect, "identified_conditionally": identified}, proof,
+    identified = (data.get("design") == "randomized" and isinstance(treated, list) and isinstance(control, list)
+                  and min(len(treated), len(control)) >= 2 and max(len(treated), len(control)) <= 1000
+                  and data.get("missingness", "none") == "none" and data.get("selection", "complete") == "complete")
+    effect, uncertainty, refutations = None, None, {"randomization_verified": False}
+    if identified:
+        treated, control = [number(x) for x in treated], [number(x) for x in control]
+        effect = mean(treated) - mean(control)
+        a, b = variance(treated)/len(treated), variance(control)/len(control)
+        se = math.sqrt(a+b)
+        # A conservative Chebyshev interval for independent sample means with
+        # plug-in variance is only approximate; do not relabel it a valid CI.
+        uncertainty = {"standard_error": se, "normal_approximation_95": [effect-1.96*se, effect+1.96*se],
+                       "scope": "large-sample approximation using sample variance; small samples may undercover"}
+        halves = [mean(treated[i::2])-mean(control[i::2]) for i in (0,1)]
+        refutations.update({"split_sample_effects": halves, "selection_bias_sensitivity":
+                            {"additive_bias": data.get("bias_range", [-se, se]),
+                             "interpretation": "subtract a supplied bias from the estimate; no identification proof"}})
+    proof = {"dag": [["random_assignment", "treatment"], ["treatment", "outcome"]],
+             "identification_assumptions": ["random assignment", "consistency", "no interference", "complete observations", "independent units"],
+             "estimand": data.get("estimand", "difference in mean outcomes in the supplied trial population"),
+             "estimate": effect, "treatment": data.get("treatment", "declared two-arm assignment"),
+             "outcome": data.get("outcome", "numeric observed response"), "population": data.get("population", "supplied sample only"),
+             "confounders": data.get("confounders", []), "refutations": refutations, "uncertainty": uncertainty,
+             "missingness": data.get("missingness", "none"), "selection": data.get("selection", "complete"),
+             "data": {"digest": __import__("greg.cognition.contracts", fromlist=["digest"]).digest({"treated":treated,"control":control}), "sample_sizes": [len(treated),len(control)]}, "synthetic": data.get("synthetic", False),
+             "limits": "conditional randomized sample estimate; no general causal inference or randomization audit"}
+    return result({"effect": effect, "identified_conditionally": identified, "uncertainty": uncertainty}, proof,
                   status="ANSWER" if identified else "UNIDENTIFIED",
-                  missing=() if identified else ("verified identification design and treatment/control observations",))
+                  missing=() if identified else ("NON_IDENTIFIABLE: verified randomized design, complete observations and two units per arm required",))
 
 
 def control(data, geometry):
@@ -414,7 +436,7 @@ def evolutionary(data, geometry):
                         "evaluator": "fixed squared-distance function, no generated code or authority"})
 
 
-SOLVERS = {"exact": exact, "estimation": fermi, "formal": formal, "optimization": optimization,
+SOLVERS = {"evidence": __import__("greg.cognition.evidence", fromlist=["assess"]).assess, "exact": exact, "estimation": fermi, "formal": formal, "optimization": optimization,
            "graph": graph, "search": graph, "probabilistic": bayesian, "causal": causal,
            "control": control, "information": information, "simulation": simulation, "game": game,
            "pattern": pattern, "micro": micro, "sequential": sequential, "human": human}

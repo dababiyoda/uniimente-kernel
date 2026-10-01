@@ -296,3 +296,17 @@ physical first-body designation and acceptance remain untested. Self-repair and 
 isolated interpreters; model SDKs faked, no live key used); a live OpenAI/Anthropic API route awaits Alfonso's own keys.
 Human work fabric and business runtime are PROPOSED. Presence accounting and open-source-first routing are
 UNIT/INTEGRATION TESTED in a Linux container (2026-09-30), not observed on the founder's Chromebook.
+
+### Bounded cognition seed (2026-10-01)
+
+The signed mission path supports bounded source extraction, scenario estimation,
+SMT feasibility, integer optimization, evidence binding and randomized two-arm
+computation with typed receipts and separate-process checks. See
+[cognition operator instructions](cognition/README.md), the
+[seed decision and limits](../docs/collaboration/COGNITION-SEED-20261001.md), and
+[retained test evidence](../tests/evidence/cognition-seed-20261001/).
+The existing console and authenticated phone status view show scoped cognitive
+results. This is a consequence-inert experiment; real founder-device acceptance
+and comparative superiority remain separate gates.
+
+The controlling [full-machine correction](../docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) fixes Body + Organs + Mind as the completion boundary. After each proved integration, continue the next unblocked parent requirement. Seed and VEPMC are sequencing/evidence units; pending founder use does not stop achievable machinery.

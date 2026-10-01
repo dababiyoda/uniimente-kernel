@@ -6,6 +6,7 @@ from .contracts import CognitiveCapabilityProfile
 
 # family -> (layer, operations, epistemic classes, proof class, dependency)
 FAMILIES = {
+    "evidence": (3, ("bind_evidence",), ("semantic",), "evidence_binding", None),
     "micro": (1, ("setpoint",), ("physical",), "pattern_evidence", None),
     "exact": (3, ("calculate", "polynomial"), ("arithmetic",), "exact_calculation", "sympy"),
     "estimation": (3, ("estimate",), ("estimate",), "bounded_estimate", None),
@@ -28,6 +29,14 @@ FAMILIES = {
     "evolutionary": (4, ("evolve_vector",), ("optimization",), "collective_trace", "scipy"),
 }
 
+# Existing alternative implementations retain their code and lineage. Cataloguing
+# never silently activates the P5+ repertoire on a new body.
+SEED_FAMILIES = frozenset(("micro", "exact", "estimation", "formal", "optimization", "causal", "evidence", "semantic"))
+
+def initial_state(capability_id):
+    family = capability_id.removeprefix("cognition.")
+    return "VERIFIED" if capability_id.startswith("cognition.") and family in FAMILIES and family not in SEED_FAMILIES else "ATTACHED"
+
 
 def profile(family):
     layer, operations, classes, proof, _ = FAMILIES[family]
@@ -42,7 +51,7 @@ def builtin_entries(manifest_type, lazy):
     for family in (*FAMILIES, "solve", "compose", "knowledge"):
         computational = family not in ("knowledge",)
         entries["cognition." + family] = (manifest_type(
-            capability_id="cognition." + family, version="0.1.0", provider="greg-builtin",
+            capability_id="cognition." + family, version="0.2.0", provider="greg-builtin",
             function="cognition." + family, description="Bounded " + family + " cognition with typed evidence and abstention",
             route="internal", consequence_class="read_only", target_prefix="cognition:",
             inputs={"problem_id": "str", "operation": "str", "data": "bounded dict"} if computational else {"none": "no parameters"},

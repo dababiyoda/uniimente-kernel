@@ -1,3 +1,9 @@
+## Full-machine completion — controlling correction, October 1, 2026
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
+
+Continue until the currently achievable machine is integrated and executable. A precise founder-only action, genuine external dependency or demonstrated technology limit blocks only the affected requirement; continue other buildable work, preserve the destination and implement the strongest defensible approximation/backcast. Prose and placeholders cannot replace executable machinery when feasible. Existing authority, resource, consent, refusal, pause/revocation and shutdown gates remain effective.
+
 > **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
 
 # UNIIMENTE Permanent Operating Order

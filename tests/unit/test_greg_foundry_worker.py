@@ -17,7 +17,7 @@ def test_query_demonstration_cannot_persist_its_internal_writes(tmp_path):
     result = foundry_bridge.query({"system": 15, "op": "demonstrate"}, context(tmp_path, "foundry.query"))
     assert result["result"]["no_step_repeated"]
     assert not (tmp_path / "ws" / "foundry").exists()
-    assert result["execution"]["filesystem"] == "reviewed-code-python-guard"
+    assert result["execution"]["filesystem"] in {"reviewed-code-python-guard", "landlock"}
 
 
 def test_workspace_traversal_and_symlink_cannot_read_body_files(tmp_path):

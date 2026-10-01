@@ -120,7 +120,10 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
                 after = commit(staged, root.parent, before) if table == "APPLY_OPS" else before
                 return {"system": system, "op": op, "result": answer["result"],
                         "execution": {"process": "disposable", "network": "seccomp-denied",
-                                      "filesystem": "reviewed-code-python-guard", "arbitrary_source": "refused",
+                                      "filesystem": answer.get("isolation", {}).get("filesystem", "reviewed-code-python-guard"),
+                                      "landlock_abi": answer.get("isolation", {}).get("abi"),
+                                      "filesystem_scope": answer.get("isolation", {}).get("scope"),
+                                      "arbitrary_source": "refused",
                                       "cpu_seconds": 12, "cpu_scope": "per process; group wall budget applies to all descendants",
                                       "file_bytes": 8 * 1048576, "wall_seconds": 30, "output_bytes": 1048576,
                                       "persistence": "atomic-store-commit" if table == "APPLY_OPS" else "discarded",

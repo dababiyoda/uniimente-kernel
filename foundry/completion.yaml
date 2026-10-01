@@ -165,7 +165,7 @@
   - Firecracker
   - gVisor
   - E2B-style sandboxes
-  gap: No stronger isolation for generated code or third-party packages.
+  gap: Reviewed GREG workers now attempt kernel-enforced Landlock filesystem confinement on supported Linux ABI >=3 hosts, with raw native escape probes. Generated-source/provider admission, microVM/gVisor-class isolation and broader process/resource protection remain unfinished; ordinary Docker availability is not completion.
   state: OUTSTANDING
 11:
   acceptance:
@@ -880,9 +880,7 @@
   tests:
   - tests/unit/test_foundry_systems.py
   existing: *id002
-  gap: Reviewed SDK/repair fixtures execute, but GREG refuses child/provider/caller-source execution until OS filesystem
-    confinement is available and escape tests pass. This host rejects bwrap namespaces, Landlock and chroot. The
-    requirement remains active.
+  gap: Component repair fixtures execute; GREG source admission remains refused pending a reviewed isolated source recipe and complete escape/resource/verification evidence. Actual CI provides Landlock ABI7 for reviewed workers; local host unsupported probes do not define a project-wide blocker. Preserve general repair capability.
 53:
   acceptance:
   - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains

@@ -45,6 +45,10 @@ jobs:
       - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
       - name: Measure actual host isolation facilities
         run: python scripts/ci/probe_isolation.py
+      - name: OS filesystem confinement and escape regression checks
+        env:
+          GREG_REQUIRE_LANDLOCK: "1"
+        run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
       - name: Full unit and integration suite

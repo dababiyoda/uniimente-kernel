@@ -277,6 +277,7 @@
     "greg/foundry_worker.py",
     "greg/genesis.py",
     "greg/improvement.py",
+    "greg/isolation.py",
     "greg/journal.py",
     "greg/lightcone.py",
     "greg/mac/verify_mac_body.sh",

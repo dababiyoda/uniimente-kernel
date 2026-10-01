@@ -116,8 +116,16 @@ def main():
         store = root.parent
         root.mkdir(parents=True, exist_ok=True)
         os.environ["GREG_FOUNDRY_STORE"] = str(store.resolve())
-        guard(store, source_files())
-        answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root)}
+        public = source_files()
+        from greg.isolation import available, confine
+        support = available()
+        isolation = confine(store, public) if support["available"] else {
+            "filesystem": "reviewed-code-python-guard", "arbitrary_source": "refused",
+            "scope": "reviewed Python operations only; OS filesystem confinement unavailable",
+            "abi": support["abi"]}
+        guard(store, public)
+        answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root),
+                  "isolation": isolation}
     except Exception as exc:
         answer = {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}
     print(json.dumps(answer, allow_nan=False))

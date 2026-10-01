@@ -156,6 +156,12 @@
       "tier": "other",
       "reference": "tests/unit/test_greg_owned_company.py",
       "finding": "Review found make_body(live) needed its parent created before fixture initialization; fixed before claiming CI success. The actual-host facility probe must distinguish local Codex host from hosted CI."
+    },
+    {
+      "claim": "Native company first draft fully passes",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36938816279",
+      "finding": "a03ac52f: 2failed1705passed9skipped. Fixture parent omission corrected6324; actual Gate source lookup additionally exposed authority YAML absent from owned packaging inventory. Add all3 existing canonical files and authority data directory; no new authority contents."
     }
   ],
   "pass_1": {

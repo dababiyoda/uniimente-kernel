@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DATE_EPOCH = 1_788_000_000          # fixed; the build never reads the clock
-DATA_DIRS = ("contracts", "organs", "constitution")   # non-package inputs the code loads at runtime
+DATA_DIRS = ("contracts", "organs", "constitution", "authority")   # non-package inputs the code loads at runtime
 
 
 def owned(root: Path = ROOT) -> list[str]:

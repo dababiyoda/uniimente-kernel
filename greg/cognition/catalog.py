@@ -26,6 +26,8 @@ FAMILIES = {
     "human": (4, ("human_review",), ("normative", "legal", "institutional_acceptance"), "human_judgment", None),
     "collective": (4, ("quorum",), ("prediction",), "collective_trace", None),
     "evolutionary": (4, ("evolve_vector",), ("optimization",), "collective_trace", "scipy"),
+    # 0.2 (directive §13): lawful asymmetric advantage after hard gates; layer 5 metacognition.
+    "advantage": (5, ("advantage_case",), ("strategic",), "advantage_case", None),
 }
 
 
@@ -39,7 +41,7 @@ def profile(family):
 
 def builtin_entries(manifest_type, lazy):
     entries = {}
-    for family in (*FAMILIES, "solve", "compose", "knowledge"):
+    for family in (*FAMILIES, "solve", "compose", "knowledge", "pipeline"):
         computational = family not in ("knowledge",)
         entries["cognition." + family] = (manifest_type(
             capability_id="cognition." + family, version="0.1.0", provider="greg-builtin",
@@ -50,8 +52,9 @@ def builtin_entries(manifest_type, lazy):
             retry_safe=True, strengthens=("eligibility", "routing", "proof", "settlement"),
             tests=("tests/unit/test_greg_cognition.py", "tests/integration/test_greg_cognition_mission.py"),
             provenance={"source": "uniimente-kernel/greg/cognition", "intent": "INTENT-20260930-polyintelligence"},
-            network="egress-allowlist" if family in ("semantic", "solve", "compose") else "none",
-            egress_allowlist=("127.0.0.1",) if family in ("semantic", "solve", "compose") else (),
+            network="egress-allowlist" if family in ("semantic", "solve", "compose", "pipeline") else "none",
+            egress_allowlist=("127.0.0.1",) if family in ("semantic", "solve", "compose", "pipeline") else (),
             cognitive_profile=asdict(profile(family)) if family in FAMILIES else {}),
+            lazy("greg.cognition.pipeline", "run") if family == "pipeline" else
             lazy("greg.cognition.cortex", "compose" if family == "compose" else "knowledge" if family == "knowledge" else "solve"))
     return entries

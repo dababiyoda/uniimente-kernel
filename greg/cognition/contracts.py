@@ -12,6 +12,10 @@ class CognitionError(ValueError):
     pass
 
 
+class BudgetError(CognitionError):
+    """A declared compute, operation or size ceiling would be exceeded (reason BUDGET_EXHAUSTED)."""
+
+
 class EpistemicClass(StrEnum):
     DEDUCTIVE = "deductive"
     ARITHMETIC = "arithmetic"
@@ -44,6 +48,7 @@ class ProofClass(StrEnum):
     HUMAN = "human_judgment"
     PATTERN = "pattern_evidence"
     COLLECTIVE = "collective_trace"
+    ADVANTAGE = "advantage_case"
 
 
 class AbstentionClass(StrEnum):
@@ -59,6 +64,7 @@ class AbstentionClass(StrEnum):
     UNKNOWN = "UNKNOWN"
     UNIDENTIFIED = "UNIDENTIFIED"
     NO_QUORUM = "NO_QUORUM"
+    MODEL_INVALID = "MODEL_INVALID"  # 0.2: a malformed model is not a solver UNKNOWN
 
 
 def canonical(value) -> str:
@@ -114,6 +120,13 @@ def retained_data(value):
         raise CognitionError("proof text exceeds canonical receipt retention; use bounded source references")
 
 
+VECTOR_DIMENSIONS = ("physical", "financial", "privacy", "rights", "reputation", "innocent_third_party",
+                     "irreversibility", "disclosure", "dependency", "systemic_externality", "tail_risk",
+                     "discrimination")
+DETAIL_FIELDS = ("severity", "likelihood", "affected_parties", "uncertainty", "reversibility", "mitigations",
+                 "evidence")
+
+
 @dataclass(frozen=True)
 class ConsequenceVector:
     physical: float = 0.0
@@ -130,18 +143,40 @@ class ConsequenceVector:
     discrimination: float = 0.0
     lawful: bool | None = None
     consent: bool | None = None
+    # 0.2 (directive §5): per-dimension detail. Optional; the scalars above stay the
+    # canonical severity so v0.1 receipts and consumers read unchanged.
+    details: dict = field(default_factory=dict)
 
     def __post_init__(self):
         for name, value in asdict(self).items():
+            if name == "details":
+                continue
             if name in ("lawful", "consent"):
                 if value is not None and type(value) is not bool:
                     raise CognitionError(f"{name} must be boolean or unknown")
             else:
                 number(value, low=0, high=1)
+        if not isinstance(self.details, dict):
+            raise CognitionError("consequence details must be an object")
+        for name, detail in self.details.items():
+            if name not in VECTOR_DIMENSIONS:
+                raise CognitionError(f"unknown consequence dimension {name!r}")
+            if not isinstance(detail, dict) or set(detail) - set(DETAIL_FIELDS):
+                raise CognitionError(f"consequence detail for {name} has unknown fields")
+            strict_data(detail)
+            likelihood = detail.get("likelihood")
+            if likelihood is not None:
+                if not isinstance(likelihood, list) or len(likelihood) != 2:
+                    raise CognitionError("likelihood is a [low, high] range")
+                low, high = (number(x, low=0, high=1) for x in likelihood)
+                if low > high:
+                    raise CognitionError("likelihood range is reversed")
+            if detail.get("reversibility") not in (None, "reversible", "partially_reversible", "irreversible", "unknown"):
+                raise CognitionError("invalid reversibility")
 
     @property
     def high(self):
-        return any(v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent"))
+        return any(v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent", "details"))
 
     @property
     def prohibited(self):
@@ -185,6 +220,9 @@ class ProblemGeometry:
     rights_impact: bool = False
     legal_content: bool = False
     human_value_content: bool = False
+    # 0.2 (directive §5): declared unknown-geometry and out-of-distribution flags.
+    unknown_geometry: bool = False
+    out_of_distribution: bool = False
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -280,6 +318,7 @@ PROOF_FIELDS = {
     "human_judgment": ("participants", "expertise", "conflicts", "dissent", "decision_authority"),
     "pattern_evidence": ("observations", "model", "scores", "limits"),
     "collective_trace": ("participants", "independence", "dissent", "trace", "baseline_status"),
+    "advantage_case": ("options", "gates", "frontier", "weights", "sensitivity"),
 }
 
 
@@ -330,6 +369,17 @@ class CognitiveReceipt:
     calibration_error: float | None = None
     causal_credit: list = field(default_factory=list)
     authority_created: bool = False
+    # 0.2 (directive §5-§6, §12): defaults keep every v0.1 receipt readable.
+    receipt_version: str = "0.1"
+    outcome: str | None = None
+    reasons: list = field(default_factory=list)
+    mission_id: str | None = None
+    claim_ids: list = field(default_factory=list)
+    model_provenance: dict | None = None
+    execution_mode: str = "consequence_inert_development"
+    l1_checks: list = field(default_factory=list)
+    legitimacy: dict | None = None
+    budget: dict | None = None
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -344,9 +394,36 @@ class CognitiveReceipt:
             raise CognitionError("these bounded solvers cannot certify world validity")
         if self.proof_type is not None:
             ProofArtifact(self.proof_type, self.proof_artifact).validate()
+        if self.receipt_version not in ("0.1", "0.2"):
+            raise CognitionError("unknown receipt version")
+        if self.execution_mode != "consequence_inert_development":
+            raise CognitionError("cognition runs consequence-inert during the developmental period")
+        if self.receipt_version == "0.2":
+            from .outcomes import OUTCOMES, REASONS
+            if self.outcome not in OUTCOMES or any(r not in REASONS for r in self.reasons):
+                raise CognitionError("a 0.2 receipt carries a known outcome and known reason codes")
+        if self.legitimacy is not None and self.legitimacy.get("authority_created") is not False:
+            raise CognitionError("a legitimacy evaluation cannot create authority")
         retained_data(asdict(self))
 
     def to_dict(self):
         value = asdict(self)
+        if self.receipt_version == "0.1":
+            # A v0.1 receipt keeps exactly its original field set, so its identity is unchanged.
+            value = {k: v for k, v in value.items() if k in RECEIPT_V01_FIELDS}
+            value["consequence_vector"] = {k: v for k, v in value["consequence_vector"].items() if k != "details"}
+            value["geometry"] = {k: v for k, v in value["geometry"].items()
+                                 if k not in ("unknown_geometry", "out_of_distribution")}
         value["receipt_id"] = digest(value)
         return value
+
+
+# The exact field set of a v0.1 receipt (PR #140). Settlement accepts it unchanged.
+RECEIPT_V01_FIELDS = (
+    "problem_id", "geometry", "consequence_class", "consequence_vector", "method", "method_version",
+    "epistemic_class", "input_digest", "evidence_refs", "assumptions", "excluded_variables", "output",
+    "uncertainty", "proof_type", "proof_artifact", "alternative_methods_considered", "method_selection_reason",
+    "strongest_counterargument", "falsification_condition", "abstention_state", "missing_information",
+    "compute_cost", "money_cost", "latency", "evaluator", "evaluator_result", "formal_validity",
+    "empirical_validity", "legitimate_authority", "later_outcome", "calibration_error", "causal_credit",
+    "authority_created")

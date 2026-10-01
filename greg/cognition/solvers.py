@@ -7,7 +7,7 @@ import importlib.metadata
 import math
 import random
 
-from .contracts import CognitionError, integer, number
+from .contracts import BudgetError, CognitionError, integer, number
 
 
 def result(output, proof, *, status="ANSWER", formal="NOT_APPLICABLE", missing=()):
@@ -124,9 +124,33 @@ def _model(data, *, integers=False):
     for c in constraints:
         if c["op"] not in ("<=", ">=", "==", "!=") or not set(c["coefficients"]) <= set(variables):
             raise CognitionError("invalid linear constraint")
+        if not isinstance(c.get("covers", []), list):
+            raise CognitionError("covers must list requirement ids")
         for x in [*c["coefficients"].values(), c["rhs"]]:
             (integer(x, low=-1000000, high=1000000) if integers else number(x))
     return variables, constraints
+
+
+def coverage(data):
+    """FormalizationCoverage (directive §5): which stated requirements the model represents.
+
+    Completeness of a natural-language formalization is not decidable; this only reports
+    what the requester declared and what is visibly missing or untraced."""
+    requirements = data.get("requirements", [])
+    if not isinstance(requirements, list) or len(requirements) > 128:
+        raise CognitionError("requirements must be a bounded list")
+    ids = [r.get("id") for r in requirements if isinstance(r, dict)]
+    if len(ids) != len(requirements) or any(not isinstance(i, str) for i in ids) or len(set(ids)) != len(ids):
+        raise CognitionError("each requirement needs a unique id")
+    covered = {i for c in data.get("constraints", []) for i in c.get("covers", [])}
+    if covered - set(ids):
+        raise CognitionError(f"constraints cover unknown requirements {sorted(covered - set(ids))}")
+    return {"represented": sorted(covered), "omitted": [i for i in ids if i not in covered],
+            "unsupported_translations": [k for k, c in enumerate(data.get("constraints", [])) if requirements and not c.get("covers")],
+            "assumptions": data.get("assumptions", []), "evidence_refs": data.get("evidence_refs", []),
+            "model_limits": "linear constraints over bounded variables only",
+            "review_status": data.get("review_status", "unreviewed"),
+            "completeness": "not decidable for natural-language requirements; declared coverage only"}
 
 
 def formal(data, geometry):
@@ -154,6 +178,7 @@ def formal(data, geometry):
              "solver_status": out["solver_status"], "reverse_translation": descriptions,
              "unsat_core": [str(v) for v in solver.unsat_core()] if status == z3.unsat else [],
              "formalization_completeness": data.get("formalization_complete", False),
+             "formalization_coverage": coverage(data),
              "unknown_reason": solver.reason_unknown() if status == z3.unknown else None}
     return result(out, proof, status="UNKNOWN" if status == z3.unknown else "ANSWER",
                   formal="UNKNOWN" if status == z3.unknown else "VALID_CONDITIONAL_ON_MODEL")
@@ -190,11 +215,14 @@ def optimization(data, geometry):
     out = {"solver_status": solver.status_name(status), "solution": {n: solver.value(v) for n, v in vs.items()} if feasible else {},
            "objective_value": solver.objective_value if feasible else None}
     proof = {"objective": objective, "constraints": constraints, "variables": variables, "solution": out["solution"],
+             "formalization_coverage": coverage(data),
              "solver_status": out["solver_status"], "bound": solver.best_objective_bound if feasible else None,
              "optimality_gap": abs(solver.objective_value - solver.best_objective_bound) if feasible else None,
              "solver_version": importlib.metadata.version("ortools")}
-    return result(out, proof, status="UNKNOWN" if status in (cp_model.UNKNOWN, cp_model.MODEL_INVALID) else "ANSWER",
-                  formal="VALID_CONDITIONAL_ON_MODEL" if status != cp_model.UNKNOWN else "UNKNOWN")
+    # Native statuses are preserved: MODEL_INVALID is a defect in the model, UNKNOWN an undecided search.
+    native = {cp_model.UNKNOWN: "UNKNOWN", cp_model.MODEL_INVALID: "MODEL_INVALID"}.get(status, "ANSWER")
+    return result(out, proof, status=native,
+                  formal="VALID_CONDITIONAL_ON_MODEL" if native == "ANSWER" else "UNKNOWN")
 
 
 def graph(data, geometry):
@@ -202,7 +230,7 @@ def graph(data, geometry):
     g = nx.DiGraph() if data.get("directed", True) else nx.Graph()
     edges = data["edges"]
     if not isinstance(edges, list) or len(edges) > min(10000, geometry["compute_limit"]):
-        raise CognitionError("graph edge budget exceeded")
+        raise BudgetError("graph edge budget exceeded")
     for edge in edges:
         if len(edge) != 3 or any(not isinstance(n, str) for n in edge[:2]):
             raise CognitionError("edges require two string nodes and nonnegative cost")
@@ -229,18 +257,93 @@ def bayesian(data, geometry):
 
 
 def causal(data, geometry):
-    # Conditional randomized difference in means. Observational identification is a separate obligation.
-    treated, control = data.get("treated", []), data.get("control", [])
-    identified = data.get("design") == "randomized" and bool(treated) and bool(control)
-    effect = (sum(number(x) for x in treated) / len(treated) -
-              sum(number(x) for x in control) / len(control)) if identified else None
-    proof = {"dag": data.get("dag", []), "identification_assumptions": ["randomization", "consistency", "no interference", "complete observations"],
-             "estimand": "average treatment effect in supplied randomized sample", "estimate": effect,
-             "confounders": data.get("confounders", []), "refutations": {"sample_sizes": [len(treated), len(control)],
-             "randomization_verified": False, "placebo_test": "not supplied", "unmeasured_confounding": "unknown"}}
-    return result({"effect": effect, "identified_conditionally": identified}, proof,
-                  status="ANSWER" if identified else "UNIDENTIFIED",
-                  missing=() if identified else ("verified identification design and treatment/control observations",))
+    """Average treatment effect in a declared randomized two-arm sample.
+
+    Identified only conditionally: randomization, consistency, no interference and
+    ignorable missingness are assumptions the supplied data cannot prove. The estimator
+    abstains on an observational design, on too few observations, on material or
+    differential attrition (reporting worst-case bounds when the outcome range is
+    declared), and when a supplied pre-treatment placebo comparison is imbalanced.
+    Uncertainty comes from SciPy's Welch interval and a seeded permutation test."""
+    treated = [number(x) for x in data.get("treated", []) if x is not None]
+    control = [number(x) for x in data.get("control", []) if x is not None]
+    alpha = number(data.get("alpha", .05), low=.001, high=.2)
+    missing = data.get("missing", {})
+    missing_t = integer(missing.get("treated", 0), high=1000000)
+    missing_c = integer(missing.get("control", 0), high=1000000)
+    attrition = {"treated": missing_t / max(1, len(treated) + missing_t),
+                 "control": missing_c / max(1, len(control) + missing_c)}
+    differential = abs(attrition["treated"] - attrition["control"])
+    material_attrition = max(attrition.values()) > .2 or differential > .1
+    context = {"treatment": data.get("treatment", "unspecified treatment"),
+               "outcome": data.get("outcome", "unspecified outcome"),
+               "population": data.get("population", "the supplied randomized sample only"),
+               "synthetic": bool(data.get("synthetic", False))}
+    assumptions = ["randomized assignment as declared", "consistency (one version of treatment)",
+                   "no interference between units", "missing outcomes ignorable (missing completely at random)"]
+    proof = {"dag": data.get("dag", []), "identification_assumptions": assumptions,
+             "estimand": "average treatment effect in the supplied randomized sample", "estimate": None,
+             "confounders": data.get("confounders", []), "refutations": {},
+             "missingness": {"missing": {"treated": missing_t, "control": missing_c}, "attrition": attrition,
+                             "differential": differential, "material": material_attrition},
+             "scope": "the units in this sample; no transport to another population is claimed", **context}
+
+    def stop(status, why, extra=None):
+        proof["refutations"].setdefault("sample_sizes", [len(treated), len(control)])
+        out = {"effect": None, "identified_conditionally": False, **(extra or {})}
+        return result(out, proof, status=status, missing=(why,))
+
+    if data.get("design") != "randomized":
+        return stop("UNIDENTIFIED", "verified identification design and treatment/control observations")
+    if len(treated) < 2 or len(control) < 2:
+        return stop("ABSTAIN", "at least two observed outcomes in each arm")
+    if material_attrition:
+        bounds = data.get("outcome_bounds")
+        extra = {}
+        if isinstance(bounds, list) and len(bounds) == 2:
+            lo, hi = number(bounds[0]), number(bounds[1])
+            if lo > hi or any(not lo <= x <= hi for x in treated + control):
+                raise CognitionError("declared outcome bounds must contain every observed outcome")
+            def mean_with(values, k, fill):
+                return (sum(values) + k * fill) / (len(values) + k)
+            extra["identified_set"] = [mean_with(treated, missing_t, lo) - mean_with(control, missing_c, hi),
+                                       mean_with(treated, missing_t, hi) - mean_with(control, missing_c, lo)]
+            proof["refutations"]["worst_case_bounds"] = extra["identified_set"]
+        return stop("UNIDENTIFIED", "attrition is material or differential; missing outcomes may be selected "
+                    "(worst-case bounds reported when the outcome range is declared)", extra)
+    from scipy import stats
+    welch = stats.ttest_ind(treated, control, equal_var=False)
+    ci = welch.confidence_interval(confidence_level=1 - alpha)
+    seed = integer(data.get("seed", 0), high=2147483647)
+    import numpy as np
+    perm = stats.permutation_test((np.asarray(treated), np.asarray(control)),
+                                  lambda x, y, axis: np.mean(x, axis=axis) - np.mean(y, axis=axis),
+                                  n_resamples=2000, random_state=seed, vectorized=True)
+    effect = sum(treated) / len(treated) - sum(control) / len(control)
+    proof["estimate"] = effect
+    proof["refutations"] = {"sample_sizes": [len(treated), len(control)], "randomization_verified": False,
+                            "permutation_p_value": float(perm.pvalue), "permutation_resamples": 2000,
+                            "permutation_seed": seed, "unmeasured_confounding": "excluded only if randomization held"}
+    pre = data.get("pre_treatment")
+    if isinstance(pre, dict) and pre.get("treated") and pre.get("control"):
+        balance = stats.ttest_ind([number(x) for x in pre["treated"]], [number(x) for x in pre["control"]],
+                                  equal_var=False)
+        proof["refutations"]["placebo_pre_treatment_p_value"] = float(balance.pvalue)
+        if balance.pvalue < alpha:
+            return stop("UNIDENTIFIED", "pre-treatment placebo comparison is imbalanced; randomization is in doubt")
+    else:
+        proof["refutations"]["placebo_test"] = "not supplied"
+    out = {"effect": effect, "identified_conditionally": True, "ci": [float(ci.low), float(ci.high)],
+           "confidence_level": 1 - alpha, "permutation_p_value": float(perm.pvalue),
+           "n": [len(treated), len(control)], "interval_method": f"Welch t (SciPy {_version('scipy')})"}
+    return result(out, proof)
+
+
+def _version(name):
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown"
 
 
 def control(data, geometry):
@@ -277,7 +380,7 @@ def simulation(data, geometry):
     count = integer(data["samples"], low=1, high=min(10000, geometry["compute_limit"]))
     steps = integer(data["steps"], low=1, high=1000)
     if count * steps > geometry["compute_limit"]:
-        raise CognitionError("simulation operation budget exceeded")
+        raise BudgetError("simulation operation budget exceeded")
     probability = number(data["step_probability"], low=0, high=1)
     scenarios = [sum(rng.random() < probability for _ in range(steps)) for _ in range(count)]
     out = {"mean": sum(scenarios) / count, "minimum": min(scenarios), "maximum": max(scenarios)}
@@ -334,7 +437,7 @@ def sequential(data, geometry):
     gamma = number(data.get("discount", 1), low=0, high=1)
     count = sum(len(actions) * len(states) for actions in transitions.values()) * horizon
     if not states or len(states) > 128 or count > geometry["compute_limit"]:
-        raise CognitionError("MDP operation budget exceeded")
+        raise BudgetError("MDP operation budget exceeded")
     values, policy, trace = dict.fromkeys(states, 0.0), {}, []
     for _ in range(horizon):
         next_values = {}
@@ -399,7 +502,7 @@ def evolutionary(data, geometry):
         if number(low) >= number(high):
             raise CognitionError("ordered evolutionary bounds required")
     if (generations + 1) * population * len(center) > geometry["compute_limit"]:
-        raise CognitionError("evolutionary evaluation budget exceeded")
+        raise BudgetError("evolutionary evaluation budget exceeded")
     trace = []
     def evaluate(candidate):
         return sum((number(float(v)) - c) ** 2 for v, c in zip(candidate, center))
@@ -420,4 +523,6 @@ SOLVERS = {"exact": exact, "estimation": fermi, "formal": formal, "optimization"
            "pattern": pattern, "micro": micro, "sequential": sequential, "human": human}
 SOLVERS.update({"collective": quorum, "evolutionary": evolutionary})
 from .protection import assess as protection
+from .advantage import assess as advantage
 SOLVERS["protection"] = protection
+SOLVERS["advantage"] = advantage

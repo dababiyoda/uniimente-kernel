@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .contracts import CognitiveReceipt, ProblemGeometry, digest
+from .contracts import RECEIPT_V01_FIELDS, CognitiveReceipt, ProblemGeometry, digest
 
 
 def _valid_receipt(value):
@@ -12,7 +12,9 @@ def _valid_receipt(value):
     copy = dict(value)
     identity = copy.pop("receipt_id", None)
     try:
-        if identity != digest(copy) or set(copy) != set(CognitiveReceipt.__dataclass_fields__):
+        # Both receipt versions settle: v0.1 with its original field set, v0.2 with every field.
+        if identity != digest(copy) or set(copy) not in (set(RECEIPT_V01_FIELDS),
+                                                         set(CognitiveReceipt.__dataclass_fields__)):
             return False
         CognitiveReceipt(**copy)
     except (TypeError, ValueError, KeyError):

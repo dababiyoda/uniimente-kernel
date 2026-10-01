@@ -105,6 +105,9 @@ def main(argv=None) -> int:
     css = cs.add_subparsers(dest="cognition_cmd", required=True)
     css.add_parser("inventory")
     css.add_parser("knowledge")
+    ce = css.add_parser("explain", help="run a request read-only and explain the receipt in plain words")
+    ce.add_argument("--request", required=True)
+    ce.add_argument("--json", action="store_true", help="print the full receipt instead")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -308,8 +311,20 @@ def main(argv=None) -> int:
                         registry = registry_view(journal)
                 else:
                     registry = registry_view()
-                data = [{**m.to_dict(), "attached": registry.usable(cid)[0]} for cid, m in registry.manifests.items()
+                from greg.cognition.outcomes import availability
+                data = [{**m.to_dict(), "attached": registry.usable(cid)[0],
+                         "availability": availability(cid, m, registry)} for cid, m in registry.manifests.items()
                         if cid.startswith("cognition.")]
+            elif args.cognition_cmd == "explain":
+                from greg.cognition.cortex import reason
+                from greg.cognition.outcomes import summary
+                request = json.loads(Path(args.request).read_text())
+                receipt = reason(request, registry=registry_view())
+                if args.json:
+                    data = receipt
+                else:
+                    print("\n".join(summary(receipt)))
+                    return 0
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells

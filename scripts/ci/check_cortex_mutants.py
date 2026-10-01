@@ -126,7 +126,42 @@ GREG_MUTANTS = [
     ("zero solver budget still solves", "cortex/routing.py",
      "elif set(FORMAL_ENGINES) & set(selected) and limits.max_solver_calls < 1:", "elif False:"),
 ]
-GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS)]
+# Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
+OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
+             "tests/unit/test_greg_cognition.py"]
+OSS_MUTANTS = [
+    ("certificate skips edge feasibility", "greg/cognition/network.py",
+     "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
+    ("certificate trusts claimed unreachability", "greg/cognition/network.py",
+     "        if b not in reached:\n            raise CertificateError", "        if False:\n            raise CertificateError"),
+    ("flow certificate skips the residual graph", "greg/cognition/network.py", "if sink in side:", "if False:"),
+    ("negative weights reach the engine", "greg/cognition/network.py", "    if value < 0:", "    if False:"),
+    ("changed package files survive restart", "greg/genesis.py",
+     'if mechanisms.digest(dist, candidate.digest_paths)[0] != manifest.provenance.get("package_digest"):',
+     "if False:"),
+    ("repair re-admits the package that failed in service", "greg/genesis.py",
+     'if repair and repair.get("capability_id") == manifest.capability_id:', "if False:"),
+    ("engine imported from an unqualified location", "greg/mechanisms.py",
+     "if root not in module_file.parents:", "if False:"),
+    ("#140 graph verifier accepts a longer route", "greg/cognition/verification.py",
+     'checks["path_optimal"] = data["goal"] in best and', 'checks["path_optimal"] = True or'),
+    ("#140 graph verifier accepts a false no-route", "greg/cognition/verification.py",
+     'checks["unreachable_confirmed"] = data["goal"] not in best', 'checks["unreachable_confirmed"] = True'),
+    ("LP certificate skips the duality gap", "greg/cognition/linear.py",
+     "    if not _close(primal, dual, primal):", "    if False:"),
+    ("LP certificate ignores multiplier signs", "greg/cognition/linear.py",
+     "if any(y > TOLERANCE for y in y_ub) or", "if False and any(y > TOLERANCE for y in y_ub) or"),
+    ("LP certificate skips inequality feasibility", "greg/cognition/linear.py",
+     "        if lhs > Fraction(b) + TOLERANCE * (1 + abs(Fraction(b))):", "        if False:"),
+    ("LP engine claim of infeasibility closes a mission", "greg/cognition/linear.py",
+     '        return {"certified": False, "status": claim["status"],', '        return {"certified": True, "status": claim["status"],'),
+    ("console attaches a capability no ask names", "greg/console.py",
+     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))}:",
+     "if False:"),
+]
+
+GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS)]
 
 
 def main() -> int:

@@ -43,6 +43,11 @@ WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
 SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
+NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
+                     r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
+NETWORK_LINK = re.compile(r"\b\w+\s+(?:to|and)\s+\w+\s*[:,]?\s*\d", re.I)
+PLAN = re.compile(r"(?:^|[.!?\n]\s*)(?:maximi[sz]e|minimi[sz]e)\s+\S", re.I)
+PLAN_LIMIT = re.compile(r"(?:<=|>=|≤|≥|\bat most\b|\bat least\b|\bbetween\b|=)\s*-?\d", re.I)
 
 
 @dataclass
@@ -159,6 +164,30 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "the controlled language is read without a model; a sentence it cannot read stops the plan",
             "availability taken from your words" if stated else
             "no availability statement: the answer stays conditional (add 'The machine is free all shift.')"])
+    if NETWORK.search(text) and NETWORK_LINK.search(text):   # a route or flow question in controlled words
+        try:
+            spec = templates.network_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:network-in-words", "questions": [str(exc)]}
+        function = spec["strategies"][0]["function"]
+        return _proposal(spec, "template:network-in-words", notes=[
+            "read-only: GREG computes and shows the answer; it routes or ships nothing",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            f"GREG has no built-in {function}: it looks for an installed open-source engine (NetworkX, SciPy), "
+            "qualifies it, and asks you to attach it, showing its version and license",
+            "every answer is accepted only on GREG's own certificate, not on the engine's word"])
+    if PLAN.search(text) and PLAN_LIMIT.search(text):          # a linear plan in controlled words
+        try:
+            spec = templates.plan_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:plan-in-words", "questions": [str(exc)]}
+        return _proposal(spec, "template:plan-in-words", notes=[
+            "read-only: GREG computes and shows the plan; it buys, makes or moves nothing",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            "every quantity is taken as nonnegative unless a sentence gives it a lower bound",
+            "GREG has no built-in LP engine: it looks for an installed open-source one (SciPy HiGHS, OR-Tools "
+            "GLOP), qualifies it, and asks you to attach it, showing its version and license",
+            "the plan counts only if GREG's own duality certificate proves no plan does better"])
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

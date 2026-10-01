@@ -31,10 +31,15 @@ Historical literal-morphogenesis work is preserved as research, mechanisms, test
 - Establish one canonical authority path while retaining multiple governed capability implementations.
 - Connect disconnected systems through typed contracts, adapters, events,
   registries and capability composition.
-- **Search for, acquire, adapt, or compose an existing mechanism before building missing technology. Build only the residual capability that remains missing.**
+- **Search for, acquire, adapt, vendor narrowly, fork coherently, or compose an existing mechanism before building missing technology. Build only the residual capability that remains missing.**
+- Read `docs/intent/INTENT-20261001-open-source-mechanism-harvest.json` and `docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md` for material CapabilityDeficits.
+- Treat open-source repositories, algorithms, standards, papers and public technical information as an engineering supply chain for completing Body + Organs + Mind.
+- Use explicit reuse states: DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE, RECOMBINE. Preserve upstream revision, license/notices, provenance, maintenance/security evidence, qualification tests, replacement and rollback.
+- Prefer maintained production libraries behind replaceable adapters; use educational/index repositories as mechanism atlases unless a specific source slice is independently qualified.
 - Prefer mature commodity infrastructure and build UNIIMENTE's proprietary control,
   proof, memory, composition and evolution layers above it.
 - Treat open-source projects and existing tools as mechanism sources and usable capabilities, not as things that must be recreated from scratch.
+- A seed, experiment, benchmark, PR, catalog or smallest falsifiable build is never a stopping condition for the currently achievable full machine. After each closure, continue to the highest-priority unfinished Body + Organs + Mind mechanism that can be built with current resources and authority.
 - Do not claim completion without executable evidence.
 - Do not claim an effect because an internal simulation resembles the founder's metaphor.
 - Continue until all unblocked work is implemented, tested, attacked, verified,

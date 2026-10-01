@@ -286,7 +286,7 @@ def render_home(console: Console) -> bytes:
                         f"</td><td>{accept}</td></tr>")
         out.append("<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
                    "<p class=muted>A closure counts only when every condition holds, including your acceptance "
-                   "and a Mac body.</p></section>")
+                   "and a run on the body you designated as your first body.</p></section>")
     if snap["missions"]:
         rows = "".join(
             f"<tr><td>{_e(m['mission_id'])}<br><span class=muted>{_e(m['intended_effect'])}</span></td>"

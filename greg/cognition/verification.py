@@ -52,14 +52,26 @@ def verify(family, data, answer, proof_class):
         if family == "optimization":
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
-    elif family in ("graph", "search") and output["reachable"]:
-        edges = {(a, b): w for a, b, w in data["edges"]}
-        if not data.get("directed", True):
-            edges.update({(b, a): w for (a, b), w in list(edges.items())})
-        path = output["path"]
-        checks["path_endpoints"] = path[0] == data["start"] and path[-1] == data["goal"]
-        checks["path_edges"] = all((a, b) in edges for a, b in zip(path, path[1:]))
-        checks["path_cost"] = checks["path_edges"] and math.isclose(sum(edges[a, b] for a, b in zip(path, path[1:])), output["cost"])
+    elif family in ("graph", "search"):
+        # GREG's own Dijkstra (greg/cognition/network.py) shares no code with NetworkX. It refutes a
+        # valid but longer path and a false "no path", which form checks alone let through.
+        from .network import local_dijkstra
+        nodes = {n for a, b, _ in data["edges"] for n in (a, b)}
+        best = local_dijkstra({"edges": data["edges"], "directed": data.get("directed", True),
+                               "source": data["start"]})["distances"] if data["start"] in nodes else {}
+        if output["reachable"]:
+            edges = {}
+            for a, b, w in data["edges"]:
+                for key in ([(a, b)] if data.get("directed", True) else [(a, b), (b, a)]):
+                    edges[key] = min(edges.get(key, w), w)
+            path = output["path"]
+            checks["path_endpoints"] = path[0] == data["start"] and path[-1] == data["goal"]
+            checks["path_edges"] = all((a, b) in edges for a, b in zip(path, path[1:]))
+            checks["path_cost"] = checks["path_edges"] and math.isclose(sum(edges[a, b] for a, b in zip(path, path[1:])), output["cost"])
+            checks["path_optimal"] = data["goal"] in best and math.isclose(output["cost"], best[data["goal"]],
+                                                                            rel_tol=1e-9, abs_tol=1e-12)
+        else:
+            checks["unreachable_confirmed"] = data["goal"] not in best
     elif family == "estimation":
         checks["ordered_range"] = output["low"] <= output["central"] <= output["high"]
         dissent.append("Bounds are assumptions; no calibrated probability or external market proof follows.")

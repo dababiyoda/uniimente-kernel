@@ -206,7 +206,10 @@ def graph(data, geometry):
     for edge in edges:
         if len(edge) != 3 or any(not isinstance(n, str) for n in edge[:2]):
             raise CognitionError("edges require two string nodes and nonnegative cost")
-        g.add_edge(edge[0], edge[1], weight=number(edge[2], low=0))
+        weight = number(edge[2], low=0)
+        if g.has_edge(edge[0], edge[1]):   # parallel edges: the cheaper one is a real route (add_edge overwrote it)
+            weight = min(weight, g[edge[0]][edge[1]]["weight"])
+        g.add_edge(edge[0], edge[1], weight=weight)
     try:
         path = nx.shortest_path(g, data["start"], data["goal"], weight="weight")
         cost = nx.path_weight(g, path, "weight")

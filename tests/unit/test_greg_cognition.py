@@ -129,6 +129,24 @@ def test_independent_verifier_refutes_a_solver_lie():
     assert verify("formal", MODEL, answer, "formal_model")["verdict"] == "REFUTED"
 
 
+def test_independent_verifier_refutes_a_longer_route_and_a_false_no_route():
+    data = {"edges": [["a", "b", 2], ["b", "c", 3], ["a", "c", 9]], "start": "a", "goal": "c"}
+    r = reason(request("shortest_path", data), registry=registry_view())
+    assert r["output"]["cost"] == 5
+    proof_class = "search_trace"                     # greg/cognition/catalog.py: graph
+    longer = {"output": {"path": ["a", "c"], "cost": 9, "reachable": True}, "proof": r["proof_artifact"]}
+    verdict = verify("graph", data, longer, proof_class)
+    assert verdict["verdict"] == "REFUTED" and verdict["checks"]["path_optimal"] is False
+    hidden = {"output": {"path": [], "cost": None, "reachable": False}, "proof": r["proof_artifact"]}
+    assert verify("graph", data, hidden, proof_class)["checks"]["unreachable_confirmed"] is False
+
+
+def test_a_cheaper_parallel_edge_is_never_overwritten_by_a_later_one():
+    data = {"edges": [["a", "b", 2], ["a", "b", 5], ["b", "c", 1]], "start": "a", "goal": "c"}
+    r = reason(request("shortest_path", data), registry=registry_view())
+    assert r["output"]["cost"] == 3 and r["abstention_state"] == "NONE"
+
+
 def test_symbolic_and_evolutionary_mechanisms_are_bounded_not_general_genesis():
     r = reason(request("evolve_vector", {"center": [1], "bounds": [[-2, 2]], "seed": 7, "generations": 10}), registry=registry_view())
     assert r["abstention_state"] == "NONE" and r["output"]["fitness"] < .01

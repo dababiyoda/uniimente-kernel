@@ -15,11 +15,21 @@
   "verification": {
     "full_suite": "1615 passed, 10 skipped at the pre-projection/cohort snapshot; see seed-full-final.log",
     "focused_final": "58 passed for rich receipts, real recovery, signed settlement, source continuity and interface; see seed-delivery-focus.log",
-    "last_corrections": "native version cohorts and source-map compaction checked separately; see seed-last-corrections.log",
-    "verifier": "V1-V5 PASS during development with tracked-tree state recorded; not a clean-final-head attestation",
+    "last_corrections": "Native-version cohorts and compact source map confirmed after the report existed: 4 passed; see seed-corrections-complete.log. Earlier seed-last-corrections.log failure retained.",
+    "verifier": "Final V1-V5 PASS; 1518 unit tests passed, 8 skipped, 3 fork warnings. Clean tracked source bound to 06a34b7; later commits change metadata/evidence only.",
     "native_mutations": "6 caught, 0 survived/stale/invalid; see seed-mutants-final.log",
     "phone": "2 browser tests skipped; native iPhone/Chromebook not tested",
-    "raw_results": "unmodified results.json, results-v2.json, results-v3.json and inherited-v015-rerun.json"
+    "raw_results": "unmodified results.json, results-v2.json, results-v3.json and inherited-v015-rerun.json",
+    "catalog_correction": "Final clean-tree run exposed a new GREG input in the older closed schema example directory; moved unchanged input under examples/seed-genome, updated commands, and 159 catalog/continuity checks passed. Failed run and diagnosis retained.",
+    "final_run": {
+      "path": "verifier/runs/v2-2026-10-01T15-16-59.812433+00-00.json",
+      "head_commit": "06a34b7017ff47bd212a46008af89dae245c8fa2",
+      "tracked_tree": "clean",
+      "source_tree": "e1ec7e8ac083715babc6925e3c9707c92ec62efb",
+      "equivalent_remote_source_commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
+      "command": "/workspace/scratch/888b14c8d3f5/seed-venv/bin/python /tmp/run-seed-verifier.py",
+      "capture": "Wrapper calls unmodified verifier/v2/verify.py and saves its subprocess result stdout/stderr without changing arguments or return code; raw unit output retained."
+    }
   },
   "benchmark": {
     "coverage": 120,
@@ -88,6 +98,24 @@
     "docs/cortex/evidence/seed-genome/seed-runtime.log": "4c98be8b0016dc7def40dbff60f9a7f536d6169a603dd21ead987a1af5e33c05",
     "docs/cortex/evidence/seed-genome/seed-settlement-fix.log": "2db0155e61d3015a81235fec14229d191092a51bb10cb63e5517bc199753ce7a",
     "docs/cortex/evidence/seed-genome/seed-settlement.log": "d4b05dca56168a42ed1eaaf7e4c8afc2d02595938f7588b1ca7b217957118af1",
-    "docs/cortex/evidence/seed-genome/seed-verifier.log": "d3291f46541f5efd7f07498ad420cf26fe96de8103ba42750993d86d2ac88ae2"
+    "docs/cortex/evidence/seed-genome/seed-verifier.log": "d3291f46541f5efd7f07498ad420cf26fe96de8103ba42750993d86d2ac88ae2",
+    "docs/cortex/evidence/seed-genome/authority.log": "16c96796f9e6e6df11cc9f2ded8de13c4a367ea0ec077aad206419d8ecf85026",
+    "docs/cortex/evidence/seed-genome/schema.log": "e1a4d5e9e7e49a2d8e5a9031f8684835706815bd9498a7df17ee1f68edf52a8a",
+    "docs/cortex/evidence/seed-genome/sealed.log": "c6f5311fc4ae782a4051fa2a38b05044996e015a41f3d3acc2f0e92e94e5a2f1",
+    "docs/cortex/evidence/seed-genome/seed-catalog-fix.log": "dc386fe8064ca78e9983410da14490bca07ac18d8fb2785b73d86490da6fb279",
+    "docs/cortex/evidence/seed-genome/seed-corrections-complete.log": "c76dbb2cb5633e2f061610df8480983f7ad140913e837e67e4c7a38afe82dfda",
+    "docs/cortex/evidence/seed-genome/seed-verifier-catalog-diagnosis.log": "64922bcbc27abe9025d1d00b8013c7657736f0c4116395bf6c5ebdf5a29bfe03",
+    "docs/cortex/evidence/seed-genome/seed-verifier-catalog-failure.log": "a73f38f5c53dd1502261d04cb156443a645417e47d63cc4a85ce600a15e58b5c",
+    "docs/cortex/evidence/seed-genome/seed-verifier-closed.log": "37ff8f6e7f932ed8e0ec530e3a1f05e12c7b77412e6756c31e1889c72b0d6a4b",
+    "docs/cortex/evidence/seed-genome/seed-verifier-unit-output.log": "a4d32e5c884aee279194d0e787e488cb6bd8835067143c0dcf2689fda7bc7e36"
+  },
+  "publication": {
+    "draft_pr": "https://github.com/dababiyoda/uniimente-kernel/pull/142",
+    "base": "claude/uniimente-greg-reconciliation-39syff",
+    "base_sha": "3d2bb1762ff709ce74d3053aced060e70d4e6674",
+    "initial_remote_commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
+    "initial_local_source": "06a34b7",
+    "initial_shared_tree": "e1ec7e8ac083715babc6925e3c9707c92ec62efb",
+    "transport": "Connector file tree upload; exact local source history through abff923 preserved in the Git bundle. Metadata/evidence-only commits follow."
   }
 }

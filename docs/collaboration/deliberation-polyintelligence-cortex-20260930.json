@@ -162,7 +162,7 @@
       "claim": "Stacks on PR #137",
       "tier": "sandbox_execution",
       "reference": "docs/cortex/SEED_EXPERIMENT_REPORT.md#stacking-on-pr-137",
-      "finding": "clean merge; 1297 passed vs 1201 for #137 alone, same 12 skips"
+      "finding": "clean merge at the final head; 1556 passed vs 1201 for #137 alone, same 12 skips; 22/22 mutants and verifier PASS on the stack"
     },
     {
       "claim": "Router precedents",

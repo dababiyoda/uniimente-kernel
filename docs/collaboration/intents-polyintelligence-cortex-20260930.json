@@ -166,12 +166,12 @@
       "evidence_refs": [
         "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
         "tests/unit/test_cortex_traceability.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json"
       ],
       "implementation_refs": [
         "cortex/",
         "contracts/cortex-*.schema.json",
-        "cortex/evaluation/freeze-v0.1.4.json"
+        "cortex/evaluation/freeze-v0.1.5.json"
       ],
       "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
       "next_review_trigger": "Declared baselines run; exit verdict recorded.",
@@ -196,7 +196,7 @@
       "rationale": "Prevents promotion on self-authored or weak evidence.",
       "conflicts": [],
       "evidence_refs": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json",
         "cortex/evaluation/scoring.py"
       ],
       "implementation_refs": [

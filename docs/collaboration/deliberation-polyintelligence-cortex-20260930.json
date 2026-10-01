@@ -108,7 +108,7 @@
       ],
       "evidence_refs": [
         "docs/cortex/INVENTION_DOSSIER.md",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json"
       ],
       "recommendation": "EXPERIMENT"
     },
@@ -143,7 +143,7 @@
     {
       "claim": "Routed seed on frozen held-out",
       "tier": "deterministic_fixture",
-      "reference": "tests/evidence/cortex-seed-v0.1.4/heldout-results.json",
+      "reference": "tests/evidence/cortex-seed-v0.1.5/heldout-results.json",
       "finding": "0.964 [0.911, 1.000], zero critical errors, unsupported certainty and gate violations; self-authored items"
     },
     {
@@ -175,7 +175,7 @@
     {
       "claim": "Routing gain",
       "tier": "deterministic_fixture",
-      "reference": "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit",
+      "reference": "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
       "finding": "INCONCLUSIVE: declared baselines NOT_RUN"
     },
     {

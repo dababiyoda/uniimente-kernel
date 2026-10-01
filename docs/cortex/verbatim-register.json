@@ -532,7 +532,7 @@
       "anchor": "37. New mechanism: Intelligence Characterization Harness",
       "disposition": "implemented_partial",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/by_family",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family",
         "cortex/evaluation/scoring.py"
       ],
       "backcast": "N2",
@@ -1035,7 +1035,7 @@
       "disposition": "implemented",
       "evidence": [
         "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit"
       ],
       "backcast": null,
       "notes": "VEPMC 0->1 stays the global bottleneck; the cognition bottleneck is verified cross-geometry routing gain, which is the frozen exit rule (cost, latency and error counted).",
@@ -1908,7 +1908,7 @@
       "anchor": "51. P2: Minimal Polyintelligence Proof",
       "disposition": "implemented_partial",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/always_llm/status",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/always_llm/status",
         "cortex/evaluation/suites/smoke-v0.1.json"
       ],
       "backcast": "N1",
@@ -2099,7 +2099,7 @@
       "anchor": "The decisive test is not whether it sounds intelligent.",
       "disposition": "implemented_partial",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_cross_geometry_gain_without_resource_blowup",
         "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
       ],

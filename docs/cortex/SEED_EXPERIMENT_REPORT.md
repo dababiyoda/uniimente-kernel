@@ -99,7 +99,7 @@ refuses if any input changed. Six versions were frozen and run; all manifests an
 Held-out results were **identical item for item** across all six versions: no held-out item exercises the
 changed paths, and the exit change only matters once baselines run. That is a coverage gap, recorded under limitations; the paths are covered by unit and mutation tests.
 
-**Held-out results (cortex 0.1.4, `tests/evidence/cortex-seed-v0.1.4/heldout-results.json`):**
+**Held-out results (cortex 0.1.5, `tests/evidence/cortex-seed-v0.1.5/heldout-results.json`):**
 
 | Measure | Routed seed | Always abstain (reference) | Always LLM | LLM committee |
 | --- | --- | --- | --- | --- |

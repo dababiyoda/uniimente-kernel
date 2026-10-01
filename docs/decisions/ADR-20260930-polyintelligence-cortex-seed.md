@@ -29,7 +29,7 @@
 
 | Claim | Claim class | Evidence tier | Source and location | Finding | Limitation |
 | --- | --- | --- | --- | --- | --- |
-| Routed seed quality | observation | deterministic fixture | `tests/evidence/cortex-seed-v0.1.4/heldout-results.json` | 0.964 [0.911, 1.000]; 0 critical errors | self-authored, structured items |
+| Routed seed quality | observation | deterministic fixture | `tests/evidence/cortex-seed-v0.1.5/heldout-results.json` | 0.964 [0.911, 1.000]; 0 critical errors | self-authored, structured items |
 | Routing gain | unresolved claim | deterministic fixture | same file, `exit` | `INCONCLUSIVE` | baselines `NOT_RUN` (no reachable model) |
 | No authority created | implementation | unit test | `tests/unit/test_cortex_pipeline.py` | schema pins `authority_created: false`; no actuator import | — |
 | Safeguards load-bearing | implementation | unit test | `scripts/ci/check_cortex_mutants.py` | 26/26 mutants caught | mutants are hand-chosen |

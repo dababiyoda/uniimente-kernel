@@ -21,7 +21,7 @@
   "success_evidence": [
     "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
     "docs/cortex/verbatim-register.json",
-    "tests/evidence/cortex-seed-v0.1.4/heldout-results.json",
+    "tests/evidence/cortex-seed-v0.1.5/heldout-results.json",
     "scripts/ci/check_cortex_mutants.py"
   ],
   "failure_evidence": [
@@ -40,7 +40,7 @@
     "'Verbatim' versus the review's own corrections (PC-010)",
     "Literal dominance reading versus Final Build Order §11 (PC-004)"
   ],
-  "next_review_trigger": "Declared baselines run on freeze v0.1.4, or the founder rules on merge (deliberation polyintelligence-cortex-20260930).",
+  "next_review_trigger": "Declared baselines run on freeze v0.1.5, or the founder rules on merge (deliberation polyintelligence-cortex-20260930).",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [

@@ -56,10 +56,10 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/by_family",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family",
         "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry"
       ],
-      "notes": "Five mechanisms of different kinds (LLM synthesis, Monte Carlo decomposition, SMT, evidence rules + adjustment, rule-based attack) run under one router."
+      "notes": "Six mechanisms of different kinds (LLM synthesis, Monte Carlo decomposition, SMT, evidence rules + adjustment, expected-value incentive model, rule-based attack) run under one router."
     },
     {
       "id": "R01.0",
@@ -306,7 +306,7 @@
       "status": "met",
       "evidence": [
         "cortex/gates.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/by_family/founder_policy"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family/founder_policy"
       ],
       "notes": "Pareto front over eligible options with founder weights."
     },
@@ -606,7 +606,7 @@
       "status": "met",
       "evidence": [
         "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_prediction_needs_track_record",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/by_family/association"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family/association"
       ],
       "notes": ""
     },
@@ -925,7 +925,7 @@
       ],
       "status": "met",
       "evidence": [
-        "cortex/evaluation/freeze-v0.1.4.json",
+        "cortex/evaluation/freeze-v0.1.5.json",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_heldout_matches_its_freeze"
       ],
       "notes": ""
@@ -939,7 +939,7 @@
       "status": "met",
       "evidence": [
         "cortex/evaluation/suites/smoke-v0.1.json",
-        "tests/evidence/cortex-seed-v0.1.4/smoke-results.json"
+        "tests/evidence/cortex-seed-v0.1.5/smoke-results.json"
       ],
       "notes": "Semantic smoke abstains (no model reachable); the other three pass."
     },
@@ -991,7 +991,7 @@
       "status": "blocked_external",
       "evidence": [
         "cortex/evaluation/arms.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/always_llm/status",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/always_llm/status",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_unavailable_model_means_not_run_never_simulated"
       ],
       "notes": "Arm implemented; NOT_RUN because no local model is reachable and the network policy blocks model download. Unblock: allow the model host in the environment's network settings, or run on a machine with Ollama (qwen3.5:4b)."
@@ -1005,7 +1005,7 @@
       "status": "blocked_external",
       "evidence": [
         "cortex/evaluation/arms.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/llm_committee/status"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/llm_committee/status"
       ],
       "notes": "Same blocker as R09.5."
     },
@@ -1017,7 +1017,7 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/mean_quality"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/mean_quality"
       ],
       "notes": "0.964 [0.911, 1.000] on 42 held-out items."
     },
@@ -1030,7 +1030,7 @@
       "status": "met",
       "evidence": [
         "cortex/evaluation/arms.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/resource_disclosure"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/resource_disclosure"
       ],
       "notes": "Baselines receive the same facts rendered as text in the question."
     },
@@ -1042,7 +1042,7 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/latency_s_p95"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/latency_s_p95"
       ],
       "notes": "Latency is measured around the whole Cortex.run call."
     },
@@ -1054,9 +1054,9 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/calibration",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/abstention",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/arms/routed_seed/summary/mean_quality_ci95"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/calibration",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/abstention",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/mean_quality_ci95"
       ],
       "notes": ""
     },
@@ -1093,7 +1093,7 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/smoke-results.json"
+        "tests/evidence/cortex-seed-v0.1.5/smoke-results.json"
       ],
       "notes": "Fermi, Formal and causal smoke items succeed."
     },
@@ -1105,7 +1105,7 @@
       ],
       "status": "met_reported_negative",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit/verdict",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit/verdict",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_every_declared_baseline_and_a_margin"
       ],
       "notes": "No gain is claimed: exit is INCONCLUSIVE."
@@ -1119,7 +1119,7 @@
       "status": "met",
       "evidence": [
         "cortex/memory.py",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/learning_checks"
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/learning_checks"
       ],
       "notes": ""
     },
@@ -1247,7 +1247,7 @@
       "evidence": [
         "docs/cortex/README.md#reproduce-the-benchmark",
         "docs/cortex/examples/INDEX.json",
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/representative_receipts",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/representative_receipts",
         "docs/cortex/SEED_EXPERIMENT_REPORT.md#limitations",
         "docs/cortex/SEED_EXPERIMENT_REPORT.md#evidence-for-the-next-expansion"
       ],
@@ -1286,7 +1286,7 @@
       ],
       "status": "met_reported_negative",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
         "cortex/evaluation/scoring.py",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_cross_geometry_gain_without_resource_blowup",
         "scripts/ci/check_cortex_mutants.py"
@@ -1301,7 +1301,7 @@
       ],
       "status": "met",
       "evidence": [
-        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json#/exit/promote",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit/promote",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_profile_invariants"
       ],
       "notes": "Seed organs stay SANDBOXED; exit promote=false."

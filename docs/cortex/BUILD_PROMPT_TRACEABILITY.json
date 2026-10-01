@@ -1,7 +1,7 @@
 {
   "schema": "cortex-build-prompt-traceability/0.1",
   "source": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
-  "cortex_version": "0.2.0",
+  "cortex_version": "0.2.1",
   "rule": "Every line of the verbatim build prompt is covered by a requirement anchor or a framing anchor; every evidence reference resolves. tests/unit/test_cortex_traceability.py enforces both.",
   "status_vocabulary": {
     "met": "executable evidence in this repository demonstrates it",
@@ -34,7 +34,7 @@
         "cortex/routing.py",
         "docs/cortex/SEED_EXPERIMENT_REPORT.md"
       ],
-      "notes": "Built as the `cortex` package; the version string is 0.2.0 after six disclosed changes (v0.2.0: a fault-diverse CP-SAT engine, the outcome taxonomy and the schedule-extraction composition, converged onto GREG's registry and mission path), each frozen before its own reported run."
+      "notes": "Built as the `cortex` package; the version string is 0.2.1 after seven disclosed changes (v0.2.0: a fault-diverse CP-SAT engine, the outcome taxonomy and the schedule-extraction composition, converged onto GREG's registry and mission path; v0.2.1: declared harm may raise the consequence class, the fix for the crossgeo v0.2 hard failure), each frozen before its own reported run."
     },
     {
       "id": "R00.2",

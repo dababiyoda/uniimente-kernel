@@ -132,7 +132,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000178,
+    "seconds": 0.000183,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -257,12 +257,12 @@
   "proof_artifacts": [],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:49e597b298cc6af6f5904320a02108bb90d89c6a13fa6a1a9b24f04b107bfb5f",
+  "receipt_id": "sha256:812c836e1cbe6cf03714b8c2e00cfd7582386836afb4c110072a8941bbcdea9e",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2",
+    "policy": "cortex-route-policy/0.2.1",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": []
   },
@@ -293,8 +293,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.0",
-    "policy": "cortex-route-policy/0.2",
+    "cortex": "0.2.1",
+    "policy": "cortex-route-policy/0.2.1",
     "routes": {}
   }
 }

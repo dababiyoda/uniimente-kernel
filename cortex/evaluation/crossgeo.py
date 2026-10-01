@@ -27,9 +27,13 @@ from .generators import expand
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-SUITE_VERSION = "0.2"
-SUITES = {p: HERE / "suites" / f"crossgeo-{p}-v{SUITE_VERSION}.json"
-          for p in ("dev", "selection", "heldout", "adversarial")}
+# v0.3 is the next bounded test after the v0.2 GAIN_ABSENT result: development and selection are the
+# v0.2 splits unchanged; held-out and adversarial are fresh samples. v0.2 freeze and results are kept.
+SUITE_VERSION = "0.3"
+SUITES = {"dev": HERE / "suites" / "crossgeo-dev-v0.2.json",
+          "selection": HERE / "suites" / "crossgeo-selection-v0.2.json",
+          "heldout": HERE / "suites" / f"crossgeo-heldout-v{SUITE_VERSION}.json",
+          "adversarial": HERE / "suites" / f"crossgeo-adversarial-v{SUITE_VERSION}.json"}
 MANIFEST = HERE / f"freeze-crossgeo-v{SUITE_VERSION}.json"
 FROZEN_CODE = ["cortex/evaluation/crossgeo.py", "cortex/evaluation/crossgeo_arms.py",
                "cortex/evaluation/crossgeo_loss.py", "cortex/evaluation/crossgeo_suite.py",

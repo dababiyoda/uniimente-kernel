@@ -23,7 +23,7 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.2.0"
+CORTEX_VERSION = "0.2.1"
 
 
 class CortexError(ValueError):
@@ -159,7 +159,7 @@ OBJECTIVES = ("decide_feasibility", "decide_entailment", "optimize_objective", "
 # Where a geometry value came from. Semantic proposals never count as
 # established unless validated against the structured payload.
 FIELD_SOURCES = ("payload_structure", "requester_declared", "semantic_proposal_validated",
-                 "default_unknown")
+                 "raised_by_declared_harm", "default_unknown")
 
 
 def _enum(name: str, value: Any, allowed: tuple) -> str:

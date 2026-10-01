@@ -135,19 +135,55 @@ def test_freeze_covers_the_router_organs_bridge_and_instrument():
 
 
 def _suite(p):
-    return json.loads((ROOT / f"cortex/evaluation/suites/crossgeo-{p}-v0.2.json").read_text())["items"]
+    return json.loads(R.SUITES[p].read_text())["items"]
+
+
+SUITE_FILES = sorted((ROOT / "cortex/evaluation/suites").glob("crossgeo-*-v*.json"))
 
 
 def test_splits_are_disjoint_by_template_and_digest():
-    from cortex.evaluation.crossgeo_suite import NAMES, _problem_digest
+    """No problem appears in two files: not across splits, not across versions (v0.3 is a fresh sample)."""
+    from cortex.evaluation.crossgeo_suite import NAMES, VARIANTS, _problem_digest
     seen = {}
-    for p in ("dev", "selection", "heldout", "adversarial"):
-        for i in _suite(p):
+    for path in SUITE_FILES:
+        for i in json.loads(path.read_text())["items"]:
             key = _problem_digest(i)
-            assert key not in seen or seen[key] == p, f"{i['item_id']} repeats a problem from {seen.get(key)}"
-            seen[key] = p
-    for a, b in itertools.combinations(NAMES, 2):
-        assert not set(NAMES[a]) & set(NAMES[b]), (a, b)
+            assert key not in seen, f"{path.name}:{i['item_id']} repeats {seen[key]}"
+            seen[key] = f"{path.name}:{i['item_id']}"
+    names = {**NAMES, **{f"{v}:{k}": n for v, var in VARIANTS.items() for k, n in var["names"].items()}}
+    names.pop("heldout"), names.pop("adversarial")
+    names.update({"0.2:heldout": ["J", "K", "L", "M"], "0.2:adversarial": ["X", "Y", "Z", "W"]})
+    for a, b in itertools.combinations(names, 2):
+        assert not set(names[a]) & set(names[b]), (a, b)
+
+
+def test_v02_suites_regenerate_item_for_item(tmp_path):
+    """The frozen v0.2 items are reproducible from the generator. Negative evidence pinned: the frozen
+    files embed a stale system-level map written before it was corrected; items are unaffected."""
+    import subprocess
+    import sys
+    code = (f"from pathlib import Path; from cortex.evaluation import crossgeo_suite as X; "
+            f"X.build('0.2', Path({str(tmp_path)!r}))")
+    subprocess.run([sys.executable, "-c", code], cwd=ROOT, check=True)
+    for split in ("dev", "selection", "heldout", "adversarial"):
+        fresh = json.loads((tmp_path / f"crossgeo-{split}-v0.2.json").read_text())
+        frozen = json.loads((ROOT / f"cortex/evaluation/suites/crossgeo-{split}-v0.2.json").read_text())
+        assert fresh["items"] == frozen["items"], split
+
+
+@pytest.mark.parametrize("version", ["0.2", "0.3"])
+def test_reported_results_match_their_freeze(version):
+    import hashlib
+    results = ROOT / f"tests/evidence/greg-crossgeo-v{version}/results.json"
+    if not results.exists():
+        pytest.skip(f"no v{version} results yet")
+    data = json.loads(results.read_text())
+    manifest = ROOT / f"cortex/evaluation/freeze-crossgeo-v{version}.json"
+    assert data["freeze_manifest_sha256"] == "sha256:" + hashlib.sha256(manifest.read_bytes()).hexdigest()
+    assert data["frozen_at"] <= data["run_at"], "the freeze must precede the reported run"
+    for split in ("heldout", "adversarial"):
+        for arm, rows in data[split]["rows"].items():
+            assert all("loss" in r and "hard_failures" in r for r in rows), (split, arm)
 
 
 def test_heldout_meets_the_floor_and_the_power_plan():

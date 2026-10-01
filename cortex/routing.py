@@ -37,7 +37,7 @@ from .organs.schedule_extraction import ScheduleExtractionOrgan
 from .organs import schedule_extraction
 from .organs.semantic import SemanticOrgan
 
-POLICY_VERSION = "cortex-route-policy/0.2"
+POLICY_VERSION = "cortex-route-policy/0.2.1"
 BUDGET_POLICY = "cortex-thinking-budget/0.1"
 RECEIPT_SCHEMA = "cortex-receipt/0.2"
 FORMAL = "cortex.formal.z3@0.2.0"
@@ -177,6 +177,16 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
     harm = ConsequenceVector.from_partial(declared.get("harm"))
     if "harm" not in declared:
         unresolved.append("consequence_vector")
+    # v0.2.1 (crossgeo v0.2 hard failure): the declared harm vector may raise the consequence class,
+    # never lower it. High financial harm, or any hard violation, is at least "financial", which
+    # cognition hands off instead of recommending. The declaration that understated it is kept.
+    implied = "financial" if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) else None
+    if implied and consequence_rank(implied) > consequence_rank(consequence):
+        severe = {k: v for k, v in harm.levels.items() if v in ("high", "critical")}
+        rejected.append({"field": "consequence_class", "value": consequence, "source": "requester_declared",
+                         "why": f"declared harm {severe} implies at least {implied}"})
+        consequence = implied
+        prov["consequence_class"] = {"source": "raised_by_declared_harm", "confidence": None}
     claim = p.get("claim") if isinstance(p.get("claim"), Mapping) else None
     spec = p.get("causal_spec") if isinstance(p.get("causal_spec"), Mapping) else None
     if spec:

@@ -351,3 +351,36 @@ class TestLatencyBudget:
                    registry=registry_view())
         assert r["proof_type"] == "cortex_receipt", r.get("missing_information")
         assert r["outcome"]["outcome"] in ("WAIT", "ABSTAIN", "ANSWERED_WITHIN_SCOPE")
+
+
+class TestMisclassifiedConsequence:
+    """crossgeo v0.2 hard failure (ADV-misclassified_high_consequence): a problem declared
+    internal_write whose declared harm vector says high financial harm was recommended. From
+    v0.2.1 the harm vector may raise the consequence class, never lower it."""
+
+    @staticmethod
+    def problem(harm):
+        model, _, _ = schedule([("A", 3), ("B", 4)], 10)
+        return {"problem_id": "t:misclassified", "question": "Feasible? (releases a payment automatically)",
+                "payload": {"formal_model": model, "declared": {"consequence_class": "internal_write",
+                                                                "reversibility": "reversible", "harm": harm}}}
+
+    @pytest.mark.parametrize("harm", [{"financial": "high"}, {"financial": "critical"}, {"physical": "high"},
+                                      {"rights": "high"}, {"irreversible_disclosure": "high"},
+                                      {"privacy": "critical"}])
+    def test_declared_harm_raises_the_consequence_and_forces_handoff(self, harm):
+        r = Cortex(clock=lambda: "2026-10-01T00:00:00Z").run(self.problem(harm))
+        assert r["disposition"]["kind"] == "handoff", r["disposition"]
+        assert r["geometry"]["consequence_class"] == "financial"
+        assert r["geometry"]["provenance"]["consequence_class"]["source"] == "raised_by_declared_harm"
+        assert any(x["field"] == "consequence_class" and x["value"] == "internal_write"
+                   for x in r["geometry"]["rejected_proposals"]), "the understated declaration is kept"
+        assert "AUTHORITY_REQUIRED" in r["outcome"]["reasons"]
+
+    def test_low_or_soft_harm_never_raises_and_never_lowers(self):
+        r = Cortex(clock=lambda: "2026-10-01T00:00:00Z").run(self.problem({"privacy": "high", "financial": "low"}))
+        assert r["geometry"]["consequence_class"] == "internal_write" and r["disposition"]["kind"] == "recommend"
+        p = self.problem({"financial": "none"})
+        p["payload"]["declared"]["consequence_class"] = "irreversible"
+        r = Cortex(clock=lambda: "2026-10-01T00:00:00Z").run(p)
+        assert r["geometry"]["consequence_class"] == "irreversible" and r["disposition"]["kind"] == "handoff"

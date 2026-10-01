@@ -120,6 +120,9 @@ GREG_MUTANTS = [
     ("paid fallback enabled: non-founder provider order selects a model", "greg/cognition/bridge.py",
      'if not model_config or "ollama" not in model_config.get("order", []) or not model_config.get("ollama_model"):',
      'if not model_config or not model_config.get("ollama_model"):'),
+    ("misclassified consequence: declared harm cannot raise the class", "cortex/routing.py",
+     'implied = "financial" if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) else None',
+     "implied = None"),
     ("zero solver budget still solves", "cortex/routing.py",
      "elif set(FORMAL_ENGINES) & set(selected) and limits.max_solver_calls < 1:", "elif False:"),
 ]

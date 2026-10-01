@@ -37,6 +37,7 @@ def owned(root: Path = ROOT) -> list[str]:
                       and p.name not in ("tests",))
     return packages + [d for d in DATA_DIRS if (root / d).exists() and d not in packages]
 PINNED = ("PyYAML", "jsonschema", "cryptography", "pytest")
+RUNTIME = ("z3-solver", "ortools", "wasmtime", "mcp", "rfc3161-client", "supervisor")
 EXCLUDE_PARTS = {"__pycache__", ".pytest_cache"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo"}
 
@@ -52,7 +53,13 @@ def toolchain() -> dict:
             versions[name] = metadata.version(name)
         except metadata.PackageNotFoundError:
             versions[name] = None
-    return {"python": ".".join(map(str, sys.version_info[:3])), "packages": versions,
+    runtime = {}
+    for name in RUNTIME:
+        try:
+            runtime[name] = metadata.version(name)
+        except metadata.PackageNotFoundError:
+            runtime[name] = None
+    return {"python": ".".join(map(str, sys.version_info[:3])), "packages": versions, "runtime_packages": runtime,
             "source_date_epoch": SOURCE_DATE_EPOCH}
 
 

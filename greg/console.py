@@ -204,6 +204,78 @@ def _form(console: Console, action: str, fields: dict, label: str, *, cls: str =
             f"{_e(label)}</button></form>")
 
 
+
+
+def owned_pages(console: Console) -> list[dict]:
+    """Pages must be bound to successful canonical receipts, not filesystem presence."""
+    pages = {}
+    with observe(console.home, actor="spiffe://uniimente.internal/greg/owned-reader") as journal:
+        ledger = journal.ledger
+        ok, _ = ledger.verify_chain()
+        if not ok:
+            return []
+        witnesses = {r.payload["witness_id"]: r.payload["grant_id"] for r in ledger.by_type("witness")
+                     if r.payload.get("action_class") == "greg.foundry.apply"
+                     and r.payload.get("capability") == "foundry.apply"}
+        dispatched = {(r.payload.get("witness_id"), r.payload.get("grant_id"))
+                      for r in ledger.by_type("grant_dispatch")}
+        for event in journal.replay("mission.action"):
+            p = event.payload
+            if p.get("status") != "DONE" or p.get("capability") != "foundry.apply":
+                continue
+            receipt = ledger.find(p.get("receipt"))
+            if receipt is None:
+                continue
+            rp = receipt.payload
+            wid, gid = rp.get("witness_id"), rp.get("grant_id")
+            if not gid or witnesses.get(wid) != gid or (wid, gid) not in dispatched:
+                continue
+            result = rp.get("result", {})
+            output = result.get("output") or {}
+            if result.get("result_class") != "positive" or not isinstance(output, dict):
+                continue
+            page = output.get("result") if output.get("system") == 31 else (
+                (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
+            if isinstance(page, dict) and page.get("kind") == "owned-page":
+                item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
+                item["mission_id"] = p["mission_id"]
+                pages[(p["mission_id"], item["name"], item["version"])] = item
+    return list(pages.values())
+
+
+def render_owned_index(console: Console) -> bytes:
+    links = []
+    for page in owned_pages(console):
+        url = "/owned/" + quote(page["mission_id"], safe="") + "/" + quote(page["name"], safe="")
+        links.append(f"<li><a href='{url}?version={page['version']}'>{_e(page['title'])}</a> "
+                     f"(version {_e(page['version'])})</li>")
+    return _page("Owned content", "<h1>Owned content</h1><p>Private pages produced by GREG. "
+                 "Public deployment requires its own authority.</p><ul>" + "".join(links) +
+                 "</ul><p><a href='/'>GREG</a></p>")
+
+
+def render_owned_page(console: Console, mission_id: str, name: str, version: int | None) -> bytes:
+    from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+    from greg import foundry_bridge
+    approved = [p for p in owned_pages(console) if p["mission_id"] == mission_id and p["name"] == name
+                and (version is None or p["version"] == version)]
+    if not approved:
+        raise FileNotFoundError("no canonical owned-page receipt")
+    wanted = max(approved, key=lambda p: p["version"])
+    root = (console.layout.workspace / mission_id.replace(":", "_")).resolve()
+    if console.layout.workspace.resolve() not in root.parents:
+        raise FileNotFoundError("owned mission outside workspace")
+    ctx = InvocationContext(root, (root,), SecretBroker(console.layout.secrets), BUILTINS["foundry.query"][0])
+    try:
+        output = foundry_bridge.query({"system": 31, "op": "retrieve", "args": {
+            "name": name, "version": wanted["version"]}}, ctx)["result"]
+    except CapabilityError as exc:
+        raise FileNotFoundError("owned content failed integrity checks") from exc
+    if (output["address"], output["version_address"]) != (wanted["address"], wanted["version_address"]):
+        raise FileNotFoundError("owned content lacks a matching canonical receipt")
+    return output["html"].encode()
+
+
 def render_home(console: Console) -> bytes:
     snap = console.snapshot()
     st = snap["status"]
@@ -287,7 +359,7 @@ def render_home(console: Console) -> bytes:
     out.append("<section><h2>Recent history</h2><table>" + "".join(
         f"<tr><td class=muted>{_e(r['at'][11:19])}</td><td>{_e(r['type'])}</td><td>{_e(r['mission_id'] or '')}</td>"
         f"<td>{_e(r['summary'])}</td></tr>" for r in snap["recent"]) + "</table>"
-        "<p><a href=/morning>Morning report</a> · <a href=/api/state>JSON state</a></p></section>")
+        "<p><a href=/morning>Morning report</a> · <a href=/api/state>JSON state</a> · <a href=/owned>Owned content</a></p></section>")
     out.append("<section><h2>Stop</h2><p class=muted>Shutdown always wins. A signed stop is recorded as your "
                "command; the local stop file works even without a key.</p>" +
                _form(console, "/stop", {"mode": "signed"}, "Stop GREG (signed)", cls="danger", disabled=not can,
@@ -388,6 +460,19 @@ def make_handler(console: Console):
                 if path.startswith("/delivery/"):
                     from urllib.parse import unquote
                     return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
+                if path == "/owned":
+                    return self._send(200, render_owned_index(console))
+                if path.startswith("/owned/"):
+                    from urllib.parse import unquote
+                    parts = path.split("/")
+                    if len(parts) != 4:
+                        return self._send(404, b"not found")
+                    query = parse_qs(urlsplit(self.path).query)
+                    try:
+                        version = int(query["version"][0]) if "version" in query else None
+                    except ValueError:
+                        return self._send(400, b"invalid page version")
+                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version))
                 if path == "/morning":
                     return self._send(200, render_morning(console))
                 if path == "/api/state":

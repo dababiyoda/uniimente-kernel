@@ -517,11 +517,16 @@
   - static site on a CDN
   - FastAPI
   existing:
+  - foundry/systems/portal.py
+  - greg/console.py
+  - greg/artifacts.py
+  - foundry/systems/versions.py
+  - tests/unit/test_greg_owned_portal.py
   - DALEOBANKS:app.py
-  - DALEOBANKS:server/index.ts
   - WealthMachineIntelligence:src/api/main.py
-  gap: Organs run application servers; there is no owned canonical site, customer portal or knowledge hub, and the
-    kernel serves nothing.
+  interface: foundry.apply build; foundry.query inspect/retrieve (system31); GREG console /owned
+  gap: Canonical owned pages now version, retain provenance and serve privately from the existing GREG loopback console after receipt and byte revalidation. Owned public deployment, broader customer-portal operations and authenticated collection remain open.
+  limitations: Private serving only. Declared rights are not independent verification; no public activation or second authority/server.
   state: PARTIAL
 32:
   acceptance:

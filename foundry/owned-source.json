@@ -222,6 +222,7 @@
     "foundry/systems/next_test.py",
     "foundry/systems/observability.py",
     "foundry/systems/pki.py",
+    "foundry/systems/portal.py",
     "foundry/systems/promotion.py",
     "foundry/systems/proofs.py",
     "foundry/systems/queue.py",

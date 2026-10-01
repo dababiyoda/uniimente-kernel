@@ -56,6 +56,22 @@ merged (a second package would be a second registry). Keep the decision `EXPERIM
   escalating incomparable trade-offs; that is a disposition rule, cheap to copy into the static table.
 - Each problem costs a worker process (median 0.22 s).
 
+## Correction, 2026-10-01: open-source supply on the genesis path
+
+Alfonso's comment on this PR (draft #144) made open-source mechanisms construction supply and ended
+VEPMC's use as a stopping condition. Decision record:
+[`deliberation-greg-open-source-genesis-20261001.json`](../collaboration/deliberation-greg-open-source-genesis-20261001.json),
+decision `EXPERIMENT`, authority change none.
+
+- Genesis now forms `graph.shortest_path` and `graph.max_flow` from installed NetworkX or SciPy, and
+  `lp.optimize` from SciPy's HiGHS or OR-Tools GLOP (DEPEND).
+  GREG installs nothing. Attach stays with the founder (console button or `greg attach`) unless a signed
+  mission pre-authorizes a read-only attach.
+- Every answer passes a GREG certificate that shares no code with the engine. A lying engine is
+  quarantined and replaced by a different package; it is not re-admitted without the founder.
+- Kill if an uncertified answer is ever accepted, if GREG installs or downloads a package, or if a
+  quarantined package returns without the founder.
+
 ## Rollback
 
 `greg detach cognition.cortex` (founder-signed) withholds the router at once; reverting the branch

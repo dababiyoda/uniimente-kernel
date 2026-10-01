@@ -20,6 +20,16 @@ checked computation:
 - **a schedule written in controlled words**. It is extracted and audited by a token scan independent
   of the extractor, then solved to a certified optimum, shown back as a reverse translation, and
   handed to the Gate for any action.
+- **a route or flow question in controlled words** ("Warehouse to Hub: 4. ... Shortest route from
+  Warehouse to Store."), answered by an open-source engine GREG did not write. Genesis finds the
+  installed package (NetworkX, SciPy), pins it on a Mechanism Card (version, license, upstream, file
+  digest), qualifies it against GREG's own oracle and asks the founder to attach it. GREG accepts an
+  answer only on its own certificate: feasible potentials for shortest distances, an equal-capacity
+  cut for maximum flow. A lying engine is quarantined and replaced by a different package.
+- **a plan in controlled words** ("Maximize 40 chairs + 30 tables. 2 chairs + 3 tables <= 120. ..."),
+  solved by an installed linear-programming engine (SciPy's HiGHS or OR-Tools GLOP) and accepted only
+  on GREG's duality certificate: the plan is feasible, and a set of prices proves no plan does better.
+  The answer carries those prices: what one more unit of each limit is worth.
 
 The receipt creates no authority. It settles competence exactly once, across `kill -9` and restart,
 and only from appraised, re-observed outcomes. Before this branch, GREG's own cognition path could
@@ -96,6 +106,11 @@ problems correctly. They show their value where the held-out set does not reach:
 
 No superiority over a model is claimed.
 
+The v0.3 numbers belong to the code at `ee728a8`, which the freeze manifest pins. After the founder's
+correction, two frozen files changed (`greg/cognition/solvers.py` and `verification.py`, graph family
+only, which no cross-geometry stratum exercises). Rerunning the reported partitions is therefore refused
+by design until a new freeze; no new comparison is claimed.
+
 ## Real versus simulated
 
 | Real | Not real here |
@@ -120,6 +135,8 @@ Appendix A, the 8 section-2 ambiguities and the 11 section-21 completion conditi
 - A gold-label error (high privacy harm marked gate-failing against the declared policy).
 - The token audit's over-abstention on a sentence-initial "We".
 - The audit's disclosed blind spot.
+- Open-source route: the local implementations were as fast as the packages on the probes; the
+  oracle caught the NetworkX self-predecessor quirk in GREG's first runner.
 - A stale system-level map embedded in the frozen v0.2 suites.
 
 ## Unresolved dissent and founder decisions
@@ -140,12 +157,56 @@ Appendix A, the 8 section-2 ambiguities and the 11 section-21 completion conditi
 `greg detach cognition.cortex` (founder-signed) withholds the router immediately. Reverting the branch
 removes it. #140 requests and retained receipts stay valid without it.
 
+## Founder correction absorbed: open-source supply, and no stopping at VEPMC
+
+Alfonso's comment on #143 (draft #144, `INTENT-20261001-open-source-mechanism-harvest`): open-source
+mechanisms are construction supply, P5 and P7 search and qualify existing libraries before anything is
+hand-built, and VEPMC is a required device proof, not a reason to stop building.
+
+What that changed in code:
+
+| | Before | After |
+| --- | --- | --- |
+| Genesis sources | installed executables, a builder, the founder | also installed open-source packages (DEPEND): NetworkX, SciPy, OR-Tools |
+| What GREG trusts | the engine's answer, checked for form | GREG's own certificate, on every call |
+| A lying engine | undetected if the answer is well-formed | quarantined; a different package re-forms the function |
+| Founder sees | capability ID | version, license, upstream, digest, qualification, shared dependencies |
+
+Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/` (reproduce with
+`python scripts/qualify_open_source_engines.py <dir>`), `tests/unit/test_greg_open_source_genesis.py`,
+14 further mutants in `scripts/ci/check_cortex_mutants.py` (55 in all, 0 survived). Deliberation:
+`docs/collaboration/deliberation-greg-open-source-genesis-20261001.json` (EXPERIMENT).
+
+Read it narrowly. The reuse was not a speed win: on the scale probes a plain-Python Dijkstra and
+Edmonds-Karp matched or beat the packages' solve time, before the ~0.25 s each isolated call spends
+starting an interpreter. What the route buys is that GREG wrote no engine, any qualified engine is
+interchangeable, and trust sits in a certificate GREG owns. The oracle also caught two integration
+defects of GREG's own runners: NetworkX names the source its own predecessor across a zero-weight
+self-loop, and a sparse matrix sums parallel edges.
+
 ## Bottleneck and next step
 
-The project bottleneck is unchanged: **VEPMC 0 → 1** on the founder's Chromebook (`greg path`, N1).
-Only Alfonso's run moves it.
+**VEPMC 0 → 1** on the founder's Chromebook (`greg path`, N1) remains the required device proof and
+the one primary node. Only Alfonso's run moves it. It is no longer a stopping condition: unblocked
+cognition work continues.
 
-The cognition workstream's next step is to run the frozen v0.3 suite's `always_llm` and `tool_llm`
-arms once a founder-selected local model answers on Body 1
-(`greg model set --route ollama --local-model <name> --key <founder key>`).
-That is the one comparison that can tell whether routing beats a model.
+Done after the correction:
+
+- #140's `cognition.graph` check now refutes a longer route and a false "no route" with GREG's own
+  Dijkstra, and its solver no longer drops a cheaper parallel road.
+- Linear programs (`lp.optimize`, template `plan-in-words`): two installed engines, a duality
+  certificate, shadow prices. An engine's "infeasible" or "unbounded" has no certificate through these
+  interfaces, so GREG reports it and never closes on it.
+
+Next mechanisms:
+
+1. Farkas certificates for infeasible programs, so GREG can prove "no plan exists" rather than relay
+   it. HiGHS exposes dual rays through its own Python interface (`highspy`), which SciPy bundles but
+   does not surface; qualifying it is the next residual.
+2. A cognition deficit with no installed engine, closed through the builder route against a
+   founder-frozen contract and the same certificate (P7's second route). Blocked here: no builder
+   (coding agent, person or founder-selected model) is attached to this body.
+
+Blocked on Alfonso: the frozen v0.3 suite's `always_llm` and `tool_llm` arms need a founder-selected
+local model on Body 1 (`greg model set --route ollama --local-model <name> --key <founder key>`). That
+is the one comparison that can tell whether routing beats a model.

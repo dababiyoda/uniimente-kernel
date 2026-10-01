@@ -1058,10 +1058,11 @@
       "id": "cognition_cortex",
       "intent": [
         "INTENT-20261001-greg-seed-genome",
-        "INTENT-20260930-polyintelligence-cortex"
+        "INTENT-20260930-polyintelligence-cortex",
+        "INTENT-20261001-open-source-mechanism-harvest"
       ],
       "subordinate_to": "N1",
-      "rule": "One project-wide active node (N1, VEPMC). The cortex keeps a subordinate workstream metric and never displaces the embodied-mission bottleneck; later P-nodes are horizons with gates, never activated by appearing here.",
+      "rule": "One project-wide active node (N1, VEPMC). VEPMC stays the required real-device proof and the one operationally primary node; per the founder's 2026-10-01 correction (#143 comment, draft #144) it is not a stopping condition for development: every safe, reversible, buildable P-node continues until a real external dependency, missing authority, resource or evidence blocks it. Later P-nodes are horizons with gates, never activated by appearing here.",
       "metric": "Verified Cross-Geometry Routing Gain",
       "reconciles": {
         "C1": [
@@ -1188,15 +1189,19 @@
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "a mission that needs a family the seed lacks",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "a CapabilityDeficit naming a reserved family",
           "falsification": "an enabled family adds no measured mission value",
-          "smallest_next_experiment": "enable the one reserved family a real mission asked for, with a native benchmark",
+          "smallest_next_experiment": "the next reserved family a real mission asks for, sourced first from a qualified open-source engine (#144 source map) behind a GREG certificate",
           "exit": "per family: real adapter, native benchmark, declared limits, integrated mission value",
-          "evidence_refs": []
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "tests/unit/test_greg_linear_genesis.py"
+          ]
         },
         {
           "id": "P6",
@@ -1216,15 +1221,20 @@
           "id": "P7",
           "title": "Cognitive Capability Genesis",
           "maps_to": "N2",
-          "status": "HORIZON",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate)",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P5 and GREG genesis (N2)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "a cognition deficit during a real mission",
           "falsification": "a capability absent at mission start is never acquired, or registration grants execution",
-          "smallest_next_experiment": "route one cognition deficit through GREG's existing genesis path in a sandbox mission",
+          "smallest_next_experiment": "a cognition deficit with no installed engine, closed through the builder route against a founder-frozen contract and the same certificate",
           "exit": "a bounded problem solved with a verified capability absent at mission start",
-          "evidence_refs": []
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "greg/genesis.py",
+            "greg/mechanisms.py"
+          ]
         },
         {
           "id": "P8",
@@ -1258,7 +1268,7 @@
           "id": "P10",
           "title": "Functional morphogenesis",
           "maps_to": "N2",
-          "status": "HORIZON",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery)",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7, P9 and developmental research (Track B)",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1266,7 +1276,9 @@
           "falsification": "recovery is scripted, or a strong centralized adaptive baseline does as well",
           "smallest_next_experiment": "inject an unseen organ loss in a sandbox and measure Unscripted Functional Recovery Rate",
           "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
-          "evidence_refs": []
+          "evidence_refs": [
+            "tests/unit/test_greg_open_source_genesis.py"
+          ]
         },
         {
           "id": "P11",

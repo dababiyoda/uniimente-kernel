@@ -1,0 +1,343 @@
+{
+ "decision_id": "DEL-20261001-greg-open-source-genesis",
+ "title": "Form missing GREG functions (network flows, shortest paths, linear programs) from installed open-source packages, accepted only on GREG's certificate",
+ "problem": "The founder corrected on #143 (draft #144): open-source mechanisms are an active construction supply chain, P5/P7 must search and qualify existing libraries before hand-building, and VEPMC is not a development stopping condition. GREG's genesis could acquire executables only; a mission needing a shortest route, a maximum flow or a continuous linear optimum had no certified provider.",
+ "founder_intent_refs": [
+  "INTENT-20261001-open-source-mechanism-harvest",
+  "INTENT-20261001-greg-seed-genome",
+  "INTENT-20260930-open-source-first"
+ ],
+ "baseline": "Genesis searches attached, verified, installed executables, a builder, then the founder. #140's cognition.graph op answers one s-t path via NetworkX, checked for validity but not optimality.",
+ "alternatives": [
+  {
+   "name": "DEPEND on installed packages behind GREG's certificate (chosen)",
+   "description": "Genesis pins an installed distribution on a Mechanism Card, qualifies it in a no-network interpreter against GREG's oracle, registers it VERIFIED; the founder attaches; every answer must pass an O(edges) certificate GREG owns",
+   "advantages": [
+    "no hand-built engine",
+    "engines become interchangeable because the certificate, not the engine, is trusted",
+    "fault-diverse replacement on a lie"
+   ],
+   "disadvantages": [
+    "~0.25 s interpreter start per call",
+    "the license is read from metadata, not reviewed",
+    "on the probe a 20-line local implementation was as fast"
+   ],
+   "revival_evidence": "n/a (chosen)"
+  },
+  {
+   "name": "Write the algorithms locally",
+   "description": "Ship GREG's own Dijkstra and Edmonds-Karp as built-ins",
+   "advantages": [
+    "fastest at this size (measured)",
+    "no dependency"
+   ],
+   "disadvantages": [
+    "rebuilds solved technology against the founder's correction",
+    "no breadth beyond two functions"
+   ],
+   "revival_evidence": "the packages become unavailable on Body 1, or per-call start-up dominates a real mission"
+  },
+  {
+   "name": "Vendor the NetworkX modules",
+   "description": "Copy the shortest-path and flow modules into the tree",
+   "advantages": [
+    "no runtime dependency"
+   ],
+   "disadvantages": [
+    "update burden and notice obligations for code already installed"
+   ],
+   "revival_evidence": "a body that may not carry the dependency"
+  },
+  {
+   "name": "Extend #140's cognition.graph op",
+   "description": "Add flow and certificates to the in-process op family",
+   "advantages": [
+    "one fewer path"
+   ],
+   "disadvantages": [
+    "imports the engine into the body process; no acquisition, pinning or replacement"
+   ],
+   "revival_evidence": "a decision to retire genesis for cognition functions"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Graph questions stay unanswered or uncertified; the founder's correction is recorded but not executed",
+  "advantages": [
+   "no new code"
+  ],
+  "disadvantages": [
+   "the correction stays prose"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Single agent performing all five roles (a stated limitation). The correction asks for reuse as construction, not as comparison, and for continued building. The chosen route depends on installed engines, invents only the certificate and the qualification, and keeps attach with the founder.",
+   "material_concerns": [
+    "the founder may prefer automatic attach for read-only functions"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md",
+    "tests/unit/test_greg_open_source_genesis.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "The supply chain lives inside the existing genesis loop: same deficit, registry, attach, quarantine and repair. The new parts are a package candidate, a Mechanism Card and a per-function certificate. No second registry or plane.",
+   "material_concerns": [
+    "catalog entries are hand-written per function"
+   ],
+   "evidence_refs": [
+    "greg/genesis.py",
+    "greg/mechanisms.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "A lying engine is caught by the certificate, quarantined and replaced by a different package; an engine imported from another location or version is refused; changed pinned files quarantine at restart. The oracle caught two real integration defects.",
+   "material_concerns": [
+    "unpinned files of a distribution can change undetected",
+    "certificate tolerance for non-integer weights"
+   ],
+   "evidence_refs": [
+    "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+    "tests/unit/test_greg_open_source_genesis.py",
+    "tests/evidence/greg-open-source-genesis-2026-10-01/mutants.log"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Nothing is installed by GREG. If no engine is installed the ask names it. Pins break on upgrade by design and require requalification.",
+   "material_concerns": [
+    "Body 1 may lack NetworkX/SciPy",
+    "upgrades quarantine the capability until requalified"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_open_source_genesis.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Answers are read-only; the receipt carries engine, license and authority_created false; the founder sees license and qualification before attaching.",
+   "material_concerns": [
+    "license read from metadata is not legal review"
+   ],
+   "evidence_refs": [
+    "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Every installed engine qualifies for its functions",
+   "tier": "sandbox_execution",
+   "reference": "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+   "finding": "6 of 6 engine/function pairs qualified (NetworkX and SciPy for shortest path and maximum flow; SciPy HiGHS and OR-Tools GLOP for linear programs) on frozen cases plus a certified scale probe"
+  },
+  {
+   "claim": "A plan closes on a duality certificate",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_linear_genesis.py",
+   "finding": "words -> deficit -> qualified LP engine -> certified optimum with shadow prices; an impossible plan never closes"
+  },
+  {
+   "claim": "A mission closes on a capability absent at its start",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_open_source_genesis.py",
+   "finding": "deficit -> card -> founder attach -> certified 7-mile route; VERIFIED appraisal"
+  },
+  {
+   "claim": "A lying engine is replaced, never believed",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_open_source_genesis.py",
+   "finding": "NetworkX quarantined on the certificate; SciPy re-formed; every accepted distance correct"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Reuse was not faster here",
+   "tier": "sandbox_execution",
+   "reference": "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+   "finding": "on the graph probes a plain-Python Dijkstra and Edmonds-Karp matched or beat the packages' solve time, before the ~0.25 s interpreter start; for linear programs no simple local alternative exists"
+  },
+  {
+   "claim": "Infeasible and unbounded claims stay unproved",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_linear_genesis.py",
+   "finding": "neither LP interface returns a Farkas certificate, so GREG reports the engine's claim and never closes on it"
+  },
+  {
+   "claim": "First runner drafts were wrong",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_open_source_genesis.py",
+   "finding": "NetworkX names the source its own predecessor across a zero-weight self-loop; a sparse matrix sums parallel edges. The frozen oracle caught the first; the second is pinned by a mutant test"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "GREG answers network questions with engines it did not write, and trusts only its own proof",
+  "advantages": [
+   {
+    "id": "ADV-1",
+    "statement": "No hand-built engine",
+    "amplified_value": "any installed package with a runner and a certificate can serve; the founder's supply chain becomes executable"
+   },
+   {
+    "id": "ADV-2",
+    "statement": "Certificate as the control layer",
+    "amplified_value": "engines are interchangeable; the moat is the proof, not the solver"
+   },
+   {
+    "id": "ADV-3",
+    "statement": "Fault-diverse repair",
+    "amplified_value": "a lying engine is replaced by a different package through the existing self-repair loop"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "DIS-1",
+    "statement": "Per-call interpreter start",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "batch the qualification; isolate per call (metric: probe wall time recorded)"
+   },
+   {
+    "id": "DIS-2",
+    "statement": "Metadata license only",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "card states the limit; founder decides attach seeing it"
+   },
+   {
+    "id": "DIS-3",
+    "statement": "Partial file pinning",
+    "severity": "medium",
+    "response_type": "protective",
+    "redesigned_response": "RECORD plus mechanism files plus shared dependency RECORD digests; restart quarantines"
+   }
+  ],
+  "comparisons": {
+   "baseline": "executables-only genesis; #140 cognition.graph without optimality certificate",
+   "do_nothing": "correction recorded, not executed",
+   "simplest_viable_alternative": "local Dijkstra and Edmonds-Karp built-ins",
+   "strongest_competing_architecture": "vendoring NetworkX modules into the tree",
+   "reversible_experiment": "two catalog functions behind genesis; founder attach; detachable"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Write the algorithms locally",
+    "rejection_reason": "contradicts the correction; no breadth",
+    "revival_evidence": "packages unavailable on Body 1"
+   },
+   {
+    "name": "Vendor NetworkX modules",
+    "rejection_reason": "update and notice burden for installed code",
+    "revival_evidence": "a body that may not carry the dependency"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked engine lies, location and version substitution, file tampering, repair re-admission, console attach forgery, false infeasibility and input outside competence. Fourteen mutants remove one safeguard each; 55 of 55 are caught.",
+  "new_weaknesses": [
+   {
+    "id": "P2-1",
+    "category": "gaming",
+    "statement": "A repair search could re-admit the package that just lied",
+    "strengthening_response": "repair skips the quarantined identity; re-admission needs the founder"
+   },
+   {
+    "id": "P2-2",
+    "category": "fragility",
+    "statement": "A shadowing module on the path could stand in for the engine",
+    "strengthening_response": "isolated -I interpreter; imported file must lie under the qualified location; version must match"
+   },
+   {
+    "id": "P2-3",
+    "category": "centralization",
+    "statement": "Common-mode failure between SciPy and NumPy",
+    "strengthening_response": "shared dependency disclosed on the card and pinned; the certificate shares no code"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "DIS-1",
+    "outcome": "accepted",
+    "rationale": "isolation is worth 0.25 s per call",
+    "owner": "GREG maintainers",
+    "review_trigger": "a mission latency budget below one second"
+   },
+   {
+    "disadvantage_id": "DIS-2",
+    "outcome": "accepted",
+    "rationale": "founder decides attach seeing the license",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "a copyleft or undeclared license on a candidate"
+   },
+   {
+    "disadvantage_id": "DIS-3",
+    "outcome": "accepted",
+    "rationale": "limit stated on every card",
+    "owner": "GREG maintainers",
+    "review_trigger": "a tamper not caught at restart"
+   }
+  ],
+  "final_design": "Package candidates in genesis; Mechanism Card; batch qualification on GREG's oracle and a scale probe; founder attach (console or CLI) unless the signed mission pre-authorizes read-only attach; per-call pin and certificate; quarantine and fault-diverse repair",
+  "residual_risks": [
+   {
+    "risk": "Local implementation is as fast",
+    "mitigation": "recorded; revisit if latency matters",
+    "owner": "GREG maintainers",
+    "review_trigger": "a real mission's latency complaint"
+   },
+   {
+    "risk": "Body 1 may lack the packages",
+    "mitigation": "the ask names them; GREG installs nothing",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "N1 Chromebook run"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; proceeds as an experiment",
+  "entries": [
+   {
+    "role": "Operator and Maintainer",
+    "position": "For two functions this small, local code would do",
+    "rationale": "measured: local matched or beat the packages",
+    "evidence_threshold": "a third function where no local implementation is simple",
+    "owner": "GREG maintainers",
+    "review_trigger": "next catalog function"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive on the draft branch: two genesis catalog functions, one template, a console attach button for verified candidates using the existing CAPABILITY_ATTACH command. Existing genesis functions and their tests are unchanged.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "greg detach acquired.graph.shortest_path.<engine> (founder-signed)",
+   "revert the branch commit"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "an uncertified engine answer is ever accepted",
+  "GREG installs or downloads a package",
+  "a quarantined package is re-admitted without the founder"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez",
+ "review_trigger": "the third package-backed function, or Body 1 lacking the engines"
+}

@@ -150,6 +150,12 @@
       "tier": "other",
       "reference": "foundry/completion.yaml",
       "finding": "False. All55 original obligations, generic isolation, real payments, external channels and operational ratification remain active."
+    },
+    {
+      "claim": "First draft fixture setup complete",
+      "tier": "other",
+      "reference": "tests/unit/test_greg_owned_company.py",
+      "finding": "Review found make_body(live) needed its parent created before fixture initialization; fixed before claiming CI success. The actual-host facility probe must distinguish local Codex host from hosted CI."
     }
   ],
   "pass_1": {

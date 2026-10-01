@@ -188,6 +188,7 @@ def test_signed_body_completes_company_delivery_finance_loop_and_serves_receipte
     native = order(preview / "system-54")
     delivered = offers.fulfill(preview / "system-54", native)
     ack = acceptance(delivered)
+    (tmp_path / "live").mkdir()
     home, key, body_id, _ = make_body(tmp_path / "live")
     checks = []
     for id, system, field, value in (

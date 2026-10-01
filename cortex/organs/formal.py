@@ -155,6 +155,52 @@ class Spec:
         self.timeout_ms = int(model.get("timeout_ms", 5000))
 
 
+def _bound_text(bounds) -> str:
+    lo, hi = bounds
+    if lo is None and hi is None:
+        return " (unbounded)"
+    return f" in [{'-∞' if lo is None else lo}, {'∞' if hi is None else hi}]"
+
+
+def review(spec: Spec) -> tuple[list, list, list]:
+    """Reverse translation plus the structural discrepancy check, independent of any solver.
+
+    Shared by every formal engine (Z3 here, OR-Tools CP-SAT in ``cpsat``) so the
+    same model receives the same review whichever engine the router selects.
+    Returns (reverse_translation, discrepancies, warnings)."""
+    reverse = [f"{v} is {'a boolean' if s == 'bool' else ('an integer' if s == 'int' else 'a real')}"
+               + ("" if s == "bool" else _bound_text(spec.bounds[v])) for v, s in spec.variables.items()]
+    reverse += [f"{c['id']} (covers {', '.join(c['covers']) or 'nothing'}): {render(c['expr'])}"
+                for c in spec.constraints]
+    if spec.query["kind"] == "entailment":
+        reverse.append(f"question: do the constraints guarantee {render(spec.query['property'])}?")
+    elif spec.query["kind"] == "optimize":
+        reverse.append(f"question: which assignment satisfying every constraint "
+                       f"{spec.query['sense']}s {render(spec.query['objective'])}?")
+    discrepancies = []
+    covered = {o for c in spec.constraints for o in c["covers"]}
+    for oid in spec.obligations:
+        if oid not in covered:
+            discrepancies.append(f"obligation {oid} has no constraint: {spec.obligations[oid]!r}")
+    for c in spec.constraints:
+        if not c["covers"]:
+            discrepancies.append(f"constraint {c['id']} traces to no obligation")
+        for oid in c["covers"]:
+            if oid not in spec.obligations:
+                discrepancies.append(f"constraint {c['id']} cites unknown obligation {oid}")
+    warnings = []
+    for oid, text in spec.obligations.items():
+        numbers = set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", text))
+        used = set()
+        for c in spec.constraints:
+            if oid in c["covers"]:
+                used |= set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", str(c["expr"])))
+        missing = sorted(numbers - used)
+        if missing:
+            warnings.append(f"{oid}: numbers {missing} in the requirement text appear in no covering constraint")
+    return reverse, discrepancies, warnings
+
+
 def _z3():
     try:
         import z3  # noqa: F401
@@ -185,39 +231,7 @@ class FormalOrgan:
         except (FormalModelError, KeyError, TypeError, ValueError) as exc:
             return self._fail("MALFORMED_INPUT", f"model rejected: {exc}", started)
 
-        # reverse translation
-        reverse = [f"{v} is {'a boolean' if s == 'bool' else ('an integer' if s == 'int' else 'a real')}"
-                   + ("" if s == "bool" else self._bound_text(spec.bounds[v])) for v, s in spec.variables.items()]
-        reverse += [f"{c['id']} (covers {', '.join(c['covers']) or 'nothing'}): {render(c['expr'])}"
-                    for c in spec.constraints]
-        if spec.query["kind"] == "entailment":
-            reverse.append(f"question: do the constraints guarantee {render(spec.query['property'])}?")
-        elif spec.query["kind"] == "optimize":
-            reverse.append(f"question: which assignment satisfying every constraint "
-                           f"{spec.query['sense']}s {render(spec.query['objective'])}?")
-
-        # discrepancy check (structural part)
-        discrepancies = []
-        covered = {o for c in spec.constraints for o in c["covers"]}
-        for oid in spec.obligations:
-            if oid not in covered:
-                discrepancies.append(f"obligation {oid} has no constraint: {spec.obligations[oid]!r}")
-        for c in spec.constraints:
-            if not c["covers"]:
-                discrepancies.append(f"constraint {c['id']} traces to no obligation")
-            for oid in c["covers"]:
-                if oid not in spec.obligations:
-                    discrepancies.append(f"constraint {c['id']} cites unknown obligation {oid}")
-        warnings = []
-        for oid, text in spec.obligations.items():
-            numbers = set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", text))
-            used = set()
-            for c in spec.constraints:
-                if oid in c["covers"]:
-                    used |= set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", str(c["expr"])))
-            missing = sorted(numbers - used)
-            if missing:
-                warnings.append(f"{oid}: numbers {missing} in the requirement text appear in no covering constraint")
+        reverse, discrepancies, warnings = review(spec)
 
         z3 = None if faults.get("solver_available") is False else _z3()
         if z3 is None:
@@ -383,12 +397,7 @@ class FormalOrgan:
         return ("OK", answer, solver_out)
 
     # ---------------------------------------------------------------- helpers
-    @staticmethod
-    def _bound_text(bounds) -> str:
-        lo, hi = bounds
-        if lo is None and hi is None:
-            return " (unbounded)"
-        return f" in [{'-∞' if lo is None else lo}, {'∞' if hi is None else hi}]"
+    _bound_text = staticmethod(_bound_text)
 
     @staticmethod
     def _declare(z3, spec: Spec) -> dict:

@@ -328,6 +328,59 @@
           }
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "optimization"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "failure"
+                ]
+              },
+              {
+                "required": [
+                  "objective",
+                  "structured_model",
+                  "assignment",
+                  "feasibility_check",
+                  "native_status",
+                  "bound",
+                  "gap",
+                  "budget",
+                  "timeout_s",
+                  "optimality",
+                  "reverse_translation",
+                  "discrepancy_check",
+                  "premises",
+                  "unverified_premises"
+                ]
+              }
+            ]
+          },
+          {
+            "required": [
+              "scope"
+            ],
+            "properties": {
+              "scope": {
+                "const": "valid_given_encoding"
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

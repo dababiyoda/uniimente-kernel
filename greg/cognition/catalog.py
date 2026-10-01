@@ -37,6 +37,45 @@ def profile(family):
                                      latency_estimate_seconds=1.0 if family in ("formal", "optimization", "game", "evolutionary", "semantic") else .1)
 
 
+# The Polyintelligence Cortex (PR #141) on the same registry: one router manifest (layer 5)
+# and one manifest per executable cortex organ (layer 3). Each is an ordinary GREG
+# capability: founder CAPABILITY_DETACH withholds the organ from cortex routing.
+# capability id -> (version, epistemic classes, deterministic, network, description)
+CORTEX_ENTRIES = {
+    "cognition.cortex": ("0.2.0", ("constraint_feasibility", "deductive", "optimization", "estimate", "causal",
+                                   "prediction", "semantic", "strategic", "unresolved"), True, "egress-allowlist",
+                         "Cortex router: geometry, hard eligibility, two formal engines, verifier, typed receipt"),
+    "cognition.cortex.formal.z3": ("0.2.0", ("deductive", "constraint_feasibility", "optimization", "arithmetic"),
+                                   True, "none", "Z3 feasibility, entailment and certified optimization"),
+    "cognition.cortex.optimization.cpsat": ("0.2.0", ("deductive", "constraint_feasibility", "optimization"), True,
+                                            "none", "OR-Tools CP-SAT on the same model; independently re-checked"),
+    "cognition.cortex.estimation.fermi": ("0.1.0", ("estimate",), True, "none",
+                                          "Unit-checked Fermi decomposition with dependence and sensitivity"),
+    "cognition.cortex.evidence_causal": ("0.1.0", ("semantic", "prediction", "causal", "physical"), True, "none",
+                                         "Evidence assessment and identification-gated causal estimation"),
+    "cognition.cortex.semantic": ("0.1.0", ("semantic", "strategic"), False, "egress-allowlist",
+                                  "Source-quoted synthesis through the founder-selected local model only"),
+    "cognition.cortex.deterrence.accountability": ("0.1.0", ("strategic",), True, "none",
+                                                   "Lawful deterrence: Becker condition, coercion refused"),
+}
+CORTEX_VERSIONS = {cid: spec[0] for cid, spec in CORTEX_ENTRIES.items()}
+
+
+def cortex_profile(capability_id):
+    version, classes, deterministic, _, _ = CORTEX_ENTRIES[capability_id]
+    return CognitiveCapabilityProfile(
+        family=capability_id.removeprefix("cognition."), layer=5 if capability_id == "cognition.cortex" else 3,
+        operations=("cortex",), epistemic_classes=classes, proof_class="cortex_receipt",
+        deterministic=deterministic, latency_estimate_seconds=5.0 if capability_id == "cognition.cortex" else 2.0,
+        evidence_requirements=("cortex-problem contract: question plus structured payload",),
+        uncertainty_model="per proof class inside the cortex receipt",
+        state="stateless worker process per problem; bounded CPU and address space",
+        abstention_conditions=("missing input, dependency, evidence or authority", "withheld by GREG registry",
+                               "formalization incomplete", "not identified"),
+        falsification_tests=("tests/unit/test_cortex_formal_engines.py", "tests/unit/test_greg_cortex_bridge.py"),
+        lineage=("INTENT-20261001-greg-seed-genome", "PR #141 cortex", "PR #140 GREG cognition"))
+
+
 def builtin_entries(manifest_type, lazy):
     entries = {}
     for family in (*FAMILIES, "solve", "compose", "knowledge"):
@@ -54,4 +93,16 @@ def builtin_entries(manifest_type, lazy):
             egress_allowlist=("127.0.0.1",) if family in ("semantic", "solve", "compose") else (),
             cognitive_profile=asdict(profile(family)) if family in FAMILIES else {}),
             lazy("greg.cognition.cortex", "compose" if family == "compose" else "knowledge" if family == "knowledge" else "solve"))
+    for cid, (version, _, _, network, description) in CORTEX_ENTRIES.items():
+        entries[cid] = (manifest_type(
+            capability_id=cid, version=version, provider="greg-builtin", function=cid, description=description,
+            route="internal", consequence_class="read_only", target_prefix="cognition:",
+            inputs={"problem_id": "str", "problem": "cortex-problem {question, payload}", "records": "list"},
+            outputs={"receipt": "CognitiveReceipt carrying a cortex-receipt/0.2", "authority_created": "false"},
+            retry_safe=True, strengthens=("eligibility", "routing", "proof", "settlement"),
+            tests=("tests/unit/test_greg_cortex_bridge.py", "tests/integration/test_greg_cortex_mission.py"),
+            provenance={"source": "uniimente-kernel/cortex via greg/cognition/bridge.py",
+                        "intent": "INTENT-20261001-greg-seed-genome"},
+            network=network, egress_allowlist=("127.0.0.1",) if network == "egress-allowlist" else (),
+            cognitive_profile=asdict(cortex_profile(cid))), lazy("greg.cognition.cortex", "solve"))
     return entries

@@ -14,6 +14,7 @@ from .catalog import FAMILIES
 from .contracts import (CognitionError, CognitiveCapabilityProfile, CognitiveReceipt, ConsequenceVector,
                         ProblemGeometry, canonical, digest, strict_data, retained_data)
 from .verification import metaconsensus, verify
+from cortex.outcomes import classify_greg
 
 
 OPERATIONS = {op: (family, classes[0]) for family, (_, ops, classes, _, _) in FAMILIES.items() for op in ops}
@@ -133,6 +134,11 @@ def _semantic(data, geometry, model_config):
 
 
 def reason(params, *, registry, journal=None, model_config=None, forced_family=None):
+    if isinstance(params, dict) and "problem" in params:
+        # Cortex contract (cortex-problem): one entry, one receipt envelope, one learning plane.
+        from .bridge import reason_cortex
+        return reason_cortex(params, registry=registry, journal=journal, model_config=model_config,
+                             forced=forced_family)
     started = time.monotonic()
     geometry, consequences = compile_problem(params)
     rows = candidates(params, geometry, registry, journal)
@@ -184,7 +190,8 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
                       "model_calls": int(bool(answer and chosen["family"] == "semantic")), "energy": "unmeasured"},
         money_cost=0.0, latency=time.monotonic() - started, evaluator="greg.cognition.verification/0.1.0", evaluator_result=evaluator,
         formal_validity=answer.get("formal_validity", "NOT_APPLICABLE") if answer else "NOT_APPLICABLE",
-        causal_credit=[{"method": chosen["method"], "role": "solver"}, {"method": "greg.cognition.verification", "role": "falsifier"}] if chosen else [])
+        causal_credit=[{"method": chosen["method"], "role": "solver"}, {"method": "greg.cognition.verification", "role": "falsifier"}] if chosen else [],
+        outcome=classify_greg(state, has_output=answer is not None))
     return receipt.to_dict()
 
 
@@ -194,6 +201,8 @@ def solve(params, ctx):
         raise CapabilityError("cognition requires its signed bounded target")
     family = ctx.manifest.capability_id.removeprefix("cognition.")
     forced = family if family in FAMILIES else None
+    if family.startswith("cortex.") and isinstance(params, dict) and "problem" in params:
+        forced = ctx.manifest.capability_id   # a signed mission may pin one cortex organ
     try:
         return reason(params, registry=ctx.capability_registry or registry_view(ctx.journal), journal=ctx.journal,
                       model_config=ctx.cognition_model, forced_family=forced)

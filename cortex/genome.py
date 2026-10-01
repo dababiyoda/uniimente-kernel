@@ -174,6 +174,16 @@ class IntelligenceRegistry:
     def __init__(self, genomes: GenomeRegistry | None = None):
         self.genomes = genomes if genomes is not None else GenomeRegistry()
         self._profiles: dict[str, CognitiveProfile] = {}
+        self._withheld: dict[str, str] = {}
+
+    def withhold(self, key: str, reason: str) -> None:
+        """Make a registered organ ineligible without changing its profile.
+
+        The host's lifecycle authority (GREG's CapabilityRegistry: founder detach,
+        quarantine) is projected here; the cortex never decides attachment itself."""
+        if key not in self._profiles:
+            raise GenomeError(f"cannot withhold unregistered {key}")
+        self._withheld[key] = reason
 
     def register(self, genome: IntelligenceGenome) -> IntelligenceGenome:
         problems = genome.validate()
@@ -208,6 +218,8 @@ class IntelligenceRegistry:
                 continue
             reasons: list[str] = []
             name, _, version = key.partition("@")
+            if key in self._withheld:
+                reasons.append(f"withheld by host registry: {self._withheld[key]}")
             if not profile.enabled:
                 reasons.append(f"disabled family ({profile.lifecycle})")
             elif profile.lifecycle not in ROUTABLE_LIFECYCLE:
@@ -319,6 +331,31 @@ SEED_ORGANS = {
         failures=("unfaithful encoding", "unverified premises", "solver outage"),
         acceptance=["SAT/UNSAT agrees with requester witnesses; UNSAT carries a core"],
         benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
+    "cortex.optimization.cpsat": dict(
+        # 0.2.0 (cortex 0.2.0, directive 2026-09-30 section 7C): implemented. It supersedes the
+        # reserved, disabled 0.1.0 profile of the same family, which stays registered as
+        # SUPERSEDED lineage. Same formal_model contract as cortex.formal.z3: two fault-diverse
+        # engines behind one input contract.
+        version="0.2.0",
+        description="OR-Tools CP-SAT feasibility, entailment and optimization on the same structured model as "
+                    "the Z3 organ; every assignment re-checked by a solver-independent evaluator.",
+        role="solver", layer="solver_macro_cognitive",
+        geometries=("deductive_logical", "constraint_feasibility", "optimization"),
+        proofs=("formal", "optimization"),
+        observations=("structured model", "obligations", "witnesses", "premises"),
+        state="one CP-SAT model per solve; single worker, fixed seed", update="none",
+        recruitment="recruited for integer/boolean models inside its declared linear fragment; first for "
+                    "optimization queries",
+        inhibition="inhibited for real-valued or unbounded variables, non-linear products, numeric if-then-else",
+        evidence=("structured model", "enumerated obligations", "finite integer bounds"), ceiling="external_contact",
+        diversity="cp_sat_lazy_clause_generation", deps=("solver:ortools-cpsat",), lifecycle="SANDBOXED",
+        enabled=True, contraindications=(),
+        abstain=("formalization incomplete", "solver unavailable", "timeout", "outside fragment"),
+        failures=("unfaithful encoding", "unverified premises", "FEASIBLE without optimality proof",
+                  "core not minimal"),
+        lineage=("greg/cognition/solvers.py#optimization (PR #140)", "cortex reserved family 0.1.0 (PR #141)"),
+        acceptance=["every returned assignment satisfies every source constraint under python re-evaluation",
+                    "FEASIBLE is never reported as OPTIMAL", "agrees with z3 on the frozen parity cases"]),
     "cortex.evidence_causal": dict(
         description="Evidence assessment and gated causal estimation.",
         role="solver", layer="solver_macro_cognitive",
@@ -461,11 +498,16 @@ def seed_registry(genomes: GenomeRegistry | None = None, *, include_reserved: bo
                               {"problem": "cortex problem"}, {"result": "typed proof artifact"},
                               [f"must beat the simpler baseline on its native geometry ({diversity})"],
                               ["not implemented"])
+            # A reserved family later implemented as a seed organ stays registered as SUPERSEDED
+            # lineage: "SUPERSEDED does not mean deleted. It means a stronger default exists."
+            superseded = name in SEED_ORGANS
             profile = _profile(f"{name}@0.1.0", role="reserved", layer=layer, geometries=geometries,
                                proofs=(proof,), observations=("reserved",), state="none",
                                update="none", recruitment="never in v0.1", inhibition="disabled",
                                evidence=("reserved",), ceiling="read_only", diversity=diversity,
-                               deps=(), lifecycle="SPECIFIED", enabled=False,
-                               abstain=("disabled family",), failures=("not implemented",), bio=bio)
+                               deps=(), lifecycle="SUPERSEDED" if superseded else "SPECIFIED", enabled=False,
+                               abstain=("disabled family",), failures=("not implemented",), bio=bio,
+                               lineage=(f"superseded by {name}@{SEED_ORGANS[name].get('version', '0.1.0')}",)
+                               if superseded else ())
             registry.register(IntelligenceGenome(cap, profile))
     return registry

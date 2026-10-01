@@ -12,7 +12,9 @@ def _valid_receipt(value):
     copy = dict(value)
     identity = copy.pop("receipt_id", None)
     try:
-        if identity != digest(copy) or set(copy) != set(CognitiveReceipt.__dataclass_fields__):
+        fields = set(CognitiveReceipt.__dataclass_fields__)
+        # Receipts retained before the additive ``outcome`` field remain valid without it.
+        if identity != digest(copy) or set(copy) not in (fields, fields - {"outcome"}):
             return False
         CognitiveReceipt(**copy)
     except (TypeError, ValueError, KeyError):

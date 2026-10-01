@@ -23,7 +23,7 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.1.5"
+CORTEX_VERSION = "0.2.0"
 
 
 class CortexError(ValueError):
@@ -98,11 +98,11 @@ PROOF_CLASSES = (
     # implemented in the seed
     "semantic_sourced", "estimation", "formal", "evidence_assessment",
     "causal_estimate", "gate_report", "verifier_findings", "deterrence_assessment",
-    # reserved for registered-but-disabled families (no executor in v0.1)
+    # 0.2.0: optimization is implemented (CP-SAT); the rest stay reserved for disabled families
     "optimization", "bayesian", "simulation", "human_adjudication",
     "measurement", "institutional_observation",
 )
-IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:8]
+IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:9]  # 0.2.0: optimization (CP-SAT)
 
 DISPOSITIONS = ("recommend", "abstain", "bounded_test", "handoff")
 

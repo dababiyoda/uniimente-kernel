@@ -26,6 +26,8 @@ class EpistemicClass(StrEnum):
     LEGAL = "legal"
     PHYSICAL = "physical"
     INSTITUTIONAL = "institutional_acceptance"
+    # Additive (cortex bridge): classification failed. Never coerced to another class.
+    UNRESOLVED = "unresolved"
 
 
 class ProofClass(StrEnum):
@@ -44,6 +46,9 @@ class ProofClass(StrEnum):
     HUMAN = "human_judgment"
     PATTERN = "pattern_evidence"
     COLLECTIVE = "collective_trace"
+    # Additive (cortex bridge): the complete cortex receipt, itself a typed union of
+    # formal / optimization / estimation / evidence / causal / semantic / deterrence proofs.
+    CORTEX = "cortex_receipt"
 
 
 class AbstentionClass(StrEnum):
@@ -136,16 +141,21 @@ class ConsequenceVector:
             if name in ("lawful", "consent"):
                 if value is not None and type(value) is not bool:
                     raise CognitionError(f"{name} must be boolean or unknown")
-            else:
+            elif value is not None:   # None = not measured; unknown is never coerced to zero
                 number(value, low=0, high=1)
 
     @property
+    def unknown(self):
+        return tuple(k for k, v in asdict(self).items() if v is None and k not in ("lawful", "consent"))
+
+    @property
     def high(self):
-        return any(v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent"))
+        return any(v is not None and v >= .5 for k, v in asdict(self).items() if k not in ("lawful", "consent"))
 
     @property
     def prohibited(self):
-        return self.lawful is False or self.consent is False or self.rights > 0 or self.discrimination > 0
+        return (self.lawful is False or self.consent is False or (self.rights or 0) > 0
+                or (self.discrimination or 0) > 0)
 
 
 @dataclass(frozen=True)
@@ -280,6 +290,8 @@ PROOF_FIELDS = {
     "human_judgment": ("participants", "expertise", "conflicts", "dissent", "decision_authority"),
     "pattern_evidence": ("observations", "model", "scores", "limits"),
     "collective_trace": ("participants", "independence", "dissent", "trace", "baseline_status"),
+    "cortex_receipt": ("schema", "receipt_id", "geometry", "route", "verifier", "truth", "disposition",
+                       "accountability", "outcome", "authority_created", "execution_authority"),
 }
 
 
@@ -330,6 +342,10 @@ class CognitiveReceipt:
     calibration_error: float | None = None
     causal_credit: list = field(default_factory=list)
     authority_created: bool = False
+    # Additive (directive section 6): the explicit outcome taxonomy and reasons, a pure
+    # projection of abstention_state (or of the cortex receipt). Receipts retained before
+    # this field existed remain valid without it.
+    outcome: dict | None = None
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -344,6 +360,11 @@ class CognitiveReceipt:
             raise CognitionError("these bounded solvers cannot certify world validity")
         if self.proof_type is not None:
             ProofArtifact(self.proof_type, self.proof_artifact).validate()
+        if self.outcome is not None:
+            from cortex.outcomes import OUTCOMES, REASONS
+            if (set(self.outcome) != {"outcome", "reasons", "taxonomy"} or self.outcome["outcome"] not in OUTCOMES
+                    or not set(self.outcome["reasons"]) <= set(REASONS)):
+                raise CognitionError("outcome must use the directive taxonomy")
         retained_data(asdict(self))
 
     def to_dict(self):

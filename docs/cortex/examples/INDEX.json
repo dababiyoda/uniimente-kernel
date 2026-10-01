@@ -1,0 +1,22 @@
+{
+  "contracts": {
+    "genome-formal-z3.json": "cortex-intelligence-genome",
+    "genome-reserved-disabled.json": "cortex-intelligence-genome",
+    "problem-geometry-formal.json": "cortex-problem-geometry",
+    "proof-causal_estimate.json": "cortex-proof-artifact",
+    "proof-estimation.json": "cortex-proof-artifact",
+    "proof-evidence_assessment.json": "cortex-proof-artifact",
+    "proof-formal.json": "cortex-proof-artifact",
+    "proof-semantic_sourced.json": "cortex-proof-artifact",
+    "receipt-causal-identified.json": "cortex-receipt",
+    "receipt-causal-unmeasured-confounding.json": "cortex-receipt",
+    "receipt-estimate-dependent-inputs.json": "cortex-receipt",
+    "receipt-formal-recommend.json": "cortex-receipt",
+    "receipt-gates-incomparable.json": "cortex-receipt",
+    "receipt-legal-handoff.json": "cortex-receipt",
+    "receipt-semantic-model-unavailable.json": "cortex-receipt",
+    "receipt-victim-protection-handoff.json": "cortex-receipt",
+    "routing-memory-verified-success.json": "cortex-routing-memory"
+  },
+  "schema": "cortex-examples/0.1"
+}

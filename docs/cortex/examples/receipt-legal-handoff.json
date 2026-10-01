@@ -1,0 +1,192 @@
+{
+  "alternatives": [
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.1.1",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "handoff",
+    "next_step": "route to the authorized human decision-maker with the assembled evidence",
+    "reason": "legal questions belong to legitimate human or institutional authority"
+  },
+  "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.1.1",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.000233,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "high",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "unknown",
+      "financial": "unknown",
+      "irreversible_disclosure": "unknown",
+      "physical": "unknown",
+      "privacy": "unknown",
+      "reputational": "unknown",
+      "rights": "unknown",
+      "systemic": "unknown",
+      "tail_risk": "unknown",
+      "third_party": "unknown"
+    },
+    "constraints": [],
+    "epistemic_class": "legal",
+    "evidence_quality": "none",
+    "exactness": "unknown",
+    "objective": "adjudicate",
+    "problem_id": "example-legal",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "default_unknown"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "unknown",
+    "temporal_character": "static",
+    "uncertainty": "unknown",
+    "unresolved_fields": [
+      "reversibility",
+      "consequence_vector"
+    ]
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "declared"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": null,
+    "per_route": [],
+    "state": "REQUIRES_HUMAN_AUTHORITY"
+  },
+  "problem": {
+    "payload_digest": "sha256:6e310016d21c7b9693582deff9ec93231d5e424108fbc92c5dd60f7b6287e3a4",
+    "problem_id": "example-legal",
+    "question_digest": "sha256:0c1edff1604d60e68184e454f7d1c9f252a4a06d1b9b16fb24d7022c97b96239"
+  },
+  "proof_artifacts": [],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:d273cb3e37af0ef0c7921d7875adb3d9e4f4b4f47ba812422f78c58b5269024e",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": []
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unknown",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "no route executed",
+  "verifier": {
+    "blocking": false,
+    "findings": [],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.3",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {}
+  }
+}

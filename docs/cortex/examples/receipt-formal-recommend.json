@@ -1,0 +1,731 @@
+{
+  "alternatives": [
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    }
+  ],
+  "assumptions": [
+    "premise P_avail: the machine is available for the whole 10h shift (verified=True)"
+  ],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "recommend",
+    "next_step": null,
+    "reason": "route states ['OK']"
+  },
+  "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.formal.z3@0.1.1",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.072908,
+    "solver_calls": 9,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "none",
+      "financial": "none",
+      "irreversible_disclosure": "none",
+      "physical": "none",
+      "privacy": "none",
+      "reputational": "none",
+      "rights": "none",
+      "systemic": "none",
+      "tail_risk": "none",
+      "third_party": "none"
+    },
+    "constraints": [
+      "C_end_A",
+      "C_end_B",
+      "C_end_C",
+      "C_one_AB",
+      "C_one_AC",
+      "C_one_BC"
+    ],
+    "epistemic_class": "constraint_feasibility",
+    "evidence_quality": "none",
+    "exactness": "exact_required",
+    "objective": "decide_feasibility",
+    "problem_id": "H-F01",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "low",
+    "unresolved_fields": []
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "as_of",
+      "declared",
+      "formal_model"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.formal.z3@0.1.1|constraint_feasibility"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": {
+      "feasible": true,
+      "model": {
+        "s_A": 0,
+        "s_B": 3,
+        "s_C": 7
+      }
+    },
+    "per_route": [
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_A": 0,
+            "s_B": 3,
+            "s_C": 7
+          }
+        },
+        "assumptions": [
+          "premise P_avail: the machine is available for the whole 10h shift (verified=True)"
+        ],
+        "dependencies": [
+          "solver:z3"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 0.070977,
+          "solver_calls": 9,
+          "usd": 0.0
+        },
+        "notes": [],
+        "organ_id": "cortex.formal.z3@0.1.1",
+        "organ_version": "0.1.1",
+        "origin": "solver",
+        "proof": {
+          "completeness": "not established by reverse translation",
+          "counterexample_search": [
+            {
+              "constraint": "C_end_A",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_end_B",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_end_C",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_one_AB",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_one_AC",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_one_BC",
+              "result": "binding: violable without it"
+            }
+          ],
+          "discrepancy_check": {
+            "discrepancies": [],
+            "warnings": [],
+            "witnesses": [
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "satisfying",
+                "witness": {
+                  "s_A": 0,
+                  "s_B": 3,
+                  "s_C": 7
+                }
+              },
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "violating",
+                "witness": {
+                  "s_A": 0,
+                  "s_B": 0,
+                  "s_C": 0
+                }
+              }
+            ]
+          },
+          "original_requirement": "Jobs A (3h), B (4h), C (2h) on one machine within a 10h shift.",
+          "premises": [
+            {
+              "evidence_ref": "maintenance-log",
+              "id": "P_avail",
+              "text": "the machine is available for the whole 10h shift",
+              "verified": true
+            }
+          ],
+          "proof_class": "formal",
+          "reverse_translation": [
+            "s_A is an integer in [0, 10]",
+            "s_B is an integer in [0, 10]",
+            "s_C is an integer in [0, 10]",
+            "C_end_A (covers R_end_A): (s_A + 3) \u2264 10",
+            "C_end_B (covers R_end_B): (s_B + 4) \u2264 10",
+            "C_end_C (covers R_end_C): (s_C + 2) \u2264 10",
+            "C_one_AB (covers R_one): ((s_A + 3) \u2264 s_B) or ((s_B + 4) \u2264 s_A)",
+            "C_one_AC (covers R_one): ((s_A + 3) \u2264 s_C) or ((s_C + 2) \u2264 s_A)",
+            "C_one_BC (covers R_one): ((s_B + 4) \u2264 s_C) or ((s_C + 2) \u2264 s_B)"
+          ],
+          "scope": "valid_given_encoding",
+          "solver": {
+            "model": {
+              "s_A": 0,
+              "s_B": 3,
+              "s_C": 7
+            },
+            "name": "z3",
+            "status": "SAT",
+            "version": "5.1.0"
+          },
+          "structured_model": {
+            "bounds": {
+              "s_A": [
+                0,
+                10
+              ],
+              "s_B": [
+                0,
+                10
+              ],
+              "s_C": [
+                0,
+                10
+              ]
+            },
+            "constraints": [
+              {
+                "covers": [
+                  "R_end_A"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_A",
+                    3
+                  ],
+                  10
+                ],
+                "id": "C_end_A"
+              },
+              {
+                "covers": [
+                  "R_end_B"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_B",
+                    4
+                  ],
+                  10
+                ],
+                "id": "C_end_B"
+              },
+              {
+                "covers": [
+                  "R_end_C"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_C",
+                    2
+                  ],
+                  10
+                ],
+                "id": "C_end_C"
+              },
+              {
+                "covers": [
+                  "R_one"
+                ],
+                "expr": [
+                  "or",
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_A",
+                      3
+                    ],
+                    "s_B"
+                  ],
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_B",
+                      4
+                    ],
+                    "s_A"
+                  ]
+                ],
+                "id": "C_one_AB"
+              },
+              {
+                "covers": [
+                  "R_one"
+                ],
+                "expr": [
+                  "or",
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_A",
+                      3
+                    ],
+                    "s_C"
+                  ],
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_C",
+                      2
+                    ],
+                    "s_A"
+                  ]
+                ],
+                "id": "C_one_AC"
+              },
+              {
+                "covers": [
+                  "R_one"
+                ],
+                "expr": [
+                  "or",
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_B",
+                      4
+                    ],
+                    "s_C"
+                  ],
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_C",
+                      2
+                    ],
+                    "s_B"
+                  ]
+                ],
+                "id": "C_one_BC"
+              }
+            ],
+            "obligations": {
+              "R_end_A": "job A (3h) ends within the 10h shift",
+              "R_end_B": "job B (4h) ends within the 10h shift",
+              "R_end_C": "job C (2h) ends within the 10h shift",
+              "R_one": "the machine runs one job at a time"
+            },
+            "query": {
+              "kind": "feasibility"
+            },
+            "variables": {
+              "s_A": "int",
+              "s_B": "int",
+              "s_C": "int"
+            }
+          },
+          "unverified_premises": []
+        },
+        "state": "OK",
+        "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises"
+      }
+    ],
+    "state": "OK"
+  },
+  "problem": {
+    "payload_digest": "sha256:b68f8f746ac6c1c9f3a54191815b1db252cbf2ddc072c7489491139388b9b1a8",
+    "problem_id": "H-F01",
+    "question_digest": "sha256:1d00198a524dd0a867166e743b7594a9f600387f8d8255d64e6be5a1d6ac683d"
+  },
+  "proof_artifacts": [
+    {
+      "completeness": "not established by reverse translation",
+      "counterexample_search": [
+        {
+          "constraint": "C_end_A",
+          "result": "binding: violable without it"
+        },
+        {
+          "constraint": "C_end_B",
+          "result": "binding: violable without it"
+        },
+        {
+          "constraint": "C_end_C",
+          "result": "binding: violable without it"
+        },
+        {
+          "constraint": "C_one_AB",
+          "result": "binding: violable without it"
+        },
+        {
+          "constraint": "C_one_AC",
+          "result": "binding: violable without it"
+        },
+        {
+          "constraint": "C_one_BC",
+          "result": "binding: violable without it"
+        }
+      ],
+      "discrepancy_check": {
+        "discrepancies": [],
+        "warnings": [],
+        "witnesses": [
+          {
+            "agrees": true,
+            "index": 0,
+            "kind": "satisfying",
+            "witness": {
+              "s_A": 0,
+              "s_B": 3,
+              "s_C": 7
+            }
+          },
+          {
+            "agrees": true,
+            "index": 0,
+            "kind": "violating",
+            "witness": {
+              "s_A": 0,
+              "s_B": 0,
+              "s_C": 0
+            }
+          }
+        ]
+      },
+      "original_requirement": "Jobs A (3h), B (4h), C (2h) on one machine within a 10h shift.",
+      "premises": [
+        {
+          "evidence_ref": "maintenance-log",
+          "id": "P_avail",
+          "text": "the machine is available for the whole 10h shift",
+          "verified": true
+        }
+      ],
+      "proof_class": "formal",
+      "reverse_translation": [
+        "s_A is an integer in [0, 10]",
+        "s_B is an integer in [0, 10]",
+        "s_C is an integer in [0, 10]",
+        "C_end_A (covers R_end_A): (s_A + 3) \u2264 10",
+        "C_end_B (covers R_end_B): (s_B + 4) \u2264 10",
+        "C_end_C (covers R_end_C): (s_C + 2) \u2264 10",
+        "C_one_AB (covers R_one): ((s_A + 3) \u2264 s_B) or ((s_B + 4) \u2264 s_A)",
+        "C_one_AC (covers R_one): ((s_A + 3) \u2264 s_C) or ((s_C + 2) \u2264 s_A)",
+        "C_one_BC (covers R_one): ((s_B + 4) \u2264 s_C) or ((s_C + 2) \u2264 s_B)"
+      ],
+      "scope": "valid_given_encoding",
+      "solver": {
+        "model": {
+          "s_A": 0,
+          "s_B": 3,
+          "s_C": 7
+        },
+        "name": "z3",
+        "status": "SAT",
+        "version": "5.1.0"
+      },
+      "structured_model": {
+        "bounds": {
+          "s_A": [
+            0,
+            10
+          ],
+          "s_B": [
+            0,
+            10
+          ],
+          "s_C": [
+            0,
+            10
+          ]
+        },
+        "constraints": [
+          {
+            "covers": [
+              "R_end_A"
+            ],
+            "expr": [
+              "<=",
+              [
+                "+",
+                "s_A",
+                3
+              ],
+              10
+            ],
+            "id": "C_end_A"
+          },
+          {
+            "covers": [
+              "R_end_B"
+            ],
+            "expr": [
+              "<=",
+              [
+                "+",
+                "s_B",
+                4
+              ],
+              10
+            ],
+            "id": "C_end_B"
+          },
+          {
+            "covers": [
+              "R_end_C"
+            ],
+            "expr": [
+              "<=",
+              [
+                "+",
+                "s_C",
+                2
+              ],
+              10
+            ],
+            "id": "C_end_C"
+          },
+          {
+            "covers": [
+              "R_one"
+            ],
+            "expr": [
+              "or",
+              [
+                "<=",
+                [
+                  "+",
+                  "s_A",
+                  3
+                ],
+                "s_B"
+              ],
+              [
+                "<=",
+                [
+                  "+",
+                  "s_B",
+                  4
+                ],
+                "s_A"
+              ]
+            ],
+            "id": "C_one_AB"
+          },
+          {
+            "covers": [
+              "R_one"
+            ],
+            "expr": [
+              "or",
+              [
+                "<=",
+                [
+                  "+",
+                  "s_A",
+                  3
+                ],
+                "s_C"
+              ],
+              [
+                "<=",
+                [
+                  "+",
+                  "s_C",
+                  2
+                ],
+                "s_A"
+              ]
+            ],
+            "id": "C_one_AC"
+          },
+          {
+            "covers": [
+              "R_one"
+            ],
+            "expr": [
+              "or",
+              [
+                "<=",
+                [
+                  "+",
+                  "s_B",
+                  4
+                ],
+                "s_C"
+              ],
+              [
+                "<=",
+                [
+                  "+",
+                  "s_C",
+                  2
+                ],
+                "s_B"
+              ]
+            ],
+            "id": "C_one_BC"
+          }
+        ],
+        "obligations": {
+          "R_end_A": "job A (3h) ends within the 10h shift",
+          "R_end_B": "job B (4h) ends within the 10h shift",
+          "R_end_C": "job C (2h) ends within the 10h shift",
+          "R_one": "the machine runs one job at a time"
+        },
+        "query": {
+          "kind": "feasibility"
+        },
+        "variables": {
+          "s_A": "int",
+          "s_B": "int",
+          "s_C": "int"
+        }
+      },
+      "unverified_premises": []
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:7de278e1b21397c39f4ef8c7876223aba863e7b8fe44fe595f9165b73c88b9d7",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.formal.z3@0.1.1"
+    ]
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "premises_verified",
+    "formal_validity": "valid_given_encoding",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises",
+  "verifier": {
+    "blocking": false,
+    "findings": [],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.3",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {
+      "cortex.formal.z3@0.1.1": "0.1.1"
+    },
+    "solver": {
+      "name": "z3",
+      "version": "5.1.0"
+    }
+  }
+}

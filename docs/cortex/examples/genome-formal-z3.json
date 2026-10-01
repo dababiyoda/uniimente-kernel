@@ -1,0 +1,105 @@
+{
+  "capability": {
+    "acceptance_tests": [
+      "SAT/UNSAT agrees with requester witnesses; UNSAT carries a core"
+    ],
+    "authority": {
+      "budget_ceiling_usd": 0.0,
+      "max_consequence_class": "read_only",
+      "requires_human": false
+    },
+    "contracts": [
+      "cortex-problem-geometry",
+      "cortex-proof-artifact",
+      "cortex-receipt"
+    ],
+    "description": "Formal feasibility and entailment on an inspectable model via Z3.",
+    "failure_modes": [
+      "unfaithful encoding",
+      "unverified premises",
+      "solver outage"
+    ],
+    "interface": {
+      "inputs": {
+        "problem": "cortex problem"
+      },
+      "outputs": {
+        "result": "typed proof artifact"
+      }
+    },
+    "legal_operator": "alfonso_lopez",
+    "name": "cortex.formal.z3",
+    "recovery_path": "unregister the profile; routes fall back to abstain or handoff",
+    "version": "0.1.1"
+  },
+  "key": "cortex.formal.z3@0.1.1",
+  "profile": {
+    "abstention_conditions": [
+      "formalization incomplete",
+      "solver unavailable",
+      "timeout"
+    ],
+    "authority_ref": "cortex.formal.z3@0.1.1",
+    "benchmark_history": [
+      "tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed"
+    ],
+    "biological_concept": null,
+    "cognitive_light_cone": {
+      "horizon": "single problem",
+      "max_informed_consequence": "external_contact",
+      "modifies": [],
+      "observes": [
+        "structured model",
+        "obligations",
+        "witnesses",
+        "premises"
+      ]
+    },
+    "contraindications": [],
+    "cost_usd_per_call": 0.0,
+    "enabled": true,
+    "evidence_requirements": [
+      "structured model",
+      "enumerated obligations"
+    ],
+    "failure_diversity_key": "smt",
+    "failure_modes": [
+      "unfaithful encoding",
+      "unverified premises",
+      "solver outage"
+    ],
+    "inhibition": "inhibited when the encoding fails discrepancy or witness checks",
+    "input_contract": {
+      "problem": "cortex-problem-geometry"
+    },
+    "latency_s_budget": 30.0,
+    "layer": "solver_macro_cognitive",
+    "lifecycle": "SANDBOXED",
+    "lineage": [],
+    "memory_scope": "per-problem; no cross-problem memory in v0.1",
+    "observations": [
+      "structured model",
+      "obligations",
+      "witnesses",
+      "premises"
+    ],
+    "output_contract": {
+      "result": "cortex-proof-artifact"
+    },
+    "proof_classes": [
+      "formal"
+    ],
+    "recruitment": "recruited only when a structured model exists",
+    "role": "solver",
+    "shared_dependencies": [
+      "solver:z3"
+    ],
+    "state": "solver session per problem",
+    "supported_geometries": [
+      "deductive_logical",
+      "constraint_feasibility",
+      "arithmetic"
+    ],
+    "update_rules": "none"
+  }
+}

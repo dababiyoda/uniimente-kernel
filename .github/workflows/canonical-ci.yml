@@ -106,6 +106,8 @@ jobs:
       - run: pip install -r requirements-dev.txt -r requirements-cortex.txt
       - name: Cortex tests with the solver present (no skips for Z3)
         run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py
+      - name: Mutation check (every safeguard-removing mutant must be caught)
+        run: python scripts/ci/check_cortex_mutants.py
       - name: Held-out run against the freeze manifest (refuses if frozen inputs changed)
         run: python -m cortex.evaluation.run --partition heldout --out cortex-heldout-results.json
       - uses: actions/upload-artifact@v4

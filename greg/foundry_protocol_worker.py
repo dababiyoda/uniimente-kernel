@@ -13,13 +13,22 @@ import sys
 
 def main():
     mode = sys.argv[1:]
-    if mode not in (["dsl-verify"], ["build-owned"]):
+    if mode not in (["dsl-verify"], ["build-owned"], ["mcp-foundry"]):
         raise ValueError("unreviewed child recipe")
     resource.setrlimit(resource.RLIMIT_CPU, (12, 12))
     resource.setrlimit(resource.RLIMIT_AS, (2 * 1024**3, 2 * 1024**3))
-    ceiling = 8 * 1048576 if mode == ["build-owned"] else 0
+    ceiling = 8 * 1048576 if mode == ["build-owned"] else (1048576 if mode == ["mcp-foundry"] else 0)
     resource.setrlimit(resource.RLIMIT_FSIZE, (ceiling, ceiling))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    if mode == ["mcp-foundry"]:
+        scope = os.environ.get("GREG_FOUNDRY_STORE")
+        if not scope or os.environ.get("FOUNDRY_MCP_ROOT") != str(Path(scope).resolve()):
+            raise ValueError("MCP requires its parent-installed fixed store scope")
+        from foundry.mcp.foundry_server import server
+        from greg.foundry_worker import guard
+        guard(Path(scope))
+        server.run("stdio")
+        return
     raw = sys.stdin.buffer.read(131073)
     if len(raw) > 131072:
         raise ValueError("reviewed child job exceeds 128 KiB")

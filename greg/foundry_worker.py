@@ -3,8 +3,8 @@
 Seccomp is installed by the parent before exec. Audit hooks constrain reviewed
 Python filesystem calls, not arbitrary Python or native code. Subprocesses and
 unreviewed source/child execution fail closed until an OS filesystem sandbox is available.
-Two exact reviewed recipes are allowed: restricted-DSL recomputation and
-owned-source packaging from an explicit published source inventory.
+Three exact reviewed recipes are allowed: restricted-DSL recomputation,
+owned-source packaging and the first-party read-only MCP server.
 Read-only calls operate on disposable copies and cannot mutate persistent state.
 """
 from __future__ import annotations
@@ -81,10 +81,15 @@ def guard(root: Path, source_data=()):
             executable, argv, cwd, env = args
             reviewed = [sys.executable, "-s", "-m", "greg.foundry_protocol_worker"]
             environment = dict(os.environ) if env is None else env
-            if list(argv)[:-1] != reviewed or list(argv)[-1:] not in (["dsl-verify"], ["build-owned"]) or executable != sys.executable or cwd is None or Path(cwd).resolve() != code or \
+            if list(argv)[:-1] != reviewed or list(argv)[-1:] not in (["dsl-verify"], ["build-owned"], ["mcp-foundry"]) or executable != sys.executable or cwd is None or Path(cwd).resolve() != code or \
                     environment.get("PYTHONPATH") != str(code) or environment.get("GREG_FOUNDRY_STORE") != str(root) or \
                     environment.get("PYTHONDONTWRITEBYTECODE") != "1" or \
-                    set(environment) - {"PATH", "LANG", "PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "GREG_FOUNDRY_STORE"}:
+                    set(environment) - ({"PATH", "LANG", "PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "GREG_FOUNDRY_STORE"} |
+                        ({"HOME", "FOUNDRY_MCP_ROOT"} if list(argv)[-1:] == ["mcp-foundry"] else set())):
+                raise PermissionError("child execution requires OS filesystem confinement")
+            if list(argv)[-1:] == ["mcp-foundry"] and (
+                    environment.get("HOME") != os.environ.get("HOME") or
+                    environment.get("FOUNDRY_MCP_ROOT") != str(root)):
                 raise PermissionError("child execution requires OS filesystem confinement")
         elif event in {"os.system", "os.exec", "os.fork", "os.posix_spawn"}:
             raise PermissionError("child execution requires OS filesystem confinement")

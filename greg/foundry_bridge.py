@@ -4,8 +4,8 @@
 ``{system, op, args}``. The system's store lives inside the mission workspace,
 with reviewed operations executed in a disposable, network-denied worker.
 Python file guards defend reviewed code against path confusion; they are not
-an OS filesystem sandbox. Unreviewed source and child processes require one. Two exact reviewed child
-recipes support restricted DSL recomputation and owned-source packaging.
+an OS filesystem sandbox. Unreviewed source and child processes require one. Three exact reviewed child recipes support restricted DSL recomputation,
+owned-source packaging and the first-party read-only MCP server.
 An op the system does not declare for that capability is refused, so a
 read-only grant cannot reach a write op.
 """

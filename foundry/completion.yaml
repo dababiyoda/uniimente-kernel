@@ -477,10 +477,10 @@
   state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_mcp_worker.py
   existing: *id001
-  gap: Reviewed SDK/repair fixtures execute, but GREG refuses child/provider/caller-source execution until OS filesystem
-    confinement is available and escape tests pass. This host rejects bwrap namespaces, Landlock and chroot. The
-    requirement remains active.
+  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores. General external providers and remote transport still require stronger OS filesystem confinement; original failover and authority component evidence is retained.
+
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

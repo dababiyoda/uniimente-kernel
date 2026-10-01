@@ -1,0 +1,11 @@
+{
+  "problem_id": "demo:exact",
+  "operation": "calculate",
+  "data": {
+    "expression": "(0.1 + 0.2) * 10"
+  },
+  "geometry": {
+    "latency_limit": 5,
+    "compute_limit": 1000
+  }
+}

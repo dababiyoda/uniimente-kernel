@@ -365,15 +365,48 @@ class TestEvaluationIntegrity:
         assert out["disposition"] == "recommend" and out["model_calls"] == 3 and "not independent" in out[
             "shared_dependency"]
 
+    @staticmethod
+    def arms_fixture(base_scores=None, base_cost=0.01, base_p95=2.0, lo=0.2):
+        geometries = ["formal"] * 3 + ["estimate"] * 3 + ["semantic"] * 3
+        items = lambda scores: [{"item_id": f"i{n}", "geometry": g, "score": s}  # noqa: E731
+                                for n, (g, s) in enumerate(zip(geometries, scores))]
+        routed = {"status": "RUN", "items": items([1.0] * 9),
+                  "summary": {"critical_errors": 0, "gate_violations": 0, "cost_usd_total": 0.0, "latency_s_p95": 0.2}}
+        base = {"status": "RUN", "items": items(base_scores or [0.0, 1.0, 1.0] * 3),
+                "summary": {"critical_errors": 0, "cost_usd_total": base_cost, "latency_s_p95": base_p95},
+                "paired_gain_vs_routed": {"ci95": [lo, lo + 0.1]}}
+        return routed, base
+
     def test_exit_requires_every_declared_baseline_and_a_margin(self):
-        routed = {"status": "RUN", "summary": {"critical_errors": 0, "gate_violations": 0}}
-        base = lambda lo: {"status": "RUN", "summary": {"critical_errors": 0},  # noqa: E731
-                           "paired_gain_vs_routed": {"ci95": [lo, lo + 0.1]}}
-        assert S.exit_verdict({"routed_seed": routed, "always_llm": base(0.2), "llm_committee": base(0.2)})[
-            "verdict"] == "GAIN_VERIFIED"
-        assert S.exit_verdict({"routed_seed": routed, "always_llm": base(0.01), "llm_committee": base(0.2)})[
+        routed, base = self.arms_fixture()
+        verdict = S.exit_verdict({"routed_seed": routed, "always_llm": base, "llm_committee": base})
+        assert verdict["verdict"] == "GAIN_VERIFIED" and verdict["promotion_requires"] == "founder ratification"
+        _, weak = self.arms_fixture(lo=0.01)
+        assert S.exit_verdict({"routed_seed": routed, "always_llm": weak, "llm_committee": base})[
             "verdict"] == "GAIN_ABSENT"
-        assert S.exit_verdict({"routed_seed": routed, "always_llm": base(0.2)})["verdict"] == "INCONCLUSIVE"
+        assert S.exit_verdict({"routed_seed": routed, "always_llm": base})["verdict"] == "INCONCLUSIVE"
+
+    def test_exit_requires_cross_geometry_gain_without_resource_blowup(self):
+        def verdict(**kw):
+            routed, base = self.arms_fixture(**kw)
+            return S.exit_verdict({"routed_seed": routed, "always_llm": base, "llm_committee": base})
+        # pooled gain that comes from one geometry only is not cross-geometry gain
+        one = verdict(base_scores=[0.0, 0.0, 0.0] + [1.0] * 6)
+        assert one["verdict"] == "GAIN_ABSENT" and any("geometries" in r for r in one["reasons"])
+        # a geometry where routing is worse blocks the exit even when the pooled bound clears
+        routed, base = self.arms_fixture()
+        routed["items"][6]["score"] = routed["items"][8]["score"] = 0.0   # semantic: diffs 0, 0, -1
+        worse = S.exit_verdict({"routed_seed": routed, "always_llm": base, "llm_committee": base})
+        assert worse["verdict"] == "GAIN_ABSENT" and any("worse than" in r for r in worse["reasons"])
+        assert verdict(base_cost=0.0)["verdict"] == "GAIN_VERIFIED"           # equal cost is fine
+        routed, base = self.arms_fixture(base_p95=0.01)
+        routed["summary"]["latency_s_p95"] = 3.0
+        slow = S.exit_verdict({"routed_seed": routed, "always_llm": base, "llm_committee": base})
+        assert slow["verdict"] == "GAIN_ABSENT" and any("latency" in r for r in slow["reasons"])
+        routed, base = self.arms_fixture(base_cost=0.0)
+        routed["summary"]["cost_usd_total"] = 1.0
+        assert S.exit_verdict({"routed_seed": routed, "always_llm": base, "llm_committee": base})[
+            "verdict"] == "GAIN_ABSENT"
 
     def test_heldout_is_refused_when_frozen_inputs_change(self, monkeypatch, tmp_path):
         if not R.MANIFEST.exists():

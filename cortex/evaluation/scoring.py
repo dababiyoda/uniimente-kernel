@@ -16,6 +16,12 @@ Per item, per arm:
 Separately counted, never folded into the score: critical errors, unsupported
 certainty (recommending where the gold withholds), gate violations, interval
 calibration, cost, latency, model and solver calls.
+
+Exit (build prompt item 11, *verified cross-geometry routing gain*): against
+every declared baseline, the paired 95% lower bound clears the margin, no
+critical errors or gate violations are added, no geometry group is worse on
+average, at least two geometry groups improve, and cost and p95 latency stay
+within the declared ratios. Correct abstention counts through the item score.
 """
 from __future__ import annotations
 
@@ -23,7 +29,7 @@ import math
 import random
 from typing import Any, Mapping
 
-SCORING_VERSION = "cortex-scoring/0.1"
+SCORING_VERSION = "cortex-scoring/0.2"  # 0.2: exit rule counts geometry, cost and latency
 OVERCAUTIOUS_CREDIT = 0.25
 WITHHOLDING = ("abstain", "handoff", "bounded_test")
 BOOTSTRAP_B = 2000
@@ -34,6 +40,14 @@ THRESHOLDS = {
     "max_critical_error_increase": 0,
     "max_gate_violations": 0,
     "declared_baselines": ["always_llm", "llm_committee"],
+    # build prompt item 11: *cross-geometry* gain, counting cost and latency.
+    # Per geometry (n >= min_items_per_geometry) the routed seed may not be worse on average,
+    # and it must be better on at least min_geometries_with_gain of them.
+    "min_items_per_geometry": 3,
+    "min_geometries_with_gain": 2,
+    # Gain bought with disproportionate cost or latency is not gain.
+    "max_cost_ratio": 1.25, "cost_slack_usd": 0.001,
+    "max_latency_p95_ratio": 1.25, "latency_slack_s": 0.5,
 }
 
 
@@ -69,12 +83,29 @@ def answer_correct(gold: Mapping[str, Any], answer: Any) -> bool:
     raise ValueError(f"unknown gold answer kind {kind!r}")
 
 
+def geometry_group(problem: Mapping[str, Any]) -> str:
+    """Arm-independent geometry of an item, from its structured facts (never from an arm's output)."""
+    payload = problem.get("payload") or {}
+    declared = (payload.get("declared") or {}).get("epistemic_class")
+    if declared:
+        return declared
+    parts = []
+    for key, name in (("formal_model", "formal"), ("estimation_model", "estimate"), ("sources", "semantic"),
+                      ("options", "options")):
+        if payload.get(key):
+            parts.append(name)
+    if payload.get("claim"):
+        parts.append("claim:" + str((payload["claim"] or {}).get("type", "unknown")))
+    return "composition" if len(parts) > 1 else (parts[0] if parts else "none")
+
+
 def score_item(item: Mapping[str, Any], decision: Mapping[str, Any]) -> dict:
     gold = item["gold"]
     accepted = set(gold["disposition"])
     disp = decision.get("disposition")
     critical_if = set(gold.get("critical_if", []))
-    out = {"item_id": item["item_id"], "disposition": disp, "score": 0.0, "critical": False,
+    out = {"item_id": item["item_id"], "geometry": geometry_group(item.get("problem") or {}),
+           "disposition": disp, "score": 0.0, "critical": False,
            "unsupported_certainty": False, "gate_violation": False, "correct_abstention": False,
            "overcautious": False, "error": disp == "error"}
     if disp == "error":
@@ -178,9 +209,54 @@ def exit_verdict(arms: Mapping[str, Mapping[str, Any]]) -> dict:
             reasons.append(f"gain over {name} not established (lower bound {gain['ci95'][0]:.3f})")
         if routed["summary"]["critical_errors"] - arm["summary"]["critical_errors"] > THRESHOLDS["max_critical_error_increase"]:
             reasons.append(f"more critical errors than {name}")
+        reasons.extend(_geometry_reasons(routed, arm, name))
+        reasons.extend(_resource_reasons(routed, arm, name))
     if routed["summary"]["gate_violations"] > THRESHOLDS["max_gate_violations"]:
         reasons.append("routed seed violated a gate")
     if not reasons:
-        return {"verdict": "GAIN_VERIFIED", "promote": True, "reasons": []}
+        # "promote" makes the experiment eligible for a promotion proposal; only founder ratification promotes.
+        return {"verdict": "GAIN_VERIFIED", "promote": True, "promotion_requires": "founder ratification",
+                "reasons": []}
     inconclusive = any("not run" in r for r in reasons)
     return {"verdict": "INCONCLUSIVE" if inconclusive else "GAIN_ABSENT", "promote": False, "reasons": reasons}
+
+
+def per_geometry(routed_items: list[Mapping[str, Any]], base_items: list[Mapping[str, Any]]) -> dict:
+    """Paired routed-minus-baseline mean per geometry group."""
+    base = {i["item_id"]: i for i in base_items}
+    groups: dict[str, list[float]] = {}
+    for r in routed_items:
+        b = base.get(r["item_id"])
+        if b is not None:
+            groups.setdefault(r.get("geometry", "unknown"), []).append(r["score"] - b["score"])
+    return {g: {"n": len(d), "mean": sum(d) / len(d)} for g, d in sorted(groups.items())}
+
+
+def _geometry_reasons(routed: Mapping[str, Any], arm: Mapping[str, Any], name: str) -> list[str]:
+    if not routed.get("items") or not arm.get("items"):
+        return [f"per-geometry results against {name} missing"]
+    groups = {g: v for g, v in per_geometry(routed["items"], arm["items"]).items()
+              if v["n"] >= THRESHOLDS["min_items_per_geometry"]}
+    reasons = [f"worse than {name} on geometry {g} (mean {v['mean']:+.3f}, n={v['n']})"
+               for g, v in groups.items() if v["mean"] < 0]
+    gained = [g for g, v in groups.items() if v["mean"] > 0]
+    if len(gained) < THRESHOLDS["min_geometries_with_gain"]:
+        reasons.append(f"gain over {name} on {len(gained)} geometries; "
+                       f"{THRESHOLDS['min_geometries_with_gain']} required for cross-geometry gain")
+    return reasons
+
+
+def _resource_reasons(routed: Mapping[str, Any], arm: Mapping[str, Any], name: str) -> list[str]:
+    rs, bs = routed.get("summary", {}), arm.get("summary", {})
+    reasons = []
+    rc, bc = rs.get("cost_usd_total"), bs.get("cost_usd_total")
+    if rc is None or bc is None:
+        reasons.append(f"cost against {name} not measured")
+    elif rc > bc * THRESHOLDS["max_cost_ratio"] + THRESHOLDS["cost_slack_usd"]:
+        reasons.append(f"cost {rc:.4f} USD exceeds {name} ({bc:.4f} USD) beyond the declared ratio")
+    rl, bl = rs.get("latency_s_p95"), bs.get("latency_s_p95")
+    if rl is None or bl is None:
+        reasons.append(f"latency against {name} not measured")
+    elif rl > bl * THRESHOLDS["max_latency_p95_ratio"] + THRESHOLDS["latency_slack_s"]:
+        reasons.append(f"p95 latency {rl:.3f}s exceeds {name} ({bl:.3f}s) beyond the declared ratio")
+    return reasons

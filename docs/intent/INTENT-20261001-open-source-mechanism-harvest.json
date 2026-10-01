@@ -1,0 +1,62 @@
+{
+  "intent_id": "INTENT-20261001-open-source-mechanism-harvest",
+  "statement": "Use lawful open-source software, repositories, algorithms, public technical information and reusable mechanisms as a default engineering supply chain for completing the currently achievable GREG Body + Organs + Mind; invent only the residual capability that verified reuse, adaptation and composition cannot supply.",
+  "source_refs": [
+    "docs/intent/sources/OPEN-SOURCE-MECHANISM-HARVEST-2026-10-01-source.md",
+    "INTENT-20260930-open-source-first",
+    "Issue #117 acquire-before-invent rule",
+    "Founder correction, 2026-10-01"
+  ],
+  "owner": "Alfonso Lopez; repository maintainers and coding agents implement",
+  "state": "active",
+  "binding_scope": "Project-wide development and implementation selection across Kernel, Cortex, organs, Foundry, capability genesis and future bodies. It governs how missing capabilities are sourced; it does not itself authorize installation, activation, deployment or external effects.",
+  "constitutional_constraints": [
+    "Alfonso remains root human constitutional authority",
+    "Imported or generated capability never inherits authority",
+    "License, attribution, model/data terms, patents, provenance and security must be checked before code reuse",
+    "Educational or example code is not represented as production-qualified without independent tests and a stronger-baseline comparison",
+    "No automatic paid fallback, unapproved download, runtime self-installation, self-attachment or live promotion",
+    "One canonical GREG path and one authority spine remain controlling",
+    "Open-source reuse is an acceleration strategy, not a stopping condition that narrows the full-machine destination"
+  ],
+  "success_evidence": [
+    "Material CapabilityDeficits record existing/internal and open-source candidates before custom architecture",
+    "Adopted code or dependencies retain upstream repository, commit/tag, path/package, exact license/notice obligations and replacement interface",
+    "Imported mechanisms pass native qualification, project integration tests and consequence-appropriate verification",
+    "Repository-scale imports are replaced by narrow adapters or vendored slices when those preserve the effect with less coupling",
+    "Foundry work identifies the residual novel mechanism after reuse options are exhausted"
+  ],
+  "failure_evidence": [
+    "Rebuilding mature commodity mechanisms without documenting why available open-source routes fail",
+    "Copying code without compatible license/provenance",
+    "Treating an educational implementation, stars or popularity as production qualification",
+    "Importing large repositories that create duplicate authority, registries, schedulers, learning planes or unbounded dependency burden",
+    "Declaring the mind complete because a mechanism catalog exists"
+  ],
+  "dependencies": [
+    "Existing Capability Genome and CapabilityDeficit handling",
+    "Canonical GREG mission and authority path",
+    "Mechanism Recombination Foundry for residual invention",
+    "Repository/source diligence, security review and license verification",
+    "Typed adapters, tests, receipts and rollback for adopted mechanisms"
+  ],
+  "conflicts": [
+    "The founder's colloquial 'copy and paste' wording cannot override upstream license, notice, security, privacy, patent or distribution obligations",
+    "Some open-source projects are educational, research-only, copyleft, source-available, model-license-restricted, abandoned or operationally heavier than a small local implementation",
+    "Open source can eliminate license/API cost without eliminating hardware, electricity, storage, maintenance, exclusive data or platform fees"
+  ],
+  "next_review_trigger": "Every new material CapabilityDeficit and every proposed repository-scale import; re-evaluate source fitness when upstream license, maintenance, security posture, API, model weights or project requirements change.",
+  "supersedes": [
+    "Any narrow interpretation of INTENT-20260930-open-source-first that limits reuse to replacing paid AI/provider costs",
+    "Any default build behavior that writes a new implementation before checking mature reusable mechanisms"
+  ],
+  "superseded_by": [],
+  "implementation_refs": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    "docs/OPEN_SOURCE_STACK.md",
+    "docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md",
+    "docs/collaboration/OPEN_SOURCE_MECHANISM_HARVEST_REVIEW_2026-10-01.md"
+  ]
+}

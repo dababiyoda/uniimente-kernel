@@ -32,7 +32,7 @@ from .organs.formal import FormalOrgan
 from .organs.semantic import SemanticOrgan
 
 POLICY_VERSION = "cortex-route-policy/0.1"
-FORMAL = "cortex.formal.z3@0.1.0"
+FORMAL = "cortex.formal.z3@0.1.1"
 FERMI = "cortex.estimation.fermi@0.1.0"
 EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"

@@ -23,7 +23,7 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.1.1"
+CORTEX_VERSION = "0.1.2"
 
 
 class CortexError(ValueError):

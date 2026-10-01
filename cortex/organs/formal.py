@@ -29,8 +29,8 @@ from typing import Any, Mapping
 
 from ..contracts import Expenditure, OrganResult
 
-ORGAN_ID = "cortex.formal.z3@0.1.0"
-VERSION = "0.1.0"
+ORGAN_ID = "cortex.formal.z3@0.1.1"
+VERSION = "0.1.1"
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _BOOL_OPS = ("and", "or", "not", "implies")
 _CMP_OPS = ("=", "!=", "<", "<=", ">", ">=")
@@ -155,6 +155,13 @@ def _z3():
         return None
 
 
+def _unknown_state(solver) -> str:
+    """Z3 reports an exhausted timeout as ``timeout`` or, in recent releases, ``canceled``
+    (the timer is this process's only canceller). Anything else undecided is INCONCLUSIVE."""
+    reason = str(solver.reason_unknown()).lower()
+    return "TIMEOUT" if "timeout" in reason or "canceled" in reason else "INCONCLUSIVE"
+
+
 class FormalOrgan:
     organ_id = ORGAN_ID
     version = VERSION
@@ -235,7 +242,13 @@ class FormalOrgan:
                     discrepancies.append("witness checks truncated by solver-call budget")
                     break
                 bind = [env[k] == self._lit(z3, spec.variables[k], v) for k, v in w.items()]
-                _, res = check(domain + bind + list(exprs.values()))
+                ws, res = check(domain + bind + list(exprs.values()))
+                if res not in (z3.sat, z3.unsat):
+                    # An undecided witness is not agreement: the discrepancy check did not complete.
+                    return self._result(_unknown_state(ws), None, spec, z3, started, calls, reverse,
+                                        discrepancies, warnings, witness_results, [],
+                                        {"status": "UNKNOWN", "reason": str(ws.reason_unknown()),
+                                         "during": f"{kind} witness #{i}"})
                 holds = res == z3.sat
                 ok = holds if kind == "satisfying" else not holds
                 witness_results.append({"kind": kind, "index": i, "witness": w, "agrees": ok})
@@ -278,7 +291,7 @@ class FormalOrgan:
                 answer = {"feasible": False, "unsat_core": core}
                 solver_out = {"status": "UNSAT", "unsat_core": core}
             else:
-                return self._result("TIMEOUT" if "timeout" in str(solver.reason_unknown()) else "INCONCLUSIVE",
+                return self._result(_unknown_state(solver),
                                     None, spec, z3, started, calls, reverse, discrepancies, warnings,
                                     witness_results, cex, {"status": "UNKNOWN",
                                                            "reason": str(solver.reason_unknown())})
@@ -295,7 +308,7 @@ class FormalOrgan:
                 answer = {"entailed": True, "supporting_constraints": core}
                 solver_out = {"status": "UNSAT(negation)", "certificate": "unsat core of constraints", "unsat_core": core}
             else:
-                return self._result("TIMEOUT" if "timeout" in str(solver.reason_unknown()) else "INCONCLUSIVE",
+                return self._result(_unknown_state(solver),
                                     None, spec, z3, started, calls, reverse, discrepancies, warnings,
                                     witness_results, cex, {"status": "UNKNOWN",
                                                            "reason": str(solver.reason_unknown())})

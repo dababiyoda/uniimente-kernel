@@ -150,7 +150,7 @@ class TestIntelligenceGenomeProjection:
         genomes = GenomeRegistry(ledger=ledger)
         reg = seed_registry(genomes)
         assert len(reg.keys()) == len(SEED_ORGANS) + len(RESERVED_FAMILIES)
-        assert genomes.get("cortex.formal.z3", "0.1.0") is not None          # same identifiers/versioning
+        assert genomes.get("cortex.formal.z3", "0.1.1") is not None          # same identifiers/versioning
         events = [r.payload["type"] for r in ledger.by_type("event")]
         assert events.count("capabilities.genome_registered") == len(reg.keys())
         assert events.count("cortex.profile_registered") == len(reg.keys())

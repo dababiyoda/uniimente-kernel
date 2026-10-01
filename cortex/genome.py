@@ -236,9 +236,9 @@ class IntelligenceRegistry:
 
 # ------------------------------------------------------------------ seed + reserved families
 def _capability(name: str, description: str, inputs: dict, outputs: dict,
-                acceptance: list[str], failures: list[str]) -> CapabilityGenome:
+                acceptance: list[str], failures: list[str], version: str = "0.1.0") -> CapabilityGenome:
     return CapabilityGenome(
-        name=name, version="0.1.0", description=description,
+        name=name, version=version, description=description,
         interface={"inputs": inputs, "outputs": outputs},
         contracts=["cortex-problem-geometry", "cortex-proof-artifact", "cortex-receipt"],
         authority=AuthorityEnvelope(max_consequence_class="read_only", budget_ceiling_usd=0.0,
@@ -302,6 +302,9 @@ SEED_ORGANS = {
         acceptance=["result unit equals the declared target unit"],
         benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.formal.z3": dict(
+        # 0.1.1: an exhausted Z3 timeout ("canceled") is TIMEOUT, and an undecided witness
+        # check stops the run instead of counting as agreement. 0.1.0 is preserved in history.
+        version="0.1.1",
         description="Formal feasibility and entailment on an inspectable model via Z3.",
         role="solver", layer="solver_macro_cognitive",
         geometries=("deductive_logical", "constraint_feasibility", "arithmetic"), proofs=("formal",),
@@ -423,10 +426,11 @@ def seed_registry(genomes: GenomeRegistry | None = None, *, include_reserved: bo
     registry = IntelligenceRegistry(genomes)
     for name, spec in SEED_ORGANS.items():
         spec = dict(spec)
+        version = spec.pop("version", "0.1.0")
         cap = _capability(name, spec.pop("description"), {"problem": "cortex problem"},
                           {"result": "typed proof artifact"}, spec.pop("acceptance"),
-                          list(spec["failures"]))
-        profile = _profile(f"{name}@0.1.0", **spec)
+                          list(spec["failures"]), version)
+        profile = _profile(f"{name}@{version}", **spec)
         registry.register(IntelligenceGenome(cap, profile))
     if include_reserved:
         for name, (layer, geometries, proof, diversity, bio) in RESERVED_FAMILIES.items():

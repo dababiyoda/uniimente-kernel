@@ -220,7 +220,7 @@ class TestRoutingMemory:
     def setup_method(self):
         self.receipt = cortex().run(formal_problem())
         self.ledger = CompetenceLedger()
-        self.kw = dict(receipt=self.receipt, method="cortex.formal.z3", method_version="0.1.0")
+        self.kw = dict(receipt=self.receipt, method="cortex.formal.z3", method_version="0.1.1")
         self.geometry = self.receipt["geometry"]["epistemic_class"]
 
     def verified(self, n=1, status="verified_success"):
@@ -235,7 +235,7 @@ class TestRoutingMemory:
             rec = self.ledger.settle(outcome_status=status, provenance={"kind": "internal_observation"},
                                      attribution=[], **self.kw)
             assert rec.competence_update["weight"] == 0.0
-        assert self.ledger.estimate("cortex.formal.z3", "0.1.0", self.geometry)["basis"] == "prior"
+        assert self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry)["basis"] == "prior"
 
     @pytest.mark.parametrize("kind", ["prediction", "model_output", "self_assessment"])
     def test_predictions_and_self_assessment_cannot_settle(self, kind):
@@ -261,16 +261,16 @@ class TestRoutingMemory:
     def test_rollback_restores_prior_state_without_deleting_history(self):
         self.verified(2)
         checkpoint = self.ledger.head
-        before = self.ledger.estimate("cortex.formal.z3", "0.1.0", self.geometry)
+        before = self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry)
         self.verified(4, status="observed_failure")
-        assert self.ledger.estimate("cortex.formal.z3", "0.1.0", self.geometry) != before
-        assert self.ledger.rollback(checkpoint).estimate("cortex.formal.z3", "0.1.0", self.geometry) == before
+        assert self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry) != before
+        assert self.ledger.rollback(checkpoint).estimate("cortex.formal.z3", "0.1.1", self.geometry) == before
         assert len(self.ledger.records()) == 6
         assert self.ledger.rollback(GENESIS).records() == []
 
     def test_learning_reorders_eligible_only_and_needs_evidence(self):
         geometry = derive_geometry(Problem.from_dict(formal_problem()))
-        eligible = ["cortex.formal.z3@0.1.0"]
+        eligible = ["cortex.formal.z3@0.1.1"]
         self.verified(10)
         assert self.ledger.reorder(eligible, geometry) == eligible                  # never adds a route
         disabled = "cortex.optimization.cpsat@0.1.0"
@@ -290,7 +290,7 @@ class TestRoutingMemory:
         from provenance.ledger import EvidenceLedger
         ledger = EvidenceLedger("sha256:" + "0" * 64)
         w = new_witness(actor="agent-1", legal_principal="alfonso_lopez",
-                        action_class="cortex/cortex.formal.z3@0.1.0/constraint_feasibility", payload={},
+                        action_class="cortex/cortex.formal.z3@0.1.1/constraint_feasibility", payload={},
                         target="internal://x", policy_version="1.0.0", constitution_hash="sha256:" + "0" * 64,
                         grant_id="g", capability="c", budget_reservation_id="r", expected_outcome="o",
                         evidence_refs=[])
@@ -299,7 +299,7 @@ class TestRoutingMemory:
         ledger.append("outcome", {"action_ref": "a1", "result_class": "positive",
                                   "validation_status": "externally_verified", "recorded_at": "2026-09-30T00:00:00Z"})
         rows = records_from_causal_memory(CausalMemory(ledger))
-        assert rows == [{"method_version": "cortex.formal.z3@0.1.0", "geometry": "constraint_feasibility",
+        assert rows == [{"method_version": "cortex.formal.z3@0.1.1", "geometry": "constraint_feasibility",
                          "result_class": "positive", "validation_status": "externally_verified",
                          "action_id": "a1", "witness_id": w.witness_id, "policy_version": "1.0.0"}]
 

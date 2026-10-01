@@ -68,6 +68,31 @@ class TestFormal:
         m, _, _ = schedule(JOBS, 10)
         assert self.run(m, **payload).state == state
 
+    @staticmethod
+    def cubes(witnesses):
+        cube = lambda v: ["*", v, ["*", v, v]]  # noqa: E731
+        return {"requirement": "x cubed plus y cubed plus z cubed equals 33",
+                "variables": [{"name": n, "sort": "int", "lo": -10**16, "hi": 10**16} for n in "xyz"],
+                "obligations": [{"id": "R1", "text": "sum of three cubes equals 33"}],
+                "constraints": [{"id": "C1", "covers": ["R1"],
+                                 "expr": ["=", ["+", cube("x"), ["+", cube("y"), cube("z")]], 33]}],
+                "witnesses": witnesses, "timeout_ms": 50}
+
+    def test_exhausted_timeout_is_explicit(self):
+        # A solution exists inside the bounds, but no SMT solver finds it in 50 ms.
+        r = self.run(self.cubes({"satisfying": [], "violating": [{"x": 0, "y": 0, "z": 0}]}))
+        assert r.state == "TIMEOUT" and r.proof["solver"]["status"] == "UNKNOWN"
+
+    def test_undecided_witness_is_not_agreement(self):
+        r = self.run(self.cubes({"satisfying": [], "violating": [{"x": 10**15}]}))
+        assert r.state == "TIMEOUT" and r.proof["solver"]["during"] == "violating witness #0"
+
+    @pytest.mark.parametrize("reason, state", [("timeout", "TIMEOUT"), ("canceled", "TIMEOUT"),
+                                               ("(incomplete (theory arithmetic))", "INCONCLUSIVE")])
+    def test_unknown_reasons_map_to_explicit_states(self, reason, state):
+        from cortex.organs.formal import _unknown_state
+        assert _unknown_state(type("S", (), {"reason_unknown": lambda self: reason})()) == state
+
     def test_unverified_premise_is_world_unverified_not_ok(self):
         m, _, _ = schedule(JOBS, 10, verified=False)
         r = self.run(m)

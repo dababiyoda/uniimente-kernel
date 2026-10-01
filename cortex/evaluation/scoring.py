@@ -1,8 +1,9 @@
 """Pre-registered scoring for the seed experiment (build prompt item 9).
 
-Frozen by content hash in ``cortex/evaluation/freeze-v0.1.json`` before the
-reported run. Changing any rule here changes the hash and the runner refuses to
-report against the old freeze.
+Frozen by content hash in ``cortex/evaluation/freeze-v<cortex version>.json``
+before each reported run; earlier manifests and their results are kept.
+Changing any rule here changes the hash and the runner refuses to report
+against the old freeze.
 
 Per item, per arm:
 

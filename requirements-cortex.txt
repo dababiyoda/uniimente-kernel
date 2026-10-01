@@ -1,0 +1,6 @@
+# Polyintelligence Cortex seed v0.1 — optional solver dependency, tested separately
+# (Canonical CI job 6). Z3 is MIT-licensed (https://github.com/Z3Prover/z3).
+# Acquisition verified in a sandbox on 2026-09-30: SAT, UNSAT with unsat core.
+# Installing this file does not activate anything; building != installation !=
+# activation != consequence authority.
+z3-solver==5.1.0.0

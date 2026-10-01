@@ -333,8 +333,10 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith("artifact.") else None,
-                                 artifact_root=self.artifact_root)
+                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 artifact_root=self.artifact_root,
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 cognition_model=getattr(self, "cognition_model", None))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,

@@ -250,6 +250,15 @@ class MissionBook:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
 
 
+def _mechanism_summary(provenance: dict) -> dict:
+    """What the founder needs to decide whether GREG may depend on an open-source package."""
+    qualification = provenance.get("qualification") or {}
+    return {k: provenance.get(k) for k in ("distribution", "version", "license", "upstream", "package_digest",
+                                           "primitive", "competence", "common_mode", "acquisition", "limits")} | {
+        "qualification": {"cases": qualification.get("cases"), "failures": len(qualification.get("failures", [])),
+                          "oracle": qualification.get("oracle"), "scale_probe": qualification.get("scale_probe")}}
+
+
 class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
@@ -333,8 +342,10 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith("artifact.") else None,
-                                 artifact_root=self.artifact_root)
+                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 artifact_root=self.artifact_root,
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 cognition_model=getattr(self, "cognition_model", None))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -721,7 +732,9 @@ class MissionEngine:
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
-                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id]}
+                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
+                                    **({"mechanism": _mechanism_summary(c.provenance)}
+                                       if c.provider.startswith("installed:python:") else {})}
                                    for c in self.registry.by_function(function)]}
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "

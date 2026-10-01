@@ -1,0 +1,2113 @@
+{
+  "schema": "cortex-verbatim-register/0.1",
+  "sources": {
+    "A": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md",
+    "B": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md"
+  },
+  "rule": "Every numbered section of both review passes, plus each preamble and pass 2's closing build list and decisive test, has one row. Anchors are copied programmatically from the verbatim sources. A row is never deleted; a changed disposition is a new commit with its reason.",
+  "dispositions": {
+    "implemented": "executable in this branch; evidence resolves",
+    "implemented_partial": "part executable; notes say which part and the backcast node carries the rest",
+    "reserved_profile": "registered as a disabled IntelligenceGenome with a compiled mechanism; no executor",
+    "adopted_correction": "the review's own correction to the earlier v0.1 is applied",
+    "classification": "a list the review classifies; each item carries its own status",
+    "pursued_goal": "not achievable now; kept as a goal on the named backcast node with its evidence gate",
+    "superseded_by_build_prompt": "the later founder build prompt controls; the review's form is preserved and mapped",
+    "context": "framing or precedent; where it is reflected is cited"
+  },
+  "item_statuses": {
+    "implemented": "runs in the cortex",
+    "reserved": "registered disabled family",
+    "outside_cortex": "exists elsewhere in the Kernel",
+    "pursued": "goal on a backcast node"
+  },
+  "backcast_nodes": [
+    "N1",
+    "N2",
+    "N3",
+    "N4",
+    "N5",
+    "N6",
+    "destination"
+  ],
+  "rows": [
+    {
+      "id": "A00",
+      "pass": "A",
+      "anchor": "I reran the review from the project sources, prior conversations, current repository state, and current external research. The second pass changes the architecture materially.",
+      "disposition": "context",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "cortex/routing.py"
+      ],
+      "backcast": null,
+      "items": null,
+      "notes": "Preamble: biology must compile to mechanism (enforced at registration) and geometry decides recruitment rather than activating everything (the router)."
+    },
+    {
+      "id": "A01",
+      "pass": "A",
+      "anchor": "1. The important thing I missed previously",
+      "disposition": "implemented",
+      "evidence": [
+        "cortex/contracts.py",
+        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt"
+      ],
+      "backcast": null,
+      "notes": "L1-L5 scales are preserved through REVIEW_LAYER_MAP; the build prompt's five layer names control the contracts. Scales, not sequential stages: one router, any layer may resolve a problem.",
+      "items": null
+    },
+    {
+      "id": "A02",
+      "pass": "A",
+      "anchor": "2. Layer 1: Microintelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "Layer 1 mechanisms are registered disabled (feedback control, anomaly patterning, associative microcircuit). The cortex's own gates and routing are deterministic L1-style rules: no model decides thresholds, expiry, budgets or signatures.",
+      "items": null
+    },
+    {
+      "id": "A03",
+      "pass": "A",
+      "anchor": "3. Layer 2: Bounded Competency Cells",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/genome.py",
+        "docs/cortex/examples/genome-formal-z3.json",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "The cell's envelope (geometry, observations, state, memory scope, abstention, cognitive light cone, authority ceiling, failure signatures) is the CognitiveProfile. Homeostatic control, contextual bandits and active inference are reserved families; active inference must beat simpler control.",
+      "items": null
+    },
+    {
+      "id": "A04",
+      "pass": "A",
+      "anchor": "4. Layer 3: Specialized Intelligence Organs",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/genome.py",
+        "cortex/organs/semantic.py"
+      ],
+      "backcast": "N4",
+      "notes": "Semantic, Formal, Estimation, Evidence/Causal and the adversarial verifier run; the other solver families are reserved. The semantic organ is one replaceable organ, not a universal architect.",
+      "items": null
+    },
+    {
+      "id": "A05",
+      "pass": "A",
+      "anchor": "5. Estimation intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_units_are_converted_and_interval_contains_truth",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_sensitivity_names_dominant_uncertainty",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_outside_view_conflict_is_contested",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_dependencies_are_preserved_not_assumed_away"
+      ],
+      "backcast": null,
+      "notes": "Decomposition, dimensional analysis, ranges, reference class, sensitivity, dependency structure. Scenario analysis is not a separate feature.",
+      "items": null
+    },
+    {
+      "id": "A06",
+      "pass": "A",
+      "anchor": "6. Probabilistic intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.probabilistic.bayes reserved; Monte Carlo runs inside the Fermi organ; Beta-posterior updating runs in the competence ledger.",
+      "items": null
+    },
+    {
+      "id": "A07",
+      "pass": "A",
+      "anchor": "7. Causal intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_causal_estimate_recovers_planted_effect_and_beats_naive",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_not_identified_without_requirements",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_generated_diagrams_are_refused_by_name_and_by_schema"
+      ],
+      "backcast": null,
+      "notes": "Model -> identify -> estimate -> refute, with declared identification only. DoWhy was considered and not adopted for the seed (dependency weight against 'minimal dependencies'); it is the first adoption candidate when more estimators are needed.",
+      "items": null
+    },
+    {
+      "id": "A08",
+      "pass": "A",
+      "anchor": "8. Formal intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_hands_off_even_with_a_valid_proof",
+        "docs/cortex/examples/receipt-formal-recommend.json"
+      ],
+      "backcast": null,
+      "notes": "Every receipt separates formal validity, empirical validity and legitimate authority.",
+      "items": null
+    },
+    {
+      "id": "A09",
+      "pass": "A",
+      "anchor": "9. Constraint and operations-research intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_optimum_matches_brute_force_and_carries_a_certificate",
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "Formal 0.2.0 solves small integer/real optimization with an optimality certificate and maps solver states to explicit abstention states. A dedicated OR engine (CP-SAT/LP/MIP) remains the reserved cortex.optimization.cpsat.",
+      "items": null
+    },
+    {
+      "id": "A10",
+      "pass": "A",
+      "anchor": "10. Graph and search intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.graph.search and cortex.search.heuristic reserved.",
+      "items": null
+    },
+    {
+      "id": "A11",
+      "pass": "A",
+      "anchor": "11. Control intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.control.feedback reserved.",
+      "items": null
+    },
+    {
+      "id": "A12",
+      "pass": "A",
+      "anchor": "12. Information-acquisition intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_missing_information_names_what_would_resolve_the_question",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_consent_revoked_fails_and_missing_is_unresolved"
+      ],
+      "backcast": "N4",
+      "notes": "Receipts name the missing information and unresolved gates resolve to bounded evidence acquisition; computing expected value of information is the reserved cortex.information.voi.",
+      "items": null
+    },
+    {
+      "id": "A13",
+      "pass": "A",
+      "anchor": "13. Simulation and counterfactual intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "twins/"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.simulation.twin reserved; the Kernel's twins/ package holds digital-twin work outside the cortex.",
+      "items": null
+    },
+    {
+      "id": "A14",
+      "pass": "A",
+      "anchor": "14. Game-theoretic and mechanism-design intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.game.mechanism reserved.",
+      "items": null
+    },
+    {
+      "id": "A15",
+      "pass": "A",
+      "anchor": "15. Pattern intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.pattern.anomaly reserved for statistical patterns; structural and institutional pattern work belongs to the Foundry and Spider-Web, outside the cortex.",
+      "items": null
+    },
+    {
+      "id": "A16",
+      "pass": "A",
+      "anchor": "16. Program-synthesis and algorithm-discovery intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.developmental.program_synthesis reserved; bounded evaluable domains first, generalized self-improvement is frontier.",
+      "items": null
+    },
+    {
+      "id": "A17",
+      "pass": "A",
+      "anchor": "17. Layer 4: Collective and Developmental Intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "Collective and developmental families are registered disabled; each carries the acceptance test 'must beat the simpler baseline on its native geometry'.",
+      "items": null
+    },
+    {
+      "id": "A18",
+      "pass": "A",
+      "anchor": "18. Ant / stigmergic intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.collective.stigmergy with its compiled mechanism.",
+      "items": null
+    },
+    {
+      "id": "A19",
+      "pass": "A",
+      "anchor": "19. Flock / PSO intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.collective.swarm_pso with its compiled mechanism.",
+      "items": null
+    },
+    {
+      "id": "A20",
+      "pass": "A",
+      "anchor": "20. Slime-mold intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.collective.slime_network with its compiled mechanism.",
+      "items": null
+    },
+    {
+      "id": "A21",
+      "pass": "A",
+      "anchor": "21. Immune intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.collective.immune with tolerance (autoimmunity) as its named failure condition.",
+      "items": null
+    },
+    {
+      "id": "A22",
+      "pass": "A",
+      "anchor": "22. Ecological intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_committee_records_shared_dependency"
+      ],
+      "backcast": "N4",
+      "notes": "Every profile declares a failure-diversity key and shared dependencies; the verifier records correlated dependencies so a model monoculture is visible. The ecology family itself is reserved.",
+      "items": null
+    },
+    {
+      "id": "A23",
+      "pass": "A",
+      "anchor": "23. Market intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/memory.py",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_reorders_eligible_only_and_needs_evidence"
+      ],
+      "backcast": "N4",
+      "notes": "Profiles report cost, latency, evidence requirements and failure modes; outcomes settle competence per method x geometry. No literal token economy; bidding (cortex.collective.ecology_market) is reserved.",
+      "items": null
+    },
+    {
+      "id": "A24",
+      "pass": "A",
+      "anchor": "24. Evolutionary intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.developmental.evolutionary reserved.",
+      "items": null
+    },
+    {
+      "id": "A25",
+      "pass": "A",
+      "anchor": "25. Human collective intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_human_authority_questions_hand_off_without_deciding",
+        "cortex/genome.py"
+      ],
+      "backcast": "N4",
+      "notes": "Normative, legal and institutional questions hand off to legitimate human authority; structured human panels (cortex.human.panel) are reserved.",
+      "items": null
+    },
+    {
+      "id": "A26",
+      "pass": "A",
+      "anchor": "26. Neural-ensemble / global-workspace intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N6",
+      "notes": "cortex.meta.global_workspace reserved; its failure condition is 'becomes a second Kernel or authority path'.",
+      "items": null
+    },
+    {
+      "id": "A27",
+      "pass": "A",
+      "anchor": "27. Morphogenetic intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Functional morphogenesis is reserved and stays in the developmental/ research lab (MICA/CDPE) until it beats a centralized adaptive baseline.",
+      "items": null
+    },
+    {
+      "id": "A28",
+      "pass": "A",
+      "anchor": "28. Constraint-release intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Constraint-release discovery reserved; usefulness unproven.",
+      "items": null
+    },
+    {
+      "id": "A29",
+      "pass": "A",
+      "anchor": "29. Molecular associative intelligence has stronger support than I previously gave it",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N6",
+      "notes": "cortex.developmental.molecular_micro reserved as a research question: associative state at a fraction of a model's compute.",
+      "items": null
+    },
+    {
+      "id": "A30",
+      "pass": "A",
+      "anchor": "30. Layer 5: Metacognitive Institutional Intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py",
+        "docs/cortex/examples/receipt-formal-recommend.json"
+      ],
+      "backcast": "N3",
+      "notes": "Discrepancy -> geometry -> recruitment -> independent analysis -> adversarial test -> recommendation -> authority path -> receipt -> outcome hooks run. Bounded signal exchange, minority views and metaconsensus are not built (cortex.meta.metaconsensus reserved).",
+      "items": null
+    },
+    {
+      "id": "A31",
+      "pass": "A",
+      "anchor": "31. New mechanism: Epistemic Type System",
+      "disposition": "implemented",
+      "evidence": [
+        "cortex/contracts.py",
+        "contracts/cortex-problem-geometry.schema.json"
+      ],
+      "backcast": null,
+      "notes": "The 13 epistemic types are the verbatim table rows.",
+      "items": null
+    },
+    {
+      "id": "A32",
+      "pass": "A",
+      "anchor": "32. New mechanism: Formalization Completeness Gate",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_unverified_premise_is_world_unverified_not_ok",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_omitted_constraint_is_caught_before_solving"
+      ],
+      "backcast": null,
+      "notes": "High consequence does not default to Formal; unverified premises yield WORLD_UNVERIFIED; incomplete formalization yields FORMALIZATION_INCOMPLETE.",
+      "items": null
+    },
+    {
+      "id": "A33",
+      "pass": "A",
+      "anchor": "33. New mechanism: Proof-Carrying Cognition",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "contracts/cortex-proof-artifact.schema.json",
+        "docs/cortex/examples/proof-formal.json",
+        "docs/cortex/examples/proof-estimation.json",
+        "docs/cortex/examples/proof-causal_estimate.json"
+      ],
+      "backcast": "N4",
+      "notes": "Typed proofs for formal, estimation, evidence, causal and semantic routes; Bayesian, optimization-engine and human-collective proof classes are reserved with their families.",
+      "items": null
+    },
+    {
+      "id": "A34",
+      "pass": "A",
+      "anchor": "34. New mechanism: Cognitive Spider-Web",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_eligibility_reuses_may_instantiate",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_reorders_eligible_only_and_needs_evidence",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_cannot_touch_the_registry"
+      ],
+      "backcast": "N5",
+      "notes": "Eligibility, default routing, proof and settlement exist; settlement has no real outcomes yet, so learned routing has not moved. No method gains authority.",
+      "items": null
+    },
+    {
+      "id": "A35",
+      "pass": "A",
+      "anchor": "35. Algorithm portfolios are a real precedent for this",
+      "disposition": "context",
+      "evidence": [
+        "docs/cortex/INVENTION_DOSSIER.md"
+      ],
+      "backcast": null,
+      "notes": "Precedent recorded in the novelty ledger: algorithm portfolios select per instance; the cortex extends selection across epistemic classes.",
+      "items": null
+    },
+    {
+      "id": "A36",
+      "pass": "A",
+      "anchor": "36. New mechanism: Cognitive Degeneracy",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_committee_records_shared_dependency",
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry"
+      ],
+      "backcast": "N3",
+      "notes": "Failure-diversity keys, shared-dependency records and a model-free verifier; multi-mechanism composition is bounded to the parts present in a problem.",
+      "items": null
+    },
+    {
+      "id": "A37",
+      "pass": "A",
+      "anchor": "37. New mechanism: Intelligence Characterization Harness",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family",
+        "cortex/evaluation/scoring.py"
+      ],
+      "backcast": "N2",
+      "notes": "The frozen harness measures quality, calibration, cost and latency per failure family; agency measures (memory depth, prediction horizon, adaptability) are not measured.",
+      "items": null
+    },
+    {
+      "id": "A38",
+      "pass": "A",
+      "anchor": "38. New mechanism: Cognitive Metabolism / Value of Information",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/contracts.py",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_solver_call_budget"
+      ],
+      "backcast": "N4",
+      "notes": "Hard budgets (USD, seconds, model calls, solver calls) with BUDGET_EXHAUSTED; value-of-information stopping is the reserved cortex.information.voi.",
+      "items": null
+    },
+    {
+      "id": "A39",
+      "pass": "A",
+      "anchor": "39. New mechanism: Outcome-based cognitive credit",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_attribution_must_name_the_updated_method",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_predictions_and_self_assessment_cannot_settle"
+      ],
+      "backcast": null,
+      "notes": "Attribution roles separate hypothesis generation, flaw detection, calibration, consumed resources and failed assumptions.",
+      "items": null
+    },
+    {
+      "id": "A40",
+      "pass": "A",
+      "anchor": "40. Offline “dreaming” survives, with a different interpretation",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N5",
+      "notes": "Offline consolidation is a Kernel memory concern, not built here; its outputs would remain provisional until verified.",
+      "items": null
+    },
+    {
+      "id": "A41",
+      "pass": "A",
+      "anchor": "41. Current v0.1 directive: exact audit",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model",
+        "tests/unit/test_cortex_traceability.py::test_heldout_covers_categories_and_named_failures",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_every_declared_baseline_and_a_margin"
+      ],
+      "backcast": null,
+      "notes": "Every verdict in the audit table is applied: keep the seed organs; reject 'exactly three forever', 'high risk means Formal decides', indisputable real-world truth, forcing concession, and zero-harm guarantees; three examples are a smoke test only; benchmarks run without human intervention while high-risk decisions hand off.",
+      "items": null
+    },
+    {
+      "id": "A42",
+      "pass": "A",
+      "anchor": "42. The “weaponization of proof” language should change",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "contracts/cortex-receipt.schema.json",
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers"
+      ],
+      "backcast": null,
+      "notes": "Receipts are challenge-resistant artifacts: observed, assumed, established, uncertain, and the authority path, so a dispute must attack a named assumption or inference.",
+      "items": null
+    },
+    {
+      "id": "A43",
+      "pass": "A",
+      "anchor": "43. The harm scalar also needs to die",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default"
+      ],
+      "backcast": null,
+      "notes": "Ten harm dimensions, unknown by default; hard dimensions block.",
+      "items": null
+    },
+    {
+      "id": "A44",
+      "pass": "A",
+      "anchor": "44. What is metaphor",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/FOUNDER_EFFECT_COMPILER.md"
+      ],
+      "backcast": null,
+      "notes": "Metaphors are allowed only as compiled mechanisms; registration refuses an uncompiled biological concept.",
+      "items": null
+    },
+    {
+      "id": "A45",
+      "pass": "A",
+      "anchor": "45. What is redundant",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers",
+        "cortex/genome.py"
+      ],
+      "backcast": null,
+      "notes": "No second registry (projection of the Capability Genome), no digital-cell OS, no persona per analogy, no blockchain, no custom transport; preserved work stays as reserved profiles and research.",
+      "items": null
+    },
+    {
+      "id": "A46",
+      "pass": "A",
+      "anchor": "46. What is buildable now",
+      "disposition": "classification",
+      "evidence": [
+        "cortex/genome.py",
+        "cortex/organs/cpsat.py",
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": null,
+      "notes": "Each listed capability is mapped below. v0.2.0 implements CP-SAT (fault-diverse second engine behind the same formal_model contract); the v0.1 reserved family of the same name is SUPERSEDED with lineage.",
+      "items": [
+        {
+          "text": "semantic LLM reasoning;",
+          "status": "implemented",
+          "where": "cortex.semantic"
+        },
+        {
+          "text": "deterministic rules;",
+          "status": "implemented",
+          "where": "routing policy and gates"
+        },
+        {
+          "text": "ternary/fuzzy states;",
+          "status": "implemented",
+          "where": "gate states PASS/FAIL/UNRESOLVED"
+        },
+        {
+          "text": "small classifiers;",
+          "status": "reserved",
+          "where": "cortex.pattern.anomaly"
+        },
+        {
+          "text": "anomaly detection;",
+          "status": "reserved",
+          "where": "cortex.pattern.anomaly"
+        },
+        {
+          "text": "Fermi estimation;",
+          "status": "implemented",
+          "where": "cortex.estimation.fermi"
+        },
+        {
+          "text": "probabilistic programming;",
+          "status": "reserved",
+          "where": "cortex.probabilistic.bayes"
+        },
+        {
+          "text": "Bayesian updating;",
+          "status": "implemented",
+          "where": "competence ledger Beta posterior"
+        },
+        {
+          "text": "Monte Carlo;",
+          "status": "implemented",
+          "where": "Fermi copula Monte Carlo"
+        },
+        {
+          "text": "causal inference;",
+          "status": "implemented",
+          "where": "cortex.evidence_causal"
+        },
+        {
+          "text": "SMT/SAT;",
+          "status": "implemented",
+          "where": "cortex.formal.z3"
+        },
+        {
+          "text": "formal model checking;",
+          "status": "pursued",
+          "where": "N4"
+        },
+        {
+          "text": "theorem-prover integration;",
+          "status": "pursued",
+          "where": "N4"
+        },
+        {
+          "text": "CP-SAT;",
+          "status": "implemented",
+          "where": "cortex.optimization.cpsat"
+        },
+        {
+          "text": "LP/MIP;",
+          "status": "implemented",
+          "where": "integer linear models: CP-SAT 0.2.0 with Z3 optimality certificate; Formal 0.2.0 certified optimization; continuous LP/MIP remains reserved"
+        },
+        {
+          "text": "graph algorithms;",
+          "status": "reserved",
+          "where": "cortex.graph.search"
+        },
+        {
+          "text": "network flow;",
+          "status": "reserved",
+          "where": "cortex.graph.search"
+        },
+        {
+          "text": "scheduling;",
+          "status": "implemented",
+          "where": "Formal/CP-SAT feasibility and optimization on scheduling models; cortex.extraction.schedule reads bounded requests in words"
+        },
+        {
+          "text": "MCTS/search;",
+          "status": "reserved",
+          "where": "cortex.search.heuristic"
+        },
+        {
+          "text": "dynamic programming;",
+          "status": "reserved",
+          "where": "cortex.search.heuristic"
+        },
+        {
+          "text": "PID/MPC;",
+          "status": "reserved",
+          "where": "cortex.control.feedback"
+        },
+        {
+          "text": "contextual bandits;",
+          "status": "reserved",
+          "where": "cortex.sequential.bandit"
+        },
+        {
+          "text": "Value of Information;",
+          "status": "reserved",
+          "where": "cortex.information.voi"
+        },
+        {
+          "text": "digital twins;",
+          "status": "outside_cortex",
+          "where": "twins/; cortex.simulation.twin reserved"
+        },
+        {
+          "text": "simulation;",
+          "status": "reserved",
+          "where": "cortex.simulation.twin"
+        },
+        {
+          "text": "game theory;",
+          "status": "reserved",
+          "where": "cortex.game.mechanism"
+        },
+        {
+          "text": "mechanism design;",
+          "status": "reserved",
+          "where": "cortex.game.mechanism"
+        },
+        {
+          "text": "swarm algorithms;",
+          "status": "reserved",
+          "where": "cortex.collective.swarm_pso"
+        },
+        {
+          "text": "evolutionary search;",
+          "status": "reserved",
+          "where": "cortex.developmental.evolutionary"
+        },
+        {
+          "text": "program synthesis;",
+          "status": "reserved",
+          "where": "cortex.developmental.program_synthesis"
+        },
+        {
+          "text": "human collective intelligence;",
+          "status": "implemented",
+          "where": "handoff to legitimate human authority; cortex.human.panel reserved"
+        },
+        {
+          "text": "algorithm portfolios;",
+          "status": "implemented",
+          "where": "per-instance eligibility and routing across organs"
+        },
+        {
+          "text": "Cognitive Receipts;",
+          "status": "implemented",
+          "where": "cortex-receipt"
+        },
+        {
+          "text": "problem-geometry routing;",
+          "status": "implemented",
+          "where": "cortex.routing"
+        },
+        {
+          "text": "champion/challenger evaluation;",
+          "status": "implemented",
+          "where": "frozen arms; production shadow mode is Node 2"
+        },
+        {
+          "text": "outcome-calibrated routing.",
+          "status": "implemented",
+          "where": "CompetenceLedger.reorder; no real outcomes yet"
+        }
+      ]
+    },
+    {
+      "id": "A47",
+      "pass": "A",
+      "anchor": "47. Buildable but experimental",
+      "disposition": "classification",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": null,
+      "notes": "Experimental mechanisms must beat the simpler baseline on their native geometry before any enablement.",
+      "items": [
+        {
+          "text": "active inference;",
+          "status": "reserved",
+          "where": "cortex.meta.active_inference"
+        },
+        {
+          "text": "associative molecular microcircuits;",
+          "status": "reserved",
+          "where": "cortex.developmental.molecular_micro"
+        },
+        {
+          "text": "MICA local fields;",
+          "status": "reserved",
+          "where": "cortex.developmental.mica_field"
+        },
+        {
+          "text": "cellular automata as a cognitive substrate;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "reaction-diffusion control fields;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "hive/quorum decision engines;",
+          "status": "reserved",
+          "where": "cortex.collective.hive_quorum"
+        },
+        {
+          "text": "slime-mold adaptive networking;",
+          "status": "reserved",
+          "where": "cortex.collective.slime_network"
+        },
+        {
+          "text": "ecology-based solver competition;",
+          "status": "reserved",
+          "where": "cortex.collective.ecology_market"
+        },
+        {
+          "text": "global-workspace architectures;",
+          "status": "reserved",
+          "where": "cortex.meta.global_workspace"
+        },
+        {
+          "text": "constraint-release laboratories;",
+          "status": "reserved",
+          "where": "cortex.developmental.constraint_release"
+        },
+        {
+          "text": "automatic temporary cognitive tissues;",
+          "status": "pursued",
+          "where": "N3"
+        },
+        {
+          "text": "evolutionary program creation;",
+          "status": "reserved",
+          "where": "cortex.developmental.evolutionary"
+        },
+        {
+          "text": "morphology-inspired repair.",
+          "status": "reserved",
+          "where": "cortex.developmental.morphogenetic"
+        }
+      ]
+    },
+    {
+      "id": "A48",
+      "pass": "A",
+      "anchor": "48. Frontier",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Frontier items stay as goals with evidence gates; none is claimed.",
+      "items": [
+        {
+          "text": "genuine unscripted morphogenetic repair;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "structurally different reconstitution of a lost function;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "open-ended capability construction;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "reliable self-created new solver classes;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "generalized world-model cognition;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "open-world multi-month autonomous planning;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "generalized recursive cognitive improvement;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "large-scale decentralized cognition beating centralized alternatives;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "robust cross-body cognition under heterogeneous hardware.",
+          "status": "pursued",
+          "where": "destination"
+        }
+      ]
+    },
+    {
+      "id": "A49",
+      "pass": "A",
+      "anchor": "49. Future substrate goals",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "destination",
+      "notes": "Substrates are places cognition may run, not new intelligences.",
+      "items": [
+        {
+          "text": "ternary/low-bit neural models;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "liquid neural networks;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "neuromorphic processors;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "event-driven spiking networks;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "robotics;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "edge hardware;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "AR;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "future photonic/neuromorphic compute.",
+          "status": "pursued",
+          "where": "destination"
+        }
+      ]
+    },
+    {
+      "id": "A50",
+      "pass": "A",
+      "anchor": "50. Backcast GPS",
+      "disposition": "implemented",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit"
+      ],
+      "backcast": null,
+      "notes": "VEPMC 0->1 stays the global bottleneck; the cognition bottleneck is verified cross-geometry routing gain, which is the frozen exit rule (cost, latency and error counted).",
+      "items": null
+    },
+    {
+      "id": "A51",
+      "pass": "A",
+      "anchor": "51. Backcast nodes",
+      "disposition": "superseded_by_build_prompt",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md#reconciliation-with-the-reviews-backcasts"
+      ],
+      "backcast": null,
+      "notes": "The C1-C8 ladder is preserved and mapped onto the build prompt's stages (Seed -> Cortex -> Composer -> Developmental Cortex -> Polyintelligent GREG -> frontier discovery). C1 is this branch.",
+      "items": null
+    },
+    {
+      "id": "A52",
+      "pass": "A",
+      "anchor": "52. The final architecture is therefore not “many agents”",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py",
+        "docs/cortex/examples/receipt-gates-incomparable.json"
+      ],
+      "backcast": "N3",
+      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages.",
+      "items": null
+    },
+    {
+      "id": "A53",
+      "pass": "A",
+      "anchor": "53. My revised pitch",
+      "disposition": "implemented",
+      "evidence": [
+        "contracts/cortex-intelligence-genome.schema.json",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "docs/cortex/examples/receipt-formal-recommend.json"
+      ],
+      "backcast": null,
+      "notes": "The pitched v0.1 abstraction layer exists: epistemic type, geometry, profile, light cone, typed proof, receipt, abstention, formalization-completeness state, truth split, outcome hooks, disabled registrations. The thesis is adopted: claims are attributed to their proof class.",
+      "items": null
+    },
+    {
+      "id": "B00",
+      "pass": "B",
+      "anchor": "Final second-pass audit",
+      "disposition": "context",
+      "evidence": [
+        "cortex/routing.py",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md"
+      ],
+      "backcast": null,
+      "items": null,
+      "notes": "Preamble: recognize geometry, recruit the smallest competent form, compose when needed, determine legitimate proof, learn from reality - the seed does the first four for its families; learning waits on real outcomes."
+    },
+    {
+      "id": "B01",
+      "pass": "B",
+      "anchor": "1. What the deeper search recovered",
+      "disposition": "context",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#inspected-before-editing"
+      ],
+      "backcast": null,
+      "notes": "Discrepancy recorded: the review says current main 'describes a Cognitive Router'. True as documentation (Final Build Order §4.14); no router implementation exists on main. PR #137 learns capability reliability from outcomes but does not classify problem geometry.",
+      "items": null
+    },
+    {
+      "id": "B02",
+      "pass": "B",
+      "anchor": "2. The strongest correction to your v0.1",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_human_authority_questions_hand_off_without_deciding",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_no_spec_means_bounded_experiment"
+      ],
+      "backcast": null,
+      "notes": "Epistemic Finality Rule: formalizable -> formal decides the formal property; empirical -> evidence/causal; legitimate human judgment -> handoff; otherwise abstain.",
+      "items": null
+    },
+    {
+      "id": "B03",
+      "pass": "B",
+      "anchor": "3. The final five-layer architecture",
+      "disposition": "superseded_by_build_prompt",
+      "evidence": [
+        "cortex/contracts.py",
+        "cortex/genome.py"
+      ],
+      "backcast": "N4",
+      "notes": "The review's layer names are mapped to the build prompt's; Layer 1 primitives are reserved families plus the cortex's deterministic gates.",
+      "items": null
+    },
+    {
+      "id": "B04",
+      "pass": "B",
+      "anchor": "4. Layer 2: Bounded Competency Cells",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers",
+        "docs/cortex/examples/genome-formal-z3.json"
+      ],
+      "backcast": "N2",
+      "notes": "The profile carries geometry, contracts, proof class, evidence requirements, state, memory, update rule, cost, latency, competence (benchmark) history, contraindications, abstention, failure modes, authority and consequence ceilings, lineage; recovery via the Capability Genome. Not yet fields: deterministic flag, compute, energy, calibration history, falsification tests, attach/detach/shutdown procedures. One registry, extended.",
+      "items": null
+    },
+    {
+      "id": "B05",
+      "pass": "B",
+      "anchor": "5. Layer 3: Specialized Intelligence Organs",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_only_exact_quotes_survive",
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_injected_instruction_cannot_manufacture_support",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_non_permission_records_never_create_permission"
+      ],
+      "backcast": null,
+      "notes": "Organ family 1: the semantic organ generates and interprets; only exact-quote claims survive; model output cannot settle competence or create permission.",
+      "items": null
+    },
+    {
+      "id": "B06",
+      "pass": "B",
+      "anchor": "6. Organ family 2: Exact symbolic intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.exact.symbolic added in 0.1.4. Exact integer/real arithmetic inside Z3 models already runs.",
+      "items": null
+    },
+    {
+      "id": "B07",
+      "pass": "B",
+      "anchor": "7. Organ family 3: Formal logical intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormal::test_entailment_and_counterexample",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_infeasible_returns_unsat_core"
+      ],
+      "backcast": "N4",
+      "notes": "SMT feasibility, entailment with counterexamples, unsat cores. Model checking, theorem proving, temporal logic and symbolic execution are later extensions of the same organ.",
+      "items": null
+    },
+    {
+      "id": "B08",
+      "pass": "B",
+      "anchor": "8. Organ family 4: Operations-research intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_optimum_matches_brute_force_and_carries_a_certificate",
+        "cortex/genome.py"
+      ],
+      "backcast": "N4",
+      "notes": "Certified small-scale optimization in Formal 0.2.0; dedicated OR (CP-SAT, LP/MIP, flows, matching) reserved.",
+      "items": null
+    },
+    {
+      "id": "B09",
+      "pass": "B",
+      "anchor": "9. Organ family 5: Graph intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.graph.search reserved; classifying which graph problem a question is belongs to a later geometry compiler.",
+      "items": null
+    },
+    {
+      "id": "B10",
+      "pass": "B",
+      "anchor": "10. Organ family 6: Estimation intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_sensitivity_names_dominant_uncertainty",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_outside_view_conflict_is_contested",
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_missing_information_names_what_would_resolve_the_question"
+      ],
+      "backcast": null,
+      "notes": "Estimate, assumptions, ranges, sensitivity, dominant uncertainty and falsifier; the 'cheapest evidence that would move the estimate' is named qualitatively, not computed.",
+      "items": null
+    },
+    {
+      "id": "B11",
+      "pass": "B",
+      "anchor": "11. Organ family 7: Probabilistic intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.probabilistic.bayes reserved.",
+      "items": null
+    },
+    {
+      "id": "B12",
+      "pass": "B",
+      "anchor": "12. Organ family 8: Causal intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_causal_estimate_recovers_planted_effect_and_beats_naive",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_not_identified_without_requirements"
+      ],
+      "backcast": null,
+      "notes": "MODEL -> IDENTIFY -> ESTIMATE -> REFUTE is the organ's pattern.",
+      "items": null
+    },
+    {
+      "id": "B13",
+      "pass": "B",
+      "anchor": "13. Organ family 9: Search intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.search.heuristic added in 0.1.4.",
+      "items": null
+    },
+    {
+      "id": "B14",
+      "pass": "B",
+      "anchor": "14. Organ family 10: Control intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.control.feedback reserved.",
+      "items": null
+    },
+    {
+      "id": "B15",
+      "pass": "B",
+      "anchor": "15. Organ family 11: Sequential-decision intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.sequential.bandit and cortex.meta.active_inference reserved; use the winner against PID, MPC, bandits and rules.",
+      "items": null
+    },
+    {
+      "id": "B16",
+      "pass": "B",
+      "anchor": "16. Organ family 12: Pattern intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.pattern.anomaly reserved; mechanism-pattern recognition belongs to the Mechanism Recombination Foundry.",
+      "items": null
+    },
+    {
+      "id": "B17",
+      "pass": "B",
+      "anchor": "17. Organ family 13: Information intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_missing_information_names_what_would_resolve_the_question"
+      ],
+      "backcast": "N4",
+      "notes": "Missing observations are named; information-theoretic selection is cortex.information.voi (reserved).",
+      "items": null
+    },
+    {
+      "id": "B18",
+      "pass": "B",
+      "anchor": "18. Organ family 14: Game and mechanism intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.game.mechanism reserved.",
+      "items": null
+    },
+    {
+      "id": "B19",
+      "pass": "B",
+      "anchor": "19. Organ family 15: Adversarial intelligence",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_verifier_independently_blocks_a_recommend_at_financial",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_verifier_only_lowers_a_disposition",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "backcast": null,
+      "notes": "The adversarial verifier has its own contract: model-free, attacks assumptions, omitted constraints, contradictions and boundaries; findings only lower a disposition.",
+      "items": null
+    },
+    {
+      "id": "B20",
+      "pass": "B",
+      "anchor": "20. Organ family 16: Simulation intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.simulation.twin reserved; simulation is not evidence about reality until calibrated.",
+      "items": null
+    },
+    {
+      "id": "B21",
+      "pass": "B",
+      "anchor": "21. Collective intelligence belongs between Layer 3 and Layer 4",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "Collective families are reserved as coordination topologies compiled to mechanisms. Tension recorded: some reserved keys keep source-lineage names (hive_quorum, slime_network); each compiles to its mechanism and none is a production module.",
+      "items": null
+    },
+    {
+      "id": "B22",
+      "pass": "B",
+      "anchor": "22. Layer 4: Collective and Developmental Intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_committee_records_shared_dependency",
+        "cortex/genome.py"
+      ],
+      "backcast": "N4",
+      "notes": "Ensemble comparison exists in evaluation (committee with recorded correlated failure); quorum, stigmergy, ecology and market are reserved.",
+      "items": null
+    },
+    {
+      "id": "B23",
+      "pass": "B",
+      "anchor": "23. Evolutionary intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "backcast": "N4",
+      "notes": "Evolutionary search reserved; only where evaluators are trustworthy.",
+      "items": null
+    },
+    {
+      "id": "B24",
+      "pass": "B",
+      "anchor": "24. Program-synthesis intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N4",
+      "notes": "Deficit -> contract -> search -> compose -> generate -> test -> retain is Node 4 (Developmental Cortex).",
+      "items": null
+    },
+    {
+      "id": "B25",
+      "pass": "B",
+      "anchor": "25. Constraint-release intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Constraint-Release Discovery Laboratory reserved; experimental.",
+      "items": null
+    },
+    {
+      "id": "B26",
+      "pass": "B",
+      "anchor": "26. Morphogenetic intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Promotion only on unseen disruption repaired by a materially different structure; MICA/CDPE stays a research lab.",
+      "items": null
+    },
+    {
+      "id": "B27",
+      "pass": "B",
+      "anchor": "27. Layer 5: Macro-Cognition / Meta-Intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py"
+      ],
+      "backcast": "N3",
+      "notes": "The router decides how a problem is represented, attacked, verified and decided for the seed families.",
+      "items": null
+    },
+    {
+      "id": "B28",
+      "pass": "B",
+      "anchor": "28. A. Mental-model intelligence",
+      "disposition": "reserved_profile",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N4",
+      "notes": "cortex.meta.mental_models added in 0.1.4: mental models as representation operators.",
+      "items": null
+    },
+    {
+      "id": "B29",
+      "pass": "B",
+      "anchor": "29. B. Problem Geometry Intelligence",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "contracts/cortex-problem-geometry.schema.json",
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_unknowns_are_explicit"
+      ],
+      "backcast": "N2",
+      "notes": "The build prompt's geometry fields are implemented, with unknowns explicit. The review's larger schema (graph structure, constraint density, search-space size, adversariality, identifiability, embodiment, ...) is the next geometry extension.",
+      "items": null
+    },
+    {
+      "id": "B30",
+      "pass": "B",
+      "anchor": "30. C. Metaconsensus intelligence",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N3",
+      "notes": "Metaconsensus by epistemic jurisdiction is not built; contradictions surface as CONTESTED and the verifier never averages. cortex.meta.metaconsensus reserved.",
+      "items": null
+    },
+    {
+      "id": "B31",
+      "pass": "B",
+      "anchor": "31. The Polyintelligence Cortex therefore becomes this",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py",
+        "docs/cortex/README.md#pipeline"
+      ],
+      "backcast": "N4",
+      "notes": "The mature diagram's seed subset runs end to end; other branches are reserved.",
+      "items": null
+    },
+    {
+      "id": "B32",
+      "pass": "B",
+      "anchor": "32. Spider-Web Hegemony applied to cognition",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_eligibility_reuses_may_instantiate",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_receipts_are_content_addressed_and_deterministic",
+        "contracts/cortex-proof-artifact.schema.json"
+      ],
+      "backcast": "N2",
+      "notes": "Eligibility, default routing and proof/truth exist. Default routing is structural (the payload decides), not yet 'cheapest sufficient cognition' by cost.",
+      "items": null
+    },
+    {
+      "id": "B33",
+      "pass": "B",
+      "anchor": "33. 4. Cognitive Settlement",
+      "disposition": "implemented",
+      "evidence": [
+        "cortex/memory.py",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_reorders_eligible_only_and_needs_evidence",
+        "docs/cortex/examples/routing-memory-verified-success.json"
+      ],
+      "backcast": null,
+      "notes": "Settlement is per method x geometry x conditions x version and moves only on verified outcomes. (Source numbering: the fourth Spider-Web supernode is printed as section 33.)",
+      "items": null
+    },
+    {
+      "id": "B34",
+      "pass": "B",
+      "anchor": "34. Cognitive receipts should become stronger than your draft",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "contracts/cortex-receipt.schema.json",
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
+      ],
+      "backcast": "N2",
+      "notes": "Present: problem id, geometry, consequence class, methods and versions, epistemic class, input digest, evidence refs, assumptions, output, uncertainty, proof, alternatives, selection rationale, strongest counterargument, falsification conditions, missing information, abstention state, costs, latency, verifier, outcome link, authority_created false. Not yet: excluded variables, calibration error, causal credit inside the receipt (credit lives in routing memory).",
+      "items": null
+    },
+    {
+      "id": "B35",
+      "pass": "B",
+      "anchor": "35. “Weaponization of proof” needs one correction",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_receipt_never_carries_evidence_content"
+      ],
+      "backcast": null,
+      "notes": "Proof-Bearing Asymmetric Accountability: receipts narrow disputes, expose contradictions, keep content-addressed chain of custody and name falsifiers. Proof increases leverage; it commands nothing.",
+      "items": null
+    },
+    {
+      "id": "B36",
+      "pass": "B",
+      "anchor": "36. Lawful deterrence can be computational",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/organs/deterrence.py",
+        "tests/unit/test_cortex_routes.py::TestDeterrence::test_certainty_beats_severity_and_coercion_is_never_ranked",
+        "tests/unit/test_cortex_pipeline.py::TestDeterrenceRouting::test_action_reaching_another_party_is_handed_off",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "backcast": "N3",
+      "notes": "Cortex 0.1.5 adds a lawful deterrence organ: the Becker expected-value condition over declared ranges, a closed lawful intervention vocabulary, coercive and hard-harm interventions refused before ranking, each intervention labelled certainty/severity/opportunity (Nagin 2013: certainty deters more reliably), and any action reaching another party handed to the competent authority. Composition with game, causal and graph families (actor incentives, causal effect of controls, control points) remains Node 3/4.",
+      "items": null
+    },
+    {
+      "id": "B37",
+      "pass": "B",
+      "anchor": "37. Victim protection should also be a problem geometry",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_unmeasured_harm_is_a_gap_that_hands_off",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_actions_are_ordered_by_protective_priority",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_receipt_never_names_the_person_or_the_safe_channel",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "backcast": null,
+      "notes": "v0.1.4: harm, retaliation, privacy and evidence-at-risk levels (unknown by default), protective priority order, gaps that force a human handoff, and receipts that never name the person or the channel. Investigation itself stays human-led.",
+      "items": null
+    },
+    {
+      "id": "B38",
+      "pass": "B",
+      "anchor": "38. Collateral harm should become a vector",
+      "disposition": "implemented",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default"
+      ],
+      "backcast": null,
+      "notes": "Harm is a vector; hard constraints first, optimization second.",
+      "items": null
+    },
+    {
+      "id": "B39",
+      "pass": "B",
+      "anchor": "39. Lawful Asymmetric Advantage becomes a constrained objective",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_favorable_score_cannot_override_failed_gate",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_incomparable_options_preserve_tradeoffs_and_margin_blocks_near_ties"
+      ],
+      "backcast": "N5",
+      "notes": "Law, rights, authority, consent, evidence floor and risk ceiling are hard gates; advantage terms are ranked as a Pareto front with founder weights. The LAA ratio is deliberately not collapsed into one scalar while its terms are unmeasured; measuring them needs real outcomes.",
+      "items": null
+    },
+    {
+      "id": "B40",
+      "pass": "B",
+      "anchor": "40. What is BUILDABLE NOW",
+      "disposition": "classification",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": null,
+      "notes": "Layer-by-layer buildable list; see A46 for the per-item mapping, which covers the same mechanisms.",
+      "items": null
+    },
+    {
+      "id": "B41",
+      "pass": "B",
+      "anchor": "41. What is metaphor only",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms",
+        "docs/FOUNDER_EFFECT_COMPILER.md"
+      ],
+      "backcast": null,
+      "notes": "Every metaphor must compile to a mechanism; the immune example is the reserved immune family's compiled form.",
+      "items": null
+    },
+    {
+      "id": "B42",
+      "pass": "B",
+      "anchor": "42. What is redundant",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "cortex/genome.py"
+      ],
+      "backcast": null,
+      "notes": "Mechanisms survive, zoological namespaces do not run as modules; see B21 for the naming tension.",
+      "items": null
+    },
+    {
+      "id": "B43",
+      "pass": "B",
+      "anchor": "43. What remains EXPERIMENTAL",
+      "disposition": "classification",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": null,
+      "notes": "Buildable but unjustified as defaults; each must beat simpler control.",
+      "items": [
+        {
+          "text": "active inference;",
+          "status": "reserved",
+          "where": "cortex.meta.active_inference"
+        },
+        {
+          "text": "reaction-diffusion coordination;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "cellular automata for general cognition;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "MICA local-field coordination;",
+          "status": "reserved",
+          "where": "cortex.developmental.mica_field"
+        },
+        {
+          "text": "slime-mold network formation;",
+          "status": "reserved",
+          "where": "cortex.collective.slime_network"
+        },
+        {
+          "text": "ecological solver populations;",
+          "status": "reserved",
+          "where": "cortex.collective.ecology_market"
+        },
+        {
+          "text": "self-organized cognitive tissues;",
+          "status": "pursued",
+          "where": "N3"
+        },
+        {
+          "text": "associative microcircuits;",
+          "status": "reserved",
+          "where": "cortex.developmental.molecular_micro"
+        },
+        {
+          "text": "constraint-release topology search;",
+          "status": "reserved",
+          "where": "cortex.developmental.constraint_release"
+        },
+        {
+          "text": "generative developmental fields;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "evolutionary creation of new solver pipelines.",
+          "status": "reserved",
+          "where": "cortex.developmental.evolutionary"
+        }
+      ]
+    },
+    {
+      "id": "B44",
+      "pass": "B",
+      "anchor": "44. What remains FRONTIER",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Research targets, not capabilities.",
+      "items": [
+        {
+          "text": "autonomous discovery of genuinely new cognitive algorithms across arbitrary domains;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "generalized program synthesis from functional requirements;",
+          "status": "pursued",
+          "where": "N4"
+        },
+        {
+          "text": "reliable open-world causal models;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "multiscale self-organization outperforming centralized planners broadly;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "automatic creation of temporary cognitive organizations for unfamiliar problems;",
+          "status": "pursued",
+          "where": "N3"
+        },
+        {
+          "text": "generalized unscripted functional regeneration;",
+          "status": "pursued",
+          "where": "N6"
+        },
+        {
+          "text": "open-ended intelligence ecology;",
+          "status": "pursued",
+          "where": "N5"
+        },
+        {
+          "text": "long-duration autonomous planning under severe distribution shift;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "general-purpose world models sufficiently accurate for institutional decision-making;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "recursive improvement without evaluator corruption.",
+          "status": "pursued",
+          "where": "N6"
+        }
+      ]
+    },
+    {
+      "id": "B45",
+      "pass": "B",
+      "anchor": "45. What remains SCIENCE-FICTION",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "destination",
+      "notes": "Preserved as destinations; not claimed.",
+      "items": [
+        {
+          "text": "substrate-fluid cognition spanning CPUs, GPUs, neuromorphic, photonic and unknown future hardware;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "one GREG intelligence continuously inhabiting many physical/digital bodies;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "large-scale self-organized developmental cognition;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "reliable autonomous scientific invention across arbitrary sciences;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "novel intelligences generated that belong to mechanism classes absent from the original system;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "extreme morphogenetic regeneration across radically different substrates;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "Jarvis-level ubiquitous mechanistic aliveness;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "persistent intelligence deeply embedded throughout buildings, robots, AR and infrastructure;",
+          "status": "pursued",
+          "where": "destination"
+        },
+        {
+          "text": "civilization-scale coordination while preserving local autonomy.",
+          "status": "pursued",
+          "where": "destination"
+        }
+      ]
+    },
+    {
+      "id": "B46",
+      "pass": "B",
+      "anchor": "46. Michael Levin’s proper place after the final audit",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "docs/FOUNDER_EFFECT_COMPILER.md"
+      ],
+      "backcast": null,
+      "notes": "Levin informs engineering questions; UNIIMENTE does not depend on his metaphysical hypothesis.",
+      "items": null
+    },
+    {
+      "id": "B47",
+      "pass": "B",
+      "anchor": "47. The deeper invention",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py",
+        "cortex/memory.py"
+      ],
+      "backcast": "N4",
+      "notes": "Competency Compiler questions answered now: problem kind, epistemology, competency class, legitimate proof, independent falsifier, budget, existing capability, authority, outcome link, future routing. Not yet: recombination beyond two parts, capability generation.",
+      "items": null
+    },
+    {
+      "id": "B48",
+      "pass": "B",
+      "anchor": "48. The final five layers",
+      "disposition": "superseded_by_build_prompt",
+      "evidence": [
+        "cortex/contracts.py"
+      ],
+      "backcast": null,
+      "notes": "Same five layers under the build prompt's names; REVIEW_LAYER_MAP reconciles.",
+      "items": null
+    },
+    {
+      "id": "B49",
+      "pass": "B",
+      "anchor": "49. Backcast GPS for the technologically constrained capabilities",
+      "disposition": "implemented",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#stacking-on-pr-137"
+      ],
+      "backcast": null,
+      "notes": "VEPMC stays global; the cortex is a subordinate ladder and stacks on PR #137 without conflict. P0 substrate verified on main: Kernel, authority, Consequence Gate, causal memory, capability registry, Foundry; persistent missions and routing reliability live on PR #137.",
+      "items": null
+    },
+    {
+      "id": "B50",
+      "pass": "B",
+      "anchor": "50. P1: Cognitive Contract",
+      "disposition": "implemented",
+      "evidence": [
+        "contracts/cortex-problem-geometry.schema.json",
+        "contracts/cortex-intelligence-genome.schema.json",
+        "contracts/cortex-receipt.schema.json",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
+      ],
+      "backcast": null,
+      "notes": "P1 contracts exist. Its SBM, geometry-classification accuracy, is trivially structural for structured payloads; a meaningful measurement needs free-text intake (Node 2).",
+      "items": null
+    },
+    {
+      "id": "B51",
+      "pass": "B",
+      "anchor": "51. P2: Minimal Polyintelligence Proof",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/always_llm/status",
+        "cortex/evaluation/suites/smoke-v0.1.json"
+      ],
+      "backcast": "N1",
+      "notes": "P2 is this seed: four competency classes plus the gatekeeper, the four-geometry smoke suite, frozen comparison. Raw/strong LLM comparisons are blocked on model access; cross-geometry regret is not yet computed.",
+      "items": null
+    },
+    {
+      "id": "B52",
+      "pass": "B",
+      "anchor": "52. P3: Cognitive Proof Ledger",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_absent_and_unresolved_change_nothing"
+      ],
+      "backcast": "N2",
+      "notes": "Every decision creates a receipt; receipted outcome rate is zero (no real outcomes); learning without outcomes is refused.",
+      "items": null
+    },
+    {
+      "id": "B53",
+      "pass": "B",
+      "anchor": "53. P4: Cognitive Spider-Web",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/memory.py"
+      ],
+      "backcast": "N5",
+      "notes": "Spider-web mechanisms exist; routing-regret reduction cannot be measured until outcomes arrive.",
+      "items": null
+    },
+    {
+      "id": "B54",
+      "pass": "B",
+      "anchor": "54. P5: Expand the arsenal",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N4",
+      "notes": "New classes enter by measured demand, through the Developmental Cortex node.",
+      "items": null
+    },
+    {
+      "id": "B55",
+      "pass": "B",
+      "anchor": "55. P6: Heterogeneous Cognitive Tissues",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N3",
+      "notes": "Composer node: a combination must beat every constituent alone.",
+      "items": null
+    },
+    {
+      "id": "B56",
+      "pass": "B",
+      "anchor": "56. P7: Capability Genesis for cognition",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N4",
+      "notes": "Capability Genesis for cognition: Developmental Cortex node.",
+      "items": null
+    },
+    {
+      "id": "B57",
+      "pass": "B",
+      "anchor": "57. P8: Evolutionary Cognition",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N4",
+      "notes": "Evolutionary cognition with held-out tests and no evaluator gaming.",
+      "items": null
+    },
+    {
+      "id": "B58",
+      "pass": "B",
+      "anchor": "58. P9: Constraint-Release Discovery",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Constraint-release discovery.",
+      "items": null
+    },
+    {
+      "id": "B59",
+      "pass": "B",
+      "anchor": "59. P10: Functional Morphogenesis",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "N6",
+      "notes": "Functional morphogenesis; SBM unscripted functional recovery rate.",
+      "items": null
+    },
+    {
+      "id": "B60",
+      "pass": "B",
+      "anchor": "60. P11: Open Cognitive Ecology",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_cannot_touch_the_registry"
+      ],
+      "backcast": "N5",
+      "notes": "Open cognitive ecology is a goal; its hard invariant is already enforced: competence may evolve, authority may not self-evolve.",
+      "items": null
+    },
+    {
+      "id": "B61",
+      "pass": "B",
+      "anchor": "61. P12: Substrate-plural GREG",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "destination",
+      "notes": "Substrate-plural GREG.",
+      "items": null
+    },
+    {
+      "id": "B62",
+      "pass": "B",
+      "anchor": "62. P13: Poly-embodied developmental institution",
+      "disposition": "pursued_goal",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "backcast": "destination",
+      "notes": "Poly-embodied developmental institution.",
+      "items": null
+    },
+    {
+      "id": "B63",
+      "pass": "B",
+      "anchor": "63. What I would change in your supplied v0.1",
+      "disposition": "adopted_correction",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_witness_disagreement_blocks",
+        "cortex/memory.py",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default",
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers",
+        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt"
+      ],
+      "backcast": null,
+      "notes": "All eight changes applied: Seed naming; empirical/causal route; Formal dominates only formalizable properties; translation chain with discrepancy check and counterexample search (comparison is structural via obligations and witnesses, not an LLM comparison); conditional competence; harm vector; proof-bearing accountability; five layers in contracts.",
+      "items": null
+    },
+    {
+      "id": "B64",
+      "pass": "B",
+      "anchor": "64. The new pitch",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "cortex/routing.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
+      ],
+      "backcast": "N2",
+      "notes": "Seed Genome chain runs except 'cheapest sufficient intelligence' (routing is structural, not cost-minimizing). The listed future classes all have extension points (28 reserved profiles, four added in 0.1.4).",
+      "items": null
+    },
+    {
+      "id": "B65",
+      "pass": "B",
+      "anchor": "My proposed first build, if approved",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
+        "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_optimum_matches_brute_force_and_carries_a_certificate",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "backcast": "N1",
+      "items": null,
+      "notes": "Every listed seed item exists (profile, epistemic class, proof class, consequence vector, receipt, ABSTAIN, deterministic router, Semantic, Fermi, Formal/Optimization, Evidence/Causal, gatekeeper, translation protocol, baseline comparison, competency ledger, hooks); MICA/CDPE stays outside; evolutionary/swarm/active-inference/developmental stay on the backcast; VEPMC stays first. Partial only because the baseline comparison has not run."
+    },
+    {
+      "id": "B66",
+      "pass": "B",
+      "anchor": "The decisive test is not whether it sounds intelligent.",
+      "disposition": "implemented_partial",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_cross_geometry_gain_without_resource_blowup",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
+      ],
+      "backcast": "N1",
+      "items": null,
+      "notes": "Different geometries, different cognition, class-appropriate proof and abstention are demonstrated; outperforming an always-LLM baseline is unmeasured until the baselines run. No new authority is gained by construction."
+    }
+  ]
+}

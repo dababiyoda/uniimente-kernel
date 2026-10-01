@@ -1,0 +1,163 @@
+# Polyintelligence Cortex — Seed Experiment
+
+The `cortex` package is the seed of GREG's Polyintelligence Cortex: a router that classifies a problem's
+geometry, checks which cognitive organs are eligible for it, runs the eligible ones under a budget, attacks
+their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
+together with a content-addressed receipt.
+
+**Status:** cortex 0.2.1, converged onto GREG's mission path (`cognition.solve`, one registry, one receipt
+envelope, one settlement) · seven seed organs including a fault-diverse CP-SAT engine and the schedule-extraction
+composition · reserved families registered and disabled · **not promoted**. The frozen cross-geometry comparison
+against GREG's own baselines is reported in [`GREG_SEED_GENOME_REPORT.md`](GREG_SEED_GENOME_REPORT.md); the v0.1
+seed experiment is in [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
+
+Source of requirements: the verbatim build prompt in
+[`docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md`](../intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md).
+Every line of it is mapped to a status and evidence in [`BUILD_PROMPT_TRACEABILITY.json`](BUILD_PROMPT_TRACEABILITY.json),
+which `tests/unit/test_cortex_traceability.py` keeps honest. Every section of the two earlier AI review passes has a
+disposition in [`verbatim-register.json`](verbatim-register.json), checked by `tests/unit/test_cortex_register.py`.
+
+## Authority boundary
+
+Cognition creates no authority. Every receipt carries `authority_created: false` and
+`execution_authority: "none"`, enforced by its schema. The package cannot import the Consequence Gate, adapters
+or any actuator (`test_cortex_imports_nothing_that_can_act`). External consequences continue through the Kernel
+policy engine → capability grant → Consequence Gate. Financial and irreversible questions, legal, normative and
+institutional questions, and human-led victim-protection actions are handed off, never recommended.
+
+## Five layers
+
+The build prompt's five layers are a profile field (`profile.layer`) on each genome — selectable scales, not
+services. One process runs everything.
+
+| Layer (`profile.layer`) | Build prompt name | Enabled in the seed | Registered, disabled |
+| --- | --- | --- | --- |
+| `primitive_basal` | Primitive / basal intelligence | — | feedback control, molecular micro-agents, anomaly patterning |
+| `distributed_collective` | Distributed / collective intelligence | — | ecology market, hive quorum, immune, slime network, stigmergy, swarm PSO, human panel |
+| `solver_macro_cognitive` | Solver / macro-cognitive intelligence | Semantic, Fermi, Formal (Z3, incl. certified optimization), Evidence/Causal, Deterrence | mechanism design, graph search, heuristic search, exact symbolic, CP-SAT, Bayesian, bandit, simulation twin |
+| `developmental_morphogenetic` | Developmental / morphogenetic intelligence | — | constraint release, evolutionary, MICA field, morphogenetic, program synthesis |
+| `meta_polyintelligence_cortex` | Meta-intelligence / Polyintelligence Cortex | adversarial verifier (and the router itself) | value of information, active inference, global workspace, mental models, metaconsensus |
+
+The earlier AI review used a different five-layer naming (L1–L5); `REVIEW_LAYER_MAP` in `cortex/contracts.py`
+reconciles the two and both are preserved. Every biological concept attached to a genome must name its
+mechanism, state variables, interface, feedback loop, measurable behavior, test and failure condition, or
+registration is refused.
+
+## Pipeline
+
+```
+problem → geometry → cognitive eligibility → budget → route or bounded composition
+        → typed artifact → adversarial verification → abstain / recommend / bounded test / handoff → receipt
+```
+
+Routing policy `cortex-route-policy/0.1` is deterministic: the structure of the payload selects routes
+(`formal_model` → Formal, `estimation_model` → Fermi, `claim` → Evidence/Causal, `sources` → Semantic). A model
+may *propose* geometry features through the `proposer` hook; a proposal is kept only when the structured payload
+supports it, and its confidence is recorded. When options are present, hard gates run before any ranking and
+ranking sees only options that passed every gate.
+
+## Routes
+
+| Organ | Mechanism | Proof class | Explicit non-OK states |
+| --- | --- | --- | --- |
+| `cortex.semantic@0.1.0` | existing `egregore.local_model` client; only claims quoting an exact span of a cited source survive | `semantic_sourced` | `DEPENDENCY_UNAVAILABLE`, `BUDGET_EXHAUSTED`, `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
+| `cortex.estimation.fermi@0.1.0` | unit-checked decomposition, Gaussian-copula Monte Carlo, sensitivity, reference class | `estimation` | `DIMENSION_MISMATCH`, `CONTESTED`, `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
+| `cortex.formal.z3@0.2.0` | requirement → model → reverse translation → discrepancy check → counterexample search → Z3 feasibility, entailment, or optimization with an independent UNSAT optimality certificate | `formal` | `FORMALIZATION_INCOMPLETE`, `WORLD_UNVERIFIED`, `DEPENDENCY_UNAVAILABLE`, `TIMEOUT`, `INCONCLUSIVE`, `BUDGET_EXHAUSTED` |
+| `cortex.evidence_causal@0.1.0` | evidence rules (provenance, freshness, contradictions, missing observations); stratified/linear adjustment with bootstrap CI and refutations, only under declared identification | `evidence_assessment`, `causal_estimate` | `INSUFFICIENT_EVIDENCE`, `CONTESTED`, `NOT_IDENTIFIED`, `MALFORMED_INPUT` |
+| `cortex.deterrence.accountability@0.1.0` | Becker expected-value condition (gain − p_detect · p_sanction · sanction) over declared ranges; closed lawful intervention vocabulary; coercive and hard-harm interventions refused; levers labelled certainty / severity / opportunity; actions reaching another party handed off | `deterrence_assessment` | `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
+| `cortex.verifier.adversarial@0.1.0` | rule-based, model-free attack on artifacts and evidence; records shared dependencies | `verifier_findings` | findings only lower a disposition; a critical finding blocks `recommend` |
+
+## Receipts: truth, accountability, protection
+
+Every receipt separates **formal validity**, **empirical validity** and **legitimate authority**, and carries an
+**accountability** section: the strongest counterargument the verifier found, a falsification condition for each
+route's claim, and the missing information that would resolve the question. When victim protection is relevant,
+declared actions are ordered (protect now → preserve evidence → contain → safe contact → escalate → repair → prevent
+recurrence); unmeasured harm, unpreserved evidence, a missing safe channel or retaliation risk without disclosure
+controls are *gaps* that force a human handoff; and the receipt records only whether a person or safe channel was
+declared — never who or which.
+
+## Deterrence, lawfully
+
+Deterrence here means changing the expected value of misconduct for a risk-neutral actor (Becker 1968): misconduct
+pays when the gain exceeds detection probability × sanction probability × sanction. The organ samples the declared
+ranges, then ranks only interventions from a closed lawful vocabulary (detection, evidence preservation, access
+control, process change, independent audit, victim support; and, handed off to the competent authority, reporting,
+contractual remedies, transparency, restitution). Threats, retaliation, intimidation, extortion, deception, doxxing,
+unconsented surveillance, vigilantism, harassment and coercion are refused and never ranked. Each intervention is
+labelled by the lever it moves; a best option that moves only severity is flagged, because the evidence supports
+certainty of apprehension far more consistently (Nagin 2013).
+
+## Contracts
+
+JSON Schema 2020-12 in `contracts/`, validated strictly by `cortex/schemas.py` (deliberately not added to the
+shared-boundary allowlist):
+
+| Contract | Example (generated by a real run) |
+| --- | --- |
+| `cortex-problem-geometry` | [`examples/problem-geometry-formal.json`](examples/problem-geometry-formal.json) |
+| `cortex-intelligence-genome` | [`examples/genome-formal-z3.json`](examples/genome-formal-z3.json), [`examples/genome-reserved-disabled.json`](examples/genome-reserved-disabled.json) |
+| `cortex-proof-artifact` | [`examples/proof-formal.json`](examples/proof-formal.json), `proof-estimation`, `proof-evidence_assessment`, `proof-causal_estimate`, `proof-semantic_sourced` |
+| `cortex-receipt` | eleven receipts in [`examples/`](examples/), one per disposition path, incl. certified optimization, victim-protection handoff and deterrence (internal control recommended; report to authority handed off) |
+| `cortex-routing-memory` | [`examples/routing-memory-verified-success.json`](examples/routing-memory-verified-success.json) |
+
+Regenerate with `python -m cortex.examples --out docs/cortex/examples`. Receipts carry measured expenditure, so
+their ids change between runs; states and dispositions do not.
+
+## Reproduce the benchmark
+
+```bash
+pip install -r requirements-dev.txt -r requirements-cortex.txt
+
+# tests: contracts, gates, routes, pipeline, learning, evaluation integrity, traceability
+python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py \
+    tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
+
+# mutation check: cortex and GREG-path safeguard-removing mutants on a scratch copy; all must be caught
+python scripts/ci/check_cortex_mutants.py
+
+# the cortex on GREG's path: bridge, composition, cross-geometry instrument, signed mission, kill -9 rehearsal
+python -m pytest -q tests/unit/test_greg_cortex_bridge.py tests/unit/test_cortex_formal_engines.py \
+    tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py \
+    tests/integration/test_greg_cortex_mission.py tests/integration/test_greg_cortex_rehearsal.py
+
+# cross-geometry comparison (directive section 15): five arms, predeclared loss, frozen before reporting
+python -m cortex.evaluation.crossgeo --partition selection --out selection.json
+python -m cortex.evaluation.crossgeo --partition reported --out results.json   # refused unless frozen
+
+# development partitions (no freeze needed)
+python -m cortex.evaluation.run --partition smoke --out smoke.json
+python -m cortex.evaluation.run --partition dev --out dev.json
+
+# reported partition: refused unless every frozen input hashes to cortex/evaluation/freeze-v<version>.json
+python -m cortex.evaluation.run --partition heldout --out heldout.json
+```
+
+The LLM baselines (`always_llm`, `llm_committee`) need the configured local model (`egregore.local_model`,
+default `qwen3.5:4b` behind an OpenAI-compatible endpoint on loopback, e.g. Ollama). Without it they are reported
+`NOT_RUN` — never simulated — and the exit stays `INCONCLUSIVE`. To run them:
+
+```bash
+ollama pull qwen3.5:4b && ollama serve &
+python -m cortex.evaluation.run --partition heldout --out heldout-with-baselines.json
+```
+
+Changing any frozen input (suites, scoring, arms, generators, route policy, organ code, budgets, thresholds)
+makes the held-out run refuse. A change is a new cortex version with its own freeze; earlier manifests and results
+are kept in `cortex/evaluation/` and `tests/evidence/cortex-seed-v*/`.
+
+## Files
+
+| Path | Role |
+| --- | --- |
+| `cortex/contracts.py` | vocabularies, `Problem`, `ProblemGeometry`, harm vector, victim protection, results |
+| `cortex/genome.py` | `IntelligenceGenome` projection of the Capability Genome; seed organs; reserved families |
+| `cortex/gates.py` | hard gates, permission-bearing records, Pareto ranking after gates |
+| `cortex/routing.py` | geometry derivation, eligibility, budget, routes, disposition, receipts |
+| `cortex/organs/` | the six seed organs |
+| `cortex/memory.py` | outcome-conditional competence ledger; Kernel causal-memory adapter |
+| `cortex/evaluation/` | suites, scoring, arms, runner, freeze manifests |
+| `cortex/examples.py` | contract examples from real runs |
+| `scripts/ci/check_cortex_mutants.py` | mutation check |
+| `cortex/evidence_refs.py` | resolves evidence references in the traceability documents |
+| `docs/cortex/INVENTION_DOSSIER.md`, `invention.json` | mechanism lineage, novelty boundary, decision |

@@ -1,0 +1,118 @@
+{
+  "scope": "Local bounded-runtime verification of the exact runtime-only proposed GitHub snapshot; no deployment, world-effect or whole-destination proof",
+  "base_sha": "3d2bb1762ff709ce74d3053aced060e70d4e6674",
+  "tested_at_utc": "2026-09-30T23:58:27.821173+00:00",
+  "python": "3.12",
+  "full_suite": {
+    "command": "python -m pytest -q",
+    "result": "1242 passed, 10 skipped, 3 warnings in 211.64s",
+    "exit_code": 0,
+    "log": "full-suite.log"
+  },
+  "checks": [
+    {
+      "name": "schema-refs",
+      "exit_code": 0,
+      "seconds": 0.027,
+      "log": "schema-refs.log"
+    },
+    {
+      "name": "authority",
+      "exit_code": 0,
+      "seconds": 0.042,
+      "log": "authority.log"
+    },
+    {
+      "name": "sealed",
+      "exit_code": 0,
+      "seconds": 0.088,
+      "log": "sealed.log"
+    },
+    {
+      "name": "benchmark",
+      "exit_code": 0,
+      "seconds": 3.027,
+      "log": "benchmark.log"
+    }
+  ],
+  "frozen_suite": {
+    "correct": 22,
+    "total": 22,
+    "superiority": "UNMEASURED",
+    "cross_geometry_regret": null,
+    "log": "benchmark.log"
+  },
+  "authority_created": false,
+  "world_effect": "UNVERIFIED",
+  "external_product_outcomes": 0,
+  "live_local_model": "Unavailable in development; missing-model abstention verified",
+  "comparative_baselines": "Unavailable; no superiority or calibration claim",
+  "lint": "Unverified: installed Ruff binary failed in this development runtime",
+  "remote_ci": "Separate pending evidence",
+  "dependencies": [
+    {
+      "distribution": "sympy",
+      "version": "1.14.0",
+      "license_expression": null,
+      "license_classifiers": [
+        "License :: OSI Approved :: BSD License"
+      ],
+      "distributed_license_files": [
+        "sympy-1.14.0.dist-info/licenses/AUTHORS",
+        "sympy-1.14.0.dist-info/licenses/LICENSE",
+        "sympy/parsing/latex/LICENSE.txt"
+      ],
+      "license_metadata_sha256": "49d9777da612e1f4e9269fa9f93ea324a66f9dcc7722ad812de124ef3f266d93",
+      "license_summary": "BSD"
+    },
+    {
+      "distribution": "networkx",
+      "version": "3.7",
+      "license_expression": "BSD-3-Clause",
+      "license_classifiers": [],
+      "distributed_license_files": [
+        "networkx-3.7.dist-info/licenses/LICENSE.txt"
+      ],
+      "license_metadata_sha256": null,
+      "license_summary": "BSD-3-Clause"
+    },
+    {
+      "distribution": "z3-solver",
+      "version": "5.1.0.0",
+      "license_expression": null,
+      "license_classifiers": [],
+      "distributed_license_files": [],
+      "license_metadata_sha256": "abb2896dc3c2a9402f901b88d5035cf0a83d5cf7c17e73642cdf562b0b9d3bc5",
+      "license_summary": "MIT License"
+    },
+    {
+      "distribution": "ortools",
+      "version": "9.15.6755",
+      "license_expression": null,
+      "license_classifiers": [
+        "License :: OSI Approved :: Apache Software License"
+      ],
+      "distributed_license_files": [
+        "ortools-9.15.6755.dist-info/licenses/LICENSE"
+      ],
+      "license_metadata_sha256": "cf989ea142f203f532233fa944ee1d8d5acfe6f6875e4d611f515ee108ba26df",
+      "license_summary": "Apache 2.0"
+    },
+    {
+      "distribution": "scipy",
+      "version": "1.17.0",
+      "license_expression": null,
+      "license_classifiers": [
+        "License :: OSI Approved :: BSD License"
+      ],
+      "distributed_license_files": [
+        "scipy-1.17.0.dist-info/LICENSE.txt",
+        "scipy/_lib/_uarray/LICENSE",
+        "scipy/fft/_pocketfft/LICENSE.md",
+        "scipy/integrate/LICENSE_DOP"
+      ],
+      "license_metadata_sha256": "f5322e8eb7c9d0155475f23c903dc68d59a62ff146eb0d41acef061cd7fef874",
+      "license_summary": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers."
+    }
+  ]
+}

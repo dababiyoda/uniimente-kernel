@@ -16,6 +16,10 @@ KNOWN_CONTRACTS = (
     "capability-grant", "context-packet", "decision", "event", "evidence",
     "opportunity-packet", "outcome", "venture-assessment", "venture-cell-charter",
     "organ-manifest", "wire-opportunity-packet", "wire-venture-assessment",
+    # Polyintelligence Cortex seed v0.1 (cortex/): cognition contracts. They
+    # carry recommendations and evidence only; none of them carries authority.
+    "cortex-problem-geometry", "cortex-intelligence-genome", "cortex-proof-artifact",
+    "cortex-receipt", "cortex-routing-memory",
 )
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact",
                        "financial", "irreversible")
@@ -54,6 +58,7 @@ class CapabilityGenome:
     failure_modes: list[str]
     recovery_path: str
     legal_operator: str = "alfonso_lopez"
+    cognitive_profiles: list[dict] = field(default_factory=list)
 
     def validate(self) -> list[str]:
         problems = []
@@ -72,6 +77,13 @@ class CapabilityGenome:
         if not self.failure_modes:
             problems.append("genome must declare its failure modes")
         problems.extend(self.authority.validate())
+        if self.cognitive_profiles:
+            from cortex.seed.contracts import CognitiveCapabilityProfile
+            for profile in self.cognitive_profiles:
+                try:
+                    problems.extend(CognitiveCapabilityProfile(**profile).validate())
+                except (TypeError, ValueError):
+                    problems.append('invalid cognitive profile')
         return problems
 
 

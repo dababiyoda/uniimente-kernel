@@ -1,0 +1,52 @@
+........................................................................ [  4%]
+........................................................................ [  8%]
+........................................................................ [ 13%]
+........................................................................ [ 17%]
+........................................................................ [ 22%]
+........................................................................ [ 26%]
+........................................................................ [ 31%]
+........................................................................ [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 44%]
+....................ss.......................F.......................... [ 48%]
+........................................................................ [ 53%]
+........................................................................ [ 57%]
+........................................................................ [ 62%]
+........................................................................ [ 66%]
+........................s............................................... [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 84%]
+........................................................................ [ 89%]
+......................................................ssss.............. [ 93%]
+........................................................................ [ 97%]
+.................................                                        [100%]
+=================================== FAILURES ===================================
+__ test_real_heterogeneous_methods_and_separate_verifier[evidence-data6-None] __
+
+kind = 'evidence'
+data = {'sources': [{'id': 's1', 'text': 'The measured total was 12.', 'sha256': 'ce676973b855e0d9b1125aa0a5101024d7698c9e663...-10-01T14:27:29.082063+00:00', ...}], 'bindings': [{'source_id': 's1', 'quote': 'total was 12', 'stance': 'supports'}]}
+status = None
+
+    @pytest.mark.parametrize('kind,data,status', [
+        ('optimization', allocation(), 'OPTIMAL'), ('optimization', allocation(False), 'INFEASIBLE'),
+        ('formal', allocation(optimize=False), 'SAT'), ('formal', allocation(False, False), 'UNSAT'),
+        ('estimation', estimation(), None), ('causal', causal(), None), ('evidence', evidence(), None)])
+    def test_real_heterogeneous_methods_and_separate_verifier(kind, data, status):
+        r = evaluate_problem(problem(kind, data))
+>       assert r['answered'], r
+E       AssertionError: {'schema_version': 'cognition/1', 'problem_id': 'test', 'input_digest': 'sha256:988f576ee59f0c20e4e19082208e63ef34a506fa1a7931460be04f99c893ff70', 'policy_version': 'static-smallest-sufficient/1', ...}
+E       assert False
+
+tests/unit/test_greg_cognition.py:66: AssertionError
+=============================== warnings summary ===============================
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_local_mission.py::test_missing_grant_blocks_and_stays_remembered
+  /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=5) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_cognition.py::test_real_heterogeneous_methods_and_separate_verifier[evidence-data6-None]
+1 failed, 1609 passed, 10 skipped, 3 warnings in 392.73s (0:06:32)

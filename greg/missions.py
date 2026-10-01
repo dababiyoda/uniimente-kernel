@@ -262,6 +262,7 @@ class MissionEngine:
         self.artifact_root = Path(artifact_root) if artifact_root else None
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
+        self._stop_check = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -318,6 +319,7 @@ class MissionEngine:
     def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
         """One turn per mission. ``should_stop`` is consulted before every mission step:
         a stop that arrives mid-tick admits no further dispatch (from #112)."""
+        self._stop_check = should_stop
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
@@ -333,8 +335,8 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith("artifact.") else None,
-                                 artifact_root=self.artifact_root)
+                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 artifact_root=self.artifact_root, stop_check=self._stop_check)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,

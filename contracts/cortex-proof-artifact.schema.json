@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.example/contracts/cortex-proof-artifact.schema.json",
+  "title": "Cortex typed proof artifact v0.1",
+  "description": "Each route returns the proof appropriate to its epistemic class. A proof never carries permission.",
+  "type": "object",
+  "required": [
+    "proof_class"
+  ],
+  "properties": {
+    "proof_class": {
+      "enum": [
+        "semantic_sourced",
+        "estimation",
+        "formal",
+        "evidence_assessment",
+        "causal_estimate",
+        "gate_report",
+        "verifier_findings",
+        "deterrence_assessment",
+        "optimization",
+        "bayesian",
+        "simulation",
+        "human_adjudication",
+        "measurement",
+        "institutional_observation"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "formal"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "failure"
+                ]
+              },
+              {
+                "required": [
+                  "original_requirement",
+                  "structured_model",
+                  "reverse_translation",
+                  "discrepancy_check",
+                  "counterexample_search",
+                  "solver",
+                  "premises",
+                  "unverified_premises",
+                  "completeness"
+                ]
+              }
+            ]
+          },
+          {
+            "required": [
+              "scope"
+            ],
+            "properties": {
+              "scope": {
+                "const": "valid_given_encoding"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "estimation"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "decomposition",
+              "units",
+              "inputs",
+              "dependencies",
+              "dependency_effect",
+              "interval",
+              "samples",
+              "seed",
+              "low",
+              "median",
+              "high",
+              "sensitivity",
+              "dominant_uncertainty",
+              "reference_class"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "evidence_assessment"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "claim",
+              "available",
+              "stale",
+              "excluded",
+              "contradictions",
+              "provenance",
+              "missing_observations"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "causal_estimate"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "failure"
+                ]
+              },
+              {
+                "required": [
+                  "estimand",
+                  "treatment",
+                  "outcome",
+                  "adjustment_set",
+                  "identification_assumptions",
+                  "identification_basis",
+                  "method",
+                  "estimate",
+                  "ci95_bootstrap",
+                  "refutations",
+                  "limitations",
+                  "truth_note"
+                ]
+              }
+            ]
+          },
+          {
+            "properties": {
+              "identification_basis": {
+                "type": "object",
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "const": "model_generated"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "semantic_sourced"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "source_ids",
+              "claims",
+              "rejected_claims",
+              "support_check",
+              "truth_note"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "verifier_findings"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "verifier",
+              "findings",
+              "blocking",
+              "independence"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "deterrence_assessment"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "model",
+              "parameters",
+              "samples",
+              "seed",
+              "baseline",
+              "interventions",
+              "refused",
+              "assumptions",
+              "limitations",
+              "truth_note"
+            ],
+            "properties": {
+              "interventions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "reach",
+                    "levers",
+                    "reduction"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "not": {
+                        "enum": [
+                          "threat",
+                          "retaliation",
+                          "intimidation",
+                          "extortion",
+                          "deception",
+                          "doxxing",
+                          "unconsented_surveillance",
+                          "vigilantism",
+                          "harassment",
+                          "coercion"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

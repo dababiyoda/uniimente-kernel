@@ -78,6 +78,7 @@ class CapabilityManifest:
     attach: str = "founder command or pre-authorized mission light cone"
     detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
     rollback: str = "detach; retained history is never rewritten"
+    cognitive_profiles: tuple = ()
 
     def validate(self) -> list[str]:
         problems = []
@@ -116,7 +117,7 @@ class CapabilityManifest:
                                         requires_human=self.consequence_class in ("financial", "irreversible")),
             acceptance_tests=list(self.tests) or ["declared-by-builder"],
             failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
-            recovery_path=self.rollback)
+            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles))
 
     def digest(self) -> str:
         return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
@@ -128,6 +129,8 @@ class CapabilityManifest:
                 value[key] = list(item)
         if not value["target_from"]:
             value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
+        if not value['cognitive_profiles']:
+            value.pop('cognitive_profiles')  # preserve historical manifest digests
         return value
 
     @classmethod
@@ -137,7 +140,7 @@ class CapabilityManifest:
             raise CapabilityError(f"unknown manifest fields {sorted(set(value) - known)}")
         data = dict(value)
         for key in ("egress_allowlist", "credentials", "binaries", "data_classes", "platforms", "tests",
-                    "strengthens"):
+                    "strengthens", "cognitive_profiles"):
             if key in data:
                 data[key] = tuple(data[key])
         return cls(**data)
@@ -221,6 +224,11 @@ class InvocationContext:
     journal: object | None = None     # canonical ledger for memory and receipt-bound artifacts
     target: str = ""                   # exact signed target set by the authority office
     artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
+    mission_id: str = ""
+    authority_ref: str = ""
+    grant_id: str = ""
+    policy_version: str = ""
+    stop_check: object | None = None
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -739,3 +747,27 @@ def installed_binary(name: str) -> str | None:
     """Locate an installed executable on the standard system path only."""
     found = shutil.which(name, path="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
     return str(Path(found).resolve()) if found else None
+
+# Cortex capabilities use the same broker and GenomeRegistry. These are trusted
+# builtins; being catalogued here never replaces a signed mission light cone.
+from dataclasses import asdict as _profile_dict
+from cortex.seed.contracts import CognitiveCapabilityProfile, METHODS, PROOFS
+
+for _cid, _handler, _consequence, _inputs in (
+    ('cognition.solve', 'solve', 'read_only', {'problem': 'cognition/1'}),
+    ('cognition.status', 'status', 'read_only', {'problem_id': 'str'}),
+    ('cognition.settle', 'settle', 'internal_write', {'outcome_id': 'str', 'receipt_id': 'str',
+        'tier': 'str', 'score': 'number|null', 'evidence_refs': 'list', 'supersedes': 'str|null', 'conditions': 'dict'}),
+):
+    STRENGTHENS[_cid] = ('eligibility', 'routing', 'proof', 'settlement')
+    BUILTINS[_cid] = (_builtin(_cid, _cid, 'Bounded typed cognition with canonical authority and evidence',
+        'internal', _consequence, 'cognition:', _inputs, {'receipt': 'dict'},
+        strengthens=('eligibility', 'routing', 'proof', 'settlement'),
+        tests=('tests/unit/test_greg_cognition.py',),
+        network='egress-allowlist' if _handler == 'solve' else 'none',
+        egress_allowlist=('127.0.0.1',) if _handler == 'solve' else (),
+        cognitive_profiles=tuple(_profile_dict(CognitiveCapabilityProfile(
+            METHODS[k], k, PROOFS[k], 'bounded seed; availability checked per request'))
+            for k in METHODS) if _handler == 'solve' else (),
+        provenance={'source': 'greg/cognition.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
+        _lazy('greg.cognition', _handler))

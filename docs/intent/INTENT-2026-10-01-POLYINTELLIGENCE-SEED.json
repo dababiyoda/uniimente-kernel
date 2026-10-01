@@ -1,0 +1,43 @@
+{
+  "intent_id": "INTENT-2026-10-01-POLYINTELLIGENCE-SEED",
+  "title": "Integrate the Seed Genome into one GREG while preserving the full horizon",
+  "statement": "Build and verify four competency classes and an independent verifier through the canonical GREG mission, permissions and durable event path. Preserve all founder intentions and declared limits; no benchmark result authorizes consequences.",
+  "source": "Founder-supplied coding-agent build directive, uploads 8/9/10 byte-identical",
+  "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt",
+  "source_date_or_version": "2026-10-01",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "bounded",
+  "intended_outcome": "Different epistemic geometries receive real bounded computation or truthful non-answers with recoverable evidence, without adding sovereignty.",
+  "affected_systems": [
+    "greg",
+    "cortex",
+    "capabilities.genome",
+    "canonical event ledger"
+  ],
+  "rationale": "Integrated bounded implementation exists; full seed exit remains open under explicit residual scope and unavailable model/device evidence.",
+  "conflicts": [
+    "PR141 old layer taxonomy remains frozen historical input; current directive controls active interpretation.",
+    "Main and PR137/141 remain unmerged.",
+    "Typed-input suite cannot establish independent real-world routing advantage."
+  ],
+  "evidence_refs": [
+    "docs/cortex/evidence/seed-genome/results-v3.json",
+    "tests/integration/test_greg_cognition_process.py"
+  ],
+  "implementation_refs": [
+    "greg/cognition.py",
+    "cortex/seed",
+    "docs/cortex/SEED_GENOME_REQUIREMENTS.json",
+    "greg/path.json"
+  ],
+  "owner": "Kernel/GREG maintainers; Alfonso is root human authority",
+  "next_review_trigger": "Configured licensed resource-fit local model, residual-contract closure, or actual Chromebook evidence",
+  "unresolved_questions": [
+    "Full rich geometry/receipt and VOI coverage",
+    "Strong model baselines and semantic-quality evidence",
+    "Downstream organ consumption and independent real-world outcome adapter"
+  ],
+  "created_at": "2026-10-01T15:00:00Z",
+  "updated_at": "2026-10-01T15:00:00Z"
+}

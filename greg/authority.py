@@ -133,7 +133,9 @@ class AuthorityOffice:
 
         def execute(p):
             try:
-                output = adapter(params, replace(ctx, target=target))
+                output = adapter(params, replace(ctx, target=target, mission_id=mission_id,
+                                                authority_ref=command_digest, grant_id=grant['grant_id'],
+                                                policy_version=self.compiled.constitution_version))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "output": None, "validation_status": "self_reported"}

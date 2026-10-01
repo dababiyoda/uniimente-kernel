@@ -135,6 +135,7 @@ def main(argv=None) -> int:
             q.add_argument("--deliverable", default="deliverable.pdf",
                            help="human-work: file name the person's deliverable is saved as in the mission folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
+            q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
@@ -247,6 +248,10 @@ def main(argv=None) -> int:
                 elif args.target == "word-limit":
                     spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
                                                 workspace_root=Layout(home).workspace)
+                elif args.target == "cognition":
+                    if not args.problem:
+                        raise BodyError('cognition needs --problem')
+                    spec = templates.cognitive_problem(json.loads(Path(args.problem).read_text()))
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")

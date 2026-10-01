@@ -1,0 +1,27 @@
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_source_lineage_is_exact_and_all_appendix_identifiers_are_retained ____
+
+    def test_source_lineage_is_exact_and_all_appendix_identifiers_are_retained():
+        register=json.loads((ROOT/'docs/cortex/SEED_GENOME_REQUIREMENTS.json').read_text())
+        original=ROOT/register['source']
+        assert hashlib.sha256(original.read_bytes()).hexdigest()==register['sha256']
+        lines=original.read_text().splitlines()
+        assert [int(r['source_location'].rsplit(':',1)[1]) for r in register['line_register']]==[i for i,l in enumerate(lines,1) if l.strip()]
+        for row in register['line_register']:
+            line=lines[int(row['source_location'].rsplit(':',1)[1])-1]
+            assert hashlib.sha256(line.encode()).hexdigest()==row['source_sha256']
+        assert len({r['source_id'] for r in register['source_crosswalk']})==122
+        assert set(r['status'] for r in register['line_register']) <= {'active','needs_evidence'}
+        for row in register['sections']:
+            for ref in row['implementation_refs']:
+>               assert (ROOT/ref).exists(),ref
+E               AssertionError: docs/cortex/evidence/seed-genome/results-v3.json
+E               assert False
+E                +  where False = exists()
+E                +    where exists = (PosixPath('/workspace/scratch/888b14c8d3f5/kernel') / 'docs/cortex/evidence/seed-genome/results-v3.json').exists
+
+tests/unit/test_seed_genome_continuity.py:22: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_seed_genome_continuity.py::test_source_lineage_is_exact_and_all_appendix_identifiers_are_retained
+1 failed, 3 passed in 4.68s

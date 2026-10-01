@@ -984,5 +984,292 @@
         "INTENT-0030"
       ]
     }
-  ]
+  ],
+  "subordinate_workstreams": {
+    "polyintelligence_cortex": {
+      "authority": "No scheduling, promotion or permission effect; N1/VEPMC remains primary",
+      "metric": "Verified Cross-Geometry Routing Gain",
+      "current": "INCONCLUSIVE; timing-independent gain 0 versus static rules",
+      "nodes": [
+        {
+          "id": "P0",
+          "title": "Inspect and anchor",
+          "requirement": "Establish current source, authority, runtime, and embodiment evidence. Reuse what exists. Exit: reproducible context checksum and owner map.",
+          "status": "active",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "canonical source/authority evidence",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "close exact inspected scope gaps",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:553"
+        },
+        {
+          "id": "P1",
+          "title": "Cognitive contracts",
+          "requirement": "Implement the typed extensions, eligibility, and abstention semantics. Diagnostic: geometry classification and unsafe-misrouting rates. Exit: frozen mixed-suite results and no authority expansion.",
+          "status": "active",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P0 and one canonical signed mission path",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "extend one missing rich contract with hostile validation",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:556"
+        },
+        {
+          "id": "P2",
+          "title": "Seed proof",
+          "requirement": "Implement the four competency classes, independent verifier, and real integrated path. Active cognition metric: Verified Cross-Geometry Routing Gain. Exit: implementation evidence plus the predeclared performance test; otherwise remain an experiment.",
+          "status": "active",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P0 and one canonical signed mission path",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "run local semantic and strong tool-model baselines without changing freeze",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:559"
+        },
+        {
+          "id": "P3",
+          "title": "Proof/outcome ledger",
+          "requirement": "Persist receipts and separately typed benchmark, simulation, and real-outcome records. Diagnostic: receipted outcome coverage with a complete denominator. Exit: idempotent settlement, corrections, and provenance across restart.",
+          "status": "active",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P0 and one canonical signed mission path",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "exercise signed settlement and independent observed-outcome evidence",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:562"
+        },
+        {
+          "id": "P4",
+          "title": "Cognitive settlement and learned routing",
+          "requirement": "Use eligibility, routing, proof, and outcomes to earn conditional defaults. Exit: learned routing beats the static baseline on held-out tasks without new authority.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P3 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565"
+        },
+        {
+          "id": "P5",
+          "title": "Demand-led repertoire expansion",
+          "requirement": "Add graph, exact symbolic, Bayesian, broader causal, OR, control, simulation, information, game/mechanism, and human routing as evidence justifies each dependency. Exit per family: real adapter, native benchmark, declared limits, integrated mission value.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P4 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568"
+        },
+        {
+          "id": "P6",
+          "title": "Heterogeneous compositions",
+          "requirement": "Test useful pipelines, structured human input, quorum, stigmergy, ecological allocation, and other candidates against constituents, simple pipelines, and committees. Exit: at least one composition has measured net lift after overhead and correlated-failure analysis.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P5 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571"
+        },
+        {
+          "id": "P7",
+          "title": "Capability genesis",
+          "requirement": "Detect deficit; search existing capabilities; reconfigure; compose; inspect compatible open source/services; generate only where needed; independently test; register under existing controls; retry the original sandbox mission. Exit: solve a bounded problem with a verified capability absent at mission start. Distinguish acquiring an existing tool, composing existing tools, and inventing a new algorithm. Registration grants no execution authority.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P6 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574"
+        },
+        {
+          "id": "P8",
+          "title": "Evolutionary cognition",
+          "requirement": "Use trustworthy machine-evaluable objectives, protected evaluators, candidate mutation/recombination, sandbox execution, selection, and lineage. Exit: repeated held-out gains without evaluator gaming or unauthorized mutation. No self-authored evaluator may be its own final judge.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P7 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:578"
+        },
+        {
+          "id": "P9",
+          "title": "Constraint-release discovery",
+          "requirement": "Search novel allowed topologies and communication/resource conditions. Exit: a useful previously unlisted organization beats the baseline and survives independent replication. Record how novelty was assessed.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P8 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:581"
+        },
+        {
+          "id": "P10",
+          "title": "Functional morphogenesis",
+          "requirement": "Inject an unseen loss. Require recovered target function through a materially different organization, bounded local information, no scripted restoration, preserved authority/identity, and independent outcome verification. Compare against a strong centralized adaptive baseline. Metric: scoped Unscripted Functional Recovery Rate.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P9 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:584"
+        },
+        {
+          "id": "P11",
+          "title": "Open cognitive ecology",
+          "requirement": "Maintain specialization, diversity, rare-method preservation, turnover, learning, and bounded generation under distribution shift. Exit: sustained net benefit across changing workloads without evaluator capture, runaway resource use, or authority drift.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P10 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:587"
+        },
+        {
+          "id": "P12",
+          "title": "Substrate-plural execution",
+          "requirement": "Run equivalent behavioral contracts on materially different approved substrates. Measure portability, resource requirements, state continuity, failure, and revocation. A portable manifest alone is insufficient.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P11 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:590"
+        },
+        {
+          "id": "P13",
+          "title": "Poly-embodied developmental institution",
+          "requirement": "Extend the same governed identity through phone, Chromebook, cloud, edge, AR, robots, laboratories, businesses, human teams, and institutional networks. Scope every body and action. Far-horizon objectives include open developmental cognition, long-duration planning, scientific invention, and broader coordination while preserving local autonomy and legitimate shutdown.",
+          "status": "deferred",
+          "owner": "Kernel/GREG maintainers; Alfonso controls activation",
+          "dependency": "P12 evidence plus demand and founder-authorized envelope",
+          "budget_ceiling": {
+            "paid_usd": 0,
+            "development_wall_seconds_per_experiment": 60,
+            "activation": "none"
+          },
+          "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
+          "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
+          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:593"
+        }
+      ],
+      "c_to_p": {
+        "C1": [
+          "P1",
+          "P2",
+          "P3"
+        ],
+        "C2": [
+          "P5"
+        ],
+        "C3": [
+          "P4",
+          "budget controller"
+        ],
+        "C4": [
+          "P6",
+          "P11"
+        ],
+        "C5": [
+          "P7",
+          "P8"
+        ],
+        "C6": [
+          "P9",
+          "P10"
+        ],
+        "C7": [
+          "P12",
+          "P13"
+        ],
+        "C8": [
+          "P11",
+          "P13"
+        ]
+      },
+      "preserved_obligations": [
+        "Foundry-55 remains binding",
+        "Chromebook/phone immediate; Mac separate horizon",
+        "future approved computer tools and mission-specific teams",
+        "frontier/science-fiction destination remains a gated aspiration"
+      ]
+    }
+  }
 }

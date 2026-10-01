@@ -1,0 +1,40 @@
+{
+  "attribution": [
+    {
+      "method": "cortex.formal.z3",
+      "role": "final_answer",
+      "uncertainty": "low"
+    },
+    {
+      "method": "cortex.verifier.adversarial",
+      "role": "flaw_detection",
+      "uncertainty": "medium"
+    }
+  ],
+  "authorization_ref": null,
+  "competence_update": {
+    "after": 0.7778,
+    "before": 0.5,
+    "bounded": true,
+    "changes": "ordering among eligible routes only",
+    "delta": 0.2778,
+    "weight": 1.0
+  },
+  "conditions": [],
+  "consequence_class": "internal_write",
+  "geometry": "constraint_feasibility",
+  "method": "cortex.formal.z3",
+  "method_version": "0.2.0",
+  "outcome_provenance": {
+    "kind": "external_observation",
+    "ref": "example: schedule executed as proved",
+    "validation_status": "externally_verified"
+  },
+  "outcome_status": "verified_success",
+  "policy_version": "cortex-route-policy/0.1",
+  "problem_id": "H-F01",
+  "receipt_id": "sha256:a08b0852030dc51f5a66f8a96a50c0443c535ee0734b554f618d66b158efcd9d",
+  "recommendation": "recommend",
+  "record_id": "sha256:b402b2e71aff78f9588a7dd281dc30fbfc3a59719b7f5ff1511cdc0a71bdc526",
+  "rollback_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

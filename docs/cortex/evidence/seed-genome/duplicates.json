@@ -1,0 +1,195 @@
+{
+  "algorithm": "sha256",
+  "complete": true,
+  "errors": [],
+  "excluded_subtrees": [
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    "adapters/__pycache__",
+    "capabilities/__pycache__",
+    "compiler/__pycache__",
+    "contracts/__pycache__",
+    "cortex/__pycache__",
+    "cortex/evaluation/__pycache__",
+    "cortex/organs/__pycache__",
+    "cortex/seed/__pycache__",
+    "egregore/__pycache__",
+    "events/__pycache__",
+    "greg/__pycache__",
+    "identity/__pycache__",
+    "memory/__pycache__",
+    "policy/__pycache__",
+    "provenance/__pycache__",
+    "tests/__pycache__",
+    "tests/unit/__pycache__",
+    "tools/__pycache__"
+  ],
+  "generated_at": "2026-10-01T14:27:04.283450+00:00",
+  "groups": [
+    {
+      "copy_count": 2,
+      "paths": [
+        "tests/evidence/adoption-20260909/dale-candidate.patch",
+        "tests/evidence/adoption-20260909/dale-current-main-composition.patch"
+      ],
+      "reclaimable_bytes_if_one_retained": 82717,
+      "sha256": "ef920c58a08a5d958a5a18a998c9972b9e9e45b059a14f940ea3d28e15ffb152",
+      "size_bytes": 82717
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "docs/collaboration/goal-chase-v0-evidence/begin.json",
+        "docs/collaboration/goal-chase-v0-evidence/inspect.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 12675,
+      "sha256": "224bb36e6f874532d80c12999aed0d6eff5c11d367658e75bf9363d5d8a0d5b1",
+      "size_bytes": 12675
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "docs/collaboration/goal-chase-attention-evidence/inspect.json",
+        "docs/collaboration/goal-chase-attention-evidence/reconfirm.json"
+      ],
+      "reclaimable_bytes_if_one_retained": 12675,
+      "sha256": "85ee72a2d9f6c444073627af66054466db2c456b5dad8fbae89090ddcd797d30",
+      "size_bytes": 12675
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "cortex/seed/verify.py",
+        "greg/cognitive_verify.py"
+      ],
+      "reclaimable_bytes_if_one_retained": 8260,
+      "sha256": "b0dcbd33bbff0df177913b25bc42c63430fba0a6c3c138a63c733de6ffaa93ed",
+      "size_bytes": 8260
+    },
+    {
+      "copy_count": 3,
+      "paths": [
+        "tests/evidence/adoption-20260909/kernel-check_authority_singleton.log",
+        "tests/evidence/greg-proof/authority.log",
+        "tests/evidence/opus-reconciliation/authority.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 1458,
+      "sha256": "eb927c68b9d03fbf460b333b67bd938c076fbde9e32a3b453f40e5889a92ad56",
+      "size_bytes": 729
+    },
+    {
+      "copy_count": 3,
+      "paths": [
+        "tests/evidence/adoption-20260909/kernel-check_sealed_developmental.log",
+        "tests/evidence/greg-proof/sealed.log",
+        "tests/evidence/opus-reconciliation/sealed.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 1356,
+      "sha256": "bff5a679e432c7595d305e94379a2e621ffd408dd543aa4934014811fa13632d",
+      "size_bytes": 678
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "docs/collaboration/goal-chase-attention-evidence/begin.txt",
+        "docs/collaboration/goal-chase-v0-evidence/begin.txt"
+      ],
+      "reclaimable_bytes_if_one_retained": 1302,
+      "sha256": "897beb8012bb69ea7ffb6ad885f6ff890d9a004a14817f3065189ba5e456a71d",
+      "size_bytes": 1302
+    },
+    {
+      "copy_count": 3,
+      "paths": [
+        "docs/collaboration/goal-chase-attention-evidence/sealed.log",
+        "docs/collaboration/goal-chase-v0-evidence/goal-chase-sealed.log",
+        "tests/evidence/greg-usable/sealed.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 778,
+      "sha256": "c6f5311fc4ae782a4051fa2a38b05044996e015a41f3d3acc2f0e92e94e5a2f1",
+      "size_bytes": 389
+    },
+    {
+      "copy_count": 3,
+      "paths": [
+        "tests/evidence/adoption-20260909/kernel-check_schema_refs.log",
+        "tests/evidence/greg-proof/schemas.log",
+        "tests/evidence/opus-reconciliation/schema.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 738,
+      "sha256": "f82388da71099715c57b44fcf8583e2819302786bc2a252e0d54bd960d95a5c6",
+      "size_bytes": 369
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "docs/collaboration/goal-chase-attention-evidence/authority.log",
+        "tests/evidence/greg-usable/authority.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 441,
+      "sha256": "16c96796f9e6e6df11cc9f2ded8de13c4a367ea0ec077aad206419d8ecf85026",
+      "size_bytes": 441
+    },
+    {
+      "copy_count": 2,
+      "paths": [
+        "tests/evidence/greg-proof/ruff-correctness.log",
+        "tests/evidence/opus-reconciliation/ruff.log"
+      ],
+      "reclaimable_bytes_if_one_retained": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "size_bytes": 19
+    }
+  ],
+  "mode": "report_only",
+  "repository": "/workspace/scratch/888b14c8d3f5/kernel",
+  "skipped_files": [
+    {
+      "path": "adapters/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "cortex/evaluation/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "cortex/organs/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "linker/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/evidence/greg-proof/adopted-repositories/host-result.json.log",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/evidence/greg-usable/retained-state/recovery-tests/test_killed_host_reconstructs_0/session/f78b55e859844c749cb4faf048346b27/host.log",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/integration/__init__.py",
+      "reason": "below_min_size"
+    },
+    {
+      "path": "tests/unit/__init__.py",
+      "reason": "below_min_size"
+    }
+  ],
+  "summary": {
+    "candidate_files_hashed": 168,
+    "duplicate_file_count": 26,
+    "duplicate_group_count": 11,
+    "error_count": 0,
+    "excluded_subtree_count": 21,
+    "files_scanned": 884,
+    "potential_reclaimable_bytes": 122419,
+    "skipped_file_count": 8
+  },
+  "tool": "detect_exact_duplicates.py",
+  "truncated": false,
+  "version": 1,
+  "warning": "Byte identity does not prove semantic redundancy or authorize deletion. Confirm authorship, canonical ownership, consumers, evidence value, and provenance before any migration."
+}

@@ -190,3 +190,7 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Seed Genome integration — October 1, 2026
+
+[INTENT-2026-10-01-POLYINTELLIGENCE-SEED](intent/INTENT-2026-10-01-POLYINTELLIGENCE-SEED.json) remains **active**: bounded computation is integrated into the existing GREG mission, authority and journal path; the complete directive and live verification remain open. [Current scope, evidence and residual obligations](cortex/GREG_SEED_GENOME.md) govern claims. [Every supplied directive line and Appendix A item](cortex/SEED_GENOME_REQUIREMENTS.json) has retained lineage. PR137 is the runtime base; PR141 is reused and preserved; PR139's selected integration/outcome mechanisms remain linked for later extraction. The simple static policy is retained after a negative advantage comparison. No cognition result changes human sovereignty. P0–P13/C1–C8 live beneath `greg/path.json`; N1/VEPMC remains primary, and Foundry-55 is unaffected.

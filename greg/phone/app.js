@@ -78,6 +78,14 @@ async function refresh() {
     const hb = status.background || {};
     $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}`;
     $("goals").replaceChildren(...status.goals.map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    $("cognition").replaceChildren(...(status.cognition?.receipts || []).map((r) => {
+      const item = el("li", `${r.problem_id}: ${r.answered ? "checked conditional result" : "needs evidence or review"}. ${r.next_step}`);
+      const detail = el("details", "");
+      detail.append(el("summary", "Evidence and limits"), el("pre", JSON.stringify(r.claims, null, 2)),
+        el("p", `${r.elapsed_ms} ms. ${r.cost_limits}`));
+      item.append(detail);
+      return item;
+    }));
     renderDecisions((await api("/api/decisions")).data);
     const v = await api("/api/vepmc");
     $("vepmc").textContent = `VEPMC ${v.VEPMC}` + v.missions.map((m) => ` · ${m.mission_id} missing ${m.missing.join(", ") || "nothing"}`).join("");

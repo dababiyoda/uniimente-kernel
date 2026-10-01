@@ -1,0 +1,94 @@
+{
+  "capability": {
+    "acceptance_tests": [
+      "must beat the simpler baseline on its native geometry (allocation_market)"
+    ],
+    "authority": {
+      "budget_ceiling_usd": 0.0,
+      "max_consequence_class": "read_only",
+      "requires_human": false
+    },
+    "contracts": [
+      "cortex-problem-geometry",
+      "cortex-proof-artifact",
+      "cortex-receipt"
+    ],
+    "description": "Reserved family allocation_market; no executor in the seed experiment.",
+    "failure_modes": [
+      "not implemented"
+    ],
+    "interface": {
+      "inputs": {
+        "problem": "cortex problem"
+      },
+      "outputs": {
+        "result": "typed proof artifact"
+      }
+    },
+    "legal_operator": "alfonso_lopez",
+    "name": "cortex.collective.ecology_market",
+    "recovery_path": "unregister the profile; routes fall back to abstain or handoff",
+    "version": "0.1.0"
+  },
+  "key": "cortex.collective.ecology_market@0.1.0",
+  "profile": {
+    "abstention_conditions": [
+      "disabled family"
+    ],
+    "authority_ref": "cortex.collective.ecology_market@0.1.0",
+    "benchmark_history": [],
+    "biological_concept": {
+      "failure_condition": "monoculture or gamed bids",
+      "feedback_loop": "settled outcomes change future bids and niches",
+      "interface": "problem in, allocation out",
+      "measurable_behavior": "routing regret vs static policy",
+      "mechanism": "methods bid expected accuracy, cost, latency; outcomes settle reputation; diversity protected",
+      "state_variables": "bids, settled reputation, niche occupancy",
+      "test": "held-out regret after settlement"
+    },
+    "cognitive_light_cone": {
+      "horizon": "single problem",
+      "max_informed_consequence": "read_only",
+      "modifies": [],
+      "observes": [
+        "reserved"
+      ]
+    },
+    "contraindications": [],
+    "cost_usd_per_call": 0.0,
+    "enabled": false,
+    "evidence_requirements": [
+      "reserved"
+    ],
+    "failure_diversity_key": "allocation_market",
+    "failure_modes": [
+      "not implemented"
+    ],
+    "inhibition": "disabled",
+    "input_contract": {
+      "problem": "cortex-problem-geometry"
+    },
+    "latency_s_budget": 30.0,
+    "layer": "distributed_collective",
+    "lifecycle": "SPECIFIED",
+    "lineage": [],
+    "memory_scope": "per-problem; no cross-problem memory in v0.1",
+    "observations": [
+      "reserved"
+    ],
+    "output_contract": {
+      "result": "cortex-proof-artifact"
+    },
+    "proof_classes": [
+      "simulation"
+    ],
+    "recruitment": "never in v0.1",
+    "role": "reserved",
+    "shared_dependencies": [],
+    "state": "none",
+    "supported_geometries": [
+      "strategic"
+    ],
+    "update_rules": "none"
+  }
+}

@@ -97,3 +97,40 @@ def test_backcast_names_every_node():
 @pytest.mark.parametrize("ref", sorted({ref for r in ROWS for ref in r["evidence"]}))
 def test_evidence_resolves(ref):
     resolve(ROOT, ref)
+
+
+# ------------------------------------------------------------------ collaboration records
+COLLAB = ROOT / "docs/collaboration"
+LEDGER_FIELDS = ("intent_id", "statement", "source_refs", "owner", "state", "binding_scope", "constitutional_constraints",
+                 "success_evidence", "failure_evidence", "dependencies", "conflicts", "next_review_trigger",
+                 "supersedes", "superseded_by", "implementation_refs")
+
+
+def _paths(refs):
+    for ref in refs:
+        head = ref.split(" (")[0].split("; ")[0].strip()
+        if "/" in head and " " not in head and not head.startswith("http"):
+            yield head.rstrip("/").split("#")[0]
+
+
+def test_collaboration_records_are_consistent_and_resolvable():
+    deliberation = json.loads((COLLAB / "deliberation-polyintelligence-cortex-20260930.json").read_text(encoding="utf-8"))
+    intents = json.loads((COLLAB / "intents-polyintelligence-cortex-20260930.json").read_text(encoding="utf-8"))["intents"]
+    umbrella = json.loads((ROOT / "docs/intent/INTENT-20260930-polyintelligence-cortex.json").read_text(encoding="utf-8"))
+    adr = (ROOT / "docs/decisions/ADR-20260930-polyintelligence-cortex-seed.md").read_text(encoding="utf-8")
+    roles = {r["role"].lower() for r in deliberation["roles"]}
+    assert {"founder-intent steward", "systems architect", "adversarial reviewer", "operator and maintainer",
+            "evidence and welfare guardian"} <= roles
+    assert deliberation["decision"] == deliberation["pass_2"]["recommendation"]
+    assert f"`{deliberation['decision']}`" in adr and deliberation["decision_id"] in adr
+    # chat text never authenticates the founder: no approval may be recorded here
+    assert deliberation["authority_impact"]["approval_status"] != "approved"
+    assert set(LEDGER_FIELDS) <= set(umbrella) and umbrella["state"] in (
+        "active", "implemented", "deferred", "superseded", "prohibited", "exploratory")
+    ids = {i["intent_id"] for i in intents}
+    assert {"PC-004"} <= ids and next(i for i in intents if i["intent_id"] == "PC-004")["status"] == "prohibited"
+    for record in intents + [umbrella]:
+        for path in _paths(record.get("implementation_refs", []) + record.get("evidence_refs", [])
+                           + record.get("success_evidence", [])):
+            assert (ROOT / path.replace("cortex-*.schema.json", "cortex-receipt.schema.json")).exists(), \
+                (record.get("intent_id"), path)

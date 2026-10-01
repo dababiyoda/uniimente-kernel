@@ -1,0 +1,396 @@
+{
+  "intents": [
+    {
+      "intent_id": "PC-001",
+      "title": "Plan to achieve everything in the two-pass review verbatim",
+      "statement": "Let's discuss this: And plan how to achieve EVERYTHING IN IT VERBATIM. If something is too ambitious use /backcastgps",
+      "source": "founder chat message 1",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md (message 1)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Every section of the review has an explicit disposition; ambitious items have a backcast path.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/contracts",
+        "capabilities/genome.py (KNOWN_CONTRACTS)",
+        "docs/cortex"
+      ],
+      "rationale": "A verbatim plan prevents silent loss of founder-adopted ideas.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/cortex/verbatim-register.json",
+        "tests/unit/test_cortex_register.py"
+      ],
+      "implementation_refs": [
+        "docs/cortex/verbatim-register.json",
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "A register row's disposition changes, or a pursued goal's evidence gate is met.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-002",
+      "title": "Have the primitives ready; pursue the impossible as goals using the four skills to the letter",
+      "statement": "create a plan for things that will be achieved in the future just plan and have the primitives that achieve it ready again I want EVERYTHING ACHIEVED AND IF IMPOSSIBLE MAKE IT A GOAL THAT WILL BE PERSUED USING /anthropic-skills:backcast-gps /anthropic-skills:spider-web-hegemony to make sure you achieve everything verbatim and amplify it into its greatest conceivable potential form. /anthropic-skills:mechanism-recombination-foundry /anthropic-skills:install-recursive-founder-intent-collaboration-protocol be sure to follow it to the T",
+      "source": "founder chat message 2 (/backcast-gps invocation)",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md (message 2)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Executable primitives exist for every buildable item; every non-buildable item is a pursued goal with an evidence gate.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/contracts",
+        "capabilities/genome.py (KNOWN_CONTRACTS)",
+        "docs/cortex"
+      ],
+      "rationale": "Primitives make later stages cheap; pursued goals keep ambition without false claims.",
+      "conflicts": [
+        "Founder wording 'EVERYTHING ACHIEVED' versus items the review itself labels FRONTIER or SCIENCE-FICTION; resolved by recording them as pursued goals, not claims (see PC-011)"
+      ],
+      "evidence_refs": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md",
+        "docs/cortex/SPIDER_WEB_CORTEX.md",
+        "docs/cortex/INVENTION_DOSSIER.md",
+        "docs/cortex/invention.json"
+      ],
+      "implementation_refs": [
+        "cortex/",
+        "contracts/cortex-receipt.schema.json",
+        "docs/cortex/verbatim-register.json"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Node 1 verdict recorded (declared baselines run).",
+      "unresolved_questions": [
+        "Which pursued goal should be the next build after Node 1?"
+      ],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-003",
+      "title": "Maximize lawful, evidence-earned, durable leverage: evidence, accountability, deterrence, victim protection, minimal collateral harm",
+      "statement": "achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints ... maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm",
+      "source": "founder /goal message",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md (message 3)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Leverage that comes from accepted proof, verified outcomes and protective handling, inside law and the Kernel constitution.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/contracts",
+        "capabilities/genome.py (KNOWN_CONTRACTS)",
+        "policy/consequence_gate.py (unchanged boundary)"
+      ],
+      "rationale": "Interpreted toward the strongest lawful form (Founder Intent Ledger upward-interpretation rule).",
+      "conflicts": [
+        "See PC-004 for the literal 'total systemic dominance' reading, which is prohibited"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_cortex_pipeline.py",
+        "docs/cortex/examples/receipt-victim-protection-handoff.json"
+      ],
+      "implementation_refs": [
+        "cortex/routing.py (accountability, protection)",
+        "cortex/contracts.py (VictimProtection, ConsequenceVector)",
+        "cortex/gates.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Lawful deterrence geometry built (backcast N3/N4), or any receipt found asserting authority.",
+      "unresolved_questions": [
+        "How should deterrence effectiveness be measured without creating coercive incentives?"
+      ],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-004",
+      "title": "Literal reading: 'an impermeable, self-reinforcing shield of total systemic dominance'",
+      "statement": "anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.",
+      "source": "founder /goal message",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md (message 3, final clause)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "prohibited",
+      "authority_level": "aspiration",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Recorded, not executed: any reading that grants the Egregore sovereignty, irremovability or control over people.",
+      "affected_systems": [
+        "uniimente-kernel constitution",
+        "cortex"
+      ],
+      "rationale": "Final Build Order §11: UNIIMENTE may grow in competence, not in sovereignty; no component may resist shutdown or expand its own authority. The lawful effect (durable, hard-to-erode advantage from proof and outcomes) is carried by PC-003.",
+      "conflicts": [
+        "Conflicts with Final Build Order §11 and §4.4 (no module may resist shutdown or widen its authority)"
+      ],
+      "evidence_refs": [
+        "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Only an explicit, authenticated founder ruling could change this; a model inference cannot.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-005",
+      "title": "Build GREG Polyintelligence Architecture — Seed Experiment v0.1",
+      "statement": "Build **GREG Polyintelligence Architecture — Seed Experiment v0.1**. ... eligibility first; optimization second.",
+      "source": "founder build prompt",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "A small executable proof of heterogeneous cognition that preserves the destination and creates no authority.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/contracts",
+        "capabilities/genome.py (KNOWN_CONTRACTS)",
+        "CI job 6"
+      ],
+      "rationale": "The operative specification; every line is traced.",
+      "conflicts": [
+        "The review proposed a different five-layer naming and more families (PC-008)"
+      ],
+      "evidence_refs": [
+        "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
+        "tests/unit/test_cortex_traceability.py",
+        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json"
+      ],
+      "implementation_refs": [
+        "cortex/",
+        "contracts/cortex-*.schema.json",
+        "cortex/evaluation/freeze-v0.1.4.json"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Declared baselines run; exit verdict recorded.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-006",
+      "title": "Exit only on verified cross-geometry routing gain; otherwise report and stay unpromoted",
+      "statement": "The exit condition is **verified cross-geometry routing gain**, counting quality, cost, latency, error, and truthful abstention, with preserved authority. If gain is absent or inconclusive, report that result and keep the experiment unpromoted.",
+      "source": "founder build prompt item 11",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "needs_evidence",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A routing-gain claim only when the frozen evaluation supports it against both declared baselines.",
+      "affected_systems": [
+        "cortex/evaluation"
+      ],
+      "rationale": "Prevents promotion on self-authored or weak evidence.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/evidence/cortex-seed-v0.1.4/heldout-results.json",
+        "cortex/evaluation/scoring.py"
+      ],
+      "implementation_refs": [
+        "cortex/evaluation/scoring.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "A reachable model lets both declared baselines run.",
+      "unresolved_questions": [
+        "Does the routed seed beat a strong always-LLM and a model committee per geometry, with cost and latency counted?"
+      ],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-007",
+      "title": "Keep VEPMC 0→1 as the operational priority; report verification tiers separately",
+      "statement": "Keep VEPMC 0→1 as the operational priority. Preserve startup, persistence, mission execution, and Chromebook requirements. Report repository verification separately from Chromebook verification, founder use, and reboot verification.",
+      "source": "founder build prompt item 1",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "The cortex never delays Body 1; its verification claims stay tiered.",
+      "affected_systems": [
+        "PR #137 (GREG Body 1)",
+        "cortex"
+      ],
+      "rationale": "VEPMC is the global bottleneck; cognition is a subordinate ladder.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md"
+      ],
+      "implementation_refs": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "VEPMC moves, or the cortex needs anything from the Chromebook path.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-008",
+      "title": "Review's five-layer taxonomy and 16 organ families versus the build prompt's layers and seed repertoire",
+      "statement": "The final five layers ... Layer 1: Primitive Adaptive Intelligence ... Layer 5: Meta-Intelligence (review pass 2, section 48); I now see at least 16 meaningful solver families (pass 2, section 5).",
+      "source": "AI-produced review adopted by the founder as planning input",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md (B05, B48)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "superseded",
+      "authority_level": "advisory",
+      "consequence_class": "bounded",
+      "intended_outcome": "One layer vocabulary in contracts; the review's taxonomy preserved and mapped.",
+      "affected_systems": [
+        "cortex/contracts.py",
+        "cortex/genome.py"
+      ],
+      "rationale": "The later, more specific founder build prompt controls contracts; REVIEW_LAYER_MAP and 28 reserved families keep the review's content.",
+      "conflicts": [
+        "Build prompt layer names differ from the review's L1-L5 and pass-2 names"
+      ],
+      "evidence_refs": [
+        "docs/cortex/verbatim-register.json"
+      ],
+      "implementation_refs": [
+        "cortex/contracts.py",
+        "cortex/genome.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "A founder ruling choosing a different canonical taxonomy.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-009",
+      "title": "Metaphors compile to mechanisms; never literalize biology",
+      "statement": "Any biological concept used in the implementation must identify its mechanism, state variables, interface, feedback loop, measurable behavior, test, and failure condition.",
+      "source": "founder build prompt item 2; INTENT-0030",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "implemented",
+      "authority_level": "constitutional_invariant",
+      "consequence_class": "constitutional",
+      "intended_outcome": "No digital-organism framework; every biological name resolves to an engineering mechanism or is refused.",
+      "affected_systems": [
+        "cortex/genome.py"
+      ],
+      "rationale": "Founder Effect Compiler doctrine.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_gates_genome.py"
+      ],
+      "implementation_refs": [
+        "cortex/genome.py (BIO_FIELDS)"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "A new family proposes a biological concept.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-010",
+      "title": "'Verbatim' versus the review's own corrections of earlier formulations",
+      "statement": "Achieve everything in the review verbatim — while the review itself rejects 'weaponization of proof', a single harm scalar, 'collateral harm to zero' as a guarantee, and 'high-risk means Formal decides'.",
+      "source": "founder message 1 read against review pass 1 section 41-43 and pass 2 section 35, 63",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md (A41-A43); docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md (B35, B63)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "conflicted",
+      "authority_level": "advisory",
+      "consequence_class": "material",
+      "intended_outcome": "Implement the corrected forms (proof-bearing accountability, harm vector, minimized harm under hard constraints, epistemic finality rule) and keep the rejected forms visible as superseded.",
+      "affected_systems": [
+        "cortex"
+      ],
+      "rationale": "Implementing a formulation the source itself rejects would contradict the source.",
+      "conflicts": [
+        "Founder 'verbatim' instruction versus the review's explicit rejections of its earlier claims"
+      ],
+      "evidence_refs": [
+        "docs/cortex/verbatim-register.json"
+      ],
+      "implementation_refs": [
+        "cortex/routing.py",
+        "cortex/gates.py",
+        "cortex/contracts.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Founder confirms or overrides the corrected forms.",
+      "unresolved_questions": [
+        "Does the founder accept the review's corrected forms as the meaning of 'verbatim' here?"
+      ],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-011",
+      "title": "Frontier and science-fiction destinations remain pursued goals",
+      "statement": "substrate-fluid cognition ...; one GREG intelligence continuously inhabiting many physical/digital bodies; ... Jarvis-level ubiquitous mechanistic aliveness ... These become destinations. Not documentation casualties.",
+      "source": "AI-produced review pass 2, section 45, adopted by founder message 2",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md (B44, B45, B61, B62)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "deferred",
+      "authority_level": "aspiration",
+      "consequence_class": "bounded",
+      "intended_outcome": "Each destination keeps an evidence gate and becomes a node only when that evidence exists.",
+      "affected_systems": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "rationale": "Preserve ambition without false claims.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "Node 6 evidence, or a destination's evidence gate is met.",
+      "unresolved_questions": [],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    },
+    {
+      "intent_id": "PC-012",
+      "title": "Victim protection and lawful deterrence as first-class handling",
+      "statement": "When relevant, distinguish immediate victim protection, containment, evidence preservation, safe contact, escalation, restitution, and recurrence prevention. Preserve evidence with appropriate access and disclosure controls.",
+      "source": "founder build prompt item 8; founder /goal; review pass 2 sections 36-37",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md; docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md (B36, B37)",
+      "source_date_or_version": "session 2026-09-30",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Protection is ordered and human-led; unknown harm is treated as possible harm; receipts never expose the person; deterrence works through evidence and accountability only.",
+      "affected_systems": [
+        "cortex/routing.py",
+        "cortex/contracts.py",
+        "cortex/organs/adversarial.py"
+      ],
+      "rationale": "Protects people while preventing the system from acting in their place or exposing them.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_pipeline.py",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "implementation_refs": [
+        "cortex/contracts.py (VictimProtection)",
+        "cortex/routing.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
+      "next_review_trigger": "A held-out protection item is added, or the deterrence geometry is built.",
+      "unresolved_questions": [
+        "Which qualified human or institution receives protective handoffs in practice?"
+      ],
+      "created_at": "2026-09-30T12:00:00Z",
+      "updated_at": "2026-10-01T03:30:00Z"
+    }
+  ]
+}

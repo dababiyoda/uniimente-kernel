@@ -1,0 +1,52 @@
+{
+  "intent_id": "INTENT-20260930-polyintelligence-cortex",
+  "statement": "Build the GREG Polyintelligence Cortex seed exactly as the founder's build prompt specifies, keep every idea of the two-pass review with an explicit disposition, pursue the non-buildable as goals, and maximize lawful evidence-earned leverage — evidence, accountability, deterrence, victim protection, minimal collateral harm — without any growth in sovereignty.",
+  "source_refs": [
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md",
+    "Detailed records: docs/collaboration/intents-polyintelligence-cortex-20260930.json (PC-001 to PC-012); this source records development intent and does not authenticate a runtime principal"
+  ],
+  "owner": "Alfonso Lopez; cortex maintainers implement",
+  "state": "active",
+  "binding_scope": "Development and evaluation artifacts on a draft branch; consequence-inert. Merge, promotion beyond SANDBOXED, activation and external use are not authorized by this record.",
+  "constitutional_constraints": [
+    "Cognition creates no authority (schema-enforced)",
+    "Cortex imports no actuator; the Kernel Consequence Gate remains the only external-effect boundary",
+    "Learning cannot change permissions, ceilings, evaluators or disabled families",
+    "Literal 'total systemic dominance' is prohibited (PC-004)",
+    "Building != installation != activation != consequence authority"
+  ],
+  "success_evidence": [
+    "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
+    "docs/cortex/verbatim-register.json",
+    "tests/evidence/cortex-seed-v0.1.4/heldout-results.json",
+    "scripts/ci/check_cortex_mutants.py"
+  ],
+  "failure_evidence": [
+    "Declared LLM baselines NOT_RUN: no reachable model (network policy blocks model download); exit INCONCLUSIVE",
+    "Semantic organ never run against a live model",
+    "Held-out suite self-authored; structured payloads only",
+    "v0.1 shipped victim protection parsed but unused, a mislabelled Z3 timeout, an exit rule weaker than the prompt, and missing review primitives; each fixed as a disclosed version (0.1.1-0.1.4)"
+  ],
+  "dependencies": [
+    "A reachable local or authorized frontier model for baselines",
+    "VEPMC >= 1 (PR #137) before any shadow use",
+    "z3-solver"
+  ],
+  "conflicts": [
+    "Review taxonomy versus build prompt (build prompt controls)",
+    "'Verbatim' versus the review's own corrections (PC-010)",
+    "Literal dominance reading versus Final Build Order §11 (PC-004)"
+  ],
+  "next_review_trigger": "Declared baselines run on freeze v0.1.4, or the founder rules on merge (deliberation polyintelligence-cortex-20260930).",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "cortex/",
+    "contracts/cortex-*.schema.json",
+    "docs/cortex/",
+    "docs/decisions/ADR-20260930-polyintelligence-cortex-seed.md"
+  ]
+}

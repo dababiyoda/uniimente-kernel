@@ -57,14 +57,28 @@ OMNIMORPH is an optional organization-design/composition mechanism, not the mean
 
 For any material PR, explicitly state the target effect, metaphor/literal split, simplest viable mechanism, existing mechanisms searched, residual CapabilityDeficit, verification plan, and why added complexity is warranted.
 
-## Open-source-first models and software
+## Open-source-first models, software, algorithms and mechanism harvesting
 
-Current founder direction (2026-09-30): use locally served, freely licensed AI
-models and mature free software across egregore and its connected organs.
-Read `docs/OPEN_SOURCE_STACK.md` and
-`docs/intent/INTENT-20260930-open-source-first.json` before adding model/tool
-dependencies. Normal AI routing must not select a paid provider merely because
-an API key exists. Search popular repositories, then verify the actual license,
-maintainer activity, hardware fit and whether examples call paid backends.
-Local model weights do not make rented hardware or exclusive data free.
-This changes implementation selection, not Kernel consequence authority.
+Current founder direction is cumulative:
+
+- 2026-09-30: prefer locally served, freely licensed AI models and mature free software instead of paid commodity replacements.
+- 2026-10-01: treat lawful open-source repositories, public technical information, algorithms and reusable mechanisms as a default **engineering supply chain for completing Body + Organs + Mind**, not merely as references.
+
+Read `docs/OPEN_SOURCE_STACK.md`,
+`docs/intent/INTENT-20260930-open-source-first.json`,
+`docs/intent/INTENT-20261001-open-source-mechanism-harvest.json`, and
+`docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md` before material model/tool/algorithm construction.
+
+For every material CapabilityDeficit, search and compare in this order:
+
+existing project mechanism -> composition/reconfiguration -> maintained free/open-source dependency -> narrow lawful vendored transplant -> coherent fork/subtree when justified -> API/plugin/service/computer use -> small local utility -> Mechanism Recombination Foundry -> genuinely new architecture.
+
+Use five explicit reuse modes: **DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE, RECOMBINE**. Do not dump repositories into the active tree. Record exact upstream/revision/path, license and notices, maintenance/security evidence, assumptions, replacement interface, qualification test and rollback.
+
+Educational repositories such as `TheAlgorithms/Python` are discovery-first: they are valuable mechanism atlases but are not production-qualified merely because code exists or tests pass. Prefer stronger maintained implementations where available.
+
+Normal AI routing must not select a paid provider merely because an API key exists. Open source removes some provider/license costs, not hardware, electricity, storage, maintenance, exclusive data or platform fees.
+
+This changes implementation selection and development tempo, not Kernel consequence authority. Imported code, models, packages and generated capabilities acquire no authority by being useful.
+
+**Full-machine rule:** successful reuse, a seed, a benchmark, a PR or a smallest falsifiable build is an intermediate engineering step, not a stopping condition. After each closure, identify the highest-priority unfinished mechanism preventing the currently achievable complete Body + Organs + Mind and continue all unblocked authorized implementation.

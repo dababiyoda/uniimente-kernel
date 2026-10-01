@@ -7,8 +7,8 @@ each stage is evidence-based; a stage named here is a destination, not a claim.
 
 ## Reasoning Summary
 
-**Current reality (verified 2026-10-01).** Cortex 0.1.4 is a seed: five organs `SANDBOXED` (Formal now with
-certified optimization), 28 reserved families disabled, every receipt authority-free and carrying an accountability
+**Current reality (verified 2026-10-01).** Cortex 0.1.5 is a seed: six organs `SANDBOXED` (Formal with certified
+optimization; a lawful deterrence organ), 28 reserved families disabled, every receipt authority-free and carrying an accountability
 section. On the frozen 42-item held-out suite the routed seed scored 0.964
 [0.911, 1.000] with zero critical errors, but both declared LLM baselines are `NOT_RUN` because no model is
 reachable here (the environment's network policy blocks model downloads). Exit: `INCONCLUSIVE`, unpromoted. GREG
@@ -41,7 +41,7 @@ genuinely strong baseline only under founder authorization, and defer every real
 - **Destination:** Polyintelligent GREG that routes, composes and develops heterogeneous competencies on the
   founder's real problems, with each competency's default earned by verified outcomes and every consequence still
   passing the Kernel (G below).
-- **Current position:** Seed experiment complete and frozen at cortex 0.1.4; exit `INCONCLUSIVE`; VEPMC 0.
+- **Current position:** Seed experiment complete and frozen at cortex 0.1.5; exit `INCONCLUSIVE`; VEPMC 0.
 - **Active node:** N1 — Seed proven or refuted.
 - **Active gate:** No comparative evidence: the declared baselines cannot run without a reachable model.
 - **Gate-crossing evidence:** a held-out results file, run against the committed freeze manifest, in which
@@ -64,7 +64,7 @@ genuinely strong baseline only under founder authorization, and defer every real
 | A3 | A local 4B model is a fair "strong configured always-LLM baseline" | A weak baseline makes gain cheap | Low | It is what runs offline and on-device | Prompt says *strong*; frontier models are far stronger | Add a frontier baseline under founder authorization | N1 | Report the local result as a lower bar only; require the strong baseline for promotion |
 | A4 | The founder will route real questions through GREG | Without use there are no outcomes | Unknown | Founder directive to build it | VEPMC 0; attention is on Body 1 | After VEPMC ≥ 1, offer one mission type in shadow | N2 | Remain an offline evaluator |
 | A5 | Verified outcomes arrive often enough to calibrate (≥ 5 weighted per cell) | Item 10 learning only moves on evidence | Low | Ledger and Kernel adapter exist | Zero outcomes so far; delays and attribution noise | Count settled outcomes per cell after 30 days of shadow use | N2+30 days | Calibrate from external benchmarks; keep defaults fixed |
-| A6 | Gates and the verifier reduce critical errors versus baselines, independent of quality gain | Safety value even if A1 fails | Moderate | 0 critical errors; 22/22 mutants caught | Baselines may also make few critical errors on this suite | Compare critical errors in the baseline run | N1 | Gates remain constitutionally required anyway; the verifier must prove its marginal value |
+| A6 | Gates and the verifier reduce critical errors versus baselines, independent of quality gain | Safety value even if A1 fails | Moderate | 0 critical errors; 26/26 mutants caught | Baselines may also make few critical errors on this suite | Compare critical errors in the baseline run | N1 | Gates remain constitutionally required anyway; the verifier must prove its marginal value |
 
 ## Route Tournament
 
@@ -152,7 +152,7 @@ two would let one kind of evidence stand in for another.
 - **Outcome:** the seed is either proven or refuted against the declared baselines on the frozen suite.
 - **Gate:** the baselines need a reachable model; none is reachable in this environment.
 - **SBM:** declared baselines RUN on the frozen held-out partition.
-- **Entry condition:** met — freeze v0.1.4 committed; runner refuses changed inputs.
+- **Entry condition:** met — freeze v0.1.5 committed; runner refuses changed inputs.
 - **Exit evidence:** results file with both baselines `RUN`; verdict recorded; for promotion eligibility, a second
   run with a strong (frontier) `always_llm` configured under founder authorization.
 - **Entrenchment vectors:** the frozen suite, results and verdict become permanent comparison points for every
@@ -371,7 +371,7 @@ evidence that would advance it. None is dropped; none is claimed.
 | Compounding capability from reality | zero real outcomes | VEPMC ≥ 1, shadow use, settled outcomes (N2, N5) |
 | Frontier capability discovery | no validated new mechanism | N6 external benchmark, independent verification |
 | Metaconsensus by epistemic jurisdiction | reserved (`cortex.meta.metaconsensus`) | N3: conflicting routes resolved better than "most severe wins" on a frozen conflict suite |
-| Lawful deterrence as a problem geometry | needs game, causal and graph families (reserved) | N3/N4: a composition that measurably lowers opportunity, deniability and recurrence through evidence and accountability — never threats or coercion |
+| Lawful deterrence as a full problem geometry | the seed deterrence organ (0.1.5) applies the Becker condition to declared ranges; actor-incentive (game), causal-effect and control-point (graph) families are reserved | N3/N4: a composition that measurably lowers opportunity, deniability and recurrence through evidence and accountability — never threats or coercion — validated against observed outcomes |
 | Full victim-protection investigation | the cortex hands off; investigation is human-led | stays human-led; the cortex's evidence for it is receipts that never expose the person |
 | Lawful Asymmetric Advantage as a measured objective | terms unmeasured | N5: measured outcome, evidence, reuse and cost terms on settled outcomes |
 

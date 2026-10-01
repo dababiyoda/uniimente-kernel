@@ -17,6 +17,7 @@
         "causal_estimate",
         "gate_report",
         "verifier_findings",
+        "deterrence_assessment",
         "optimization",
         "bayesian",
         "simulation",
@@ -256,6 +257,74 @@
               "blocking",
               "independence"
             ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "deterrence_assessment"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "model",
+              "parameters",
+              "samples",
+              "seed",
+              "baseline",
+              "interventions",
+              "refused",
+              "assumptions",
+              "limitations",
+              "truth_note"
+            ],
+            "properties": {
+              "interventions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "reach",
+                    "levers",
+                    "reduction"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "not": {
+                        "enum": [
+                          "threat",
+                          "retaliation",
+                          "intimidation",
+                          "extortion",
+                          "deception",
+                          "doxxing",
+                          "unconsented_surveillance",
+                          "vigilantism",
+                          "harassment",
+                          "coercion"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         ]
       }

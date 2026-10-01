@@ -12,6 +12,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
       "route": "cortex.estimation.fermi@0.1.0",
       "why_not": [
         "does not support constraint_feasibility"
@@ -41,6 +47,14 @@
     "reason": "victim protection requires human-led action ['immediate_protection', 'escalation']; route states ['OK']"
   },
   "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    },
     {
       "eligible": false,
       "key": "cortex.estimation.fermi@0.1.0",
@@ -75,7 +89,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.032211,
+    "seconds": 0.030657,
     "solver_calls": 9,
     "usd": 0.0
   },
@@ -179,7 +193,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.03058,
+          "seconds": 0.029133,
           "solver_calls": 9,
           "usd": 0.0
         },
@@ -725,7 +739,7 @@
     "safe_contact_channel": "absent"
   },
   "ranking": null,
-  "receipt_id": "sha256:7cc0edf5e0c4d2673177947c7289fafc0e8868fe64edaf8af4f61598594d0f97",
+  "receipt_id": "sha256:17d96b26016aa0536df54e65b667cd2b33c8c4de1183206f6c2a9ccbcbad4d20",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -761,7 +775,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.formal.z3@0.2.0": "0.2.0"

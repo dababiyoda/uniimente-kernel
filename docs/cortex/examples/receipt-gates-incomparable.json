@@ -12,6 +12,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    },
+    {
       "route": "cortex.estimation.fermi@0.1.0",
       "why_not": [
         "does not support strategic"
@@ -46,6 +52,12 @@
   },
   "eligibility": [
     {
+      "eligible": true,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
       "eligible": false,
       "key": "cortex.estimation.fermi@0.1.0",
       "may_recommend": false,
@@ -79,7 +91,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000402,
+    "seconds": 0.000373,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -286,7 +298,7 @@
     "status": "none_eligible",
     "tradeoffs": []
   },
-  "receipt_id": "sha256:49c6c7da883fe836bf1523db9663887fafee867d6a0504b1fead591871bf23fc",
+  "receipt_id": "sha256:47f03b942a3bafacad7f740c1534f0a090c3f9569526e9db38b08f617eb207c9",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -320,7 +332,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {}
   }

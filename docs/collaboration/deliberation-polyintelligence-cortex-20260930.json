@@ -1,6 +1,6 @@
 {
   "decision_id": "polyintelligence-cortex-20260930",
-  "title": "Adopt the GREG Polyintelligence Cortex seed (cortex 0.1.4) into the Kernel as a SANDBOXED, unpromoted experiment",
+  "title": "Adopt the GREG Polyintelligence Cortex seed (cortex 0.1.5) into the Kernel as a SANDBOXED, unpromoted experiment",
   "problem": "GREG answers mixed-geometry questions through single-model reasoning with no epistemic jurisdiction, typed proof, gates-before-ranking or outcome-only learning. The founder ordered a seed experiment; it is built on a draft branch. Merging it adds five names to the shared Kernel contract registry and a CI job; it creates no authority and no external effect.",
   "founder_intent_refs": [
     "PC-001",
@@ -156,7 +156,7 @@
       "claim": "Safeguards are load-bearing",
       "tier": "unit_test",
       "reference": "scripts/ci/check_cortex_mutants.py",
-      "finding": "22 of 22 safeguard-removing mutants caught"
+      "finding": "26 of 26 safeguard-removing mutants caught"
     },
     {
       "claim": "Stacks on PR #137",
@@ -312,7 +312,7 @@
         "review_trigger": "a traceability or register test fails"
       }
     ],
-    "final_design": "Cortex 0.1.4 as on the branch: SANDBOXED seed organs, 28 reserved families disabled, gates before ranking, typed proofs, accountability and protection in receipts, outcome-only settlement, frozen evaluation with a strict exit, CI job 6. Merge only by founder decision; no promotion without GAIN_VERIFIED.",
+    "final_design": "Cortex 0.1.5 as on the branch: six SANDBOXED seed organs (incl. lawful deterrence), 28 reserved families disabled, gates before ranking, typed proofs, accountability and protection in receipts, outcome-only settlement, frozen evaluation with a strict exit, CI job 6. Merge only by founder decision; no promotion without GAIN_VERIFIED.",
     "residual_risks": [
       {
         "risk": "Routing gain never materializes",

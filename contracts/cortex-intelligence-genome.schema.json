@@ -131,6 +131,7 @@
               "causal_estimate",
               "gate_report",
               "verifier_findings",
+              "deterrence_assessment",
               "optimization",
               "bayesian",
               "simulation",

@@ -23,7 +23,7 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.1.4"
+CORTEX_VERSION = "0.1.5"
 
 
 class CortexError(ValueError):
@@ -97,12 +97,12 @@ CLAIM_TYPE_TO_EPISTEMIC = {
 PROOF_CLASSES = (
     # implemented in the seed
     "semantic_sourced", "estimation", "formal", "evidence_assessment",
-    "causal_estimate", "gate_report", "verifier_findings",
+    "causal_estimate", "gate_report", "verifier_findings", "deterrence_assessment",
     # reserved for registered-but-disabled families (no executor in v0.1)
     "optimization", "bayesian", "simulation", "human_adjudication",
     "measurement", "institutional_observation",
 )
-IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:7]
+IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:8]
 
 DISPOSITIONS = ("recommend", "abstain", "bounded_test", "handoff")
 
@@ -307,7 +307,7 @@ class VictimProtection:
 
 
 # ------------------------------------------------------------------ problem
-PAYLOAD_KEYS = ("formal_model", "estimation_model", "sources", "evidence", "claim",
+PAYLOAD_KEYS = ("formal_model", "estimation_model", "deterrence_model", "sources", "evidence", "claim",
                 "causal_spec", "options", "declared", "resources", "as_of", "victim_protection",
                 "faults")
 

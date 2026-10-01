@@ -1558,13 +1558,15 @@
       "id": "B36",
       "pass": "B",
       "anchor": "36. Lawful deterrence can be computational",
-      "disposition": "pursued_goal",
+      "disposition": "implemented_partial",
       "evidence": [
-        "docs/cortex/BACKCAST_GPS_CORTEX.md",
-        "cortex/genome.py"
+        "cortex/organs/deterrence.py",
+        "tests/unit/test_cortex_routes.py::TestDeterrence::test_certainty_beats_severity_and_coercion_is_never_ranked",
+        "tests/unit/test_cortex_pipeline.py::TestDeterrenceRouting::test_action_reaching_another_party_is_handed_off",
+        "scripts/ci/check_cortex_mutants.py"
       ],
       "backcast": "N3",
-      "notes": "Deterrence is a problem geometry recruiting game, causal, graph and risk mechanisms (reserved). Lawful only: it reduces opportunity, deniability and recurrence through evidence and accountability; no threats or coercion.",
+      "notes": "Cortex 0.1.5 adds a lawful deterrence organ: the Becker expected-value condition over declared ranges, a closed lawful intervention vocabulary, coercive and hard-harm interventions refused before ranking, each intervention labelled certainty/severity/opportunity (Nagin 2013: certainty deters more reliably), and any action reaching another party handed to the competent authority. Composition with game, causal and graph families (actor incentives, causal effect of controls, control points) remains Node 3/4.",
       "items": null
     },
     {

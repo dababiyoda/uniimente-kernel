@@ -12,6 +12,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support semantic"
+      ]
+    },
+    {
       "route": "cortex.estimation.fermi@0.1.0",
       "why_not": [
         "does not support semantic"
@@ -39,6 +45,14 @@
     "reason": "route states ['DEPENDENCY_UNAVAILABLE']"
   },
   "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support semantic"
+      ]
+    },
     {
       "eligible": false,
       "key": "cortex.estimation.fermi@0.1.0",
@@ -71,7 +85,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 1,
-    "seconds": 0.027832,
+    "seconds": 0.027154,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -155,7 +169,7 @@
         ],
         "expenditure": {
           "model_calls": 1,
-          "seconds": 0.027484,
+          "seconds": 0.026792,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -186,7 +200,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:b940f9d46d87e95d336229b19c6fd5306e6297f290ba77a3be509bbc26e1408f",
+  "receipt_id": "sha256:fd9e03ed38ec56cbb3b973c2a82091ab67d45988df735a609f0b8ab442d7a007",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -222,7 +236,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.semantic@0.1.0": "0.1.0"

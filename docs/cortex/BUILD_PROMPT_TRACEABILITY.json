@@ -1,7 +1,7 @@
 {
   "schema": "cortex-build-prompt-traceability/0.1",
   "source": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
-  "cortex_version": "0.1.4",
+  "cortex_version": "0.1.5",
   "rule": "Every line of the verbatim build prompt is covered by a requirement anchor or a framing anchor; every evidence reference resolves. tests/unit/test_cortex_traceability.py enforces both.",
   "status_vocabulary": {
     "met": "executable evidence in this repository demonstrates it",
@@ -34,7 +34,7 @@
         "cortex/routing.py",
         "docs/cortex/SEED_EXPERIMENT_REPORT.md"
       ],
-      "notes": "Built as the `cortex` package; the version string is 0.1.4 after four disclosed changes, each frozen before its own reported run."
+      "notes": "Built as the `cortex` package; the version string is 0.1.5 after five disclosed changes, each frozen before its own reported run."
     },
     {
       "id": "R00.2",
@@ -857,9 +857,10 @@
       "status": "met",
       "evidence": [
         "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_cortex_imports_nothing_that_can_act",
-        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates",
+        "tests/unit/test_cortex_pipeline.py::TestDeterrenceRouting::test_action_reaching_another_party_is_handed_off"
       ],
-      "notes": "Cortex cannot import the gate, adapters or any actuator; receipts name the authority path instead."
+      "notes": "Cortex cannot import the gate, adapters or any actuator; receipts name the authority path instead. Deterrence actions that reach another party (v0.1.5) are handed to the competent authority."
     },
     {
       "id": "R08.3",
@@ -966,7 +967,7 @@
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_heldout_is_refused_when_frozen_inputs_change",
         "tests/unit/test_cortex_traceability.py::test_reported_results_match_their_freeze"
       ],
-      "notes": "Each version freezes before its reported run; v0.1 through v0.1.4 manifests and results are all kept."
+      "notes": "Each version freezes before its reported run; v0.1 through v0.1.5 manifests and results are all kept."
     },
     {
       "id": "R09.4",

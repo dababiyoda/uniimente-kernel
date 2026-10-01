@@ -101,10 +101,11 @@
       "implementation_refs": [
         "cortex/routing.py (accountability, protection)",
         "cortex/contracts.py (VictimProtection, ConsequenceVector)",
-        "cortex/gates.py"
+        "cortex/gates.py",
+        "cortex/organs/deterrence.py"
       ],
       "owner": "Alfonso Lopez (root authority); cortex maintainers implement",
-      "next_review_trigger": "Lawful deterrence geometry built (backcast N3/N4), or any receipt found asserting authority.",
+      "next_review_trigger": "Deterrence composed with game, causal and graph families (backcast N3/N4), or any receipt found asserting authority.",
       "unresolved_questions": [
         "How should deterrence effectiveness be measured without creating coercive incentives?"
       ],

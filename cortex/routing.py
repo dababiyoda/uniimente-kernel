@@ -26,6 +26,7 @@ from .contracts import (CLAIM_TYPE_TO_EPISTEMIC, CORTEX_VERSION, EPISTEMIC_CLASS
 from .gates import AuthorityRecord, Option, evaluate_gates, rank_after_gates
 from .genome import IntelligenceRegistry, seed_registry
 from .organs import adversarial
+from .organs.deterrence import DeterrenceOrgan
 from .organs.estimation import EstimationOrgan
 from .organs.evidence_causal import EvidenceCausalOrgan
 from .organs.formal import FormalOrgan
@@ -36,6 +37,7 @@ FORMAL = "cortex.formal.z3@0.2.0"
 FERMI = "cortex.estimation.fermi@0.1.0"
 EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"
+DETERRENCE = "cortex.deterrence.accountability@0.1.0"
 
 # The deterministic route policy lives in _route_parts: formal_model -> Formal,
 # estimation_model -> Fermi, claim -> Evidence/Causal, sources -> Semantic.
@@ -79,6 +81,8 @@ def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
         parts.append((FORMAL, _formal_class(fm)))
     if isinstance(payload.get("estimation_model"), Mapping):
         parts.append((FERMI, "estimate"))
+    if isinstance(payload.get("deterrence_model"), Mapping):
+        parts.append((DETERRENCE, "strategic"))
     claim = payload.get("claim")
     if isinstance(claim, Mapping) and claim.get("type") in CLAIM_TYPE_TO_EPISTEMIC:
         parts.append((EVIDENCE, CLAIM_TYPE_TO_EPISTEMIC[claim["type"]]))
@@ -94,6 +98,8 @@ def _structural_classes(payload: Mapping[str, Any]) -> list[str]:
         out.append(_formal_class(fm))
     if isinstance(payload.get("estimation_model"), Mapping):
         out.append("estimate")
+    if isinstance(payload.get("deterrence_model"), Mapping):
+        out.append("strategic")
     claim = payload.get("claim")
     if isinstance(claim, Mapping) and claim.get("type") in CLAIM_TYPE_TO_EPISTEMIC:
         out.append(CLAIM_TYPE_TO_EPISTEMIC[claim["type"]])
@@ -228,6 +234,11 @@ def _falsifier(result: OrganResult) -> str:
         return "verified evidence contradicting the claim, or the missing observations resolving against it"
     if pc == "semantic_sourced":
         return "a quoted span absent from its cited source, or the cited source shown wrong"
+    if pc == "deterrence_assessment":
+        best = answer.get("best_intervention") or {}
+        return (f"misconduct persisting after {best.get('id', 'the intervention')} at a rate above "
+                f"{best.get('pays_probability_after', answer.get('misconduct_pays_probability'))}, "
+                f"or a declared parameter range shown wrong")
     return "not stated by the route"
 
 
@@ -260,7 +271,8 @@ class Cortex:
                  clock: Callable[[], str] | None = None, memory=None):
         self.registry = registry or seed_registry()
         self.organs = dict(organs or {FORMAL: FormalOrgan(), FERMI: EstimationOrgan(),
-                                      EVIDENCE: EvidenceCausalOrgan(), SEMANTIC: SemanticOrgan()})
+                                      EVIDENCE: EvidenceCausalOrgan(), SEMANTIC: SemanticOrgan(),
+                                      DETERRENCE: DeterrenceOrgan()})
         self.clock = clock or (lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         self.memory = memory
 
@@ -350,6 +362,16 @@ class Cortex:
             next_step = (f"human-led protective response ({', '.join(protection.ordered_actions) or 'actions to be decided'}); "
                          f"evidence access {protection.evidence_access}"
                          + (f"; resolve first: {'; '.join(protection.gaps)}" if protection.gaps else ""))
+        deterrent = next((r for r in results if (r.proof or {}).get("proof_class") == "deterrence_assessment"
+                          and r.answer and r.answer.get("external_action_required")), None)
+        if deterrent is not None:
+            # Deterrence that reaches another party is decided by legitimate authority, never by cognition.
+            kind = deterrent.answer["best_intervention"]["kind"]
+            if disposition != "handoff":
+                disposition = "handoff"
+                reason = f"strongest lawful deterrent ({kind}) reaches another party; {reason}"
+            next_step = (f"give the deterrence assessment and its evidence to the competent authority for a "
+                         f"decision on {kind}; the cortex takes no action against anyone")
         verifier = adversarial.verify(problem, geometry, results, proposed_disposition=disposition,
                                       gate_reports=gate_reports, ranking=ranking, protection=protection)
         if verifier["blocking"] and disposition == "recommend":

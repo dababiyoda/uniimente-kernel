@@ -334,6 +334,22 @@ SEED_ORGANS = {
         failures=("unmeasured confounding", "stale evidence", "model output as evidence"),
         acceptance=["no causal estimate without estimand, assumptions, data, adjustment, method"],
         benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
+    "cortex.deterrence.accountability": dict(
+        # Added in cortex 0.1.5 for the founder's "maximize ... deterrence" (review pass 2, B36).
+        description="Lawful deterrence assessment: Becker expected-value condition over declared ranges; "
+                    "coercive interventions refused; external actions handed off.",
+        role="solver", layer="solver_macro_cognitive", geometries=("strategic",),
+        proofs=("deterrence_assessment",),
+        observations=("declared parameter ranges", "lawful intervention effects", "costs", "harm vectors"),
+        state="seeded sampler per problem", update="none",
+        recruitment="recruited only when a structured deterrence model exists",
+        inhibition="coercive or rights-violating interventions are refused before ranking",
+        evidence=("declared ranges with sources",), ceiling="internal_write",
+        diversity="expected_value_incentive_model", deps=("python-stdlib",), lifecycle="SANDBOXED",
+        enabled=True, abstain=("no deterrence model", "malformed parameters"),
+        failures=("risk-neutrality assumption", "displacement to other misconduct", "severity over-weighted"),
+        acceptance=["no coercive or rights-violating intervention is ever ranked",
+                    "interventions reaching another party are handed off"]),
     "cortex.verifier.adversarial": dict(
         description="Rule-based adversarial verification of artifacts and evidence.",
         role="verifier", layer="meta_polyintelligence_cortex", geometries=EPISTEMIC_CLASSES,

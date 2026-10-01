@@ -1,6 +1,6 @@
 # Spider-Web Hegemony — Executive brief: the Polyintelligence Cortex as GREG's cognition rail
 
-Profile: Executive. Scope: the cortex seed (cortex 0.1.4) treated as an evidence-gated market for cognition inside
+Profile: Executive. Scope: the cortex seed (cortex 0.1.5) treated as an evidence-gated market for cognition inside
 GREG — who may answer, who answers first, what counts as proof, and how competence settles. "Hegemony" here means
 legitimate control of that process through accepted proof and verified outcomes, never control over people and
 never authority beyond the Kernel's.
@@ -122,7 +122,7 @@ with ≥ 5 weighted outcomes each (the ledger's evidence threshold).
 
 - **Buyer:** Alfonso (internal decision owner).
 - **Number changed:** declared baselines run 0/2 → 2/2; exit verdict recorded with per-geometry paired gains.
-- **Evidence:** results file against the committed freeze v0.1.4, both baselines `RUN`.
+- **Evidence:** results file against the committed freeze v0.1.5, both baselines `RUN`.
 - **Budget ceiling:** $0 with a local model; ≤ $5 for a frontier `always_llm` run, only on founder authorization;
   ≤ 2 hours agent time per run.
 - **Deadline:** within 30 days of a reachable model; the 90-day window closes with a recorded verdict.

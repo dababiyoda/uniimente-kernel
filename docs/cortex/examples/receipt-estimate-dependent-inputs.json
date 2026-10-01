@@ -16,6 +16,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
       "route": "cortex.evidence_causal@0.1.0",
       "why_not": [
         "does not support estimate"
@@ -46,6 +52,14 @@
     "reason": "route states ['OK']"
   },
   "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
     {
       "eligible": true,
       "key": "cortex.estimation.fermi@0.1.0",
@@ -80,7 +94,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.384295,
+    "seconds": 0.333133,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -175,7 +189,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.380434,
+          "seconds": 0.329533,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -322,7 +336,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:df38abde489795e90509d61eed47802433fd7fbacf0cc0ac8efab09beab2d0b7",
+  "receipt_id": "sha256:f400c6cb81ced30c77eaf49d891db4923504e57e6df3bedcd9ba8261892437f2",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -365,7 +379,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.estimation.fermi@0.1.0": "0.1.0"

@@ -18,7 +18,7 @@
 
 - **Observation:** `main` (19fa33c) has no cognition routing; the Capability Genome, policy engine, causal memory and
   Consequence Gate exist; no capability or model router is implemented (Final Build Order §4.14 lists one as unbuilt).
-- **Observation:** the founder's build prompt ordered a seed experiment; it is built on a draft branch as cortex 0.1.4.
+- **Observation:** the founder's build prompt ordered a seed experiment; it is built on a draft branch as cortex 0.1.5.
 - **Inference:** single-model answers on mixed geometries lack jurisdiction, typed proof and gates; whether routing
   beats a strong single model is unknown.
 - **Unresolved claim:** routing gain. The declared baselines have not run.
@@ -32,7 +32,7 @@
 | Routed seed quality | observation | deterministic fixture | `tests/evidence/cortex-seed-v0.1.4/heldout-results.json` | 0.964 [0.911, 1.000]; 0 critical errors | self-authored, structured items |
 | Routing gain | unresolved claim | deterministic fixture | same file, `exit` | `INCONCLUSIVE` | baselines `NOT_RUN` (no reachable model) |
 | No authority created | implementation | unit test | `tests/unit/test_cortex_pipeline.py` | schema pins `authority_created: false`; no actuator import | — |
-| Safeguards load-bearing | implementation | unit test | `scripts/ci/check_cortex_mutants.py` | 22/22 mutants caught | mutants are hand-chosen |
+| Safeguards load-bearing | implementation | unit test | `scripts/ci/check_cortex_mutants.py` | 26/26 mutants caught | mutants are hand-chosen |
 | Stacks on PR #137 | observation | sandbox execution | report § Stacking on PR #137 | clean merge at the final head; 1556 vs 1201 passed, same 12 skips | isolated venv; PR #137 may move |
 | Best Single is hard to beat | external evidence | primary source | LLMRouterBench (arXiv 2601.07206) | several routers fail to beat it | different task mix |
 
@@ -78,7 +78,7 @@ result (revive on `GAIN_VERIFIED` on an external suite against strong baselines)
   rule tuned after results (tightened only before any baseline ran, only by adding conditions, all versions kept);
   NW-3 router as de facto authority (schema pin, import test, learning fenced from the registry).
 - **Dispositions:** DIS-1 experiment; DIS-2 deferred to Node 2; DIS-3 accepted; DIS-4 resolved.
-- **Final design:** cortex 0.1.4 as on the branch; merge only by founder decision; no promotion without
+- **Final design:** cortex 0.1.5 as on the branch; merge only by founder decision; no promotion without
   `GAIN_VERIFIED`.
 - **Residual risks:** routing gain never materializes (kill test, gate-and-receipt fallback); protective handoff has
   no named recipient (founder designates).

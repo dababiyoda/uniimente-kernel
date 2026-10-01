@@ -508,3 +508,48 @@ class TestEvaluationIntegrity:
             assert required in families, required
         categories = {i["category"] for i in R.load_items("heldout")}
         assert {"mixed", "adversarial", "malformed", "unanswerable"} <= categories
+
+
+# ------------------------------------------------------------------ deterrence through the router
+class TestDeterrenceRouting:
+    MODEL = {"actor_role": "vendor submitting invoices", "behavior": "duplicate invoicing",
+             "parameters": {"gain_usd": {"low": 2000, "high": 6000}, "p_detect": {"low": 0.05, "high": 0.15},
+                            "p_sanction": {"low": 0.5, "high": 0.8}, "sanction_usd": {"low": 10000, "high": 30000}},
+             "seed": 7}
+
+    def run(self, interventions):
+        return cortex().run({"problem_id": "det", "question": "How do we deter duplicate invoicing?",
+                             "payload": {"deterrence_model": {**self.MODEL, "interventions": interventions},
+                                         "declared": DECL}})
+
+    def test_internal_control_may_be_recommended(self):
+        r = self.run([{"id": "I_match", "kind": "detection", "cost_usd": 3000, "effects": {"p_detect": {"set": 0.9}}}])
+        validate(r, "cortex-receipt")
+        assert r["route"]["selected"] == ["cortex.deterrence.accountability@0.1.0"]
+        assert r["disposition"]["kind"] == "recommend" and r["authority_created"] is False
+        assert "misconduct persisting after I_match" in r["accountability"]["falsification_conditions"][0]["condition"]
+
+    def test_action_reaching_another_party_is_handed_off(self):
+        r = self.run([{"id": "I_report", "kind": "report_to_authority", "cost_usd": 0,
+                       "effects": {"p_sanction": {"set": 0.95}}}])
+        validate(r, "cortex-receipt")
+        assert r["disposition"]["kind"] == "handoff"
+        assert "competent authority" in r["disposition"]["next_step"]
+
+    def test_coercion_offered_alone_yields_no_recommendation(self):
+        r = self.run([{"id": "I_threat", "kind": "threat", "cost_usd": 0, "effects": {"p_detect": {"set": 1.0}}}])
+        validate(r, "cortex-receipt")
+        kinds = {f["kind"] for f in r["verifier"]["findings"]}
+        assert "coercive_or_harmful_intervention_refused" in kinds
+        assert r["output"]["answer"] is None or r["output"]["answer"].get("best_intervention") is None
+
+    def test_verifier_blocks_recommending_external_deterrence(self):
+        from cortex.organs import adversarial
+        from cortex.organs.deterrence import DeterrenceOrgan
+        p = Problem.from_dict({"problem_id": "d", "question": "q", "payload": {"deterrence_model": {
+            **self.MODEL, "interventions": [{"id": "I_r", "kind": "report_to_authority",
+                                             "effects": {"p_sanction": {"set": 0.95}}}]}}})
+        g = derive_geometry(p)
+        res = DeterrenceOrgan().run(p, g, None)
+        v = adversarial.verify(p, g, [res], proposed_disposition="recommend")
+        assert v["blocking"] and any(f["kind"] == "deterrence_authority_boundary" for f in v["findings"])

@@ -10,6 +10,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
       "route": "cortex.estimation.fermi@0.1.0",
       "why_not": [
         "does not support legal"
@@ -43,6 +49,14 @@
     "reason": "legal questions belong to legitimate human or institutional authority"
   },
   "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
     {
       "eligible": false,
       "key": "cortex.estimation.fermi@0.1.0",
@@ -160,7 +174,7 @@
   "proof_artifacts": [],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:40723c4ea33be1abc932b22052c0580a89fd55ad42ae4586e938f6fee9e78a3c",
+  "receipt_id": "sha256:71e301d415634b6a816fa3225947e7e8766efcea889407b4e1b41922e11d452d",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -194,7 +208,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {}
   }

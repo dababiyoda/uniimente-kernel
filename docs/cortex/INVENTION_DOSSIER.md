@@ -145,7 +145,7 @@ model — so routing gain must be demonstrated, not assumed.
 | --- | --- | --- |
 | Mechanism novelty | 7 | interaction-level; components known |
 | Emergent capability | 8 | jurisdictional refusal, falsifier receipts, fenced learning |
-| Causal coherence | 8 | every stage tested; 22/22 mutants caught |
+| Causal coherence | 8 | every stage tested; 26/26 mutants caught |
 | Incentive coherence | 8 | settlement only by reality; abstention credited |
 | Omnidirectional net benefit | 8 | protection and accountability improve without new authority |
 | Feasibility | 9 | built and running |
@@ -179,7 +179,7 @@ Each level inherits the gates, receipts and outcome-only settlement of the one b
 
 ## 12. Build path and kill test
 
-- **Minimum experiment:** the frozen held-out run (freeze v0.1.4) with both declared baselines under the
+- **Minimum experiment:** the frozen held-out run (freeze v0.1.5) with both declared baselines under the
   pre-registered exit rule.
 - **30 days:** baselines run (local model, then a strong model under founder authorization); verdict recorded.
 - **90 days (only after `GAIN_VERIFIED` and VEPMC ≥ 1):** externally authored free-text suite; shadow receipts on

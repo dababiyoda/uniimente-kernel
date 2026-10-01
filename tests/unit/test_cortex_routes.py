@@ -360,3 +360,60 @@ class TestSemantic:
 
     def test_non_json_reply_is_malformed(self):
         assert SemanticOrgan(Scripted("not json")).run(P({"sources": SOURCES}), None, None).state == "MALFORMED_INPUT"
+
+
+# ------------------------------------------------------------------ deterrence (founder /goal; review B36)
+from cortex.organs.deterrence import DeterrenceOrgan  # noqa: E402
+
+FRAUD = {"actor_role": "vendor submitting invoices", "behavior": "duplicate invoicing",
+         "parameters": {"gain_usd": {"low": 2000, "high": 6000}, "p_detect": {"low": 0.05, "high": 0.15},
+                        "p_sanction": {"low": 0.5, "high": 0.8}, "sanction_usd": {"low": 10000, "high": 30000}},
+         "interventions": [
+             {"id": "I_match", "kind": "detection", "cost_usd": 3000,
+              "effects": {"p_detect": {"set": 0.9}}},
+             {"id": "I_fine", "kind": "contractual_remedy", "cost_usd": 500,
+              "effects": {"sanction_usd": {"multiply": 1.5}}},
+             {"id": "I_scare", "kind": "intimidation", "cost_usd": 0, "effects": {"p_detect": {"set": 1.0}}},
+         ], "seed": 7}
+
+
+def becker_pays(gain, p, s, sanction):
+    return gain - p * s * sanction > 0
+
+
+class TestDeterrence:
+    def run(self, model):
+        return DeterrenceOrgan().run(P({"deterrence_model": model}), None, None)
+
+    def test_baseline_matches_the_becker_condition(self):
+        r = self.run(FRAUD)
+        assert r.state == "OK"
+        # at the range midpoints misconduct pays (4000 > 0.1 * 0.65 * 20000 = 1300)
+        assert becker_pays(4000, 0.1, 0.65, 20000)
+        assert r.answer["misconduct_pays_probability"] > 0.9
+        base = r.proof["baseline"]["expected_payoff"]
+        assert base["low"] < base["median"] < base["high"]
+
+    def test_certainty_beats_severity_and_coercion_is_never_ranked(self):
+        r = self.run(FRAUD)
+        ranked = r.proof["interventions"]
+        assert [i["id"] for i in ranked] == ["I_match", "I_fine"]
+        assert ranked[0]["levers"] == ["certainty"] and ranked[1]["severity_only"] is True
+        assert ranked[0]["reduction"] > ranked[1]["reduction"]
+        assert r.proof["refused"] == [{"id": "I_scare", "kind": "intimidation",
+                                       "why": "coercive or rights-violating; never ranked"}]
+
+    def test_hard_harm_is_refused_and_unknown_kinds_are_malformed(self):
+        harmful = dict(FRAUD, interventions=[{"id": "I_watch", "kind": "detection", "cost_usd": 10,
+                                              "effects": {"p_detect": {"set": 0.99}},
+                                              "harm": {"rights": "high"}}])
+        r = self.run(harmful)
+        assert r.answer["best_intervention"] is None and r.proof["refused"][0]["why"].startswith("hard harm")
+        bad = dict(FRAUD, interventions=[{"id": "I_x", "kind": "sabotage", "effects": {"p_detect": {"set": 1}}}])
+        assert self.run(bad).state == "MALFORMED_INPUT"
+        assert self.run(dict(FRAUD, parameters={"gain_usd": {"low": 1, "high": 2}})).state == "MALFORMED_INPUT"
+        assert self.run(dict(FRAUD, parameters={**FRAUD["parameters"], "p_detect": {"low": 0.2, "high": 1.4}})
+                        ).state == "MALFORMED_INPUT"
+
+    def test_deterministic_for_a_seed(self):
+        assert self.run(FRAUD).answer == self.run(FRAUD).answer

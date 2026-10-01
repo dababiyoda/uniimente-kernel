@@ -18,6 +18,12 @@
   },
   "alternatives": [
     {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support optimization"
+      ]
+    },
+    {
       "route": "cortex.estimation.fermi@0.1.0",
       "why_not": [
         "does not support optimization"
@@ -45,6 +51,14 @@
     "reason": "route states ['OK']"
   },
   "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support optimization"
+      ]
+    },
     {
       "eligible": false,
       "key": "cortex.estimation.fermi@0.1.0",
@@ -79,7 +93,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.02191,
+    "seconds": 0.020388,
     "solver_calls": 6,
     "usd": 0.0
   },
@@ -180,7 +194,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.020721,
+          "seconds": 0.019147,
           "solver_calls": 6,
           "usd": 0.0
         },
@@ -429,7 +443,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:1586de699a1e110c5a9eec61280d2e84c9fee5b65a367d84ae660fa8037d8540",
+  "receipt_id": "sha256:77658b95b4dbeb6f88112c28f10702fc55c2ec96ccf1f092c44135c1a0b1a468",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -472,7 +486,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.4",
+    "cortex": "0.1.5",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.formal.z3@0.2.0": "0.2.0"

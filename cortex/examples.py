@@ -42,6 +42,22 @@ STAFFING = {"problem_id": "example-optimize", "question": "Cheapest staffing tha
         "query": {"kind": "optimize", "sense": "minimize", "objective": ["+", ["*", 30, "a"], ["*", 45, "b"]]},
         "witnesses": {"satisfying": [{"a": 1, "b": 3}], "violating": [{"a": 0, "b": 0}]}},
     "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+_DETER = {"actor_role": "vendor submitting invoices", "behavior": "duplicate invoicing",
+          "parameters": {"gain_usd": {"low": 2000, "high": 6000}, "p_detect": {"low": 0.05, "high": 0.15},
+                         "p_sanction": {"low": 0.5, "high": 0.8}, "sanction_usd": {"low": 10000, "high": 30000}},
+          "seed": 7}
+DETERRENCE_INTERNAL = {"problem_id": "example-deterrence-internal", "question": "How do we deter duplicate invoicing?",
+                       "payload": {"deterrence_model": {**_DETER, "interventions": [
+                           {"id": "I_match", "kind": "detection", "cost_usd": 3000, "effects": {"p_detect": {"set": 0.9}}},
+                           {"id": "I_fine", "kind": "process_change", "cost_usd": 500,
+                            "effects": {"sanction_usd": {"multiply": 1.5}}},
+                           {"id": "I_scare", "kind": "intimidation", "cost_usd": 0, "effects": {"p_detect": {"set": 1.0}}}]},
+                           "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+DETERRENCE_EXTERNAL = {"problem_id": "example-deterrence-external", "question": "Should the duplicate invoicing be reported?",
+                       "payload": {"deterrence_model": {**_DETER, "interventions": [
+                           {"id": "I_report", "kind": "report_to_authority", "cost_usd": 0,
+                            "effects": {"p_sanction": {"set": 0.95}, "p_detect": {"set": 0.6}}}]},
+                           "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
 PROTECTION = {"relevant": True, "required_actions": ["immediate_protection", "evidence_preservation", "escalation"],
               "evidence_access": "need_to_know", "disclosure_controls": ["no disclosure without the person's consent"]}
 
@@ -60,6 +76,8 @@ def build() -> dict[str, tuple[str, dict]]:
         receipts[stem] = cortex.run(_find(items, item_id))
     receipts["receipt-legal-handoff"] = cortex.run(copy.deepcopy(LEGAL))
     receipts["receipt-formal-optimize-certified"] = cortex.run(copy.deepcopy(STAFFING))
+    receipts["receipt-deterrence-internal-control"] = cortex.run(copy.deepcopy(DETERRENCE_INTERNAL))
+    receipts["receipt-deterrence-external-handoff"] = cortex.run(copy.deepcopy(DETERRENCE_EXTERNAL))
     protected = _find(items, "H-F01")
     protected["problem_id"] = "example-victim-protection"
     protected["payload"]["victim_protection"] = copy.deepcopy(PROTECTION)

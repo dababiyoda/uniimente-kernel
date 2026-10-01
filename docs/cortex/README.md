@@ -5,7 +5,7 @@ geometry, checks which cognitive organs are eligible for it, runs the eligible o
 their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
 together with a content-addressed receipt.
 
-**Status:** cortex 0.1.4 · five seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
+**Status:** cortex 0.1.5 · six seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
 frozen held-out result `INCONCLUSIVE` · **not promoted**. See [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
 
 Source of requirements: the verbatim build prompt in
@@ -31,7 +31,7 @@ services. One process runs everything.
 | --- | --- | --- | --- |
 | `primitive_basal` | Primitive / basal intelligence | — | feedback control, molecular micro-agents, anomaly patterning |
 | `distributed_collective` | Distributed / collective intelligence | — | ecology market, hive quorum, immune, slime network, stigmergy, swarm PSO, human panel |
-| `solver_macro_cognitive` | Solver / macro-cognitive intelligence | Semantic, Fermi, Formal (Z3, incl. certified optimization), Evidence/Causal | mechanism design, graph search, heuristic search, exact symbolic, CP-SAT, Bayesian, bandit, simulation twin |
+| `solver_macro_cognitive` | Solver / macro-cognitive intelligence | Semantic, Fermi, Formal (Z3, incl. certified optimization), Evidence/Causal, Deterrence | mechanism design, graph search, heuristic search, exact symbolic, CP-SAT, Bayesian, bandit, simulation twin |
 | `developmental_morphogenetic` | Developmental / morphogenetic intelligence | — | constraint release, evolutionary, MICA field, morphogenetic, program synthesis |
 | `meta_polyintelligence_cortex` | Meta-intelligence / Polyintelligence Cortex | adversarial verifier (and the router itself) | value of information, active inference, global workspace, mental models, metaconsensus |
 
@@ -61,6 +61,7 @@ ranking sees only options that passed every gate.
 | `cortex.estimation.fermi@0.1.0` | unit-checked decomposition, Gaussian-copula Monte Carlo, sensitivity, reference class | `estimation` | `DIMENSION_MISMATCH`, `CONTESTED`, `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
 | `cortex.formal.z3@0.2.0` | requirement → model → reverse translation → discrepancy check → counterexample search → Z3 feasibility, entailment, or optimization with an independent UNSAT optimality certificate | `formal` | `FORMALIZATION_INCOMPLETE`, `WORLD_UNVERIFIED`, `DEPENDENCY_UNAVAILABLE`, `TIMEOUT`, `INCONCLUSIVE`, `BUDGET_EXHAUSTED` |
 | `cortex.evidence_causal@0.1.0` | evidence rules (provenance, freshness, contradictions, missing observations); stratified/linear adjustment with bootstrap CI and refutations, only under declared identification | `evidence_assessment`, `causal_estimate` | `INSUFFICIENT_EVIDENCE`, `CONTESTED`, `NOT_IDENTIFIED`, `MALFORMED_INPUT` |
+| `cortex.deterrence.accountability@0.1.0` | Becker expected-value condition (gain − p_detect · p_sanction · sanction) over declared ranges; closed lawful intervention vocabulary; coercive and hard-harm interventions refused; levers labelled certainty / severity / opportunity; actions reaching another party handed off | `deterrence_assessment` | `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
 | `cortex.verifier.adversarial@0.1.0` | rule-based, model-free attack on artifacts and evidence; records shared dependencies | `verifier_findings` | findings only lower a disposition; a critical finding blocks `recommend` |
 
 ## Receipts: truth, accountability, protection
@@ -73,6 +74,17 @@ recurrence); unmeasured harm, unpreserved evidence, a missing safe channel or re
 controls are *gaps* that force a human handoff; and the receipt records only whether a person or safe channel was
 declared — never who or which.
 
+## Deterrence, lawfully
+
+Deterrence here means changing the expected value of misconduct for a risk-neutral actor (Becker 1968): misconduct
+pays when the gain exceeds detection probability × sanction probability × sanction. The organ samples the declared
+ranges, then ranks only interventions from a closed lawful vocabulary (detection, evidence preservation, access
+control, process change, independent audit, victim support; and, handed off to the competent authority, reporting,
+contractual remedies, transparency, restitution). Threats, retaliation, intimidation, extortion, deception, doxxing,
+unconsented surveillance, vigilantism, harassment and coercion are refused and never ranked. Each intervention is
+labelled by the lever it moves; a best option that moves only severity is flagged, because the evidence supports
+certainty of apprehension far more consistently (Nagin 2013).
+
 ## Contracts
 
 JSON Schema 2020-12 in `contracts/`, validated strictly by `cortex/schemas.py` (deliberately not added to the
@@ -83,7 +95,7 @@ shared-boundary allowlist):
 | `cortex-problem-geometry` | [`examples/problem-geometry-formal.json`](examples/problem-geometry-formal.json) |
 | `cortex-intelligence-genome` | [`examples/genome-formal-z3.json`](examples/genome-formal-z3.json), [`examples/genome-reserved-disabled.json`](examples/genome-reserved-disabled.json) |
 | `cortex-proof-artifact` | [`examples/proof-formal.json`](examples/proof-formal.json), `proof-estimation`, `proof-evidence_assessment`, `proof-causal_estimate`, `proof-semantic_sourced` |
-| `cortex-receipt` | nine receipts in [`examples/`](examples/), one per disposition path, incl. certified optimization and victim-protection handoff |
+| `cortex-receipt` | eleven receipts in [`examples/`](examples/), one per disposition path, incl. certified optimization, victim-protection handoff and deterrence (internal control recommended; report to authority handed off) |
 | `cortex-routing-memory` | [`examples/routing-memory-verified-success.json`](examples/routing-memory-verified-success.json) |
 
 Regenerate with `python -m cortex.examples --out docs/cortex/examples`. Receipts carry measured expenditure, so
@@ -98,7 +110,7 @@ pip install -r requirements-dev.txt -r requirements-cortex.txt
 python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py \
     tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
 
-# mutation check: 22 safeguard-removing mutants on a scratch copy; all must be caught
+# mutation check: 26 safeguard-removing mutants on a scratch copy; all must be caught
 python scripts/ci/check_cortex_mutants.py
 
 # development partitions (no freeze needed)
@@ -130,7 +142,7 @@ are kept in `cortex/evaluation/` and `tests/evidence/cortex-seed-v*/`.
 | `cortex/genome.py` | `IntelligenceGenome` projection of the Capability Genome; seed organs; reserved families |
 | `cortex/gates.py` | hard gates, permission-bearing records, Pareto ranking after gates |
 | `cortex/routing.py` | geometry derivation, eligibility, budget, routes, disposition, receipts |
-| `cortex/organs/` | the five seed organs |
+| `cortex/organs/` | the six seed organs |
 | `cortex/memory.py` | outcome-conditional competence ledger; Kernel causal-memory adapter |
 | `cortex/evaluation/` | suites, scoring, arms, runner, freeze manifests |
 | `cortex/examples.py` | contract examples from real runs |

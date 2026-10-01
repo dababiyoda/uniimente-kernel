@@ -1,0 +1,52 @@
+{
+  "intent_id": "INTENT-20261001-open-source-mechanism-harvest-standard",
+  "title": "Open-source mechanism harvesting for full-machine completion",
+  "statement": "Use lawful open-source software, repositories, algorithms, public technical information, standards, papers and reusable mechanisms as the default engineering supply chain before original construction while completing the currently achievable GREG Body + Organs + Mind. Invent only the residual capability that qualified reuse, adaptation and composition cannot supply.",
+  "source": "Founder correction, current ChatGPT conversation",
+  "source_location": "docs/intent/sources/OPEN-SOURCE-MECHANISM-HARVEST-2026-10-01-source.md",
+  "source_date_or_version": "2026-10-01",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "material",
+  "intended_outcome": "Increase engineering velocity and capability breadth by metabolizing existing lawful open-source work into governed GREG capabilities without narrowing the full-machine destination, duplicating authority, or laundering unqualified code into production.",
+  "affected_systems": [
+    "UNIIMENTE Kernel",
+    "GREG Polyintelligence Cortex",
+    "Capability Genome",
+    "CapabilityDeficit handling",
+    "Mechanism Recombination Foundry",
+    "attached organs",
+    "future bodies"
+  ],
+  "rationale": "Current doctrine already says acquire before invent, but the founder explicitly broadened open-source-first from cost substitution into a project-wide construction strategy: search, qualify, reuse and recombine existing mechanisms before writing solved technology again.",
+  "conflicts": [
+    "Upstream licenses, notice obligations, patents, security posture, privacy requirements and distribution terms remain external constraints.",
+    "Educational or example repositories cannot be treated as production-qualified merely because they are open source.",
+    "Repository-scale imports may conflict with one canonical Kernel, registry, mission path or learning plane and must be adapted behind existing interfaces."
+  ],
+  "evidence_refs": [
+    "AGENTS.md resourcefulness-before-architecture rule",
+    "CLAUDE.md acquire/adapt/compose-before-build rule",
+    "docs/OPEN_SOURCE_STACK.md",
+    "Issue #117 acquire-before-invent rule",
+    "TheAlgorithms/Python README and LICENSE.md inspected 2026-10-01"
+  ],
+  "implementation_refs": [
+    "docs/intent/INTENT-20261001-open-source-mechanism-harvest.json",
+    "docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md",
+    "docs/collaboration/OPEN_SOURCE_MECHANISM_HARVEST_REVIEW_2026-10-01.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    "docs/OPEN_SOURCE_STACK.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+  ],
+  "owner": "Alfonso Lopez; repository maintainers and coding agents implement within existing authority",
+  "next_review_trigger": "Any material CapabilityDeficit, repository-scale import, license/security change, upstream abandonment, or evidence that search and qualification cost exceeds the engineering value of reuse for a capability class.",
+  "unresolved_questions": [
+    "Which open-source mechanism family should be the first post-seed repertoire expansion after the current embodied-mission gate clears?",
+    "Which third-party components require professional license or patent review before redistribution?"
+  ],
+  "created_at": "2026-10-01T18:41:00Z",
+  "updated_at": "2026-10-01T18:41:00Z"
+}

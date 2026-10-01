@@ -308,3 +308,49 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+
+
+AVAILABILITY = re.compile(r"(?:^|(?<=[.!?\n]))\s*((?:the\s+)?machine\s+is\s+(?:free|available)\s+(?:all|the\s+whole)\s+"
+                          r"shift[^.!?\n]*[.!?]?)", re.I)
+
+
+def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
+    """A schedule written in the controlled language, solved by the cortex seed composition.
+
+    The words go to cognition.solve unchanged: extraction, a token audit independent of the
+    extractor, CP-SAT with a Z3 optimality certificate, the verifier, and a receipt with a
+    reverse translation. If the founder states that the machine is free all shift, that
+    sentence becomes the availability evidence; otherwise the result stays conditional on it.
+    The check needs a feasible schedule, so an impossible request never closes: GREG asks.
+    Read-only: nothing is scheduled or written; acting on the plan is a separate mission.
+    """
+    stated = AVAILABILITY.search(text)
+    request = AVAILABILITY.sub("", text).strip() if stated else text.strip()
+    if not request or len(request) > 4000:
+        raise ValueError("a schedule request of 1-4000 characters is required")
+    digest = __import__("hashlib").sha256(request.encode()).hexdigest()[:10]
+    payload = {"schedule_request": {"text": request},
+               "declared": {"consequence_class": "read_only", "reversibility": "reversible"}}
+    if stated:
+        payload["schedule_request"]["availability_evidence"] = f"founder statement in the signed mission: " \
+                                                               f"{stated.group(1).strip()!r}"
+    step = {"capability": "cognition.solve", "target": f"cognition:schedule-{digest}",
+            "params": {"problem_id": f"schedule:{digest}",
+                       "problem": {"question": "Best schedule for the stated jobs", "payload": payload}}}
+    return {
+        "mission_id": f"m:schedule-{digest}",
+        "founder_expression": text,
+        "intended_effect": "a certified schedule for the stated jobs, with the reading shown back for comparison",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "feasible-schedule", "description": "a feasible schedule, checked "
+                            "independently of the extractor and the solver",
+                            "sensor": step, "predicate": {"op": "equals", "field": "output.answer.1.feasible",
+                                                          "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["feasible-schedule"],
+                        "rationale": "compute through the cortex (read-only)"}],
+        "light_cone": {"capabilities": ["cognition.solve"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["schedule-in-words"] = schedule_in_words

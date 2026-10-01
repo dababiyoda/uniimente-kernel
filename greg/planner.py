@@ -42,6 +42,7 @@ SHA256 = re.compile(r"\b([0-9a-fA-F]{64})\b")
 WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{1,7})\s+words?\b", re.I)
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
+SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
 
 
 @dataclass
@@ -147,6 +148,17 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
         return _verify_route(text, ctx)
     if (limit := WORD_LIMIT.search(text)) and FILE_PATH.search(text):
         return _words_route(text, ctx, limit)
+    if SCHEDULE.search(text):               # a schedule in the controlled language: the cortex composition
+        try:
+            spec = templates.schedule_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:schedule-in-words", "questions": [str(exc)]}
+        stated = "availability_evidence" in spec["strategies"][0]["params"]["problem"]["payload"]["schedule_request"]
+        return _proposal(spec, "template:schedule-in-words", notes=[
+            "read-only: GREG computes and shows the plan; it schedules nothing",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            "availability taken from your words" if stated else
+            "no availability statement: the answer stays conditional (add 'The machine is free all shift.')"])
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

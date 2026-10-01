@@ -53,7 +53,7 @@ def cortex_main(request):
 class _NoSelectedModel:
     """GREG's founder-selected route names no local model: the semantic organ abstains."""
     def complete(self, system, user):
-        raise OSError("no founder-selected local model (greg models select --local-model ...)")
+        raise OSError("no founder-selected local model (greg model set --route ollama --local-model <name> --key ...)")
 
 
 def main():

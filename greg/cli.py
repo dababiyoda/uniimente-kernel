@@ -252,6 +252,10 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target == "schedule-in-words":
+                    if not args.text:
+                        raise BodyError("schedule-in-words needs --text with the schedule in the controlled language")
+                    spec = templates.schedule_in_words(text=args.text)
                 elif args.target == "verify-download":
                     spec = templates.verify_download(file=Path(args.file), sha256=args.sha256,
                                                      workspace_root=Layout(home).workspace)
@@ -320,7 +324,11 @@ def main(argv=None) -> int:
                             "cells": cells(journal, registry), "authority_created": False}
             else:
                 request = json.loads(Path(args.request).read_text())
-                compile_problem(request)
+                if "problem" in request:          # cortex contract: validated by the bridge, same entry
+                    from greg.cognition.bridge import _validate
+                    _validate(request)
+                else:
+                    compile_problem(request)
                 try:
                     expected = json.loads(args.equals)
                 except ValueError:

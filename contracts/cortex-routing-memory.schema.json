@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.example/contracts/cortex-routing-memory.schema.json",
+  "title": "Cortex routing-memory record v0.1",
+  "description": "Learning conditional on verified outcomes. Competence is scoped to method x geometry x conditions x version, bounded and rollback-able; it reorders eligible routes only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "receipt_id",
+    "problem_id",
+    "geometry",
+    "conditions",
+    "method",
+    "method_version",
+    "recommendation",
+    "authorization_ref",
+    "consequence_class",
+    "outcome_status",
+    "outcome_provenance",
+    "attribution",
+    "policy_version",
+    "rollback_ref",
+    "competence_update"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "problem_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "geometry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recommendation": {
+      "enum": [
+        "recommend",
+        "abstain",
+        "bounded_test",
+        "handoff"
+      ]
+    },
+    "authorization_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "consequence_class": {
+      "enum": [
+        "read_only",
+        "internal_write",
+        "external_contact",
+        "financial",
+        "irreversible"
+      ]
+    },
+    "outcome_status": {
+      "enum": [
+        "verified_success",
+        "observed_failure",
+        "unresolved",
+        "absent_feedback"
+      ]
+    },
+    "outcome_provenance": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "external_observation",
+            "internal_observation",
+            "human_report",
+            "model_output",
+            "prediction",
+            "self_assessment"
+          ]
+        }
+      }
+    },
+    "attribution": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "method",
+          "role",
+          "uncertainty"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "hypothesis_generation",
+              "flaw_detection",
+              "calibration_improvement",
+              "resource_consumption",
+              "failed_assumption",
+              "final_answer"
+            ]
+          },
+          "uncertainty": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        }
+      }
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rollback_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "competence_update": {
+      "type": "object",
+      "required": [
+        "weight",
+        "before",
+        "after",
+        "delta",
+        "bounded"
+      ],
+      "properties": {
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "bounded": {
+          "const": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome_provenance": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "model_output",
+                  "prediction",
+                  "self_assessment"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcome_status": {
+            "enum": [
+              "unresolved",
+              "absent_feedback"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

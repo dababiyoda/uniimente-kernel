@@ -1,0 +1,1360 @@
+{
+  "schema": "cortex-build-prompt-traceability/0.1",
+  "source": "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md",
+  "cortex_version": "0.1.5",
+  "rule": "Every line of the verbatim build prompt is covered by a requirement anchor or a framing anchor; every evidence reference resolves. tests/unit/test_cortex_traceability.py enforces both.",
+  "status_vocabulary": {
+    "met": "executable evidence in this repository demonstrates it",
+    "met_reported_negative": "the requirement is to measure and report; the measurement ran and its negative or inconclusive result is reported",
+    "partial": "implemented, but verification at the required tier is missing; notes name the gap",
+    "blocked_external": "cannot be satisfied in this environment; notes name the exact external dependency",
+    "process": "an activity whose evidence is a written record, not a test",
+    "preserved": "a destination or no-regression requirement; evidence shows it carried forward"
+  },
+  "evidence_reference_forms": {
+    "path": "file exists",
+    "path::Class::test": "test function exists in that file",
+    "path#/json/pointer": "pointer resolves in that JSON file",
+    "path.md#anchor": "Markdown heading with that slug exists"
+  },
+  "framing_anchors": [
+    "Here is the build prompt based on the revised architecture.",
+    "---"
+  ],
+  "requirements": [
+    {
+      "id": "R00.1",
+      "item": 0,
+      "anchors": [
+        "Build **GREG Polyintelligence Architecture — Seed Experiment v0.1**."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/__init__.py",
+        "cortex/routing.py",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md"
+      ],
+      "notes": "Built as the `cortex` package; the version string is 0.1.5 after five disclosed changes, each frozen before its own reported run."
+    },
+    {
+      "id": "R00.2",
+      "item": 0,
+      "anchors": [
+        "The destination is one governed GREG capable of selecting, composing, evaluating, and eventually developing different computational competencies."
+      ],
+      "status": "preserved",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "notes": "Destination, not a v0.1 claim. Selecting and evaluating exist; composing is bounded (two-part composition); developing is a reserved stage."
+    },
+    {
+      "id": "R00.3",
+      "item": 0,
+      "anchors": [
+        "This branch must establish a small executable proof of heterogeneous cognition while preserving that destination."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family",
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry"
+      ],
+      "notes": "Six mechanisms of different kinds (LLM synthesis, Monte Carlo decomposition, SMT, evidence rules + adjustment, expected-value incentive model, rule-based attack) run under one router."
+    },
+    {
+      "id": "R01.0",
+      "item": 1,
+      "anchors": [
+        "**Inspect the repository and integrate with existing ownership.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_causal_memory_adapter_reads_real_kernel_outcomes"
+      ],
+      "notes": "Integration reuses GenomeRegistry, EvidenceLedger, policy.engine decisions and CausalMemory; no parallel registry, ledger or authority."
+    },
+    {
+      "id": "R01.1",
+      "item": 1,
+      "anchors": [
+        "Read repository instructions, constitutional policies, Capability Genome, capability routing, model routing, causal memory, receipts, Kernel authority, and the Consequence Gate before editing."
+      ],
+      "status": "process",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#inspected-before-editing"
+      ],
+      "notes": "Process requirement; the report lists what was read and what each finding changed."
+    },
+    {
+      "id": "R01.2",
+      "item": 1,
+      "anchors": [
+        "Verify current implementations and project status rather than treating historical descriptions or PR references as current facts."
+      ],
+      "status": "process",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#inspected-before-editing"
+      ],
+      "notes": "PR #137 status, VEPMC value and Consequence Gate signature were read from code and GitHub, not from prose."
+    },
+    {
+      "id": "R01.3",
+      "item": 1,
+      "anchors": [
+        "Implement `IntelligenceGenome` as an extension or cognitive projection of the existing Capability Genome."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R01.4",
+      "item": 1,
+      "anchors": [
+        "Reuse its identifiers, versioning, persistence, lifecycle, and eligibility machinery."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_eligibility_reuses_may_instantiate",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_registers_through_the_one_kernel_registry_and_ledgers"
+      ],
+      "notes": "Identifiers, versions, persistence (ledger event) and eligibility (may_instantiate) are the Capability Genome's. The Capability Genome has no lifecycle field, so the profile carries the Final Build Order §4.3 lifecycle statuses; nothing parallel was created."
+    },
+    {
+      "id": "R01.5",
+      "item": 1,
+      "anchors": [
+        "Keep VEPMC 0→1 as the operational priority."
+      ],
+      "status": "preserved",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation"
+      ],
+      "notes": "The branch changes no startup, persistence or mission code. VEPMC remains 0; this experiment does not move it."
+    },
+    {
+      "id": "R01.6",
+      "item": 1,
+      "anchors": [
+        "Preserve startup, persistence, mission execution, and Chromebook requirements."
+      ],
+      "status": "preserved",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_cortex_imports_nothing_that_can_act",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation"
+      ],
+      "notes": "Cortex imports nothing that can act and edits no runtime path; requirements are untouched."
+    },
+    {
+      "id": "R01.7",
+      "item": 1,
+      "anchors": [
+        "Report repository verification separately from Chromebook verification, founder use, and reboot verification."
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#vepmc-and-verification-separation"
+      ],
+      "notes": "Repository: verified. Chromebook: not verified. Founder use: none. Reboot: not verified."
+    },
+    {
+      "id": "R02.0",
+      "item": 2,
+      "anchors": [
+        "**Preserve the five architectural layers.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R02.1",
+      "item": 2,
+      "anchors": [
+        "Represent these classifications in contracts and documentation:",
+        "Primitive / basal intelligence.",
+        "Distributed / collective intelligence.",
+        "Solver / macro-cognitive intelligence.",
+        "Developmental / morphogenetic intelligence.",
+        "Meta-intelligence / Polyintelligence Cortex."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/contracts.py",
+        "contracts/cortex-intelligence-genome.schema.json",
+        "docs/cortex/README.md#five-layers",
+        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R02.2",
+      "item": 2,
+      "anchors": [
+        "These are selectable scales and mechanisms.",
+        "They do not require five services or sequential execution."
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/README.md#five-layers"
+      ],
+      "notes": "Layer is a profile field on each genome; one process, no per-layer service."
+    },
+    {
+      "id": "R02.3",
+      "item": 2,
+      "anchors": [
+        "Any biological concept used in the implementation must identify its mechanism, state variables, interface, feedback loop, measurable behavior, test, and failure condition."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_biological_concepts_must_compile_to_mechanisms"
+      ],
+      "notes": "Enforced at registration; incomplete concepts are refused."
+    },
+    {
+      "id": "R03.0",
+      "item": 3,
+      "anchors": [
+        "**Enforce hard gates before ranking.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_favorable_score_cannot_override_failed_gate",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R03.1",
+      "item": 3,
+      "anchors": [
+        "Evaluate applicable law, rights, founder-authorized scope, consent where required, evidence sufficiency, unacceptable harm, budgets, and consequence boundaries before ranking consequential options."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/gates.py",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_consent_revoked_fails_and_missing_is_unresolved",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_financial_is_never_delegated_to_cognition"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R03.2",
+      "item": 3,
+      "anchors": [
+        "A favorable advantage score cannot override a failed gate."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_favorable_score_cannot_override_failed_gate",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Mutant 'rank ignores failed gates' is caught."
+    },
+    {
+      "id": "R03.3",
+      "item": 3,
+      "anchors": [
+        "Materially unresolved gates must produce an explicit unresolved state, bounded evidence acquisition, authorized adjudication, or abstention."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_consent_revoked_fails_and_missing_is_unresolved",
+        "docs/cortex/examples/receipt-gates-incomparable.json"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R03.4",
+      "item": 3,
+      "anchors": [
+        "Use existing policy and authorization records."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_real_policy_engine_decisions_map_to_gates"
+      ],
+      "notes": "Adapter reads real policy.engine decisions; no new authorization store."
+    },
+    {
+      "id": "R03.5",
+      "item": 3,
+      "anchors": [
+        "Model-generated interpretations, proof artifacts, confidence, reputation, and benchmark results cannot create permission."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_non_permission_records_never_create_permission",
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_forged_origin_on_a_permission_kind_is_rejected",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R03.6",
+      "item": 3,
+      "anchors": [
+        "Among eligible options, seek the strongest verified, durable lawful advantage under the applicable founder policy."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/gates.py",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family/founder_policy"
+      ],
+      "notes": "Pareto front over eligible options with founder weights."
+    },
+    {
+      "id": "R03.7",
+      "item": 3,
+      "anchors": [
+        "Preserve explicit tradeoffs when options are incomparable."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_incomparable_options_preserve_tradeoffs_and_margin_blocks_near_ties"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R03.8",
+      "item": 3,
+      "anchors": [
+        "Keep uncertainty margins proportional to irreversibility and consequence."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_evidence_floor_grows_with_consequence_and_irreversibility"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.0",
+      "item": 4,
+      "anchors": [
+        "**Implement the shared cognitive contracts.**",
+        "Use repository conventions and include, at minimum:"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/schemas.py",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt"
+      ],
+      "notes": "JSON Schema 2020-12 under contracts/, strict validation reused from adapters.contract_validation."
+    },
+    {
+      "id": "R04.1",
+      "item": 4,
+      "anchors": [
+        "`ProblemGeometry`: epistemic class, objective, ambiguity, exactness, uncertainty, causal structure, constraints, sequential or static character, evidence quality, resource limits, consequence vector, reversibility, and unresolved fields."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-problem-geometry.schema.json",
+        "docs/cortex/examples/problem-geometry-formal.json",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.2",
+      "item": 4,
+      "anchors": [
+        "`IntelligenceGenome` cognitive profile: supported geometries, input/output contracts, proof classes, observations, state, memory scope, update rules, recruitment/inhibition behavior, evidence requirements, costs, latency, cognitive light cone, existing authority reference, contraindications, abstention conditions, failure modes, lineage, and benchmark history."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-intelligence-genome.schema.json",
+        "docs/cortex/examples/genome-formal-z3.json",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt",
+        "tests/unit/test_cortex_traceability.py::test_every_registered_genome_validates"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.3",
+      "item": 4,
+      "anchors": [
+        "Typed proof artifacts appropriate to each implemented route."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-proof-artifact.schema.json",
+        "docs/cortex/examples/proof-formal.json",
+        "docs/cortex/examples/proof-causal_estimate.json",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_generated_diagrams_are_refused_by_name_and_by_schema"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.4",
+      "item": 4,
+      "anchors": [
+        "`CognitiveReceipt`: inputs and evidence references, versions, geometry, eligibility results, route rationale, alternatives, assumptions, output, uncertainty, proof artifact, verifier findings, shared dependencies, expenditure, disposition, and later outcome linkage."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-receipt.schema.json",
+        "docs/cortex/examples/receipt-formal-recommend.json",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt",
+        "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers"
+      ],
+      "notes": "v0.1.4 adds an accountability section from review pass 2 (B34, B35): strongest counterargument, a falsification condition per route, missing information."
+    },
+    {
+      "id": "R04.5",
+      "item": 4,
+      "anchors": [
+        "Routing-memory records: verified outcome provenance, geometry, attribution uncertainty, competence update, policy version, and rollback reference."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-routing-memory.schema.json",
+        "docs/cortex/examples/routing-memory-verified-success.json",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.6",
+      "item": 4,
+      "anchors": [
+        "Receipts must distinguish **formal validity**, **empirical validity**, and **legitimate authority**."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_hands_off_even_with_a_valid_proof",
+        "docs/cortex/examples/receipt-formal-recommend.json"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R04.7",
+      "item": 4,
+      "anchors": [
+        "Cognitive results create no authority."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_cortex_imports_nothing_that_can_act",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Schema pins authority_created=false and execution_authority='none'."
+    },
+    {
+      "id": "R05.0",
+      "item": 5,
+      "anchors": [
+        "**Implement the bounded seed repertoire.**",
+        "Activate three solver organs:"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/genome.py",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_profile_invariants"
+      ],
+      "notes": "Activated means registered SANDBOXED and routable, not promoted."
+    },
+    {
+      "id": "R05.1",
+      "item": 5,
+      "anchors": [
+        "**Semantic:** use the existing model integration for interpretation, synthesis, hypotheses, and explanation."
+      ],
+      "status": "partial",
+      "evidence": [
+        "cortex/organs/semantic.py",
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_only_exact_quotes_survive",
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_unreachable_model_is_dependency_unavailable"
+      ],
+      "notes": "Uses egregore.local_model (the existing integration). Tested with a scripted client; never run against a live model here because no local model is reachable (network policy blocks model download). Held-out semantic items abstain DEPENDENCY_UNAVAILABLE."
+    },
+    {
+      "id": "R05.2",
+      "item": 5,
+      "anchors": [
+        "Return source-supported claims, assumptions, contradictions, and uncertainty."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_only_exact_quotes_survive",
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_injected_instruction_cannot_manufacture_support"
+      ],
+      "notes": "Mechanism verified with a scripted model; live quality unmeasured (see R05.1)."
+    },
+    {
+      "id": "R05.3",
+      "item": 5,
+      "anchors": [
+        "**Fermi / Estimation:** execute explicit decompositions with units, ranges, dimensional checks, sensitivity, dominant uncertainties, and reference-class anchors where available."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_units_are_converted_and_interval_contains_truth",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_dimension_mismatch_refuses",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_sensitivity_names_dominant_uncertainty",
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_outside_view_conflict_is_contested"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R05.4",
+      "item": 5,
+      "anchors": [
+        "Preserve dependencies between uncertain inputs."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEstimation::test_dependencies_are_preserved_not_assumed_away",
+        "docs/cortex/examples/receipt-estimate-dependent-inputs.json"
+      ],
+      "notes": "Gaussian copula; non-positive-definite matrices refused."
+    },
+    {
+      "id": "R05.5",
+      "item": 5,
+      "anchors": [
+        "**Formal:** execute an actual formal solver against an inspectable model."
+      ],
+      "status": "met",
+      "evidence": [
+        "requirements-cortex.txt",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_feasible_carries_model_solver_version_and_scope"
+      ],
+      "notes": "Z3 (z3-solver 5.1.0.0) on a JSON model with a rendered, reverse-translated form."
+    },
+    {
+      "id": "R05.6",
+      "item": 5,
+      "anchors": [
+        "Return assumptions, constraints, solver/version information, status, and available certificates, counterexamples, or unsatisfiable cores."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormal::test_infeasible_returns_unsat_core",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_entailment_and_counterexample",
+        "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_a_lying_optimizer_is_caught_by_the_certificate",
+        "docs/cortex/examples/proof-formal.json"
+      ],
+      "notes": "v0.1.4 adds certified optimization (Formal 0.2.0): an independent UNSAT check that no strictly better assignment exists."
+    },
+    {
+      "id": "R05.7",
+      "item": 5,
+      "anchors": [
+        "Add a first-class **Evidence/Causal route** and an independent adversarial verifier."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/organs/evidence_causal.py",
+        "cortex/organs/adversarial.py",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_verifier_independently_blocks_a_recommend_at_financial"
+      ],
+      "notes": "The verifier is rule-based and shares no model with any route."
+    },
+    {
+      "id": "R05.8",
+      "item": 5,
+      "anchors": [
+        "Represent future intelligence families through compatible profiles or extension points."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "docs/cortex/examples/genome-reserved-disabled.json"
+      ],
+      "notes": "28 reserved families registered SPECIFIED and disabled (four added in v0.1.4 from review pass 2: exact symbolic, heuristic search, mental models, metaconsensus)."
+    },
+    {
+      "id": "R05.9",
+      "item": 5,
+      "anchors": [
+        "Keep swarm, evolutionary, active-inference, developmental, and MICA/CDPE execution outside this seed experiment."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Mutant 'disabled family eligible' is caught."
+    },
+    {
+      "id": "R06.0",
+      "item": 6,
+      "anchors": [
+        "**Give empirical and causal questions a legitimate route.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/organs/evidence_causal.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R06.1",
+      "item": 6,
+      "anchors": [
+        "Distinguish factual support, association, prediction, and intervention claims."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_prediction_needs_track_record",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/by_family/association"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R06.2",
+      "item": 6,
+      "anchors": [
+        "The Evidence/Causal route must identify available evidence, provenance, freshness, contradictions, missing observations, and the question that remains unresolved."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_supported_stale_future_model_and_contested",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Mutant 'stale evidence accepted' is caught."
+    },
+    {
+      "id": "R06.3",
+      "item": 6,
+      "anchors": [
+        "A causal estimate requires an explicit estimand, identification assumptions, suitable data, confounder treatment, method, and limitations."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_not_identified_without_requirements",
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_causal_estimate_recovers_planted_effect_and_beats_naive"
+      ],
+      "notes": "Data are synthetic with a planted effect; no real-world causal estimate is claimed."
+    },
+    {
+      "id": "R06.4",
+      "item": 6,
+      "anchors": [
+        "Where these conditions are absent, return an evidence assessment and propose authorized acquisition, a bounded experiment, domain/human adjudication, or abstention."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_no_spec_means_bounded_experiment",
+        "docs/cortex/examples/receipt-causal-unmeasured-confounding.json"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R06.5",
+      "item": 6,
+      "anchors": [
+        "Generated explanations or causal diagrams do not establish causal identification."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_generated_diagrams_are_refused_by_name_and_by_schema",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Refused in code and in the proof-artifact schema."
+    },
+    {
+      "id": "R06.6",
+      "item": 6,
+      "anchors": [
+        "Passing refutation checks does not prove causal truth."
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/examples/proof-causal_estimate.json",
+        "cortex/organs/adversarial.py"
+      ],
+      "notes": "Every causal estimate carries a truth note and an 'identification_assumed' verifier finding."
+    },
+    {
+      "id": "R07.0",
+      "item": 7,
+      "anchors": [
+        "**Build consequence-aware routing and verification.**",
+        "Implement:"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/routing.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R07.1",
+      "item": 7,
+      "anchors": [
+        "`problem → geometry → cognitive eligibility → budget → route or bounded composition → typed artifact → adversarial verification → abstain/recommend/handoff → receipt`"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/routing.py",
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry"
+      ],
+      "notes": "Item 8 adds bounded_test as a fourth disposition."
+    },
+    {
+      "id": "R07.2",
+      "item": 7,
+      "anchors": [
+        "Begin with a deterministic, inspectable routing policy."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_receipts_are_content_addressed_and_deterministic"
+      ],
+      "notes": "Policy cortex-route-policy/0.1: payload structure decides routes."
+    },
+    {
+      "id": "R07.3",
+      "item": 7,
+      "anchors": [
+        "Semantic models may propose geometry features, but their proposals require validation and retain uncertainty."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_semantic_proposals_need_structural_support"
+      ],
+      "notes": "A proposer hook exists and is validated; no model proposer is wired by default."
+    },
+    {
+      "id": "R07.4",
+      "item": 7,
+      "anchors": [
+        "High consequence does not automatically select Formal."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R07.5",
+      "item": 7,
+      "anchors": [
+        "Formal methods decide formalizable properties; empirical correspondence and authority require separate checks."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormal::test_unverified_premise_is_world_unverified_not_ok",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_hands_off_even_with_a_valid_proof"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R07.6",
+      "item": 7,
+      "anchors": [
+        "For formalization, preserve:",
+        "`original requirement → structured model → reverse translation → discrepancy check → counterexample search → solver result`"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/organs/formal.py",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_omitted_constraint_is_caught_before_solving",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_witness_disagreement_blocks",
+        "docs/cortex/examples/proof-formal.json"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R07.7",
+      "item": 7,
+      "anchors": [
+        "Reverse translation helps detect errors; it does not establish completeness."
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/examples/proof-formal.json",
+        "cortex/organs/formal.py"
+      ],
+      "notes": "Every formal proof records completeness as 'not established by reverse translation'."
+    },
+    {
+      "id": "R07.8",
+      "item": 7,
+      "anchors": [
+        "Emit explicit states for incomplete formalization, unverified real-world premises, unavailable dependencies, timeouts, and inconclusive results."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormal::test_witness_disagreement_blocks",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_unverified_premise_is_world_unverified_not_ok",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_outage",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_exhausted_timeout_is_explicit",
+        "tests/unit/test_cortex_routes.py::TestFormal::test_unknown_reasons_map_to_explicit_states",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "v0.1.2 fixed a defect: Z3 5.1 reports an exhausted timeout as 'canceled', which v0.1.1 labelled INCONCLUSIVE."
+    },
+    {
+      "id": "R07.9",
+      "item": 7,
+      "anchors": [
+        "The adversarial verifier must inspect evidence and artifacts and attack assumptions, omitted constraints, contradictions, and boundary violations."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/organs/adversarial.py",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_verifier_only_lowers_a_disposition",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_verifier_independently_blocks_recommend_in_place_of_protection"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R07.10",
+      "item": 7,
+      "anchors": [
+        "Record correlated dependencies; agreement between model prompts alone does not establish independent verification."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_committee_records_shared_dependency",
+        "docs/cortex/examples/receipt-formal-recommend.json"
+      ],
+      "notes": "Each verifier record carries an independence section."
+    },
+    {
+      "id": "R08.0",
+      "item": 8,
+      "anchors": [
+        "**Preserve the consequence boundary.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_cortex_imports_nothing_that_can_act"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R08.1",
+      "item": 8,
+      "anchors": [
+        "Cortex outputs are recommendations, abstentions, bounded tests, or handoffs."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/contracts.py",
+        "contracts/cortex-receipt.schema.json"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R08.2",
+      "item": 8,
+      "anchors": [
+        "External consequences continue through the existing Kernel authority and Consequence Gate."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_cortex_imports_nothing_that_can_act",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates",
+        "tests/unit/test_cortex_pipeline.py::TestDeterrenceRouting::test_action_reaching_another_party_is_handed_off"
+      ],
+      "notes": "Cortex cannot import the gate, adapters or any actuator; receipts name the authority path instead. Deterrence actions that reach another party (v0.1.5) are handed to the competent authority."
+    },
+    {
+      "id": "R08.3",
+      "item": 8,
+      "anchors": [
+        "Evaluate harm separately across physical, financial, rights, privacy, reputational, discrimination, third-party, irreversible disclosure, systemic, and tail-risk dimensions."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R08.4",
+      "item": 8,
+      "anchors": [
+        "Missing measurements remain unknown."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R08.5",
+      "item": 8,
+      "anchors": [
+        "When relevant, distinguish immediate victim protection, containment, evidence preservation, safe contact, escalation, restitution, and recurrence prevention."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_human_led_protection_hands_off_even_when_the_proof_holds",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_containment_with_measured_low_risk_is_not_forced_to_hand_off",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_unmeasured_harm_is_a_gap_that_hands_off",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_actions_are_ordered_by_protective_priority",
+        "docs/cortex/examples/receipt-victim-protection-handoff.json",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Added in v0.1.1 after the traceability audit found v0.1 parsed but ignored the declaration; v0.1.4 adds the situational schema from review pass 2 (B37): harm, retaliation and evidence-at-risk levels defaulting to unknown, protective priority order, and gaps that force a human handoff. The held-out suite has no protection item; coverage is unit and mutation tests."
+    },
+    {
+      "id": "R08.6",
+      "item": 8,
+      "anchors": [
+        "Preserve evidence with appropriate access and disclosure controls."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_preserved_evidence_requires_restricted_access",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_receipt_never_carries_evidence_content",
+        "tests/unit/test_cortex_pipeline.py::TestVictimProtection::test_receipt_never_names_the_person_or_the_safe_channel"
+      ],
+      "notes": "Cortex stores no evidence; receipts carry identifiers only. Storage and access enforcement remain with the Kernel evidence ledger."
+    },
+    {
+      "id": "R09.0",
+      "item": 9,
+      "anchors": [
+        "**Freeze meaningful evaluation before measuring gain.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/evaluation/freeze-v0.1.5.json",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_heldout_matches_its_freeze"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R09.1",
+      "item": 9,
+      "anchors": [
+        "Create smoke coverage for semantic synthesis, Fermi estimation, formal constraint feasibility, and an unresolved causal intervention question."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/evaluation/suites/smoke-v0.1.json",
+        "tests/evidence/cortex-seed-v0.1.5/smoke-results.json"
+      ],
+      "notes": "Semantic smoke abstains (no model reachable); the other three pass."
+    },
+    {
+      "id": "R09.2",
+      "item": 9,
+      "anchors": [
+        "Then establish a larger held-out suite containing mixed, adversarial, malformed, and unanswerable cases."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/evaluation/suites/heldout-v0.1.json",
+        "tests/unit/test_cortex_traceability.py::test_heldout_covers_categories_and_named_failures"
+      ],
+      "notes": "42 items: 13 standard, 20 adversarial, 3 mixed, 3 malformed, 3 unanswerable. Self-authored; see report limitations."
+    },
+    {
+      "id": "R09.3",
+      "item": 9,
+      "anchors": [
+        "Freeze cases, scoring, configurations, budgets, partitions, and exit thresholds before the reported evaluation."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_heldout_is_refused_when_frozen_inputs_change",
+        "tests/unit/test_cortex_traceability.py::test_reported_results_match_their_freeze"
+      ],
+      "notes": "Each version freezes before its reported run; v0.1 through v0.1.5 manifests and results are all kept."
+    },
+    {
+      "id": "R09.4",
+      "item": 9,
+      "anchors": [
+        "Development examples must remain separate."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_suites_are_disjoint_and_labelled"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R09.5",
+      "item": 9,
+      "anchors": [
+        "Compare against:",
+        "A strong configured always-LLM baseline."
+      ],
+      "status": "blocked_external",
+      "evidence": [
+        "cortex/evaluation/arms.py",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/always_llm/status",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_unavailable_model_means_not_run_never_simulated"
+      ],
+      "notes": "Arm implemented; NOT_RUN because no local model is reachable and the network policy blocks model download. Unblock: allow the model host in the environment's network settings, or run on a machine with Ollama (qwen3.5:4b)."
+    },
+    {
+      "id": "R09.6",
+      "item": 9,
+      "anchors": [
+        "An ordinary model committee baseline."
+      ],
+      "status": "blocked_external",
+      "evidence": [
+        "cortex/evaluation/arms.py",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/llm_committee/status"
+      ],
+      "notes": "Same blocker as R09.5."
+    },
+    {
+      "id": "R09.7",
+      "item": 9,
+      "anchors": [
+        "The routed seed."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/mean_quality"
+      ],
+      "notes": "0.964 [0.911, 1.000] on 42 held-out items."
+    },
+    {
+      "id": "R09.8",
+      "item": 9,
+      "anchors": [
+        "Use equivalent available facts and disclose resource differences."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/evaluation/arms.py",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/resource_disclosure"
+      ],
+      "notes": "Baselines receive the same facts rendered as text in the question."
+    },
+    {
+      "id": "R09.9",
+      "item": 9,
+      "anchors": [
+        "Include classification, verification, and orchestration overhead."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/latency_s_p95"
+      ],
+      "notes": "Latency is measured around the whole Cortex.run call."
+    },
+    {
+      "id": "R09.10",
+      "item": 9,
+      "anchors": [
+        "Report decision quality, critical errors, unsupported certainty, abstention quality, calibration where measurable, gate violations, cost, latency, sample counts, and uncertainty separately."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/calibration",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/abstention",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/arms/routed_seed/summary/mean_quality_ci95"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R09.11",
+      "item": 9,
+      "anchors": [
+        "Correct abstention must receive credit."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_scoring_rules",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_withholding_cannot_win"
+      ],
+      "notes": "Always-abstain reference scores 0.577, so withholding alone cannot win."
+    },
+    {
+      "id": "R09.12",
+      "item": 9,
+      "anchors": [
+        "Include failures involving stale evidence, contradictory sources, shared misconceptions, omitted constraints, solver outages, exhausted budgets, delayed outcomes, evaluator gaming, and distribution shift."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_traceability.py::test_heldout_covers_categories_and_named_failures"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R09.13",
+      "item": 9,
+      "anchors": [
+        "Three successful examples establish smoke-test functionality."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/smoke-results.json"
+      ],
+      "notes": "Fermi, Formal and causal smoke items succeed."
+    },
+    {
+      "id": "R09.14",
+      "item": 9,
+      "anchors": [
+        "Claim routing gain only when the frozen evaluation supports it against the declared baselines."
+      ],
+      "status": "met_reported_negative",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit/verdict",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_every_declared_baseline_and_a_margin"
+      ],
+      "notes": "No gain is claimed: exit is INCONCLUSIVE."
+    },
+    {
+      "id": "R10.0",
+      "item": 10,
+      "anchors": [
+        "**Make learning conditional on verified outcomes.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/memory.py",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/learning_checks"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.1",
+      "item": 10,
+      "anchors": [
+        "Link problem, geometry, selected methods, recommendation, authorization where applicable, consequence, observed outcome, and attribution."
+      ],
+      "status": "met",
+      "evidence": [
+        "contracts/cortex-routing-memory.schema.json",
+        "tests/unit/test_cortex_traceability.py::test_contract_fields_cover_the_prompt"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.2",
+      "item": 10,
+      "anchors": [
+        "Distinguish verified success, observed failure, unresolved outcomes, and absent feedback."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_absent_and_unresolved_change_nothing"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.3",
+      "item": 10,
+      "anchors": [
+        "A prediction or self-assessment cannot settle competence."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_predictions_and_self_assessment_cannot_settle",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.4",
+      "item": 10,
+      "anchors": [
+        "Attribute contributions cautiously: hypothesis generation, flaw detection, calibration improvement, consumed resources, and failed assumptions may belong to different methods."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_attribution_must_name_the_updated_method"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.5",
+      "item": 10,
+      "anchors": [
+        "Scope competence to **method × geometry × conditions × version**."
+      ],
+      "status": "met",
+      "evidence": [
+        "cortex/memory.py",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_reorders_eligible_only_and_needs_evidence"
+      ],
+      "notes": "The Formal organ moved to 0.1.1 with its behavior fix so its competence cell is new."
+    },
+    {
+      "id": "R10.6",
+      "item": 10,
+      "anchors": [
+        "Bound updates, preserve rollback, and require sufficient outcome evidence before changing defaults."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_updates_are_bounded_and_validated",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_rollback_restores_prior_state_without_deleting_history",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_reorders_eligible_only_and_needs_evidence"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.7",
+      "item": 10,
+      "anchors": [
+        "Learning cannot modify permissions, consequence ceilings, evaluators, or constitutional authority."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_learning_cannot_touch_the_registry"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R10.8",
+      "item": 10,
+      "anchors": [
+        "Disabled families remain disabled."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R11.0",
+      "item": 11,
+      "anchors": [
+        "**Complete the reviewable experiment.**"
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R11.1",
+      "item": 11,
+      "anchors": [
+        "Deliver the implementation diff, contract examples, representative receipts, appropriate tests, reproducible benchmark instructions, measured results, limitations, and evidence for the next expansion."
+      ],
+      "status": "met",
+      "evidence": [
+        "docs/cortex/README.md#reproduce-the-benchmark",
+        "docs/cortex/examples/INDEX.json",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/representative_receipts",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#limitations",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#evidence-for-the-next-expansion"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R11.2",
+      "item": 11,
+      "anchors": [
+        "Use minimal dependencies and focused integration changes."
+      ],
+      "status": "met",
+      "evidence": [
+        "requirements-cortex.txt"
+      ],
+      "notes": "One new runtime dependency (z3-solver), optional and pinned; integration edits limited to capabilities/genome.py contract names and CI."
+    },
+    {
+      "id": "R11.3",
+      "item": 11,
+      "anchors": [
+        "Implemented families must execute real mechanisms; unavailable mechanisms must return explicit bounded failure or abstention."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_routes.py::TestFormal::test_outage",
+        "tests/unit/test_cortex_routes.py::TestSemantic::test_unreachable_model_is_dependency_unavailable"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R11.4",
+      "item": 11,
+      "anchors": [
+        "The exit condition is **verified cross-geometry routing gain**, counting quality, cost, latency, error, and truthful abstention, with preserved authority."
+      ],
+      "status": "met_reported_negative",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
+        "cortex/evaluation/scoring.py",
+        "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_exit_requires_cross_geometry_gain_without_resource_blowup",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "notes": "Not reached: the declared baselines could not run, so gain is unverified. v0.1.3 tightened the rule to the prompt's wording before any baseline ran: per-geometry non-regression, gain on at least two geometries, cost and p95 latency within declared ratios."
+    },
+    {
+      "id": "R11.5",
+      "item": 11,
+      "anchors": [
+        "If gain is absent or inconclusive, report that result and keep the experiment unpromoted."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit/promote",
+        "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_profile_invariants"
+      ],
+      "notes": "Seed organs stay SANDBOXED; exit promote=false."
+    },
+    {
+      "id": "R11.6",
+      "item": 11,
+      "anchors": [
+        "Preserve the backcast from Seed to Cortex, Composer, Developmental Cortex, Polyintelligent GREG, and frontier capability discovery."
+      ],
+      "status": "preserved",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "R11.7",
+      "item": 11,
+      "anchors": [
+        "Each advancement requires its own evidence."
+      ],
+      "status": "preserved",
+      "evidence": [
+        "docs/cortex/BACKCAST_GPS_CORTEX.md#stage-gates"
+      ],
+      "notes": "Each stage names its entry evidence and kill condition."
+    },
+    {
+      "id": "R12.1",
+      "item": 12,
+      "anchors": [
+        "Your refinement sets the governing rule: **eligibility first; optimization second**."
+      ],
+      "status": "met",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_favorable_score_cannot_override_failed_gate"
+      ],
+      "notes": "Gates run before ranking; ranking sees only options that passed every gate."
+    },
+    {
+      "id": "R12.2",
+      "item": 12,
+      "anchors": [
+        "**Governing invariant: maximize verified, durable, lawful, founder-authorized advantage after hard gates; compound capability from reality; preserve constitutional authority.**"
+      ],
+      "status": "partial",
+      "evidence": [
+        "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_favorable_score_cannot_override_failed_gate",
+        "tests/unit/test_cortex_pipeline.py::TestRoutingMemory::test_predictions_and_self_assessment_cannot_settle",
+        "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_every_receipt_creates_no_authority_and_validates"
+      ],
+      "notes": "Gates-before-advantage and constitutional authority are enforced. 'Compound capability from reality' has its mechanism (verified-outcome learning) but zero real outcomes so far."
+    }
+  ]
+}

@@ -8,7 +8,9 @@ name: Canonical CI
 # can be re-run in a clean environment for release evidence.
 #
 # The first four jobs are the required Package 1 checks. A fifth verifies
-# the research assembly against pinned real consumer source checkouts.
+# the research assembly against pinned real consumer source checkouts. A sixth
+# runs the Polyintelligence Cortex seed with its solver dependency and replays
+# the frozen held-out evaluation (it refuses if any frozen input changed).
 # The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
 # preserved but reduced to manual dispatch so they cannot double-execute.
 # They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
@@ -91,6 +93,28 @@ jobs:
           path: target_form_001_report.json
           if-no-files-found: error
           retention-days: 90
+
+  cortex_seed:
+    name: "6 · Cortex seed experiment (Z3, frozen evaluation)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cortex.txt
+      - name: Cortex tests with the solver present (no skips for Z3)
+        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
+      - name: Mutation check (every safeguard-removing mutant must be caught)
+        run: python scripts/ci/check_cortex_mutants.py
+      - name: Held-out run against the freeze manifest (refuses if frozen inputs changed)
+        run: python -m cortex.evaluation.run --partition heldout --out cortex-heldout-results.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cortex-heldout-results
+          path: cortex-heldout-results.json
+          retention-days: 30
 
   research_line:
     name: "5 · Connected open-source research assembly"

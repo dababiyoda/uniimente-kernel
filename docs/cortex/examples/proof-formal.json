@@ -1,0 +1,246 @@
+{
+  "completeness": "not established by reverse translation",
+  "counterexample_search": [
+    {
+      "constraint": "C_end_A",
+      "result": "binding: violable without it"
+    },
+    {
+      "constraint": "C_end_B",
+      "result": "binding: violable without it"
+    },
+    {
+      "constraint": "C_end_C",
+      "result": "binding: violable without it"
+    },
+    {
+      "constraint": "C_one_AB",
+      "result": "binding: violable without it"
+    },
+    {
+      "constraint": "C_one_AC",
+      "result": "binding: violable without it"
+    },
+    {
+      "constraint": "C_one_BC",
+      "result": "binding: violable without it"
+    }
+  ],
+  "discrepancy_check": {
+    "discrepancies": [],
+    "warnings": [],
+    "witnesses": [
+      {
+        "agrees": true,
+        "index": 0,
+        "kind": "satisfying",
+        "witness": {
+          "s_A": 0,
+          "s_B": 3,
+          "s_C": 7
+        }
+      },
+      {
+        "agrees": true,
+        "index": 0,
+        "kind": "violating",
+        "witness": {
+          "s_A": 0,
+          "s_B": 0,
+          "s_C": 0
+        }
+      }
+    ]
+  },
+  "original_requirement": "Jobs A (3h), B (4h), C (2h) on one machine within a 10h shift.",
+  "premises": [
+    {
+      "evidence_ref": "maintenance-log",
+      "id": "P_avail",
+      "text": "the machine is available for the whole 10h shift",
+      "verified": true
+    }
+  ],
+  "proof_class": "formal",
+  "reverse_translation": [
+    "s_A is an integer in [0, 10]",
+    "s_B is an integer in [0, 10]",
+    "s_C is an integer in [0, 10]",
+    "C_end_A (covers R_end_A): (s_A + 3) \u2264 10",
+    "C_end_B (covers R_end_B): (s_B + 4) \u2264 10",
+    "C_end_C (covers R_end_C): (s_C + 2) \u2264 10",
+    "C_one_AB (covers R_one): ((s_A + 3) \u2264 s_B) or ((s_B + 4) \u2264 s_A)",
+    "C_one_AC (covers R_one): ((s_A + 3) \u2264 s_C) or ((s_C + 2) \u2264 s_A)",
+    "C_one_BC (covers R_one): ((s_B + 4) \u2264 s_C) or ((s_C + 2) \u2264 s_B)"
+  ],
+  "scope": "valid_given_encoding",
+  "solver": {
+    "model": {
+      "s_A": 0,
+      "s_B": 3,
+      "s_C": 7
+    },
+    "name": "z3",
+    "status": "SAT",
+    "version": "5.1.0"
+  },
+  "structured_model": {
+    "bounds": {
+      "s_A": [
+        0,
+        10
+      ],
+      "s_B": [
+        0,
+        10
+      ],
+      "s_C": [
+        0,
+        10
+      ]
+    },
+    "constraints": [
+      {
+        "covers": [
+          "R_end_A"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_A",
+            3
+          ],
+          10
+        ],
+        "id": "C_end_A"
+      },
+      {
+        "covers": [
+          "R_end_B"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_B",
+            4
+          ],
+          10
+        ],
+        "id": "C_end_B"
+      },
+      {
+        "covers": [
+          "R_end_C"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_C",
+            2
+          ],
+          10
+        ],
+        "id": "C_end_C"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_A",
+              3
+            ],
+            "s_B"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_B",
+              4
+            ],
+            "s_A"
+          ]
+        ],
+        "id": "C_one_AB"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_A",
+              3
+            ],
+            "s_C"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_C",
+              2
+            ],
+            "s_A"
+          ]
+        ],
+        "id": "C_one_AC"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_B",
+              4
+            ],
+            "s_C"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_C",
+              2
+            ],
+            "s_B"
+          ]
+        ],
+        "id": "C_one_BC"
+      }
+    ],
+    "obligations": {
+      "R_end_A": "job A (3h) ends within the 10h shift",
+      "R_end_B": "job B (4h) ends within the 10h shift",
+      "R_end_C": "job C (2h) ends within the 10h shift",
+      "R_one": "the machine runs one job at a time"
+    },
+    "query": {
+      "kind": "feasibility"
+    },
+    "variables": {
+      "s_A": "int",
+      "s_B": "int",
+      "s_C": "int"
+    }
+  },
+  "unverified_premises": []
+}

@@ -23,7 +23,7 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.1.3"
+CORTEX_VERSION = "0.1.4"
 
 
 class CortexError(ValueError):
@@ -142,6 +142,8 @@ VICTIM_PROTECTION_ACTIONS = (
     "escalation", "restitution", "recurrence_prevention",
 )
 EVIDENCE_ACCESS = ("restricted", "need_to_know", "internal", "unknown")
+PROTECTION_PRIORITY = ("immediate_protection", "evidence_preservation", "containment", "safe_contact",
+                       "escalation", "restitution", "recurrence_prevention")
 
 LEVELS = ("none", "low", "medium", "high", "unknown")
 EXACTNESS = ("exact_required", "approximate_ok", "unknown")
@@ -149,8 +151,8 @@ TEMPORAL = ("static", "sequential", "unknown")
 REVERSIBILITY = ("reversible", "costly_to_reverse", "irreversible", "unknown")
 CAUSAL_STRUCTURE = ("none", "declared_adjustment", "declared_experiment", "unidentified",
                     "model_generated", "unknown")
-OBJECTIVES = ("decide_feasibility", "decide_entailment", "estimate_quantity", "assess_claim",
-              "estimate_effect", "synthesize", "choose_option", "adjudicate", "unknown")
+OBJECTIVES = ("decide_feasibility", "decide_entailment", "optimize_objective", "estimate_quantity",
+              "assess_claim", "estimate_effect", "synthesize", "choose_option", "adjudicate", "unknown")
 
 # Where a geometry value came from. Semantic proposals never count as
 # established unless validated against the structured payload.
@@ -217,12 +219,27 @@ class ConsequenceVector:
 
 @dataclass(frozen=True)
 class VictimProtection:
-    """Build prompt item 8: distinguish protective actions; control evidence access."""
+    """Build prompt item 8 and review pass 2 (B37): protective actions, evidence access and
+    the situation that decides what must happen first.
+
+    Missing measurements stay ``unknown`` and unknown counts as possible harm. The receipt
+    form records only *whether* an affected party or a safe contact channel was declared,
+    never who or which channel.
+    """
 
     relevant: bool
     required_actions: tuple[str, ...] = ()
     evidence_access: str = "unknown"
     disclosure_controls: tuple[str, ...] = ()
+    immediate_harm: str = "unknown"
+    continuing_harm: str = "unknown"
+    retaliation_risk: str = "unknown"
+    privacy_risk: str = "unknown"
+    evidence_at_risk: str = "unknown"
+    affected_party_declared: bool = False
+    safe_contact_channel_declared: bool = False
+    required_authority: str | None = None
+    notification_obligations: tuple[str, ...] = ()
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any] | None) -> "VictimProtection":
@@ -234,15 +251,59 @@ class VictimProtection:
         access = _enum("victim_protection.evidence_access",
                        value.get("evidence_access", "unknown"), EVIDENCE_ACCESS)
         controls = tuple(value.get("disclosure_controls", ()))
-        if bool(value.get("relevant", True)) and "evidence_preservation" in actions and access in ("unknown", "internal"):
+        relevant = bool(value.get("relevant", True))
+        if relevant and "evidence_preservation" in actions and access in ("unknown", "internal"):
             raise CortexError("preserved victim evidence requires restricted or need_to_know access")
-        return cls(relevant=bool(value.get("relevant", True)), required_actions=actions,
-                   evidence_access=access, disclosure_controls=controls)
+        levels = {k: _enum(f"victim_protection.{k}", value.get(k, "unknown"), LEVELS)
+                  for k in ("immediate_harm", "continuing_harm", "retaliation_risk", "privacy_risk")}
+        at_risk = _enum("victim_protection.evidence_at_risk", value.get("evidence_at_risk", "unknown"),
+                        ("yes", "no", "unknown"))
+        authority = value.get("required_authority")
+        return cls(relevant=relevant, required_actions=actions, evidence_access=access,
+                   disclosure_controls=controls, evidence_at_risk=at_risk,
+                   affected_party_declared=bool(value.get("affected_party")),
+                   safe_contact_channel_declared=bool(value.get("safe_contact_channel")),
+                   required_authority=str(authority) if authority else None,
+                   notification_obligations=tuple(str(n) for n in value.get("notification_obligations", ())),
+                   **levels)
+
+    @property
+    def ordered_actions(self) -> tuple[str, ...]:
+        """Declared actions in protective priority: protect now, preserve evidence, contain,
+        make safe contact, escalate, repair, prevent recurrence."""
+        return tuple(a for a in PROTECTION_PRIORITY if a in self.required_actions)
+
+    @property
+    def gaps(self) -> tuple[str, ...]:
+        """Conditions a human must resolve before anything else; any gap forces a handoff."""
+        if not self.relevant:
+            return ()
+        out = []
+        harm = [lvl for lvl in (self.immediate_harm, self.continuing_harm) if lvl in ("high", "medium", "unknown")]
+        if harm and "immediate_protection" not in self.required_actions:
+            out.append(f"immediate protection not declared while immediate/continuing harm is {sorted(set(harm))}")
+        if self.evidence_at_risk in ("yes", "unknown") and "evidence_preservation" not in self.required_actions:
+            out.append(f"evidence at risk ({self.evidence_at_risk}) and preservation not declared")
+        if "safe_contact" in self.required_actions and not self.safe_contact_channel_declared:
+            out.append("safe contact required but no safe channel is established")
+        if self.retaliation_risk in ("high", "medium", "unknown") and not self.disclosure_controls:
+            out.append(f"retaliation risk {self.retaliation_risk} with no disclosure controls")
+        return tuple(out)
 
     def to_dict(self) -> dict:
+        """Receipt-safe form: no identities, no channels, no evidence content."""
         return {"relevant": self.relevant, "required_actions": list(self.required_actions),
+                "ordered_actions": list(self.ordered_actions),
                 "evidence_access": self.evidence_access,
-                "disclosure_controls": list(self.disclosure_controls)}
+                "disclosure_controls": list(self.disclosure_controls),
+                "immediate_harm": self.immediate_harm, "continuing_harm": self.continuing_harm,
+                "retaliation_risk": self.retaliation_risk, "privacy_risk": self.privacy_risk,
+                "evidence_at_risk": self.evidence_at_risk,
+                "affected_party": "declared" if self.affected_party_declared else "absent",
+                "safe_contact_channel": "declared" if self.safe_contact_channel_declared else "absent",
+                "required_authority": self.required_authority,
+                "notification_obligations": list(self.notification_obligations),
+                "gaps": list(self.gaps)}
 
 
 # ------------------------------------------------------------------ problem

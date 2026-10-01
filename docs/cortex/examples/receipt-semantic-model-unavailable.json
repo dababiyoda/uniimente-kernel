@@ -1,4 +1,15 @@
 {
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "no claim asserted; nothing to falsify",
+        "route": "cortex.semantic@0.1.0"
+      }
+    ],
+    "missing_information": [],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": null
+  },
   "alternatives": [
     {
       "route": "cortex.estimation.fermi@0.1.0",
@@ -13,7 +24,7 @@
       ]
     },
     {
-      "route": "cortex.formal.z3@0.1.1",
+      "route": "cortex.formal.z3@0.2.0",
       "why_not": [
         "does not support semantic"
       ]
@@ -44,7 +55,7 @@
     },
     {
       "eligible": false,
-      "key": "cortex.formal.z3@0.1.1",
+      "key": "cortex.formal.z3@0.2.0",
       "may_recommend": false,
       "reasons": [
         "does not support semantic"
@@ -60,7 +71,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 1,
-    "seconds": 0.027164,
+    "seconds": 0.027832,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -144,7 +155,7 @@
         ],
         "expenditure": {
           "model_calls": 1,
-          "seconds": 0.026918,
+          "seconds": 0.027484,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -175,7 +186,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:f180cc8c811326143cb6969d6b6e5300231ee6647fb7720fb4c61d232592d410",
+  "receipt_id": "sha256:b940f9d46d87e95d336229b19c6fd5306e6297f290ba77a3be509bbc26e1408f",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -211,7 +222,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.3",
+    "cortex": "0.1.4",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.semantic@0.1.0": "0.1.0"

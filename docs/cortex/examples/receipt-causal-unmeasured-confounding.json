@@ -1,4 +1,20 @@
 {
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "no claim asserted; nothing to falsify",
+        "route": "cortex.evidence_causal@0.1.0"
+      }
+    ],
+    "missing_information": [
+      "observation: an explicit estimand",
+      "observation: identification assumptions",
+      "observation: treatment, outcome and confounder data (or an experiment)",
+      "unresolved: The causal effect is not identified from what is available."
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": null
+  },
   "alternatives": [
     {
       "route": "cortex.estimation.fermi@0.1.0",
@@ -7,7 +23,7 @@
       ]
     },
     {
-      "route": "cortex.formal.z3@0.1.1",
+      "route": "cortex.formal.z3@0.2.0",
       "why_not": [
         "does not support causal"
       ]
@@ -44,7 +60,7 @@
     },
     {
       "eligible": false,
-      "key": "cortex.formal.z3@0.1.1",
+      "key": "cortex.formal.z3@0.2.0",
       "may_recommend": false,
       "reasons": [
         "does not support causal"
@@ -62,7 +78,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.002571,
+    "seconds": 0.002701,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -143,7 +159,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 3.5e-05,
+          "seconds": 4e-05,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -240,7 +256,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:75bbcc7d1ee212ebc469636867f17f8bb5dab196608caeb97832ce06a7835d99",
+  "receipt_id": "sha256:577d178b676ae9c150f54fd00c978e67823c22700dba311098404536b120479a",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -276,7 +292,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.3",
+    "cortex": "0.1.4",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.evidence_causal@0.1.0": "0.1.0"

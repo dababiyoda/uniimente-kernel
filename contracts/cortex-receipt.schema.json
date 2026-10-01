@@ -28,6 +28,7 @@
     "disposition",
     "truth",
     "protection",
+    "accountability",
     "outcome_link",
     "authority_created",
     "execution_authority"
@@ -299,7 +300,18 @@
             "evidence_access",
             "disclosure_controls",
             "evidence_handling",
-            "human_led_actions"
+            "human_led_actions",
+            "ordered_actions",
+            "immediate_harm",
+            "continuing_harm",
+            "retaliation_risk",
+            "privacy_risk",
+            "evidence_at_risk",
+            "affected_party",
+            "safe_contact_channel",
+            "required_authority",
+            "notification_obligations",
+            "gaps"
           ],
           "properties": {
             "relevant": {
@@ -346,11 +358,180 @@
                   "escalation"
                 ]
               }
+            },
+            "ordered_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "containment",
+                  "evidence_preservation",
+                  "safe_contact",
+                  "escalation",
+                  "restitution",
+                  "recurrence_prevention"
+                ]
+              }
+            },
+            "immediate_harm": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "continuing_harm": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "retaliation_risk": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "privacy_risk": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "evidence_at_risk": {
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "affected_party": {
+              "enum": [
+                "declared",
+                "absent"
+              ]
+            },
+            "safe_contact_channel": {
+              "enum": [
+                "declared",
+                "absent"
+              ]
+            },
+            "required_authority": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            },
+            "notification_obligations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "gaps": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           },
           "additionalProperties": false
         }
       ]
+    },
+    "accountability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strongest_counterargument",
+        "falsification_conditions",
+        "missing_information",
+        "note"
+      ],
+      "properties": {
+        "strongest_counterargument": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "severity",
+                "kind",
+                "detail"
+              ],
+              "properties": {
+                "severity": {
+                  "enum": [
+                    "critical",
+                    "major",
+                    "minor"
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "falsification_conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "route",
+              "condition"
+            ],
+            "properties": {
+              "route": {
+                "type": "string",
+                "minLength": 1
+              },
+              "condition": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "missing_information": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "note": {
+          "const": "competence evidence and proof narrow disputes; they never create authority"
+        }
+      }
     }
   }
 }

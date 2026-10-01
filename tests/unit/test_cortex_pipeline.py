@@ -168,11 +168,52 @@ class TestVictimProtection:
         assert r["disposition"]["kind"] == "abstain" and r["output"]["state"] == "MALFORMED_INPUT"
         assert r["route"]["selected"] == []
 
-    def test_containment_only_is_not_forced_to_hand_off(self):
+    @needs_z3
+    def test_containment_with_measured_low_risk_is_not_forced_to_hand_off(self):
+        calm = {"relevant": True, "required_actions": ["containment"], "evidence_access": "restricted",
+                "immediate_harm": "none", "continuing_harm": "low", "retaliation_risk": "low",
+                "evidence_at_risk": "no", "disclosure_controls": ["internal only"]}
+        v = cortex().run(protected(formal_problem(), calm))
+        validate(v, "cortex-receipt")
+        assert v["protection"]["human_led_actions"] == [] and v["protection"]["gaps"] == []
+        assert v["disposition"]["kind"] == "recommend"
+
+    @needs_z3
+    def test_unmeasured_harm_is_a_gap_that_hands_off(self):
+        # Missing measurements stay unknown, and unknown harm is treated as possible harm.
         v = cortex().run(protected(formal_problem(), {"relevant": True, "required_actions": ["containment"],
                                                       "evidence_access": "restricted"}))
-        assert v["protection"]["human_led_actions"] == []
-        assert "human-led" not in v["disposition"]["reason"]
+        validate(v, "cortex-receipt")
+        assert v["disposition"]["kind"] == "handoff" and "unresolved protection gaps" in v["disposition"]["reason"]
+        gaps = v["protection"]["gaps"]
+        assert any("immediate protection not declared" in g for g in gaps)
+        assert any("evidence at risk" in g for g in gaps) and any("retaliation risk" in g for g in gaps)
+        assert "resolve first" in v["disposition"]["next_step"]
+        assert all(f"protection: {g}" in v["accountability"]["missing_information"] for g in gaps)
+
+    def test_actions_are_ordered_by_protective_priority(self):
+        from cortex.contracts import VictimProtection
+        vp = VictimProtection.from_dict({"required_actions": ["recurrence_prevention", "escalation", "containment",
+                                                              "immediate_protection", "evidence_preservation"],
+                                         "evidence_access": "restricted"})
+        assert vp.ordered_actions == ("immediate_protection", "evidence_preservation", "containment", "escalation",
+                                      "recurrence_prevention")
+
+    def test_receipt_never_names_the_person_or_the_safe_channel(self):
+        name, channel = "Jane Q. Example", "+1-555-0100 (sister's phone)"
+        situation = {**PROTECTION, "required_actions": PROTECTION["required_actions"] + ["safe_contact"],
+                     "affected_party": name, "safe_contact_channel": channel, "retaliation_risk": "high",
+                     "required_authority": "local police"}
+        r = cortex().run(protected(formal_problem(), situation))
+        validate(r, "cortex-receipt")
+        text = json.dumps(r)
+        assert name not in text and channel not in text
+        assert r["protection"]["affected_party"] == "declared" and r["protection"]["safe_contact_channel"] == "declared"
+        assert r["protection"]["required_authority"] == "local police"
+        missing = {**situation}
+        missing.pop("safe_contact_channel")
+        gap = cortex().run(protected(formal_problem(), missing))
+        assert "safe contact required but no safe channel is established" in gap["protection"]["gaps"]
 
     def test_verifier_independently_blocks_recommend_in_place_of_protection(self):
         from cortex.contracts import VictimProtection
@@ -184,6 +225,38 @@ class TestVictimProtection:
         quiet = adversarial.verify(p, derive_geometry(p), [], proposed_disposition="handoff",
                                    protection=VictimProtection.from_dict(PROTECTION))
         assert not any(f["kind"] == "victim_protection_boundary" for f in quiet["findings"])
+
+
+# ------------------------------------------------------------------ accountability (review B34, B35)
+class TestAccountability:
+    @needs_z3
+    def test_strongest_counterargument_and_falsifiers(self):
+        m, _, _ = schedule(JOBS, 10)
+        m["requirement"] += " Budget cap 999 USD."          # a number no constraint encodes -> major finding
+        r = cortex().run({"problem_id": "acc", "question": "q", "payload": {"formal_model": m, "declared": DECL}})
+        validate(r, "cortex-receipt")
+        acc = r["accountability"]
+        severities = {"critical": 0, "major": 1, "minor": 2}
+        top = min(r["verifier"]["findings"], key=lambda f: severities[f["severity"]])
+        assert acc["strongest_counterargument"]["kind"] == top["kind"]
+        assert acc["falsification_conditions"] == [{"route": "cortex.formal.z3@0.2.0", "condition": acc[
+            "falsification_conditions"][0]["condition"]}]
+        assert "violating a constraint" in acc["falsification_conditions"][0]["condition"]
+
+    def test_missing_information_names_what_would_resolve_the_question(self):
+        r = cortex().run({"problem_id": "mi", "question": "q", "payload": {
+            "claim": {"id": "C", "type": "intervention", "statement": "the change raised sales"}}})
+        validate(r, "cortex-receipt")
+        missing = r["accountability"]["missing_information"]
+        assert any(m.startswith("observation: an explicit estimand") for m in missing)
+        assert r["accountability"]["falsification_conditions"][0]["condition"]
+
+    def test_malformed_input_still_carries_accountability(self):
+        r = cortex().run(protected(formal_problem(), {**PROTECTION, "evidence_access": "internal"}))
+        validate(r, "cortex-receipt")
+        assert r["output"]["state"] == "MALFORMED_INPUT"
+        assert r["accountability"]["strongest_counterargument"]["kind"] == "malformed_input"
+        assert r["accountability"]["missing_information"][0].startswith("well-formed input:")
 
 
 # ------------------------------------------------------------------ geometry
@@ -220,7 +293,7 @@ class TestRoutingMemory:
     def setup_method(self):
         self.receipt = cortex().run(formal_problem())
         self.ledger = CompetenceLedger()
-        self.kw = dict(receipt=self.receipt, method="cortex.formal.z3", method_version="0.1.1")
+        self.kw = dict(receipt=self.receipt, method="cortex.formal.z3", method_version="0.2.0")
         self.geometry = self.receipt["geometry"]["epistemic_class"]
 
     def verified(self, n=1, status="verified_success"):
@@ -235,7 +308,7 @@ class TestRoutingMemory:
             rec = self.ledger.settle(outcome_status=status, provenance={"kind": "internal_observation"},
                                      attribution=[], **self.kw)
             assert rec.competence_update["weight"] == 0.0
-        assert self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry)["basis"] == "prior"
+        assert self.ledger.estimate("cortex.formal.z3", "0.2.0", self.geometry)["basis"] == "prior"
 
     @pytest.mark.parametrize("kind", ["prediction", "model_output", "self_assessment"])
     def test_predictions_and_self_assessment_cannot_settle(self, kind):
@@ -261,16 +334,16 @@ class TestRoutingMemory:
     def test_rollback_restores_prior_state_without_deleting_history(self):
         self.verified(2)
         checkpoint = self.ledger.head
-        before = self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry)
+        before = self.ledger.estimate("cortex.formal.z3", "0.2.0", self.geometry)
         self.verified(4, status="observed_failure")
-        assert self.ledger.estimate("cortex.formal.z3", "0.1.1", self.geometry) != before
-        assert self.ledger.rollback(checkpoint).estimate("cortex.formal.z3", "0.1.1", self.geometry) == before
+        assert self.ledger.estimate("cortex.formal.z3", "0.2.0", self.geometry) != before
+        assert self.ledger.rollback(checkpoint).estimate("cortex.formal.z3", "0.2.0", self.geometry) == before
         assert len(self.ledger.records()) == 6
         assert self.ledger.rollback(GENESIS).records() == []
 
     def test_learning_reorders_eligible_only_and_needs_evidence(self):
         geometry = derive_geometry(Problem.from_dict(formal_problem()))
-        eligible = ["cortex.formal.z3@0.1.1"]
+        eligible = ["cortex.formal.z3@0.2.0"]
         self.verified(10)
         assert self.ledger.reorder(eligible, geometry) == eligible                  # never adds a route
         disabled = "cortex.optimization.cpsat@0.1.0"
@@ -290,7 +363,7 @@ class TestRoutingMemory:
         from provenance.ledger import EvidenceLedger
         ledger = EvidenceLedger("sha256:" + "0" * 64)
         w = new_witness(actor="agent-1", legal_principal="alfonso_lopez",
-                        action_class="cortex/cortex.formal.z3@0.1.1/constraint_feasibility", payload={},
+                        action_class="cortex/cortex.formal.z3@0.2.0/constraint_feasibility", payload={},
                         target="internal://x", policy_version="1.0.0", constitution_hash="sha256:" + "0" * 64,
                         grant_id="g", capability="c", budget_reservation_id="r", expected_outcome="o",
                         evidence_refs=[])
@@ -299,7 +372,7 @@ class TestRoutingMemory:
         ledger.append("outcome", {"action_ref": "a1", "result_class": "positive",
                                   "validation_status": "externally_verified", "recorded_at": "2026-09-30T00:00:00Z"})
         rows = records_from_causal_memory(CausalMemory(ledger))
-        assert rows == [{"method_version": "cortex.formal.z3@0.1.1", "geometry": "constraint_feasibility",
+        assert rows == [{"method_version": "cortex.formal.z3@0.2.0", "geometry": "constraint_feasibility",
                          "result_class": "positive", "validation_status": "externally_verified",
                          "action_id": "a1", "witness_id": w.witness_id, "policy_version": "1.0.0"}]
 

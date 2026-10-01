@@ -13,7 +13,7 @@
       "cortex-proof-artifact",
       "cortex-receipt"
     ],
-    "description": "Formal feasibility and entailment on an inspectable model via Z3.",
+    "description": "Formal feasibility, entailment and certified optimization on an inspectable model via Z3.",
     "failure_modes": [
       "unfaithful encoding",
       "unverified premises",
@@ -30,16 +30,16 @@
     "legal_operator": "alfonso_lopez",
     "name": "cortex.formal.z3",
     "recovery_path": "unregister the profile; routes fall back to abstain or handoff",
-    "version": "0.1.1"
+    "version": "0.2.0"
   },
-  "key": "cortex.formal.z3@0.1.1",
+  "key": "cortex.formal.z3@0.2.0",
   "profile": {
     "abstention_conditions": [
       "formalization incomplete",
       "solver unavailable",
       "timeout"
     ],
-    "authority_ref": "cortex.formal.z3@0.1.1",
+    "authority_ref": "cortex.formal.z3@0.2.0",
     "benchmark_history": [
       "tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed"
     ],
@@ -98,6 +98,7 @@
     "supported_geometries": [
       "deductive_logical",
       "constraint_feasibility",
+      "optimization",
       "arithmetic"
     ],
     "update_rules": "none"

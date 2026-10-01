@@ -32,6 +32,16 @@ RECEIPTS = (
 )
 LEGAL = {"problem_id": "example-legal", "question": "Is this clause enforceable?",
          "payload": {"declared": {"epistemic_class": "legal", "consequence_class": "internal_write"}}}
+STAFFING = {"problem_id": "example-optimize", "question": "Cheapest staffing that covers 7 shift units?", "payload": {
+    "formal_model": {
+        "requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); "
+                       "at most 6 juniors and 5 seniors; minimize cost.",
+        "variables": [{"name": "a", "sort": "int", "lo": 0, "hi": 6}, {"name": "b", "sort": "int", "lo": 0, "hi": 5}],
+        "obligations": [{"id": "R_cover", "text": "at least 7 units covered"}],
+        "constraints": [{"id": "C_cover", "covers": ["R_cover"], "expr": [">=", ["+", "a", ["*", 2, "b"]], 7]}],
+        "query": {"kind": "optimize", "sense": "minimize", "objective": ["+", ["*", 30, "a"], ["*", 45, "b"]]},
+        "witnesses": {"satisfying": [{"a": 1, "b": 3}], "violating": [{"a": 0, "b": 0}]}},
+    "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
 PROTECTION = {"relevant": True, "required_actions": ["immediate_protection", "evidence_preservation", "escalation"],
               "evidence_access": "need_to_know", "disclosure_controls": ["no disclosure without the person's consent"]}
 
@@ -49,6 +59,7 @@ def build() -> dict[str, tuple[str, dict]]:
     for stem, item_id, _ in RECEIPTS:
         receipts[stem] = cortex.run(_find(items, item_id))
     receipts["receipt-legal-handoff"] = cortex.run(copy.deepcopy(LEGAL))
+    receipts["receipt-formal-optimize-certified"] = cortex.run(copy.deepcopy(STAFFING))
     protected = _find(items, "H-F01")
     protected["problem_id"] = "example-victim-protection"
     protected["payload"]["victim_protection"] = copy.deepcopy(PROTECTION)
@@ -64,13 +75,13 @@ def build() -> dict[str, tuple[str, dict]]:
                 seen.add(pc)
                 out[f"proof-{pc}"] = ("cortex-proof-artifact", proof)
     registry = seed_registry()
-    out["genome-formal-z3"] = ("cortex-intelligence-genome", registry.get("cortex.formal.z3@0.1.1").to_dict())
+    out["genome-formal-z3"] = ("cortex-intelligence-genome", registry.get("cortex.formal.z3@0.2.0").to_dict())
     reserved = next(k for k in registry.keys() if not registry.get(k).profile.enabled
                     and registry.get(k).profile.biological_concept)
     out["genome-reserved-disabled"] = ("cortex-intelligence-genome", registry.get(reserved).to_dict())
     ledger = CompetenceLedger()
     record = ledger.settle(receipt=receipts["receipt-formal-recommend"], method="cortex.formal.z3",
-                           method_version="0.1.1", outcome_status="verified_success",
+                           method_version="0.2.0", outcome_status="verified_success",
                            provenance={"kind": "external_observation", "validation_status": "externally_verified",
                                        "ref": "example: schedule executed as proved"},
                            attribution=[{"method": "cortex.formal.z3", "role": "final_answer", "uncertainty": "low"},

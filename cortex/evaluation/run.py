@@ -83,7 +83,7 @@ def learning_checks() -> dict:
                          "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
         "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}})
     ledger = CompetenceLedger()
-    method, version = "cortex.formal.z3", "0.1.1"
+    method, version = "cortex.formal.z3", "0.2.0"
     geometry = receipt["geometry"]["epistemic_class"]
     out = {"receipt_id": receipt["receipt_id"]}
     ledger.settle(receipt=receipt, method=method, method_version=version, outcome_status="absent_feedback",

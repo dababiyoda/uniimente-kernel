@@ -1,0 +1,485 @@
+{
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "a feasible assignment with objective < 165, or a mis-encoded constraint",
+        "route": "cortex.formal.z3@0.2.0"
+      }
+    ],
+    "missing_information": [
+      "geometry field consequence_vector unresolved"
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "numbers ['1'] in the original requirement appear nowhere in the model",
+      "kind": "requirement_number_not_encoded",
+      "severity": "major"
+    }
+  },
+  "alternatives": [
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support optimization"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support optimization"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "does not support optimization"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "recommend",
+    "next_step": null,
+    "reason": "route states ['OK']"
+  },
+  "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support optimization"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support optimization"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support optimization"
+      ]
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.02191,
+    "solver_calls": 6,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "unknown",
+      "financial": "unknown",
+      "irreversible_disclosure": "unknown",
+      "physical": "unknown",
+      "privacy": "unknown",
+      "reputational": "unknown",
+      "rights": "unknown",
+      "systemic": "unknown",
+      "tail_risk": "unknown",
+      "third_party": "unknown"
+    },
+    "constraints": [
+      "C_cover"
+    ],
+    "epistemic_class": "optimization",
+    "evidence_quality": "none",
+    "exactness": "exact_required",
+    "objective": "optimize_objective",
+    "problem_id": "example-optimize",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "low",
+    "unresolved_fields": [
+      "consequence_vector"
+    ]
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "declared",
+      "formal_model"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.formal.z3@0.2.0|optimization"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": {
+      "feasible": true,
+      "model": {
+        "a": 1,
+        "b": 3
+      },
+      "objective": 165,
+      "optimal": true,
+      "sense": "minimize"
+    },
+    "per_route": [
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "a": 1,
+            "b": 3
+          },
+          "objective": 165,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "assumptions": [],
+        "dependencies": [
+          "solver:z3"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 0.020721,
+          "solver_calls": 6,
+          "usd": 0.0
+        },
+        "notes": [],
+        "organ_id": "cortex.formal.z3@0.2.0",
+        "organ_version": "0.2.0",
+        "origin": "solver",
+        "proof": {
+          "completeness": "not established by reverse translation",
+          "counterexample_search": [
+            {
+              "constraint": "C_cover",
+              "result": "binding: violable without it"
+            }
+          ],
+          "discrepancy_check": {
+            "discrepancies": [],
+            "warnings": [],
+            "witnesses": [
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "satisfying",
+                "witness": {
+                  "a": 1,
+                  "b": 3
+                }
+              },
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "violating",
+                "witness": {
+                  "a": 0,
+                  "b": 0
+                }
+              }
+            ]
+          },
+          "original_requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); at most 6 juniors and 5 seniors; minimize cost.",
+          "premises": [],
+          "proof_class": "formal",
+          "reverse_translation": [
+            "a is an integer in [0, 6]",
+            "b is an integer in [0, 5]",
+            "C_cover (covers R_cover): (a + (2 \u00d7 b)) \u2265 7",
+            "question: which assignment satisfying every constraint minimizes ((30 \u00d7 a) + (45 \u00d7 b))?"
+          ],
+          "scope": "valid_given_encoding",
+          "solver": {
+            "certificate": "no feasible assignment has objective < 165",
+            "certificate_check": "UNSAT",
+            "model": {
+              "a": 1,
+              "b": 3
+            },
+            "name": "z3",
+            "objective": 165,
+            "status": "OPTIMAL",
+            "version": "5.1.0"
+          },
+          "structured_model": {
+            "bounds": {
+              "a": [
+                0,
+                6
+              ],
+              "b": [
+                0,
+                5
+              ]
+            },
+            "constraints": [
+              {
+                "covers": [
+                  "R_cover"
+                ],
+                "expr": [
+                  ">=",
+                  [
+                    "+",
+                    "a",
+                    [
+                      "*",
+                      2,
+                      "b"
+                    ]
+                  ],
+                  7
+                ],
+                "id": "C_cover"
+              }
+            ],
+            "obligations": {
+              "R_cover": "at least 7 units covered"
+            },
+            "query": {
+              "kind": "optimize",
+              "objective": [
+                "+",
+                [
+                  "*",
+                  30,
+                  "a"
+                ],
+                [
+                  "*",
+                  45,
+                  "b"
+                ]
+              ],
+              "sense": "minimize"
+            },
+            "variables": {
+              "a": "int",
+              "b": "int"
+            }
+          },
+          "unverified_premises": []
+        },
+        "state": "OK",
+        "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises"
+      }
+    ],
+    "state": "OK"
+  },
+  "problem": {
+    "payload_digest": "sha256:cced237491275bba114a5fb7f44ee88615dbd8c64b38e2f52648d9a2b57c698c",
+    "problem_id": "example-optimize",
+    "question_digest": "sha256:1b011a53faedd071884ef1da95b15331756d29ab2c51af6371417fd01205e732"
+  },
+  "proof_artifacts": [
+    {
+      "completeness": "not established by reverse translation",
+      "counterexample_search": [
+        {
+          "constraint": "C_cover",
+          "result": "binding: violable without it"
+        }
+      ],
+      "discrepancy_check": {
+        "discrepancies": [],
+        "warnings": [],
+        "witnesses": [
+          {
+            "agrees": true,
+            "index": 0,
+            "kind": "satisfying",
+            "witness": {
+              "a": 1,
+              "b": 3
+            }
+          },
+          {
+            "agrees": true,
+            "index": 0,
+            "kind": "violating",
+            "witness": {
+              "a": 0,
+              "b": 0
+            }
+          }
+        ]
+      },
+      "original_requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); at most 6 juniors and 5 seniors; minimize cost.",
+      "premises": [],
+      "proof_class": "formal",
+      "reverse_translation": [
+        "a is an integer in [0, 6]",
+        "b is an integer in [0, 5]",
+        "C_cover (covers R_cover): (a + (2 \u00d7 b)) \u2265 7",
+        "question: which assignment satisfying every constraint minimizes ((30 \u00d7 a) + (45 \u00d7 b))?"
+      ],
+      "scope": "valid_given_encoding",
+      "solver": {
+        "certificate": "no feasible assignment has objective < 165",
+        "certificate_check": "UNSAT",
+        "model": {
+          "a": 1,
+          "b": 3
+        },
+        "name": "z3",
+        "objective": 165,
+        "status": "OPTIMAL",
+        "version": "5.1.0"
+      },
+      "structured_model": {
+        "bounds": {
+          "a": [
+            0,
+            6
+          ],
+          "b": [
+            0,
+            5
+          ]
+        },
+        "constraints": [
+          {
+            "covers": [
+              "R_cover"
+            ],
+            "expr": [
+              ">=",
+              [
+                "+",
+                "a",
+                [
+                  "*",
+                  2,
+                  "b"
+                ]
+              ],
+              7
+            ],
+            "id": "C_cover"
+          }
+        ],
+        "obligations": {
+          "R_cover": "at least 7 units covered"
+        },
+        "query": {
+          "kind": "optimize",
+          "objective": [
+            "+",
+            [
+              "*",
+              30,
+              "a"
+            ],
+            [
+              "*",
+              45,
+              "b"
+            ]
+          ],
+          "sense": "minimize"
+        },
+        "variables": {
+          "a": "int",
+          "b": "int"
+        }
+      },
+      "unverified_premises": []
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:1586de699a1e110c5a9eec61280d2e84c9fee5b65a367d84ae660fa8037d8540",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.formal.z3@0.2.0"
+    ]
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "premises_verified",
+    "formal_validity": "valid_given_encoding",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises",
+  "verifier": {
+    "blocking": false,
+    "findings": [
+      {
+        "detail": "numbers ['1'] in the original requirement appear nowhere in the model",
+        "kind": "requirement_number_not_encoded",
+        "severity": "major",
+        "target": null
+      }
+    ],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.4",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {
+      "cortex.formal.z3@0.2.0": "0.2.0"
+    },
+    "solver": {
+      "name": "z3",
+      "version": "5.1.0"
+    }
+  }
+}

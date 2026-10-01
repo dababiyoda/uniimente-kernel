@@ -303,11 +303,12 @@ SEED_ORGANS = {
         benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
     "cortex.formal.z3": dict(
         # 0.1.1: an exhausted Z3 timeout ("canceled") is TIMEOUT, and an undecided witness
-        # check stops the run instead of counting as agreement. 0.1.0 is preserved in history.
-        version="0.1.1",
-        description="Formal feasibility and entailment on an inspectable model via Z3.",
+        # check stops the run instead of counting as agreement. 0.2.0: optimization with an
+        # optimality certificate. Earlier versions are preserved in history.
+        version="0.2.0",
+        description="Formal feasibility, entailment and certified optimization on an inspectable model via Z3.",
         role="solver", layer="solver_macro_cognitive",
-        geometries=("deductive_logical", "constraint_feasibility", "arithmetic"), proofs=("formal",),
+        geometries=("deductive_logical", "constraint_feasibility", "optimization", "arithmetic"), proofs=("formal",),
         observations=("structured model", "obligations", "witnesses", "premises"),
         state="solver session per problem", update="none",
         recruitment="recruited only when a structured model exists",
@@ -364,6 +365,12 @@ RESERVED_FAMILIES = {
     "cortex.simulation.twin": ("solver_macro_cognitive", ("strategic", "causal"), "simulation", "simulation", None),
     "cortex.game.mechanism": ("solver_macro_cognitive", ("strategic",), "simulation", "game_theory", None),
     "cortex.human.panel": ("distributed_collective", ("normative_value", "legal", "institutional_acceptance"), "human_adjudication", "human_judgment", None),
+    # Added in cortex 0.1.4 from review pass 2 (B06, B13, B28, B30): families the review named
+    # that had no extension point.
+    "cortex.exact.symbolic": ("solver_macro_cognitive", ("arithmetic",), "formal", "exact_symbolic", None),
+    "cortex.search.heuristic": ("solver_macro_cognitive", ("strategic", "optimization"), "optimization", "heuristic_search", None),
+    "cortex.meta.mental_models": ("meta_polyintelligence_cortex", ("strategic",), "estimation", "representation_operators", None),
+    "cortex.meta.metaconsensus": ("meta_polyintelligence_cortex", ("strategic", "causal", "prediction"), "simulation", "epistemic_jurisdiction", None),
     "cortex.collective.hive_quorum": ("distributed_collective", ("strategic",), "simulation", "quorum",
         _BIO("independent scouts accumulate noisy evidence; cross-inhibition; quorum threshold",
              "per-option support counts, inhibition rate, quorum threshold", "candidate options in, chosen option out",

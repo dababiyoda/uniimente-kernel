@@ -11,6 +11,7 @@
     "receipt-causal-identified.json": "cortex-receipt",
     "receipt-causal-unmeasured-confounding.json": "cortex-receipt",
     "receipt-estimate-dependent-inputs.json": "cortex-receipt",
+    "receipt-formal-optimize-certified.json": "cortex-receipt",
     "receipt-formal-recommend.json": "cortex-receipt",
     "receipt-gates-incomparable.json": "cortex-receipt",
     "receipt-legal-handoff.json": "cortex-receipt",

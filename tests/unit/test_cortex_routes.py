@@ -112,6 +112,81 @@ class TestFormal:
         assert r.state == "BUDGET_EXHAUSTED"
 
 
+# ------------------------------------------------------------------ formal optimization (review B08, B64)
+def staffing(sense="minimize", **overrides):
+    """Cover >= 7 units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); brute force: a=1, b=3, 165."""
+    model = {"requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); "
+                            "at most 6 juniors and 5 seniors; minimize cost.",
+             "variables": [{"name": "a", "sort": "int", "lo": 0, "hi": 6}, {"name": "b", "sort": "int", "lo": 0, "hi": 5}],
+             "obligations": [{"id": "R_cover", "text": "at least 7 units covered"}],
+             "constraints": [{"id": "C_cover", "covers": ["R_cover"], "expr": [">=", ["+", "a", ["*", 2, "b"]], 7]}],
+             "query": {"kind": "optimize", "sense": sense, "objective": ["+", ["*", 30, "a"], ["*", 45, "b"]]},
+             "witnesses": {"satisfying": [{"a": 1, "b": 3}], "violating": [{"a": 0, "b": 0}]}}
+    model.update(overrides)
+    return model
+
+
+def brute_force(sense):
+    costs = [(30 * a + 45 * b) for a in range(7) for b in range(6) if a + 2 * b >= 7]
+    return min(costs) if sense == "minimize" else max(costs)
+
+
+class TestFormalOptimization:
+    def run(self, model, **payload):
+        return FormalOrgan().run(P({"formal_model": model, **payload}), None, None)
+
+    @pytest.mark.parametrize("sense", ["minimize", "maximize"])
+    def test_optimum_matches_brute_force_and_carries_a_certificate(self, sense):
+        r = self.run(staffing(sense))
+        assert r.state == "OK" and r.answer["optimal"] is True
+        assert r.answer["objective"] == brute_force(sense)
+        assert r.proof["solver"]["status"] == "OPTIMAL" and r.proof["solver"]["certificate_check"] == "UNSAT"
+        assert "question: which assignment" in r.proof["reverse_translation"][-1]
+
+    def test_a_lying_optimizer_is_caught_by_the_certificate(self, monkeypatch):
+        real = z3.Optimize
+
+        class Worse:  # reports an objective 30 above the true optimum
+            def __init__(self):
+                self.o = real()
+
+            def __getattr__(self, name):
+                return getattr(self.o, name)
+
+            def minimize(self, objective):
+                self.h = self.o.minimize(objective)
+                return self
+
+            def value(self):
+                return z3.IntVal(self.h.value().as_long() + 30)
+
+        monkeypatch.setattr(z3, "Optimize", Worse)
+        r = self.run(staffing())
+        assert r.state == "INCONCLUSIVE" and r.answer is None
+        assert any("strictly better" in n for n in r.notes)
+
+    def test_infeasible_unbounded_and_malformed(self):
+        infeasible = staffing(constraints=staffing()["constraints"] + [
+            {"id": "C_cap", "covers": ["R_cover"], "expr": ["<=", ["+", "a", "b"], 2]}],
+            witnesses={"satisfying": [], "violating": [{"a": 0, "b": 0}]})
+        r = self.run(infeasible)
+        assert r.state == "OK" and r.answer == {"feasible": False, "unsat_core": ["C_cap", "C_cover"]}
+        unbounded = staffing("maximize", variables=[{"name": "a", "sort": "int", "lo": 0}, {"name": "b", "sort": "int", "lo": 0}],
+                             witnesses={"satisfying": [], "violating": []})
+        assert self.run(unbounded).state == "INCONCLUSIVE"
+        assert self.run(staffing(query={"kind": "optimize", "sense": "best", "objective": "a"})).state == "MALFORMED_INPUT"
+        assert self.run(staffing(query={"kind": "optimize", "sense": "minimize",
+                                        "objective": [">=", "a", 1]})).state == "MALFORMED_INPUT"
+
+    def test_routes_as_optimization_geometry(self):
+        geometry = derive_geometry(P({"formal_model": staffing()}))
+        assert geometry.epistemic_class == "optimization" and geometry.objective == "optimize_objective"
+
+    def test_budget_is_checked_before_optimizing(self):
+        geometry = derive_geometry(P({"formal_model": staffing(), "resources": {"max_solver_calls": 4}}))
+        assert FormalOrgan().run(P({"formal_model": staffing()}), geometry, None).state == "BUDGET_EXHAUSTED"
+
+
 # ------------------------------------------------------------------ estimation
 SAAS = {"target": {"name": "spend", "unit": "USD/year"},
         "variables": [{"name": "seats", "unit": "count", "low": 40, "high": 80},

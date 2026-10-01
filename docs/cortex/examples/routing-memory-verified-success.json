@@ -24,7 +24,7 @@
   "consequence_class": "internal_write",
   "geometry": "constraint_feasibility",
   "method": "cortex.formal.z3",
-  "method_version": "0.1.1",
+  "method_version": "0.2.0",
   "outcome_provenance": {
     "kind": "external_observation",
     "ref": "example: schedule executed as proved",
@@ -33,8 +33,8 @@
   "outcome_status": "verified_success",
   "policy_version": "cortex-route-policy/0.1",
   "problem_id": "H-F01",
-  "receipt_id": "sha256:7de278e1b21397c39f4ef8c7876223aba863e7b8fe44fe595f9165b73c88b9d7",
+  "receipt_id": "sha256:5ae7453ff13eb994217be70aee13215b62dd5afcceba0b3b879dc0af13599ff7",
   "recommendation": "recommend",
-  "record_id": "sha256:bb3ae2f27b4d20f40c0cb1d786359dfec2002d39ef6325497cd85d2d899e2a45",
+  "record_id": "sha256:e861c4a73539d0cfc5c05711a226f447c569b002b17fc8fb67f48c2e6a7b3bc6",
   "rollback_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 }

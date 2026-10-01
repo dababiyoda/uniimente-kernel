@@ -32,7 +32,7 @@ from .organs.formal import FormalOrgan
 from .organs.semantic import SemanticOrgan
 
 POLICY_VERSION = "cortex-route-policy/0.1"
-FORMAL = "cortex.formal.z3@0.1.1"
+FORMAL = "cortex.formal.z3@0.2.0"
 FERMI = "cortex.estimation.fermi@0.1.0"
 EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"
@@ -66,13 +66,17 @@ _ORDER = ("recommend", "bounded_test", "handoff", "abstain")
 HUMAN_LED_PROTECTION = ("immediate_protection", "safe_contact", "escalation")
 
 
+def _formal_class(model: Mapping[str, Any]) -> str:
+    kind = (model.get("query") or {}).get("kind", "feasibility")
+    return {"entailment": "deductive_logical", "optimize": "optimization"}.get(kind, "constraint_feasibility")
+
+
 def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
     """(route key, epistemic class of the payload part it serves), in policy order."""
     parts = []
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
-        kind = (fm.get("query") or {}).get("kind", "feasibility")
-        parts.append((FORMAL, "deductive_logical" if kind == "entailment" else "constraint_feasibility"))
+        parts.append((FORMAL, _formal_class(fm)))
     if isinstance(payload.get("estimation_model"), Mapping):
         parts.append((FERMI, "estimate"))
     claim = payload.get("claim")
@@ -87,8 +91,7 @@ def _structural_classes(payload: Mapping[str, Any]) -> list[str]:
     out = []
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
-        kind = (fm.get("query") or {}).get("kind", "feasibility")
-        out.append("deductive_logical" if kind == "entailment" else "constraint_feasibility")
+        out.append(_formal_class(fm))
     if isinstance(payload.get("estimation_model"), Mapping):
         out.append("estimate")
     claim = payload.get("claim")
@@ -165,10 +168,13 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
     quality = ("high" if "externally_verified" in statuses else "medium" if "internally_observed" in statuses
                else "low" if evidence or p.get("sources") else "none")
     exactness = {"constraint_feasibility": "exact_required", "deductive_logical": "exact_required",
-                 "arithmetic": "exact_required", "estimate": "approximate_ok"}.get(epistemic, "unknown")
-    uncertainty = {"constraint_feasibility": "low", "deductive_logical": "low", "estimate": "high",
+                 "optimization": "exact_required", "arithmetic": "exact_required",
+                 "estimate": "approximate_ok"}.get(epistemic, "unknown")
+    uncertainty = {"constraint_feasibility": "low", "deductive_logical": "low", "optimization": "low",
+                   "estimate": "high",
                    "causal": "high", "prediction": "high"}.get(epistemic, "unknown")
     objective = {"constraint_feasibility": "decide_feasibility", "deductive_logical": "decide_entailment",
+                 "optimization": "optimize_objective",
                  "estimate": "estimate_quantity", "causal": "estimate_effect", "prediction": "assess_claim",
                  "semantic": "assess_claim" if claim else "synthesize", "strategic": "choose_option",
                  "normative_value": "adjudicate", "legal": "adjudicate",
@@ -185,6 +191,66 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
         evidence_quality=quality, resource_limits=ResourceLimits.from_dict(p.get("resources")),
         consequence_vector=harm, consequence_class=consequence, reversibility=reversibility,
         unresolved_fields=tuple(dict.fromkeys(unresolved)), provenance=prov, rejected_proposals=tuple(rejected))
+
+
+# ------------------------------------------------------------------ accountability
+# Review pass 2 (B34, B35): a receipt should narrow disputes. It names the strongest
+# counterargument, what observation would falsify each route's claim, and what is missing.
+_SEVERITY = {"critical": 0, "major": 1, "minor": 2}
+
+
+def _falsifier(result: OrganResult) -> str:
+    proof, answer = result.proof or {}, result.answer
+    pc = proof.get("proof_class")
+    if answer is None:
+        return "no claim asserted; nothing to falsify"
+    if pc == "formal":
+        kind = (proof.get("structured_model") or {}).get("query", {}).get("kind", "feasibility")
+        premises = [p.get("id") for p in proof.get("premises") or []]
+        tail = f", or premise {premises} found false" if premises else ""
+        if kind == "optimize" and answer.get("optimal"):
+            relation = "<" if answer.get("sense") == "minimize" else ">"
+            return f"a feasible assignment with objective {relation} {answer.get('objective')}, or a mis-encoded constraint{tail}"
+        if answer.get("feasible") is False:
+            return f"an assignment satisfying every constraint in core {answer.get('unsat_core')}, or a mis-encoded constraint{tail}"
+        if answer.get("entailed") is True:
+            return f"an assignment satisfying the constraints that violates the property{tail}"
+        if answer.get("entailed") is False:
+            return "the reported counterexample violating a constraint"
+        return f"the reported model violating a constraint, or a requirement the encoding omits{tail}"
+    if pc == "estimation":
+        return (f"an observed value outside [{answer.get('low')}, {answer.get('high')}] {answer.get('unit')}, "
+                f"or a reference class the estimate contradicts")
+    if pc == "causal_estimate":
+        return (f"a better-identified estimate (e.g. randomized) outside {answer.get('ci95')}, a failed refutation, "
+                f"or an identification assumption shown false")
+    if pc == "evidence_assessment":
+        return "verified evidence contradicting the claim, or the missing observations resolving against it"
+    if pc == "semantic_sourced":
+        return "a quoted span absent from its cited source, or the cited source shown wrong"
+    return "not stated by the route"
+
+
+def _accountability(geometry, results, verifier, gate_reports, protection) -> dict:
+    findings = sorted(verifier.get("findings", []), key=lambda f: _SEVERITY.get(f["severity"], 3))
+    strongest = ({"severity": findings[0]["severity"], "kind": findings[0]["kind"], "detail": findings[0]["detail"]}
+                 if findings else None)
+    missing = [f"geometry field {f} unresolved" for f in geometry.unresolved_fields]
+    for r in results:
+        proof = r.proof or {}
+        assessment = proof.get("evidence_assessment", proof)
+        missing += [f"observation: {m.get('description')}" for m in assessment.get("missing_observations", []) or []]
+        if assessment.get("unresolved_question"):
+            missing.append(f"unresolved: {assessment['unresolved_question']}")
+    for option, report in (gate_reports or {}).items():
+        missing += [f"{option}: {name} gate unresolved ({g.reason})" for name, g in report.gates.items()
+                    if g.status == "UNRESOLVED"]
+    if protection is not None and protection.relevant:
+        missing += [f"protection: {g}" for g in protection.gaps]
+    return {"strongest_counterargument": strongest,
+            "falsification_conditions": [{"route": r.organ_id, "condition": _falsifier(r)} for r in results],
+            "missing_information": list(dict.fromkeys(missing)),
+            "note": "competence evidence and proof narrow disputes; they never create authority"}
 
 
 class Cortex:
@@ -275,13 +341,15 @@ class Cortex:
 
         state, disposition, reason, next_step = self._dispose(
             geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options)
-        if protection.relevant and set(protection.required_actions) & set(HUMAN_LED_PROTECTION):
-            human_led = [a for a in protection.required_actions if a in HUMAN_LED_PROTECTION]
+        if protection.relevant and (set(protection.required_actions) & set(HUMAN_LED_PROTECTION) or protection.gaps):
+            human_led = [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]
             if disposition != "handoff":
                 disposition = "handoff"
-                reason = f"victim protection requires human-led action {human_led}; {reason}"
-            next_step = (f"human-led protective response ({', '.join(protection.required_actions)}); "
-                         f"evidence access {protection.evidence_access}")
+                why = f"human-led action {human_led}" if human_led else f"unresolved protection gaps {list(protection.gaps)}"
+                reason = f"victim protection requires {why}; {reason}"
+            next_step = (f"human-led protective response ({', '.join(protection.ordered_actions) or 'actions to be decided'}); "
+                         f"evidence access {protection.evidence_access}"
+                         + (f"; resolve first: {'; '.join(protection.gaps)}" if protection.gaps else ""))
         verifier = adversarial.verify(problem, geometry, results, proposed_disposition=disposition,
                                       gate_reports=gate_reports, ranking=ranking, protection=protection)
         if verifier["blocking"] and disposition == "recommend":
@@ -426,7 +494,8 @@ class Cortex:
             "protection": None if protection is None or not protection.relevant else {
                 **protection.to_dict(),
                 "evidence_handling": "receipt carries evidence identifiers and digests only, never content",
-                "human_led_actions": [a for a in protection.required_actions if a in HUMAN_LED_PROTECTION]},
+                "human_led_actions": [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]},
+            "accountability": _accountability(geometry, results, verifier, gate_reports, protection),
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
                              "memory_keys": [f"{k}|{geometry.epistemic_class}" for k in selected]},
             "authority_created": False,
@@ -464,6 +533,10 @@ class Cortex:
                       "legitimate_authority": "not_granted_by_cortex",
                       "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"},
             "protection": None,
+            "accountability": {"strongest_counterargument": {"severity": "critical", "kind": "malformed_input",
+                                                             "detail": why},
+                               "falsification_conditions": [], "missing_information": [f"well-formed input: {why}"],
+                               "note": "competence evidence and proof narrow disputes; they never create authority"},
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None, "memory_keys": []},
             "authority_created": False, "execution_authority": "none",
         }

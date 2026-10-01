@@ -61,6 +61,7 @@
       "enum": [
         "decide_feasibility",
         "decide_entailment",
+        "optimize_objective",
         "estimate_quantity",
         "assess_claim",
         "estimate_effect",

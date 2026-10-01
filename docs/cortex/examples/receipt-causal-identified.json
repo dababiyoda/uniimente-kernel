@@ -1,4 +1,23 @@
 {
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "a better-identified estimate (e.g. randomized) outside [1.7894413709111396, 2.1590794719145205], a failed refutation, or an identification assumption shown false",
+        "route": "cortex.evidence_causal@0.1.0"
+      }
+    ],
+    "missing_information": [
+      "observation: an explicit estimand",
+      "observation: identification assumptions",
+      "observation: treatment, outcome and confounder data (or an experiment)"
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "estimate rests on stated identification assumptions; refutations do not prove them",
+      "kind": "identification_assumed",
+      "severity": "minor"
+    }
+  },
   "alternatives": [
     {
       "route": "cortex.estimation.fermi@0.1.0",
@@ -7,7 +26,7 @@
       ]
     },
     {
-      "route": "cortex.formal.z3@0.1.1",
+      "route": "cortex.formal.z3@0.2.0",
       "why_not": [
         "does not support causal"
       ]
@@ -48,7 +67,7 @@
     },
     {
       "eligible": false,
-      "key": "cortex.formal.z3@0.1.1",
+      "key": "cortex.formal.z3@0.2.0",
       "may_recommend": false,
       "reasons": [
         "does not support causal"
@@ -66,7 +85,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.124044,
+    "seconds": 0.125817,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -167,7 +186,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.121993,
+          "seconds": 0.124199,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -354,7 +373,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:c91e8ad65af5b7fcd51308a7c946267927ba0d58595a7858d3651da15b85126c",
+  "receipt_id": "sha256:d4ab951ef0fc16d9b62f16e4e81d39a678ae1be72e60b67d261c1932d9b6c6d9",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -397,7 +416,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.3",
+    "cortex": "0.1.4",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.evidence_causal@0.1.0": "0.1.0"

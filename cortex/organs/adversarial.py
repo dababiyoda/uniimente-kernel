@@ -53,7 +53,8 @@ def verify(problem, geometry, results: list, *, proposed_disposition: str,
                 if str(c.get("result", "")).startswith("implied"):
                     add("minor", "redundant_constraint", f"{c['constraint']} is implied by the others")
             requirement = proof.get("original_requirement") or ""
-            encoded = str(proof.get("structured_model", {}).get("constraints", ""))
+            encoded = str(proof.get("structured_model", {}).get("constraints", "")) + \
+                str(proof.get("structured_model", {}).get("query", ""))
             bounds = str(proof.get("structured_model", {}).get("bounds", ""))
             missing = sorted(set(_NUMBER.findall(requirement)) - set(_NUMBER.findall(encoded + bounds)))
             if missing and r.state in ("OK", "WORLD_UNVERIFIED"):
@@ -99,7 +100,8 @@ def verify(problem, geometry, results: list, *, proposed_disposition: str,
             add("critical", "authority_boundary",
                 f"{geometry.epistemic_class} questions belong to legitimate human or institutional authority")
     if protection is not None and getattr(protection, "relevant", False) and proposed_disposition == "recommend" \
-            and set(protection.required_actions) & {"immediate_protection", "safe_contact", "escalation"}:
+            and (set(protection.required_actions) & {"immediate_protection", "safe_contact", "escalation"}
+                 or getattr(protection, "gaps", ())):
         add("critical", "victim_protection_boundary",
             "protective actions are human-led; cognition may not recommend in their place")
     if ranking and ranking.get("chosen") and gate_reports:

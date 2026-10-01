@@ -29,13 +29,16 @@ from typing import Any, Mapping
 
 from ..contracts import Expenditure, OrganResult
 
-ORGAN_ID = "cortex.formal.z3@0.1.1"
-VERSION = "0.1.1"
+ORGAN_ID = "cortex.formal.z3@0.2.0"
+VERSION = "0.2.0"
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _BOOL_OPS = ("and", "or", "not", "implies")
 _CMP_OPS = ("=", "!=", "<", "<=", ">", ">=")
 _ARITH_OPS = ("+", "-", "*")
 _SYMBOL = {"=": "=", "!=": "≠", "<": "<", "<=": "≤", ">": ">", ">=": "≥", "+": "+", "-": "−", "*": "×"}
+
+
+QUERY_KINDS = ("feasibility", "entailment", "optimize")
 
 
 class FormalModelError(ValueError):
@@ -133,10 +136,15 @@ class Spec:
         if not self.constraints:
             raise FormalModelError("model declares no constraints")
         self.query = model.get("query", {"kind": "feasibility"})
-        if self.query.get("kind") not in ("feasibility", "entailment"):
+        if self.query.get("kind") not in QUERY_KINDS:
             raise FormalModelError(f"unsupported query kind {self.query.get('kind')!r}")
         if self.query["kind"] == "entailment" and _check_expr(self.query.get("property"), self.variables) != "bool":
             raise FormalModelError("entailment property must be boolean")
+        if self.query["kind"] == "optimize":
+            if self.query.get("sense") not in ("minimize", "maximize"):
+                raise FormalModelError("optimize needs sense 'minimize' or 'maximize'")
+            if _check_expr(self.query.get("objective"), self.variables) != "num":
+                raise FormalModelError("optimize objective must be numeric")
         witnesses = model.get("witnesses", {})
         self.satisfying = list(witnesses.get("satisfying", []))
         self.violating = list(witnesses.get("violating", []))
@@ -184,6 +192,9 @@ class FormalOrgan:
                     for c in spec.constraints]
         if spec.query["kind"] == "entailment":
             reverse.append(f"question: do the constraints guarantee {render(spec.query['property'])}?")
+        elif spec.query["kind"] == "optimize":
+            reverse.append(f"question: which assignment satisfying every constraint "
+                           f"{spec.query['sense']}s {render(spec.query['objective'])}?")
 
         # discrepancy check (structural part)
         discrepancies = []
@@ -295,6 +306,28 @@ class FormalOrgan:
                                     None, spec, z3, started, calls, reverse, discrepancies, warnings,
                                     witness_results, cex, {"status": "UNKNOWN",
                                                            "reason": str(solver.reason_unknown())})
+        elif spec.query["kind"] == "optimize":
+            solver, res = check(domain, track=exprs)
+            if res == z3.unsat:
+                core = sorted(str(t).replace("__track_", "") for t in solver.unsat_core())
+                answer = {"feasible": False, "unsat_core": core}
+                solver_out = {"status": "UNSAT", "unsat_core": core}
+            elif res != z3.sat:
+                return self._result(_unknown_state(solver), None, spec, z3, started, calls, reverse, discrepancies,
+                                    warnings, witness_results, cex, {"status": "UNKNOWN",
+                                                                     "reason": str(solver.reason_unknown())})
+            else:
+                if calls + 2 > max_calls:
+                    return self._fail("BUDGET_EXHAUSTED", "solver-call budget exhausted before optimization",
+                                      started, reverse=reverse, discrepancies=discrepancies, warnings=warnings,
+                                      calls=calls)
+                outcome = self._optimize(z3, spec, env, domain, exprs, check)
+                calls += 1  # the Optimize call; the certificate check counted itself
+                if outcome[0] != "OK":
+                    state, why = outcome
+                    return self._result(state, None, spec, z3, started, calls, reverse, discrepancies,
+                                        warnings + [why], witness_results, cex, {"status": "UNKNOWN", "reason": why})
+                _, answer, solver_out = outcome
         else:
             prop = self._build(z3, spec.query["property"], env)
             solver, res = check(domain + [z3.Not(prop)], track=exprs)
@@ -316,6 +349,38 @@ class FormalOrgan:
         state = "WORLD_UNVERIFIED" if unverified else "OK"
         return self._result(state, answer, spec, z3, started, calls, reverse, discrepancies, warnings,
                             witness_results, cex, solver_out)
+
+    # ---------------------------------------------------------------- optimization
+    def _optimize(self, z3, spec, env, domain, exprs, check):
+        """Optimal assignment plus a certificate: an independent check that no feasible
+        assignment is strictly better. Returns ("OK", answer, solver_out) or (state, reason)."""
+        sense = spec.query["sense"]
+        objective = self._build(z3, spec.query["objective"], env)
+        opt = z3.Optimize()
+        opt.set("timeout", spec.timeout_ms)
+        for a in domain + list(exprs.values()):
+            opt.add(a)
+        handle = opt.minimize(objective) if sense == "minimize" else opt.maximize(objective)
+        if opt.check() != z3.sat:
+            return (_unknown_state(opt), str(opt.reason_unknown()))
+        value = handle.value()
+        if not (z3.is_int_value(value) or z3.is_rational_value(value)):
+            return ("INCONCLUSIVE", f"objective unbounded or not attained: {value}")
+        model = opt.model()
+        assignment = {k: self._value(z3, model.eval(env[k], model_completion=True)) for k in spec.variables}
+        better = objective < value if sense == "minimize" else objective > value
+        certifier, res = check(domain + list(exprs.values()) + [better])
+        if res == z3.sat:
+            return ("INCONCLUSIVE", "optimizer value contradicted: a strictly better feasible assignment exists")
+        if res != z3.unsat:
+            return (_unknown_state(certifier), str(certifier.reason_unknown()))
+        number = self._value(z3, value)
+        relation = "<" if sense == "minimize" else ">"
+        answer = {"feasible": True, "optimal": True, "sense": sense, "objective": number, "model": assignment}
+        solver_out = {"status": "OPTIMAL", "objective": number, "model": assignment,
+                      "certificate": f"no feasible assignment has objective {relation} {number}",
+                      "certificate_check": "UNSAT"}
+        return ("OK", answer, solver_out)
 
     # ---------------------------------------------------------------- helpers
     @staticmethod

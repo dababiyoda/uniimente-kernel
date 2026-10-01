@@ -1,4 +1,19 @@
 {
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "an observed value outside [2393.400199658791, 4983.59830185558] count/day, or a reference class the estimate contradicts",
+        "route": "cortex.estimation.fermi@0.1.0"
+      }
+    ],
+    "missing_information": [],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "no reference-class anchor available",
+      "kind": "no_outside_view",
+      "severity": "minor"
+    }
+  },
   "alternatives": [
     {
       "route": "cortex.evidence_causal@0.1.0",
@@ -7,7 +22,7 @@
       ]
     },
     {
-      "route": "cortex.formal.z3@0.1.1",
+      "route": "cortex.formal.z3@0.2.0",
       "why_not": [
         "does not support estimate"
       ]
@@ -47,7 +62,7 @@
     },
     {
       "eligible": false,
-      "key": "cortex.formal.z3@0.1.1",
+      "key": "cortex.formal.z3@0.2.0",
       "may_recommend": false,
       "reasons": [
         "does not support estimate"
@@ -65,7 +80,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.340454,
+    "seconds": 0.384295,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -160,7 +175,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.337198,
+          "seconds": 0.380434,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -307,7 +322,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:f8d838aabf9dbe5e8177b16fe598ea61a3b200657bd692abf176502ab6b80157",
+  "receipt_id": "sha256:df38abde489795e90509d61eed47802433fd7fbacf0cc0ac8efab09beab2d0b7",
   "route": {
     "composition": false,
     "policy": "cortex-route-policy/0.1",
@@ -350,7 +365,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.3",
+    "cortex": "0.1.4",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.estimation.fermi@0.1.0": "0.1.0"

@@ -529,8 +529,14 @@
   adopt:
   - Discourse
   - Ghost memberships
-  gap: No owned or federated community; DALEOBANKS distributes through rented platforms.
-  state: OUTSTANDING
+  existing:
+  - foundry/systems/community.py
+  - greg/foundry_bridge.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
+  gap: Portable signed member identities, posts, edits, reactions, departures and paginated complete history export/import are implemented through GREG. Network enrollment, moderation operations, serving and real member use remain unfinished.
+  limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
+  state: PARTIAL
 33:
   acceptance:
   - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity
@@ -550,7 +556,12 @@
   - Plausible
   existing:
   - DALEOBANKS:services/analytics.py
-  gap: Content analytics exist; no map of which narrative sequences produce subscribers or customers.
+  - foundry/systems/journeys.py
+  - greg/foundry_bridge.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.apply ingest; foundry.query report (system 34)
+  gap: Source-declared event ingestion, time-bounded content sequences, subscriber/customer ratios and separate-currency receipt totals are implemented. Automatic first-party collection, authenticated provider imports and real audience evidence remain open.
+  limitations: Temporal association, not causal attribution or verified settlement. Fixture and observed tiers are queried separately; no impression-based revenue estimate.
   state: PARTIAL
 35:
   acceptance:
@@ -803,8 +814,11 @@
   - PostHog funnels
   existing:
   - foundry/territory.py
-  - tests/unit/test_foundry.py
-  gap: Territory Graphs validate; no audience journey measured through them.
+  - foundry/systems/journeys.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.query route (system 50); uses the canonical system-34 observed-event store
+  gap: Existing TerritoryGraph now routes from retained subject visits to unvisited, evidence-valid next doors. Live collection/delivery and measured real audience journey outcomes remain open.
+  limitations: Local recommendation only; no contact, self-granted authority or fabricated conversion. Stale/retired nodes and future visits cannot advance the route.
   state: PARTIAL
 51:
   acceptance:

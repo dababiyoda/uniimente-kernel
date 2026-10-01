@@ -1,0 +1,355 @@
+{
+  "decision_id": "FM-OWNED-COMMUNITY-JOURNEYS-20261001",
+  "title": "Implement portable community records and measured journeys through canonical GREG",
+  "problem": "Native production, existing social memory and TerritoryGraph remain disconnected from owned member history and observed content-to-demand paths.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR147 guarded Foundry/media plus fixed DSL protocol; DALE pinned source provides social memory and aggregate analytics, but not portable signed community exports or content sequence cohorts.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Add local signed community records and observed journeys through existing guarded GREG; reuse TerritoryGraph and SQLite.",
+      "advantages": [
+        "Executable portable data and actual retained-event routing."
+      ],
+      "disadvantages": [
+        "Serving, moderation and authenticated observation collectors remain open."
+      ],
+      "revival_evidence": "Measured operational limitations or mature system integration evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Integrate self-hosted Discourse/Ghost and PostHog with owned deployment.",
+      "advantages": [
+        "Mature community moderation and authenticated ingestion interfaces."
+      ],
+      "disadvantages": [
+        "No owned instance is connected; installation/deployment cannot be inferred from fixture tests."
+      ],
+      "revival_evidence": "Authorized available owned deployment and verified export/authority contracts."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Signed synthetic members, export/import, hostile mutations, temporal-control fixtures and signed GREG missions in CI.",
+      "advantages": [
+        "Tests integrity and actual machine reachability without live contact."
+      ],
+      "disadvantages": [
+        "No real membership, behavioral change or market proof."
+      ],
+      "revival_evidence": "Later authorized real-world usage, without postponing buildable machinery."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave production disconnected from owned relationships and measured demand.",
+    "advantages": [
+      "No new state projections."
+    ],
+    "disadvantages": [
+      "A tested media component remains an incomplete machine."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Complete one machine; native production must connect to owned relationships and performance memory. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Member keys could be mistaken for kernel authority or real-world identity."
+      ],
+      "evidence_refs": [
+        "foundry/systems/community.py",
+        "foundry/systems/journeys.py",
+        "tests/unit/test_greg_community_journeys.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse canonical GREG, TerritoryGraph and mature SQLite/Ed25519 primitives rather than parallel authority or graph models. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Unsigned edits, replay or changed history could forge interactions."
+      ],
+      "evidence_refs": [
+        "foundry/systems/community.py",
+        "foundry/systems/journeys.py",
+        "tests/unit/test_greg_community_journeys.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Application signatures do not establish human identity or authority; hostile replay/forgery must fail. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Conversion analytics could fabricate outcomes or causality."
+      ],
+      "evidence_refs": [
+        "foundry/systems/community.py",
+        "foundry/systems/journeys.py",
+        "tests/unit/test_greg_community_journeys.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Bound stores and paginated exports; preserve transactional failure and replay behavior. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Unbounded or partial export/write operations could lose portability."
+      ],
+      "evidence_refs": [
+        "foundry/systems/community.py",
+        "foundry/systems/journeys.py",
+        "tests/unit/test_greg_community_journeys.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep fixtures, source-declared observations, measured association and verified settlement separate. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Routing could bypass evidence floors or become a second content model."
+      ],
+      "evidence_refs": [
+        "foundry/systems/community.py",
+        "foundry/systems/journeys.py",
+        "tests/unit/test_greg_community_journeys.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Existing organ mechanisms inspected before creating native gaps",
+      "tier": "other",
+      "reference": "DALEOBANKS@a8341ba81622dbd1180583bc6660fa1e7ed707b8:services/analytics.py,services/memory.py",
+      "finding": "Social relationships and aggregate conversion records exist. They do not implement portable signed community export or retained narrative sequence cohorts; existing clients remain the distribution path."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Local component implementation completes the owned community and measured market outcome",
+      "tier": "other",
+      "reference": "foundry/completion.yaml",
+      "finding": "It does not: network serving, enrollment/moderation, authenticated collectors and real-world outcomes remain separate unfinished requirements. States remain PARTIAL."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Join owned community records and performance memory to GREG and existing territory machinery; then continue the next requirement.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Portable signed member history",
+        "amplified_value": "Export/import preserves key identities, posts, corrections and interactions."
+      },
+      {
+        "id": "A2",
+        "statement": "Actual observed sequence computation",
+        "amplified_value": "No substitute impression or modeled revenue metrics."
+      },
+      {
+        "id": "A3",
+        "statement": "Evidence-separated memory",
+        "amplified_value": "Fixtures cannot silently become real customer evidence."
+      },
+      {
+        "id": "A4",
+        "statement": "Existing territory reuse",
+        "amplified_value": "Routes retained visits through the established evidence/retirement model."
+      },
+      {
+        "id": "A5",
+        "statement": "Governed machine integration",
+        "amplified_value": "Signed GREG missions and independent appraisals reach the implementation."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Member keys could be mistaken for kernel authority or real-world identity.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Keep public member keys as signed application records only, outside all agent/legal/organ authority registries; explicitly limit identity claims."
+      },
+      {
+        "id": "D2",
+        "statement": "Unsigned edits, replay or changed history could forge interactions.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Verify Ed25519 mutations, community binding, per-member predecessor chain and exact idempotency; refuse changed ids and broken chain imports."
+      },
+      {
+        "id": "D3",
+        "statement": "Conversion analytics could fabricate outcomes or causality.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Require bounded source references, separate fixture/observed tiers, actual retained temporal sequences and receipt-linked integer currency totals; state association limits."
+      },
+      {
+        "id": "D4",
+        "statement": "Unbounded or partial export/write operations could lose portability.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Bound event stores and batches, paginate complete export, validate before SQL commit and retain GREG staged atomic persistence."
+      },
+      {
+        "id": "D5",
+        "statement": "Routing could bypass evidence floors or become a second content model.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Reuse TerritoryGraph validation, expiry and retirement checks; ignore future visits and emit recommendations without contact or new authority."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR147 guarded Foundry/media plus fixed DSL protocol; DALE pinned source provides social memory and aggregate analytics, but not portable signed community exports or content sequence cohorts.",
+      "do_nothing": "Leave production disconnected from owned relationships and measured demand.",
+      "simplest_viable_alternative": "Add local signed community records and observed journeys through existing guarded GREG; reuse TerritoryGraph and SQLite.",
+      "strongest_competing_architecture": "Integrate self-hosted Discourse/Ghost and PostHog with owned deployment.",
+      "reversible_experiment": "Signed synthetic members, export/import, hostile mutations, temporal-control fixtures and signed GREG missions in CI."
+    }
+  },
+  "pass_2": {
+    "attack_summary": "Attack identity overclaim, signature/history forgery, fabricated causality, export truncation and parallel graph/authority drift; strengthen each before implementation.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "centralization",
+        "statement": "Member keys could be mistaken for kernel authority or real-world identity.",
+        "strengthening_response": "Keep public member keys as signed application records only, outside all agent/legal/organ authority registries; explicitly limit identity claims."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Unsigned edits, replay or changed history could forge interactions.",
+        "strengthening_response": "Verify Ed25519 mutations, community binding, per-member predecessor chain and exact idempotency; refuse changed ids and broken chain imports."
+      },
+      {
+        "id": "N3",
+        "category": "overfit",
+        "statement": "Conversion analytics could fabricate outcomes or causality.",
+        "strengthening_response": "Require bounded source references, separate fixture/observed tiers, actual retained temporal sequences and receipt-linked integer currency totals; state association limits."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Unbounded or partial export/write operations could lose portability.",
+        "strengthening_response": "Bound event stores and batches, paginate complete export, validate before SQL commit and retain GREG staged atomic persistence."
+      },
+      {
+        "id": "N5",
+        "category": "bureaucracy",
+        "statement": "Routing could bypass evidence floors or become a second content model.",
+        "strengthening_response": "Reuse TerritoryGraph validation, expiry and retirement checks; ignore future visits and emit recommendations without contact or new authority."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Member keys could be mistaken for kernel authority or real-world identity. Keep public member keys as signed application records only, outside all agent/legal/organ authority registries; explicitly limit identity claims.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any member authority, collector, routing or completion claim."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Unsigned edits, replay or changed history could forge interactions. Verify Ed25519 mutations, community binding, per-member predecessor chain and exact idempotency; refuse changed ids and broken chain imports.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any member authority, collector, routing or completion claim."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Conversion analytics could fabricate outcomes or causality. Require bounded source references, separate fixture/observed tiers, actual retained temporal sequences and receipt-linked integer currency totals; state association limits.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any member authority, collector, routing or completion claim."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Unbounded or partial export/write operations could lose portability. Bound event stores and batches, paginate complete export, validate before SQL commit and retain GREG staged atomic persistence.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any member authority, collector, routing or completion claim."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Routing could bypass evidence floors or become a second content model. Reuse TerritoryGraph validation, expiry and retirement checks; ignore future visits and emit recommendations without contact or new authority.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any member authority, collector, routing or completion claim."
+      }
+    ],
+    "final_design": "Bounded signed owned records, paginated full-history export/import, observed sequence cohorts and reused TerritoryGraph routing through canonical GREG; continue serving and collector dependencies.",
+    "residual_risks": [
+      {
+        "risk": "Member keys could be mistaken for kernel authority or real-world identity.",
+        "mitigation": "Keep public member keys as signed application records only, outside all agent/legal/organ authority registries; explicitly limit identity claims.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Next integration or changed observation source."
+      },
+      {
+        "risk": "Unsigned edits, replay or changed history could forge interactions.",
+        "mitigation": "Verify Ed25519 mutations, community binding, per-member predecessor chain and exact idempotency; refuse changed ids and broken chain imports.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Next integration or changed observation source."
+      },
+      {
+        "risk": "Conversion analytics could fabricate outcomes or causality.",
+        "mitigation": "Require bounded source references, separate fixture/observed tiers, actual retained temporal sequences and receipt-linked integer currency totals; state association limits.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Next integration or changed observation source."
+      },
+      {
+        "risk": "Unbounded or partial export/write operations could lose portability.",
+        "mitigation": "Bound event stores and batches, paginate complete export, validate before SQL commit and retain GREG staged atomic persistence.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Next integration or changed observation source."
+      },
+      {
+        "risk": "Routing could bypass evidence floors or become a second content model.",
+        "mitigation": "Reuse TerritoryGraph validation, expiry and retirement checks; ignore future visits and emit recommendations without contact or new authority.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Next integration or changed observation source."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not claim an owned deployed community or true causal demand from private fixtures.",
+        "rationale": "Key possession and source-declared events do not prove external identity, real adoption or provider settlement.",
+        "evidence_threshold": "Authenticated live observations, operational moderation/serving and independent outcome evidence.",
+        "owner": "GREG/DALE maintainers",
+        "review_trigger": "Any promotion or completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add systems32/34/50 to PR147 without changing authority; retain all55 obligations as PARTIAL where operational work remains.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this additive implementation; keep source and negative evidence.",
+      "Export signed records before any data migration; leave canonical Gate and authority unchanged."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unsigned or cross-community mutation accepted.",
+    "Fixtures mixed with observed outcomes or impression-based revenue fabricated.",
+    "Stale/retired route published or member keys gain kernel authority."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

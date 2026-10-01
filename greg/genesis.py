@@ -202,12 +202,12 @@ def package_adapter(function: str, candidate: PackageCandidate):
             answer = spec["certify"](request, claim["result"])
             if answer.get("follow_up") and spec.get("follow_up"):
                 # The engine's negative claim is proved or refuted by a second, certified solve.
-                [extra] = mechanisms.run(candidate, spec["runners"][candidate.runner], [answer["follow_up"]],
-                                         location=prov["location"], version=prov["version"])
-                if "error" in extra:
+                extras = mechanisms.run(candidate, spec["runners"][candidate.runner], answer["follow_up"],
+                                        location=prov["location"], version=prov["version"])
+                if any("error" in e for e in extras):
                     raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
-                                          f"{extra['error'][:200]}")
-                answer = spec["follow_up"](request, answer, extra["result"])
+                                          f"{next(e['error'] for e in extras if 'error' in e)[:200]}")
+                answer = spec["follow_up"](request, answer, [e["result"] for e in extras])
         except spec["certificate_error"] as exc:
             raise CapabilityError(f"capability refused: package output failed its certificate: {exc}") from exc
         answer.pop("follow_up", None)
@@ -268,17 +268,20 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
             answers.append(None)
     pending = [i for i, a in enumerate(answers) if a and a.get("follow_up") and spec.get("follow_up")]
     if pending:                                   # negative claims are proved by a second, certified solve
+        flat = [r for i in pending for r in answers[i]["follow_up"]]
         try:
-            extras = mechanisms.run(candidate, spec["runners"][candidate.runner],
-                                    [answers[i]["follow_up"] for i in pending], location=card["location"],
+            extras = mechanisms.run(candidate, spec["runners"][candidate.runner], flat, location=card["location"],
                                     version=card["version"], cpu_seconds=60)
         except CapabilityError as exc:
-            extras = [{"error": str(exc)}] * len(pending)
-        for i, extra in zip(pending, extras):
+            extras = [{"error": str(exc)}] * len(flat)
+        position = 0
+        for i in pending:
+            group = extras[position:position + len(answers[i]["follow_up"])]
+            position += len(answers[i]["follow_up"])
             try:
-                if "error" in extra:
-                    raise spec["certificate_error"](extra["error"][:160])
-                answers[i] = spec["follow_up"](requests[i], answers[i], extra["result"])
+                if any("error" in e for e in group):
+                    raise spec["certificate_error"](next(e["error"] for e in group if "error" in e)[:160])
+                answers[i] = spec["follow_up"](requests[i], answers[i], [e["result"] for e in group])
             except spec["certificate_error"] as exc:
                 report["failures"].append({"case": named[i]["name"], "certificate": str(exc)[:160]})
                 answers[i] = None

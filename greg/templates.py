@@ -510,7 +510,8 @@ def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = Fal
     GREG's exact oracle and asks you to attach it. An answer counts only if GREG's duality
     certificate holds: the plan is feasible and a set of prices proves no plan does better. If no
     plan meets every limit, GREG proves that too (a certified elastic program) and names the
-    limits in conflict and the least total violation. Read-only: nothing is bought, made or moved.
+    limits in conflict and the least total violation; if the objective has no limit, GREG shows a
+    plan and a direction that improves it forever. Read-only: nothing is bought, made or moved.
     """
     if not text.strip() or len(text) > 4000:
         raise ValueError("a plan of 1-4000 characters is required")
@@ -521,7 +522,8 @@ def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = Fal
         "mission_id": f"m:plan-{digest}",
         "founder_expression": text,
         "intended_effect": "the best plan under the stated limits with prices that prove no plan does better, or a "
-                           "proof that no plan meets them naming the limits in conflict",
+                           "proof that no plan meets them (naming the limits in conflict) or that the objective has "
+                           "no limit",
         "priority": 60, "closure": {"kind": "bounded"},
         "success_checks": [{"check_id": "certified-plan", "description": "an optimal plan, or the impossibility of "
                             "any plan, proved by GREG's own duality certificate, independent of the engine",

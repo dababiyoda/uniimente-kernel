@@ -174,7 +174,7 @@ What that changed in code:
 
 Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/` (reproduce with
 `python scripts/qualify_open_source_engines.py <dir>`), `tests/unit/test_greg_open_source_genesis.py`,
-16 further mutants in `scripts/ci/check_cortex_mutants.py` (57 in all, 0 survived). Deliberation:
+18 further mutants in `scripts/ci/check_cortex_mutants.py` (59 in all, 0 survived). Deliberation:
 `docs/collaboration/deliberation-greg-open-source-genesis-20261001.json` (EXPERIMENT).
 
 Read it narrowly. The reuse was not a speed win: on the scale probes a plain-Python Dijkstra and
@@ -200,17 +200,19 @@ Done after the correction:
   elastic program (one slack per limit, minimize total slack) with the same engine and certifies its
   optimum. A positive minimum proves that no plan meets the limits; its prices name the limits in
   conflict. A zero minimum refutes the engine: in a test, an engine that denied any plan existed
-  was quarantined and replaced, and its claim was never accepted. "Unbounded" is still unproved
-  and never closes.
+  was quarantined and replaced, and its claim was never accepted.
+- **"No limit to the objective" is proved too:** a plan that meets every limit, plus a direction that
+  keeps meeting them while the objective improves, both checked directly. GREG decides which
+  negative holds from its own proofs and keeps the engine's label as `engine_said`, because engines
+  blur the two: OR-Tools GLOP reports an unbounded program as "infeasible". The first qualification
+  run caught it, and GLOP qualifies only because the proof, not the label, decides.
 - **Body 1 carries the engines.** The founder-run installer now installs them from binary wheels,
   best-effort: 5 of 5 in a fresh venv in 33 s, with 89 tests passing there. `greg doctor` reports
   each engine. `tests/evidence/greg-body1-engines-2026-10-01/`.
 
 Next mechanisms:
 
-1. Prove "unbounded" the same way: an auxiliary program for an improving ray, certified by duality,
-   together with a certified feasible point.
-2. A cognition deficit with no installed engine, closed through the builder route against a
+1. A cognition deficit with no installed engine, closed through the builder route against a
    founder-frozen contract and the same certificate (P7's second route). Blocked here: no builder
    (coding agent, person or founder-selected model) is attached to this body.
 

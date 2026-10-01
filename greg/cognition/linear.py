@@ -19,7 +19,9 @@ builds its own: the elastic program (one nonnegative slack per limit, minimize t
 solved by the same engine and its optimum is certified by the same duality check. A certified
 positive minimum proves that every point within the bounds breaks the limits by at least that
 much, and its nonzero prices name the limits in conflict. A certified zero minimum refutes the
-engine. "Unbounded" is still reported without proof and never closes a mission.
+engine. An engine's "unbounded" is proved the same way, with two direct checks: the elastic
+program yields a point that meets every limit, and a direction search (inside a unit box) yields a
+direction that keeps meeting them while the objective improves. Either missing refutes the engine.
 
 The qualification oracle is GREG's: vertex enumeration in exact fractions over bounded problems.
 """
@@ -153,16 +155,34 @@ def _close(lhs: Fraction, rhs: Fraction, scale: Fraction) -> bool:
     return abs(lhs - rhs) <= TOLERANCE * (1 + abs(scale))
 
 
+def check_primal(req: dict, x: list) -> None:
+    """Every limit and bound holds at x (relative 1e-7), checked in exact arithmetic."""
+    F = lambda row: [Fraction(a) for a in row]  # noqa: E731
+    for row, b, label in zip(req["a_ub"], req["b_ub"], req["labels_ub"]):
+        if sum(a * v for a, v in zip(F(row), x)) > Fraction(b) + TOLERANCE * (1 + abs(Fraction(b))):
+            raise CertificateError(f"constraint {label} is violated")
+    for row, b, label in zip(req["a_eq"], req["b_eq"], req["labels_eq"]):
+        if not _close(sum(a * v for a, v in zip(F(row), x)), Fraction(b), Fraction(b)):
+            raise CertificateError(f"constraint {label} is violated")
+    for name, v, lo, hi in zip(req["names"], x, req["lower"], req["upper"]):
+        if (lo is not None and v < Fraction(lo) - TOLERANCE * (1 + abs(Fraction(lo)))) or \
+                (hi is not None and v > Fraction(hi) + TOLERANCE * (1 + abs(Fraction(hi)))):
+            raise CertificateError(f"bound on {name} is violated")
+
+
 def certify_lp(req: dict, claim) -> dict:
     if not isinstance(claim, dict) or claim.get("status") not in ("optimal", "infeasible", "unbounded", "unknown"):
         raise CertificateError("the claim must carry a status")
     names = req["names"]
-    if claim["status"] == "infeasible":
-        follow_up = elastic(req)
-        return {"certified": False, "status": "infeasible", "follow_up": follow_up, "certificate": None,
-                "why": "the engine reports no feasible plan; GREG proves or refutes it with the elastic program"
-                       if follow_up else "the engine reports no feasible plan; the program is too large for GREG "
-                                         "to prove it here"}
+    if claim["status"] in ("infeasible", "unbounded"):
+        # Engines blur these two (GLOP reports an unbounded program as infeasible); GREG decides by proof.
+        program = elastic(req)
+        follow_up = None if program is None else [program, ray(req)]
+        what = "no feasible plan" if claim["status"] == "infeasible" else "no limit to the objective"
+        return {"certified": False, "status": claim["status"], "follow_up": follow_up, "certificate": None,
+                "why": f"the engine reports {what}; GREG proves or refutes it with follow-up solves"
+                       if follow_up else f"the engine reports {what}; the program is too large for GREG to prove it "
+                                         "here"}
     if claim["status"] != "optimal":
         return {"certified": False, "status": claim["status"],
                 "why": "the engine reports no optimum and gives no certificate; GREG cannot prove the claim",
@@ -178,20 +198,8 @@ def certify_lp(req: dict, claim) -> dict:
     n = len(names)
     x, y_ub, y_eq = vector("x", n), vector("y_ub", len(req["b_ub"])), vector("y_eq", len(req["b_eq"]))
     z_l, z_u = vector("z_l", n), vector("z_u", n)
-    F = lambda row: [Fraction(a) for a in row]  # noqa: E731
-    c = F(req["c"])
-    # primal feasibility
-    for row, b, label in zip(req["a_ub"], req["b_ub"], req["labels_ub"]):
-        lhs = sum(a * v for a, v in zip(F(row), x))
-        if lhs > Fraction(b) + TOLERANCE * (1 + abs(Fraction(b))):
-            raise CertificateError(f"constraint {label} is violated")
-    for row, b, label in zip(req["a_eq"], req["b_eq"], req["labels_eq"]):
-        if not _close(sum(a * v for a, v in zip(F(row), x)), Fraction(b), Fraction(b)):
-            raise CertificateError(f"constraint {label} is violated")
-    for name, v, lo, hi in zip(names, x, req["lower"], req["upper"]):
-        if (lo is not None and v < Fraction(lo) - TOLERANCE * (1 + abs(Fraction(lo)))) or \
-                (hi is not None and v > Fraction(hi) + TOLERANCE * (1 + abs(Fraction(hi)))):
-            raise CertificateError(f"bound on {name} is violated")
+    c = [Fraction(a) for a in req["c"]]
+    check_primal(req, x)
     # dual feasibility: signs, multipliers only on finite bounds, stationarity
     if any(y > TOLERANCE for y in y_ub) or any(z < -TOLERANCE for z in z_l) or any(z > TOLERANCE for z in z_u):
         raise CertificateError("a multiplier has the wrong sign")
@@ -241,18 +249,38 @@ def elastic(req: dict) -> dict | None:
             "labels_ub": req["labels_ub"], "labels_eq": req["labels_eq"], "flips_ub": req["flips_ub"]}
 
 
-def follow_up_lp(req: dict, answer: dict, claim) -> dict:
-    """Prove or refute an engine's "no feasible plan" from its certified elastic optimum."""
-    proof = certify_lp(answer["follow_up"], claim)
+def ray(req: dict) -> dict:
+    """Search, inside a unit box, a direction that keeps every limit and bound and improves the objective."""
+    return {"ray": True, "names": list(req["names"]), "sense": "min", "c": list(req["c"]),
+            "a_ub": [list(r) for r in req["a_ub"]], "b_ub": [0] * len(req["b_ub"]),
+            "a_eq": [list(r) for r in req["a_eq"]], "b_eq": [0] * len(req["b_eq"]),
+            "lower": [-1 if lo is None else 0 for lo in req["lower"]],
+            "upper": [1 if hi is None else 0 for hi in req["upper"]],
+            "labels_ub": req["labels_ub"], "labels_eq": req["labels_eq"], "flips_ub": req["flips_ub"]}
+
+
+def _least_violation(req: dict, program: dict, claim) -> tuple[dict, float, float]:
+    proof = certify_lp(program, claim)
     if not proof["certified"]:
         raise CertificateError("the elastic program has no certified optimum")
     scale = 1 + max([abs(b) for b in req["b_ub"] + req["b_eq"]] or [0])
-    least = proof["objective"]
-    if least <= 1e-6 * scale:
-        raise CertificateError("the engine said no plan exists, but a plan meets every limit")
-    prices = claim["y_ub"] + claim["y_eq"]
+    return proof, proof["objective"], 1e-6 * scale
+
+
+def follow_up_lp(req: dict, answer: dict, claims: list) -> dict:
+    """Decide by proof what an engine's "no optimum" means: no feasible plan, or no limit to the objective.
+
+    The engine's own label is kept as ``engine_said``; only GREG's proof sets ``status``."""
+    proof, least, threshold = _least_violation(req, answer["follow_up"][0], claims[0])
+    if least <= threshold:                                   # a plan meets every limit
+        found = _unbounded(req, proof, claims[1])
+        if found is None:
+            raise CertificateError(f"the engine said {answer['status']}, but a plan meets every limit and the "
+                                   "objective is bounded")
+        return {**found, "engine_said": answer["status"]}
+    prices = claims[0]["y_ub"] + claims[0]["y_eq"]
     labels = req["labels_ub"] + req["labels_eq"]
-    return {"certified": True, "status": "infeasible", "sense": req["sense"],
+    return {"certified": True, "status": "infeasible", "sense": req["sense"], "engine_said": answer["status"],
             "least_total_violation": least,
             "conflicting": sorted(label for label, y in zip(labels, prices) if abs(y) > 1e-9),
             "closest_values": {name: proof["values"][name] for name in req["names"]},
@@ -260,6 +288,40 @@ def follow_up_lp(req: dict, answer: dict, claim) -> dict:
                                     "breaks the limits by at least the least total violation",
                             "gap": proof["certificate"]["gap"], "tolerance": proof["certificate"]["tolerance"],
                             "arithmetic": "exact fractions"}}
+
+
+def _unbounded(req: dict, proof: dict, direction_claim) -> dict | None:
+    """A proof of no limit, or None when the direction search shows the objective is bounded."""
+    point = [Fraction(proof["values"][name]) for name in req["names"]]
+    check_primal(req, point)                              # a plan that meets every limit
+    if not isinstance(direction_claim, dict) or direction_claim.get("status") != "optimal" \
+            or not isinstance(direction_claim.get("x"), list) or len(direction_claim["x"]) != len(req["names"]):
+        raise CertificateError("the direction search returned no direction")
+    try:
+        d = [Fraction(v) for v in direction_claim["x"]]
+    except (TypeError, ValueError) as exc:
+        raise CertificateError("the direction holds a non-number") from exc
+    scale = Fraction(1) + max([abs(Fraction(a)) for row in req["a_ub"] + req["a_eq"] for a in row] or [0])
+    for row, label in zip(req["a_ub"], req["labels_ub"]):
+        if sum(Fraction(a) * v for a, v in zip(row, d)) > TOLERANCE * scale:
+            raise CertificateError(f"moving along the direction breaks {label}")
+    for row, label in zip(req["a_eq"], req["labels_eq"]):
+        if abs(sum(Fraction(a) * v for a, v in zip(row, d))) > TOLERANCE * scale:
+            raise CertificateError(f"moving along the direction breaks {label}")
+    for name, v, lo, hi in zip(req["names"], d, req["lower"], req["upper"]):
+        if (lo is not None and v < -TOLERANCE) or (hi is not None and v > TOLERANCE):
+            raise CertificateError(f"moving along the direction breaks the bound on {name}")
+    rate = sum(Fraction(cj) * v for cj, v in zip(req["c"], d))
+    if rate >= -TOLERANCE * (1 + max([abs(Fraction(cj)) for cj in req["c"]] or [0])):
+        return None                                        # no improving direction: the objective is bounded
+    sign = 1 if req["sense"] == "min" else -1
+    return {"certified": True, "status": "unbounded", "sense": req["sense"],
+            "feasible_point": {name: float(v) for name, v in zip(req["names"], point)},
+            "improving_direction": {name: float(v) for name, v in zip(req["names"], d)},
+            "objective_change_per_step": float(sign * rate),
+            "certificate": {"kind": "a point meeting every limit plus a direction that keeps meeting them while the "
+                                    "objective improves; both checked directly",
+                            "tolerance": "relative 1e-7 (engine floating point)", "arithmetic": "exact fractions"}}
 
 
 # -- GREG's oracle: vertex enumeration in exact fractions (bounded problems only) -------------
@@ -339,6 +401,15 @@ FIXED_LP = [
 ]
 
 
+# Programs vertex enumeration cannot judge (unbounded feasible region), with their stated answer.
+FIXED_LP_STATED = [
+    ("unbounded-ray", {"variables": [{"name": "x", "lower": 0, "upper": None}, {"name": "y", "lower": 0, "upper": None}],
+                       "objective": {"sense": "max", "coefficients": {"x": 1, "y": 1}},
+                       "constraints": [{"coefficients": {"x": 1, "y": -1}, "op": "<=", "rhs": 1}]},
+     {"status": "unbounded"}),
+]
+
+
 def oracle_lp(seed: int) -> list[dict]:
     rng = random.Random(seed)
     cases = [{"name": name, "input": params} for name, params in FIXED_LP]
@@ -359,7 +430,7 @@ def oracle_lp(seed: int) -> list[dict]:
             "constraints": constraints}})
     for case in cases:
         case["expected"] = vertex_enumeration(normalize_lp(case["input"]))
-    return cases
+    return cases + [{"name": name, "input": params, "expected": expected} for name, params, expected in FIXED_LP_STATED]
 
 
 def judge_lp(answer: dict, expected: dict) -> bool:

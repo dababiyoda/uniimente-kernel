@@ -1,7 +1,7 @@
 {
  "authority_created": false,
  "command": "python scripts/qualify_open_source_engines.py tests/evidence/greg-open-source-genesis-2026-10-01",
- "generated_at": "2026-10-01T19:41:05.555799+00:00",
+ "generated_at": "2026-10-01T20:01:28.337355+00:00",
  "installed_by_greg": false,
  "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
  "python": "3.11.15",
@@ -55,10 +55,10 @@
      "agrees_with_local": true,
      "certified": true,
      "edges": 10000,
-     "local_seconds": 0.0055,
+     "local_seconds": 0.0056,
      "nodes": 2000,
-     "package_run_seconds_with_interpreter": 0.229,
-     "package_solve_seconds": 0.0255,
+     "package_run_seconds_with_interpreter": 0.227,
+     "package_solve_seconds": 0.0224,
      "simplest_local_alternative": "local binary-heap Dijkstra (plain Python)"
     }
    }
@@ -116,10 +116,10 @@
      "agrees_with_local": true,
      "certified": true,
      "edges": 10000,
-     "local_seconds": 0.0054,
+     "local_seconds": 0.0052,
      "nodes": 2000,
-     "package_run_seconds_with_interpreter": 0.324,
-     "package_solve_seconds": 0.0108,
+     "package_run_seconds_with_interpreter": 0.357,
+     "package_solve_seconds": 0.0111,
      "simplest_local_alternative": "local binary-heap Dijkstra (plain Python)"
     }
    }
@@ -173,10 +173,10 @@
      "agrees_with_local": true,
      "certified": true,
      "edges": 2933,
-     "local_seconds": 0.0029,
+     "local_seconds": 0.0028,
      "nodes": 300,
-     "package_run_seconds_with_interpreter": 0.21,
-     "package_solve_seconds": 0.0229,
+     "package_run_seconds_with_interpreter": 0.228,
+     "package_solve_seconds": 0.0202,
      "simplest_local_alternative": "local Edmonds-Karp (plain Python)"
     }
    }
@@ -234,10 +234,10 @@
      "agrees_with_local": true,
      "certified": true,
      "edges": 2933,
-     "local_seconds": 0.0044,
+     "local_seconds": 0.0027,
      "nodes": 300,
-     "package_run_seconds_with_interpreter": 0.304,
-     "package_solve_seconds": 0.0024,
+     "package_run_seconds_with_interpreter": 0.331,
+     "package_solve_seconds": 0.0035,
      "simplest_local_alternative": "local Edmonds-Karp (plain Python)"
     }
    }
@@ -287,7 +287,7 @@
    "installed": true,
    "passed": true,
    "report": {
-    "cases": 15,
+    "cases": 16,
     "certificate": "GREG-owned, exact; shares no code with the package",
     "failures": [],
     "isolation": "no-network interpreter",
@@ -296,8 +296,8 @@
     "scale_probe": {
      "certified": true,
      "constraints": 45,
-     "package_run_seconds_with_interpreter": 0.468,
-     "package_solve_seconds": 0.0174,
+     "package_run_seconds_with_interpreter": 0.491,
+     "package_solve_seconds": 0.0167,
      "simplest_local_alternative": "none simple at this size: GREG's exact vertex enumeration is exponential and serves only as the oracle",
      "variables": 500
     }
@@ -347,7 +347,7 @@
    "installed": true,
    "passed": true,
    "report": {
-    "cases": 15,
+    "cases": 16,
     "certificate": "GREG-owned, exact; shares no code with the package",
     "failures": [],
     "isolation": "no-network interpreter",
@@ -356,7 +356,7 @@
     "scale_probe": {
      "certified": true,
      "constraints": 45,
-     "package_run_seconds_with_interpreter": 0.137,
+     "package_run_seconds_with_interpreter": 0.153,
      "package_solve_seconds": 0.0084,
      "simplest_local_alternative": "none simple at this size: GREG's exact vertex enumeration is exponential and serves only as the oracle",
      "variables": 500

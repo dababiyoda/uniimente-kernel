@@ -38,8 +38,11 @@ present from `requirements-cognition.txt`.
 - **License from metadata**, not a legal review; the founder sees it before attaching.
 - **Neither LP interface returns a Farkas certificate.** GREG now proves "infeasible" itself: the
   elastic program, solved by the same engine and certified by duality. A certified zero minimum
-  refutes a false "infeasible" (tested on the mission path). "Unbounded" is still unproved and
-  never closes a mission.
+  refutes a false "infeasible" (tested on the mission path). "Unbounded" is proved by a feasible
+  point plus an improving direction, both checked directly.
+- **OR-Tools GLOP labels an unbounded program "infeasible".** The first qualification with the
+  unbounded oracle case refuted GLOP's label. GREG now decides between the two negatives by proof
+  and keeps the engine's label as `engine_said`.
 - **Shadow-price sign.** The first certificate reported prices with the wrong sign for maximization;
   a test caught it, and prices are now the change in the stated objective per unit of the stated
   limit (pinned for both `<=` and `>=` rows, both engines).

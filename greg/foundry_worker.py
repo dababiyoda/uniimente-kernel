@@ -3,7 +3,8 @@
 Seccomp is installed by the parent before exec. Audit hooks constrain reviewed
 Python filesystem calls, not arbitrary Python or native code. Subprocesses and
 unreviewed source/child execution fail closed until an OS filesystem sandbox is available.
-One exact reviewed restricted-DSL recomputation recipe is allowed.
+Two exact reviewed recipes are allowed: restricted-DSL recomputation and
+owned-source packaging from an explicit published source inventory.
 Read-only calls operate on disposable copies and cannot mutate persistent state.
 """
 from __future__ import annotations
@@ -15,11 +16,28 @@ import resource
 import sys
 
 
-def guard(root: Path):
+def source_files():
+    code = Path(__file__).resolve().parents[1]
+    inventory = json.loads((code / "foundry" / "owned-source.json").read_text())
+    if inventory.get("version") != "owned-source/1" or not isinstance(inventory.get("files"), list) or len(inventory["files"]) > 4096:
+        raise ValueError("invalid owned source inventory")
+    paths = []
+    for relative in inventory["files"]:
+        if not isinstance(relative, str) or Path(relative).is_absolute() or any(p in {"", ".", ".."} for p in relative.split("/")):
+            raise ValueError("invalid owned source path")
+        path = code / relative
+        if path.resolve() != path or not path.is_file() or path.stat().st_nlink != 1:
+            raise ValueError("owned source must be an existing unlinked file")
+        paths.append(path)
+    return paths
+
+
+def guard(root: Path, source_data=()):
     root = root.resolve()
     code = Path(__file__).resolve().parents[1]
     schemas = code / "contracts"
     published = set()
+    source_data = set(source_data)
     libraries = [Path(p).resolve() for p in sys.path if p and Path(p).is_dir() and Path(p).resolve() != code]
 
     def allowed(path, *, write=False, unlink=False):
@@ -30,7 +48,7 @@ def guard(root: Path):
             if not unlink and p.is_file() and p.stat().st_nlink > 1 and p not in published:
                 raise PermissionError("hard-linked workspace file refused")
             return
-        if not write and (((p == code or code in p.parents) and (p.is_dir() or p.suffix in {".py", ".pyc"})) or
+        if not write and (p in source_data or ((p == code or code in p.parents) and (p.is_dir() or p.suffix in {".py", ".pyc"})) or
                           (schemas in p.parents and p.suffix == ".json") or
                           any(p == lib or lib in p.parents for lib in libraries)):
             return
@@ -61,9 +79,9 @@ def guard(root: Path):
             allowed(args[0], write=True)
         elif event == "subprocess.Popen":
             executable, argv, cwd, env = args
-            reviewed = [sys.executable, "-s", "-m", "greg.foundry_protocol_worker", "dsl-verify"]
+            reviewed = [sys.executable, "-s", "-m", "greg.foundry_protocol_worker"]
             environment = dict(os.environ) if env is None else env
-            if list(argv) != reviewed or executable != sys.executable or cwd is None or Path(cwd).resolve() != code or \
+            if list(argv)[:-1] != reviewed or list(argv)[-1:] not in (["dsl-verify"], ["build-owned"]) or executable != sys.executable or cwd is None or Path(cwd).resolve() != code or \
                     environment.get("PYTHONPATH") != str(code) or environment.get("GREG_FOUNDRY_STORE") != str(root) or \
                     environment.get("PYTHONDONTWRITEBYTECODE") != "1" or \
                     set(environment) - {"PATH", "LANG", "PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "GREG_FOUNDRY_STORE"}:
@@ -78,7 +96,7 @@ def guard(root: Path):
 def main():
     resource.setrlimit(resource.RLIMIT_CPU, (12, 12))
     resource.setrlimit(resource.RLIMIT_AS, (2 * 1024**3, 2 * 1024**3))
-    resource.setrlimit(resource.RLIMIT_FSIZE, (1048576, 1048576))
+    resource.setrlimit(resource.RLIMIT_FSIZE, (8 * 1048576, 8 * 1048576))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     request = json.loads(sys.stdin.buffer.read(131073))
     from foundry.systems import module
@@ -93,7 +111,7 @@ def main():
         store = root.parent
         root.mkdir(parents=True, exist_ok=True)
         os.environ["GREG_FOUNDRY_STORE"] = str(store.resolve())
-        guard(store)
+        guard(store, source_files() if system == 53 else ())
         answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root)}
     except Exception as exc:
         answer = {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}

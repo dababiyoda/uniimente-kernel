@@ -4,7 +4,8 @@
 ``{system, op, args}``. The system's store lives inside the mission workspace,
 with reviewed operations executed in a disposable, network-denied worker.
 Python file guards defend reviewed code against path confusion; they are not
-an OS filesystem sandbox. Source execution and child processes require one.
+an OS filesystem sandbox. Unreviewed source and child processes require one. Two exact reviewed child
+recipes support restricted DSL recomputation and owned-source packaging.
 An op the system does not declare for that capability is refused, so a
 read-only grant cannot reach a write op.
 """
@@ -120,7 +121,8 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
                 return {"system": system, "op": op, "result": answer["result"],
                         "execution": {"process": "disposable", "network": "seccomp-denied",
                                       "filesystem": "reviewed-code-python-guard", "arbitrary_source": "refused",
-                                      "cpu_seconds": 12, "wall_seconds": 30, "output_bytes": 1048576,
+                                      "cpu_seconds": 12, "cpu_scope": "per process; group wall budget applies to all descendants",
+                                      "file_bytes": 8 * 1048576, "wall_seconds": 30, "output_bytes": 1048576,
                                       "persistence": "atomic-store-commit" if table == "APPLY_OPS" else "discarded",
                                       "state_before": before, "state_after": after}}
             finally:

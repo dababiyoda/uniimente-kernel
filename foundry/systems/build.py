@@ -19,6 +19,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -56,6 +57,11 @@ def toolchain() -> dict:
 
 
 def _files(root: Path) -> list[Path]:
+    if os.environ.get("GREG_FOUNDRY_STORE"):
+        if Path(root).resolve() != ROOT:
+            raise BuildError("guarded packaging uses only the fixed owned source root")
+        from greg.foundry_worker import source_files
+        return sorted(source_files(), key=lambda p: p.relative_to(root).as_posix())
     out = []
     for top in owned(root):
         base = root / top
@@ -96,6 +102,18 @@ def build(out_dir: Path, *, root: Path = ROOT) -> dict:
 
 
 def build_in_subprocess(out_dir: Path, *, root: Path = ROOT) -> dict:
+    scope = os.environ.get("GREG_FOUNDRY_STORE")
+    if scope:
+        if Path(root).resolve() != ROOT:
+            raise BuildError("guarded packaging source root is fixed")
+        env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(ROOT),
+               "PYTHONDONTWRITEBYTECODE": "1", "GREG_FOUNDRY_STORE": scope}
+        proc = subprocess.run([sys.executable, "-s", "-m", "greg.foundry_protocol_worker", "build-owned"],
+                              input=json.dumps({"out": str(out_dir)}), cwd=ROOT, env=env,
+                              capture_output=True, text=True, timeout=60)
+        if proc.returncode:
+            raise BuildError(proc.stderr[-400:])
+        return json.loads(proc.stdout)
     code = ("import json,sys; from pathlib import Path; from foundry.systems.build import build; "
             "print(json.dumps(build(Path(sys.argv[1]), root=Path(sys.argv[2]))))")
     proc = subprocess.run([sys.executable, "-s", "-c", code, str(out_dir), str(root)], cwd=ROOT,

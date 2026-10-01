@@ -98,3 +98,46 @@ def test_concurrent_mutation_and_quota_refuse_commit(tmp_path, monkeypatch):
     monkeypatch.setattr(foundry_state, "MAX_BYTES", 1)
     with pytest.raises(CapabilityError, match="quota"):
         foundry_state.fingerprint(staged)
+
+def test_restricted_dsl_verifier_runs_but_ratification_is_still_required(tmp_path):
+    from foundry.systems import promotion
+    source = "max(base_price * units * (1 - 0.05 * customer_tier), cost_per_unit * units * 1.1)"
+    result = foundry_bridge.query({"system": 16, "op": "dry_run", "args": {
+        "candidate": promotion.candidate(source), "context": promotion.context()}}, context(tmp_path, "foundry.query"))
+    assert result["result"]["status"] == "BLOCKED"
+    assert result["result"]["blocked_at"] == "ratification"
+    verification = next(s for s in result["result"]["stages"] if s["stage"] == "verification")
+    assert verification["passed"] and verification["result"]["verified_cases"] == 41
+    assert not (tmp_path / "ws" / "foundry").exists()
+
+
+def test_fixed_child_recipe_rejects_module_environment_and_scope_substitution(tmp_path):
+    import json
+    from pathlib import Path
+    import subprocess
+    import sys
+    code = Path(__file__).resolve().parents[2]
+    script = """
+import json,os,sys,subprocess
+from pathlib import Path
+from greg.foundry_worker import guard
+root=Path(sys.argv[1]); code=Path(sys.argv[2])
+guard(root)
+base=[sys.executable,'-s','-m','greg.foundry_protocol_worker','dsl-verify']
+env={'PATH':'/usr/bin:/bin','LANG':'C.UTF-8','PYTHONPATH':str(code),
+     'PYTHONDONTWRITEBYTECODE':'1','GREG_FOUNDRY_STORE':str(root)}
+attempts=[(base[:-1]+['unknown'],code,env),(base,root,env),
+          (base,code,{**env,'PYTHONPATH':str(root)}),
+          (base,code,{**env,'GREG_FOUNDRY_STORE':str(root.parent)}),
+          (base,code,{**env,'PYTHONINSPECT':'1'})]
+denied=0
+for argv,cwd,values in attempts:
+    try: subprocess.run(argv,cwd=cwd,env=values,input='{}',text=True,timeout=3)
+    except PermissionError: denied+=1
+print(json.dumps({'denied':denied}))
+"""
+    proc = subprocess.run([sys.executable, "-s", "-c", script, str(tmp_path), str(code)],
+                          capture_output=True, text=True, timeout=10,
+                          env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(code), "PYTHONDONTWRITEBYTECODE": "1"})
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout)["denied"] == 5

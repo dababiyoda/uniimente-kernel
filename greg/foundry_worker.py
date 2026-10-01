@@ -2,7 +2,8 @@
 
 Seccomp is installed by the parent before exec. Audit hooks constrain reviewed
 Python filesystem calls, not arbitrary Python or native code. Subprocesses and
-source execution fail closed until an OS filesystem sandbox is available.
+unreviewed source/child execution fail closed until an OS filesystem sandbox is available.
+One exact reviewed restricted-DSL recomputation recipe is allowed.
 Read-only calls operate on disposable copies and cannot mutate persistent state.
 """
 from __future__ import annotations
@@ -58,7 +59,16 @@ def guard(root: Path):
             allowed(args[0] or ".")
         elif event == "sqlite3.connect":
             allowed(args[0], write=True)
-        elif event in {"subprocess.Popen", "os.system", "os.exec", "os.fork", "os.posix_spawn"}:
+        elif event == "subprocess.Popen":
+            executable, argv, cwd, env = args
+            reviewed = [sys.executable, "-s", "-m", "greg.foundry_protocol_worker", "dsl-verify"]
+            environment = dict(os.environ) if env is None else env
+            if list(argv) != reviewed or executable != sys.executable or cwd is None or Path(cwd).resolve() != code or \
+                    environment.get("PYTHONPATH") != str(code) or environment.get("GREG_FOUNDRY_STORE") != str(root) or \
+                    environment.get("PYTHONDONTWRITEBYTECODE") != "1" or \
+                    set(environment) - {"PATH", "LANG", "PYTHONPATH", "PYTHONDONTWRITEBYTECODE", "GREG_FOUNDRY_STORE"}:
+                raise PermissionError("child execution requires OS filesystem confinement")
+        elif event in {"os.system", "os.exec", "os.fork", "os.posix_spawn"}:
             raise PermissionError("child execution requires OS filesystem confinement")
         elif event == "exec" and args[0].co_filename == "<target>":
             raise PermissionError("caller source execution requires OS filesystem confinement")
@@ -82,6 +92,7 @@ def main():
     try:
         store = root.parent
         root.mkdir(parents=True, exist_ok=True)
+        os.environ["GREG_FOUNDRY_STORE"] = str(store.resolve())
         guard(store)
         answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root)}
     except Exception as exc:

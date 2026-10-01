@@ -1,0 +1,514 @@
+{
+  "inventory_count": 84,
+  "covered_count": 82,
+  "blocked_count": 2,
+  "receipts": [
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 41,
+      "status": "already_corrected_or_closed",
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/41"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 40,
+      "status": "already_corrected_or_closed",
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/40"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 38,
+      "status": "already_corrected_or_closed",
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/38"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 37,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/37",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 34,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/34",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 32,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/32",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 31,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/31",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 30,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/30",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 29,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/29",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 28,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/28",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 24,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/24",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 23,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/23",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 22,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/22",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 21,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/21",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 20,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/20",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 19,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/19",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 18,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/18",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 17,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/17",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 16,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/16",
+      "status": "updated"
+    },
+    {
+      "repo": "WealthMachineIntelligence",
+      "pr": 15,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/15",
+      "status": "updated"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 84,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/84",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 83,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/83",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 81,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/81",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 80,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/80",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 79,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/79",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 76,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/76",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 75,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/75",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 74,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/74",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 73,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/73",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 71,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/71",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 70,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/70",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 69,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/69",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 68,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/68",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 67,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/67",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 66,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/66",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 65,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/65",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 62,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/62",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 61,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/61",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 60,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/60",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 59,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/59",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 58,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/58",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 53,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/53",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "DALEOBANKS",
+      "pr": 1,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/1",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 12,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/12",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 11,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/11",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 10,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/10",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 9,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/9",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 6,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/6",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 5,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/5",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 4,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/4",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 3,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/3",
+      "status": "updated"
+    },
+    {
+      "repo": "RAILSCOUT",
+      "pr": 2,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/2",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 23,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/23",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 22,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/22",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 21,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/21",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 15,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/15",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 14,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/14",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 13,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/13",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 12,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/12",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 11,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/11",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 10,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/10",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 9,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/9",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 8,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/8",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 7,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/7",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 6,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/6",
+      "status": "updated"
+    },
+    {
+      "repo": "RESEARCH-IN",
+      "pr": 3,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/3",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 21,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/21",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 20,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/20",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 17,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/17",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 16,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/16",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 15,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/15",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 14,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/14",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 13,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/13",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 7,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/7",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 6,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/6",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 5,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/5",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 4,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/4",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 2,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/2",
+      "status": "updated"
+    },
+    {
+      "repo": "PumpStation",
+      "pr": 1,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/1",
+      "status": "updated"
+    },
+    {
+      "repo": "build-your-own-x",
+      "pr": 4,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/4",
+      "status": "already_corrected"
+    },
+    {
+      "repo": "build-your-own-x",
+      "pr": 3,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/3",
+      "status": "updated"
+    },
+    {
+      "repo": "build-your-own-x",
+      "pr": 2,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/2",
+      "status": "updated"
+    },
+    {
+      "repo": "gods-eye-view-EGGREGORE-TOOL",
+      "pr": 3,
+      "url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/3",
+      "status": "write_blocked",
+      "error": "GitHub API error 403: {\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/pulls/pulls#update-a-pull-request\",\"status\":\"403\"}"
+    },
+    {
+      "repo": "gods-eye-view-EGGREGORE-TOOL",
+      "pr": 1,
+      "url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/1",
+      "status": "write_blocked",
+      "error": "GitHub API error 403: {\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/pulls/pulls#update-a-pull-request\",\"status\":\"403\"}"
+    }
+  ],
+  "claim_limits": "Draft branch guidance and open PR guidance; no default branches were written or merged. God's Eye file/PR mutations returned integration access 403."
+}

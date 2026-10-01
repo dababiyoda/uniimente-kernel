@@ -1271,5 +1271,12 @@
         "frontier/science-fiction destination remains a gated aspiration"
       ]
     }
+  },
+  "completion_boundary": {
+    "intent_id": "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "product": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+    "increment_role": "sequencing unit; automatically resume parent objective",
+    "founder_use_gate": "item-specific authentic evidence; never a gate on unrelated achievable implementation",
+    "state": "active_not_complete"
   }
 }

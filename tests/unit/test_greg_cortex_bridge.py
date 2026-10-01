@@ -144,6 +144,42 @@ class TestWorkerOutputIsData:
         r = reason(request({"formal_model": opt_model()}), registry=registry_view())
         assert r["abstention_state"] == "ABSTAIN" and r["output"] is None
 
+    def test_each_refusal_layer_holds_even_if_the_schema_layer_is_lost(self, monkeypatch):
+        """Defense in depth: the receipt schema already refuses these, so the bridge's own checks
+        are pinned with the schema bypassed (a mutant that removes either layer must fail a test)."""
+        _, problem, records = bridge._validate(request({"formal_model": opt_model()}))
+        receipt = bridge.run_worker(problem, records, withheld_organs={}, semantic_model=None, cpu_seconds=10,
+                                    created_at="2026-10-01T00:00:00Z")
+        monkeypatch.setattr(bridge, "validate_cortex", lambda *a, **k: None)
+        for field, value, why in (("authority_created", True, "claims authority"),
+                                  ("execution_authority", "full", "claims authority")):
+            forged = copy.deepcopy(receipt)
+            forged[field] = value
+            forged["receipt_id"] = cortex_digest({k: v for k, v in forged.items() if k != "receipt_id"})
+            with pytest.raises(bridge.CognitionError, match=why):
+                bridge.check_receipt(forged)
+        forged = copy.deepcopy(receipt)
+        forged["expenditure"] = dict(forged["expenditure"], usd=0.01)
+        forged["receipt_id"] = cortex_digest({k: v for k, v in forged.items() if k != "receipt_id"})
+        with pytest.raises(bridge.CognitionError, match="never purchases"):
+            bridge.check_receipt(forged)
+
+    def test_readdressed_paid_expenditure_is_refused(self, monkeypatch):
+        def paid(r):
+            r["expenditure"] = dict(r["expenditure"], usd=0.002)
+            body = {k: v for k, v in r.items() if k != "receipt_id"}
+            r["receipt_id"] = cortex_digest(body)
+        self.tamper(monkeypatch, paid)
+        r = reason(request({"formal_model": opt_model()}), registry=registry_view())
+        assert r["abstention_state"] == "ABSTAIN" and "never purchases" in r["missing_information"][0]
+
+    def test_only_a_founder_ordered_local_model_is_ever_selected(self):
+        problem = {"payload": {"sources": [{"id": "S1", "text": "x"}]}}
+        assert bridge._semantic_model({"order": ["anthropic"], "ollama_model": "qwen3.5:4b"}, problem) is None
+        assert bridge._semantic_model({"order": ["ollama"], "ollama_model": "qwen3.5:4b"}, problem)["model"] == \
+            "qwen3.5:4b"
+        assert bridge._semantic_model({"order": ["ollama"], "ollama_model": "qwen3.5:4b"}, {"payload": {}}) is None
+
     def test_worker_crash_is_unknown_not_success(self, monkeypatch):
         def boom(*a, **k):
             raise bridge.CognitionError("cortex worker stopped (exit -9); result unknown")

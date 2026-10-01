@@ -531,17 +531,26 @@ class Cortex:
         calls = result.expenditure.solver_calls
         remaining = [k for k in order[1:]]
         failing = ("DEPENDENCY_UNAVAILABLE", "TIMEOUT", "INCONCLUSIVE")
+        def rest():
+            """The latency budget that remains for a later engine; never a fresh budget."""
+            return replace(limits, max_latency_s=max(0.0, limits.max_latency_s - (time.perf_counter() - started)))
+
         while result.state in failing and result.answer is None and remaining:
             alt = remaining.pop(0)
             if calls >= limits.max_solver_calls:
                 decisions.append({"step": f"fallback to {alt}", "taken": False,
                                   "reason": "solver-call budget exhausted", "solver_calls_used": calls})
                 break
+            if rest().max_latency_s <= 0:
+                decisions.append({"step": f"fallback to {alt}", "taken": False,
+                                  "reason": f"latency budget of {limits.max_latency_s}s exhausted",
+                                  "solver_calls_used": calls})
+                break
             decisions.append({"step": f"fallback to {alt}", "taken": True,
                               "reason": f"{result.organ_id} returned {result.state}; a fault-diverse engine can "
                                         f"still decide the same encoded question", "solver_calls_used": calls})
             attempts.append(_attempt(result, "superseded by fallback"))
-            result = self.organs[alt].run(problem, geometry, limits)
+            result = self.organs[alt].run(problem, geometry, rest())
             calls += result.expenditure.solver_calls
         others = [k for k in order if k != f"{result.organ_id}"]
         answer = result.answer or {}
@@ -560,8 +569,8 @@ class Cortex:
             if not ok:
                 decisions.append({"step": "independent optimality certificate (z3)", "taken": False, "reason": why})
             else:
-                cert = cpsat.z3_optimality_certificate(model, answer["objective"],
-                                                        int(model.get("timeout_ms", 5000)))
+                cert = cpsat.z3_optimality_certificate(model, answer["objective"], max(1, min(
+                    int(model.get("timeout_ms", 5000)), int(rest().max_latency_s * 1000))))
                 calls += 1
                 decisions.append({"step": "independent optimality certificate (z3)", "taken": True,
                                   "reason": "an optimality claim changes which assignment is recommended; a "
@@ -583,7 +592,7 @@ class Cortex:
                               "reason": why or f"gap {answer.get('gap')} > 0: a proof of optimality could change "
                                                "the recommended assignment"})
             if ok:
-                second = self.organs[FORMAL].run(problem, geometry, limits)
+                second = self.organs[FORMAL].run(problem, geometry, rest())
                 calls += second.expenditure.solver_calls
                 if second.state in ("OK", "WORLD_UNVERIFIED") and (second.answer or {}).get("optimal"):
                     attempts.append(_attempt(result, "superseded: z3 proved optimality"))
@@ -597,7 +606,7 @@ class Cortex:
                               "reason": why or "an impossibility or entailment verdict ends or settles the plan; a "
                                                "second engine's confirmation is cheap relative to acting on it"})
             if ok:
-                second = self.organs[alt].run(problem, geometry, limits)
+                second = self.organs[alt].run(problem, geometry, rest())
                 calls += second.expenditure.solver_calls
                 key = "feasible" if "feasible" in answer else "entailed"
                 agrees = second.answer is not None and second.answer.get(key) == answer.get(key)

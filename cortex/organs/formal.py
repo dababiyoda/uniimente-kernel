@@ -245,12 +245,21 @@ class FormalOrgan:
         env = self._declare(z3, spec)
         exprs = {c["id"]: self._build(z3, c["expr"], env) for c in spec.constraints}
         domain = self._domain(z3, spec, env)
+        # The declared latency budget caps every solve: no fresh timeout per check.
+        latency = float(getattr(budget, "max_latency_s", 0) or 0)
+        deadline = started + latency if latency > 0 else None
 
-        def check(assertions, track=None):
+        def ms_left(until=None) -> int:
+            end = until if until is not None else deadline
+            if end is None:
+                return spec.timeout_ms
+            return min(spec.timeout_ms, int((end - time.perf_counter()) * 1000))
+
+        def check(assertions, track=None, until=None):
             nonlocal calls
             calls += 1
             s = z3.Solver()
-            s.set("timeout", spec.timeout_ms)
+            s.set("timeout", max(1, ms_left(until)))   # 1 ms: an exhausted budget answers unknown at once
             if track:
                 s.set(unsat_core=True)
                 for name, e in track.items():
@@ -288,14 +297,18 @@ class FormalOrgan:
             return self._result("FORMALIZATION_INCOMPLETE", None, spec, z3, started, calls, reverse,
                                 discrepancies, warnings, witness_results, [], {"status": "not_run"})
 
-        # counterexample search
+        # counterexample search: a diagnostic, so it may spend at most half of what remains
         cex = []
+        cex_until = None if deadline is None else time.perf_counter() + (deadline - time.perf_counter()) / 2
         for c in spec.constraints:
             if calls >= max_calls - 1:
                 cex.append({"constraint": c["id"], "result": "skipped: solver-call budget"})
                 continue
+            if cex_until is not None and ms_left(cex_until) < 1:
+                cex.append({"constraint": c["id"], "result": "skipped: latency budget"})
+                continue
             others = [e for cid, e in exprs.items() if cid != c["id"]]
-            _, res = check(domain + others + [z3.Not(exprs[c["id"]])])
+            _, res = check(domain + others + [z3.Not(exprs[c["id"]])], until=cex_until)
             if res == z3.unsat:
                 cex.append({"constraint": c["id"], "result": "implied by the others (redundant or mis-encoded?)"})
             elif res == z3.sat:
@@ -335,7 +348,7 @@ class FormalOrgan:
                     return self._fail("BUDGET_EXHAUSTED", "solver-call budget exhausted before optimization",
                                       started, reverse=reverse, discrepancies=discrepancies, warnings=warnings,
                                       calls=calls)
-                outcome = self._optimize(z3, spec, env, domain, exprs, check)
+                outcome = self._optimize(z3, spec, env, domain, exprs, check, max(1, ms_left()))
                 calls += 1  # the Optimize call; the certificate check counted itself
                 if outcome[0] != "OK":
                     state, why = outcome
@@ -365,13 +378,13 @@ class FormalOrgan:
                             witness_results, cex, solver_out)
 
     # ---------------------------------------------------------------- optimization
-    def _optimize(self, z3, spec, env, domain, exprs, check):
+    def _optimize(self, z3, spec, env, domain, exprs, check, timeout_ms=None):
         """Optimal assignment plus a certificate: an independent check that no feasible
         assignment is strictly better. Returns ("OK", answer, solver_out) or (state, reason)."""
         sense = spec.query["sense"]
         objective = self._build(z3, spec.query["objective"], env)
         opt = z3.Optimize()
-        opt.set("timeout", spec.timeout_ms)
+        opt.set("timeout", timeout_ms or spec.timeout_ms)
         for a in domain + list(exprs.values()):
             opt.add(a)
         handle = opt.minimize(objective) if sense == "minimize" else opt.maximize(objective)

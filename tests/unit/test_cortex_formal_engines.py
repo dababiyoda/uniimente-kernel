@@ -282,6 +282,10 @@ class TestRouting:
                                                                  "objective": ["+", "s_A", "s_B"]})
         r = run_cortex(model, resources={"max_solver_calls": 0})
         assert r["output"]["state"] == "BUDGET_EXHAUSTED" and r["outcome"]["outcome"] == "WAIT"
+        # refused before spending, never after: no engine is invoked, so no engine artifact exists
+        assert r["proof_artifacts"] == [] or all(p.get("proof_class") == "verifier_findings"
+                                                 for p in r["proof_artifacts"]), r["proof_artifacts"]
+        assert r["route"]["attempts"] == [] and r["expenditure"]["solver_calls"] == 0
 
 
 class TestL1AndOutcomes:
@@ -309,3 +313,41 @@ class TestL1AndOutcomes:
         for state in AbstentionClass:
             out = outcomes.classify_greg(state.value, has_output=False)
             assert out["outcome"] in outcomes.OUTCOMES and set(out["reasons"]) <= set(outcomes.REASONS)
+
+
+class TestLatencyBudget:
+    """Selection-split finding (crossgeo v0.2): with a 50 ms budget the Z3 organ still spent ~5 s
+    because every diagnostic solve took a fresh timeout, and adding CP-SAT pushed the GREG worker
+    past its CPU limit (SIGXCPU, a task failure). Every solve now draws on one deadline."""
+
+    @staticmethod
+    def pigeonhole(holes=12, budget=0.05):
+        return {"problem_id": "t:budget", "question": "Distinct bays?", "payload": {
+            "formal_model": {"requirement": f"{holes + 1} crews, {holes} bays, one crew per bay.",
+                             "variables": [{"name": f"p{k}", "sort": "int", "lo": 1, "hi": holes}
+                                           for k in range(holes + 1)],
+                             "obligations": [{"id": "R", "text": "distinct bays"}],
+                             "constraints": [{"id": f"C{a}_{b}", "covers": ["R"], "expr": ["!=", f"p{a}", f"p{b}"]}
+                                             for a, b in __import__("itertools").combinations(range(holes + 1), 2)]},
+            "resources": {"max_latency_s": budget},
+            "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+
+    def test_the_cortex_stays_near_its_declared_latency(self):
+        import time
+        started = time.perf_counter()
+        receipt = Cortex(clock=lambda: "2026-10-01T00:00:00Z").run(self.pigeonhole())
+        elapsed = time.perf_counter() - started
+        assert elapsed < 1.5, elapsed
+        answer = receipt["output"]["answer"]
+        assert receipt["disposition"]["kind"] != "recommend" or (answer or {}).get("feasible") is False
+        skipped = [c for p in receipt["proof_artifacts"] for c in p.get("counterexample_search", [])
+                   if c["result"] == "skipped: latency budget"]
+        assert skipped, "diagnostics must yield to the budget"
+
+    def test_the_greg_worker_is_never_killed_by_a_tight_budget(self):
+        from greg.cognition.cortex import reason, registry_view
+        p = self.pigeonhole()
+        r = reason({"problem_id": p["problem_id"], "problem": {"question": p["question"], "payload": p["payload"]}},
+                   registry=registry_view())
+        assert r["proof_type"] == "cortex_receipt", r.get("missing_information")
+        assert r["outcome"]["outcome"] in ("WAIT", "ABSTAIN", "ANSWERED_WITHIN_SCOPE")

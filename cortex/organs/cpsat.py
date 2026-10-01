@@ -225,11 +225,19 @@ class CpSatOrgan:
         seconds = max(spec.timeout_ms, 1) / 1000.0
         calls = 0
         timed_out = []
+        # The declared latency budget caps every solve: no fresh timeout per solve.
+        latency = float(getattr(budget, "max_latency_s", 0) or 0)
+        deadline = started + latency if latency > 0 else None
 
-        def solve(extra=None, *, objective=None, assumptions=False, constraints=None):
+        def left(until=None) -> float:
+            end = until if until is not None else deadline
+            return seconds if end is None else min(seconds, end - time.perf_counter())
+
+        def solve(extra=None, *, objective=None, assumptions=False, constraints=None, until=None):
             """One CP-SAT solve over ``constraints`` (default: all) plus ``extra`` boolean nodes."""
             nonlocal calls
             calls += 1
+            limit = max(0.001, left(until))
             enc = _Encoder(cp_model, spec)
             guards = {}
             for c in spec.constraints if constraints is None else constraints:
@@ -249,13 +257,13 @@ class CpSatOrgan:
                 (enc.model.minimize if spec.query["sense"] == "minimize" else enc.model.maximize)(expr)
             invalid = enc.model.validate()
             solver = cp_model.CpSolver()
-            solver.parameters.max_time_in_seconds = seconds
+            solver.parameters.max_time_in_seconds = limit
             solver.parameters.num_workers = WORKERS
             solver.parameters.random_seed = SEED
             t0 = time.perf_counter()
             status = solver.solve(enc.model) if not invalid else cp_model.MODEL_INVALID
             name = solver.status_name(status) if not invalid else "MODEL_INVALID"
-            if name == "UNKNOWN" and time.perf_counter() - t0 >= 0.95 * seconds:
+            if name == "UNKNOWN" and time.perf_counter() - t0 >= 0.95 * limit:
                 timed_out.append(True)
             return enc, solver, name, guards, invalid
 
@@ -294,14 +302,19 @@ class CpSatOrgan:
             return self._result("FORMALIZATION_INCOMPLETE", None, spec, started, calls, reverse, discrepancies,
                                 warnings, witness_results, [], {"status": "not_run"})
 
-        # counterexample search: is each constraint violable given the others?
+        # counterexample search: is each constraint violable given the others? A diagnostic, so it
+        # may spend at most half of what remains of the latency budget.
         cex = []
+        cex_until = None if deadline is None else time.perf_counter() + (deadline - time.perf_counter()) / 2
         for c in spec.constraints:
             if calls >= max_calls - 1:
                 cex.append({"constraint": c["id"], "result": "skipped: solver-call budget"})
                 continue
+            if cex_until is not None and left(cex_until) <= 0:
+                cex.append({"constraint": c["id"], "result": "skipped: latency budget"})
+                continue
             others = [x for x in spec.constraints if x["id"] != c["id"]]
-            _, _, name, _, _ = solve([["not", c["expr"]]], constraints=others)
+            _, _, name, _, _ = solve([["not", c["expr"]]], constraints=others, until=cex_until)
             cex.append({"constraint": c["id"], "result": {
                 "INFEASIBLE": "implied by the others (redundant or mis-encoded?)",
                 "OPTIMAL": "binding: violable without it", "FEASIBLE": "binding: violable without it"}.get(

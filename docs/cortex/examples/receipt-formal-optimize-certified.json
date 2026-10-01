@@ -3,7 +3,7 @@
     "falsification_conditions": [
       {
         "condition": "a feasible assignment with objective < 165, or a mis-encoded constraint",
-        "route": "cortex.formal.z3@0.2.0"
+        "route": "cortex.optimization.cpsat@0.2.0"
       }
     ],
     "missing_information": [
@@ -36,6 +36,18 @@
       ]
     },
     {
+      "route": "cortex.extraction.schedule@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    },
+    {
       "route": "cortex.semantic@0.1.0",
       "why_not": [
         "does not support optimization"
@@ -44,6 +56,24 @@
   ],
   "assumptions": [],
   "authority_created": false,
+  "budget_controller": {
+    "decisions": [
+      {
+        "reason": "an optimality claim changes which assignment is recommended; a different engine's UNSAT for a strictly better objective is cheap",
+        "result": "CERTIFIED",
+        "step": "independent optimality certificate (z3)",
+        "taken": true
+      }
+    ],
+    "mandatory": [
+      "eligibility gates",
+      "adversarial verifier",
+      "independent assignment re-evaluation",
+      "consequence ceiling"
+    ],
+    "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+    "policy": "cortex-thinking-budget/0.1"
+  },
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "recommend",
@@ -77,7 +107,19 @@
     },
     {
       "eligible": true,
+      "key": "cortex.extraction.schedule@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": true,
       "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": true,
+      "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": true,
       "reasons": []
     },
@@ -93,8 +135,8 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.020388,
-    "solver_calls": 6,
+    "seconds": 0.273565,
+    "solver_calls": 4,
     "usd": 0.0
   },
   "gates": null,
@@ -158,9 +200,57 @@
       "formal_model"
     ]
   },
+  "l1_checks": [
+    {
+      "check": "schema_valid",
+      "detail": "problem and payload parsed",
+      "value": "pass"
+    },
+    {
+      "check": "as_of_present",
+      "detail": "no reference date; freshness cannot be judged",
+      "value": "unknown"
+    },
+    {
+      "check": "evidence_fresh",
+      "detail": "no evidence items",
+      "value": "not_applicable"
+    },
+    {
+      "check": "no_instruction_text_in_sources",
+      "detail": "scanned sources",
+      "value": "not_applicable"
+    },
+    {
+      "check": "budget_declared",
+      "detail": {
+        "max_cost_usd": 0.05,
+        "max_latency_s": 30.0,
+        "max_model_calls": 4,
+        "max_solver_calls": 64
+      },
+      "value": "unknown"
+    },
+    {
+      "check": "formal_engine_available",
+      "detail": {
+        "excluded": {},
+        "order": [
+          "cortex.optimization.cpsat@0.2.0",
+          "cortex.formal.z3@0.2.0"
+        ]
+      },
+      "value": "pass"
+    }
+  ],
+  "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+  },
   "outcome_link": {
     "memory_keys": [
-      "cortex.formal.z3@0.2.0|optimization"
+      "cortex.optimization.cpsat@0.2.0|optimization"
     ],
     "settlement_ref": null,
     "status": "absent_feedback"
@@ -190,19 +280,35 @@
         },
         "assumptions": [],
         "dependencies": [
-          "solver:z3"
+          "solver:ortools-cpsat"
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.019147,
-          "solver_calls": 6,
+          "seconds": 0.268087,
+          "solver_calls": 4,
           "usd": 0.0
         },
         "notes": [],
-        "organ_id": "cortex.formal.z3@0.2.0",
+        "organ_id": "cortex.optimization.cpsat@0.2.0",
         "organ_version": "0.2.0",
         "origin": "solver",
         "proof": {
+          "assignment": {
+            "a": 1,
+            "b": 3
+          },
+          "bound": 165,
+          "budget": {
+            "max_solver_calls_used": 3,
+            "seed": 0,
+            "workers": 1
+          },
+          "certificate": {
+            "claim": "no feasible assignment has objective < 165",
+            "engine": "z3",
+            "status": "CERTIFIED",
+            "version": "5.1.0"
+          },
           "completeness": "not established by reverse translation",
           "counterexample_search": [
             {
@@ -216,6 +322,7 @@
             "witnesses": [
               {
                 "agrees": true,
+                "checked_by": "python re-evaluation",
                 "index": 0,
                 "kind": "satisfying",
                 "witness": {
@@ -225,6 +332,7 @@
               },
               {
                 "agrees": true,
+                "checked_by": "python re-evaluation",
                 "index": 0,
                 "kind": "violating",
                 "witness": {
@@ -234,9 +342,38 @@
               }
             ]
           },
+          "feasibility_check": {
+            "bound_violations": [],
+            "error": null,
+            "holds": true,
+            "method": "python exact re-evaluation of every source constraint (shares only the parser)",
+            "objective_recomputed": 165,
+            "objective_reported": 165,
+            "violated_constraints": []
+          },
+          "gap": 0,
+          "native_status": "OPTIMAL",
+          "objective": {
+            "expression": [
+              "+",
+              [
+                "*",
+                30,
+                "a"
+              ],
+              [
+                "*",
+                45,
+                "b"
+              ]
+            ],
+            "sense": "minimize",
+            "value": 165
+          },
+          "optimality": "proven by CP-SAT search (bound equals objective); independent certificate recorded separately when obtained",
           "original_requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); at most 6 juniors and 5 seniors; minimize cost.",
           "premises": [],
-          "proof_class": "formal",
+          "proof_class": "optimization",
           "reverse_translation": [
             "a is an integer in [0, 6]",
             "b is an integer in [0, 5]",
@@ -245,16 +382,28 @@
           ],
           "scope": "valid_given_encoding",
           "solver": {
-            "certificate": "no feasible assignment has objective < 165",
-            "certificate_check": "UNSAT",
+            "best_bound": 165,
+            "gap": 0,
+            "independent_check": {
+              "bound_violations": [],
+              "error": null,
+              "holds": true,
+              "method": "python exact re-evaluation of every source constraint (shares only the parser)",
+              "objective_recomputed": 165,
+              "objective_reported": 165,
+              "violated_constraints": []
+            },
+            "max_time_s_per_solve": 5.0,
             "model": {
               "a": 1,
               "b": 3
             },
-            "name": "z3",
+            "name": "ortools-cpsat",
             "objective": 165,
+            "seed": 0,
             "status": "OPTIMAL",
-            "version": "5.1.0"
+            "version": "9.15.6755",
+            "workers": 1
           },
           "structured_model": {
             "bounds": {
@@ -313,10 +462,11 @@
               "b": "int"
             }
           },
+          "timeout_s": 5.0,
           "unverified_premises": []
         },
         "state": "OK",
-        "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises"
+        "uncertainty": "exact given the encoding; empirical correspondence rests on verified premises"
       }
     ],
     "state": "OK"
@@ -328,6 +478,22 @@
   },
   "proof_artifacts": [
     {
+      "assignment": {
+        "a": 1,
+        "b": 3
+      },
+      "bound": 165,
+      "budget": {
+        "max_solver_calls_used": 3,
+        "seed": 0,
+        "workers": 1
+      },
+      "certificate": {
+        "claim": "no feasible assignment has objective < 165",
+        "engine": "z3",
+        "status": "CERTIFIED",
+        "version": "5.1.0"
+      },
       "completeness": "not established by reverse translation",
       "counterexample_search": [
         {
@@ -341,6 +507,7 @@
         "witnesses": [
           {
             "agrees": true,
+            "checked_by": "python re-evaluation",
             "index": 0,
             "kind": "satisfying",
             "witness": {
@@ -350,6 +517,7 @@
           },
           {
             "agrees": true,
+            "checked_by": "python re-evaluation",
             "index": 0,
             "kind": "violating",
             "witness": {
@@ -359,9 +527,38 @@
           }
         ]
       },
+      "feasibility_check": {
+        "bound_violations": [],
+        "error": null,
+        "holds": true,
+        "method": "python exact re-evaluation of every source constraint (shares only the parser)",
+        "objective_recomputed": 165,
+        "objective_reported": 165,
+        "violated_constraints": []
+      },
+      "gap": 0,
+      "native_status": "OPTIMAL",
+      "objective": {
+        "expression": [
+          "+",
+          [
+            "*",
+            30,
+            "a"
+          ],
+          [
+            "*",
+            45,
+            "b"
+          ]
+        ],
+        "sense": "minimize",
+        "value": 165
+      },
+      "optimality": "proven by CP-SAT search (bound equals objective); independent certificate recorded separately when obtained",
       "original_requirement": "Cover at least 7 shift units with juniors (1 unit, 30 USD) and seniors (2 units, 45 USD); at most 6 juniors and 5 seniors; minimize cost.",
       "premises": [],
-      "proof_class": "formal",
+      "proof_class": "optimization",
       "reverse_translation": [
         "a is an integer in [0, 6]",
         "b is an integer in [0, 5]",
@@ -370,16 +567,28 @@
       ],
       "scope": "valid_given_encoding",
       "solver": {
-        "certificate": "no feasible assignment has objective < 165",
-        "certificate_check": "UNSAT",
+        "best_bound": 165,
+        "gap": 0,
+        "independent_check": {
+          "bound_violations": [],
+          "error": null,
+          "holds": true,
+          "method": "python exact re-evaluation of every source constraint (shares only the parser)",
+          "objective_recomputed": 165,
+          "objective_reported": 165,
+          "violated_constraints": []
+        },
+        "max_time_s_per_solve": 5.0,
         "model": {
           "a": 1,
           "b": 3
         },
-        "name": "z3",
+        "name": "ortools-cpsat",
         "objective": 165,
+        "seed": 0,
         "status": "OPTIMAL",
-        "version": "5.1.0"
+        "version": "9.15.6755",
+        "workers": 1
       },
       "structured_model": {
         "bounds": {
@@ -438,21 +647,36 @@
           "b": "int"
         }
       },
+      "timeout_s": 5.0,
       "unverified_premises": []
     }
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:77658b95b4dbeb6f88112c28f10702fc55c2ec96ccf1f092c44135c1a0b1a468",
+  "receipt_id": "sha256:2b408be6e01a2b773fbb905d929bd2f7c37213bb84133087e347362d626b45ea",
   "route": {
+    "attempts": [],
     "composition": false,
-    "policy": "cortex-route-policy/0.1",
+    "formal_plan": {
+      "excluded": {},
+      "order": [
+        "cortex.optimization.cpsat@0.2.0",
+        "cortex.formal.z3@0.2.0"
+      ],
+      "policy": "cortex-route-policy/0.2",
+      "policy_order": [
+        "cortex.optimization.cpsat@0.2.0",
+        "cortex.formal.z3@0.2.0"
+      ],
+      "query_kind": "optimize"
+    },
+    "policy": "cortex-route-policy/0.2",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
-      "cortex.formal.z3@0.2.0"
+      "cortex.optimization.cpsat@0.2.0"
     ]
   },
-  "schema": "cortex-receipt/0.1",
+  "schema": "cortex-receipt/0.2",
   "shared_dependencies": {},
   "truth": {
     "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
@@ -460,7 +684,7 @@
     "formal_validity": "valid_given_encoding",
     "legitimate_authority": "not_granted_by_cortex"
   },
-  "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises",
+  "uncertainty": "exact given the encoding; empirical correspondence rests on verified premises",
   "verifier": {
     "blocking": false,
     "findings": [
@@ -486,14 +710,14 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.5",
-    "policy": "cortex-route-policy/0.1",
+    "cortex": "0.2.0",
+    "policy": "cortex-route-policy/0.2",
     "routes": {
-      "cortex.formal.z3@0.2.0": "0.2.0"
+      "cortex.optimization.cpsat@0.2.0": "0.2.0"
     },
     "solver": {
-      "name": "z3",
-      "version": "5.1.0"
+      "name": "ortools-cpsat",
+      "version": "9.15.6755"
     }
   }
 }

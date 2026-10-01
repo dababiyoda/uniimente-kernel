@@ -174,7 +174,8 @@
               "simulation",
               "human_adjudication",
               "measurement",
-              "institutional_observation"
+              "institutional_observation",
+              "extraction"
             ]
           }
         }

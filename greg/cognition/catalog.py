@@ -57,6 +57,9 @@ CORTEX_ENTRIES = {
                                   "Source-quoted synthesis through the founder-selected local model only"),
     "cognition.cortex.deterrence.accountability": ("0.1.0", ("strategic",), True, "none",
                                                    "Lawful deterrence: Becker condition, coercion refused"),
+    "cognition.cortex.extraction.schedule": ("0.1.0", ("semantic", "constraint_feasibility", "optimization"), False,
+                                             "egress-allowlist", "Bounded scheduling request in words -> audited "
+                                             "formal model (controlled grammar; founder-selected model only)"),
 }
 CORTEX_VERSIONS = {cid: spec[0] for cid, spec in CORTEX_ENTRIES.items()}
 

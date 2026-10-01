@@ -23,7 +23,8 @@
         "simulation",
         "human_adjudication",
         "measurement",
-        "institutional_observation"
+        "institutional_observation",
+        "extraction"
       ]
     }
   },
@@ -378,6 +379,40 @@
                 "const": "valid_given_encoding"
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "extraction"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "original",
+              "grammar",
+              "extractor",
+              "structured",
+              "reverse_translation",
+              "audit",
+              "compiled_model",
+              "limits",
+              "proposal"
+            ]
           }
         ]
       }

@@ -101,8 +101,10 @@ PROOF_CLASSES = (
     # 0.2.0: optimization is implemented (CP-SAT); the rest stay reserved for disabled families
     "optimization", "bayesian", "simulation", "human_adjudication",
     "measurement", "institutional_observation",
+    # 0.2.0: request text -> declarative model (seed composition, directive section 7)
+    "extraction",
 )
-IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:9]  # 0.2.0: optimization (CP-SAT)
+IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:9] + ("extraction",)  # 0.2.0: optimization (CP-SAT), extraction
 
 DISPOSITIONS = ("recommend", "abstain", "bounded_test", "handoff")
 
@@ -307,7 +309,8 @@ class VictimProtection:
 
 
 # ------------------------------------------------------------------ problem
-PAYLOAD_KEYS = ("formal_model", "estimation_model", "deterrence_model", "sources", "evidence", "claim",
+PAYLOAD_KEYS = ("formal_model", "schedule_request", "estimation_model", "deterrence_model", "sources",
+                "evidence", "claim",
                 "causal_spec", "options", "declared", "resources", "as_of", "victim_protection",
                 "faults")
 

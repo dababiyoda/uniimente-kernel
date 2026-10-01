@@ -356,6 +356,22 @@ SEED_ORGANS = {
         lineage=("greg/cognition/solvers.py#optimization (PR #140)", "cortex reserved family 0.1.0 (PR #141)"),
         acceptance=["every returned assignment satisfies every source constraint under python re-evaluation",
                     "FEASIBLE is never reported as OPTIMAL", "agrees with z3 on the frozen parity cases"]),
+    "cortex.extraction.schedule": dict(
+        # 0.1.0 (cortex 0.2.0, directive section 7 seed composition): words -> declarative model.
+        description="Bounded scheduling request in words -> declarative constraints: controlled-language parser "
+                    "first (no model); founder-selected local model only for free text; token audit independent "
+                    "of the extractor.",
+        role="solver", layer="solver_macro_cognitive", geometries=("constraint_feasibility", "optimization"),
+        proofs=("extraction",), observations=("request text",),
+        state="stateless per request", update="none",
+        recruitment="recruited when a schedule_request is supplied without a formal_model",
+        inhibition="inhibited by any unreadable sentence or a failed token audit",
+        evidence=("request text",), ceiling="internal_write", diversity="controlled_grammar",
+        deps=("python-stdlib",), lifecycle="SANDBOXED", enabled=True,
+        abstain=("sentence outside the grammar without a selected model", "token audit failure"),
+        failures=("misread quantity", "dropped constraint", "model extraction invented a fact"),
+        lineage=("directive 2026-09-30 section 7: seed composition",),
+        acceptance=["every sentence parses or the request abstains; numbers and identifiers round-trip"]),
     "cortex.evidence_causal": dict(
         description="Evidence assessment and gated causal estimation.",
         role="solver", layer="solver_macro_cognitive",

@@ -21,6 +21,7 @@ def cortex_main(request):
     only when the founder selected a local model, the loopback model to use. The
     receipt is printed; the body re-validates it before anything is retained."""
     from cortex.genome import seed_registry
+    from cortex.organs.schedule_extraction import ScheduleExtractionOrgan
     from cortex.organs.semantic import SemanticOrgan
     from cortex.routing import Cortex
     seconds = max(1, math.ceil(request["cpu_seconds"]))
@@ -39,6 +40,9 @@ def cortex_main(request):
         client = _NoSelectedModel()
     cortex = Cortex(registry, clock=lambda: request["created_at"])
     cortex.organs["cortex.semantic@0.1.0"] = SemanticOrgan(client)
+    # The extractor reads free text only through a founder-selected model; otherwise the
+    # controlled grammar alone, and out-of-grammar text abstains (DEPENDENCY_UNAVAILABLE).
+    cortex.organs["cortex.extraction.schedule@0.1.0"] = ScheduleExtractionOrgan(client if model else None)
     receipt = cortex.run(request["problem"], records=request.get("records"))
     text = canonical(receipt)
     if len(text.encode()) > 512 * 1024:

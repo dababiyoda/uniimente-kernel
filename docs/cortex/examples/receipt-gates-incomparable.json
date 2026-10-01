@@ -30,7 +30,19 @@
       ]
     },
     {
+      "route": "cortex.extraction.schedule@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
       "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support strategic"
       ]
@@ -44,6 +56,17 @@
   ],
   "assumptions": [],
   "authority_created": false,
+  "budget_controller": {
+    "decisions": [],
+    "mandatory": [
+      "eligibility gates",
+      "adversarial verifier",
+      "independent assignment re-evaluation",
+      "consequence ceiling"
+    ],
+    "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+    "policy": "cortex-thinking-budget/0.1"
+  },
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "handoff",
@@ -75,7 +98,23 @@
     },
     {
       "eligible": false,
+      "key": "cortex.extraction.schedule@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
         "does not support strategic"
@@ -91,7 +130,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000373,
+    "seconds": 0.00037,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -269,6 +308,50 @@
       "options"
     ]
   },
+  "l1_checks": [
+    {
+      "check": "schema_valid",
+      "detail": "problem and payload parsed",
+      "value": "pass"
+    },
+    {
+      "check": "as_of_present",
+      "detail": "2026-09-30",
+      "value": "pass"
+    },
+    {
+      "check": "evidence_fresh",
+      "detail": "no evidence items",
+      "value": "not_applicable"
+    },
+    {
+      "check": "no_instruction_text_in_sources",
+      "detail": "scanned sources",
+      "value": "not_applicable"
+    },
+    {
+      "check": "budget_declared",
+      "detail": {
+        "max_cost_usd": 0.05,
+        "max_latency_s": 30.0,
+        "max_model_calls": 4,
+        "max_solver_calls": 64
+      },
+      "value": "unknown"
+    },
+    {
+      "check": "formal_engine_available",
+      "detail": "no formal model",
+      "value": "not_applicable"
+    }
+  ],
+  "outcome": {
+    "outcome": "ESCALATE",
+    "reasons": [
+      "AUTHORITY_REQUIRED"
+    ],
+    "taxonomy": "directive-outcomes/0.1"
+  },
   "outcome_link": {
     "memory_keys": [],
     "settlement_ref": null,
@@ -298,14 +381,16 @@
     "status": "none_eligible",
     "tradeoffs": []
   },
-  "receipt_id": "sha256:47f03b942a3bafacad7f740c1534f0a090c3f9569526e9db38b08f617eb207c9",
+  "receipt_id": "sha256:0bd9ed6c95bbe3e0b7df926b22f62d7d072cb0aad7d463614374013dd723dd5e",
   "route": {
+    "attempts": [],
     "composition": false,
-    "policy": "cortex-route-policy/0.1",
+    "formal_plan": null,
+    "policy": "cortex-route-policy/0.2",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": []
   },
-  "schema": "cortex-receipt/0.1",
+  "schema": "cortex-receipt/0.2",
   "shared_dependencies": {},
   "truth": {
     "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
@@ -332,8 +417,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.5",
-    "policy": "cortex-route-policy/0.1",
+    "cortex": "0.2.0",
+    "policy": "cortex-route-policy/0.2",
     "routes": {}
   }
 }

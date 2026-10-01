@@ -33,6 +33,8 @@ from .organs.deterrence import DeterrenceOrgan
 from .organs.estimation import EstimationOrgan
 from .organs.evidence_causal import EvidenceCausalOrgan
 from .organs.formal import FormalOrgan
+from .organs.schedule_extraction import ScheduleExtractionOrgan
+from .organs import schedule_extraction
 from .organs.semantic import SemanticOrgan
 
 POLICY_VERSION = "cortex-route-policy/0.2"
@@ -44,6 +46,7 @@ EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"
 DETERRENCE = "cortex.deterrence.accountability@0.1.0"
 CPSAT = cpsat.ORGAN_ID
+EXTRACT = schedule_extraction.ORGAN_ID
 # Fault-diverse engines behind the one formal_model contract (directive 7C, 14).
 FORMAL_ENGINES = (FORMAL, CPSAT)
 
@@ -89,6 +92,9 @@ def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
         parts.append((FORMAL, _formal_class(fm)))
+    elif isinstance(payload.get("schedule_request"), Mapping):
+        # Seed composition: words -> declarative model -> formal slot (planned after extraction).
+        parts.append((EXTRACT, "constraint_feasibility"))
     if isinstance(payload.get("estimation_model"), Mapping):
         parts.append((FERMI, "estimate"))
     if isinstance(payload.get("deterrence_model"), Mapping):
@@ -106,6 +112,8 @@ def _structural_classes(payload: Mapping[str, Any]) -> list[str]:
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
         out.append(_formal_class(fm))
+    elif isinstance(payload.get("schedule_request"), Mapping):
+        out.append("constraint_feasibility")
     if isinstance(payload.get("estimation_model"), Mapping):
         out.append("estimate")
     if isinstance(payload.get("deterrence_model"), Mapping):
@@ -280,7 +288,8 @@ class Cortex:
     def __init__(self, registry: IntelligenceRegistry | None = None, *, organs: Mapping[str, Any] | None = None,
                  clock: Callable[[], str] | None = None, memory=None):
         self.registry = registry or seed_registry()
-        self.organs = dict(organs or {FORMAL: FormalOrgan(), CPSAT: CpSatOrgan(), FERMI: EstimationOrgan(),
+        self.organs = dict(organs or {FORMAL: FormalOrgan(), CPSAT: CpSatOrgan(), EXTRACT: ScheduleExtractionOrgan(),
+                                      FERMI: EstimationOrgan(),
                                       EVIDENCE: EvidenceCausalOrgan(), SEMANTIC: SemanticOrgan(),
                                       DETERRENCE: DeterrenceOrgan()})
         self.clock = clock or (lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
@@ -344,8 +353,15 @@ class Cortex:
         results: list[OrganResult] = []
         attempts: list[dict] = []
         decisions: list[dict] = []
+        source_problem = problem
         if budget_problem is None:
-            for key in selected:
+            for key in list(selected):
+                if key == EXTRACT:
+                    problem, executed, plan = self._compose_schedule(problem, geometry, limits, started, results,
+                                                                     attempts, decisions)
+                    selected = selected + [k for k in executed if k not in selected]
+                    formal_plan = plan
+                    continue
                 if key in FORMAL_ENGINES and formal_plan is not None:
                     result, tried, decided = self._run_formal(problem, geometry, limits, formal_plan, started)
                     results.append(result)
@@ -415,11 +431,41 @@ class Cortex:
             reason = f"critical verifier finding(s): {sorted(kinds)}"
             next_step = "resolve the findings before relying on this result"
         spent = spent.plus(Expenditure(seconds=time.perf_counter() - started - spent.seconds))
-        return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
+        return self._receipt(source_problem, geometry, eligibility, selected, alternatives, results, verifier,
                              gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
                              formal_plan=formal_plan, attempts=attempts, decisions=decisions, l1=l1,
                              extra_reasons=extra_reasons)
 
+
+
+    # ------------------------------------------------------------------ seed composition
+    def _compose_schedule(self, problem, geometry, limits, started, results, attempts, decisions):
+        """Extraction -> compiled formal model -> formal slot. Returns (problem, executed keys, plan).
+
+        The formal stage sees the compiled model; the verifier re-checks against it. Whether the
+        compiled model is a faithful reading of the words is the extraction audit's and the
+        founder's question, recorded in the extraction proof, never assumed here."""
+        ext = self.organs[EXTRACT].run(problem, geometry, limits)
+        results.append(ext)
+        if ext.state != "OK":
+            decisions.append({"step": "formal stage", "taken": False,
+                              "reason": f"extraction state {ext.state}: no model to solve"})
+            return problem, [], None
+        model = ext.proof["compiled_model"]
+        composed = Problem(problem.problem_id, problem.question, {**problem.payload, "formal_model": model})
+        kind = (model.get("query") or {}).get("kind", "feasibility")
+        part_geometry = replace(geometry, epistemic_class="optimization" if kind == "optimize"
+                                else "constraint_feasibility")
+        plan = self._formal_plan(composed, part_geometry)
+        if not plan["order"]:
+            decisions.append({"step": "formal stage", "taken": False,
+                              "reason": f"no eligible formal engine: {plan['excluded']}"})
+            return composed, [], plan
+        result, tried, decided = self._run_formal(composed, part_geometry, limits, plan, started)
+        results.append(result)
+        attempts += tried
+        decisions += decided
+        return composed, [result.organ_id], plan
 
     # ------------------------------------------------------------------ formal slot (policy 0.2)
     def _engine_available(self, key: str, payload: Mapping[str, Any]) -> tuple[bool, str]:

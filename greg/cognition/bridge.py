@@ -75,6 +75,7 @@ ORGANS = {
     "cortex.evidence_causal@0.1.0": "cognition.cortex.evidence_causal",
     "cortex.semantic@0.1.0": "cognition.cortex.semantic",
     "cortex.deterrence.accountability@0.1.0": "cognition.cortex.deterrence.accountability",
+    "cortex.extraction.schedule@0.1.0": "cognition.cortex.extraction.schedule",
 }
 CAPABILITY_OF = dict(ORGANS)
 ORGAN_OF = {cid: key for key, cid in ORGANS.items()}
@@ -127,8 +128,9 @@ def withheld(registry, *, forced: str | None = None) -> dict:
 
 
 def _semantic_model(model_config, problem) -> dict | None:
-    """Only a founder-selected local Ollama model, and only when the problem has sources."""
-    if not problem["payload"].get("sources"):
+    """Only a founder-selected local Ollama model, and only when the problem has sources or a
+    free-text schedule request the controlled grammar may not cover."""
+    if not problem["payload"].get("sources") and not problem["payload"].get("schedule_request"):
         return None
     if not model_config or "ollama" not in model_config.get("order", []) or not model_config.get("ollama_model"):
         return None

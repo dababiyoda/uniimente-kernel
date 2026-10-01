@@ -187,7 +187,8 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "every quantity is taken as nonnegative unless a sentence gives it a lower bound",
             "GREG has no built-in LP engine: it looks for an installed open-source one (SciPy HiGHS, OR-Tools "
             "GLOP), qualifies it, and asks you to attach it, showing its version and license",
-            "the plan counts only if GREG's own duality certificate proves no plan does better"])
+            "the plan counts only if GREG's own duality certificate proves no plan does better; if no plan meets "
+            "every limit, GREG proves that and names the limits in conflict"])
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

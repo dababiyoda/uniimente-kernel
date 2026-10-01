@@ -36,8 +36,10 @@ present from `requirements-cognition.txt`.
 - **Unpinned files.** The card pins RECORD, the mechanism's files and shared dependencies' RECORD.
   A change to another file of the distribution without a RECORD change is not detected.
 - **License from metadata**, not a legal review; the founder sees it before attaching.
-- **"Infeasible" and "unbounded" are not proved.** Neither LP interface returns a Farkas certificate,
-  so GREG reports the engine's claim and never closes a mission on it.
+- **Neither LP interface returns a Farkas certificate.** GREG now proves "infeasible" itself: the
+  elastic program, solved by the same engine and certified by duality. A certified zero minimum
+  refutes a false "infeasible" (tested on the mission path). "Unbounded" is still unproved and
+  never closes a mission.
 - **Shadow-price sign.** The first certificate reported prices with the wrong sign for maximization;
   a test caught it, and prices are now the change in the stated objective per unit of the stated
   limit (pinned for both `<=` and `>=` rows, both engines).

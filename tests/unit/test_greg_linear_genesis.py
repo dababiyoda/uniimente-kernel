@@ -86,8 +86,8 @@ def test_a_worse_plan_an_infeasible_plan_and_forged_prices_are_refuted():
         linear.certify_lp(req, {**claim, "y_ub": [claim["y_ub"][0], 0.0]})
     with pytest.raises(linear.CertificateError):
         linear.certify_lp(req, {**claim, "x": [30.0]})
-    stated = linear.certify_lp(req, {"status": "infeasible"})
-    assert stated["certified"] is False and "Farkas" in stated["why"]
+    stated = linear.certify_lp(req, {"status": "unbounded"})
+    assert stated["certified"] is False and "cannot prove" in stated["why"]
 
 
 @pytest.mark.parametrize("seed", range(15))
@@ -95,6 +95,12 @@ def test_greg_oracle_and_an_engine_agree_on_random_bounded_programs(seed):
     case = linear.oracle_lp(seed)[-1]
     req, claim = solve_with("scipy", case["input"])
     answer = linear.certify_lp(req, claim)
+    if answer.get("follow_up"):                                  # "no plan exists" must be proved, not relayed
+        c = candidate("scipy")
+        card = mechanisms.card(c, "lp.optimize", mechanisms.installed("scipy"))
+        [extra] = mechanisms.run(c, linear.RUNNERS[c.runner], [answer["follow_up"]], location=card["location"],
+                                 version=card["version"])
+        answer = linear.follow_up_lp(req, answer, extra["result"])
     assert linear.judge_lp(answer, case["expected"])
 
 
@@ -138,14 +144,38 @@ def test_a_plan_mission_closes_on_a_certified_optimum_from_a_formed_capability(t
         assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
 
 
-def test_an_impossible_plan_never_closes(tmp_path):
+def test_an_impossible_plan_closes_only_on_a_proof_that_names_the_conflicting_limits(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", plan_in_words(text="Maximize x. x >= 5. x <= 3.", auto_attach=True)))
     clock = Clock()
     with Body(home, clock=clock) as body:
         body.boot()
-        assert "ACHIEVED" not in [s["state"] for s in ticks(body, clock, 4)]
-        assert not body.journal.replay("mission.achieved")
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 4)]
+        [answer] = [r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                    if isinstance(r.payload["result"].get("output"), dict)
+                    and r.payload["result"]["output"].get("certified")][-1:]
+        assert answer["status"] == "infeasible" and answer["least_total_violation"] == pytest.approx(2)
+        assert answer["conflicting"] == ["x <= 3", "x >= 5"] and "follow_up" not in answer
+
+
+@pytest.mark.parametrize("distribution", ["scipy", "ortools"])
+def test_no_plan_is_proved_with_the_least_violation_and_a_false_no_plan_is_refuted(distribution):
+    req, claim = solve_with(distribution, read_plan_words("Minimize a + b. a + b = 3. a + b >= 5. a <= 4."))
+    stated = linear.certify_lp(req, claim)
+    assert stated["status"] == "infeasible" and stated["certified"] is False and stated["follow_up"]["elastic"]
+    c = candidate(distribution)
+    card = mechanisms.card(c, "lp.optimize", mechanisms.installed(distribution))
+    [extra] = mechanisms.run(c, linear.RUNNERS[c.runner], [stated["follow_up"]], location=card["location"],
+                             version=card["version"])
+    proof = linear.follow_up_lp(req, stated, extra["result"])
+    assert proof["certified"] and proof["least_total_violation"] == pytest.approx(2)
+    assert set(proof["conflicting"]) == {"a + b = 3", "a + b >= 5"}
+    feasible_req, feasible_claim = solve_with(distribution, read_plan_words(PLAN))
+    lie = linear.certify_lp(feasible_req, {"status": "infeasible"})          # the engine claims no plan exists
+    [extra] = mechanisms.run(c, linear.RUNNERS[c.runner], [lie["follow_up"]], location=card["location"],
+                             version=card["version"])
+    with pytest.raises(linear.CertificateError, match="a plan meets every limit"):
+        linear.follow_up_lp(feasible_req, lie, extra["result"])
 
 
 def test_greg_vertex_oracle_is_exact():
@@ -167,3 +197,27 @@ def test_greg_vertex_oracle_is_exact():
             assert expected["status"] == "infeasible"
         else:
             assert float(expected["objective"]) == pytest.approx(best)
+
+
+def test_an_engine_that_falsely_says_no_plan_exists_is_refuted_quarantined_and_replaced(tmp_path, monkeypatch):
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", plan_in_words(text=PLAN, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)                                       # honest qualification; read-only auto-attach
+        assert body.registry.state["acquired.lp.optimize.scipy"] == "ATTACHED"
+        lie = linear.RUNNERS["scipy.lp"].replace(
+            "def solve(req):\n", 'def solve(req):\n    if not req.get("elastic"):\n        return {"status": "infeasible"}\n', 1)
+        monkeypatch.setitem(linear.RUNNERS, "scipy.lp", lie)        # in service, the engine denies any plan exists
+        states = [s["state"] for s in ticks(body, clock, 8)]
+        assert "ACHIEVED" in states, states
+        [quarantined] = [e.payload for e in body.journal.replay("capability.state")
+                         if e.payload["state"] == "QUARANTINED"]
+        assert quarantined["capability_id"] == "acquired.lp.optimize.scipy"
+        assert "a plan meets every limit" in quarantined["why"]
+        answers = [r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                   if isinstance(r.payload["result"].get("output"), dict)
+                   and r.payload["result"]["output"].get("certified")]
+        assert answers and all(a["status"] == "optimal" for a in answers)     # the false "no plan" was never accepted
+        assert answers[-1]["engine"].startswith("ortools ") and answers[-1]["objective"] == pytest.approx(1800)

@@ -14,8 +14,12 @@ then checks, sharing no code with either engine:
 Weak duality makes the dual objective a lower bound on every feasible point, so a feasible x that
 meets it is optimal. Engines work in floating point, so each test allows a relative 1e-7 (the
 engines' own default feasibility tolerance); arithmetic in the check itself is exact.
-An engine that reports "infeasible" or "unbounded" gives no Farkas certificate through these
-interfaces, so GREG reports that claim as uncertified and never closes a mission on it.
+An engine that reports "infeasible" gives no Farkas certificate through these interfaces, so GREG
+builds its own: the elastic program (one nonnegative slack per limit, minimize total slack) is
+solved by the same engine and its optimum is certified by the same duality check. A certified
+positive minimum proves that every point within the bounds breaks the limits by at least that
+much, and its nonzero prices name the limits in conflict. A certified zero minimum refutes the
+engine. "Unbounded" is still reported without proof and never closes a mission.
 
 The qualification oracle is GREG's: vertex enumeration in exact fractions over bounded problems.
 """
@@ -30,6 +34,7 @@ import re
 from greg.capabilities import CapabilityError
 
 MAX_VARIABLES, MAX_CONSTRAINTS, MAX_COEFFICIENT = 500, 2000, 1e9
+MAX_ELASTIC_CELLS = 1_000_000          # dense elastic program: (variables + slacks) x limits
 TOLERANCE = Fraction(1, 10**7)
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,31}$")
 OPS = ("<=", ">=", "==")
@@ -152,9 +157,15 @@ def certify_lp(req: dict, claim) -> dict:
     if not isinstance(claim, dict) or claim.get("status") not in ("optimal", "infeasible", "unbounded", "unknown"):
         raise CertificateError("the claim must carry a status")
     names = req["names"]
+    if claim["status"] == "infeasible":
+        follow_up = elastic(req)
+        return {"certified": False, "status": "infeasible", "follow_up": follow_up, "certificate": None,
+                "why": "the engine reports no feasible plan; GREG proves or refutes it with the elastic program"
+                       if follow_up else "the engine reports no feasible plan; the program is too large for GREG "
+                                         "to prove it here"}
     if claim["status"] != "optimal":
         return {"certified": False, "status": claim["status"],
-                "why": "the engine reports no optimum and gives no Farkas certificate; GREG cannot prove the claim",
+                "why": "the engine reports no optimum and gives no certificate; GREG cannot prove the claim",
                 "certificate": None}
     def vector(key, size):
         values = claim.get(key)
@@ -210,6 +221,45 @@ def certify_lp(req: dict, claim) -> dict:
                               **{label: float(sign * y) for label, y in zip(req["labels_eq"], y_eq) if y != 0}},
             "certificate": {"kind": "primal and dual feasibility with zero duality gap", "gap": float(primal - dual),
                             "tolerance": "relative 1e-7 (engine floating point)", "arithmetic": "exact fractions"}}
+
+
+def elastic(req: dict) -> dict | None:
+    """The same limits with one nonnegative slack each; minimizing total slack measures infeasibility."""
+    n, mu, me = len(req["names"]), len(req["b_ub"]), len(req["b_eq"])
+    if not mu + me or (n + mu + 2 * me) * (mu + me) > MAX_ELASTIC_CELLS:
+        return None
+
+    def unit(k, size, value):
+        return [value if j == k else 0 for j in range(size)]
+    a_ub = [list(row) + unit(i, mu, -1) + [0] * (2 * me) for i, row in enumerate(req["a_ub"])]
+    a_eq = [list(row) + [0] * mu + unit(i, me, -1) + unit(i, me, 1) for i, row in enumerate(req["a_eq"])]
+    names = list(req["names"]) + [f"over_{i}" for i in range(mu)] + [f"above_{i}" for i in range(me)] + \
+        [f"below_{i}" for i in range(me)]
+    return {"elastic": True, "names": names, "sense": "min", "c": [0] * n + [1] * (mu + 2 * me),
+            "a_ub": a_ub, "b_ub": list(req["b_ub"]), "a_eq": a_eq, "b_eq": list(req["b_eq"]),
+            "lower": list(req["lower"]) + [0] * (mu + 2 * me), "upper": list(req["upper"]) + [None] * (mu + 2 * me),
+            "labels_ub": req["labels_ub"], "labels_eq": req["labels_eq"], "flips_ub": req["flips_ub"]}
+
+
+def follow_up_lp(req: dict, answer: dict, claim) -> dict:
+    """Prove or refute an engine's "no feasible plan" from its certified elastic optimum."""
+    proof = certify_lp(answer["follow_up"], claim)
+    if not proof["certified"]:
+        raise CertificateError("the elastic program has no certified optimum")
+    scale = 1 + max([abs(b) for b in req["b_ub"] + req["b_eq"]] or [0])
+    least = proof["objective"]
+    if least <= 1e-6 * scale:
+        raise CertificateError("the engine said no plan exists, but a plan meets every limit")
+    prices = claim["y_ub"] + claim["y_eq"]
+    labels = req["labels_ub"] + req["labels_eq"]
+    return {"certified": True, "status": "infeasible", "sense": req["sense"],
+            "least_total_violation": least,
+            "conflicting": sorted(label for label, y in zip(labels, prices) if abs(y) > 1e-9),
+            "closest_values": {name: proof["values"][name] for name in req["names"]},
+            "certificate": {"kind": "elastic program optimum certified by duality: every point within the bounds "
+                                    "breaks the limits by at least the least total violation",
+                            "gap": proof["certificate"]["gap"], "tolerance": proof["certificate"]["tolerance"],
+                            "arithmetic": "exact fractions"}}
 
 
 # -- GREG's oracle: vertex enumeration in exact fractions (bounded problems only) -------------
@@ -282,6 +332,10 @@ FIXED_LP = [
     ("infeasible", {"variables": [{"name": "x", "lower": 0, "upper": 1}],
                     "objective": {"sense": "max", "coefficients": {"x": 1}},
                     "constraints": [{"coefficients": {"x": 1}, "op": ">=", "rhs": 2}]}),
+    ("infeasible-equality", {"variables": [{"name": "a", "lower": 0, "upper": 4}, {"name": "b", "lower": 0, "upper": 4}],
+                             "objective": {"sense": "min", "coefficients": {"a": 1, "b": 1}},
+                             "constraints": [{"coefficients": {"a": 1, "b": 1}, "op": "==", "rhs": 3},
+                                             {"coefficients": {"a": 1, "b": 1}, "op": ">=", "rhs": 5}]}),
 ]
 
 
@@ -310,7 +364,7 @@ def oracle_lp(seed: int) -> list[dict]:
 
 def judge_lp(answer: dict, expected: dict) -> bool:
     if expected["status"] != "optimal":
-        return answer["status"] == expected["status"] and answer["certified"] is False
+        return answer["status"] == expected["status"] and answer["certified"] is True
     return answer["certified"] and math.isclose(answer["objective"], float(expected["objective"]),
                                                 rel_tol=1e-7, abs_tol=1e-7)
 

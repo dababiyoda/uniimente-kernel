@@ -157,7 +157,7 @@ CATALOG["lp.optimize"] = {
                                       "with a duality certificate",
     "oracle": linear.oracle_lp, "oracle_kind": "vertex enumeration in exact fractions (GREG)",
     "output_field": "certified", "normalize": linear.normalize_lp, "certify": linear.certify_lp,
-    "certificate_error": linear.CertificateError, "runners": linear.RUNNERS,
+    "certificate_error": linear.CertificateError, "runners": linear.RUNNERS, "follow_up": linear.follow_up_lp,
     "judge": linear.judge_lp, "probe": linear.probe_lp, "size": linear.size,
     "inputs": {"variables": "list", "objective": "dict", "constraints": "list"},
     "baseline": ("none simple at this size: GREG's exact vertex enumeration is exponential and serves only as "
@@ -200,8 +200,17 @@ def package_adapter(function: str, candidate: PackageCandidate):
                                   f"{claim['error'][:200]}")
         try:
             answer = spec["certify"](request, claim["result"])
+            if answer.get("follow_up") and spec.get("follow_up"):
+                # The engine's negative claim is proved or refuted by a second, certified solve.
+                [extra] = mechanisms.run(candidate, spec["runners"][candidate.runner], [answer["follow_up"]],
+                                         location=prov["location"], version=prov["version"])
+                if "error" in extra:
+                    raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
+                                          f"{extra['error'][:200]}")
+                answer = spec["follow_up"](request, answer, extra["result"])
         except spec["certificate_error"] as exc:
             raise CapabilityError(f"capability refused: package output failed its certificate: {exc}") from exc
+        answer.pop("follow_up", None)
         return {**answer, "engine": f"{candidate.distribution} {prov['version']}", "license": prov["license"],
                 "authority_created": False}
     return adapter
@@ -245,20 +254,36 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
         report["failures"].append({"case": "all", "error": str(exc)[:300]})
         return False, report
     wall = time.perf_counter() - started
+    named = cases + [{"name": "scale-probe"}]
     answers = []
-    for case, request, claim in zip(cases + [{"name": "scale-probe"}], requests, claims):
+    for case, request, claim in zip(named, requests, claims):
         if "error" in claim:
             report["failures"].append({"case": case["name"], "error": claim["error"][:160]})
             answers.append(None)
             continue
         try:
-            answer = spec["certify"](request, claim["result"])
+            answers.append(spec["certify"](request, claim["result"]))
         except spec["certificate_error"] as exc:
             report["failures"].append({"case": case["name"], "certificate": str(exc)[:160]})
             answers.append(None)
-            continue
-        answers.append(answer)
-        if "expected" in case and not spec["judge"](answer, case["expected"]):
+    pending = [i for i, a in enumerate(answers) if a and a.get("follow_up") and spec.get("follow_up")]
+    if pending:                                   # negative claims are proved by a second, certified solve
+        try:
+            extras = mechanisms.run(candidate, spec["runners"][candidate.runner],
+                                    [answers[i]["follow_up"] for i in pending], location=card["location"],
+                                    version=card["version"], cpu_seconds=60)
+        except CapabilityError as exc:
+            extras = [{"error": str(exc)}] * len(pending)
+        for i, extra in zip(pending, extras):
+            try:
+                if "error" in extra:
+                    raise spec["certificate_error"](extra["error"][:160])
+                answers[i] = spec["follow_up"](requests[i], answers[i], extra["result"])
+            except spec["certificate_error"] as exc:
+                report["failures"].append({"case": named[i]["name"], "certificate": str(exc)[:160]})
+                answers[i] = None
+    for case, answer in zip(named, answers):
+        if answer is not None and "expected" in case and not spec["judge"](answer, case["expected"]):
             report["failures"].append({"case": case["name"], "expected": str(case["expected"])[:120],
                                        "got": str({k: answer.get(k) for k in case["expected"]})[:120]})
     probe_answer = answers[-1]

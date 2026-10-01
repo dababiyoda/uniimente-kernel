@@ -1,0 +1,119 @@
+{
+  "schema_version": "cognition/1",
+  "problem_id": "mixed-example",
+  "objective": "Check a scenario estimate and a bounded allocation before I decide what to do.",
+  "consequence": {
+    "class": "read_only",
+    "exposures": {
+      "physical": 0,
+      "financial": 0,
+      "legal_rights": 0,
+      "privacy": 0,
+      "reputational": 0,
+      "discrimination": 0,
+      "third_party": 0,
+      "disclosure": 0,
+      "irreversibility": 0,
+      "dependency": 0,
+      "systemic": 0,
+      "tail_risk": 0
+    },
+    "human_judgment": false,
+    "policy_refusal": false
+  },
+  "budget_ms": 10000,
+  "claims": [
+    {
+      "claim_id": "c1",
+      "kind": "estimation",
+      "data": {
+        "factors": [
+          {
+            "name": "quantity",
+            "low": 3,
+            "high": 5,
+            "unit": {
+              "items": 1,
+              "hour": -1
+            },
+            "power": 1
+          },
+          {
+            "name": "duration_or_scale",
+            "low": 2,
+            "high": 4,
+            "unit": {
+              "hour": 1
+            },
+            "power": 1
+          }
+        ],
+        "output_unit": {
+          "items": 1
+        },
+        "assumptions": [
+          "nonnegative declared scenario bounds"
+        ],
+        "anchors": [],
+        "dependencies": [
+          "joint bounds are scenarios; independence is not asserted"
+        ]
+      },
+      "conditions": {}
+    },
+    {
+      "claim_id": "allocate",
+      "kind": "optimization",
+      "data": {
+        "variables": {
+          "x": [
+            0,
+            8
+          ],
+          "y": [
+            0,
+            8
+          ]
+        },
+        "constraints": [
+          {
+            "id": "capacity",
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "op": "<=",
+            "rhs": 5
+          },
+          {
+            "id": "minimum",
+            "coefficients": {
+              "x": 1
+            },
+            "op": ">=",
+            "rhs": 2
+          }
+        ],
+        "coverage": {
+          "represented": [
+            "capacity",
+            "minimum"
+          ],
+          "omissions": [],
+          "assumptions": [
+            "bounded declared integer model"
+          ],
+          "reviewed": true
+        },
+        "objective": {
+          "direction": "max",
+          "coefficients": {
+            "x": 3,
+            "y": 2
+          }
+        }
+      },
+      "conditions": {}
+    }
+  ]
+}

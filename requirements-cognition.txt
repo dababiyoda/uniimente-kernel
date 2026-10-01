@@ -1,0 +1,3 @@
+# Optional bounded cognition solvers; shared Z3 pin with the inherited cortex.
+-r requirements-cortex.txt
+ortools==9.14.6206

@@ -75,3 +75,28 @@ def routing_knowledge(journal: Journal) -> list[dict]:
     for capability, record in sorted(track_record(journal).items()):
         rows.append({"capability": capability, **record, "reliability": round(reliability(record), 3)})
     return rows
+
+
+def cognitive_knowledge(journal: Journal) -> list[dict]:
+    """Conditional outcome projection; never edits routing weights or protected policy.
+
+    Latest corrections supersede, not erase. Missing outcomes stay unscored.
+    Benchmark, synthetic and observed tiers cannot lend each other credibility.
+    """
+    latest = {}
+    for event in journal.replay('cognition.outcome'):
+        latest[event.payload['receipt_id']] = event.payload
+    groups = {}
+    import json
+    for outcome in latest.values():
+        for method in outcome['methods']:
+            key = json.dumps([method, outcome['tier'], outcome['conditions']], sort_keys=True)
+            row = groups.setdefault(key, {'method': method, 'tier': outcome['tier'],
+                'conditions': outcome['conditions'], 'observations': 0, 'missing': 0, 'scores': [],
+                'authority_created': False, 'routing_update': 'none; held-out promotion gate required'})
+            row['observations'] += 1
+            if outcome['score'] is None:
+                row['missing'] += 1
+            else:
+                row['scores'].append(outcome['score'])
+    return [groups[k] for k in sorted(groups)]

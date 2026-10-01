@@ -216,3 +216,7 @@ Before any material architectural PR:
 7. identify the executable evidence used to decide current reality.
 
 See `docs/PROJECT_COGNITION_SOP.md`.
+
+## October 1 accessible addition
+
+`docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt`: founder-supplied coding-agent directive (uploads 8, 9, 10 byte-identical). Source digest, 677 nonblank lines and 122 Appendix A items are in `docs/cortex/SEED_GENOME_REQUIREMENTS.json`. This addition does not claim a refresh of inaccessible raw Project sources or organ repositories.

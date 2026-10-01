@@ -268,6 +268,19 @@ def render_home(console: Console) -> bytes:
             f"<td>{m['actions_done']}</td></tr>" for m in snap["missions"])
         out.append("<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
                    "</th><th>Actions</th></tr>" + rows + "</table></section>")
+    cognitive = snap['status'].get('cognition', {}).get('receipts', [])
+    if cognitive:
+        rows = []
+        for r in cognitive:
+            methods = ', '.join(c['kind'] for c in r['claims'])
+            explanation = '; '.join(c['selection_rationale'] for c in r['claims'])
+            rows.append(f"<tr><td>{_e(r['problem_id'])}<br>{_e(methods)}</td>"
+                        f"<td>{'Checked conditional result' if r['answered'] else 'Needs evidence or review'}<br>"
+                        f"{_e(r['next_step'])}<details><summary>Evidence and limits</summary>"
+                        f"<p>{_e(explanation)}</p><pre>{_e(json.dumps(r['claims'], indent=2))}</pre>"
+                        f"<p>{_e(r['cost_limits'])}; {_e(r['elapsed_ms'])} ms</p></details></td></tr>")
+        out.append('<section><h2>Checked reasoning</h2><p>These results check computation and source binding. '
+                   'Real-world assumptions and consequential decisions still need review.</p><table>' + ''.join(rows) + '</table></section>')
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
         out.append(f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")

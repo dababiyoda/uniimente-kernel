@@ -623,6 +623,13 @@ def status(home: str | Path) -> dict:
                                          heartbeat=heartbeat),
             "designation": [e.payload for e in journal.replay("body.designated")],
             "developmental_position": _path_summary(journal),
+            "cognition": {
+                "receipts": [{k: e.payload[k] for k in
+                    ("receipt_id", "mission_id", "problem_id", "answered", "outcome", "next_step", "claims", "elapsed_ms", "cost_limits")}
+                    for e in journal.replay("cognition.receipt")],
+                "outcomes": __import__('greg.routing', fromlist=['cognitive_knowledge']).cognitive_knowledge(journal),
+                "scope": "conditional computation; no external acceptance or authority",
+            },
         }
     finally:
         ledger.close()

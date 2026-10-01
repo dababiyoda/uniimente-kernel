@@ -101,3 +101,7 @@ A competent new coding agent entering through a normal repository instruction su
 9. handoff procedure.
 
 If not, propagation for that repository is incomplete.
+
+## October 1 Seed Genome continuation
+
+The [integration record](cortex/GREG_SEED_GENOME.md) and [complete supplied-source register](cortex/SEED_GENOME_REQUIREMENTS.json) anchor this work. Its intent remains active; implemented, integrated, tested and live-authorized states are separate. P0–P13/C1–C8 extend the existing `greg/path.json` under a subordinate workstream. No new primary node or external authority is created. PR137/141/139 lineage and inspected/unavailable scope are recorded there; no propagation to unseen organ repositories is claimed.

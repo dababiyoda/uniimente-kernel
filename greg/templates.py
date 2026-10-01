@@ -308,3 +308,26 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+
+
+def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
+    """Founder reviews/signs bounded input and optional local model identity before dispatch."""
+    from cortex.seed.contracts import validate_problem
+    validate_problem(problem)
+    return {'mission_id': 'm:cognition-' + problem['problem_id'],
+            'founder_expression': problem['objective'],
+            'intended_effect': 'Return independently checked, conditional cognitive artifacts; no external action.',
+            'priority': 50, 'closure': {'kind': 'bounded'},
+            'success_checks': [{'check_id': 'verified-answer', 'description': 'All subclaims answered within declared scope',
+                'sensor': {'capability': 'cognition.status', 'target': 'cognition:' + problem['problem_id'],
+                           'params': {'problem_id': problem['problem_id']}},
+                'predicate': {'op': 'equals', 'field': 'answered', 'value': True}}],
+            'strategies': [{'action_id': 'compute', 'capability': 'cognition.solve',
+                'target': 'cognition:' + problem['problem_id'], 'params': {'problem': problem},
+                'advances': ['verified-answer'], 'rationale': 'Smallest eligible methods, typed proof, independent checks'}],
+            'light_cone': {'capabilities': ['cognition.solve', 'cognition.status'],
+                'targets': ['cognition:' + problem['problem_id']], 'max_consequence_class': 'read_only',
+                'budget_usd': 0, 'horizon': _horizon(horizon_days)}}
+
+
+TEMPLATES['cognition'] = cognitive_problem

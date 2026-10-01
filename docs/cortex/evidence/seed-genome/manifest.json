@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-01",
+  "scope": "development Linux; signed per-test identities are not Alfonso; no live device or inference model",
+  "lineage": {
+    "main": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+    "greg_base": "3d2bb1762ff709ce74d3053aced060e70d4e6674",
+    "inherited_cortex": "71b6f74",
+    "inspected_other_seed": "30d162b6016a2edc1a8c2e87cd54aa4ec3609d86",
+    "first_frozen_checkpoint": "7522fb0"
+  },
+  "current_frozen_source": {
+    "manifest": "cortex/evaluation/seed_genome/freeze-v3.json",
+    "code_identity": "per-file digests in the manifest, not parent HEAD alone"
+  },
+  "verification": {
+    "full_suite": "1615 passed, 10 skipped at the pre-projection/cohort snapshot; see seed-full-final.log",
+    "focused_final": "58 passed for rich receipts, real recovery, signed settlement, source continuity and interface; see seed-delivery-focus.log",
+    "last_corrections": "native version cohorts and source-map compaction checked separately; see seed-last-corrections.log",
+    "verifier": "V1-V5 PASS during development with tracked-tree state recorded; not a clean-final-head attestation",
+    "native_mutations": "6 caught, 0 survived/stale/invalid; see seed-mutants-final.log",
+    "phone": "2 browser tests skipped; native iPhone/Chromebook not tested",
+    "raw_results": "unmodified results.json, results-v2.json, results-v3.json and inherited-v015-rerun.json"
+  },
+  "benchmark": {
+    "coverage": 120,
+    "quality_cases": 100,
+    "semantic_availability_cases": 20,
+    "quality_families": 20,
+    "gain": {
+      "absolute_mean": -4.4496500000000024e-05,
+      "relative_mean": -0.024148825996600728,
+      "ci95_cluster": [
+        -0.00016400380000000002,
+        7.555940000000001e-05
+      ],
+      "families": 20,
+      "timing_independent_gain": 0.0,
+      "interpretation": "same deterministic policy in both arms; differences in latency are execution noise"
+    },
+    "exit": "INCONCLUSIVE",
+    "superiority_claim": false,
+    "world_outcomes": 0,
+    "vepmc": 0
+  },
+  "cost": "token fees $0 exercised; compute/time bounded; energy, full maintenance and device/model costs unmeasured",
+  "external_authority": "none created; no merge, live activation, provider fallback, contact, spend or deployment",
+  "known_limits": [
+    "self-authored structured engineering workload",
+    "model baselines unavailable",
+    "source/data/author/runtime correlated",
+    "old gate receipt can be absent in receipt-to-action crash gap",
+    "server-specific resource cancellation outside worker control",
+    "authentic real-world outcomes and residual source clauses remain open"
+  ],
+  "dependency_review": {
+    "z3-solver": {
+      "version": "5.1.0.0",
+      "license": "MIT, installed package metadata and maintainer PyPI verified",
+      "source": "https://pypi.org/project/z3-solver/5.1.0.0/",
+      "replacement": "bounded enumerator for checked finite domain"
+    },
+    "ortools": {
+      "version": "9.14.6206",
+      "license": "Apache 2.0, installed package metadata and packaged license",
+      "source": "https://github.com/google/or-tools/releases/tag/v9.14",
+      "replacement": "bounded independent enumerator or alternate declarative solver"
+    },
+    "security": "resource/network isolation exercised; no exhaustive transitive vulnerability or distribution audit claimed",
+    "models": "no weights acquired, server launched, or license/resource fit invented"
+  },
+  "files": {
+    "docs/cortex/evidence/seed-genome/seed-benchmark-v2.log": "bcf7a1535ca0c758127f47c70b77dd32ef2da38f02d2acbc00b8066e688fc6b5",
+    "docs/cortex/evidence/seed-genome/seed-benchmark-v3.log": "6405ffe79ce54438037738b801b046646e60e237b79ee979bfd522334944cfa7",
+    "docs/cortex/evidence/seed-genome/seed-benchmark.log": "1ead1b3ee579f798fe8b9af96e1805aa59df171c8233f78ce730e3a9ae03a65b",
+    "docs/cortex/evidence/seed-genome/seed-contract-focus.log": "c00959b2c138c9c7ae89745c003467f5540dc74a711ce33e2bd7cf86b7cc1255",
+    "docs/cortex/evidence/seed-genome/seed-delivery-focus.log": "c2d91a29a6a8452f8029914df8cdfa3842ee8a76b358f73af40a2de26508ba93",
+    "docs/cortex/evidence/seed-genome/seed-final-focus.log": "9cf41ba6de2753b7df2f8a986a635e05b992e4d6b41370c371c47d9616a972fa",
+    "docs/cortex/evidence/seed-genome/seed-focused.log": "4a59c6352ff6ebed131a089cd87afa0ff285e847faaeb81790016d6469a15fca",
+    "docs/cortex/evidence/seed-genome/seed-full-final.log": "5ff22b8d14f4857d219b3768bb0aa0885b24eccc4f53ef4735b8da9b7ec76a30",
+    "docs/cortex/evidence/seed-genome/seed-full.log": "4460f046f3f62ca486e621651a0fb70fe51193c559853f4259aecefcbcc0bd61",
+    "docs/cortex/evidence/seed-genome/seed-last-corrections.log": "c21889c6cde5a08b1cd708da8c6ae80e517fde7bb92275567c7e777721a5970f",
+    "docs/cortex/evidence/seed-genome/seed-legacy-eval.log": "2ff9f41a12313082b9fdd86d818b298ce75313de41faa11a454c90553177c456",
+    "docs/cortex/evidence/seed-genome/seed-mutants-final.log": "514e18e1f84eec803ae0100c8a8f41fa90e7f055d58bb8af009610ffd289c682",
+    "docs/cortex/evidence/seed-genome/seed-mutants.log": "5ea03c6eb6a36c67ac67fb5fa1b53f5610c1b2e83f7f4764f8508c4dcfb5ee38",
+    "docs/cortex/evidence/seed-genome/seed-process.log": "895e4cb1e2c34be5667c98a3f9bc026e50101ef8b390e12dee9ebd7d4964683a",
+    "docs/cortex/evidence/seed-genome/seed-projection.log": "1513f628b73404511893475e33e11f7b9b04afac600635ca11e82ccfca054c37",
+    "docs/cortex/evidence/seed-genome/seed-recovery.log": "15608a0e0a0e47d63ba8a275516584b4b5d570ca9b57cd5765894f07c1f69764",
+    "docs/cortex/evidence/seed-genome/seed-runtime.log": "4c98be8b0016dc7def40dbff60f9a7f536d6169a603dd21ead987a1af5e33c05",
+    "docs/cortex/evidence/seed-genome/seed-settlement-fix.log": "2db0155e61d3015a81235fec14229d191092a51bb10cb63e5517bc199753ce7a",
+    "docs/cortex/evidence/seed-genome/seed-settlement.log": "d4b05dca56168a42ed1eaaf7e4c8afc2d02595938f7588b1ca7b217957118af1",
+    "docs/cortex/evidence/seed-genome/seed-verifier.log": "d3291f46541f5efd7f07498ad420cf26fe96de8103ba42750993d86d2ac88ae2"
+  }
+}

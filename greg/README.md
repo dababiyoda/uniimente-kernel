@@ -1,5 +1,7 @@
 # GREG — the persistent, founder-sovereign operating layer (first-body candidate)
 
+Current bounded product integration: [Seed Genome on the canonical GREG path](../docs/cortex/GREG_SEED_GENOME.md). The older sandbox experiment and its frozen results remain historical evidence.
+
 > **Founder-effect rule (INTENT-0030, INTENT-2026-09-25-EGREGORE-ECOLOGY):** the egregore is built
 > as real, running mechanisms. The *effects* (persistence, self-direction inside scope,
 > self-healing, capability genesis, continuity, community influence, Jarvis-like integration)

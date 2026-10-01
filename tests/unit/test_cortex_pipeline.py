@@ -493,6 +493,12 @@ class TestEvaluationIntegrity:
         with pytest.raises(SystemExit, match="frozen inputs changed"):
             R.run("heldout", ["always_abstain"])
 
+    def test_every_organ_and_core_module_is_frozen(self):
+        # A route whose code is not hashed could change after the freeze without the runner noticing.
+        organs = {f"cortex/organs/{p.name}" for p in (ROOT / "cortex/organs").glob("*.py") if p.name != "__init__.py"}
+        core = {f"cortex/{m}.py" for m in ("routing", "gates", "genome", "contracts", "memory")}
+        assert organs | core <= set(R.FROZEN_CODE), sorted((organs | core) - set(R.FROZEN_CODE))
+
     def test_heldout_matches_its_freeze(self):
         if not R.MANIFEST.exists():
             pytest.skip("no freeze manifest yet")

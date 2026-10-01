@@ -35,7 +35,7 @@ FROZEN_CODE = ["cortex/evaluation/scoring.py", "cortex/evaluation/arms.py", "cor
                "cortex/evaluation/run.py", "cortex/routing.py", "cortex/gates.py", "cortex/genome.py",
                "cortex/contracts.py", "cortex/memory.py", "cortex/organs/formal.py",
                "cortex/organs/estimation.py", "cortex/organs/evidence_causal.py", "cortex/organs/semantic.py",
-               "cortex/organs/adversarial.py"]
+               "cortex/organs/adversarial.py", "cortex/organs/deterrence.py"]
 
 
 def _sha(path: Path) -> str:

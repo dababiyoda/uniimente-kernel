@@ -610,8 +610,16 @@
   - Market rules are enforced, not advisory
   adopt:
   - Stripe Connect when real supply exists
-  gap: No independent supply or demand; a marketplace would be premature.
-  state: OUTSTANDING
+
+  state: PARTIAL
+  gap: Native pinned media offers, signed peer orders, verified byte delivery and signed acceptance are executable in the shared system-54 store. Independent supply/demand matching, policy-enforced market settlement and a real processor remain active requirements.
+  interface: foundry.query discover/history/reputation; foundry.apply publish/fulfill/accept (system37 aliases canonical system54)
+  implementation:
+  - foundry/systems/offers.py
+  - greg/foundry_bridge.py
+  limitations: Fixture consideration only; signed keys are not independently verified buyer identity, payment or real market demand.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 38:
   acceptance:
   - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
@@ -810,8 +818,22 @@
   - tests/unit/test_foundry.py
   - DALEOBANKS:services/x_client.py
   - DALEOBANKS:persona.json
-  gap: Charter and distribution loop are modeled; no products, community or finance attached to a persona.
+
   state: PARTIAL
+  gap: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture books now operate in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification, public distribution, real subscription/payment rails, treasury effect execution and live evidence remain unfinished.
+  interface: foundry.apply assemble/ingest/reconcile; foundry.query inspect (system49)
+  implementation:
+  - foundry/systems/media_company.py
+  - foundry/systems/offers.py
+  - foundry/systems/media.py
+  - foundry/systems/portal.py
+  - foundry/systems/community.py
+  - foundry/systems/journeys.py
+  - foundry/systems/accounting.py
+  - greg/console.py
+  limitations: Private synthetic fixture loop; no public activation, operational ratification, money movement or invented users/outcomes.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 50:
   acceptance:
   - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
@@ -885,8 +907,19 @@
   - x402
   - A2A Agent Cards
   - MCP
-  gap: No machine-readable offers or agent payments.
-  state: OUTSTANDING
+
+  state: PARTIAL
+  gap: Versioned machine-readable offers can be discovered, ordered, actually delivered, and accepted by signed peers in local fixture mode. Receipts feed deduplicated fixture reputation and canonical performance memory. Real processor test-mode billing/refund/reserve integration and remote authenticated discovery/purchasing remain open.
+  interface: foundry.apply publish/fulfill/accept; foundry.query discover/inspect/history/reputation (system54)
+  implementation:
+  - foundry/systems/offers.py
+  - foundry/systems/versions.py
+  - foundry/systems/reputation.py
+  - foundry/systems/journeys.py
+  - greg/artifacts.py
+  limitations: No payment rail or verified real-market demand; all consideration is explicitly fixture-only.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 55:
   acceptance:
   - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner

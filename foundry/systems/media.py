@@ -94,10 +94,7 @@ def _avi(seed):
                  _riff(b"idx1", b"".join(indexes)))
 
 
-def produce(root: Path, value: dict):
-    value = canon(value)
-    store = ArtifactStore(Path(root) / "artifacts")
-    source, _ = store.put(_json(value))
+def _contents(value):
     seed = hashlib.sha256(_json(value)).digest()
     title, body = html.escape(value["title"]), html.escape(value["body"])
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360">'
@@ -109,10 +106,17 @@ def produce(root: Path, value: dict):
                    '<input type="range" min="0" max="100" value="50" '
                    'oninput="document.getElementById(\'value\').textContent=this.value"></label>'
                    '<output id="value">50</output><p>Local preview; no publication or network.</p>').encode()
-    assets = []
-    for name, mime, content in (("image.svg", "image/svg+xml", svg), ("image.png", "image/png", _png(seed, value["title"])),
+    return (("image.svg", "image/svg+xml", svg), ("image.png", "image/png", _png(seed, value["title"])),
                                 ("audio.wav", "audio/wav", _wav(seed)), ("video.avi", "video/x-msvideo", _avi(seed)),
-                                ("interactive.html", "text/html", interactive)):
+                                ("interactive.html", "text/html", interactive))
+
+
+def produce(root: Path, value: dict):
+    value = canon(value)
+    store = ArtifactStore(Path(root) / "artifacts")
+    source, _ = store.put(_json(value))
+    assets = []
+    for name, mime, content in _contents(value):
         address, _ = store.put(content)
         assets.append({"name": name, "mime": mime, "address": address, "bytes": len(content)})
     manifest = {"version": VERSION, "canon": source, "canon_id": value["canon_id"], "assets": assets,
@@ -130,9 +134,19 @@ def inspect(root, address):
     if manifest["version"] != VERSION:
         raise ValueError("unknown media manifest")
     value = canon(json.loads(store.read(manifest["canon"])))
-    for asset in manifest["assets"]:
-        if len(store.read(asset["address"])) != asset["bytes"]:
-            raise ValueError("media byte count mismatch")
+    if set(manifest) != {"version", "canon", "canon_id", "assets", "provenance", "limitations", "authority_created"} or \
+            manifest["limitations"] != "graphic compositions and tone cues; no synthesized narration, live distribution or commercial proof" or \
+            manifest["canon_id"] != value["canon_id"] or manifest["authority_created"] is not False or \
+            manifest["provenance"] != {"source_refs": value["source_refs"], "rights": value["rights"],
+                                      "status": "declared_not_independently_verified"}:
+        raise ValueError("media manifest differs from canonical provenance")
+    expected = _contents(value)
+    if not isinstance(manifest["assets"], list) or len(manifest["assets"]) != len(expected):
+        raise ValueError("media manifest does not contain every canonical format")
+    for asset, (name, mime, content) in zip(manifest["assets"], expected):
+        if set(asset) != {"name", "mime", "address", "bytes"} or asset["name"] != name or asset["mime"] != mime or \
+                asset["bytes"] != len(content) or store.read(asset["address"]) != content:
+            raise ValueError("media asset differs from its canonical production contract")
     return {"intact": True, "canon_id": value["canon_id"], "assets": len(manifest["assets"]),
             "manifest": address, "authority_created": False}
 

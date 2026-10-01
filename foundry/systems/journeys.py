@@ -7,7 +7,7 @@ impression-based revenue estimates, model-generated conversions or live contact.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import timedelta
+from datetime import timedelta, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -123,7 +123,11 @@ def report(root, tier, lookback_hours=720):
     viewers = {e["subject"] for e in views}
     subscribers = set().union(*(row["subscribers"] for row in paths.values()))
     customers = set().union(*(row["customers"] for row in paths.values()))
-    return {"tier": tier, "events": len(events), "viewers": len(viewers),
+    returning = sum(len({instant(e["at"]).astimezone(timezone.utc).date() for e in history if e["kind"] == "view"}) > 1
+                    for history in subjects.values())
+    useful = {kind: sum(e["kind"] == kind for e in events) for kind in ("used_tool", "joined_community")}
+    return {"tier": tier, "events": len(events), "views": len(views), "viewers": len(viewers),
+            "returning_on_later_utc_day": returning, "useful_actions": useful,
             "paths": [{"sequence": list(path), **{k: len(v) for k, v in row.items()}}
                       for path, row in sorted(paths.items())],
             "subscribers": len(subscribers), "customers": len(customers),
@@ -134,11 +138,7 @@ def report(root, tier, lookback_hours=720):
             "claim": "temporal association in source-declared events; not causal attribution or verified settlement"}
 
 
-def route(root, subject, tier, territory, now):
-    identifier(subject)
-    if tier not in TIERS:
-        raise ValueError("declared evidence tier required")
-    when = instant(now)
+def territory_graph(territory):
     if not isinstance(territory, dict) or set(territory) != {"name", "entry", "nodes"} or len(territory["nodes"]) > 300:
         raise ValueError("bounded existing TerritoryGraph specification required")
     graph = TerritoryGraph(territory["name"])
@@ -150,6 +150,15 @@ def route(root, subject, tier, territory, now):
     problems = graph.validate()
     if problems:
         raise ValueError("invalid territory: " + str(problems))
+    return graph
+
+
+def route(root, subject, tier, territory, now):
+    identifier(subject)
+    if tier not in TIERS:
+        raise ValueError("declared evidence tier required")
+    when = instant(now)
+    graph = territory_graph(territory)
     db = _connect(root)
     try:
         seen = [e for e in _events(db) if e["subject"] == subject and e["tier"] == tier and e["kind"] == "view" and instant(e["at"]) <= when]

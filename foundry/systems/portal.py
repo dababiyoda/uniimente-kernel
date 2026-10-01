@@ -10,7 +10,7 @@ import html
 import json
 from pathlib import Path
 
-from foundry.systems import media, versions
+from foundry.systems import cas, media, versions
 from greg.artifacts import ArtifactStore
 from greg.capabilities import CapabilityError
 
@@ -73,7 +73,7 @@ def observed(root, name, n=None):
     try:
         result = retrieve(root, name, n)
         return {k: v for k, v in result.items() if k != "html"}
-    except (CapabilityError, versions.VersionError, ValueError, KeyError, FileNotFoundError) as exc:
+    except (CapabilityError, versions.VersionError, cas.IntegrityError, ValueError, KeyError, FileNotFoundError) as exc:
         return {"intact": False, "name": name, "reason": type(exc).__name__, "authority_created": False}
 
 

@@ -116,7 +116,7 @@ def main():
         store = root.parent
         root.mkdir(parents=True, exist_ok=True)
         os.environ["GREG_FOUNDRY_STORE"] = str(store.resolve())
-        guard(store, source_files() if system == 53 else ())
+        guard(store, source_files())
         answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root)}
     except Exception as exc:
         answer = {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}

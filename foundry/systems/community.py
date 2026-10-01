@@ -183,7 +183,9 @@ def view(root, community, offset=0, limit=32):
         return {"members": list(state["members"].values())[offset:offset + limit],
                 "posts": list(state["posts"].values())[offset:offset + limit],
                 "interactions": state["interactions"][offset:offset + limit],
-                "totals": {k: len(v) for k, v in state.items()}, "offset": offset, "limit": limit,
+                "totals": {k: len(v) for k, v in state.items()},
+                "active_members": sum(m["active"] for m in state["members"].values()),
+                "offset": offset, "limit": limit,
                 "authority_created": False}
     finally:
         db.close()

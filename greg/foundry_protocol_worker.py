@@ -25,8 +25,8 @@ def main():
         if not scope or os.environ.get("FOUNDRY_MCP_ROOT") != str(Path(scope).resolve()):
             raise ValueError("MCP requires its parent-installed fixed store scope")
         from foundry.mcp.foundry_server import server
-        from greg.foundry_worker import guard
-        guard(Path(scope))
+        from greg.foundry_worker import guard, source_files
+        guard(Path(scope), source_files())
         server.run("stdio")
         return
     raw = sys.stdin.buffer.read(131073)

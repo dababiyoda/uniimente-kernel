@@ -1,0 +1,416 @@
+{
+  "scope": "Current reviewed Foundry source search at52e; targeted audit, not proof of exhaustive OS security. Canonical public owned-source reads are explicitly listed; private host files, arbitrary code and general children remain refused.",
+  "findings": [
+    {
+      "path": "foundry/systems/datamodel.py",
+      "hits": [
+        {
+          "line": 92,
+          "text": "                    for table, rows in json.loads(backup.read_text()).items():"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/cas.py",
+      "hits": [
+        {
+          "line": 53,
+          "text": "    data = path.read_bytes()"
+        },
+        {
+          "line": 72,
+          "text": "        if digest(path.read_bytes()) != address:"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/__init__.py",
+      "hits": [
+        {
+          "line": 24,
+          "text": "    return importlib.import_module(f\"foundry.systems.{SYSTEMS[system_id]}\")"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/distributed.py",
+      "hits": [
+        {
+          "line": 32,
+          "text": "            self.rows = [json.loads(l) for l in Path(path).read_text().splitlines()]"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/graph.py",
+      "hits": [
+        {
+          "line": 138,
+          "text": "    return Graph.from_dict(json.loads(path.read_text())) if path.exists() else Graph()"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/event_sourcing.py",
+      "hits": [
+        {
+          "line": 69,
+          "text": "    lines = path.read_text().splitlines()"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/business_compiler.py",
+      "hits": [
+        {
+          "line": 136,
+          "text": "QUERY_OPS = {\"compile\": lambda a, r: {k: v for k, v in compile_business(a[\"name\"], a[\"evidence\"]).items()"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/community.py",
+      "hits": [
+        {
+          "line": 24,
+          "text": "NAME = re.compile(r\"[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}\\Z\")"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/compiler.py",
+      "hits": [
+        {
+          "line": 209,
+          "text": "QUERY_OPS = {\"compile\": lambda a, r: _check(a)}"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/build.py",
+      "hits": [
+        {
+          "line": 23,
+          "text": "import subprocess"
+        },
+        {
+          "line": 29,
+          "text": "ROOT = Path(__file__).resolve().parents[2]"
+        },
+        {
+          "line": 34,
+          "text": "def owned(root: Path = ROOT) -> list[str]:"
+        },
+        {
+          "line": 68,
+          "text": "        if Path(root).resolve() != ROOT:"
+        },
+        {
+          "line": 84,
+          "text": "def build(out_dir: Path, *, root: Path = ROOT) -> dict:"
+        },
+        {
+          "line": 92,
+          "text": "            data = p.read_bytes()"
+        },
+        {
+          "line": 106,
+          "text": "    digest = hashlib.sha256(bundle.read_bytes()).hexdigest()"
+        },
+        {
+          "line": 111,
+          "text": "def build_in_subprocess(out_dir: Path, *, root: Path = ROOT) -> dict:"
+        },
+        {
+          "line": 114,
+          "text": "        if Path(root).resolve() != ROOT:"
+        },
+        {
+          "line": 116,
+          "text": "        env = {\"PATH\": \"/usr/bin:/bin\", \"LANG\": \"C.UTF-8\", \"PYTHONPATH\": str(ROOT),"
+        },
+        {
+          "line": 118,
+          "text": "        proc = subprocess.run([sys.executable, \"-s\", \"-m\", \"greg.foundry_protocol_worker\", \"build-owned\"],"
+        },
+        {
+          "line": 119,
+          "text": "                              input=json.dumps({\"out\": str(out_dir)}), cwd=ROOT, env=env,"
+        },
+        {
+          "line": 126,
+          "text": "    proc = subprocess.run([sys.executable, \"-s\", \"-c\", code, str(out_dir), str(root)], cwd=ROOT,"
+        },
+        {
+          "line": 133,
+          "text": "def verify(bundle: Path, *, root: Path = ROOT, scratch: Path) -> dict:"
+        },
+        {
+          "line": 135,
+          "text": "    have = hashlib.sha256(Path(bundle).read_bytes()).hexdigest()"
+        },
+        {
+          "line": 146,
+          "text": "    proc = subprocess.run([sys.executable, \"-s\", \"-c\","
+        },
+        {
+          "line": 170,
+          "text": "        shutil.copytree(ROOT / top, src / top, ignore=shutil.ignore_patterns(\"__pycache__\"))"
+        },
+        {
+          "line": 171,
+          "text": "    (src / \"foundry\" / \"systems\" / \"cas.py\").write_text((src / \"foundry\" / \"systems\" / \"cas.py\").read_text() + \"#\\n\")"
+        },
+        {
+          "line": 182,
+          "text": "    shutil.copytree(ROOT / top, dst / top, ignore=shutil.ignore_patterns(\"__pycache__\"))"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/accounting.py",
+      "hits": [
+        {
+          "line": 38,
+          "text": "    return json.loads(path.read_text()) if path.exists() else {\"currency\": None, \"accounts\": {}}"
+        },
+        {
+          "line": 57,
+          "text": "    entries = [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []"
+        },
+        {
+          "line": 154,
+          "text": "    tampered = (Path(root) / \"journal.jsonl\").read_text().replace('\"debit\": 2500', '\"debit\": 250')"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/dsl.py",
+      "hits": [
+        {
+          "line": 38,
+          "text": "        tree = ast.parse(source, mode=\"eval\")"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/discovery.py",
+      "hits": [
+        {
+          "line": 40,
+          "text": "    return json.loads(p.read_text()) if p.exists() else {\"organs\": {}, \"entries\": {}}"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/mcp_gateway.py",
+      "hits": [
+        {
+          "line": 31,
+          "text": "ROOT = Path(__file__).resolve().parents[2]"
+        },
+        {
+          "line": 46,
+          "text": "        env = {\"PATH\": \"/usr/bin:/bin\", \"LANG\": \"C.UTF-8\", \"PYTHONPATH\": str(ROOT),"
+        },
+        {
+          "line": 51,
+          "text": "                                     env=env, cwd=str(ROOT))"
+        },
+        {
+          "line": 53,
+          "text": "           \"PYTHONPATH\": str(ROOT), **provider.get(\"env\", {})}"
+        },
+        {
+          "line": 54,
+          "text": "    return StdioServerParameters(command=sys.executable, args=[\"-s\", \"-m\", provider[\"module\"]], env=env, cwd=str(ROOT))"
+        },
+        {
+          "line": 199,
+          "text": "    calls_before_grant = len(log.read_text().splitlines())"
+        },
+        {
+          "line": 209,
+          "text": "            \"provider_calls_after\": len(log.read_text().splitlines()),"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/kernel_stack.py",
+      "hits": [
+        {
+          "line": 12,
+          "text": "ROOT = Path(__file__).resolve().parents[2]"
+        },
+        {
+          "line": 21,
+          "text": "    compiled = compile_constitution(str(ROOT))"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/promotion.py",
+      "hits": [
+        {
+          "line": 26,
+          "text": "import subprocess"
+        },
+        {
+          "line": 148,
+          "text": "    proc = subprocess.run([sys.executable, \"-s\", \"-m\", \"greg.foundry_protocol_worker\", \"dsl-verify\"], input=json.dumps("
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/queue.py",
+      "hits": [
+        {
+          "line": 24,
+          "text": "        return json.loads(self.state_path.read_text()) if self.state_path.exists() else {\"messages\": {}, \"order\": []}"
+        },
+        {
+          "line": 78,
+          "text": "        self.done = set(json.loads(self.path.read_text())) if self.path.exists() else set()"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/teams.py",
+      "hits": [
+        {
+          "line": 34,
+          "text": "    return json.loads(p.read_text())"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/twin.py",
+      "hits": [
+        {
+          "line": 24,
+          "text": "    return json.loads(p.read_text()) if p.exists() else {\"capabilities\": {}, \"alerts\": []}"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/shell.py",
+      "hits": [
+        {
+          "line": 42,
+          "text": "            h.update(str(p.relative_to(d)).encode() + b\"\\0\" + hashlib.sha256(p.read_bytes()).digest())"
+        },
+        {
+          "line": 57,
+          "text": "            return json.loads(self._state_path.read_text())"
+        },
+        {
+          "line": 66,
+          "text": "        lines = self._audit_path.read_text().splitlines() if self._audit_path.exists() else []"
+        },
+        {
+          "line": 74,
+          "text": "        return [json.loads(line) for line in self._audit_path.read_text().splitlines()] if self._audit_path.exists() else []"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/registry.py",
+      "hits": [
+        {
+          "line": 32,
+          "text": "    return json.loads(p.read_text()) if p.exists() else {\"genomes\": {}}"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/search.py",
+      "hits": [
+        {
+          "line": 18,
+          "text": "_TOKEN = re.compile(r\"[a-z0-9]+\")"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/versions.py",
+      "hits": [
+        {
+          "line": 36,
+          "text": "    return ref.read_text().strip() if ref.is_file() else None"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/repair.py",
+      "hits": [
+        {
+          "line": 28,
+          "text": "import subprocess"
+        },
+        {
+          "line": 45,
+          "text": "    code = compile(source, \"<target>\", \"exec\")"
+        },
+        {
+          "line": 46,
+          "text": "    exec(code, ns)"
+        },
+        {
+          "line": 138,
+          "text": "        proc = subprocess.run([sys.executable, \"-m\", \"pytest\", \"-q\", \"-p\", \"no:cacheprovider\", *test_sources],"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/seed.py",
+      "hits": [
+        {
+          "line": 34,
+          "text": "        files[rel] = cas.put(store, path.read_bytes())"
+        },
+        {
+          "line": 52,
+          "text": "    lines = Path(ledger).read_text().splitlines() if Path(ledger).exists() else []"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/wasm.py",
+      "hits": [
+        {
+          "line": 86,
+          "text": "    raise WasmError(f\"cannot compile {type(node).__name__}\")"
+        },
+        {
+          "line": 191,
+          "text": "    return {\"value\": run((root / f\"{args['component']}.wasm\").read_bytes(),"
+        },
+        {
+          "line": 192,
+          "text": "                         json.loads((root / f\"{args['component']}.json\").read_text()), args[\"inputs\"])}"
+        },
+        {
+          "line": 197,
+          "text": "APPLY_OPS = {\"compile\": _store}"
+        }
+      ]
+    },
+    {
+      "path": "foundry/systems/snapshots.py",
+      "hits": [
+        {
+          "line": 33,
+          "text": "            files[str(path.relative_to(state))] = cas.put(store, path.read_bytes())"
+        },
+        {
+          "line": 53,
+          "text": "    files = lambda d: {str(p.relative_to(d)): cas.digest(p.read_bytes()) for p in Path(d).rglob(\"*\") if p.is_file()}"
+        },
+        {
+          "line": 87,
+          "text": "    return {\"production_untouched\": json.loads((prod / \"policy\" / \"pricing.json\").read_text()) == {\"price\": 49},"
+        }
+      ]
+    }
+  ]
+}

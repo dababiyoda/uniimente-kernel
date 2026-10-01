@@ -130,6 +130,12 @@
       "tier": "sandbox_execution",
       "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36932965542",
       "finding": "All six jobs passed atc559d5c1; not evidence for the new MCP delta."
+    },
+    {
+      "claim": "First-party MCP integration test executes",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36934826793",
+      "finding": "1693 tests passed/9 skipped; two tests failed: obsolete blanket-refusal expectation and wrapped refusal-message assertion. Actual first-party retained-media query/list and provider substitution tests passed. No acceptance claim for failed head."
     }
   ],
   "counterevidence": [
@@ -138,6 +144,12 @@
       "tier": "other",
       "reference": "foundry/completion.yaml",
       "finding": "It does not. Unknown providers still require OS filesystem confinement; reviewed dependencies remain assumptions."
+    },
+    {
+      "claim": "MCP delta is fully verified",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_foundry_systems.py:608;tests/unit/test_greg_mcp_worker.py:28",
+      "finding": "Failed at52e78780. Update intentional first-party expectation and explicitly refuse write ops before SDK wrapping; retain negative test and fresh CI."
     }
   ],
   "pass_1": {
@@ -316,6 +328,12 @@
         "mitigation": "Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency.",
         "owner": "GREG/MCP maintainers",
         "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "SDK exception groups can obscure refusal reasons",
+        "mitigation": "Preflight exact first-party tool and QUERY_OP membership in the reviewed gateway; retain production-refusal test.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "SDK error shape or tool surface changes."
       }
     ],
     "recommendation": "EXPERIMENT"

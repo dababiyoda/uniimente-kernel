@@ -603,12 +603,14 @@ def test_mcp_tools_run_behind_kernel_identity_policy_and_gate(tmp_path):
     assert result["provider_calls_before_grant"] == 0 and result["provider_calls_after"] == 1
     assert set(result["refusals"]) == {"unknown_caller", "unlisted_tool", "send_without_grant", "grant_replayed"}
     assert all(result["refusals"].values()) and result["chain_ok"]
-    # The direct SDK fixture proves protocol behavior. Runtime child providers
-    # require OS filesystem confinement, rather than inheriting body access.
-    with pytest.raises(CapabilityError, match="requires OS filesystem confinement"):
-        foundry_bridge.query({"system": 28, "op": "foundry_tool", "args": {
-            "tool": "foundry_query", "args": {"system": 43, "op": "check_approval_boundary", "args_json": "{}"}}},
-            _ctx(tmp_path, "foundry.query"))
+    # One reviewed first-party read-only recipe now reaches retained machine
+    # state; unreviewed provider/source refusal is exercised separately.
+    bounded = foundry_bridge.query({"system": 28, "op": "foundry_tool", "args": {
+        "tool": "foundry_query", "args": {"system": 43, "op": "check_approval_boundary", "args_json": "{}"}}},
+        _ctx(tmp_path, "foundry.query"))
+    assert json.loads(bounded["result"]["value"])["holds"] is True
+    assert bounded["execution"]["persistence"] == "discarded"
+    assert bounded["execution"]["arbitrary_source"] == "refused"
     tools = {t["name"] for t in mcp_gateway.list_tools(mcp_gateway.FOUNDRY)}
     assert tools == {"foundry_query", "price_quote"}, "no write op is exposed over MCP"
 

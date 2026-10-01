@@ -10,11 +10,11 @@ directly rather than trusted.
 import hashlib
 import json
 import pathlib
-import re
 
 import pytest
 
 from cortex.contracts import CORTEX_VERSION, LAYERS
+from cortex.evidence_refs import resolve
 from cortex.genome import seed_registry
 from cortex.schemas import validate
 
@@ -27,10 +27,6 @@ REQS = MATRIX["requirements"]
 
 def _schema(name):
     return json.loads((ROOT / "contracts" / f"{name}.schema.json").read_text(encoding="utf-8"))
-
-
-def _slug(heading: str) -> str:
-    return re.sub(r"\s+", "-", re.sub(r"[^\w\s-]", "", heading.strip().lower()))
 
 
 # ------------------------------------------------------------------ the map itself
@@ -64,30 +60,9 @@ def test_every_line_of_the_prompt_is_covered():
     assert not uncovered, uncovered
 
 
-def _resolve(ref: str):
-    if "::" in ref:
-        path, *names = ref.split("::")
-        text = (ROOT / path).read_text(encoding="utf-8")
-        for n in names:
-            assert re.search(rf"^\s*(class|def) {re.escape(n)}\b", text, re.M), f"{ref}: {n} not defined"
-        return
-    path, _, frag = ref.partition("#")
-    target = ROOT / path
-    assert target.exists(), f"{ref}: missing file"
-    if not frag:
-        return
-    if frag.startswith("/"):
-        node = json.loads(target.read_text(encoding="utf-8"))
-        for part in frag.strip("/").split("/"):
-            node = node[int(part)] if isinstance(node, list) else node[part]
-        return
-    slugs = {_slug(m) for m in re.findall(r"^#{1,6}\s+(.+)$", target.read_text(encoding="utf-8"), re.M)}
-    assert frag in slugs, f"{ref}: heading not found"
-
-
 @pytest.mark.parametrize("ref", sorted({ref for r in REQS for ref in r["evidence"]}))
 def test_evidence_resolves(ref):
-    _resolve(ref)
+    resolve(ROOT, ref)
 
 
 # ------------------------------------------------------------------ claims checked directly

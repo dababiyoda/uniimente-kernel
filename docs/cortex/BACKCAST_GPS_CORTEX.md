@@ -7,8 +7,9 @@ each stage is evidence-based; a stage named here is a destination, not a claim.
 
 ## Reasoning Summary
 
-**Current reality (verified 2026-10-01).** Cortex 0.1.3 is a seed: five organs `SANDBOXED`, 24 reserved
-families disabled, every receipt authority-free. On the frozen 42-item held-out suite the routed seed scored 0.964
+**Current reality (verified 2026-10-01).** Cortex 0.1.4 is a seed: five organs `SANDBOXED` (Formal now with
+certified optimization), 28 reserved families disabled, every receipt authority-free and carrying an accountability
+section. On the frozen 42-item held-out suite the routed seed scored 0.964
 [0.911, 1.000] with zero critical errors, but both declared LLM baselines are `NOT_RUN` because no model is
 reachable here (the environment's network policy blocks model downloads). Exit: `INCONCLUSIVE`, unpromoted. GREG
 itself sits at VEPMC = 0 on PR #137; nothing has been used by the founder; no real outcome has been settled.
@@ -40,7 +41,7 @@ genuinely strong baseline only under founder authorization, and defer every real
 - **Destination:** Polyintelligent GREG that routes, composes and develops heterogeneous competencies on the
   founder's real problems, with each competency's default earned by verified outcomes and every consequence still
   passing the Kernel (G below).
-- **Current position:** Seed experiment complete and frozen at cortex 0.1.3; exit `INCONCLUSIVE`; VEPMC 0.
+- **Current position:** Seed experiment complete and frozen at cortex 0.1.4; exit `INCONCLUSIVE`; VEPMC 0.
 - **Active node:** N1 — Seed proven or refuted.
 - **Active gate:** No comparative evidence: the declared baselines cannot run without a reachable model.
 - **Gate-crossing evidence:** a held-out results file, run against the committed freeze manifest, in which
@@ -63,7 +64,7 @@ genuinely strong baseline only under founder authorization, and defer every real
 | A3 | A local 4B model is a fair "strong configured always-LLM baseline" | A weak baseline makes gain cheap | Low | It is what runs offline and on-device | Prompt says *strong*; frontier models are far stronger | Add a frontier baseline under founder authorization | N1 | Report the local result as a lower bar only; require the strong baseline for promotion |
 | A4 | The founder will route real questions through GREG | Without use there are no outcomes | Unknown | Founder directive to build it | VEPMC 0; attention is on Body 1 | After VEPMC ≥ 1, offer one mission type in shadow | N2 | Remain an offline evaluator |
 | A5 | Verified outcomes arrive often enough to calibrate (≥ 5 weighted per cell) | Item 10 learning only moves on evidence | Low | Ledger and Kernel adapter exist | Zero outcomes so far; delays and attribution noise | Count settled outcomes per cell after 30 days of shadow use | N2+30 days | Calibrate from external benchmarks; keep defaults fixed |
-| A6 | Gates and the verifier reduce critical errors versus baselines, independent of quality gain | Safety value even if A1 fails | Moderate | 0 critical errors; 18/18 mutants caught | Baselines may also make few critical errors on this suite | Compare critical errors in the baseline run | N1 | Gates remain constitutionally required anyway; the verifier must prove its marginal value |
+| A6 | Gates and the verifier reduce critical errors versus baselines, independent of quality gain | Safety value even if A1 fails | Moderate | 0 critical errors; 22/22 mutants caught | Baselines may also make few critical errors on this suite | Compare critical errors in the baseline run | N1 | Gates remain constitutionally required anyway; the verifier must prove its marginal value |
 
 ## Route Tournament
 
@@ -151,7 +152,7 @@ two would let one kind of evidence stand in for another.
 - **Outcome:** the seed is either proven or refuted against the declared baselines on the frozen suite.
 - **Gate:** the baselines need a reachable model; none is reachable in this environment.
 - **SBM:** declared baselines RUN on the frozen held-out partition.
-- **Entry condition:** met — freeze v0.1.3 committed; runner refuses changed inputs.
+- **Entry condition:** met — freeze v0.1.4 committed; runner refuses changed inputs.
 - **Exit evidence:** results file with both baselines `RUN`; verdict recorded; for promotion eligibility, a second
   run with a strong (frontier) `always_llm` configured under founder authorization.
 - **Entrenchment vectors:** the frozen suite, results and verdict become permanent comparison points for every
@@ -317,6 +318,44 @@ verification).
 - **Review trigger:** a model becomes reachable, or VEPMC moves.
 - **Evidence required to advance:** the N1 gate-crossing evidence.
 
+## Reconciliation with the review's backcasts
+
+The two AI review passes each proposed a ladder (pass 1: C1–C8; pass 2: P0–P13). The build prompt's six stages
+control; both ladders are preserved and mapped here, so no rung is lost. Row-level dispositions are in
+[`verbatim-register.json`](verbatim-register.json) (A50–A51, B49–B62).
+
+| Review rung | Content | Stage here | Status |
+| --- | --- | --- | --- |
+| P0 | current substrate | before N1 | verified on `main` (Kernel, authority, Consequence Gate, causal memory, capability registry, Foundry); missions and routing reliability on PR #137 |
+| P1 | Cognitive Contract | N1 | built (five contracts) |
+| C1 / P2 | Epistemic Cortex Seed / Minimal Polyintelligence Proof | N1 | built; baseline comparison blocked on model access |
+| P3 | Cognitive Proof Ledger | N2, N5 | receipts built; receipted outcome rate 0 |
+| P4 | Cognitive Spider-Web | N2, N5 | eligibility, routing, proof, settlement built; no outcomes yet |
+| C2 / P5 | Mathematical Cortex / Expand the arsenal | N4 | certified optimization built; OR, graph, Bayesian, control, simulation, game, VOI reserved |
+| C3 | Metacognitive Routing | N2, N5 | settlement mechanism built; learning waits on outcomes |
+| P6 | Heterogeneous Cognitive Tissues | N3 | Composer: a combination must beat every constituent |
+| C5 / P7 | Generative Cognition / Capability Genesis for cognition | N4 | Developmental Cortex |
+| P8 | Evolutionary Cognition | N4 | reserved family, evaluator integrity first |
+| C4 / P11 | Cognitive Ecology / Open Cognitive Ecology | N5, N6 | reserved families; invariant "authority may not self-evolve" already enforced |
+| P9 | Constraint-Release Discovery | N6 | reserved |
+| C6 / P10 | Functional Morphogenesis | N6 | `developmental/` research lab (MICA/CDPE) |
+| C8 | Open Developmental Intelligence | N6 | frontier capability discovery |
+| C7 / P12 | Cross-Substrate Cognition / Substrate-plural GREG | destination | see below |
+| P13 | Poly-embodied developmental institution | destination | see below |
+
+## Destinations beyond Node 6
+
+Preserved, not claimed. Each becomes a scheduled node only when the evidence named here exists.
+
+| Destination | Source | Evidence that would make it a node |
+| --- | --- | --- |
+| Substrate-plural cognition (CPU, GPU, NPU, edge, phone, Chromebook, robots, neuromorphic, photonic) | A49, B45, B61 | the same behavioral contract passing on two materially different substrates |
+| One GREG across many bodies; poly-embodied institution | B45, B62 | identity, authority and receipts preserved across two running bodies (starts with PR #137's Body 1) |
+| General world models for institutional decisions; open-world causal models | A48, B44 | calibrated predictions on an external, distribution-shifted benchmark |
+| Long-horizon autonomous planning under distribution shift | A48, B44 | multi-month plans whose outcomes beat human-set baselines under authority |
+| Autonomous scientific invention; intelligences of absent mechanism classes | B45 | an externally verified mechanism outside every registered family |
+| Jarvis-level ubiquity; intelligence embedded in buildings, AR, infrastructure; civilization-scale coordination | B45 | each step requires its own consented deployment and outcome evidence |
+
 ## Pursued goals
 
 Items from the build prompt and the earlier review that current evidence cannot satisfy stay as goals, each with the
@@ -331,6 +370,10 @@ evidence that would advance it. None is dropped; none is claimed.
 | Meta-cognition (global workspace, active inference, value of information) | reserved | N3/N4 evidence that they improve routing decisions |
 | Compounding capability from reality | zero real outcomes | VEPMC ≥ 1, shadow use, settled outcomes (N2, N5) |
 | Frontier capability discovery | no validated new mechanism | N6 external benchmark, independent verification |
+| Metaconsensus by epistemic jurisdiction | reserved (`cortex.meta.metaconsensus`) | N3: conflicting routes resolved better than "most severe wins" on a frozen conflict suite |
+| Lawful deterrence as a problem geometry | needs game, causal and graph families (reserved) | N3/N4: a composition that measurably lowers opportunity, deniability and recurrence through evidence and accountability — never threats or coercion |
+| Full victim-protection investigation | the cortex hands off; investigation is human-led | stays human-led; the cortex's evidence for it is receipts that never expose the person |
+| Lawful Asymmetric Advantage as a measured objective | terms unmeasured | N5: measured outcome, evidence, reuse and cost terms on settled outcomes |
 
 ## 100-Point Process Quality Gate
 

@@ -5,13 +5,14 @@ geometry, checks which cognitive organs are eligible for it, runs the eligible o
 their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
 together with a content-addressed receipt.
 
-**Status:** cortex 0.1.3 · five seed organs `SANDBOXED` · 24 reserved families registered and disabled ·
+**Status:** cortex 0.1.4 · five seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
 frozen held-out result `INCONCLUSIVE` · **not promoted**. See [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
 
 Source of requirements: the verbatim build prompt in
 [`docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md`](../intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md).
 Every line of it is mapped to a status and evidence in [`BUILD_PROMPT_TRACEABILITY.json`](BUILD_PROMPT_TRACEABILITY.json),
-which `tests/unit/test_cortex_traceability.py` keeps honest.
+which `tests/unit/test_cortex_traceability.py` keeps honest. Every section of the two earlier AI review passes has a
+disposition in [`verbatim-register.json`](verbatim-register.json), checked by `tests/unit/test_cortex_register.py`.
 
 ## Authority boundary
 
@@ -30,9 +31,9 @@ services. One process runs everything.
 | --- | --- | --- | --- |
 | `primitive_basal` | Primitive / basal intelligence | — | feedback control, molecular micro-agents, anomaly patterning |
 | `distributed_collective` | Distributed / collective intelligence | — | ecology market, hive quorum, immune, slime network, stigmergy, swarm PSO, human panel |
-| `solver_macro_cognitive` | Solver / macro-cognitive intelligence | Semantic, Fermi, Formal (Z3), Evidence/Causal | mechanism design, graph search, CP-SAT, Bayesian, bandit, simulation twin |
+| `solver_macro_cognitive` | Solver / macro-cognitive intelligence | Semantic, Fermi, Formal (Z3, incl. certified optimization), Evidence/Causal | mechanism design, graph search, heuristic search, exact symbolic, CP-SAT, Bayesian, bandit, simulation twin |
 | `developmental_morphogenetic` | Developmental / morphogenetic intelligence | — | constraint release, evolutionary, MICA field, morphogenetic, program synthesis |
-| `meta_polyintelligence_cortex` | Meta-intelligence / Polyintelligence Cortex | adversarial verifier (and the router itself) | value of information, active inference, global workspace |
+| `meta_polyintelligence_cortex` | Meta-intelligence / Polyintelligence Cortex | adversarial verifier (and the router itself) | value of information, active inference, global workspace, mental models, metaconsensus |
 
 The earlier AI review used a different five-layer naming (L1–L5); `REVIEW_LAYER_MAP` in `cortex/contracts.py`
 reconciles the two and both are preserved. Every biological concept attached to a genome must name its
@@ -58,9 +59,19 @@ ranking sees only options that passed every gate.
 | --- | --- | --- | --- |
 | `cortex.semantic@0.1.0` | existing `egregore.local_model` client; only claims quoting an exact span of a cited source survive | `semantic_sourced` | `DEPENDENCY_UNAVAILABLE`, `BUDGET_EXHAUSTED`, `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
 | `cortex.estimation.fermi@0.1.0` | unit-checked decomposition, Gaussian-copula Monte Carlo, sensitivity, reference class | `estimation` | `DIMENSION_MISMATCH`, `CONTESTED`, `INSUFFICIENT_EVIDENCE`, `MALFORMED_INPUT` |
-| `cortex.formal.z3@0.1.1` | requirement → model → reverse translation → discrepancy check → counterexample search → Z3 | `formal` | `FORMALIZATION_INCOMPLETE`, `WORLD_UNVERIFIED`, `DEPENDENCY_UNAVAILABLE`, `TIMEOUT`, `INCONCLUSIVE`, `BUDGET_EXHAUSTED` |
+| `cortex.formal.z3@0.2.0` | requirement → model → reverse translation → discrepancy check → counterexample search → Z3 feasibility, entailment, or optimization with an independent UNSAT optimality certificate | `formal` | `FORMALIZATION_INCOMPLETE`, `WORLD_UNVERIFIED`, `DEPENDENCY_UNAVAILABLE`, `TIMEOUT`, `INCONCLUSIVE`, `BUDGET_EXHAUSTED` |
 | `cortex.evidence_causal@0.1.0` | evidence rules (provenance, freshness, contradictions, missing observations); stratified/linear adjustment with bootstrap CI and refutations, only under declared identification | `evidence_assessment`, `causal_estimate` | `INSUFFICIENT_EVIDENCE`, `CONTESTED`, `NOT_IDENTIFIED`, `MALFORMED_INPUT` |
 | `cortex.verifier.adversarial@0.1.0` | rule-based, model-free attack on artifacts and evidence; records shared dependencies | `verifier_findings` | findings only lower a disposition; a critical finding blocks `recommend` |
+
+## Receipts: truth, accountability, protection
+
+Every receipt separates **formal validity**, **empirical validity** and **legitimate authority**, and carries an
+**accountability** section: the strongest counterargument the verifier found, a falsification condition for each
+route's claim, and the missing information that would resolve the question. When victim protection is relevant,
+declared actions are ordered (protect now → preserve evidence → contain → safe contact → escalate → repair → prevent
+recurrence); unmeasured harm, unpreserved evidence, a missing safe channel or retaliation risk without disclosure
+controls are *gaps* that force a human handoff; and the receipt records only whether a person or safe channel was
+declared — never who or which.
 
 ## Contracts
 
@@ -72,7 +83,7 @@ shared-boundary allowlist):
 | `cortex-problem-geometry` | [`examples/problem-geometry-formal.json`](examples/problem-geometry-formal.json) |
 | `cortex-intelligence-genome` | [`examples/genome-formal-z3.json`](examples/genome-formal-z3.json), [`examples/genome-reserved-disabled.json`](examples/genome-reserved-disabled.json) |
 | `cortex-proof-artifact` | [`examples/proof-formal.json`](examples/proof-formal.json), `proof-estimation`, `proof-evidence_assessment`, `proof-causal_estimate`, `proof-semantic_sourced` |
-| `cortex-receipt` | eight receipts in [`examples/`](examples/), one per disposition path, incl. victim-protection handoff |
+| `cortex-receipt` | nine receipts in [`examples/`](examples/), one per disposition path, incl. certified optimization and victim-protection handoff |
 | `cortex-routing-memory` | [`examples/routing-memory-verified-success.json`](examples/routing-memory-verified-success.json) |
 
 Regenerate with `python -m cortex.examples --out docs/cortex/examples`. Receipts carry measured expenditure, so
@@ -85,9 +96,9 @@ pip install -r requirements-dev.txt -r requirements-cortex.txt
 
 # tests: contracts, gates, routes, pipeline, learning, evaluation integrity, traceability
 python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py \
-    tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py
+    tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
 
-# mutation check: 18 safeguard-removing mutants on a scratch copy; all must be caught
+# mutation check: 22 safeguard-removing mutants on a scratch copy; all must be caught
 python scripts/ci/check_cortex_mutants.py
 
 # development partitions (no freeze needed)
@@ -124,3 +135,5 @@ are kept in `cortex/evaluation/` and `tests/evidence/cortex-seed-v*/`.
 | `cortex/evaluation/` | suites, scoring, arms, runner, freeze manifests |
 | `cortex/examples.py` | contract examples from real runs |
 | `scripts/ci/check_cortex_mutants.py` | mutation check |
+| `cortex/evidence_refs.py` | resolves evidence references in the traceability documents |
+| `docs/cortex/INVENTION_DOSSIER.md`, `invention.json` | mechanism lineage, novelty boundary, decision |

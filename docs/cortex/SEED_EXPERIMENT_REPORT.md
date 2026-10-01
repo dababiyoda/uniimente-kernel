@@ -1,6 +1,6 @@
 # GREG Polyintelligence Architecture — Seed Experiment v0.1: report
 
-Cortex version 0.1.3 · branch `claude/polyintelligence-cortex-primitives-20260930` · base `main` @ `19fa33c`
+Cortex version 0.1.4 · branch `claude/polyintelligence-cortex-primitives-20260930` · base `main` @ `19fa33c`
 · 2026-10-01
 
 **Decision: EXPERIMENT — retain, unpromoted.** The seed routes, gates, receipts and outcome-conditional learning
@@ -40,7 +40,7 @@ reboot verification.
 
 | Tier | Status | Evidence |
 | --- | --- | --- |
-| Repository verification | **Verified** | Full suite on this branch; verifier v2 V1–V5 PASS; CI check scripts pass; cortex tests, traceability test and the 18-mutant check pass. Stacked on PR #137 head `3d2bb17`: clean merge, no conflicts, full suite passes (see [Stacking on PR #137](#stacking-on-pr-137)). |
+| Repository verification | **Verified** | Full suite on this branch; verifier v2 V1–V5 PASS; CI check scripts pass; cortex, traceability and register tests and the 22-mutant check pass. Stacked on PR #137 head `3d2bb17`: clean merge, no conflicts, full suite passes (see [Stacking on PR #137](#stacking-on-pr-137)). |
 | Chromebook verification | **Not verified** | No device in this session. The cortex is not part of the Body 1 install and needs nothing from it. |
 | Founder use | **None** | No founder has run a cortex problem. |
 | Reboot verification | **Not verified** | The cortex keeps no runtime state across restarts; its competence ledger is in memory and settled outcomes would live in Kernel `CausalMemory`. Nothing was rebooted. |
@@ -62,7 +62,8 @@ To show the cortex cannot delay VEPMC, this branch was trial-merged onto PR #137
 ## What was built
 
 See [`README.md`](README.md) for the full map. In short: five contracts; an `IntelligenceGenome` projection with 5
-seed organs and 24 reserved, disabled families; hard gates before Pareto ranking; Semantic, Fermi, Formal (Z3),
+seed organs and 28 reserved, disabled families; hard gates before Pareto ranking; Semantic, Fermi, Formal (Z3, with
+certified optimization),
 Evidence/Causal routes and a model-free adversarial verifier; consequence-aware dispositions with victim
 protection; an outcome-conditional competence ledger; a frozen evaluation with three partitions and four arms;
 contract examples from real runs; a line-by-line traceability matrix of the build prompt.
@@ -84,7 +85,7 @@ claims 5, interventions 5, gated options 5, semantic 3).
 
 **Freeze discipline.** Suites, scoring, arms, generators, route policy, organ code, budgets, partitions and
 thresholds are hashed into `cortex/evaluation/freeze-v<version>.json` before each reported run; the held-out run
-refuses if any input changed. Four versions were frozen and run; all manifests and results are kept.
+refuses if any input changed. Five versions were frozen and run; all manifests and results are kept.
 
 | Version | Change (disclosed) | Found by |
 | --- | --- | --- |
@@ -92,11 +93,12 @@ refuses if any input changed. Four versions were frozen and run; all manifests a
 | 0.1.1 | victim protection wired into routing, verifier and receipt (v0.1 parsed it but never acted on it) | traceability audit against item 8 |
 | 0.1.2 | Z3 5.1 reports an exhausted timeout as `canceled`; v0.1.1 called it `INCONCLUSIVE` instead of `TIMEOUT`. An undecided violating-witness check counted as agreement. Formal organ → 0.1.1 | solver probe against item 7 |
 | 0.1.3 | Exit rule tightened to the prompt's wording: *cross-geometry* gain (no geometry group worse, gain on ≥ 2), cost and p95 latency within declared ratios; a verified gain only makes promotion proposable, founder ratification promotes. Done before any declared baseline ran | traceability audit against item 11 |
+| 0.1.4 | Review-pass-2 primitives the seed lacked: Formal 0.2.0 certified optimization; receipt accountability (strongest counterargument, falsifiers, missing information); victim-protection situation (unknown harm is a gap that forces handoff; identity-free receipts); four reserved families | verbatim register of review passes 1–2 |
 
-Held-out results were **identical item for item** across all four versions: no held-out item exercises the
+Held-out results were **identical item for item** across all five versions: no held-out item exercises the
 changed paths, and the exit change only matters once baselines run. That is a coverage gap, recorded under limitations; the paths are covered by unit and mutation tests.
 
-**Held-out results (cortex 0.1.3, `tests/evidence/cortex-seed-v0.1.3/heldout-results.json`):**
+**Held-out results (cortex 0.1.4, `tests/evidence/cortex-seed-v0.1.4/heldout-results.json`):**
 
 | Measure | Routed seed | Always abstain (reference) | Always LLM | LLM committee |
 | --- | --- | --- | --- | --- |

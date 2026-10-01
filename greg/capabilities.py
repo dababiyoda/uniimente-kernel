@@ -502,6 +502,8 @@ def repo_integration_audit(params, ctx: InvocationContext) -> dict:
 
 
 STRENGTHENS = {
+    "foundry.query": ("proof", "routing", "compounding"),
+    "foundry.apply": ("proof", "settlement", "compounding", "capability_formation"),
     "fs.read": ("proof",), "fs.list": ("proof",), "fs.write": ("settlement",),
     "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
     "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
@@ -685,6 +687,22 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 {"assessed": "bool", "verdict": "str|null", "path": "str|null",
                                  "manifest_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
                        _lazy("greg.ventures", "status")),
+    "foundry.query": (_builtin("foundry.query", "foundry.system_query",
+                               "Read-only operation of an implemented Foundry system (search, graph, reputation, "
+                               "model check, verify, history, trial balance)", "internal", "read_only", "foundry:",
+                               {"system": "int", "op": "str", "args": "dict?"}, {"system": "int", "op": "str", "result": "dict"},
+                               filesystem="read-scoped", retry_safe=True,
+                               provenance={"source": "uniimente-kernel/foundry/systems",
+                                           "mechanism_from": "Foundry arsenal (55-system mandate)"}),
+                      _lazy("greg.foundry_bridge", "query")),
+    "foundry.apply": (_builtin("foundry.apply", "foundry.system_apply",
+                               "Write operation of an implemented Foundry system inside the mission workspace "
+                               "(store, commit, post, record)", "internal", "internal_write", "foundry:",
+                               {"system": "int", "op": "str", "args": "dict?"}, {"system": "int", "op": "str", "result": "dict"},
+                               filesystem="workspace-write",
+                               provenance={"source": "uniimente-kernel/foundry/systems",
+                                           "mechanism_from": "Foundry arsenal (55-system mandate)"}),
+                      _lazy("greg.foundry_bridge", "apply")),
 }
 
 

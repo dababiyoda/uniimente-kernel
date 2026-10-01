@@ -1,0 +1,22 @@
+{
+ "command": "python -m foundry.completion --run 19",
+ "name": "Recommender systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "depth_order": [
+   "case-study",
+   "viral-clip",
+   "pricing"
+  ],
+  "near_certain_belief_worth_little": true,
+  "one_lucky_transition_not_first": true,
+  "test_order": [
+   "ask finance lead",
+   "5 buyer interviews",
+   "paid pilot offer",
+   "survey on file format"
+  ]
+ },
+ "result_sha256": "sha256:d74a89b6a973b74a3917906b44a8b0db0d4e17c7a5a0324696712c52dfec34a0",
+ "system": 19
+}

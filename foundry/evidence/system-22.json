@@ -1,0 +1,42 @@
+{
+ "command": "python -m foundry.completion --run 22",
+ "name": "Simulation engines",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "deterministic": true,
+  "dominance": [
+   [
+    "owned_proof_rail",
+    "rented_audience"
+   ]
+  ],
+  "platform_loss": {
+   "owned_proof_rail": {
+    "main_failure": null,
+    "revenue_retained": 0.829,
+    "survival": 1.0
+   },
+   "rented_audience": {
+    "main_failure": "platform",
+    "revenue_retained": 0.32,
+    "survival": 0.0
+   }
+  },
+  "playbook_platform_loss": {
+   "mitigations": [
+    "move revenue to owned channels (#31/#32/#33) before the platform moves"
+   ],
+   "most_resilient": "owned_proof_rail"
+  },
+  "scenarios_covered": [
+   "capital_scarcity",
+   "competitor_attack",
+   "founder_absence",
+   "platform_loss",
+   "provider_outage",
+   "regulation"
+  ]
+ },
+ "result_sha256": "sha256:ac9a28e98f9e34894230117c83e7b3f86633866e2542ff816d72250f6133e0a6",
+ "system": 22
+}

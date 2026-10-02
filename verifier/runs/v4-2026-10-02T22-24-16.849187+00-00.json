@@ -1,0 +1,18 @@
+{
+  "verifier": "v4",
+  "ts_utc": "2026-10-02T22:24:16.849187+00:00",
+  "command": "python3 verifier/v4/verify.py",
+  "head_commit": "b1286267587d043884641f5ce043fabaa834726e",
+  "tracked_tree": "clean",
+  "exit_code": 0,
+  "passes": [
+    "V1: formed/graphsearch/continuous organs exist and never import greg",
+    "V2: pytest tests/unit: 1833 passed, 6 skipped in 428.56s (0:07:08)",
+    "V3: three-part payload -> selected ['cortex.formal.z3@0.2.0', 'cortex.estimation.fermi@0.1.0', 'cortex.evidence_causal@0.1.0'], proofs ['estimation', 'evidence_assessment', 'formal'], max_parts 4",
+    "V4: five-part payload -> 4 selected, cap_dropped ['cortex.deterrence.accountability@0.1.0'], why_not ['required by this payload and eligible; dropped by the composition bound (MAX_COMPOSITION=4, cortex-route-policy/0.4.0)']",
+    "V5: aggregate solver demand 3 > budget 2 -> BUDGET_EXHAUSTED; formed organs fired: 0",
+    "V6: prior freezes pinned; freeze-v0.4.0.json 51d660e2aa49cbe5223877bf1b21bb28829bb595582ae64e89a91016bad53933"
+  ],
+  "skips": [],
+  "failures": []
+}

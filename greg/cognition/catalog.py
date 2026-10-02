@@ -42,9 +42,10 @@ def profile(family):
 # capability: founder CAPABILITY_DETACH withholds the organ from cortex routing.
 # capability id -> (version, epistemic classes, deterministic, network, description)
 CORTEX_ENTRIES = {
-    "cognition.cortex": ("0.2.1", ("constraint_feasibility", "deductive", "optimization", "estimate", "causal",
+    "cognition.cortex": ("0.3.0", ("constraint_feasibility", "deductive", "optimization", "estimate", "causal",
                                    "prediction", "semantic", "strategic", "unresolved"), True, "egress-allowlist",
-                         "Cortex router: geometry, hard eligibility, two formal engines, verifier, typed receipt"),
+                         "Cortex router: geometry, hard eligibility, two formal engines, formed-function "
+                         "organs, verifier, typed receipt"),
     "cognition.cortex.formal.z3": ("0.2.0", ("deductive", "constraint_feasibility", "optimization", "arithmetic"),
                                    True, "none", "Z3 feasibility, entailment and certified optimization"),
     "cognition.cortex.optimization.cpsat": ("0.2.0", ("deductive", "constraint_feasibility", "optimization"), True,
@@ -60,6 +61,12 @@ CORTEX_ENTRIES = {
     "cognition.cortex.extraction.schedule": ("0.1.0", ("semantic", "constraint_feasibility", "optimization"), False,
                                              "egress-allowlist", "Bounded scheduling request in words -> audited "
                                              "formal model (controlled grammar; founder-selected model only)"),
+    "cognition.cortex.graph.search": ("0.2.0", ("optimization",), True, "none",
+                                      "Shortest paths and maximum flow via founder-attached formed functions; "
+                                      "GREG-certified answers only, engines never trusted"),
+    "cognition.cortex.optimization.continuous": ("0.1.0", ("optimization",), True, "none",
+                                                 "Continuous linear programs via the formed lp.optimize function; "
+                                                 "a duality certificate on every optimum"),
 }
 CORTEX_VERSIONS = {cid: spec[0] for cid, spec in CORTEX_ENTRIES.items()}
 

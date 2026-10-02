@@ -1,0 +1,98 @@
+{
+  "frozen_at": "2026-10-02T11:10:15Z",
+  "inputs": {
+    "arms": {
+      "baseline_system_prompt_sha256": "sha256:e5ffbe9451a88600a36e2133ce48f2660f8483b9332fcad5e76017b73694b4d2",
+      "committee_roles": [
+        "a meticulous engineer",
+        "a skeptical auditor",
+        "a pragmatic operator"
+      ],
+      "declared_baselines": [
+        "always_llm",
+        "llm_committee"
+      ],
+      "references": [
+        "always_abstain"
+      ],
+      "routed": "routed_seed"
+    },
+    "bootstrap": [
+      2000,
+      20260930
+    ],
+    "code": {
+      "cortex/contracts.py": "sha256:0529a71cb60eb43818122d36f454b7a0fe2dd0ca1e8206939f18833b01a02c4c",
+      "cortex/evaluation/arms.py": "sha256:b19b37d0d8d4a25235386d23fb333ca305aca81751a09feb23457548f3d8edab",
+      "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
+      "cortex/evaluation/run.py": "sha256:ba28821811111f89b10050a8300fffd00520ee9d46fcb282f2425489c3d2d6de",
+      "cortex/evaluation/scoring.py": "sha256:b2b8838b858f204ce846842a3274b8812478fe5c1783b7dc9c5cd65630b937ce",
+      "cortex/gates.py": "sha256:8c83fd591b71109153845cda3bfb55f3cbda36986891ff5cae124362a60dc164",
+      "cortex/genome.py": "sha256:58f47c036c022a16d41d3e6190769d6fae0dff52e578e3218a1867b0e6e27ee1",
+      "cortex/memory.py": "sha256:1c54751b7ec9058b83ba52768a9b54dc59bb947fd5d5c396b2c3c2f187d06a93",
+      "cortex/organs/adversarial.py": "sha256:2f24abb4e155f640adea05bfb3be0a88d9cd64af2b6447d923de05fa54d1450f",
+      "cortex/organs/continuous.py": "sha256:0e085c3a2a44f3173e417bc8b583120809bdfd581c3ee6bc1d0036f838b7f2b6",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/deterrence.py": "sha256:e7b93a7200ece7b0ec8187b018b3aba84d6121fddd6b413db6eb32fa17c076bb",
+      "cortex/organs/estimation.py": "sha256:a7eb0c2709c54aedc0f9df23428a12b5274110ee6564ebcd061ced8eba6a9d8e",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/formal_eval.py": "sha256:cc6efca87090aa0d6e7af1460b789b8b483ee9f63e77c6d5e6c3e0cf04bc9131",
+      "cortex/organs/formed.py": "sha256:b244dbffbc1eb2962d33d507d151eb39852f28e56a9317d94396e8301e3dd1af",
+      "cortex/organs/graphsearch.py": "sha256:2b74183fc704021695f190cc3ff4bfebe9bc03640d6395ce8523cb366dd374b2",
+      "cortex/organs/schedule_extraction.py": "sha256:bb440433915e003344ed2c82f8c0c87d40ee11cdeb8f766f254e74ac6718b047",
+      "cortex/organs/semantic.py": "sha256:20f1eaec8108f0ec650cf64069d6ba4e25819f1fe546afdb8907b5d4cb4db0d3",
+      "cortex/outcomes.py": "sha256:9d2c6120d22d97cc2198c5e480e2d5e03ed95c87f284016f24ecb0c037263d72",
+      "cortex/routing.py": "sha256:6b8c6cbf7816e7dde3227dff98e92746347e5f09059ec2d086942edeaa073a35"
+    },
+    "cortex_version": "0.3.0",
+    "default_budget": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "overcautious_credit": 0.25,
+    "partitions": {
+      "development": [
+        "smoke",
+        "dev"
+      ],
+      "reported": [
+        "heldout"
+      ]
+    },
+    "route_policy": "cortex-route-policy/0.3.0",
+    "scoring_version": "cortex-scoring/0.2",
+    "suites": {
+      "dev": {
+        "path": "cortex/evaluation/suites/dev-v0.1.json",
+        "sha256": "sha256:5e2f13bc251e6a3630b9c15009f070aa8105be35bb1cc87f42c5c3f08302dcf4"
+      },
+      "heldout": {
+        "path": "cortex/evaluation/suites/heldout-v0.1.json",
+        "sha256": "sha256:6481c3f66f6439028a6d1581ab4e16d9dba7246aee22f30841bae0a23cc3ce59"
+      },
+      "smoke": {
+        "path": "cortex/evaluation/suites/smoke-v0.1.json",
+        "sha256": "sha256:36409ccffca1cd5245782d09bd1ea1b9d1e9251f3c42ce655b802ea341632ee5"
+      }
+    },
+    "thresholds": {
+      "cost_slack_usd": 0.001,
+      "declared_baselines": [
+        "always_llm",
+        "llm_committee"
+      ],
+      "max_cost_ratio": 1.25,
+      "max_critical_error_increase": 0,
+      "max_gate_violations": 0,
+      "latency_slack_s": 0.5,
+      "max_latency_p95_ratio": 1.25,
+      "min_geometries_with_gain": 2,
+      "min_items_per_geometry": 3,
+      "min_quality_gain_lower_bound": 0.05
+    }
+  },
+  "schema": "cortex-freeze/0.1"
+}

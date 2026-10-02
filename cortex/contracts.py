@@ -23,7 +23,10 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.2.1"
+# 0.3.0: payload keys graph and linear_program route to two organs that recruit founder-attached
+# formed functions (Capability Genesis); cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the
+# consequence class. 0.2.0: CP-SAT second formal engine.
+CORTEX_VERSION = "0.3.0"
 
 
 class CortexError(ValueError):
@@ -309,7 +312,8 @@ class VictimProtection:
 
 
 # ------------------------------------------------------------------ problem
-PAYLOAD_KEYS = ("formal_model", "schedule_request", "estimation_model", "deterrence_model", "sources",
+PAYLOAD_KEYS = ("formal_model", "schedule_request", "estimation_model", "deterrence_model",
+                "graph", "linear_program", "sources",
                 "evidence", "claim",
                 "causal_spec", "options", "declared", "resources", "as_of", "victim_protection",
                 "faults")

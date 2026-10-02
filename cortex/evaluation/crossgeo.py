@@ -42,6 +42,7 @@ FROZEN_CODE = ["cortex/evaluation/crossgeo.py", "cortex/evaluation/crossgeo_arms
                "cortex/organs/formal.py", "cortex/organs/formal_eval.py", "cortex/organs/cpsat.py",
                "cortex/organs/estimation.py", "cortex/organs/evidence_causal.py", "cortex/organs/semantic.py",
                "cortex/organs/adversarial.py", "cortex/organs/deterrence.py", "cortex/organs/schedule_extraction.py",
+               "cortex/organs/formed.py", "cortex/organs/graphsearch.py", "cortex/organs/continuous.py",
                "greg/cognition/bridge.py", "greg/cognition/worker.py", "greg/cognition/cortex.py",
                "greg/cognition/catalog.py", "greg/cognition/contracts.py", "greg/cognition/solvers.py",
                "greg/cognition/verification.py", "greg/cognition/settlement.py"]

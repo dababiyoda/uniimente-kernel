@@ -84,10 +84,10 @@
         "always_llm",
         "llm_committee"
       ],
+      "latency_slack_s": 0.5,
       "max_cost_ratio": 1.25,
       "max_critical_error_increase": 0,
       "max_gate_violations": 0,
-      "latency_slack_s": 0.5,
       "max_latency_p95_ratio": 1.25,
       "min_geometries_with_gain": 2,
       "min_items_per_geometry": 3,

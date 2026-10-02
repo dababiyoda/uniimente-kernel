@@ -6,8 +6,8 @@
   "tracked_tree": "clean at validation time (records committed in 52e8e62)",
   "exit_code": 0,
   "passes": [
-    "validate_intent_ledger.py: VALID (1 record) — INTENT-0035 lifecycle state, source lineage, human owner, implemented-with-refs, review trigger",
-    "validate_deliberation.py: VALID — DELIB-KIMI-2026-10-02-001 five roles, do-nothing/strongest-competitor/reversible-experiment alternatives, exactly two passes, D1-D5 dispositions, dissent with threshold and trigger, rollback, no protected-branch writes"
+    "validate_intent_ledger.py: VALID (1 record) \u2014 INTENT-0035 lifecycle state, source lineage, human owner, implemented-with-refs, review trigger",
+    "validate_deliberation.py: VALID \u2014 DELIB-KIMI-2026-10-02-001 five roles, do-nothing/strongest-competitor/reversible-experiment alternatives, exactly two passes, D1-D5 dispositions, dissent with threshold and trigger, rollback, no protected-branch writes"
   ],
   "skips": [],
   "failures": []

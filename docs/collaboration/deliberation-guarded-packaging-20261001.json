@@ -123,7 +123,7 @@
       "claim": "Restricted DSL predecessor integrated and verified",
       "tier": "sandbox_execution",
       "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36930764043",
-      "finding": "All six jobs passed at5fc76e61; CI full suite1572 passed/74 skipped; V1–V5 passed. Optional dependencies are absent in the core test job; separate Cortex job runs with its solver."
+      "finding": "All six jobs passed at5fc76e61; CI full suite1572 passed/74 skipped; V1\u2013V5 passed. Optional dependencies are absent in the core test job; separate Cortex job runs with its solver."
     }
   ],
   "counterevidence": [
@@ -206,7 +206,14 @@
       "simplest_viable_alternative": "Reuse existing deterministic packager with explicit published source inventory and one fixed independent rebuild recipe.",
       "strongest_competing_architecture": "Containerized fully hermetic build and OCI image pipeline.",
       "reversible_experiment": "Actual guarded bundle creation and independent digest comparison plus source-inventory traversal refusal in CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: No available local container runtime; current source bundle pins but does not vendor third-party dependencies. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Available authorized container host and reproducibility/escape tests."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Attack private-source inclusion, recipe injection, quota ambiguity, omitted sources and deployment overclaim; strengthen every first-pass disadvantage.",

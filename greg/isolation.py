@@ -11,6 +11,7 @@ import ctypes
 import os
 from pathlib import Path
 import platform
+import stat
 import sys
 
 READ_FILE, READ_DIR = 1 << 2, 1 << 3
@@ -95,6 +96,25 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
+    # Reviewed extension modules load glibc compatibility libraries lazily.
+    # Include these named runtime dependencies without granting host directories
+    # or every shared library installed on the host.
+    triplet = {"x86_64": "x86_64-linux-gnu", "aarch64": "aarch64-linux-gnu"}[platform.machine()]
+    for base in (Path("/lib") / triplet, Path("/usr/lib") / triplet):
+        if not base.is_dir():
+            continue
+        for candidate in (base / name for name in (
+                "librt.so.1", "libdl.so.2", "libpthread.so.0", "libutil.so.1")):
+            if not candidate.exists():
+                continue
+            path = candidate.resolve(strict=True)
+            metadata = path.stat()
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != 0 or \
+                    metadata.st_mode & 0o022 or not metadata.st_mode & 0o004:
+                continue
+            with path.open("rb") as stream:
+                if stream.read(4) == b"\x7fELF":
+                    grants[path] = grants.get(path, 0) | READ_FILE
     attr = _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:

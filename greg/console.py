@@ -206,14 +206,13 @@ def _form(console: Console, action: str, fields: dict, label: str, *, cls: str =
 
 
 
-def owned_pages(console: Console) -> list[dict]:
-    """Pages must be bound to successful canonical receipts, not filesystem presence."""
-    pages = {}
+def owned_receipts(console: Console):
+    """One read-only receipt check for privately served owned product surfaces."""
     with observe(console.home, actor="spiffe://uniimente.internal/greg/owned-reader") as journal:
         ledger = journal.ledger
         ok, _ = ledger.verify_chain()
         if not ok:
-            return []
+            return
         witnesses = {r.payload["witness_id"]: r.payload["grant_id"] for r in ledger.by_type("witness")
                      if r.payload.get("action_class") == "greg.foundry.apply"
                      and r.payload.get("capability") == "foundry.apply"}
@@ -234,13 +233,69 @@ def owned_pages(console: Console) -> list[dict]:
             output = result.get("output") or {}
             if result.get("result_class") != "positive" or not isinstance(output, dict):
                 continue
-            page = output.get("result") if output.get("system") == 31 else (
-                (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
-            if isinstance(page, dict) and page.get("kind") == "owned-page":
-                item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
-                item["mission_id"] = p["mission_id"]
-                pages[(p["mission_id"], item["name"], item["version"])] = item
+            yield p["mission_id"], output
+
+
+def owned_pages(console: Console) -> list[dict]:
+    """Pages must be bound to successful canonical receipts, not filesystem presence."""
+    pages = {}
+    for mission_id, output in owned_receipts(console):
+        page = output.get("result") if output.get("system") == 31 else (
+            (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
+        if isinstance(page, dict) and page.get("kind") == "owned-page":
+            item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
+            item["mission_id"] = mission_id
+            pages[(mission_id, item["name"], item["version"])] = item
     return list(pages.values())
+
+
+def owned_communities(console: Console):
+    communities = {}
+    for mission_id, output in owned_receipts(console):
+        result = output.get("result") or {}
+        community = result if output.get("system") == 32 else (
+            result.get("community") if output.get("system") == 49 else None)
+        if isinstance(community, dict) and isinstance(community.get("community"), str) and \
+                isinstance(community.get("history_hash"), str):
+            item = {"mission_id": mission_id, "community": community["community"],
+                    "history_hash": community["history_hash"]}
+            communities[(mission_id, item["community"])] = item
+    return list(communities.values())
+
+
+def read_owned_community(console, mission_id, name, offset, *, export=False):
+    from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+    from greg import foundry_bridge
+    approved = [p for p in owned_communities(console) if
+                p["mission_id"] == mission_id and p["community"] == name]
+    if not approved:
+        raise FileNotFoundError("no canonical community receipt")
+    root = (console.layout.workspace / mission_id.replace(":", "_")).resolve()
+    if console.layout.workspace.resolve() not in root.parents:
+        raise FileNotFoundError("community mission outside workspace")
+    ctx = InvocationContext(root, (root,), SecretBroker(console.layout.secrets), BUILTINS["foundry.query"][0])
+    try:
+        result = foundry_bridge.query({"system": 32, "op": "export" if export else "render",
+                                     "args": {"community": name, "offset": offset, "limit": 8}}, ctx)["result"]
+    except CapabilityError as exc:
+        raise FileNotFoundError("community failed integrity checks") from exc
+    if result["history_hash"] != approved[-1]["history_hash"]:
+        raise FileNotFoundError("community differs from canonical receipt")
+    return result
+
+
+def render_community(console, mission_id, name, offset):
+    result = read_owned_community(console, mission_id, name, offset)
+    base = "/community/" + quote(mission_id, safe="") + "/" + quote(name, safe="")
+    links = []
+    if offset:
+        links.append(f"<a href='{base}?offset={max(0, offset-result['limit'])}'>Previous posts</a>")
+    if offset + result["posts"] < result["total_posts"]:
+        links.append(f"<a href='{base}?offset={offset+result['limit']}'>Next posts</a>")
+    export_url = "/community-export/" + quote(mission_id, safe="") + "/" + quote(name, safe="")
+    return _page(name, f"<h1>{_e(name)}</h1><p>Private signed community history. "
+                 "Member signatures establish key possession.</p>" + result["html"] +
+                 "<p>" + " · ".join(links) + f" · <a href='{export_url}'>Export signed history</a></p>")
 
 
 def render_owned_index(console: Console) -> bytes:
@@ -251,7 +306,10 @@ def render_owned_index(console: Console) -> bytes:
                      f"(version {_e(page['version'])})</li>")
     return _page("Owned content", "<h1>Owned content</h1><p>Private pages produced by GREG. "
                  "Public deployment requires its own authority.</p><ul>" + "".join(links) +
-                 "</ul><p><a href='/'>GREG</a></p>")
+                 "</ul><h2>Owned communities</h2><ul>" + "".join(
+                     "<li><a href='/community/" + quote(c["mission_id"], safe="") + "/" +
+                     quote(c["community"], safe="") + "'>" + _e(c["community"]) + "</a></li>"
+                     for c in owned_communities(console)) + "</ul><p><a href='/'>GREG</a></p>")
 
 
 def render_owned_page(console: Console, mission_id: str, name: str, version: int | None) -> bytes:
@@ -462,6 +520,23 @@ def make_handler(console: Console):
                     return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
                 if path == "/owned":
                     return self._send(200, render_owned_index(console))
+                if path.startswith(("/community/", "/community-export/")):
+                    from urllib.parse import unquote
+                    parts = path.split("/")
+                    if len(parts) != 4:
+                        return self._send(404, b"not found")
+                    query = parse_qs(urlsplit(self.path).query)
+                    try:
+                        offset = int(query.get("offset", ["0"])[0])
+                        if not 0 <= offset <= 1024:
+                            raise ValueError("bounded offset required")
+                    except ValueError:
+                        return self._send(400, b"invalid community offset")
+                    mid, name = unquote(parts[2]), unquote(parts[3])
+                    if parts[1] == "community-export":
+                        data = read_owned_community(console, mid, name, offset, export=True)
+                        return self._send(200, json.dumps(data).encode(), "application/json")
+                    return self._send(200, render_community(console, mid, name, offset))
                 if path.startswith("/owned/"):
                     from urllib.parse import unquote
                     parts = path.split("/")

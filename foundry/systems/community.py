@@ -151,7 +151,9 @@ def ingest(root, community, events):
             state = project(retained + added, community)
             for event in added:
                 db.execute("INSERT INTO events(id,body) VALUES (?,?)", (event["id"], canonical(event).decode()))
-        return {"added": len(added), "events": len(retained) + len(added),
+        return {"community": community,
+                "history_hash": "sha256:" + hashlib.sha256(canonical(retained + added)).hexdigest(),
+                "added": len(added), "events": len(retained) + len(added),
                 "members": len(state["members"]), "posts": len(state["posts"]), "authority_created": False}
     finally:
         db.close()
@@ -191,12 +193,23 @@ def view(root, community, offset=0, limit=32):
         db.close()
 
 
-def render(root, community):
-    state = view(root, community)
+def render(root, community, offset=0, limit=32):
+    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 32:
+        raise ValueError("bounded community view page required")
+    db = _connect(root)
+    try:
+        events = _events(db)
+        projected = project(events, identifier(community))
+    finally:
+        db.close()
+    posts = list(projected["posts"].values())
+    page = posts[offset:offset+limit]
     return {"html": "<!doctype html><meta charset='utf-8'><title>Owned community</title>" +
             "".join("<article><h2>" + html.escape(p["id"]) + "</h2><p>" +
-                    html.escape(p["body"]) + "</p></article>" for p in state["posts"]),
-            "posts": len(state["posts"]), "publicly_served": False}
+                    html.escape(p["body"]) + "</p></article>" for p in page),
+            "posts": len(page), "total_posts": len(posts),
+            "offset": offset, "limit": limit, "community": community,
+            "history_hash": "sha256:" + hashlib.sha256(canonical(events)).hexdigest(), "publicly_served": False}
 
 
 def observed(root, community):
@@ -209,5 +222,5 @@ def observed(root, community):
 
 QUERY_OPS = {"summary": lambda a, r: observed(r, a["community"]), "export": lambda a, r: export(r, a["community"], a.get("offset", 0), a.get("limit", 32)),
              "view": lambda a, r: view(r, a["community"], a.get("offset", 0), a.get("limit", 32)),
-             "render": lambda a, r: render(r, a["community"])}
+             "render": lambda a, r: render(r, a["community"], a.get("offset", 0), a.get("limit", 32))}
 APPLY_OPS = {"ingest": lambda a, r: ingest(r, a["community"], a["events"])}

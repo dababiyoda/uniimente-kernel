@@ -548,7 +548,7 @@
   - greg/foundry_bridge.py
   - tests/unit/test_greg_community_journeys.py
   interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
-  gap: Portable signed member identities, posts, edits, reactions, departures and paginated complete history export/import are implemented through GREG. Network enrollment, moderation operations, serving and real member use remain unfinished.
+  gap: Portable signed member identities, posts, edits, reactions, departures and complete history export/import are implemented through GREG. Private loopback posts and portable JSON export now bind current history to successful canonical mutation receipts. Network enrollment, moderation operations, public serving and real member use remain unfinished.
   limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
   state: PARTIAL
 33:

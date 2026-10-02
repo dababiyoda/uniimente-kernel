@@ -32,7 +32,7 @@ from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status"}
+                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query"}
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
 
 

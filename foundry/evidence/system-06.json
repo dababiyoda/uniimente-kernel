@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 6",
+ "name": "Cryptographic proof primitives",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "all_members_prove": true,
+  "forged_proof_self_consistent": true,
+  "forged_rejected_by_trusted_root": true,
+  "non_member_refused": true,
+  "root": "0775c91aefbd9b1018813dce60b734248da77f935dfd82a3e5d2ee5d92718d6b",
+  "signed_root_substitution_detected": true,
+  "tampered_sibling_fails": true
+ },
+ "result_sha256": "sha256:fe0ffcd1fae5dbd0b228e6ff37e2711dfc4aaca9ad0e478fb07fd25db3d768bf",
+ "system": 6
+}

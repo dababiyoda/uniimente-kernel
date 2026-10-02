@@ -1,0 +1,21 @@
+{
+ "command": "python -m foundry.completion --run 5",
+ "name": "Event sourcing",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "duplicate_is_noop": true,
+  "replay_equals_live": true,
+  "replayed_history": [
+   "signal.observed",
+   "assessment.created",
+   "approval.granted",
+   "capability.issued",
+   "action.executed",
+   "outcome.measured"
+  ],
+  "reused_id_refused": true,
+  "tampered_ledger_refused": true
+ },
+ "result_sha256": "sha256:71ee5d547f702263be6618b32ebbebe437ff2943c1bb35f700958f7a7d4a2ae0",
+ "system": 5
+}

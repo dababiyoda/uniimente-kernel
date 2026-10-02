@@ -1,0 +1,25 @@
+{
+ "command": "python -m foundry.completion --run 35",
+ "name": "Graphics, audio, video, and game engines",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "deduplicated": true,
+  "formats": [
+   "image/svg+xml",
+   "image/png",
+   "audio/wav",
+   "video/x-msvideo",
+   "text/html"
+  ],
+  "manifest": "sha256:0e1a02cc859b69878459b723e12a0a26a9a14657be47799495456f3fc8dccfd0",
+  "verified": {
+   "assets": 5,
+   "authority_created": false,
+   "canon_id": "owned-note-v1",
+   "intact": true,
+   "manifest": "sha256:0e1a02cc859b69878459b723e12a0a26a9a14657be47799495456f3fc8dccfd0"
+  }
+ },
+ "result_sha256": "sha256:4a33557b2516c7e1bcbb712f90a68cf229a25612379b1586997f501f08194d6b",
+ "system": 35
+}

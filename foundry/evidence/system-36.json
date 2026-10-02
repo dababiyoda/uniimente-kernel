@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 36",
+ "name": "Content-addressed storage",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "address_a": "sha256:c4b69b45d2a1b7dccac1f6280bcf740ae3f9bda472b0729a1a97cf997af16f80",
+  "dedup": true,
+  "detected": true,
+  "intact_before": true,
+  "objects_before": 2,
+  "tampered_read_refused": true,
+  "untouched_readable": true
+ },
+ "result_sha256": "sha256:1a6f5c2729c3b9990fe7df2eae97533c2e1a0740ea26bcee738d42e4e850aa41",
+ "system": 36
+}

@@ -1,0 +1,948 @@
+# All 55 obligations remain active; COMPLETE is bounded local contract evidence, never full-machine completion.
+1:
+  acceptance:
+  - Compiles policy, workflow, experiment and business-genome source into executable objects
+  - Rejects invalid source with located errors before execution
+  - Compiled output is deterministic (same source, same hash)
+  evidence: foundry/evidence/system-01.json
+  implementation:
+  - foundry/systems/compiler.py
+  - compiler/ucl_compiler.py
+  - business/genome.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query compile; foundry.apply compile_and_store (system 1)
+  limitations: Six kinds (workflow, policy, experiment, business, organ_charter, swarm_contract) over YAML sources;
+    the constitution itself stays with compiler/ucl_compiler.py. Business errors are located at the field the genome
+    owner names.
+  recovery: Stateless and deterministic; compiled objects are content-addressed (#36) and recompile identically
+    from source.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+2:
+  acceptance:
+  - Restricted languages exist for pricing, budgets and capital rules, not only policy
+  - An out-of-grammar, undeclared or over-ceiling rule is rejected before or at execution
+  - Evaluation never executes arbitrary code
+  evidence: foundry/evidence/system-02.json
+  implementation:
+  - foundry/systems/dsl.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query run|check
+  limitations: 'Expression rules only (no loops, no state); three languages: pricing, budget, capital; no exponentiation
+    by design.'
+  recovery: Stateless; a refused rule never runs.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+3:
+  acceptance:
+  - Institutional objects are versioned with ancestry, reason and evidence per version
+  - Stale concurrent writes are refused (compare-and-swap)
+  - Rollback creates a new version; no history is rewritten
+  - Any two versions can be diffed
+  evidence: foundry/evidence/system-03.json
+  implementation:
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply commit|rollback; foundry.query history|content|diff
+  limitations: 'Per-mission workspace store; single machine (fcntl lock); no signed versions yet (planned with #7).'
+  recovery: Refs move only by compare-and-swap; a crashed commit leaves the prior head valid; rollback is a new
+    version.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+4:
+  acceptance:
+  - A shared institutional data model (signals, decisions, authority, actions, outcomes, customers, money) persists
+    across restarts
+  - Schema migrations are versioned and reversible
+  - Queries join intelligence, action and outcome
+  evidence: foundry/evidence/system-04.json
+  implementation:
+  - foundry/systems/datamodel.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query mission_ledger|version; foundry.apply migrate|ingest_greg|record_money (system 4)
+  limitations: SQLite single-file store (local, one writer at a time); a projection of the GREG ledger, not a second
+    source of truth. No cross-organ replication.
+  recovery: Migrations are checksummed and reversible; down migrations export removed rows and the next up restores
+    them; the projection rebuilds from the journal.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+5:
+  acceptance:
+  - Every consequential transition is an immutable, hash-chained event
+  - Replay rebuilds state exactly
+  - Duplicate events are idempotent
+  evidence: foundry/evidence/system-05.json
+  implementation:
+  - foundry/systems/event_sourcing.py
+  - events/spine.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply emit; foundry.query project
+  limitations: Single-host file ledger with one writer; no cross-organ replay under load yet.
+  recovery: Replay after process restart rebuilds the projection; a tampered ledger refuses to open; duplicate emission
+    is a no-op.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+6:
+  acceptance:
+  - Hashes, signatures, Merkle checkpoints and external timestamps bind claims to evidence
+  - Tampering with anchored history is detected by a verifier holding state outside GREG
+  evidence: foundry/evidence/system-06.json
+  implementation:
+  - foundry/systems/proofs.py
+  - provenance/proof.py
+  - greg/anchor.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query root; greg anchor verify --witness
+  limitations: A proof is only meaningful against a trusted root (negative evidence recorded); public TSA use needs
+    founder configuration.
+  recovery: Stateless verification; anchoring recovery is the external witness bundle (greg/anchor.py).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+7:
+  acceptance:
+  - Every organ, agent, service and human approval has a verifiable key identity
+  - Credentials are short-lived, scoped and revocable; revocation takes effect before the next act
+  evidence: foundry/evidence/system-07.json
+  implementation:
+  - foundry/systems/pki.py
+  - greg/founder.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate; greg founder / greg device enroll|revoke
+  limitations: Ed25519 founder and device keys for GREG; inter-organ bridges still use shared-key HMAC; no X.509.
+  recovery: Founder key rotation via signed command; device revocation takes effect on the next command.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+8:
+  acceptance:
+  - Grants bind capability x action x target x budget x deadline
+  - Compromise of one grant cannot reach other targets or budgets
+  - Enforced for GREG's real actions, not only in unit tests
+  evidence: foundry/evidence/system-08.json
+  implementation:
+  - foundry/systems/capsec.py
+  - foundry/systems/gate.py
+  - policy/consequence_gate.py
+  - greg/authority.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate (system 8); GREG light cones on every mission action
+  limitations: Enforced in-process by the Kernel gate and GREG's Authority Office, not by OS or network isolation.
+  recovery: Revoked or used grants fail at commit; a refused proposal never reaches the executor.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+9:
+  acceptance:
+  - A capability is packaged into a reproducible OCI image with pinned inputs
+  - The same capability runs identically from the image in a second environment
+  adopt:
+  - OCI images
+  - Docker
+  - Podman
+  existing:
+  - WealthMachineIntelligence:Dockerfile
+  implementation:
+  - foundry/systems/oci.py
+  - foundry/oci_entry.py
+  - scripts/ci/prove_oci.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply package; foundry.query inspect (system9); disposable hosted builder produces and runs OCI artifacts
+  tests:
+  - tests/unit/test_greg_oci.py
+  limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG and organ dependency images and stronger general-code execution remain unfinished.
+  gap: Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution obligations.
+  state: PARTIAL
+10:
+  acceptance:
+  - Generated or third-party code runs under stronger-than-process isolation (microVM or gVisor-class)
+  - Escape attempts (fs, network, secrets) are denied and logged
+  adopt:
+  - Firecracker
+  - gVisor
+  - E2B-style sandboxes
+  gap: Reviewed GREG workers now attempt kernel-enforced Landlock filesystem confinement on supported Linux ABI >=3 hosts, with raw native escape probes. Generated-source/provider admission, microVM/gVisor-class isolation and broader process/resource protection remain unfinished; ordinary Docker availability is not completion.
+  state: OUTSTANDING
+11:
+  acceptance:
+  - A narrow capability compiles to a WebAssembly component with declared imports/exports
+  - It executes from UNIIMENTE under a WASI host with only declared imports
+  evidence: foundry/evidence/system-11.json
+  implementation:
+  - foundry/systems/wasm.py
+  - foundry/systems/dsl.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply compile; foundry.query run|differential (system 11)
+  limitations: Core WebAssembly modules with a declared manifest, not Component Model/WIT; only DSL rules compile
+    to wasm today. wasmtime is adopted from the Bytecode Alliance.
+  recovery: Modules are content-addressed by hash; tampered bytes, undeclared or forbidden imports and runaway loops
+    (fuel) are refused or trapped.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+12:
+  acceptance:
+  - Registry installs, attaches, measures, migrates and detaches a capability genome
+  - Genome records code, interface, authority, deps, tests, performance, incidents, rollback, contraindications
+  evidence: foundry/evidence/system-12.json
+  implementation:
+  - foundry/systems/registry.py
+  - capabilities/genome.py
+  - foundry/systems/cas.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply install|attach|detach|measure|rollback; foundry.query report (system 12)
+  limitations: Genome code is stored by content but not executed by the registry; attachment is a registry state,
+    activation still needs GREG's founder-signed CAPABILITY_ATTACH. Test pass/fail is asserted by the caller.
+  recovery: Detach never deletes versions; migrate keeps the prior version as the rollback target; registry state
+    is written atomically.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+13:
+  acceptance:
+  - Linker composes registered capabilities into a temporary system from typed interfaces
+  - Incompatible interfaces are refused with the mismatch named
+  evidence: foundry/evidence/system-13.json
+  implementation:
+  - foundry/systems/linking.py
+  - linker/linker.py
+  - foundry/systems/registry.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query link|run_read_only; foundry.apply run (system 13)
+  limitations: Composes Foundry system ops in a linear order; no parallel branches; organ-level edges stay in linker/linker.py.
+  recovery: A plan is re-linked and hash-checked before running; a stage that breaks its output contract stops the
+    run with nothing further executed.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+14:
+  acceptance:
+  - 'One command surface: inspect, propose, simulate, authorize, execute, revoke, reconcile, fork, promote, regress,
+    terminate'
+  - Every command is scriptable and leaves an audit record
+  evidence: foundry/evidence/system-14.json
+  implementation:
+  - foundry/systems/shell.py
+  - greg/founder.py
+  - foundry/systems/snapshots.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query inspect|simulate|verify_audit; foundry.apply propose|authorize|execute|revoke|reconcile|fork|promote|regress|terminate
+    (system 14)
+  limitations: Governs Foundry ops only; GREG missions keep their own inbox/decision path. Founder keys are supplied
+    by the caller (no key custody in the shell).
+  recovery: Audit is hash-chained and re-verified; store drift after execution is detected by reconcile; forks are
+    content-addressed snapshots; promoted objects regress by versioned rollback.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+15:
+  acceptance:
+  - Durable workflows with approvals, retries, deadlines, compensation and recovery survive process death
+  evidence: foundry/evidence/system-15.json
+  implementation:
+  - foundry/systems/workflows.py
+  - events/spine.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query (via GREG missions); DurableWorkflow
+  limitations: Linear step workflows; no parallel branches or timers beyond GREG mission cadence.
+  recovery: Resume from ledger checkpoints without repeating finished steps; uncertain steps require reconciliation.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+16:
+  acceptance:
+  - A mutation passes spec -> tests -> historical replay -> adversarial -> simulation -> canary -> verification
+    -> ratification before deploy
+  - A failed stage blocks promotion
+  evidence: foundry/evidence/system-16.json
+  implementation:
+  - foundry/systems/promotion.py
+  - foundry/systems/dsl.py
+  - foundry/systems/versions.py
+  - greg/founder.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query dry_run|evidence_hash; foundry.apply promote (system 16)
+  limitations: Governs Foundry DSL rule artifacts; repository code still ships through GitHub CI and review. The
+    canary runs against an emulated market; a live canary needs founder-authorized traffic. The simulation's demand
+    model is declared, not measured.
+  recovery: A blocked stage stops promotion with its evidence recorded; a promoted rule is a new version with the
+    prior one as its rollback.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+17:
+  acceptance:
+  - Retrieves prior cases by relevance and measured outcome
+  - Returns the closest worked and closest failed precedent for one decision
+  - Unmeasured outcomes are labelled and down-weighted; context filters apply
+  evidence: foundry/evidence/system-17.json
+  implementation:
+  - foundry/systems/search.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query search|precedents
+  limitations: Lexical BM25 relevance, not semantic embeddings; outcomes must be supplied by the caller.
+  recovery: Stateless; nothing to recover.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+18:
+  acceptance:
+  - Typed causal graph Signal->...->Capital with schema-checked edges
+  - why/impact traversal answers why a result happened
+  - Finds nodes shared by several ventures
+  - Builds from GREG's own journal
+  evidence: foundry/evidence/system-18.json
+  implementation:
+  - foundry/systems/graph.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply add; foundry.query why|impact|shared; greg foundry why <event>
+  limitations: GREG journal mapping covers missions, approvals, actions, receipts and appraisals; signals/evidence/capital
+    nodes come from callers.
+  recovery: Graph is rebuilt from the ledger on demand; the stored graph.json is a cache.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+19:
+  acceptance:
+  - Next-Best-Test router ranks experiments by expected information value per cost
+  - Narrative next-depth router ranks next content by relationship-deepening evidence
+  evidence: foundry/evidence/system-19.json
+  implementation:
+  - foundry/systems/next_test.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query next_best_test|next_depth
+  limitations: Binary hypotheses with Beta beliefs and a single decision threshold; transition data supplied by
+    caller.
+  recovery: Stateless.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+20:
+  acceptance:
+  - Deterministic emulators reproduce external providers and their failures (timeouts, 429, partial writes)
+  - GREG capabilities run against them in tests
+  evidence: foundry/evidence/system-20.json
+  implementation:
+  - foundry/systems/emulator.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query replay
+  limitations: Payments-style provider only; faults are scripted, not sampled from production traces.
+  recovery: Stateless; each replay is deterministic.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+21:
+  acceptance:
+  - Institutional state can be forked into an isolated branch and run without touching production
+  - Branches can be compared and discarded
+  evidence: foundry/evidence/system-21.json
+  implementation:
+  - foundry/systems/snapshots.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply snapshot|fork; foundry.query compare
+  limitations: Directory state only; promotion is returned as a manifest, adoption is a separate authorized act.
+  recovery: Forks never overwrite; the source is read-only; branches are discardable.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+22:
+  acceptance:
+  - Counterfactual tribunal scores strategies under platform loss, regulation, attack, capital scarcity and founder
+    absence
+  - Produces a response playbook per scenario
+  evidence: foundry/evidence/system-22.json
+  implementation:
+  - foundry/systems/scenarios.py
+  - twins/tribunal.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query tribunal
+  limitations: Strategy dependencies and shock ranges are declared by the caller; not calibrated to market data.
+  recovery: Stateless; seeded runs are reproducible.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+23:
+  acceptance:
+  - Idempotency keys, retries with backoff, compensation and reconciliation across organs
+  - Interrupted multi-step operations converge after restart
+  evidence: foundry/evidence/system-23.json
+  implementation:
+  - foundry/systems/distributed.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query retry_schedule
+  limitations: 'Sagas over the #20 provider interface; reconciliation requires the provider to expose its idempotency
+    record.'
+  recovery: Journaled steps resume after process death; permanent failure compensates completed steps in reverse.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+24:
+  acceptance:
+  - Durable queue between organs with at-least-once delivery, dead-letter and replay
+  - Consumers are idempotent
+  evidence: foundry/evidence/system-24.json
+  implementation:
+  - foundry/systems/queue.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply publish; foundry.query depth
+  limitations: Single-host file-backed queue; one state file per topic (not for high throughput).
+  recovery: Leases expire and redeliver; poison messages dead-letter with history; consumers are idempotent across
+    restarts.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+25:
+  acceptance:
+  - Router selects model/implementation by verified quality, price, privacy and latency
+  - Provider loss fails over without losing memory or governance
+  adopt:
+  - LiteLLM
+  - OpenRouter
+  gap: Canonical GREG provider fallback, policy refusal preservation, explicit local-first selection and bounded
+    paid routes already exist. Selection by independently verified quality/privacy/latency remains unfinished; no
+    live provider/weight availability is inferred.
+  state: PARTIAL
+  existing:
+  - greg/models.py
+  - tests/unit/test_greg_models.py
+26:
+  acceptance:
+  - Egress and inter-organ traffic are allowlisted per identity
+  - A compromised component cannot reach undeclared hosts
+  adopt:
+  - Tailscale/WireGuard ACLs
+  - Cloudflare Access
+  existing:
+  - adapters/bridge_transport.py
+  - tests/unit/test_shared_recovery.py
+  gap: Inter-organ messages are authenticated and replay-protected; no network-level segmentation or egress policy.
+  state: PARTIAL
+27:
+  acceptance:
+  - Organs publish typed capability manifests; others discover them
+  - Discovery grants no access
+  evidence: foundry/evidence/system-27.json
+  implementation:
+  - foundry/systems/discovery.py
+  - linker/manifest.py
+  - linker/linker.py
+  - organs/kernel.manifest.yaml
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query discover; foundry.apply enroll|publish|seed_static (system 27)
+  limitations: Directory is a local file, not a network service; health, cost and latency are self-reported by organs
+    and not probed.
+  recovery: Stale entries drop out after their TTL; older or replayed sequences are refused; re-keying an organ
+    is refused (founder act).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+28:
+  acceptance:
+  - An MCP server's tools are reachable from GREG only through Kernel identity, authority and the Consequence Gate
+  - Tool providers are swappable
+  evidence: foundry/evidence/system-28.json
+  implementation: &id001
+  - foundry/systems/mcp_gateway.py
+  - foundry/mcp/foundry_server.py
+  - foundry/mcp/ecosystem_server.py
+  - policy/consequence_gate.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
+  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in tests is
+    a local stand-in. Uses the official MCP Python SDK 2.x.
+  recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused;
+    ungranted consequential calls never reach a provider (gate refuses first).
+  state: PARTIAL
+  tests:
+  - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_mcp_worker.py
+  existing: *id001
+  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores. General external providers and remote transport still require stronger OS filesystem confinement; original failover and authority component evidence is retained.
+
+29:
+  acceptance:
+  - External agents discover, negotiate and perform bounded work through an embassy
+  - Their results are verified before acceptance; no interior access
+  adopt:
+  - A2A protocol v1 with signed Agent Cards
+  existing:
+  - embassy/gate.py
+  - tests/unit/test_embassy.py
+  gap: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.
+  state: PARTIAL
+30:
+  acceptance:
+  - Every external consequence crosses one gate with commit-time revalidation
+  - No bypass path exists (tested)
+  evidence: foundry/evidence/system-30.json
+  implementation:
+  - foundry/systems/gate.py
+  - policy/consequence_gate.py
+  - provenance/commit_witness.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query demonstrate (system 30)
+  limitations: Sandbox targets in the exercise; live external targets remain founder-authorized only.
+  recovery: Executor failure fails closed to reconciliation_required with evidence kept; ledger chain verifies.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+31:
+  acceptance:
+  - UNIIMENTE serves canonical owned pages/portals from its own server
+  - Content is versioned and provenance-linked
+  adopt:
+  - static site on a CDN
+  - FastAPI
+  existing:
+  - foundry/systems/portal.py
+  - greg/console.py
+  - greg/artifacts.py
+  - foundry/systems/versions.py
+  - tests/unit/test_greg_owned_portal.py
+  - DALEOBANKS:app.py
+  - WealthMachineIntelligence:src/api/main.py
+  interface: foundry.apply build; foundry.query inspect/retrieve (system31); GREG console /owned
+  gap: Canonical owned pages now version, retain provenance and serve privately from the existing GREG loopback console after receipt and byte revalidation. Owned public deployment, broader customer-portal operations and authenticated collection remain open.
+  limitations: Private serving only. Declared rights are not independent verification; no public activation or second authority/server.
+  state: PARTIAL
+32:
+  acceptance:
+  - Owned community with member identity, posts and interaction history exportable by UNIIMENTE
+  adopt:
+  - Discourse
+  - Ghost memberships
+  existing:
+  - foundry/systems/community.py
+  - greg/foundry_bridge.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
+  gap: Portable signed member identities, posts, edits, reactions, departures and complete history export/import are implemented through GREG. Private loopback posts and portable JSON export now bind current history to successful canonical mutation receipts. Network enrollment, moderation operations, public serving and real member use remain unfinished.
+  limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
+  state: PARTIAL
+33:
+  acceptance:
+  - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity
+  adopt:
+  - self-hosted Mastodon/GoToSocial
+  - AT Protocol PDS
+  existing:
+  - DALEOBANKS:services/mastodon_client.py
+  gap: Publishes to ActivityPub through a client; no owned instance, portable identity or follower export.
+  state: PARTIAL
+34:
+  acceptance:
+  - Maps which content sequences produced subscribers/customers from observed events
+  - Reports measured path conversion, not assumed
+  adopt:
+  - PostHog
+  - Plausible
+  existing:
+  - DALEOBANKS:services/analytics.py
+  - foundry/systems/journeys.py
+  - greg/foundry_bridge.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.apply ingest; foundry.query report (system 34)
+  gap: Source-declared event ingestion, time-bounded content sequences, subscriber/customer ratios and separate-currency receipt totals are implemented. Automatic first-party collection, authenticated provider imports and real audience evidence remain open.
+  limitations: Temporal association, not causal attribution or verified settlement. Fixture and observed tiers are queried separately; no impression-based revenue estimate.
+  state: PARTIAL
+35:
+  acceptance:
+  - Generates media assets (image/audio/video/interactive) from the canon through an integrated engine
+  - Assets are content-addressed with provenance
+  adopt:
+  - FFmpeg
+  - Remotion
+  - Godot
+  gap: Deterministic image, tone audio, AVI motion graphics and interactive card production is implemented with
+    immutable provenance. Synthesized narration, cinematic/game generation and broader media-quality integration
+    remain open; no publication or rights verification is claimed.
+  state: PARTIAL
+  existing:
+  - foundry/systems/media.py
+  - greg/artifacts.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply produce; foundry.query inspect (system 35)
+  limitations: Local deterministic graphic compositions and tone cues only. Declared canon source/rights are not
+    independently verified.
+  tests:
+  - tests/unit/test_greg_media.py
+36:
+  acceptance:
+  - Artifacts are addressed by SHA-256 of content; writes are atomic and deduplicated
+  - Every read re-hashes; corruption or substitution is refused and detected by a full verify
+  evidence: foundry/evidence/system-36.json
+  implementation:
+  - foundry/systems/cas.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply put; foundry.query get|verify
+  limitations: Local filesystem only; no replication or garbage collection.
+  recovery: Atomic rename writes; corruption is detected on read and by verify, never repaired silently.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+37:
+  acceptance:
+  - Matches independent supply and demand; settles through verification
+  - Market rules are enforced, not advisory
+  adopt:
+  - Stripe Connect when real supply exists
+
+  state: PARTIAL
+  gap: Native pinned media offers, signed peer orders, verified byte delivery and signed acceptance are executable in the shared system-54 store. Independent supply/demand matching, policy-enforced market settlement and a real processor remain active requirements.
+  interface: foundry.query discover/history/reputation; foundry.apply publish/fulfill/accept (system37 aliases canonical system54)
+  implementation:
+  - foundry/systems/offers.py
+  - greg/foundry_bridge.py
+  limitations: Fixture consideration only; signed keys are not independently verified buyer identity, payment or real market demand.
+  tests:
+  - tests/unit/test_greg_owned_company.py
+38:
+  acceptance:
+  - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
+  - Every charge traces to delivered, verified work
+  adopt:
+  - Stripe
+  - x402 for machine buyers
+  existing:
+  - business/commercial_loop.py
+  - foundry/outcome_bridge.py
+  - tests/unit/test_business.py
+  - tests/unit/test_outcome_bridge_v1.py
+  - DALEOBANKS:tests/test_revenue.py
+  gap: Payment records are modeled and reconciled; no live processor integration.
+  state: PARTIAL
+39:
+  acceptance:
+  - Balanced double-entry journal in integer minor units; unbalanced, unknown-account, foreign-currency and fractional
+    entries refused
+  - Corrections are reversals, never edits; double reversal refused
+  - Trial balance satisfies the accounting equation
+  - Journal is hash-chained; tampering is detected
+  evidence: foundry/evidence/system-39.json
+  implementation:
+  - foundry/systems/accounting.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply open_account|post|reverse; foundry.query trial_balance|journal
+  limitations: 'Single currency per book; records only: no payment rail, no tax logic.'
+  recovery: Append-only hash-chained journal; a tampered journal refuses to load.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+40:
+  acceptance:
+  - Mechanisms (e.g. scoring rules, second-price, staking) are specified and simulated
+  - Truthful reporting is shown to be the best response in simulation
+  evidence: foundry/evidence/system-40.json
+  implementation:
+  - foundry/systems/mechanism.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query best_report|procure
+  limitations: Brier scoring and Vickrey procurement only; grid-checked best responses, not symbolic proofs.
+  recovery: Stateless; simulates, never pays.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+41:
+  acceptance:
+  - Reputation from evidenced outcomes only; conservative lower-bound ranking
+  - Recency decay; incidents weigh more unless recovery is verified; insufficient evidence is reported as such
+  - Builds from GREG's appraised closures
+  evidence: foundry/evidence/system-41.json
+  implementation:
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query score; greg foundry reputation
+  limitations: Beta/normal-approximation lower bound; context granularity is caller-defined.
+  recovery: Stateless; recomputed from evidence.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+42:
+  acceptance:
+  - A live shadow model predicts a workflow/venture metric and is compared with reality continuously
+  - Prediction error is recorded and drives recalibration
+  evidence: foundry/evidence/system-42.json
+  implementation:
+  - foundry/systems/twin.py
+  - twins/twin.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query predict|alerts; foundry.apply observe|replay_greg (system 42)
+  limitations: 'Models per-capability verified-rate and cost only. Negative evidence: the first design (hard refit,
+    no cooldown) lost to a static twin; the kept design costs ~0.006 Brier when there is no drift.'
+  recovery: Twin state persists across restarts; a drift alert refits to the recent window with a cooldown; shadow
+    only, never acts.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+43:
+  acceptance:
+  - Exhaustive explicit-state checking of declared state machines with invariants
+  - Shortest counterexample for a violated invariant
+  - GREG's approval boundary is modelled and verified; a planted defect is caught
+  evidence: foundry/evidence/system-43.json
+  implementation:
+  - foundry/systems/model_check.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query check|check_approval_boundary
+  limitations: Models are hand-declared, not extracted from code; bounded to 200k states.
+  recovery: Stateless; nothing to recover.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+44:
+  acceptance:
+  - Logs, traces, costs, authority decisions and outcomes are correlated by one id
+  - Answers why a metric changed
+  evidence: foundry/evidence/system-44.json
+  implementation:
+  - foundry/systems/observability.py
+  - greg/cli.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query correlate|metrics|why_changed|otel (system 44); greg foundry trace
+  limitations: OpenTelemetry-shaped export only; no collector is bundled or contacted. Attribution is by mission
+    and capability, not causal inference.
+  recovery: 'Stateless over the ledger: recomputed from the journal at any time.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+45:
+  acceptance:
+  - Detects abnormal identity, credential, spend, network and outcome behavior
+  - Each incident yields a persistent detection rule
+  evidence: foundry/evidence/system-45.json
+  implementation:
+  - foundry/systems/siem.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query detect|rules; foundry.apply confirm|dismiss (system 45)
+  limitations: 'Detects over GREG journal events only (no host or network sensors); detection reports and never
+    blocks: containment stays with GREG pause/stop and the founder.'
+  recovery: 'Rules and incidents are versioned objects; a bad derived rule rolls back via #3; false positives are
+    recorded, not deleted.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+46:
+  acceptance:
+  - Institutional Seed reconstructs UNIIMENTE (ledger, keys-by-reference, config, stores) on a fresh machine
+  - Recovery is rehearsed and verified against the pre-failure state
+  evidence: foundry/evidence/system-46.json
+  implementation:
+  - foundry/systems/seed.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply seed; greg foundry seed --out DIR
+  limitations: Private keys are excluded by design; restore needs the founder's key backup. Local store only.
+  recovery: Restore refuses a non-empty target and any tampered object; a restored GREG body passes chain verification
+    and reboots.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+47:
+  acceptance:
+  - Compiles validated evidence into buyer, offer, workflow, pricing, delivery, compliance, economics, distribution
+    and kill rules
+  - Refuses to compile unevidenced fields
+  evidence: foundry/evidence/system-47.json
+  implementation:
+  - foundry/systems/business_compiler.py
+  - foundry/systems/compiler.py
+  - business/genome.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query compile (system 47)
+  limitations: Admissibility table (which evidence kind may support which field) is a draft for founder ratification;
+    the demand model behind the kill threshold is the observed channel conversion rate only.
+  recovery: Stateless; refuses rather than guesses (missing, inadmissible, conflicting or unprofitable evidence).
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+48:
+  acceptance:
+  - Forms a temporary specialist team for one bounded objective from registered competences
+  - Team authority is the intersection of its grants; dissolves on completion
+  evidence: foundry/evidence/system-48.json
+  implementation:
+  - foundry/systems/teams.py
+  - foundry/systems/registry.py
+  - foundry/systems/compiler.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply form|act|dissolve; foundry.query report (system 48)
+  limitations: Members are deterministic role actors over Foundry ops, not LLM agents; team authority covers Foundry
+    ops only.
+  recovery: Team state and journal persist atomically; dissolution is final and every later act is refused and journaled.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+49:
+  acceptance:
+  - 'Synthetic media company loop: identity, canon, production, distribution, products, community, finance, performance
+    memory, operated end to end in sandbox'
+  adopt:
+  - existing DALEOBANKS persona and clients
+  existing:
+  - foundry/company.py
+  - foundry/distribution.py
+  - tests/unit/test_foundry.py
+  - DALEOBANKS:services/x_client.py
+  - DALEOBANKS:persona.json
+
+  state: PARTIAL
+  gap: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture books now operate in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification, public distribution, real subscription/payment rails, treasury effect execution and live evidence remain unfinished.
+  interface: foundry.apply assemble/ingest/reconcile; foundry.query inspect (system49)
+  implementation:
+  - foundry/systems/media_company.py
+  - foundry/systems/offers.py
+  - foundry/systems/media.py
+  - foundry/systems/portal.py
+  - foundry/systems/community.py
+  - foundry/systems/journeys.py
+  - foundry/systems/accounting.py
+  - greg/console.py
+  limitations: Private synthetic fixture loop; no public activation, operational ratification, money movement or invented users/outcomes.
+  tests:
+  - tests/unit/test_greg_owned_company.py
+50:
+  acceptance:
+  - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
+  adopt:
+  - PostHog funnels
+  existing:
+  - foundry/territory.py
+  - foundry/systems/journeys.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.query route (system 50); uses the canonical system-34 observed-event store
+  gap: Existing TerritoryGraph now routes from retained subject visits to unvisited, evidence-valid next doors. Live collection/delivery and measured real audience journey outcomes remain open.
+  limitations: Local recommendation only; no contact, self-granted authority or fabricated conversion. Stale/retired nodes and future visits cannot advance the route.
+  state: PARTIAL
+51:
+  acceptance:
+  - Agents write code, tests and docs in isolated branches; changes pass CI before proposal
+  adopt:
+  - Claude Code
+  - Claude Agent SDK
+  existing:
+  - .github/pull_request_template.md
+  - .github/workflows/canonical-ci.yml
+  - tests/unit/test_founder_effect_doctrine.py
+  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
+    frozen contracts.
+  state: PARTIAL
+52:
+  acceptance:
+  - A failure yields diagnosis, competing patches, regression test and updated recovery procedure
+  - The regression test fails before and passes after
+  evidence: foundry/evidence/system-52.json
+  implementation: &id002
+  - foundry/systems/repair.py
+  - foundry/systems/versions.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query localize; foundry.apply repair (system 52)
+  limitations: 'Mutation operators are small (integer +-1, drop constant term, swap +/-, flip comparison). Negative
+    evidence: Ochiai cannot discriminate when failing and passing runs share coverage; ties are all searched (bounded
+    at 8 lines). A pytest collection error is not accepted as failing-before evidence.'
+  recovery: Original source is never modified; the chosen patch, regression test and rejected candidates are a versioned
+    recovery procedure.
+  state: PARTIAL
+  tests:
+  - tests/unit/test_foundry_systems.py
+  existing: *id002
+  gap: Component repair fixtures execute; GREG source admission remains refused pending a reviewed isolated source recipe and complete escape/resource/verification evidence. Actual CI provides Landlock ABI7 for reviewed workers; local host unsupported probes do not define a project-wide blocker. Preserve general repair capability.
+53:
+  acceptance:
+  - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains
+  - Build is reproducible
+  evidence: foundry/evidence/system-53.json
+  implementation:
+  - foundry/systems/build.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query toolchain; foundry.apply build|verify (system 53)
+  limitations: Source bundle of the owned Python packages and data, not a wheel or OCI image; third-party packages
+    are pinned by version in the manifest, not vendored.
+  recovery: Rebuilds in a separate process must be byte-identical; the bundle runs from an empty directory.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
+54:
+  acceptance:
+  - Capabilities are published as machine-readable offers other agents can discover and purchase (test mode)
+  - Receipts feed reputation
+  adopt:
+  - x402
+  - A2A Agent Cards
+  - MCP
+
+  state: PARTIAL
+  gap: Versioned machine-readable offers can be discovered, ordered, actually delivered, and accepted by signed peers in local fixture mode. Receipts feed deduplicated fixture reputation and canonical performance memory. Real processor test-mode billing/refund/reserve integration and remote authenticated discovery/purchasing remain open.
+  interface: foundry.apply publish/fulfill/accept; foundry.query discover/inspect/history/reputation (system54)
+  implementation:
+  - foundry/systems/offers.py
+  - foundry/systems/versions.py
+  - foundry/systems/reputation.py
+  - foundry/systems/journeys.py
+  - greg/artifacts.py
+  limitations: No payment rail or verified real-market demand; all consideration is explicitly fixture-only.
+  tests:
+  - tests/unit/test_greg_owned_company.py
+55:
+  acceptance:
+  - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner
+    distribution by versioned policy
+  - Postings reconcile with the double-entry ledger
+  evidence: foundry/evidence/system-55.json
+  implementation:
+  - foundry/systems/treasury.py
+  - capital/treasury.py
+  - capital/allocation-policy.yaml
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply allocate
+  limitations: Bookkeeping only; no payment rail; USD books.
+  recovery: Waterfall policy versioned (#3); postings mirrored to the hash-chained journal (#39) and reconciled
+    to the cent.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py

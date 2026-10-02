@@ -1,0 +1,22 @@
+{
+ "command": "python -m foundry.completion --run 21",
+ "name": "Virtual machines and snapshots",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "diff": {
+   "changed": [
+    "policy/pricing.json"
+   ],
+   "only_a": [],
+   "only_b": [
+    "experiment.txt"
+   ]
+  },
+  "discarded": true,
+  "overwrite_refused": true,
+  "production_untouched": true,
+  "snapshot_reproducible": true
+ },
+ "result_sha256": "sha256:df0cf9fd3250765aad5ad625a127a1729e6906c57b757c44611c71a618dbc16d",
+ "system": 21
+}

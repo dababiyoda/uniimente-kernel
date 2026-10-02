@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 40",
+ "name": "Game theory and mechanism design",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "brier_truthful": true,
+  "first_price_would_reward_shading": true,
+  "procurement": {
+   "paid": 120,
+   "winner": "b"
+  },
+  "vickrey_max_deviation_gain": 0.0
+ },
+ "result_sha256": "sha256:a4b3a03805d22e4370cafba60f85b4338c83744a4c22f9d290dd859fd2dac3eb",
+ "system": 40
+}

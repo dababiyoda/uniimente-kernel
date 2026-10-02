@@ -1,0 +1,87 @@
+{
+ "command": "python -m foundry.completion --run 47",
+ "name": "Business Architecture Compiler",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "citations": {
+   "buyer": [
+    "int-1",
+    "pay-1"
+   ],
+   "conversion": [
+    "pay-1"
+   ],
+   "conversion_rate": [
+    "chan-1"
+   ],
+   "distribution": [
+    "chan-1"
+   ],
+   "fulfillment": [
+    "cost-1"
+   ],
+   "legal_restrictions": [
+    "legal-1"
+   ],
+   "marginal_cost_usd": [
+    "cost-1"
+   ],
+   "offer": [
+    "pay-1",
+    "quote-1"
+   ],
+   "price_usd": [
+    "pay-1",
+    "quote-1"
+   ],
+   "problem": [
+    "int-1",
+    "int-2"
+   ],
+   "regenerative_effect": [
+    "out-1"
+   ],
+   "required_capabilities": [
+    "cap-1"
+   ],
+   "retention": [
+    "int-1"
+   ]
+  },
+  "compiled_objects": [
+   "business",
+   "delivery",
+   "experiment",
+   "pricing"
+  ],
+  "economics": {
+   "expected_margin_per_test_usd": 2280.0,
+   "expected_paid_per_test": 3.0,
+   "margin_pct": 0.8444,
+   "unit_margin_usd": 760.0
+  },
+  "kill_rule": "fewer than 1 paid of 20 offers in 90 days",
+  "refusals": {
+   "conflicting_buyer": [
+    "conflicting evidence for buyer: int-1='procurement lead'; pay-1='procurement lead'; pay-2='CFO'"
+   ],
+   "interview_claims_price": [
+    "evidence int-3 (interview) is not admissible for price_usd"
+   ],
+   "no_price_evidence": [
+    "no verified admissible evidence for offer",
+    "no verified admissible evidence for price_usd",
+    "no verified admissible evidence for conversion"
+   ],
+   "unprofitable": [
+    "x/business.yaml:17:12: price $900.0 does not cover marginal cost $950.0: a donation with paperwork"
+   ],
+   "unverified_only_cost": [
+    "no verified admissible evidence for marginal_cost_usd",
+    "no verified admissible evidence for fulfillment"
+   ]
+  }
+ },
+ "result_sha256": "sha256:13f1a18e1cdce6d995741296db7ad167ce8a62576752224090a1b0ef21af37eb",
+ "system": 47
+}

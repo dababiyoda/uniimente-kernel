@@ -1,0 +1,362 @@
+{
+  "decision_id": "FM-GUARDED-PACKAGING-20261001",
+  "title": "Make reproducible owned packaging executable through GREG",
+  "problem": "System53 has a standalone reproducibility proof but guarded build cannot read approved data or launch independent rebuild; registered reachability is not implemented runtime reachability.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR147 guarded Foundry, fixed DSL, signed community and measured journeys. Source packaging standalone fixture passes, but guarded build/verify remains unfinished.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse existing deterministic packager with explicit published source inventory and one fixed independent rebuild recipe.",
+      "advantages": [
+        "Restores actual reproducible build/verify without arbitrary repository or child execution."
+      ],
+      "disadvantages": [
+        "Inventory refresh must accompany owned source changes."
+      ],
+      "revival_evidence": "Measured packaging limitations or a stronger available owned build substrate."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Containerized fully hermetic build and OCI image pipeline.",
+      "advantages": [
+        "Better dependency/runtime portability and broader isolation."
+      ],
+      "disadvantages": [
+        "No available local container runtime; current source bundle pins but does not vendor third-party dependencies."
+      ],
+      "revival_evidence": "Available authorized container host and reproducibility/escape tests."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Actual guarded bundle creation and independent digest comparison plus source-inventory traversal refusal in CI.",
+      "advantages": [
+        "Tests the machine execution path rather than registration."
+      ],
+      "disadvantages": [
+        "A source bundle is not an OCI image or deployment acceptance."
+      ],
+      "revival_evidence": "Later owned deployment on the intended body."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave a falsely reachable build capability and block deployment backcast.",
+    "advantages": [
+      "No source data read allowance."
+    ],
+    "disadvantages": [
+      "Buildable packaging remains unfinished."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Fix buildable runtime gaps and continue the complete machine after reproducibility. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "An unrestricted repository read allowance could bundle private host data."
+      ],
+      "evidence_refs": [
+        "foundry/systems/build.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_packaging.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse the current packager and fixed protocol boundary; no parallel build authority. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "A new child recipe could authorize arbitrary code or environment injection."
+      ],
+      "evidence_refs": [
+        "foundry/systems/build.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_packaging.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Published source paths are the read contract; general filesystem containment remains unavailable. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Larger source archives could exceed a toy file cap or evade resource claims."
+      ],
+      "evidence_refs": [
+        "foundry/systems/build.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_packaging.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Make quotas, scope, inventory refresh and independent rebuild operationally explicit. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "A stale source inventory could silently omit new machine code."
+      ],
+      "evidence_refs": [
+        "foundry/systems/build.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_packaging.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Byte-identical source bundles establish integrity, not live installation or full product acceptance. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Reproducible source could be mistaken for an installed or complete machine."
+      ],
+      "evidence_refs": [
+        "foundry/systems/build.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_packaging.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Restricted DSL predecessor integrated and verified",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36930764043",
+      "finding": "All six jobs passed at5fc76e61; CI full suite1572 passed/74 skipped; V1\u2013V5 passed. Optional dependencies are absent in the core test job; separate Cortex job runs with its solver."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Standalone system53 exercise establishes guarded runtime reachability",
+      "tier": "other",
+      "reference": "greg/foundry_worker.py;foundry/systems/build.py",
+      "finding": "Before this delta, data-file reads and python-c independent rebuild were refused. A registry entry and component exercise were insufficient."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Execute deterministic source packaging and independent rebuild through GREG; then resume the next machine dependency.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Runtime reachability",
+        "amplified_value": "Actual GREG build/verify replaces disconnected proof."
+      },
+      {
+        "id": "A2",
+        "statement": "One existing packager",
+        "amplified_value": "Preserves deterministic archive and toolchain mechanisms."
+      },
+      {
+        "id": "A3",
+        "statement": "Explicit source scope",
+        "amplified_value": "Buildable owned data is readable without arbitrary host reads."
+      },
+      {
+        "id": "A4",
+        "statement": "Independent rebuild",
+        "amplified_value": "Second process recomputes and compares exact bytes."
+      },
+      {
+        "id": "A5",
+        "statement": "Honest evidence",
+        "amplified_value": "Source portability remains distinct from installation and acceptance."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "An unrestricted repository read allowance could bundle private host data.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Allow only explicit published owned-source paths; reject traversal, aliases, missing files and hard links. No caller-selected source root in guarded builds."
+      },
+      {
+        "id": "D2",
+        "statement": "A new child recipe could authorize arbitrary code or environment injection.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Allow exact interpreter/module/mode/cwd/environment/scope only. Keep unreviewed providers and source refused; fixed build child installs the same reviewed-code guard."
+      },
+      {
+        "id": "D3",
+        "statement": "Larger source archives could exceed a toy file cap or evade resource claims.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Bound each worker file to8MiB, durable stores to64MiB, input to128KiB and returned output to1MiB. State CPU limits are per process, with shared30-second group wall termination."
+      },
+      {
+        "id": "D4",
+        "statement": "A stale source inventory could silently omit new machine code.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Commit the actual published source list, test representative newly integrated files and manifest membership, and preserve deliberate refresh as an owned-source change obligation."
+      },
+      {
+        "id": "D5",
+        "statement": "Reproducible source could be mistaken for an installed or complete machine.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Keep OCI/vendoring/platform operation requirements and founder-use evidence open; source packaging proves bytes only and does not deploy."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR147 guarded Foundry, fixed DSL, signed community and measured journeys. Source packaging standalone fixture passes, but guarded build/verify remains unfinished.",
+      "do_nothing": "Leave a falsely reachable build capability and block deployment backcast.",
+      "simplest_viable_alternative": "Reuse existing deterministic packager with explicit published source inventory and one fixed independent rebuild recipe.",
+      "strongest_competing_architecture": "Containerized fully hermetic build and OCI image pipeline.",
+      "reversible_experiment": "Actual guarded bundle creation and independent digest comparison plus source-inventory traversal refusal in CI."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: No available local container runtime; current source bundle pins but does not vendor third-party dependencies. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Available authorized container host and reproducibility/escape tests."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack private-source inclusion, recipe injection, quota ambiguity, omitted sources and deployment overclaim; strengthen every first-pass disadvantage.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "An unrestricted repository read allowance could bundle private host data.",
+        "strengthening_response": "Allow only explicit published owned-source paths; reject traversal, aliases, missing files and hard links. No caller-selected source root in guarded builds."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "A new child recipe could authorize arbitrary code or environment injection.",
+        "strengthening_response": "Allow exact interpreter/module/mode/cwd/environment/scope only. Keep unreviewed providers and source refused; fixed build child installs the same reviewed-code guard."
+      },
+      {
+        "id": "N3",
+        "category": "dependency",
+        "statement": "Larger source archives could exceed a toy file cap or evade resource claims.",
+        "strengthening_response": "Bound each worker file to8MiB, durable stores to64MiB, input to128KiB and returned output to1MiB. State CPU limits are per process, with shared30-second group wall termination."
+      },
+      {
+        "id": "N4",
+        "category": "bureaucracy",
+        "statement": "A stale source inventory could silently omit new machine code.",
+        "strengthening_response": "Commit the actual published source list, test representative newly integrated files and manifest membership, and preserve deliberate refresh as an owned-source change obligation."
+      },
+      {
+        "id": "N5",
+        "category": "overfit",
+        "statement": "Reproducible source could be mistaken for an installed or complete machine.",
+        "strengthening_response": "Keep OCI/vendoring/platform operation requirements and founder-use evidence open; source packaging proves bytes only and does not deploy."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "An unrestricted repository read allowance could bundle private host data. Allow only explicit published owned-source paths; reject traversal, aliases, missing files and hard links. No caller-selected source root in guarded builds.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Any source inventory, child recipe, resource or portability claim change."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "A new child recipe could authorize arbitrary code or environment injection. Allow exact interpreter/module/mode/cwd/environment/scope only. Keep unreviewed providers and source refused; fixed build child installs the same reviewed-code guard.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Any source inventory, child recipe, resource or portability claim change."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Larger source archives could exceed a toy file cap or evade resource claims. Bound each worker file to8MiB, durable stores to64MiB, input to128KiB and returned output to1MiB. State CPU limits are per process, with shared30-second group wall termination.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Any source inventory, child recipe, resource or portability claim change."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "A stale source inventory could silently omit new machine code. Commit the actual published source list, test representative newly integrated files and manifest membership, and preserve deliberate refresh as an owned-source change obligation.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Any source inventory, child recipe, resource or portability claim change."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Reproducible source could be mistaken for an installed or complete machine. Keep OCI/vendoring/platform operation requirements and founder-use evidence open; source packaging proves bytes only and does not deploy.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Any source inventory, child recipe, resource or portability claim change."
+      }
+    ],
+    "final_design": "Explicit published-source read inventory, fixed independent build child, exact recipe/environment/scope and bounded files/state; no arbitrary-code or deployment claim.",
+    "residual_risks": [
+      {
+        "risk": "An unrestricted repository read allowance could bundle private host data.",
+        "mitigation": "Allow only explicit published owned-source paths; reject traversal, aliases, missing files and hard links. No caller-selected source root in guarded builds.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Every next owned-source increment or changed host."
+      },
+      {
+        "risk": "A new child recipe could authorize arbitrary code or environment injection.",
+        "mitigation": "Allow exact interpreter/module/mode/cwd/environment/scope only. Keep unreviewed providers and source refused; fixed build child installs the same reviewed-code guard.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Every next owned-source increment or changed host."
+      },
+      {
+        "risk": "Larger source archives could exceed a toy file cap or evade resource claims.",
+        "mitigation": "Bound each worker file to8MiB, durable stores to64MiB, input to128KiB and returned output to1MiB. State CPU limits are per process, with shared30-second group wall termination.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Every next owned-source increment or changed host."
+      },
+      {
+        "risk": "A stale source inventory could silently omit new machine code.",
+        "mitigation": "Commit the actual published source list, test representative newly integrated files and manifest membership, and preserve deliberate refresh as an owned-source change obligation.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Every next owned-source increment or changed host."
+      },
+      {
+        "risk": "Reproducible source could be mistaken for an installed or complete machine.",
+        "mitigation": "Keep OCI/vendoring/platform operation requirements and founder-use evidence open; source packaging proves bytes only and does not deploy.",
+        "owner": "GREG/packaging maintainers",
+        "review_trigger": "Every next owned-source increment or changed host."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call this a hermetic container build or installed full machine.",
+        "rationale": "Third-party packages remain version-pinned, not vendored; filesystem guard is reviewed Python protection only.",
+        "evidence_threshold": "Working OCI host, vendored dependency/installation evidence and hostile containment tests.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any stronger packaging or completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add fixed packaging recipe and explicit owned-source read contract on PR147; preserve all55 requirements and current authority.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert packaging delta and preserve its source/evidence.",
+      "Existing immutable source archives remain exportable; leave general source/provider refusal in place."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unlisted private path bundled.",
+    "Forged source root/recipe/environment accepted.",
+    "Quotas or STOP/process-group termination bypassed."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

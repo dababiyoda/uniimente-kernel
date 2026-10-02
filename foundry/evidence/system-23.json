@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 23",
+ "name": "Distributed-systems controls",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "compensated": true,
+  "exactly_once": true,
+  "resumed_without_duplicate": true,
+  "retry_schedule": [
+   0.5,
+   2.0
+  ]
+ },
+ "result_sha256": "sha256:e0ecfbd6034666ecf27fe393e1025ab9929ca522e6ba3f3fe2547124e90b15cd",
+ "system": 23
+}

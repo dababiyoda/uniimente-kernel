@@ -1,0 +1,386 @@
+{
+  "decision_id": "FM-FIRST-PARTY-MCP-20261001",
+  "title": "Restore reviewed first-party MCP to retained machine state",
+  "problem": "Existing official MCP stdio is frozen by blanket child refusal and points at a nested store instead of the integrated machine.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR147 guarded packaging and receipt-bound private pages; arbitrary providers remain refused.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "One fixed first-party read-only MCP child over existing canonical staged stores.",
+      "advantages": [
+        "Advances or tests the preserved machine interface."
+      ],
+      "disadvantages": [
+        "First-party proof does not supply general-provider confinement."
+      ],
+      "revival_evidence": "Changed host, requirements or stronger measured interoperability evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "General providers in a container/microVM; unavailable here, preserved as a requirement.",
+      "advantages": [
+        "Advances or tests the preserved machine interface."
+      ],
+      "disadvantages": [
+        "First-party proof does not supply general-provider confinement."
+      ],
+      "revival_evidence": "Changed host, requirements or stronger measured interoperability evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Real SDK/stdio state query, tool enumeration, write refusal and substitution tests in CI.",
+      "advantages": [
+        "Advances or tests the preserved machine interface."
+      ],
+      "disadvantages": [
+        "First-party proof does not supply general-provider confinement."
+      ],
+      "revival_evidence": "Changed host, requirements or stronger measured interoperability evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave a reviewed buildable machine interface disconnected.",
+    "advantages": [
+      "No added child recipe."
+    ],
+    "disadvantages": [
+      "Host limitations freeze more machinery than necessary."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Only the exact first-party module maps to a fixed child mode; reject unknown providers and env keys; no credentials or arbitrary source. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Provider/module/env substitution could authorize unreviewed code."
+      ],
+      "evidence_refs": [
+        "foundry/systems/mcp_gateway.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_mcp_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Use exactly the parent-installed canonical staged store in gateway and guard; validate scope on both ends. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Nested or widened stores could break machine integration."
+      ],
+      "evidence_refs": [
+        "foundry/systems/mcp_gateway.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_mcp_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Expose QUERY_OPS only, test attempted production refusal, and discard the full query stage. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Read-only calls could reach write operations or retain query writes."
+      ],
+      "evidence_refs": [
+        "foundry/systems/mcp_gateway.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_mcp_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Retain inherited seccomp, per-process limits,30-second group wall budget and group termination; anonymous socketpair only supports asyncio. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Descendants could survive revocation or acquire network access."
+      ],
+      "evidence_refs": [
+        "foundry/systems/mcp_gateway.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_mcp_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Scoped proof could redefine the full provider horizon."
+      ],
+      "evidence_refs": [
+        "foundry/systems/mcp_gateway.py",
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_mcp_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Parent filter permits anonymous socketpair but denies network sockets",
+      "tier": "other",
+      "reference": "tools/offline_test.py",
+      "finding": "Reviewed filter/probe supports asyncio self-pipe without socket/connect/bind/listen egress."
+    },
+    {
+      "claim": "Guarded packaging integrated",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36932965542",
+      "finding": "All six jobs passed atc559d5c1; not evidence for the new MCP delta."
+    },
+    {
+      "claim": "First-party MCP integration test executes",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36934826793",
+      "finding": "1693 tests passed/9 skipped; two tests failed: obsolete blanket-refusal expectation and wrapped refusal-message assertion. Actual first-party retained-media query/list and provider substitution tests passed. No acceptance claim for failed head."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "First-party stdio establishes arbitrary-provider isolation",
+      "tier": "other",
+      "reference": "foundry/completion.yaml",
+      "finding": "It does not. Unknown providers still require OS filesystem confinement; reviewed dependencies remain assumptions."
+    },
+    {
+      "claim": "MCP delta is fully verified",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_foundry_systems.py:608;tests/unit/test_greg_mcp_worker.py:28",
+      "finding": "Failed at52e78780. Update intentional first-party expectation and explicitly refuse write ops before SDK wrapping; retain negative test and fresh CI."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Reach retained machine state through official first-party MCP, then automatically continue.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Real protocol",
+        "amplified_value": "Use official SDK/stdio rather than registration or mock."
+      },
+      {
+        "id": "A2",
+        "statement": "Joined state",
+        "amplified_value": "Read the same media/other system stores that GREG produced."
+      },
+      {
+        "id": "A3",
+        "statement": "No new effect authority",
+        "amplified_value": "First-party read-only operations retain query disposal."
+      },
+      {
+        "id": "A4",
+        "statement": "Bounded lifetime",
+        "amplified_value": "Reuse guarded parent resource and STOP handling."
+      },
+      {
+        "id": "A5",
+        "statement": "Preserved destination",
+        "amplified_value": "General providers remain unfinished intent."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Provider/module/env substitution could authorize unreviewed code.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Only the exact first-party module maps to a fixed child mode; reject unknown providers and env keys; no credentials or arbitrary source."
+      },
+      {
+        "id": "D2",
+        "statement": "Nested or widened stores could break machine integration.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Use exactly the parent-installed canonical staged store in gateway and guard; validate scope on both ends."
+      },
+      {
+        "id": "D3",
+        "statement": "Read-only calls could reach write operations or retain query writes.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Expose QUERY_OPS only, test attempted production refusal, and discard the full query stage."
+      },
+      {
+        "id": "D4",
+        "statement": "Descendants could survive revocation or acquire network access.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Retain inherited seccomp, per-process limits,30-second group wall budget and group termination; anonymous socketpair only supports asyncio."
+      },
+      {
+        "id": "D5",
+        "statement": "Scoped proof could redefine the full provider horizon.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR147 guarded packaging and receipt-bound private pages; arbitrary providers remain refused.",
+      "do_nothing": "Leave a reviewed buildable machine interface disconnected.",
+      "simplest_viable_alternative": "One fixed first-party read-only MCP child over existing canonical staged stores.",
+      "strongest_competing_architecture": "General providers in a container/microVM; unavailable here, preserved as a requirement.",
+      "reversible_experiment": "Real SDK/stdio state query, tool enumeration, write refusal and substitution tests in CI."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: First-party proof does not supply general-provider confinement. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Changed host, requirements or stronger measured interoperability evidence."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack substitution, widened/nested state, write-through queries, surviving descendants and narrowing; strengthen every disadvantage.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "Provider/module/env substitution could authorize unreviewed code.",
+        "strengthening_response": "Only the exact first-party module maps to a fixed child mode; reject unknown providers and env keys; no credentials or arbitrary source."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "Nested or widened stores could break machine integration.",
+        "strengthening_response": "Use exactly the parent-installed canonical staged store in gateway and guard; validate scope on both ends."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Read-only calls could reach write operations or retain query writes.",
+        "strengthening_response": "Expose QUERY_OPS only, test attempted production refusal, and discard the full query stage."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Descendants could survive revocation or acquire network access.",
+        "strengthening_response": "Retain inherited seccomp, per-process limits,30-second group wall budget and group termination; anonymous socketpair only supports asyncio."
+      },
+      {
+        "id": "N5",
+        "category": "overfit",
+        "statement": "Scoped proof could redefine the full provider horizon.",
+        "strengthening_response": "Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Provider/module/env substitution could authorize unreviewed code. Only the exact first-party module maps to a fixed child mode; reject unknown providers and env keys; no credentials or arbitrary source.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any provider, recipe, env, scope or completion claim change."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Nested or widened stores could break machine integration. Use exactly the parent-installed canonical staged store in gateway and guard; validate scope on both ends.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any provider, recipe, env, scope or completion claim change."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Read-only calls could reach write operations or retain query writes. Expose QUERY_OPS only, test attempted production refusal, and discard the full query stage.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any provider, recipe, env, scope or completion claim change."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Descendants could survive revocation or acquire network access. Retain inherited seccomp, per-process limits,30-second group wall budget and group termination; anonymous socketpair only supports asyncio.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any provider, recipe, env, scope or completion claim change."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Scoped proof could redefine the full provider horizon. Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any provider, recipe, env, scope or completion claim change."
+      }
+    ],
+    "final_design": "One exact first-party MCP stdio child, canonical staged stores, scrubbed scope-bound environment and existing worker/lifetime protection.",
+    "residual_risks": [
+      {
+        "risk": "Provider/module/env substitution could authorize unreviewed code.",
+        "mitigation": "Only the exact first-party module maps to a fixed child mode; reject unknown providers and env keys; no credentials or arbitrary source.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "Nested or widened stores could break machine integration.",
+        "mitigation": "Use exactly the parent-installed canonical staged store in gateway and guard; validate scope on both ends.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "Read-only calls could reach write operations or retain query writes.",
+        "mitigation": "Expose QUERY_OPS only, test attempted production refusal, and discard the full query stage.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "Descendants could survive revocation or acquire network access.",
+        "mitigation": "Retain inherited seccomp, per-process limits,30-second group wall budget and group termination; anonymous socketpair only supports asyncio.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "Scoped proof could redefine the full provider horizon.",
+        "mitigation": "Keep system28 PARTIAL, preserve general-provider/remote requirements and continue the next unblocked dependency.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Next increment or changed SDK/host."
+      },
+      {
+        "risk": "SDK exception groups can obscure refusal reasons",
+        "mitigation": "Preflight exact first-party tool and QUERY_OP membership in the reviewed gateway; retain production-refusal test.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "SDK error shape or tool surface changes."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not generalize to arbitrary provider isolation or remote interoperability.",
+        "rationale": "Python guard protects reviewed code only; host containment remains absent.",
+        "evidence_threshold": "OS confinement plus provider-specific escape/lifetime/protocol tests.",
+        "owner": "GREG/MCP maintainers",
+        "review_trigger": "Any new provider or stronger claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add only the fixed first-party MCP recipe on PR147; preserve original gateway/server and system28 PARTIAL; no main write, activation or remote contact.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert MCP delta; preserve original sources and evidence.",
+      "Keep general provider refusal and canonical query disposal."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unreviewed module/env/scope accepted.",
+    "MCP reaches a write op or retains query writes.",
+    "Descendants outlive STOP or network filter is weakened."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 46",
+ "name": "Backup and disaster recovery",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "files": 3,
+  "ledger_head_equal": true,
+  "needs_from_founder": [
+   "device_ed25519.pem"
+  ],
+  "overwrite_refused": true,
+  "private_key_not_packed": true
+ },
+ "result_sha256": "sha256:3938fd9800ba33abbfd074fc4f3d494858d5c7fe7e56765072f0ea6fb33a8558",
+ "system": 46
+}

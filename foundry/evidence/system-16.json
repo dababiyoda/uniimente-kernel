@@ -1,0 +1,88 @@
+{
+ "command": "python -m foundry.completion --run 16",
+ "name": "CI/CD systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "blocked": {
+   "adversarial": [
+    "BLOCKED",
+    "adversarial"
+   ],
+   "canary_inelastic_market": [
+    "BLOCKED",
+    "canary"
+   ],
+   "margin_floor": [
+    "BLOCKED",
+    "simulation"
+   ],
+   "replay_regression": [
+    "BLOCKED",
+    "replay"
+   ],
+   "wrong_test": [
+    "BLOCKED",
+    "tests"
+   ]
+  },
+  "committed": {
+   "language": "pricing",
+   "source": "max(base_price * units * (1 - 0.05 * customer_tier), cost_per_unit * units * 1.1)"
+  },
+  "promoted": "PROMOTED",
+  "stage_results": {
+   "adversarial": {
+    "fuzzed": 300
+   },
+   "canary": {
+    "canary_cases": 46,
+    "canary_margin": 210.61,
+    "control_margin": 189.57,
+    "market": "emulated"
+   },
+   "ratification": {
+    "ratified_by": "ed25519:fe812c12f3ab4ce6ac5db69ac352f906"
+   },
+   "replay": {
+    "intended_changes": 0,
+    "replayed": 40
+   },
+   "simulation": {
+    "current_expected_margin": 12558.0,
+    "expected_margin": 12851.91
+   },
+   "spec": {
+    "cases": 1,
+    "language": "pricing"
+   },
+   "tests": {
+    "passed": 1
+   },
+   "verification": {
+    "result_hash": "deebb881b0e99eda",
+    "verified_cases": 41
+   }
+  },
+  "stages_passed": [
+   "spec",
+   "tests",
+   "replay",
+   "adversarial",
+   "simulation",
+   "canary",
+   "verification",
+   "ratification"
+  ],
+  "version": 1,
+  "without_ratification": [
+   "BLOCKED",
+   "ratification"
+  ],
+  "wrong_ratification": [
+   "BLOCKED",
+   "ratification"
+  ]
+ },
+ "result_sha256": "sha256:44c08f22a5ecf2e87225aef979d4c4de5992d0fa205208e14d448002876b9400",
+ "system": 16
+}

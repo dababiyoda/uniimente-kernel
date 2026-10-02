@@ -1,0 +1,36 @@
+{
+ "command": "python -m foundry.completion --run 27",
+ "name": "RPC and service discovery",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "down_excluded": true,
+  "grants_access": false,
+  "ranked": [
+   [
+    "dale.assess_fast",
+    200
+   ],
+   [
+    "wmi.assess",
+    900
+   ]
+  ],
+  "refusals": {
+   "forged_signature": "manifest signature does not verify against the enrolled key",
+   "rekey_without_founder": "organ:wmi is already enrolled with a different key; re-enrollment is a founder act",
+   "replayed_sequence": "sequence 1 is not newer than 1 (replay or rollback)",
+   "unenrolled_organ": "organ 'organ:rogue' is not enrolled",
+   "untyped_contract": "x names untyped contracts ['made-up']"
+  },
+  "stale_after_ttl": 0,
+  "static_entries": 27,
+  "static_seeded": [
+   "spiffe://uniimente.internal/organ/daleobanks",
+   "spiffe://uniimente.internal/organ/constitutional-controller",
+   "spiffe://uniimente.internal/organ/wealthmachine"
+  ],
+  "use_without_grant": "refused"
+ },
+ "result_sha256": "sha256:8843abdfda642a49d67fdf3d058f5944cc04e0c5b14dea397e1fa506affd1d45",
+ "system": 27
+}

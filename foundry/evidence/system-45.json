@@ -1,0 +1,49 @@
+{
+ "command": "python -m foundry.completion --run 45",
+ "name": "Security information and event management",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "derived_rule": "derived.identity.1",
+  "duplicate_rule_refused": true,
+  "false_positive_recorded": 2,
+  "rule_versions": [
+   [
+    1,
+    "incident identity.burst: forged founder commands: key not ours"
+   ]
+  ],
+  "week1_alerts": [
+   [
+    "credential",
+    "credential.secret_refused"
+   ],
+   [
+    "identity",
+    "identity.burst"
+   ],
+   [
+    "network",
+    "network.outside_scope"
+   ],
+   [
+    "outcome",
+    "outcome.refuted_streak"
+   ],
+   [
+    "spend",
+    "spend.spike"
+   ]
+  ],
+  "week2_single_forgery_after_learning": [
+   [
+    "derived.identity.1",
+    [
+     "e250"
+    ]
+   ]
+  ],
+  "week2_single_forgery_before_learning": []
+ },
+ "result_sha256": "sha256:7dd05bffacebb09220955572738268ef49d58d950051fd40484b37cd5b8b7a5d",
+ "system": 45
+}

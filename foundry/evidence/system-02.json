@@ -1,0 +1,19 @@
+{
+ "command": "python -m foundry.completion --run 2",
+ "name": "Restricted DSLs",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "budget": 800,
+  "price": 392.0,
+  "refused": {
+   "attribute": true,
+   "import": true,
+   "lambda": true,
+   "negative_price": true,
+   "over_ceiling": true,
+   "undeclared": true
+  }
+ },
+ "result_sha256": "sha256:df13b2da150f0f6c911a7d4c35708e57c85f415a7f4ab5e7b76648843759740c",
+ "system": 2
+}

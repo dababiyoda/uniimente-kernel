@@ -1,0 +1,14 @@
+{
+  "authority_created": false,
+  "authority_ref": "sha256:91747b70db60a175df3ef3d95796cb945ea14eb505d7244a1b026f5195024248",
+  "grant_id": "35e9d8a7-3dbe-4b41-be85-1eb8ced06b47",
+  "max_budget_usd": 3.0,
+  "mission_id": "m:work-add-a-read-only-function-compu",
+  "order": "add-a-read-only-function-compu",
+  "order_digest": "sha256:90647604a4c2aa19fbd04109e8a44dd900bb2dab0700ecc0d769ea2ae4dcf9ce",
+  "provider": "claude-code",
+  "push_rights": false,
+  "secrets": "none",
+  "timeout_seconds": 1200,
+  "workspace": "/tmp/greg-hands/body/workspace/m_work-add-a-read-only-function-compu/work-orders/add-a-read-only-function-compu/repo"
+}

@@ -41,6 +41,8 @@ NOTE = re.compile(r"\b(note|write down|remember)\b", re.I)
 SHA256 = re.compile(r"\b([0-9a-fA-F]{64})\b")
 WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{1,7})\s+words?\b", re.I)
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
+CODE_WORK = re.compile(r"^\s*(?:improve|change|fix|modify|update|extend)\s+(?:the\s+)?(?P<name>[\w.-]+)"
+                       r"(?:\s+(?:repo|repository|code(?:base)?))?\s*[:\u2014-]\s*(?P<objective>\S.*)$", re.I | re.S)
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
 
 
@@ -143,6 +145,8 @@ def _verify_route(text: str, ctx: PlannerContext) -> dict:
 
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
     lowered = text.lower()
+    if (work := CODE_WORK.match(text)):    # software-development work: a temporary coding worker, appraised
+        return _code_work_route(text, work, ctx)
     if SHA256.search(text):                 # a published digest: verification, never a repository brief
         return _verify_route(text, ctx)
     if (limit := WORD_LIMIT.search(text)) and FILE_PATH.search(text):
@@ -178,6 +182,23 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
         spec["founder_expression"] = text
         return _proposal(spec, "template:workspace-note")
     return None
+
+
+def _code_work_route(text: str, work, ctx: PlannerContext) -> dict:
+    name = work.group("name").lower()
+    repos = ctx.repos()
+    chosen = {n: r for n, r in repos.items() if n.lower() == name}
+    if not chosen and name in ("greg", "uniimente", "kernel"):   # GREG's own code lives in the Kernel repository
+        chosen = {n: r for n, r in repos.items() if (Path(r["path"]) / "greg" / "body.py").is_file()}
+    if len(chosen) != 1:
+        return {"status": "NEEDS_INPUT", "origin": "template:code-change",
+                "questions": [f"Which repository is {work.group('name')!r}? Visible: {', '.join(sorted(repos)) or 'none'}"]}
+    (repo_name, repo), = chosen.items()
+    spec = templates.code_change(repo=repo["path"], objective=work.group("objective").strip(),
+                                 workspace_root=ctx.workspace, founder_expression=text)
+    return _proposal(spec, "template:code-change",
+                     notes=[f"repository: {repo_name}", "a temporary coding worker edits a private clone; GREG "
+                            "appraises independently; spend capped at the signed budget; no push or merge"])
 
 
 # -- model route ------------------------------------------------------------------------

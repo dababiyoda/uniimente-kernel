@@ -331,3 +331,146 @@ def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
 
 
 TEMPLATES['cognition'] = cognitive_problem
+
+
+# -- execution fabric: work orders, computer use, DALEOBANKS ----------------------------------
+
+def _slug(text: str, limit: int = 40) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:limit] or "work"
+
+
+def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
+                tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
+                timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
+                workspace_root: Path | None = None) -> dict:
+    """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
+
+    1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
+       clone; GREG collects the diff, runs acceptance with no network and commits on ``greg/<order>``.
+    2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
+       checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
+       founder decision, never acceptance.
+    3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
+       the appraised result. Push, PR and merge stay with the existing authorized path.
+    """
+    order = order or _slug(objective, 30)
+    repo_path = str(Path(repo).expanduser().resolve())
+    allowed_paths = allowed_paths or ["greg/*", "tests/unit/*"]
+    acceptance = {"run_changed_tests": True, "max_changed_files": 8}
+    if tests:
+        acceptance["tests"] = tests
+    handoff = f"handoff-{order}.md"
+    mission_id = f"m:work-{order}"
+    handoff_path = str(Path(workspace_root or ".").resolve() / mission_id.replace(":", "_") / handoff)
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or f"Improve {Path(repo_path).name}: {objective}",
+        "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; "
+                           "promotion remains with the authorized repository path",
+        "priority": 55, "closure": {"kind": "bounded"},
+        "constraints": ["the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+                        "protected constitutional surfaces cannot be accepted without a founder decision"],
+        "success_checks": [
+            {"check_id": "work_accepted", "description": "independent appraisal ACCEPTED the work order",
+             "sensor": {"capability": "worker.appraise", "params": {"order": order}, "target": f"work:{order}"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}},
+            {"check_id": "handoff_written", "description": "the review handoff exists for the founder",
+             "sensor": {"capability": "fs.read", "params": {"path": handoff_path}, "target": f"fs:{handoff}"},
+             "predicate": {"op": "contains", "field": "text", "value": f"greg/{order}"}}],
+        "strategies": [
+            {"action_id": "commission-worker", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "repository", "repo": repo_path, "objective": objective,
+                        "acceptance": acceptance, "allowed_paths": allowed_paths, "provider": provider,
+                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds},
+             "cost_usd": budget_usd, "advances": ["work_accepted"],
+             "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
+             "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"},
+            {"action_id": "write-handoff", "capability": "fs.write", "target": f"workspace:{handoff}",
+             "params": {"relative_path": handoff,
+                        "content": f"# Proposed change ready for review: greg/{order}\n\nIndependently appraised "
+                                   f"ACCEPTED by worker.appraise. Evidence: work-orders/{order}/evidence.json and "
+                                   f"change.patch in this mission workspace. Promotion (push, PR, merge) requires "
+                                   "the existing authorized path; GREG holds no push or merge authority.\n"},
+             "advances": ["handoff_written"], "requires": ["work_accepted"],
+             "rationale": "continue the parent mission only on an independently accepted result"}],
+        "light_cone": {"capabilities": ["worker.commission", "worker.appraise", "fs.read", "fs.write"],
+                       "targets": [f"work:{order}", f"fs:{handoff}", f"workspace:{handoff}"],
+                       "max_consequence_class": "internal_write", "budget_usd": budget_usd,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
+def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, horizon_days: float = 1,
+                 founder_expression: str | None = None, on_challenge: str = "stop") -> dict:
+    """Bounded computer use: one disposable browser session; the trace sensor re-reads the evidence.
+
+    ``expect`` is a predicate over the ``browser.trace`` output (e.g. an extracted key exists).
+    """
+    from urllib.parse import urlsplit
+    host = urlsplit(url).hostname or ""
+    return {
+        "mission_id": f"m:browse-{_slug(session)}",
+        "founder_expression": founder_expression or f"Operate {host} in a browser: {session}",
+        "intended_effect": "the requested information is retrieved by operating the site, with per-step evidence; "
+                           "consequential steps stop at the authority boundary",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "retrieved", "description": "the session's retained trace holds the requested result",
+             "sensor": {"capability": "browser.trace", "params": {"session": session}, "target": f"web:{host}"},
+             "predicate": expect}],
+        "strategies": [
+            {"action_id": "operate-browser", "capability": "browser.session", "target": f"web:{host}",
+             "params": {"url": url, "steps": steps, "session": session, "on_challenge": on_challenge},
+             "advances": ["retrieved"], "rationale": "structured DOM control in a disposable real browser"}],
+        "light_cone": {"capabilities": ["browser.session", "browser.trace"], "targets": [f"web:{host}"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
+
+    The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
+    figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
+    external_contact: outside this cone, so it stops for a founder decision; even when approved,
+    DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+    """
+    source = str(Path(source).expanduser().resolve())
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    draft_name = "post.txt"
+    return {
+        "mission_id": f"m:media-{_slug(order)}",
+        "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
+        "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
+                           "gate; the truthful outcome (posted or blocked) returns to GREG",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+             "sensor": {"capability": "daleobanks.verify",
+                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                   "draft": f"work-orders/{order}/work/{draft_name}"},
+                        "target": "daleobanks:verify"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+            {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
+             "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
+             "predicate": {"op": "equals", "field": "requested", "value": True}}],
+        "strategies": [
+            {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "document", "inputs": [source],
+                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                                     "stating only facts present in the input; every number must appear in the input.",
+                        "acceptance": {"output": draft_name,
+                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
+                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": ["draft_verified"],
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+            {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
+             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
+             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+                       "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
+                       "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }

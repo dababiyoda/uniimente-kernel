@@ -1,0 +1,16 @@
+{
+ "source": "GREG browser.session pypi-z3-release (retained trace)",
+ "trace_sha256_of_file": null,
+ "observed_at": "2026-10-02T00:12:18Z",
+ "url": "https://pypi.org/project/z3-solver/#history",
+ "facts": {
+  "package_header": "z3-solver 5.1.0.0",
+  "recent_versions": [
+   "5.1.0.0",
+   "5.0.0.0",
+   "4.16.0.0",
+   "4.15.8.0",
+   "4.15.7.0"
+  ]
+ }
+}

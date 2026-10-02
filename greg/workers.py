@@ -205,6 +205,19 @@ def _parse_claim(text: str) -> dict | None:
     return None
 
 
+def _die_with_body():
+    """Linux: the worker receives SIGKILL if the GREG body dies, so no orphan keeps working or spending.
+
+    Found by the interruption proof: a SIGKILLed body left its Claude Code worker running under init.
+    macOS has no parent-death signal; there the stale lease plus reconciliation still prevent reuse of an
+    unfinished run, but an orphan can continue until its own budget or timeout ends (stated limit).
+    """
+    os.setsid()
+    if sys.platform.startswith("linux"):
+        import ctypes
+        ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
+
+
 def _worker_env() -> dict:
     """The worker needs its own provider's auth/network settings; it never gets GREG's state."""
     env = {k: v for k, v in os.environ.items() if not k.startswith(("GREG_", "UNIIMENTE_"))}
@@ -250,7 +263,8 @@ class ClaudeCodeWorker:
         started = time.monotonic()
         try:
             proc = self.runner(self.argv(order), input=worker_prompt(order), capture_output=True, text=True,
-                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env())
+                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(),
+                               preexec_fn=_die_with_body)
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped")
@@ -295,7 +309,7 @@ class CliAgentWorker:
         started = time.monotonic()
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
-                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env())
+                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(), preexec_fn=_die_with_body)
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped")

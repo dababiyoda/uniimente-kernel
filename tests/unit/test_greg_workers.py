@@ -161,3 +161,32 @@ def test_work_order_contract_refuses_unbounded_orders(tmp_path, params, message)
                             manifest=BUILTINS["worker.commission"][0])
     with pytest.raises(workers.WorkerError, match=message):
         workers.WorkOrder.from_params(params, ctx)
+
+
+def test_a_worker_dies_with_its_body(tmp_path):
+    """Regression from the interruption proof: a SIGKILLed body left its worker running under init."""
+    import os, signal, sys, time
+    if not sys.platform.startswith("linux"):
+        pytest.skip("parent-death signal is Linux-only (stated limit)")
+    marker = tmp_path / "child.pid"
+    body = subprocess.Popen([sys.executable, "-c", (
+        "import subprocess, sys, time\n"
+        "from greg.workers import _die_with_body\n"
+        f"p = subprocess.Popen(['sleep', '60'], preexec_fn=_die_with_body)\n"
+        f"open({str(marker)!r}, 'w').write(str(p.pid))\n"
+        "time.sleep(60)\n")], cwd=Path(__file__).resolve().parents[2])
+    for _ in range(100):
+        if marker.exists() and marker.read_text():
+            break
+        time.sleep(0.05)
+    child = int(marker.read_text())
+    os.kill(body.pid, signal.SIGKILL)
+    body.wait()
+    for _ in range(100):
+        try:
+            os.kill(child, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.05)
+    os.kill(child, signal.SIGKILL)
+    pytest.fail("worker outlived its body")

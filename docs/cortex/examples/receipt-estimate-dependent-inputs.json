@@ -40,6 +40,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support estimate"
@@ -115,6 +127,22 @@
     },
     {
       "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
@@ -133,7 +161,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.291448,
+    "seconds": 0.340602,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -270,7 +298,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.28818,
+          "seconds": 0.335961,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -417,12 +445,12 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:40c0c47b4e9ff4848aacd410827d1dc339ede32eef27794e03c5009d9ec258a9",
+  "receipt_id": "sha256:c35186b04e4ba2e369cc025fb4ccf06f40d2b460a13b3c3a8f7d60ed223f5c0a",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.estimation.fermi@0.1.0"
@@ -462,8 +490,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {
       "cortex.estimation.fermi@0.1.0": "0.1.0"
     }

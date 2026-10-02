@@ -1,0 +1,17 @@
+{
+  "verifier": "fresh-clone-unit-suite-replication",
+  "ts_utc": "2026-10-02T15:38:28.701715+00:00",
+  "command": "same fresh clone after installing requirements-cognition.txt (sympy 1.14.0, networkx 3.7, scipy 1.18.1, mpmath 1.3.0) and unshallowing history + fetching approved-plan commit 961f6fc5; python -I -m pytest tests/unit -q",
+  "head_commit": "88bc713579e34b27c8e61f16e2ccec231c3f18f7",
+  "tracked_tree": "7014edf46d14d2356fecf0bb2d7e97a58237d464 (pushed branch tip 88bc7135; git ls-tree -r vs local tip fe895fc: empty diff, 975 files)",
+  "exit_code": 1,
+  "passes": [],
+  "skips": [
+    "6 skipped (matches the local v3 record)"
+  ],
+  "failures": [
+    "tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now: git show 3e059c20:constitution/constitution.ucl - subject commit not reachable from the branch history fetched by --unshallow",
+    "tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now: same missing subject commits (3e059c20, 07af5758)",
+    "result line: 2 failed, 1822 passed, 6 skipped in 428.20s"
+  ]
+}

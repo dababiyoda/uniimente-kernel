@@ -29,15 +29,17 @@ from .genome import IntelligenceRegistry, seed_registry
 from . import outcomes
 from .organs import adversarial, cpsat
 from .organs.cpsat import CpSatOrgan
+from .organs.continuous import ContinuousOptimizationOrgan
 from .organs.deterrence import DeterrenceOrgan
 from .organs.estimation import EstimationOrgan
 from .organs.evidence_causal import EvidenceCausalOrgan
 from .organs.formal import FormalOrgan
+from .organs.graphsearch import GraphSearchOrgan
 from .organs.schedule_extraction import ScheduleExtractionOrgan
 from .organs import schedule_extraction
 from .organs.semantic import SemanticOrgan
 
-POLICY_VERSION = "cortex-route-policy/0.2.1"
+POLICY_VERSION = "cortex-route-policy/0.3.0"
 BUDGET_POLICY = "cortex-thinking-budget/0.1"
 RECEIPT_SCHEMA = "cortex-receipt/0.2"
 FORMAL = "cortex.formal.z3@0.2.0"
@@ -47,13 +49,21 @@ SEMANTIC = "cortex.semantic@0.1.0"
 DETERRENCE = "cortex.deterrence.accountability@0.1.0"
 CPSAT = cpsat.ORGAN_ID
 EXTRACT = schedule_extraction.ORGAN_ID
+GRAPH = "cortex.graph.search@0.2.0"
+CONOPT = "cortex.optimization.continuous@0.1.0"
 # Fault-diverse engines behind the one formal_model contract (directive 7C, 14).
 FORMAL_ENGINES = (FORMAL, CPSAT)
+# Routes that spend solver calls (formed-function organs run one isolated engine batch
+# per call, plus one for a follow-up proof); the budget is refused before spending.
+SOLVER_CALLERS = FORMAL_ENGINES + (GRAPH, CONOPT)
 
 # The deterministic route policy lives in _route_parts: formal_model -> Formal,
 # estimation_model -> Fermi, claim -> Evidence/Causal, sources -> Semantic.
 # Policy 0.2: the Formal slot has two engines (Z3, OR-Tools CP-SAT) chosen by
 # _formal_plan after hard eligibility; see that function for the fixed order.
+# Policy 0.3 (issue #117, PR #143 handoff): graph -> the graph.search organ and
+# linear_program -> the continuous-optimization organ; both recruit founder-attached
+# formed functions (Capability Genesis) and accept answers only on GREG's certificate.
 MAX_COMPOSITION = 2
 
 # State -> disposition, before verifier findings and gates can only lower it.
@@ -97,6 +107,11 @@ def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
         parts.append((EXTRACT, "constraint_feasibility"))
     if isinstance(payload.get("estimation_model"), Mapping):
         parts.append((FERMI, "estimate"))
+    graph = payload.get("graph")
+    if isinstance(graph, Mapping):
+        parts.append((GRAPH, "optimization"))
+    if isinstance(payload.get("linear_program"), Mapping):
+        parts.append((CONOPT, "optimization"))
     if isinstance(payload.get("deterrence_model"), Mapping):
         parts.append((DETERRENCE, "strategic"))
     claim = payload.get("claim")
@@ -116,6 +131,8 @@ def _structural_classes(payload: Mapping[str, Any]) -> list[str]:
         out.append("constraint_feasibility")
     if isinstance(payload.get("estimation_model"), Mapping):
         out.append("estimate")
+    if isinstance(payload.get("graph"), Mapping) or isinstance(payload.get("linear_program"), Mapping):
+        out.append("optimization")
     if isinstance(payload.get("deterrence_model"), Mapping):
         out.append("strategic")
     claim = payload.get("claim")
@@ -238,6 +255,8 @@ def _falsifier(result: OrganResult) -> str:
     pc = proof.get("proof_class")
     if answer is None:
         return "no claim asserted; nothing to falsify"
+    if proof.get("falsification"):
+        return proof["falsification"]
     if pc in ("formal", "optimization"):
         kind = (proof.get("structured_model") or {}).get("query", {}).get("kind", "feasibility")
         premises = [p.get("id") for p in proof.get("premises") or []]
@@ -301,7 +320,10 @@ class Cortex:
         self.organs = dict(organs or {FORMAL: FormalOrgan(), CPSAT: CpSatOrgan(), EXTRACT: ScheduleExtractionOrgan(),
                                       FERMI: EstimationOrgan(),
                                       EVIDENCE: EvidenceCausalOrgan(), SEMANTIC: SemanticOrgan(),
-                                      DETERRENCE: DeterrenceOrgan()})
+                                      DETERRENCE: DeterrenceOrgan(),
+                                      # Formed-function organs default to no formed function: recruited they
+                                      # certify, absent they report DEPENDENCY_UNAVAILABLE truthfully.
+                                      GRAPH: GraphSearchOrgan(), CONOPT: ContinuousOptimizationOrgan()})
         self.clock = clock or (lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         self.memory = memory
 
@@ -357,7 +379,7 @@ class Cortex:
             budget_problem = f"planned cost {planned_cost} exceeds {limits.max_cost_usd}"
         elif planned_model_calls > limits.max_model_calls:
             budget_problem = f"route needs {planned_model_calls} model call(s); budget allows {limits.max_model_calls}"
-        elif set(FORMAL_ENGINES) & set(selected) and limits.max_solver_calls < 1:
+        elif set(SOLVER_CALLERS) & set(selected) and limits.max_solver_calls < 1:
             budget_problem = "route needs the solver; solver-call budget is zero"
 
         results: list[OrganResult] = []

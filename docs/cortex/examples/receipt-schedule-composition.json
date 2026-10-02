@@ -46,6 +46,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "not required by this payload"
@@ -125,6 +137,22 @@
       "reasons": []
     },
     {
+      "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support constraint_feasibility"
+      ]
+    },
+    {
       "eligible": true,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": true,
@@ -142,7 +170,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.021768,
+    "seconds": 0.024849,
     "solver_calls": 11,
     "usd": 0.0
   },
@@ -295,7 +323,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.000691,
+          "seconds": 0.000732,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -643,7 +671,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.015314,
+          "seconds": 0.01676,
           "solver_calls": 11,
           "usd": 0.0
         },
@@ -1691,7 +1719,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:827a46a667b6cc0461af495d6147e49019d53e6182c80b01200f3e99902a055d",
+  "receipt_id": "sha256:e785b2a70f6558eed4672e7f17ef80f6c9f0c9a6053b0a410a7a4f8e47912c4e",
   "route": {
     "attempts": [],
     "composition": true,
@@ -1701,14 +1729,14 @@
         "cortex.optimization.cpsat@0.2.0",
         "cortex.formal.z3@0.2.0"
       ],
-      "policy": "cortex-route-policy/0.2.1",
+      "policy": "cortex-route-policy/0.3.0",
       "policy_order": [
         "cortex.optimization.cpsat@0.2.0",
         "cortex.formal.z3@0.2.0"
       ],
       "query_kind": "optimize"
     },
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.extraction.schedule@0.1.0",
@@ -1761,8 +1789,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {
       "cortex.extraction.schedule@0.1.0": "0.1.0",
       "cortex.optimization.cpsat@0.2.0": "0.2.0"

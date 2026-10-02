@@ -174,6 +174,16 @@ class IntelligenceRegistry:
     def __init__(self, genomes: GenomeRegistry | None = None):
         self.genomes = genomes if genomes is not None else GenomeRegistry()
         self._profiles: dict[str, CognitiveProfile] = {}
+        self._withheld: dict[str, str] = {}
+
+    def withhold(self, key: str, reason: str) -> None:
+        """Make a registered organ ineligible without changing its profile.
+
+        The host's lifecycle authority (GREG's CapabilityRegistry: founder detach,
+        quarantine) is projected here; the cortex never decides attachment itself."""
+        if key not in self._profiles:
+            raise GenomeError(f"cannot withhold unregistered {key}")
+        self._withheld[key] = reason
 
     def register(self, genome: IntelligenceGenome) -> IntelligenceGenome:
         problems = genome.validate()
@@ -208,6 +218,8 @@ class IntelligenceRegistry:
                 continue
             reasons: list[str] = []
             name, _, version = key.partition("@")
+            if key in self._withheld:
+                reasons.append(f"withheld by host registry: {self._withheld[key]}")
             if not profile.enabled:
                 reasons.append(f"disabled family ({profile.lifecycle})")
             elif profile.lifecycle not in ROUTABLE_LIFECYCLE:
@@ -319,6 +331,99 @@ SEED_ORGANS = {
         failures=("unfaithful encoding", "unverified premises", "solver outage"),
         acceptance=["SAT/UNSAT agrees with requester witnesses; UNSAT carries a core"],
         benchmarks=("tests/evidence/cortex-seed-v0.1/heldout-results.json#routed_seed",)),
+    "cortex.optimization.cpsat": dict(
+        # 0.2.0 (cortex 0.2.0, directive 2026-09-30 section 7C): implemented. It supersedes the
+        # reserved, disabled 0.1.0 profile of the same family, which stays registered as
+        # SUPERSEDED lineage. Same formal_model contract as cortex.formal.z3: two fault-diverse
+        # engines behind one input contract.
+        version="0.2.0",
+        description="OR-Tools CP-SAT feasibility, entailment and optimization on the same structured model as "
+                    "the Z3 organ; every assignment re-checked by a solver-independent evaluator.",
+        role="solver", layer="solver_macro_cognitive",
+        geometries=("deductive_logical", "constraint_feasibility", "optimization"),
+        proofs=("formal", "optimization"),
+        observations=("structured model", "obligations", "witnesses", "premises"),
+        state="one CP-SAT model per solve; single worker, fixed seed", update="none",
+        recruitment="recruited for integer/boolean models inside its declared linear fragment; first for "
+                    "optimization queries",
+        inhibition="inhibited for real-valued or unbounded variables, non-linear products, numeric if-then-else",
+        evidence=("structured model", "enumerated obligations", "finite integer bounds"), ceiling="external_contact",
+        diversity="cp_sat_lazy_clause_generation", deps=("solver:ortools-cpsat",), lifecycle="SANDBOXED",
+        enabled=True, contraindications=(),
+        abstain=("formalization incomplete", "solver unavailable", "timeout", "outside fragment"),
+        failures=("unfaithful encoding", "unverified premises", "FEASIBLE without optimality proof",
+                  "core not minimal"),
+        lineage=("greg/cognition/solvers.py#optimization (PR #140)", "cortex reserved family 0.1.0 (PR #141)"),
+        acceptance=["every returned assignment satisfies every source constraint under python re-evaluation",
+                    "FEASIBLE is never reported as OPTIMAL", "agrees with z3 on the frozen parity cases"]),
+    "cortex.graph.search": dict(
+        # 0.2.0 (cortex 0.3.0, issue #117, PR #143 handoff): implemented. It supersedes the reserved,
+        # disabled 0.1.0 profile of the same family, which stays registered as SUPERSEDED lineage.
+        # The organ recruits the formed functions Capability Genesis qualified (graph.shortest_path,
+        # graph.max_flow); it owns no engine and trusts none.
+        version="0.2.0",
+        description="Shortest paths and maximum flow through the founder-attached formed functions; "
+                    "every engine answer accepted only on GREG's own exact certificate (feasible "
+                    "potentials / no residual path with an equal-capacity cut).",
+        role="solver", layer="solver_macro_cognitive", geometries=("optimization",),
+        proofs=("optimization",), observations=("graph payload", "mechanism card", "certificate"),
+        state="one isolated package run per call; package digest re-pinned before every call",
+        update="none",
+        recruitment="recruited when a graph payload names shortest_path or max_flow",
+        inhibition="inhibited when the formed function is detached or absent, the package changed since "
+                   "qualification, or the certificate fails",
+        evidence=("founder-attached formed function", "GREG certificate on every answer"),
+        ceiling="external_contact", diversity="graph_search",
+        deps=("formed:graph.shortest_path", "formed:graph.max_flow"), lifecycle="SANDBOXED", enabled=True,
+        abstain=("formed function detached or absent", "package digest changed since qualification",
+                 "certificate failed", "outside the function's competence envelope"),
+        failures=("engine bug caught by the certificate", "package changed since qualification",
+                  "malformed graph"),
+        lineage=("cortex reserved family 0.1.0", "PR #143 capability genesis", "issue #117"),
+        acceptance=["no answer without a GREG certificate that shares no code with the engine",
+                    "a lying engine yields INCONCLUSIVE with the claim withheld",
+                    "a detached formed function yields DEPENDENCY_UNAVAILABLE, a genesis trigger"]),
+    "cortex.optimization.continuous": dict(
+        # 0.1.0 (cortex 0.3.0, issue #117, PR #143 handoff): continuous linear programs via the formed
+        # lp.optimize function. Complements cortex.optimization.cpsat, whose fragment is integer-only.
+        description="Continuous linear programs through the founder-attached formed lp.optimize function; "
+                    "primal and dual feasibility with zero duality gap on every optimum; engine claims of "
+                    "infeasible/unbounded are proved by GREG's follow-up solves or withheld.",
+        role="solver", layer="solver_macro_cognitive", geometries=("optimization",),
+        proofs=("optimization",), observations=("linear program payload", "mechanism card",
+                                                "duality certificate"),
+        state="one isolated package run per call; package digest re-pinned before every call",
+        update="none",
+        recruitment="recruited when a linear_program payload is supplied",
+        inhibition="inhibited when the formed function is detached or absent, the package changed since "
+                   "qualification, or the certificate fails",
+        evidence=("founder-attached formed function", "GREG duality certificate on every answer"),
+        ceiling="external_contact", diversity="continuous_linear_programming",
+        deps=("formed:lp.optimize",), lifecycle="SANDBOXED", enabled=True,
+        abstain=("formed function detached or absent", "package digest changed since qualification",
+                 "certificate failed", "negative claim too large to prove here"),
+        failures=("engine bug caught by the certificate", "package changed since qualification",
+                  "malformed program"),
+        lineage=("PR #143 capability genesis", "issue #117"),
+        acceptance=["no optimum without a duality certificate checked in exact arithmetic",
+                    "infeasible/unbounded claims are proved by follow-up solves or withheld",
+                    "a detached formed function yields DEPENDENCY_UNAVAILABLE, a genesis trigger"]),
+    "cortex.extraction.schedule": dict(
+        # 0.1.0 (cortex 0.2.0, directive section 7 seed composition): words -> declarative model.
+        description="Bounded scheduling request in words -> declarative constraints: controlled-language parser "
+                    "first (no model); founder-selected local model only for free text; token audit independent "
+                    "of the extractor.",
+        role="solver", layer="solver_macro_cognitive", geometries=("constraint_feasibility", "optimization"),
+        proofs=("extraction",), observations=("request text",),
+        state="stateless per request", update="none",
+        recruitment="recruited when a schedule_request is supplied without a formal_model",
+        inhibition="inhibited by any unreadable sentence or a failed token audit",
+        evidence=("request text",), ceiling="internal_write", diversity="controlled_grammar",
+        deps=("python-stdlib",), lifecycle="SANDBOXED", enabled=True,
+        abstain=("sentence outside the grammar without a selected model", "token audit failure"),
+        failures=("misread quantity", "dropped constraint", "model extraction invented a fact"),
+        lineage=("directive 2026-09-30 section 7: seed composition",),
+        acceptance=["every sentence parses or the request abstains; numbers and identifiers round-trip"]),
     "cortex.evidence_causal": dict(
         description="Evidence assessment and gated causal estimation.",
         role="solver", layer="solver_macro_cognitive",
@@ -461,11 +566,16 @@ def seed_registry(genomes: GenomeRegistry | None = None, *, include_reserved: bo
                               {"problem": "cortex problem"}, {"result": "typed proof artifact"},
                               [f"must beat the simpler baseline on its native geometry ({diversity})"],
                               ["not implemented"])
+            # A reserved family later implemented as a seed organ stays registered as SUPERSEDED
+            # lineage: "SUPERSEDED does not mean deleted. It means a stronger default exists."
+            superseded = name in SEED_ORGANS
             profile = _profile(f"{name}@0.1.0", role="reserved", layer=layer, geometries=geometries,
                                proofs=(proof,), observations=("reserved",), state="none",
                                update="none", recruitment="never in v0.1", inhibition="disabled",
                                evidence=("reserved",), ceiling="read_only", diversity=diversity,
-                               deps=(), lifecycle="SPECIFIED", enabled=False,
-                               abstain=("disabled family",), failures=("not implemented",), bio=bio)
+                               deps=(), lifecycle="SUPERSEDED" if superseded else "SPECIFIED", enabled=False,
+                               abstain=("disabled family",), failures=("not implemented",), bio=bio,
+                               lineage=(f"superseded by {name}@{SEED_ORGANS[name].get('version', '0.1.0')}",)
+                               if superseded else ())
             registry.register(IntelligenceGenome(cap, profile))
     return registry

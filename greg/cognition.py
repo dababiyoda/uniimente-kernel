@@ -89,7 +89,7 @@ def _worker(mode, payload, *, timeout, network=False, stop_check=None):
         raise
     if proc.returncode:
         raise CapabilityError('bounded worker failed: ' + stderr.decode(errors='replace')[-300:])
-    if len(stdout) > 131072:
+    if len(stdout) > (524288 if mode == 'cortex' else 131072):
         raise CapabilityError('worker output ceiling exceeded')
     return json.loads(stdout)
 
@@ -148,6 +148,9 @@ def evaluate_problem(p, *, stop_check=None):
 def solve(params, ctx):
     if ctx.journal is None or not ctx.authority_ref or not ctx.grant_id:
         raise CapabilityError('canonical mission authority and journal required before computation')
+    from greg import cortex_bridge
+    if cortex_bridge.is_cortex(params.get('problem')):
+        return cortex_bridge.solve(params['problem'], ctx)
     p = validate_problem(params['problem'])
     key = [ctx.mission_id, p['problem_id']]
     for event in ctx.journal.replay('cognition.receipt'):
@@ -217,6 +220,10 @@ def settle(params, ctx):
 def status(params, ctx):
     if ctx.journal is None:
         raise CapabilityError('canonical journal required')
+    from greg import cortex_bridge
+    signed = cortex_bridge.signed_problem(ctx, params['problem_id'])
+    if cortex_bridge.is_cortex(signed):
+        return cortex_bridge.status(signed, ctx)
     rows = [e.payload for e in ctx.journal.replay('cognition.receipt')
             if e.payload['mission_id'] == ctx.mission_id and e.payload['problem_id'] == params['problem_id']]
     if not rows:

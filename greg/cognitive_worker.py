@@ -4,6 +4,9 @@ import sys
 
 
 def main():
+    if sys.argv[1] == 'cortex':
+        from greg.cortex_worker import main as cortex_main
+        return cortex_main()
     # Native solver address space includes mapped libraries. Bound CPU and address space.
     import resource
     resource.setrlimit(resource.RLIMIT_CPU, (12, 12))

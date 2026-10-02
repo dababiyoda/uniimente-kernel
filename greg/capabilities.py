@@ -229,6 +229,7 @@ class InvocationContext:
     grant_id: str = ""
     policy_version: str = ""
     stop_check: object | None = None
+    registry: object | None = None   # existing body projection; never supplied by a cognitive payload
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)

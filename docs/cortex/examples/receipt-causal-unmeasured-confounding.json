@@ -41,6 +41,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support causal"
@@ -113,6 +125,22 @@
     },
     {
       "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
@@ -131,7 +159,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.001265,
+    "seconds": 0.001752,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -256,7 +284,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 4.1e-05,
+          "seconds": 3.2e-05,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -353,12 +381,12 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:013af137e893d41134516cbd74bad9eaf9e578e1bbbc80a32eab703fc6700517",
+  "receipt_id": "sha256:f3030efad8845252af5485cd39ef5579db24a0e1729e9f89e1f7bcc5f5d971e2",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.evidence_causal@0.1.0"
@@ -391,8 +419,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {
       "cortex.evidence_causal@0.1.0": "0.1.0"
     }

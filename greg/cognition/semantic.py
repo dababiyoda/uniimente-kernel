@@ -11,18 +11,25 @@ RESPONSE_SCHEMA = {"type":"object", "additionalProperties":False,
         "uncertainty":{"type":"string","minLength":1}}}
 
 
-def validate_semantic(answer, sources):
-    if not isinstance(answer, dict) or set(answer) != {"claims", "contradictions", "uncertainty"}:
-        raise CognitionError("semantic response fields invalid")
+def validate_sources(sources):
+    """Validate evidence before optional inference spends any model budget."""
     if not isinstance(sources, list) or not sources or len(sources) > 32:
         raise CognitionError("bounded sources required")
     index = {}
     for source in sources:
-        if not isinstance(source, dict) or not isinstance(source.get("id"), str) or not isinstance(source.get("text"), str):
+        if (not isinstance(source, dict) or not isinstance(source.get("id"), str)
+                or not 1 <= len(source["id"]) <= 128 or not isinstance(source.get("text"), str)):
             raise CognitionError("source identity and text required")
         if source["id"] in index or not source["text"]:
             raise CognitionError("duplicate or empty source")
         index[source["id"]] = source["text"]
+    return index
+
+
+def validate_semantic(answer, sources):
+    if not isinstance(answer, dict) or set(answer) != {"claims", "contradictions", "uncertainty"}:
+        raise CognitionError("semantic response fields invalid")
+    index = validate_sources(sources)
     if not isinstance(answer["claims"], list) or not 1 <= len(answer["claims"]) <= 32:
         raise CognitionError("bounded nonempty claims required")
     for claim in answer["claims"]:

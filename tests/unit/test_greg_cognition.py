@@ -43,12 +43,12 @@ def request(operation, data, **kw):
 def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
     from greg.cognition.catalog import SEED_FAMILIES
     if family not in SEED_FAMILIES:
-        receipt = reason(request(operation, data), registry=registry_view())
+        receipt = reason(request(operation, data, geometry={"latency_limit": 10}), registry=registry_view())
         assert receipt["abstention_state"] == "CAPABILITY_DEFICIT"
         return
     if operation == "polynomial":
         pytest.importorskip("sympy", reason="optional P5 symbolic dependency not acquired for this seed")
-    receipt = reason(request(operation, data), registry=registry_view())
+    receipt = reason(request(operation, data, geometry={"latency_limit": 10}), registry=registry_view())
     assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
     assert receipt["method"] == "cognition." + family
     assert receipt["output"][field] == expected

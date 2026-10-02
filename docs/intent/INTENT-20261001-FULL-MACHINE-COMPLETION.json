@@ -19,14 +19,31 @@
     "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
     "greg/path.json",
     "greg/cognition/cortex.py",
-    "greg/appraisal.py"
+    "greg/appraisal.py",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    "greg/cognition/budget.py",
+    "greg/cognition/advantage.py",
+    "greg/foundry_bridge.py",
+    "greg/cognition/network.py",
+    "greg/cognition/linear.py",
+    "greg/planner.py",
+    "greg/chromebook/install.sh"
   ],
-  "tests": [],
+  "tests": [
+    "tests/integration/test_cognition_budget_authority.py",
+    "tests/integration/test_greg_native_artifact_appraisal.py",
+    "tests/integration/test_greg_advantage_appraisal.py",
+    "tests/integration/test_greg_foundry_extraction.py",
+    "tests/unit/test_greg_status_capabilities.py"
+  ],
   "evidence_refs": [
-    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "tests/evidence/cognition-seed-20261001/full-machine-guidance/kernel-propagation.json",
+    "tests/evidence/cognition-seed-20261001/full-machine-guidance/organ-propagation.json"
   ],
   "failure_condition": "An intermediate proof or unresolved founder-use milestone silently becomes a stopping condition for unrelated achievable machinery.",
-  "next_gate": "Integrate and verify pending shared budget, proof appraisal and proposal review; immediately continue full-machine dependencies.",
+  "next_gate": "Verify integrated native proof/budget/proposal and extended Foundry/graph/LP/interface behavior, freeze/run v4, continue remaining full-machine owner dependencies automatically; physical founder acceptance remains item-specific.",
   "owner": "GREG and organ maintainers; Alfonso remains root human authority",
   "review_trigger": "Every completed increment, next requirement selection, PR handoff, genuine blocker or founder correction",
   "named_skill": "Unavailable in supplied skill catalog and previously searched workspace. Explicit correction and existing recursive collaboration protocol applied; skill not represented as run."

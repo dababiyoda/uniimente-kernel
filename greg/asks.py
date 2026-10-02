@@ -301,6 +301,9 @@ ANSWER_ONLY_RECORDS = {
                   "when the deliverable is observed.",
     "ACCOUNT_ACCESS": "Your answer is only recorded; it grants nothing. Only `greg secret set` on the body gives "
                       "GREG a credential.",
+    "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attachment requires a separate signed "
+                         "CAPABILITY_ATTACH command from the founder console's Attach button or the body CLI; "
+                         "a phone decision cannot grant root attachment authority.",
 }
 
 

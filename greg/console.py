@@ -146,6 +146,20 @@ class Console:
                 self.proposals.pop(old)
         return pid
 
+    def attach(self, request_id: str, capability_id: str) -> Path:
+        """Sign the existing attach command for a current VERIFIED candidate of an open ask.
+
+        Lineage: PR143, greg/console.py. A decision answer, stale evidence or a detached
+        descriptor cannot substitute for the separate founder signature checked by Body.
+        """
+        if self.key is None:
+            raise PermissionError("this console has no founder key; attachment requires the founder signature")
+        snapshot = status(self.home)
+        request = next((r for r in snapshot["decisions_required"] if r["request_id"] == request_id), {})
+        if capability_id not in {c["capability_id"] for c in _attachable(request, snapshot["capabilities"])}:
+            raise ValueError("that capability is not a current verified candidate of an open capability ask")
+        return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
+
     def sign_proposal(self, pid: str) -> Path:
         self._refresh_transport()
         with self.lock:
@@ -175,7 +189,20 @@ def _page(title: str, body: str, *, refresh: bool = False) -> bytes:
             ).encode()
 
 
-def _ask_details(r: dict) -> str:
+def _attachable(r: dict, capabilities=()) -> list[dict]:
+    """Join canonical open-ask evidence to current registry state; neither grants authority."""
+    if r.get("kind") != "CAPABILITY_ATTACH":
+        return []
+    evidence = r.get("evidence")
+    registered = evidence.get("registered", []) if isinstance(evidence, dict) else []
+    if not isinstance(registered, list):
+        return []
+    current = {c["capability_id"]: c for c in capabilities if isinstance(c, dict) and c.get("state") == "VERIFIED"}
+    return [current[c["capability_id"]] for c in registered if isinstance(c, dict)
+            and c.get("state") == "VERIFIED" and c.get("capability_id") in current]
+
+
+def _ask_details(r: dict, capabilities=()) -> str:
     """Section 60 on the page: what each option costs and does, how sure GREG is, what it needs."""
     parts = []
     if r.get("wording_withheld"):
@@ -191,6 +218,11 @@ def _ask_details(r: dict) -> str:
                                          for o in r["options"]) + "</table>")
     if r.get("uncertainty"):
         parts.append("<span class=muted>Uncertainty: " + _e(r["uncertainty"]) + "</span>")
+    for candidate in _attachable(r, capabilities):
+        parts.append("<br><b>Verified candidate " + _e(candidate["capability_id"]) + "</b> · version "
+                     + _e(candidate.get("version")) + " · " + _e(candidate.get("description"))
+                     + "<br><span class=muted>Attachment makes the existing method available; it grants no mission "
+                       "or effect authority. The result remains limited to its declared evidence scope.</span>")
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
@@ -247,8 +279,13 @@ def render_home(console: Console) -> bytes:
                              "It happened", disabled=not can) + " " +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_not_executed"},
                              "It did not happen", cls="secondary", disabled=not can))
+            actions += "".join(" " + _form(console, "/attach", {"request_id": r["request_id"],
+                                                                "capability_id": candidate["capability_id"]},
+                                           f"Attach {candidate['capability_id']}", disabled=not can,
+                                           confirm=f"Sign CAPABILITY_ATTACH for {candidate['capability_id']}?")
+                               for candidate in _attachable(r, st["capabilities"]))
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
-                        f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
+                        f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r, st['capabilities'])}</td>"
                         f"<td>{actions}</td></tr>")
         out.append("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
     closures = [r for r in vepmc["missions"]]
@@ -273,13 +310,18 @@ def render_home(console: Console) -> bytes:
     if snap.get("cognitive"):
         cards = []
         for answer in snap["cognitive"]:
+            review = answer.get("proposal_review")
+            review_text = ("<p>Proposal review: " + _e('; '.join(name.replace('_', ' ') + ': ' + str(state)
+                            for name, state in review['obligations'].items())) + "</p><p>Institutional acceptance: " +
+                           _e(review['acceptance']) + " · Options for review: " + _e(', '.join(review['options_for_review'])) +
+                           "</p><p>" + _e(review['next_step']) + "</p>") if review else ""
             cards.append("<section><h2>" + _e(answer["problem_id"]) + "</h2><p>Method: " + _e(answer["method"]) +
                          " · Result: " + _e(answer["outcome_state"]) + "</p><p>" + _e(answer["selection_rationale"]) +
                          "</p><pre>" + _e(json.dumps(answer["output"], ensure_ascii=False)) + "</pre><p>Evidence: " +
                          _e(answer["proof_class"]) + " · Receipt: " + _e(answer["receipt_id"]) + "</p><p>Uncertainty: " +
                          _e(answer["uncertainty"]) + "</p><p>Time: " + _e(answer["latency"]) + " seconds · Cost: $" +
                          _e(answer["money_cost"]) + "</p><p>Next permitted step: " +
-                         _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p></section>")
+                         _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p>" + review_text + "</section>")
         out.extend(cards)
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
@@ -315,6 +357,14 @@ def render_proposal(console: Console, pid: str) -> bytes:
     out.append(f"<section><h2>{_e(spec['intended_effect'])}</h2><p class=muted>{_e(spec['mission_id'])} · "
                f"{_e(summary['closure'])}</p><ul>" + "".join(f"<li>{_e(n)}</li>" for n in p.get("notes", []))
                + "</ul></section>")
+    if p.get("origin") in ("template:network-in-words", "template:plan-in-words"):
+        # Review the restricted translation beside the source words, without
+        # making raw JSON a prerequisite to signing a computation-only mission.
+        reading = "".join(f"<li>{_e(line)}</li>" for line in spec.get("constraints", [])
+                          if line.startswith(("Coverage:", "Unit scope:", "Clause ")))
+        out.append("<section><h2>Check GREG's reading</h2><p>Compare every condition with your request before "
+                   "signing. This computes the supplied model; real-world suitability still needs evidence."
+                   f"</p><ul>{reading}</ul></section>")
     out.append("<section><h2>What signing lets GREG do</h2><table>"
                f"<tr><th>Without asking</th><td>{'<br>'.join(_e(x) for x in summary['may_do_without_asking'])}</td></tr>"
                f"<tr><th>Must ask you first</th><td>{'<br>'.join(_e(x) for x in summary['must_ask_you_first']) or '—'}</td></tr>"
@@ -423,6 +473,9 @@ def make_handler(console: Console):
                     target = console.sign("DECISION", {"request_id": form["request_id"], "answer": form["answer"],
                                                        "reason": "decided in the GREG console"})
                     console.flash.append(f"Decision signed: {target.name}")
+                elif path == "/attach":
+                    target = console.attach(form.get("request_id", ""), form.get("capability_id", ""))
+                    console.flash.append(f"Attach signed: {target.name}")
                 elif path == "/accept":
                     console.sign("CRITIQUE", {"target_event_id": form["event_id"], "verdict": "accept",
                                               "evidence_type": "founder_judgment",

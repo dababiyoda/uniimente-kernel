@@ -11,6 +11,14 @@
 # uses sudo, and grants GREG no capability or permission. Designation names this
 # machine as your first body; it is accepted by the running body, not by this script.
 #
+# Optional reasoning packages are installed only when the person running this
+# script selects --with-engines or --with-expanded-engines. Exact reviewed pins
+# and binary wheels are used; failure is reported without pretending the engine
+# is available. Package installation never attaches a capability, starts a model
+# server, downloads weights or grants a mission new authority.
+# Mechanism lineage: PR #143 @ 7105a7c, optional binary-wheel install and doctor
+# metadata probe; adapted to opt-in pinned recipes rather than broad defaults.
+#
 # Ported mechanisms (INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE): Python 3.11+
 # selection and a durable greg command come from the Mac runbook repairs in PR #122
 # (commit ea95ebb); the command is a wrapper on PATH instead of a shell alias.
@@ -28,6 +36,7 @@ SERVICE="yes"
 SKIP_DEPS=0
 NO_PASSPHRASE=0
 ALLOW_OTHER_LINUX=0
+ENGINES="none"
 
 usage() {
   cat <<'EOF'
@@ -41,6 +50,9 @@ Usage: bash greg/chromebook/install.sh [options]
   --python PATH         a specific Python 3.11+ interpreter
   --no-service          do not install/enable the systemd user service (development only)
   --skip-deps           use the chosen interpreter as is, no venv or pip (development only)
+  --with-engines        explicitly install the pinned seed solvers (Z3, OR-Tools, protobuf)
+  --with-expanded-engines  explicitly install the reviewed expanded recipe (includes seed)
+  --no-engines          skip optional reasoning packages (default)
   --no-passphrase       UNPROTECTED founder key (tests only; never for Alfonso's key)
   --allow-other-linux   run outside ChromeOS Linux (the body will not be your Chromebook)
 EOF
@@ -57,6 +69,9 @@ while [ $# -gt 0 ]; do
     --python) PYTHON_CHOICE="$2"; shift 2 ;;
     --no-service) SERVICE="no"; shift ;;
     --skip-deps) SKIP_DEPS=1; shift ;;
+    --with-engines) ENGINES="seed"; shift ;;
+    --with-expanded-engines) ENGINES="expanded"; shift ;;
+    --no-engines) ENGINES="none"; shift ;;
     --no-passphrase) NO_PASSPHRASE=1; shift ;;
     --allow-other-linux) ALLOW_OTHER_LINUX=1; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -66,6 +81,7 @@ done
 
 step() { printf '\n== %s\n' "$*"; }
 fail() { printf 'STOP: %s\n' "$*" >&2; exit "${2:-1}"; }
+[ "$SKIP_DEPS" != 1 ] || [ "$ENGINES" = "none" ] || fail "--skip-deps cannot install engines; omit it to use --with-engines or --with-expanded-engines." 64
 
 step "1/8 This is ChromeOS Linux"
 [ "$(uname -s)" = "Linux" ] || fail "GREG Body 1 runs inside ChromeOS's Linux environment (Settings > About ChromeOS > Developers)." 10
@@ -100,6 +116,24 @@ else
   "$VENV/bin/python" -m pip install --quiet --upgrade pip
   "$VENV/bin/python" -m pip install --quiet -r "$REPO/requirements-dev.txt"
   GREG_PY="$VENV/bin/python"
+  case "$ENGINES" in
+    seed) ENGINE_REQUIREMENTS="$REPO/requirements-cognition.txt" ;;
+    expanded) ENGINE_REQUIREMENTS="$REPO/requirements-cognition-expanded.txt" ;;
+    none) ENGINE_REQUIREMENTS="" ;;
+  esac
+  if [ -n "$ENGINE_REQUIREMENTS" ]; then
+    [ -f "$ENGINE_REQUIREMENTS" ] || fail "The reviewed engine recipe is missing: $ENGINE_REQUIREMENTS" 12
+    # Human-invoked package acquisition only. No native build, silent fallback
+    # to another version, capability attachment, model download or server launch.
+    if "$GREG_PY" -m pip install --quiet --only-binary=:all: -r "$ENGINE_REQUIREMENTS"; then
+      echo "Requested reasoning-package recipe installed; doctor reports dependency and attachment states separately."
+    else
+      echo "WARNING: the requested reasoning-package recipe did not fully install."
+      echo "The basic body remains usable; inspect 'greg doctor --chromebook' before depending on a solver."
+    fi
+  else
+    echo "Optional reasoning packages were not requested (--no-engines is the default)."
+  fi
 fi
 
 step "4/8 The greg command"
@@ -129,6 +163,7 @@ if [ -n "$MISSING" ]; then
   fail "Missing prerequisites: $MISSING" 13
 fi
 echo "Ready."
+printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("engines",{}); print("Reasoning package metadata: %s/%s present. Native qualification and task authority are separate." % (e.get("present",0),e.get("total",0)))'
 
 step "6/8 Body"
 mkdir -p "$READ_ROOT" "$DELIVER_ROOT"

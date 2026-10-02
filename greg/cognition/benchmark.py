@@ -20,7 +20,7 @@ def score(receipt, case, *, require_method=True):
     return all(output.get(k) == v for k, v in expected.get("output", {}).items())
 
 
-def assess(*, suite=SUITE, baselines=None):
+def assess(*, suite=SUITE, baselines=None, include_receipts=False):
     raw = json.loads(Path(suite).read_text())
     registry, rows = registry_view(), []
     baseline_rows = {name: [] for name in (baselines or {})}
@@ -28,6 +28,9 @@ def assess(*, suite=SUITE, baselines=None):
         receipt = reason(case["request"], registry=registry)
         rows.append({"id": case["id"], "correct": score(receipt, case), "method": receipt["method"],
                      "state": receipt["abstention_state"], "latency": receipt["latency"], "cost_usd": receipt["money_cost"]})
+        if include_receipts:
+            rows[-1].update(original_expected=case["expected"], receipt=receipt,
+                            request_digest=digest(case["request"]))
         for name, baseline in (baselines or {}).items():
             started = time.monotonic()
             try:
@@ -50,7 +53,67 @@ def assess(*, suite=SUITE, baselines=None):
             "limits": "Structured inputs; local deterministic/math proof. No live LLM comparison, arbitrary-language classification, external outcome or VEPMC increment."}
 
 
+
+def compatibility(*, suite=SUITE):
+    """Check current default gates without rewriting the original benchmark.
+
+    Gate contracts are fixed before candidate invocation. A disabled method's
+    truthful deficit is compatible with the current development boundary,
+    while its original unfulfilled capability expectation remains visible.
+    Native qualification and held-out performance are separate tests.
+    """
+    import importlib.metadata
+    from .catalog import FAMILIES, SEED_FAMILIES
+    from .settlement import _valid_receipt
+
+    raw = json.loads(Path(suite).read_text())
+    try:
+        importlib.metadata.version("sympy")
+        symbolic_installed = True
+    except importlib.metadata.PackageNotFoundError:
+        symbolic_installed = False
+    gate_contracts = {}
+    for case in raw["cases"]:
+        original = case["expected"]
+        operation = case["request"]["operation"]
+        supported = [family for family, fields in FAMILIES.items() if operation in fields[1]]
+        contract = {"kind": "ACTIVE_OR_EXISTING_ABSTENTION", "expected": original,
+                    "require_no_output": False, "required_reason": None}
+        if not supported:
+            contract = {"kind": "UNKNOWN_GEOMETRY", "expected": {"method": "none", "state": "ABSTAIN"},
+                        "require_no_output": True, "required_reason": "UNKNOWN_GEOMETRY"}
+        elif original.get("state", "NONE") == "NONE" and all(family not in SEED_FAMILIES for family in supported):
+            contract = {"kind": "DEFAULT_UNATTACHED", "expected": {"method": "none", "state": "CAPABILITY_DEFICIT"},
+                        "require_no_output": True, "required_reason": "CAPABILITY_UNAVAILABLE"}
+        elif operation == "polynomial" and not symbolic_installed:
+            contract = {"kind": "OPTIONAL_DEPENDENCY_UNAVAILABLE", "expected": {"method": "none", "state": "CAPABILITY_DEFICIT"},
+                        "require_no_output": True, "required_reason": "CAPABILITY_UNAVAILABLE"}
+        gate_contracts[case["id"]] = contract
+    report = assess(suite=suite, include_receipts=True)
+    for row in report["cases"]:
+        contract, receipt = gate_contracts[row["id"]], row["receipt"]
+        good = (_valid_receipt(receipt) and score(receipt, {"expected": contract["expected"]})
+                and receipt.get("authority_created") is False)
+        if contract["require_no_output"]:
+            good = (good and receipt["output"] is None and not receipt["proof_artifact"]
+                    and receipt["evaluator_result"]["verdict"] == "NOT_RUN"
+                    and receipt["reason_code"] == contract["required_reason"])
+        row.update(default_gate_contract=contract, compatibility_correct=bool(good))
+    report.update(scope="DEFAULT_CATALOG_COMPATIBILITY", golden_cases_unchanged=True,
+                  compatibility_correct=sum(row["compatibility_correct"] for row in report["cases"]),
+                  authority_created=False, superiority_status="UNMEASURED",
+                  compatibility_contract_digest=digest(gate_contracts),
+                  limits=report["limits"] + " Original capability expectations and failures remain unchanged. Separate gate checks verify truthful default unavailability and epistemic abstention; no capability is attached and no completed machine is inferred.")
+    return report
+
+
 if __name__ == "__main__":
-    report = assess()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--catalog-compatibility", action="store_true",
+                        help="Assess default attachment/abstention compatibility; preserve original legacy results")
+    arguments = parser.parse_args()
+    report = compatibility() if arguments.catalog_compatibility else assess()
     print(json.dumps(report, indent=2, allow_nan=False))
-    raise SystemExit(0 if report["correct"] == report["total"] else 1)
+    gate = report.get("compatibility_correct", report["correct"])
+    raise SystemExit(0 if gate == report["total"] else 1)

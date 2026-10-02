@@ -1,0 +1,276 @@
+...F...FFF.FFFFF.FF......FF.....F.F..F.                                  [100%]
+=================================== FAILURES ===================================
+_ test_real_bounded_cognition_selects_different_mechanisms[polynomial-data1-exact-real_roots-expected1] _
+
+operation = 'polynomial', data = {'polynomial': [-4, 0, 1]}, family = 'exact'
+field = 'real_roots', expected = ['-2', '2']
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['dependency unavailable: sympy']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[shortest_path-data5-graph-cost-5] _
+
+operation = 'shortest_path'
+data = {'edges': [['a', 'b', 2], ['b', 'c', 3], ['a', 'c', 9]], 'start': 'a', 'goal': 'c'}
+family = 'graph', field = 'cost', expected = 5
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[state_search-data6-search-path-expected6] _
+
+operation = 'state_search'
+data = {'edges': [['a', 'b', 2], ['b', 'c', 3]], 'start': 'a', 'goal': 'c'}
+family = 'search', field = 'path', expected = ['a', 'b', 'c']
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[beta_update-data7-probabilistic-alpha-4] _
+
+operation = 'beta_update'
+data = {'alpha': 1, 'beta': 1, 'successes': 3, 'failures': 1}
+family = 'probabilistic', field = 'alpha', expected = 4
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[pid-data9-control-correction-3] _
+
+operation = 'pid'
+data = {'observed': 2, 'target': 10, 'kp': 2, 'correction_limit': 3}
+family = 'control', field = 'correction', expected = 3
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[value_of_information-data10-information-net_value-2] _
+
+operation = 'value_of_information'
+data = {'prior_best_value': 10, 'cost': 2, 'posterior_scenarios': [{'probability': 0.5, 'best_value': 16}, {'probability': 0.5, 'best_value': 12}]}
+family = 'information', field = 'net_value', expected = 2
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[simulate-data11-simulation-mean-2] _
+
+operation = 'simulate'
+data = {'seed': 3, 'samples': 10, 'steps': 2, 'step_probability': 1}
+family = 'simulation', field = 'mean', expected = 2
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[minimax-data12-game-value-0] _
+
+operation = 'minimax', data = {'payoffs': [[1, -1], [-1, 1]]}, family = 'game'
+field = 'value', expected = 0
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[anomalies-data13-pattern-anomalies-expected13] _
+
+operation = 'anomalies'
+data = {'observations': [0, 0, 0, 0, 0, 10], 'threshold': 2}, family = 'pattern'
+field = 'anomalies', expected = [5]
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[mdp-data15-sequential-values-expected15] _
+
+operation = 'mdp'
+data = {'transitions': {'s': {'stay': {'s': 1}}}, 'rewards': {'s': {'stay': 2}}, 'horizon': 3}
+family = 'sequential', field = 'values', expected = {'s': 6}
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_ test_real_bounded_cognition_selects_different_mechanisms[quorum-data16-collective-choice-a] _
+
+operation = 'quorum'
+data = {'observations': [{'observer_id': '0', 'independence_group': '0', 'choice': 'a', 'weight': 1}, {'observer_id': '1', 'i...group': '1', 'choice': 'a', 'weight': 1}, {'observer_id': '2', 'independence_group': '2', 'choice': 'a', 'weight': 1}]}
+family = 'collective', field = 'choice', expected = 'a'
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['state VERIFIED']
+E       assert 'CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:45: AssertionError
+_________ test_causal_legal_and_normative_questions_have_honest_routes _________
+
+    def test_causal_legal_and_normative_questions_have_honest_routes():
+        r = reason(request("treatment_effect", {"design": "observational", "treated": [4], "control": [2]}), registry=registry_view())
+        assert r["abstention_state"] == "UNIDENTIFIED" and r["output"]["effect"] is None
+        r = reason(request("calculate", {"expression": "1+1"}, geometry={"legal_content": True}), registry=registry_view())
+        assert r["abstention_state"] == "HUMAN_REVIEW_REQUIRED"
+        r = reason(request("human_review", {"participants": ["expert"]}), registry=registry_view())
+>       assert r["abstention_state"] == "HUMAN_REVIEW_REQUIRED"
+E       AssertionError: assert 'CAPABILITY_DEFICIT' == 'HUMAN_REVIEW_REQUIRED'
+E         
+E         - HUMAN_REVIEW_REQUIRED
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:82: AssertionError
+_____ test_missing_model_detached_solver_and_unknown_geometry_are_deficits _____
+
+    def test_missing_model_detached_solver_and_unknown_geometry_are_deficits():
+        registry = registry_view()
+        r = reason(request("interpret", {"text": "choose a strategy"}), registry=registry)
+        assert r["abstention_state"] == "ABSTAIN" and "local model" in r["missing_information"][0]
+        registry.set_state("cognition.exact", "DETACHED")
+        r = reason(request("calculate", {"expression": "1+1"}), registry=registry)
+        assert r["abstention_state"] == "CAPABILITY_DEFICIT" and r["output"] is None
+        r = reason(request("invent_unknown_intelligence", {}), registry=registry)
+>       assert r["abstention_state"] == "CAPABILITY_DEFICIT"
+E       AssertionError: assert 'ABSTAIN' == 'CAPABILITY_DEFICIT'
+E         
+E         - CAPABILITY_DEFICIT
+E         + ABSTAIN
+
+tests/unit/test_greg_cognition.py:93: AssertionError
+____________ test_repeated_correlated_votes_cannot_create_a_quorum _____________
+
+    def test_repeated_correlated_votes_cannot_create_a_quorum():
+        observations = [{"observer_id": str(i), "independence_group": "one-model", "choice": "a", "weight": 1} for i in range(3)]
+        r = reason(request("quorum", {"observations": observations}), registry=registry_view())
+>       assert r["abstention_state"] == "ABSTAIN" and "correlated" in r["missing_information"][0]
+E       AssertionError: assert ('CAPABILITY_DEFICIT' == 'ABSTAIN'
+E         
+E         - ABSTAIN
+E         + CAPABILITY_DEFICIT)
+
+tests/unit/test_greg_cognition.py:123: AssertionError
+__ test_symbolic_and_evolutionary_mechanisms_are_bounded_not_general_genesis ___
+
+    def test_symbolic_and_evolutionary_mechanisms_are_bounded_not_general_genesis():
+        r = reason(request("evolve_vector", {"center": [1], "bounds": [[-2, 2]], "seed": 7, "generations": 10}), registry=registry_view())
+>       assert r["abstention_state"] == "NONE" and r["output"]["fitness"] < .01
+E       AssertionError: assert ('CAPABILITY_DEFICIT' == 'NONE'
+E         
+E         - NONE
+E         + CAPABILITY_DEFICIT)
+
+tests/unit/test_greg_cognition.py:134: AssertionError
+___ test_protection_preserves_vectors_and_requires_authentic_human_authority ___
+
+    def test_protection_preserves_vectors_and_requires_authentic_human_authority():
+        data = {"affected_party": {"affected_party": "pseudonym:1", "immediate_harm": .8, "evidence_at_risk": True},
+                "interventions": [{"id": "hypothetical", "lawful": True, "consent": True,
+                                   "exploit_payoff": 10, "opportunity": .5, "detection_probability": .8,
+                                   "evidence_durability": .9, "accountability_probability": .5, "restitution_cost": 10,
+                                   "consequences": {"rights": .1}}]}
+        r = reason(request("deterrence_model", data), registry=registry_view())
+>       assert r["abstention_state"] == "HUMAN_REVIEW_REQUIRED"
+E       AssertionError: assert 'CAPABILITY_DEFICIT' == 'HUMAN_REVIEW_REQUIRED'
+E         
+E         - HUMAN_REVIEW_REQUIRED
+E         + CAPABILITY_DEFICIT
+
+tests/unit/test_greg_cognition.py:173: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[polynomial-data1-exact-real_roots-expected1]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[shortest_path-data5-graph-cost-5]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[state_search-data6-search-path-expected6]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[beta_update-data7-probabilistic-alpha-4]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[pid-data9-control-correction-3]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[value_of_information-data10-information-net_value-2]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[simulate-data11-simulation-mean-2]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[minimax-data12-game-value-0]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[anomalies-data13-pattern-anomalies-expected13]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[mdp-data15-sequential-values-expected15]
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[quorum-data16-collective-choice-a]
+FAILED tests/unit/test_greg_cognition.py::test_causal_legal_and_normative_questions_have_honest_routes
+FAILED tests/unit/test_greg_cognition.py::test_missing_model_detached_solver_and_unknown_geometry_are_deficits
+FAILED tests/unit/test_greg_cognition.py::test_repeated_correlated_votes_cannot_create_a_quorum
+FAILED tests/unit/test_greg_cognition.py::test_symbolic_and_evolutionary_mechanisms_are_bounded_not_general_genesis
+FAILED tests/unit/test_greg_cognition.py::test_protection_preserves_vectors_and_requires_authentic_human_authority
+16 failed, 23 passed in 6.03s

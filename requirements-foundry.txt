@@ -1,0 +1,3 @@
+# Optional, explicitly installed bounded WebAssembly adapter; no server/download on invocation.
+# Apache-2.0 WITH LLVM-exception; exact wheel/notice/advisory snapshot in foundry/evidence/extraction-20261001/.
+wasmtime==49.0.0

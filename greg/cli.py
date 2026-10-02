@@ -192,6 +192,20 @@ def main(argv=None) -> int:
     ae = ans.add_parser("export", help="write/extend a witness bundle to keep outside GREG (read-only on the ledger)")
     ae.add_argument("--roots", required=True, help="TSA root PEM held by the verifier, not read from the ledger")
     ae.add_argument("--out", required=True, help="witness bundle path outside GREG's home; extended append-only")
+    bk = sub.add_parser("backup", help="encrypted offline body continuity; restore remains blocked pending current authority")
+    bks = bk.add_subparsers(dest="backup_cmd", required=True)
+    be = bks.add_parser("export", help="copy the stopped body to new encrypted off-body files")
+    be.add_argument("--out", required=True); be.add_argument("--checkpoint", required=True)
+    bc = bks.add_parser("checkpoint", help="founder-sign the authoritative stopped source for a restoration nonce")
+    bc.add_argument("--out", required=True); bc.add_argument("--challenge", required=True)
+    for q in (be, bc):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+    br = bks.add_parser("restore", help="create this new body from an encrypted archive; never starts it")
+    br.add_argument("--archive", required=True); br.add_argument("--checkpoint", required=True)
+    bv = bks.add_parser("verify-authority", help="verify a fresh source checkpoint; preserve STOP/PAUSE and do not start")
+    bv.add_argument("--checkpoint", required=True)
+    for q in (br, bv):
+        q.add_argument("--trusted-founder", required=True, help="independently retained root public key hex, never from the archive")
     sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
@@ -231,7 +245,31 @@ def main(argv=None) -> int:
     home = args.home
 
     try:
-        if args.cmd == "init":
+        if args.cmd == "backup":
+            from greg import backup
+            try:
+                if args.backup_cmd in ("export", "checkpoint"):
+                    key = load_founder_key(args.key, _passphrase(args))
+                    if args.backup_cmd == "export":
+                        password = getpass.getpass("backup encryption passphrase (12+ bytes): ").encode()
+                        data = backup.export_backup(home, args.out, args.checkpoint, key, password)
+                    else:
+                        data = backup.checkpoint(home, key, challenge=args.challenge)
+                        backup._write_new(backup._outside(Path(args.out), Path(home).expanduser().resolve()),
+                                          backup._canonical(data))
+                        data = {"checkpoint": args.out, "body_id": data["body_id"], "service_started": False,
+                                "authority_created": False}
+                else:
+                    reference = json.loads(backup._read(Path(args.checkpoint), 16384))
+                    if args.backup_cmd == "restore":
+                        password = getpass.getpass("backup decryption passphrase: ").encode()
+                        data = backup.restore_backup(args.archive, home, password, reference, args.trusted_founder)
+                    else:
+                        data = backup.verify_restored_authority(home, reference, args.trusted_founder)
+            except (backup.BackupError, OSError, ValueError) as exc:
+                raise BodyError(str(exc)) from exc
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
                                        deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
@@ -252,6 +290,13 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target in ("network-in-words", "plan-in-words"):
+                    if not args.text:
+                        raise BodyError(f"{args.target} needs --text with the complete controlled request")
+                    try:
+                        spec = templates.TEMPLATES[args.target](text=args.text)
+                    except ValueError as exc:
+                        raise BodyError(str(exc)) from exc
                 elif args.target == "verify-download":
                     spec = templates.verify_download(file=Path(args.file), sha256=args.sha256,
                                                      workspace_root=Layout(home).workspace)
@@ -480,6 +525,8 @@ def main(argv=None) -> int:
             else:
                 print(json.dumps({"removed": args.name if broker.remove(args.name) else None}, indent=1))
         elif args.cmd == "start":
+            if Layout(home).restore_pending.exists():
+                raise BodyError("restore authority is pending; local start cannot clear the restoration guard or STOP")
             stop = Layout(home).stop_file
             prior = stop.read_text() if stop.exists() else None
             stop.unlink(missing_ok=True)
@@ -494,7 +541,7 @@ def main(argv=None) -> int:
             print(json.dumps(status(home), indent=1, default=str))
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
-            report = chromebook()
+            report = chromebook(home=home)
             print(json.dumps(report, indent=1))
             return 0 if report["ready_for_linux_service"] else 2
         elif args.cmd == "decisions":
@@ -512,6 +559,8 @@ def main(argv=None) -> int:
                 report = morning_projection(home)
             print(json.dumps(report, indent=1, default=str))
         elif args.cmd == "run":
+            if Layout(home).restore_pending.exists():
+                raise BodyError("restore authority is pending; run/clear-stop cannot activate the body")
             if args.clear_stop:
                 Layout(home).stop_file.unlink(missing_ok=True)
             builder = None

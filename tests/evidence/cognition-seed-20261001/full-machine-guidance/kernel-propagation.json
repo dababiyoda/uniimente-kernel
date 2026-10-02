@@ -1,0 +1,627 @@
+{
+  "repository": "dababiyoda/uniimente-kernel",
+  "canonical_commit": "a5b121f9a8cc86c3385445427dd625a3b48eea85",
+  "canonical_pr": 145,
+  "scope": "all 89 open kernel PRs at frozen inventory; bodies preserved + controlling correction appended",
+  "results": [
+    {
+      "number": 11,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:03Z",
+      "head_sha": "88906a576a4e6cac31a81244d685887e517aebce",
+      "recorded_at": "2026-10-01T20:04:03.621109+00:00"
+    },
+    {
+      "number": 12,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:05Z",
+      "head_sha": "f53b975467911a4f224afd6f940ea1f485aa13ce",
+      "recorded_at": "2026-10-01T20:04:06.272525+00:00"
+    },
+    {
+      "number": 13,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:08Z",
+      "head_sha": "b5e58577110d5402353ff5cabe1429576b69ca20",
+      "recorded_at": "2026-10-01T20:04:08.840326+00:00"
+    },
+    {
+      "number": 14,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:10Z",
+      "head_sha": "e55a9da191e191d17488bc18143028053d6ee0ca",
+      "recorded_at": "2026-10-01T20:04:11.042913+00:00"
+    },
+    {
+      "number": 15,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:13Z",
+      "head_sha": "c1deb5f77bda9099b70ea33fbb6aa1efdaf89acc",
+      "recorded_at": "2026-10-01T20:04:13.846907+00:00"
+    },
+    {
+      "number": 16,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:15Z",
+      "head_sha": "3e23cd2572907fed77491af80ab1a918bfce4cd3",
+      "recorded_at": "2026-10-01T20:04:16.233667+00:00"
+    },
+    {
+      "number": 17,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:18Z",
+      "head_sha": "15c7d4908afdcf9044428c67e625e0d97fa1106f",
+      "recorded_at": "2026-10-01T20:04:19.010630+00:00"
+    },
+    {
+      "number": 18,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:20Z",
+      "head_sha": "bec8c74ac0e2ecc416a5176d5711275f5daf483d",
+      "recorded_at": "2026-10-01T20:04:21.351539+00:00"
+    },
+    {
+      "number": 19,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:22Z",
+      "head_sha": "e5a28987c685f49e3f1e3bae984101413c584140",
+      "recorded_at": "2026-10-01T20:04:23.873144+00:00"
+    },
+    {
+      "number": 20,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:25Z",
+      "head_sha": "cf4a63a0f6933d485912c9d62a1623b3b3cf4be3",
+      "recorded_at": "2026-10-01T20:04:26.368848+00:00"
+    },
+    {
+      "number": 21,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:27Z",
+      "head_sha": "5b70e2459f215a64689d31de864d6ee3d84b92e6",
+      "recorded_at": "2026-10-01T20:04:28.320849+00:00"
+    },
+    {
+      "number": 22,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:29Z",
+      "head_sha": "9afd22169587fea25d830dff89eef8ce2af32771",
+      "recorded_at": "2026-10-01T20:04:30.623886+00:00"
+    },
+    {
+      "number": 23,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:32Z",
+      "head_sha": "a9c176ef815a5d8eb0ccb393a491b833fba4a848",
+      "recorded_at": "2026-10-01T20:04:33.351623+00:00"
+    },
+    {
+      "number": 24,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:35Z",
+      "head_sha": "bb1a62e5fb84ba4c591c5e2c5046ee5585197b3a",
+      "recorded_at": "2026-10-01T20:04:35.680732+00:00"
+    },
+    {
+      "number": 25,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:37Z",
+      "head_sha": "640ec9d24d2a282bd062ea0dbcab1baa46758867",
+      "recorded_at": "2026-10-01T20:04:38.175729+00:00"
+    },
+    {
+      "number": 26,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:39Z",
+      "head_sha": "87480072069beb69d02d8e3f8726241f5df04549",
+      "recorded_at": "2026-10-01T20:04:40.589339+00:00"
+    },
+    {
+      "number": 35,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:41Z",
+      "head_sha": "e09c20885176183ccd88fd499d8b431a00ca747c",
+      "recorded_at": "2026-10-01T20:04:42.354973+00:00"
+    },
+    {
+      "number": 44,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:43Z",
+      "head_sha": "1b4ffbc5df11d0e9246a3ee607ef67610e2e9326",
+      "recorded_at": "2026-10-01T20:04:44.606789+00:00"
+    },
+    {
+      "number": 46,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:46Z",
+      "head_sha": "9f88800f5dd57782b0e4bca8c6f6d194cdc7b71d",
+      "recorded_at": "2026-10-01T20:04:47.617530+00:00"
+    },
+    {
+      "number": 51,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:48Z",
+      "head_sha": "db9ce00a8b0da0fcd4694f175601d1254cb446f5",
+      "recorded_at": "2026-10-01T20:04:49.880845+00:00"
+    },
+    {
+      "number": 52,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:51Z",
+      "head_sha": "6fe785cc42f4ba06ba246dfe1bb73899f0cc8cb5",
+      "recorded_at": "2026-10-01T20:04:52.175341+00:00"
+    },
+    {
+      "number": 53,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:53Z",
+      "head_sha": "7a7846559f23682983898975ba89174a99c50c10",
+      "recorded_at": "2026-10-01T20:04:54.876011+00:00"
+    },
+    {
+      "number": 54,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:56Z",
+      "head_sha": "caa7acfd749b3fe6322ef8f25b78a0f9913728e1",
+      "recorded_at": "2026-10-01T20:04:56.901205+00:00"
+    },
+    {
+      "number": 55,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:04:58Z",
+      "head_sha": "e44dbdee61cfef813f236946b7601bb37932cfdb",
+      "recorded_at": "2026-10-01T20:04:58.694006+00:00"
+    },
+    {
+      "number": 56,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:00Z",
+      "head_sha": "dae5578f1b88021bea4a430cece524437c289919",
+      "recorded_at": "2026-10-01T20:05:00.994456+00:00"
+    },
+    {
+      "number": 57,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:02Z",
+      "head_sha": "977fd1f08542a65602a1c4df48e095bffb37c88e",
+      "recorded_at": "2026-10-01T20:05:03.276039+00:00"
+    },
+    {
+      "number": 58,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:04Z",
+      "head_sha": "e2384223cb6b128db585e382b26ae0f277c166f4",
+      "recorded_at": "2026-10-01T20:05:05.339655+00:00"
+    },
+    {
+      "number": 59,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:06Z",
+      "head_sha": "3105c0fa5480365872a3285460cb000dbdfc2f7b",
+      "recorded_at": "2026-10-01T20:05:07.301475+00:00"
+    },
+    {
+      "number": 60,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:08Z",
+      "head_sha": "b5bc990d47c687c298a6a767c4e40b855e97c52e",
+      "recorded_at": "2026-10-01T20:05:09.366035+00:00"
+    },
+    {
+      "number": 62,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:10Z",
+      "head_sha": "1dd43f05d07e6ad838a392f79fa9ff111e9ed068",
+      "recorded_at": "2026-10-01T20:05:11.487805+00:00"
+    },
+    {
+      "number": 63,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:13Z",
+      "head_sha": "a5d0722d3d7602bec1266cf7c79c9f8eaf1cc6d0",
+      "recorded_at": "2026-10-01T20:05:13.872484+00:00"
+    },
+    {
+      "number": 64,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:15Z",
+      "head_sha": "45254207a19ce573abc946d2df3e1d53aa98ccea",
+      "recorded_at": "2026-10-01T20:05:16.052745+00:00"
+    },
+    {
+      "number": 66,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:23Z",
+      "head_sha": "a6f14d344f2ca073fd334a885e5c2bdb921d082e",
+      "recorded_at": "2026-10-01T20:05:23.957130+00:00"
+    },
+    {
+      "number": 68,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:25Z",
+      "head_sha": "ffd9df9d5bfc2d18dab495fcbe6c3b0b95c6ae0d",
+      "recorded_at": "2026-10-01T20:05:25.971015+00:00"
+    },
+    {
+      "number": 70,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:27Z",
+      "head_sha": "c6b3f351d351cc5f5bc32b2c4456be43079ec303",
+      "recorded_at": "2026-10-01T20:05:28.288686+00:00"
+    },
+    {
+      "number": 71,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:29Z",
+      "head_sha": "2221705421eed655e5edcb0608593cdf9d3cd72b",
+      "recorded_at": "2026-10-01T20:05:30.669352+00:00"
+    },
+    {
+      "number": 72,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:32Z",
+      "head_sha": "4648e1c27dc8c65ce2bcbd342ebffb8083f9e0e4",
+      "recorded_at": "2026-10-01T20:05:33.297459+00:00"
+    },
+    {
+      "number": 73,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:35Z",
+      "head_sha": "622d76f6285061212fe1aa14fe3a94d382f687de",
+      "recorded_at": "2026-10-01T20:05:35.926944+00:00"
+    },
+    {
+      "number": 76,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:37Z",
+      "head_sha": "ff54b9cf451971484066ac08c49eb718dfa9ab2e",
+      "recorded_at": "2026-10-01T20:05:38.053901+00:00"
+    },
+    {
+      "number": 77,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:39Z",
+      "head_sha": "02e67603e371fbc3341111b2179ba17f826cb9d5",
+      "recorded_at": "2026-10-01T20:05:40.557209+00:00"
+    },
+    {
+      "number": 78,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:42Z",
+      "head_sha": "5b45be9a22d8836050571398365fc4fd3ad31cf8",
+      "recorded_at": "2026-10-01T20:05:43.021503+00:00"
+    },
+    {
+      "number": 79,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:44Z",
+      "head_sha": "b3bcc4314463b628ad48e48db53eb932fe4ded5b",
+      "recorded_at": "2026-10-01T20:05:45.342844+00:00"
+    },
+    {
+      "number": 81,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:46Z",
+      "head_sha": "69af80db2d2fd6410ba87790a020dfdef16600e9",
+      "recorded_at": "2026-10-01T20:05:47.611158+00:00"
+    },
+    {
+      "number": 83,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:49Z",
+      "head_sha": "8ef0b1ad32b41082355992fa8b066ebfe7104e61",
+      "recorded_at": "2026-10-01T20:05:50.139773+00:00"
+    },
+    {
+      "number": 85,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:51Z",
+      "head_sha": "d611771a38b2679f6f8b5c6c57e819ff0d433b53",
+      "recorded_at": "2026-10-01T20:05:52.645201+00:00"
+    },
+    {
+      "number": 86,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:54Z",
+      "head_sha": "06024204910a0cae1f35937106fef83f94a5e64b",
+      "recorded_at": "2026-10-01T20:05:54.683904+00:00"
+    },
+    {
+      "number": 87,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:55Z",
+      "head_sha": "dfd491d8b34fa963e4902008b5d8dc7690fdde63",
+      "recorded_at": "2026-10-01T20:05:56.454134+00:00"
+    },
+    {
+      "number": 88,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:05:58Z",
+      "head_sha": "3dfe6fd90fcacd11032398327e6fd184ba15a01a",
+      "recorded_at": "2026-10-01T20:05:58.739779+00:00"
+    },
+    {
+      "number": 90,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:00Z",
+      "head_sha": "8c01c800978ca1dde8352359607546b3638e2cf6",
+      "recorded_at": "2026-10-01T20:06:00.710913+00:00"
+    },
+    {
+      "number": 92,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:02Z",
+      "head_sha": "c137e863851f0f7d8dce7bcb060b4e1d5066ea80",
+      "recorded_at": "2026-10-01T20:06:02.810213+00:00"
+    },
+    {
+      "number": 93,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:04Z",
+      "head_sha": "21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
+      "recorded_at": "2026-10-01T20:06:04.848806+00:00"
+    },
+    {
+      "number": 94,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:06Z",
+      "head_sha": "5e2f221b1911309db10de26246065553c1bdcbfc",
+      "recorded_at": "2026-10-01T20:06:07.246560+00:00"
+    },
+    {
+      "number": 95,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:08Z",
+      "head_sha": "8d62edf0fa4744d45e7a750ced2f539d387ffaa4",
+      "recorded_at": "2026-10-01T20:06:09.563734+00:00"
+    },
+    {
+      "number": 97,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:10Z",
+      "head_sha": "ca4ae479485d6636baa1a5f2ddd8542f9eba4423",
+      "recorded_at": "2026-10-01T20:06:11.566711+00:00"
+    },
+    {
+      "number": 101,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:13Z",
+      "head_sha": "d4ee7b6cc37c16479e7122c7809a6e9f3b28cc52",
+      "recorded_at": "2026-10-01T20:06:14.239920+00:00"
+    },
+    {
+      "number": 102,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:15Z",
+      "head_sha": "57b7aa4cace86b43d21fd5cfc2a08c0d1f02a150",
+      "recorded_at": "2026-10-01T20:06:15.906453+00:00"
+    },
+    {
+      "number": 105,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:17Z",
+      "head_sha": "85bc0bf69da4907db77e1b3004f11e0f0d4d32db",
+      "recorded_at": "2026-10-01T20:06:18.541487+00:00"
+    },
+    {
+      "number": 108,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:20Z",
+      "head_sha": "7c24afaac503b321798a6a6ff36453ff39d6e87e",
+      "recorded_at": "2026-10-01T20:06:20.945577+00:00"
+    },
+    {
+      "number": 109,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:22Z",
+      "head_sha": "955f07e62bbea61ffb945667d2c7b04ebf40b7fb",
+      "recorded_at": "2026-10-01T20:06:22.880950+00:00"
+    },
+    {
+      "number": 110,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:24Z",
+      "head_sha": "27c3c2a283237764dec528938b8aaab438debc49",
+      "recorded_at": "2026-10-01T20:06:25.036074+00:00"
+    },
+    {
+      "number": 111,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:26Z",
+      "head_sha": "527153f13d46c65b389f48f94c38a9d17649586b",
+      "recorded_at": "2026-10-01T20:06:27.815504+00:00"
+    },
+    {
+      "number": 113,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:29Z",
+      "head_sha": "51c1374ab2b23ecf6ade765bd448e55f582d3f93",
+      "recorded_at": "2026-10-01T20:06:29.482867+00:00"
+    },
+    {
+      "number": 114,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:30Z",
+      "head_sha": "14b44e5128a18bb00e46e5f5132c1e8b29eac7f9",
+      "recorded_at": "2026-10-01T20:06:31.649458+00:00"
+    },
+    {
+      "number": 115,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:33Z",
+      "head_sha": "6c32edd2450eb44179bd7fc9422a383109ad6feb",
+      "recorded_at": "2026-10-01T20:06:33.890011+00:00"
+    },
+    {
+      "number": 118,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:35Z",
+      "head_sha": "7766b0784198d2669a480c8b62f2f50ece7498c6",
+      "recorded_at": "2026-10-01T20:06:36.220117+00:00"
+    },
+    {
+      "number": 119,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:37Z",
+      "head_sha": "7086a8aaf99668130cc57df7a25f11d0dc6285d2",
+      "recorded_at": "2026-10-01T20:06:38.404152+00:00"
+    },
+    {
+      "number": 120,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:39Z",
+      "head_sha": "19f59b3c87ad8d005c60aec3a9dd2f138b57e682",
+      "recorded_at": "2026-10-01T20:06:40.344999+00:00"
+    },
+    {
+      "number": 121,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:41Z",
+      "head_sha": "cb53196325330ea9e9753a9864dc8d5bf4060acb",
+      "recorded_at": "2026-10-01T20:06:42.337279+00:00"
+    },
+    {
+      "number": 122,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:43Z",
+      "head_sha": "3edbcfe32c2bc1192ddf504e79e03ab929fb7c72",
+      "recorded_at": "2026-10-01T20:06:44.251576+00:00"
+    },
+    {
+      "number": 124,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:45Z",
+      "head_sha": "e6131ff7e0354bfb96902cb60a48e3ce99685475",
+      "recorded_at": "2026-10-01T20:06:46.779745+00:00"
+    },
+    {
+      "number": 125,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:48Z",
+      "head_sha": "e169e57814f2bf09ffde3a53dbeb217973d3eedb",
+      "recorded_at": "2026-10-01T20:06:48.576920+00:00"
+    },
+    {
+      "number": 126,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:50Z",
+      "head_sha": "0097eb55a20e885436fd0c2f70ce75ddcbd94144",
+      "recorded_at": "2026-10-01T20:06:50.955616+00:00"
+    },
+    {
+      "number": 127,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:52Z",
+      "head_sha": "0a99a71ec560423d229d6c70b533361756c5d16f",
+      "recorded_at": "2026-10-01T20:06:52.968281+00:00"
+    },
+    {
+      "number": 128,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:55Z",
+      "head_sha": "03217e41f29423a251fcc60d088fd9dde3136074",
+      "recorded_at": "2026-10-01T20:06:56.025868+00:00"
+    },
+    {
+      "number": 129,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:06:57Z",
+      "head_sha": "4efc58f8b221796689d9a0d5cc0decf67a26f574",
+      "recorded_at": "2026-10-01T20:06:58.680538+00:00"
+    },
+    {
+      "number": 130,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:07:00Z",
+      "head_sha": "e7dac6ffebb9f0fa1162f0c4b39407c9bcd855d3",
+      "recorded_at": "2026-10-01T20:07:01.028034+00:00"
+    },
+    {
+      "number": 131,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:07:02Z",
+      "head_sha": "23cb3d669334519e67cd0aa4952b1e56dc46a3c7",
+      "recorded_at": "2026-10-01T20:07:02.972841+00:00"
+    },
+    {
+      "number": 132,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:07:04Z",
+      "head_sha": "da3d4ac8643ecf6791ffadcac064f8bb1cc6269d",
+      "recorded_at": "2026-10-01T20:07:05.592589+00:00"
+    },
+    {
+      "number": 133,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:07:07Z",
+      "head_sha": "19d30ca888394cac484bd08d359cd6378546767e",
+      "recorded_at": "2026-10-01T20:07:08.326592+00:00"
+    },
+    {
+      "number": 134,
+      "state": "updated",
+      "updated_at": "2026-10-01T20:07:09Z",
+      "head_sha": "1391e04feebb54e183606b6cb89382f67635d175",
+      "recorded_at": "2026-10-01T20:07:10.867754+00:00"
+    },
+    {
+      "number": 137,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:46Z",
+      "head_sha": "3d2bb1762ff709ce74d3053aced060e70d4e6674"
+    },
+    {
+      "number": 138,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:48Z",
+      "head_sha": "11ba6610752c0a313f98441fa66fb154f20357a3"
+    },
+    {
+      "number": 139,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:49Z",
+      "head_sha": "30d162b6016a2edc1a8c2e87cd54aa4ec3609d86"
+    },
+    {
+      "number": 140,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:51Z",
+      "head_sha": "3ced61db403a3d16908c915aef2e6d2acc8eda38"
+    },
+    {
+      "number": 141,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:53Z",
+      "head_sha": "3606c7aaaf92b9ca457752b64845089469988d1f"
+    },
+    {
+      "number": 142,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:54Z",
+      "head_sha": "3de9f950ec49e1f7a320216200004983ee8926b6"
+    },
+    {
+      "number": 143,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:56Z",
+      "head_sha": "7105a7cbd013edd6bce88b9500e2b4477635c912"
+    },
+    {
+      "number": 144,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:58Z",
+      "head_sha": "f83b31da0f3b382ced34c59297f4655b408aed95"
+    },
+    {
+      "number": 145,
+      "state": "updated_connector",
+      "updated_at": "2026-10-01T20:08:59Z",
+      "head_sha": "a5b121f9a8cc86c3385445427dd625a3b48eea85"
+    }
+  ],
+  "completed": 89,
+  "authority_changes": [],
+  "merge_deployment_or_contact": false,
+  "negative_evidence": "GH API token expired after 80 confirmed updates; connector completed remaining 9; private credentials never stored",
+  "inventory_sha256": "7bc03302438cd7bd088e40078abff8eaf0f227a7a257978e42769e71e9653093"
+}

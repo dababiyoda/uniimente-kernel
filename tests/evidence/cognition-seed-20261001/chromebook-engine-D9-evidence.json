@@ -1,0 +1,261 @@
+{
+  "decision_id": "SEED-20261001-D9",
+  "recorded_utc": "2026-10-01T20:30:59.435235+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit_at_capture": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "change_state": "working tree; final root integration commit to follow",
+  "source_pr": {
+    "command": [
+      "gh",
+      "pr",
+      "view",
+      "143",
+      "--repo",
+      "dababiyoda/uniimente-kernel",
+      "--json",
+      "number,url,state,isDraft,headRefName,headRefOid,baseRefName"
+    ],
+    "timestamp_utc": "2026-10-01T20:31:00.110393+00:00",
+    "exit_code": 0,
+    "stdout": "{\"baseRefName\":\"claude/uniimente-greg-reconciliation-39syff\",\"headRefName\":\"claude/greg-seed-genome-build-y43kmg\",\"headRefOid\":\"68b484bb45a681655274c8b23d7722424bb99488\",\"isDraft\":true,\"number\":143,\"state\":\"OPEN\",\"url\":\"https://github.com/dababiyoda/uniimente-kernel/pull/143\"}\n",
+    "stderr": ""
+  },
+  "source_head_read": "7105a7cbd013edd6bce88b9500e2b4477635c912",
+  "source_blobs": [
+    {
+      "path": "greg/chromebook/install.sh",
+      "command": [
+        "git",
+        "show",
+        "7105a7cbd013edd6bce88b9500e2b4477635c912:greg/chromebook/install.sh"
+      ],
+      "timestamp_utc": "2026-10-01T20:30:59.438349+00:00",
+      "exit_code": 0,
+      "content_sha256": "fdee60aeca21df01de16f96f7bdc0075179125d8caadab94e981ab3501884e91",
+      "git_blob": "64645721ca2e402a1a018f239eee3994f14ea1a9"
+    },
+    {
+      "path": "greg/doctor.py",
+      "command": [
+        "git",
+        "show",
+        "7105a7cbd013edd6bce88b9500e2b4477635c912:greg/doctor.py"
+      ],
+      "timestamp_utc": "2026-10-01T20:30:59.443513+00:00",
+      "exit_code": 0,
+      "content_sha256": "f0e8b382f6a2113c6aacd7f58f8e1d330311a94ed22bd0d78630a6e734fc892d",
+      "git_blob": "deea974cc3a24157245193df88b2af0a03ff81d2"
+    },
+    {
+      "path": "requirements-cognition.txt",
+      "command": [
+        "git",
+        "show",
+        "7105a7cbd013edd6bce88b9500e2b4477635c912:requirements-cognition.txt"
+      ],
+      "timestamp_utc": "2026-10-01T20:30:59.448603+00:00",
+      "exit_code": 0,
+      "content_sha256": "df79ba91df38e2060c2d23976a8d34122811d310dd127d883d85a1b675b98f31",
+      "git_blob": "0afad0b95bb66017f0953b69a3f154f0591700b6"
+    },
+    {
+      "path": "tests/unit/test_greg_chromebook_install.py",
+      "command": [
+        "git",
+        "show",
+        "7105a7cbd013edd6bce88b9500e2b4477635c912:tests/unit/test_greg_chromebook_install.py"
+      ],
+      "timestamp_utc": "2026-10-01T20:30:59.454334+00:00",
+      "exit_code": 0,
+      "content_sha256": "5fd027ed3eac19c477503ba52e6f8a959d65abdb7e76457889388c4af2ac4a92",
+      "git_blob": "92035a9d4436a0e81058aa75e212a136733007b0"
+    },
+    {
+      "path": "tests/unit/test_greg_chromebook_doctor.py",
+      "command": [
+        "git",
+        "show",
+        "7105a7cbd013edd6bce88b9500e2b4477635c912:tests/unit/test_greg_chromebook_doctor.py"
+      ],
+      "timestamp_utc": "2026-10-01T20:30:59.458941+00:00",
+      "exit_code": 0,
+      "content_sha256": "f640bea4dcfa67a933d4cb21552b206093c61a6660bc7c7824129b55ad7a32ea",
+      "git_blob": "688704e84ee92b666dbf044aabe31e9a8d7cae6a"
+    }
+  ],
+  "inventory": {
+    "command": [
+      "gh",
+      "api",
+      "--paginate",
+      "repos/dababiyoda/uniimente-kernel/pulls/143/files?per_page=100"
+    ],
+    "timestamp_utc": "2026-10-01T20:31:55.890578+00:00",
+    "exit_code": 0,
+    "file_count": 212,
+    "inventory_sha256": "607d6250cfb8ade5d237f5fd9dbb1d2fa24805827e4136bbad92736ab29e4bcd",
+    "relevant_paths": [
+      "greg/chromebook/install.sh",
+      "greg/doctor.py",
+      "requirements-cognition.txt",
+      "tests/unit/test_greg_chromebook_doctor.py",
+      "tests/unit/test_greg_chromebook_install.py"
+    ],
+    "scope": "All changed-file inventory pages refreshed; latest actual installer/doctor/dependency/test source read. Remaining PR software not independently verified in D9."
+  },
+  "working_tree_sha256": {
+    "greg/chromebook/install.sh": "b3a88254622164cdb2e5e0b71ce114ab04490d4577fe0b875d43836136eff1a8",
+    "greg/doctor.py": "27a3a26a088b4b609207712eb018d05eab2ff2e3f600d13a271d45ed9d5081a7",
+    "greg/cli.py": "edad44fb437c7d070ced7c5e77bfd03307468316585d5e9657465ed4f1e6d0eb",
+    "greg/CHROMEBOOK_FIRST_MISSION.md": "4a43d2ef8690161bbf484b4b522836ad5c7afbc812e32998aee3ce39264688ae",
+    "tests/unit/test_greg_chromebook_install.py": "afc3d1243073d9b7d46517bdb5590d72fc838298b7ee2718ffdb2683e2c7ae06",
+    "tests/unit/test_greg_chromebook_doctor.py": "340fcb0c69d2db53898db2ba6c03975caf85f53fe0579bd8b63ce48acf0be196",
+    "requirements-cognition.txt": "5d8b94c4fa4ecfa3222fae769f61ce6894316e868cc467b2e021600cd6ac8267",
+    "requirements-cognition-expanded.txt": "ce84863a7e2b2eb7139bbf7fd99b58f7d3a296cb8ff0f43ff5269e22246ff843",
+    "docs/collaboration/CHROMEBOOK-D9-ENGINE-READINESS-20261001.md": "54eca0baf1d17dd1b9424daaa279f81245005b4e73a59f3cc9cab07dfa04d96a"
+  },
+  "environment": {
+    "command": [
+      "/workspace/scratch/cortex-patched-venv/bin/python",
+      "-c",
+      "import sys,platform,json;print(json.dumps({\"python\":sys.version,\"platform\":platform.platform(),\"machine\":platform.machine()}))"
+    ],
+    "timestamp_utc": "2026-10-01T20:31:00.423551+00:00",
+    "exit_code": 0,
+    "stdout": "{\"python\": \"3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]\", \"platform\": \"Linux-6.18.44-x86_64-with-glibc2.41\", \"machine\": \"x86_64\"}\n",
+    "stderr": ""
+  },
+  "tests": {
+    "command": [
+      "/workspace/scratch/cortex-patched-venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/unit/test_greg_chromebook_doctor.py",
+      "tests/unit/test_greg_chromebook_install.py",
+      "tests/unit/test_greg_presence.py",
+      "tests/integration/test_greg_chromebook_rehearsal.py"
+    ],
+    "exit_code": 0,
+    "result": "33 passed, 1 skipped in 19.10s",
+    "unedited_log": "chromebook-engine-D9-tests.log",
+    "skip_reason": "supervisord stands in for the systemd user unit; supervisord not available on PATH"
+  },
+  "shell_syntax": {
+    "command": [
+      "bash",
+      "-n",
+      "greg/chromebook/install.sh"
+    ],
+    "timestamp_utc": "2026-10-01T20:31:00.428361+00:00",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "native_read_only_entry": "chromebook-engine-D9-doctor.json",
+  "real_components": [
+    "canonical CLI/body creation and laboratory signed designation in isolated tests",
+    "actual retained signed-detachment projection; before/after file bytes equal",
+    "actual metadata/path and readonly prerequisite doctor in lab environment"
+  ],
+  "fixtures": [
+    "pip and venv command construction intercepted; no package installation evidence from these tests",
+    "mock package metadata in boundary tests"
+  ],
+  "authority_changes": "none; no capability attachment/activation or grant added by package options",
+  "device_verified": false,
+  "body_created_by_readonly_doctor": false,
+  "live_authorized_or_verified": false,
+  "limits": [
+    "Actual Chromebook architecture, resource fit, physical founder mission/restart/reboot/acceptance not tested",
+    "Optional package download/install not executed by D9; root-reviewed laboratory dependency evidence is separately recorded",
+    "No model weights downloaded, model server launched, supervisor/systemd service launched or solver probe executed by D9",
+    "Package presence/declared availability/attachment never establish native task qualification or grant authority"
+  ],
+  "source_latest_head_read": "68b484bb45a681655274c8b23d7722424bb99488",
+  "source_latest_blobs": [
+    {
+      "path": "greg/chromebook/install.sh",
+      "command": [
+        "gh",
+        "api",
+        "repos/dababiyoda/uniimente-kernel/contents/greg/chromebook/install.sh?ref=68b484bb45a681655274c8b23d7722424bb99488"
+      ],
+      "timestamp_utc": "2026-10-01T20:31:53.865718+00:00",
+      "exit_code": 0,
+      "git_blob": "64645721ca2e402a1a018f239eee3994f14ea1a9",
+      "content_sha256": "fdee60aeca21df01de16f96f7bdc0075179125d8caadab94e981ab3501884e91",
+      "identical_to_extracted_source": true
+    },
+    {
+      "path": "greg/doctor.py",
+      "command": [
+        "gh",
+        "api",
+        "repos/dababiyoda/uniimente-kernel/contents/greg/doctor.py?ref=68b484bb45a681655274c8b23d7722424bb99488"
+      ],
+      "timestamp_utc": "2026-10-01T20:31:54.452697+00:00",
+      "exit_code": 0,
+      "git_blob": "deea974cc3a24157245193df88b2af0a03ff81d2",
+      "content_sha256": "f0e8b382f6a2113c6aacd7f58f8e1d330311a94ed22bd0d78630a6e734fc892d",
+      "identical_to_extracted_source": true
+    },
+    {
+      "path": "requirements-cognition.txt",
+      "command": [
+        "gh",
+        "api",
+        "repos/dababiyoda/uniimente-kernel/contents/requirements-cognition.txt?ref=68b484bb45a681655274c8b23d7722424bb99488"
+      ],
+      "timestamp_utc": "2026-10-01T20:31:54.931743+00:00",
+      "exit_code": 0,
+      "git_blob": "0afad0b95bb66017f0953b69a3f154f0591700b6",
+      "content_sha256": "df79ba91df38e2060c2d23976a8d34122811d310dd127d883d85a1b675b98f31",
+      "identical_to_extracted_source": true
+    },
+    {
+      "path": "tests/unit/test_greg_chromebook_install.py",
+      "command": [
+        "gh",
+        "api",
+        "repos/dababiyoda/uniimente-kernel/contents/tests/unit/test_greg_chromebook_install.py?ref=68b484bb45a681655274c8b23d7722424bb99488"
+      ],
+      "timestamp_utc": "2026-10-01T20:31:55.430792+00:00",
+      "exit_code": 0,
+      "git_blob": "92035a9d4436a0e81058aa75e212a136733007b0",
+      "content_sha256": "5fd027ed3eac19c477503ba52e6f8a959d65abdb7e76457889388c4af2ac4a92",
+      "identical_to_extracted_source": true
+    },
+    {
+      "path": "tests/unit/test_greg_chromebook_doctor.py",
+      "command": [
+        "gh",
+        "api",
+        "repos/dababiyoda/uniimente-kernel/contents/tests/unit/test_greg_chromebook_doctor.py?ref=68b484bb45a681655274c8b23d7722424bb99488"
+      ],
+      "timestamp_utc": "2026-10-01T20:31:55.890395+00:00",
+      "exit_code": 0,
+      "git_blob": "688704e84ee92b666dbf044aabe31e9a8d7cae6a",
+      "content_sha256": "f640bea4dcfa67a933d4cb21552b206093c61a6660bc7c7824129b55ad7a32ea",
+      "identical_to_extracted_source": true
+    }
+  ],
+  "inventory_initial": {
+    "command": [
+      "gh",
+      "api",
+      "--paginate",
+      "repos/dababiyoda/uniimente-kernel/pulls/143/files?per_page=100"
+    ],
+    "file_count": 212,
+    "inventory_sha256": "7026056d1fd2d341ee3a89ae4129f81f03ae500ddda40529685eaad7cd316860",
+    "relevant_paths": [
+      "greg/chromebook/install.sh",
+      "greg/doctor.py",
+      "requirements-cognition.txt",
+      "tests/unit/test_greg_chromebook_doctor.py",
+      "tests/unit/test_greg_chromebook_install.py"
+    ],
+    "scope": "Complete changed-file inventory; selected installer/doctor/dependency/test source read at exact head. Other PR software not independently verified in D9."
+  }
+}

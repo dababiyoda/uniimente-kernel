@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-10-02T09:37:29.987570+00:00",
+  "head_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "command": "env PATH=/workspace/scratch/cortex-patched-venv/bin:$PATH /workspace/scratch/cortex-patched-venv/bin/python -m pytest -q -ra tests/integration/test_greg_chromebook_rehearsal.py",
+  "result": {
+    "exit_code": 0,
+    "passed": 1,
+    "seconds": 28.63
+  },
+  "source_digests_after_execution": {
+    "greg/chromebook/install.sh": "b3a88254622164cdb2e5e0b71ce114ab04490d4577fe0b875d43836136eff1a8",
+    "greg/doctor.py": "27a3a26a088b4b609207712eb018d05eab2ff2e3f600d13a271d45ed9d5081a7",
+    "greg/cli.py": "9b2d80203bffbe60910c0f1515e2da758dde4b08b46a6497e7f19cb652b0699c",
+    "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+    "tests/integration/test_greg_chromebook_rehearsal.py": "39fb50d2343ca2a26345d77fa9dd08b1377ebcf242327df0eaae2761b616658e"
+  },
+  "log_sha256": "1f224893f87510595f5b56ea6c80ba231248318e42a33945a3b828025fae6f18",
+  "limitations": [
+    "Source digests captured after execution in shared working tree; exact final commit regression separately owned",
+    "Linux container and supervisord instead of ChromeOS/systemd",
+    "HTTP client instead of actual Chrome/phone",
+    "Per-test Ed25519 key, not Alfonso",
+    "Three real SIGKILL recoveries are bounded rehearsal, not actual Chromebook reboot",
+    "Fixture structural VEPMC is not externally verified project VEPMC",
+    "No merge, deployment or live authority change"
+  ]
+}

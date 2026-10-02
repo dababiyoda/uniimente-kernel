@@ -2,7 +2,7 @@
 
 # UNIIMENTE Agent Entry Contract
 
-**Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
+**Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. The historical no-Mac observation does not supersede the later Chromebook/phone direction; other bodies retain their separate gates. No new deployment or consequence authority follows from this build order.
 
 ## Controlling founder correction — complete machine, 2026-10-01
 
@@ -98,17 +98,32 @@ For any material PR, explicitly state the target effect, metaphor/literal split,
 
 A founder correction reroutes; it does not delete. Before superseding, closing or archiving anything material, name the axis that changed (hardware, sequence, timing, provider, interface, implementation mechanism, scale, maturity, budget, authority, immediate priority, or final intended effect), answer the nine-question inheritance test, and place it on `greg/path.json` with one of ten classes in `docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json`. Never use "outdated" as a terminal label. Not now is not never; wrong implementation is not wrong destination. Exactly one node is operationally primary (`greg path`). Enforced by `tests/unit/test_developmental_inheritance.py`; intent `docs/intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json`.
 
-## Open-source-first models and software
+## Open-source-first models, software, algorithms and mechanism harvesting
 
-Current founder direction (2026-09-30): use locally served, freely licensed AI
-models and mature free software across egregore and its connected organs.
-Read `docs/OPEN_SOURCE_STACK.md` and
-`docs/intent/INTENT-20260930-open-source-first.json` before adding model/tool
-dependencies. Normal AI routing must not select a paid provider merely because
-an API key exists. Search popular repositories, then verify the actual license,
-maintainer activity, hardware fit and whether examples call paid backends.
-Local model weights do not make rented hardware or exclusive data free.
-This changes implementation selection, not Kernel consequence authority.
+Current founder direction is cumulative:
+
+- 2026-09-30: prefer locally served, freely licensed AI models and mature free software instead of paid commodity replacements.
+- 2026-10-01: treat lawful open-source repositories, public technical information, algorithms and reusable mechanisms as a default **engineering supply chain for completing Body + Organs + Mind**, not merely as references.
+
+Read `docs/OPEN_SOURCE_STACK.md`,
+`docs/intent/INTENT-20260930-open-source-first.json`,
+`docs/intent/INTENT-20261001-open-source-mechanism-harvest.json`, and
+`docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md` before material model/tool/algorithm construction.
+
+For every material CapabilityDeficit, search and compare in this order:
+
+existing project mechanism -> composition/reconfiguration -> maintained free/open-source dependency -> narrow lawful vendored transplant -> coherent fork/subtree when justified -> API/plugin/service/computer use -> small local utility -> Mechanism Recombination Foundry -> genuinely new architecture.
+
+Use five explicit reuse modes: **DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE, RECOMBINE**. Do not dump repositories into the active tree. Record exact upstream/revision/path, license and notices, maintenance/security evidence, assumptions, replacement interface, qualification test and rollback.
+
+Educational repositories such as `TheAlgorithms/Python` are discovery-first: they are valuable mechanism atlases but are not production-qualified merely because code exists or tests pass. Prefer stronger maintained implementations where available.
+
+Normal AI routing must not select a paid provider merely because an API key exists. Open source removes some provider/license costs, not hardware, electricity, storage, maintenance, exclusive data or platform fees.
+
+This changes implementation selection and development tempo, not Kernel consequence authority. Imported code, models, packages and generated capabilities acquire no authority by being useful.
+
+**Full-machine rule:** successful reuse, a seed, a benchmark, a PR or a smallest falsifiable build is an intermediate engineering step, not a stopping condition. After each closure, identify the highest-priority unfinished mechanism preventing the currently achievable complete Body + Organs + Mind and continue all unblocked authorized implementation.
+
 
 ## GREG body (2026-09-25)
 

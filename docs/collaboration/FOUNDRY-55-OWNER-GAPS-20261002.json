@@ -1,0 +1,2346 @@
+{
+  "schema_version": "1",
+  "observed_at": "2026-10-02T15:22:48.048788+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "working tree; per-owner file digests above",
+  "source_lineage": "PR132 da3d4ac8643ecf6791ffadcac064f8bb1cc6269d preserved; unsafe separate registries/stores/grants were not adopted",
+  "scope": "existing canonical owners and explicit remaining delivery, not a new registry, runtime or permission service",
+  "full_machine_complete": false,
+  "numbered_item_completion_claims": 0,
+  "next_high_value_dependencies": [
+    "exact/durable capital and commercial state on the canonical ledger (#39/#55/#37/#54)",
+    "governed real MCP/worker invocation (#28/#29/#48)",
+    "bounded local media rendering with installed ffmpeg (#35)",
+    "actual WIT component-model contract qualification (#11)",
+    "cross-body fencing/current authority conflict detection (#23/#46)"
+  ],
+  "environment_limits": [
+    "No /dev/kvm, Firecracker or QEMU observed; actual microVM qualification needs a capable execution environment",
+    "Docker CLI and ffmpeg are installed; their existence does not qualify native adapters",
+    "founder-device custody/use and real customer/account outcomes require specific human/external evidence, and do not block remaining software"
+  ],
+  "records": [
+    {
+      "requirement_id": "FOUNDRY-01",
+      "system_id": 1,
+      "name": "Interpreters and compilers",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Interpreters and compilers within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "compiler/ucl_compiler.py",
+        "foundry/systems/compiler.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "compiler/ucl_compiler.py",
+        "foundry/systems/compiler.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_ucl_compiler.py",
+        "tests/unit/test_foundry_bridge_boundaries.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Restricted YAML drafts work; broader compiler completeness and actual requirement translation remain bounded.",
+      "next_gate": "Restricted YAML drafts work; broader compiler completeness and actual requirement translation remain bounded.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "compiler/ucl_compiler.py": "ac5b2ead10b6573bd266dd0ef5c5580a7cc31e682ce0406b23672d845437f1b5",
+        "foundry/systems/compiler.py": "e3ea9a32ec918b330fec60eddfe7ded2e1f576a88f01eac0130ada88f36d5b0b"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-02",
+      "system_id": 2,
+      "name": "Restricted DSLs",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Restricted DSLs within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/dsl.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        1
+      ],
+      "implementation_refs": [
+        "foundry/systems/dsl.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_extracted_native.py",
+        "tests/integration/test_greg_foundry_extraction.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Pricing/budget/capital scalar grammar; expand only with independently checked semantics and actual mission demand.",
+      "next_gate": "Pricing/budget/capital scalar grammar; expand only with independently checked semantics and actual mission demand.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/dsl.py": "23949f9f2f3188369f181bfa1f993bd89680fcc2bcbf5118570f388b81d7dc28"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-03",
+      "system_id": 3,
+      "name": "Git and version control",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Git and version control within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/capabilities.py",
+        "greg/briefs.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "greg/capabilities.py",
+        "greg/briefs.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_briefs.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Add governed commit/branch/change-recovery operations; local repository inspection is not full version-control delivery.",
+      "next_gate": "Add governed commit/branch/change-recovery operations; local repository inspection is not full version-control delivery.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c",
+        "greg/briefs.py": "9ba1ce15a1d5cef3b995eec7aa96c218b23bc8a4da0285c30c5fdf608798ef26"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-04",
+      "system_id": 4,
+      "name": "Databases",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Databases within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "provenance/ledger.py",
+        "memory/causal.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "provenance/ledger.py",
+        "memory/causal.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_provenance.py",
+        "tests/unit/test_memory.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Canonical journal is durable; integrated bounded relational query/migration behavior remains to be qualified, without a competing institutional store.",
+      "next_gate": "Canonical journal is durable; integrated bounded relational query/migration behavior remains to be qualified, without a competing institutional store.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "provenance/ledger.py": "534f4b4a3e28e7e8557b406b155ae4df9d593f09b47564afde73c19003a0cb4f",
+        "memory/causal.py": "2ee79d67bc0466e45f42e140ebe59e64f57d10721938a8fb07a478826189e84a"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-05",
+      "system_id": 5,
+      "name": "Event sourcing",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Event sourcing within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "events/spine.py",
+        "greg/journal.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        4
+      ],
+      "implementation_refs": [
+        "events/spine.py",
+        "greg/journal.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_events.py",
+        "tests/unit/test_ledger_tail_recovery.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Canonical replay/deduplication exists; item-level workload/retention/device acceptance must be demonstrated.",
+      "next_gate": "Canonical replay/deduplication exists; item-level workload/retention/device acceptance must be demonstrated.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "events/spine.py": "d7d76a948a0b14f8638f33fc5fcb3a4ab02e9bf33d49cd34cd9d75e78eccfbc5",
+        "greg/journal.py": "47fbedb4aaba8960dbdee0883bf8775962e4e112ff55a8dbb0e7011281a5d69b"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-06",
+      "system_id": 6,
+      "name": "Cryptographic proof primitives",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Cryptographic proof primitives within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "provenance/commit_witness.py",
+        "greg/anchor.py",
+        "foundry/systems/proofs.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5
+      ],
+      "implementation_refs": [
+        "provenance/commit_witness.py",
+        "greg/anchor.py",
+        "foundry/systems/proofs.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_anchor_witness.py",
+        "tests/unit/test_foundry_bridge_boundaries.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Digest/signature/member proofs establish integrity/attribution only; external witness custody is separately gated.",
+      "next_gate": "Digest/signature/member proofs establish integrity/attribution only; external witness custody is separately gated.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "provenance/commit_witness.py": "2ad9543ea799fb93ba2b542ce9620e52af535b34754fe5b74dd330b841bcc798",
+        "greg/anchor.py": "35b45c87572fcd1e7c48ccc314ab1b6ecb5db62e443e5a7dc01d7972735df554",
+        "foundry/systems/proofs.py": "a30216a827635c4a16a1f9d7775cc2616f3f692c827ffb555590cc1561dc9fa9"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-07",
+      "system_id": 7,
+      "name": "Public-key infrastructure",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Public-key infrastructure within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/founder.py",
+        "identity/machine_passport.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "greg/founder.py",
+        "identity/machine_passport.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_founder_and_scope.py",
+        "tests/unit/test_identity.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Native root/device signatures and rotation exist; real enrollment/custody and institutional PKI acceptance remain unverified.",
+      "next_gate": "Native root/device signatures and rotation exist; real enrollment/custody and institutional PKI acceptance remain unverified.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/founder.py": "d1aad00df70486aab4c44a3e4228c6aeff2acd23b2d5bfa61617c684b6f17177",
+        "identity/machine_passport.py": "b41e91a319886c6a50ccbc66d880e1f2411c694312d9aea0f11f130f8927fd01"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-08",
+      "system_id": 8,
+      "name": "Capability security",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Capability security within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/authority.py",
+        "policy/consequence_gate.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        7
+      ],
+      "implementation_refs": [
+        "greg/authority.py",
+        "policy/consequence_gate.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_consequence_gate.py",
+        "tests/unit/test_greg_founder_and_scope.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Native per-invocation grants exist; preserve revocation/expiry across each new adapter and restored body.",
+      "next_gate": "Native per-invocation grants exist; preserve revocation/expiry across each new adapter and restored body.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098",
+        "policy/consequence_gate.py": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-09",
+      "system_id": 9,
+      "name": "Containers",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Containers within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "deploy/research-line/compose.yaml",
+        "greg/genesis.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "deploy/research-line/compose.yaml",
+        "greg/genesis.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_genesis_builder.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Docker CLI exists; container execution/resource/network isolation through the governed mission path is not independently qualified here.",
+      "next_gate": "Docker CLI exists; container execution/resource/network isolation through the governed mission path is not independently qualified here.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "deploy/research-line/compose.yaml": "df22e68026698db04df902f665a34d3cf56e075447f17a388b0a5557a366294e",
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-10",
+      "system_id": 10,
+      "name": "Microvirtual machines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Microvirtual machines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/genesis.py",
+        "greg/compute.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "unbuilt_software_and_host_gate",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        9
+      ],
+      "implementation_refs": [
+        "greg/genesis.py",
+        "greg/compute.py"
+      ],
+      "native_qualification_candidates": [],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "No Firecracker/QEMU or /dev/kvm found. Implement and qualify a replaceable microVM adapter on an approved capable host; do not call existing process isolation a microVM.",
+      "next_gate": "No Firecracker/QEMU or /dev/kvm found. Implement and qualify a replaceable microVM adapter on an approved capable host; do not call existing process isolation a microVM.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f",
+        "greg/compute.py": "55529e3236b42ba961e9911b565c473d616540fa6c785d7a3238d73c9d20f454"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-11",
+      "system_id": 11,
+      "name": "WebAssembly components",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "WebAssembly components within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/wasm.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "foundry/systems/wasm.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_wasm_native.py",
+        "tests/integration/test_greg_foundry_wasm.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Real import-free fuel-limited core WebAssembly works. Actual WIT/Component Model interoperability remains unbuilt and buildable, not retired.",
+      "next_gate": "Real import-free fuel-limited core WebAssembly works. Actual WIT/Component Model interoperability remains unbuilt and buildable, not retired.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/wasm.py": "024b53e7a14e18bad3d5e65f18b12054ef0f791240fb369b8d2f7983c98dbd26"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-12",
+      "system_id": 12,
+      "name": "Capability Genome Registry",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Capability Genome Registry within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "capabilities/genome.py",
+        "greg/capabilities.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        8
+      ],
+      "implementation_refs": [
+        "capabilities/genome.py",
+        "greg/capabilities.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_capabilities.py",
+        "tests/unit/test_greg_status_capabilities.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Canonical catalog/lifecycle exists; catalog membership never proves implementation or task authorization.",
+      "next_gate": "Canonical catalog/lifecycle exists; catalog membership never proves implementation or task authorization.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "capabilities/genome.py": "ac525d5c982bcd122bb31b15580fef4bd5e6408f552d294b8510ba27edf92cd6",
+        "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-13",
+      "system_id": 13,
+      "name": "Linkers and component composition",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Linkers and component composition within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "linker/linker.py",
+        "greg/cognition/cortex.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        12
+      ],
+      "implementation_refs": [
+        "linker/linker.py",
+        "greg/cognition/cortex.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_loom.py",
+        "tests/integration/test_greg_composition_appraisal.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Typed small compositions work; native linker invocation and compatibility recovery need item-specific qualification.",
+      "next_gate": "Typed small compositions work; native linker invocation and compatibility recovery need item-specific qualification.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "linker/linker.py": "cc28da68d2ea5ca45faad557e82c9128ab8a76eea1d373d13f7bc2c5a6e2c181",
+        "greg/cognition/cortex.py": "0a66de8b16f72e9980bf468f5af450a636218b28ab3a1a4b203fd7780d3801ee"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-14",
+      "system_id": 14,
+      "name": "Institutional shell and pipelines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Institutional shell and pipelines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/cli.py",
+        "greg/templates.py",
+        "greg/planner.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        1,
+        8
+      ],
+      "implementation_refs": [
+        "greg/cli.py",
+        "greg/templates.py",
+        "greg/planner.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_controlled_words.py",
+        "tests/integration/test_greg_controlled_words.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Institutional command entry and controlled requests work; bounded multi-operation shell pipelines must preserve per-edge grants, not raw Python/shell authority.",
+      "next_gate": "Institutional command entry and controlled requests work; bounded multi-operation shell pipelines must preserve per-edge grants, not raw Python/shell authority.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/cli.py": "25ac8a5248aa62a62c54d575604d546a183ef578181e857e3121615938497a37",
+        "greg/templates.py": "034164b8bec177856714ea0ff9bb665c5cae65df40cfe12471cc07626a75df98",
+        "greg/planner.py": "63d8b57e820f0a2cd9b328a8a05f6cdf2a741208fcf8a0476604f30d1118199f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-15",
+      "system_id": 15,
+      "name": "Workflow engines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Workflow engines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/missions.py",
+        "loom/canonical.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5,
+        8
+      ],
+      "implementation_refs": [
+        "greg/missions.py",
+        "loom/canonical.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_missions.py",
+        "tests/unit/test_shared_recovery.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Durable canonical mission/wait execution exists; workflow interoperability/native mission evidence requires a full declared workload.",
+      "next_gate": "Durable canonical mission/wait execution exists; workflow interoperability/native mission evidence requires a full declared workload.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/missions.py": "17adbf49c3b2cff23bdd0a4f9ddfee26d7c73381f96e4ac732f5e1220e091d37",
+        "loom/canonical.py": "5627b771d990ae29b23a57947486914a4b2efc3c5fea45a1e1ce392594c71359"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-16",
+      "system_id": 16,
+      "name": "CI/CD systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "CI/CD systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        ".github/workflows/canonical-ci.yml",
+        "scripts/ci/check_authority_singleton.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        3,
+        9
+      ],
+      "implementation_refs": [
+        ".github/workflows/canonical-ci.yml",
+        "scripts/ci/check_authority_singleton.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_run_record_head_binding.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Source CI checks exist; governed promotion/rollback and independent deployment acceptance remain separate, never CI self-authorization.",
+      "next_gate": "Source CI checks exist; governed promotion/rollback and independent deployment acceptance remain separate, never CI self-authorization.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        ".github/workflows/canonical-ci.yml": "97eb3d3425e66c515e4153f27410d29df87d03a8a781eb9de0caae83ca5923ab",
+        "scripts/ci/check_authority_singleton.py": "8800201737aa39f7da4ac080a2bccbd1bdfce385d83a4db817c477783e0cb90b"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-17",
+      "system_id": 17,
+      "name": "Causal search engines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Causal search engines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "memory/causal.py",
+        "greg/precedents.py",
+        "foundry/systems/search.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        4,
+        5
+      ],
+      "implementation_refs": [
+        "memory/causal.py",
+        "greg/precedents.py",
+        "foundry/systems/search.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_precedents.py",
+        "tests/unit/test_foundry_extracted_native.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "BM25 supplied cases and native action precedents work; ancestry/text relevance is not identified causality or demonstrated future decision lift.",
+      "next_gate": "BM25 supplied cases and native action precedents work; ancestry/text relevance is not identified causality or demonstrated future decision lift.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "memory/causal.py": "2ee79d67bc0466e45f42e140ebe59e64f57d10721938a8fb07a478826189e84a",
+        "greg/precedents.py": "ff1c47ada84c37af85155385bab0929627d054b433bc611a27850270fc966df2",
+        "foundry/systems/search.py": "4e4dc43f7649c5bc281ad72375a40ace71d1719879ce174865dcd6af1d01e201"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-18",
+      "system_id": 18,
+      "name": "Knowledge graphs",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Knowledge graphs within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/graph.py",
+        "greg/cognition/network.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        4
+      ],
+      "implementation_refs": [
+        "foundry/systems/graph.py",
+        "greg/cognition/network.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_bridge_boundaries.py",
+        "tests/integration/test_greg_foundry_appraisal.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Declared graph and scoped canonical event ancestry work; cross-domain factual assertions require appropriate source evidence.",
+      "next_gate": "Declared graph and scoped canonical event ancestry work; cross-domain factual assertions require appropriate source evidence.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/graph.py": "a5c449cd82f55fc3bef26c392a9283db71e5da44e50531701da61ebb68b86ecd",
+        "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-19",
+      "system_id": 19,
+      "name": "Recommender systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Recommender systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/next_test.py",
+        "greg/routing.py",
+        "greg/cognition/budget.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        17
+      ],
+      "implementation_refs": [
+        "foundry/systems/next_test.py",
+        "greg/routing.py",
+        "greg/cognition/budget.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_bridge_boundaries.py",
+        "tests/unit/test_greg_routing_integrity.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Decision-loss VOI and bounded route rules work; learned general recommendations require authentic held-out outcome evidence.",
+      "next_gate": "Decision-loss VOI and bounded route rules work; learned general recommendations require authentic held-out outcome evidence.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/next_test.py": "cce9fc2c87f3cb85c66f65075eb0663f845f527587768cc50dfba6a364f55838",
+        "greg/routing.py": "e439f7570676c145c28ade21ed605e194e0aeec20340f4f2a7f82b42b3e6671a",
+        "greg/cognition/budget.py": "495ce47980f8ea0138af62b440cbe777281d008cf350663ce14e841a31e0bce4"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-20",
+      "system_id": 20,
+      "name": "Emulators",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Emulators within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/emulator.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only_simulation",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "foundry/systems/emulator.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_fault_simulation.py",
+        "tests/integration/test_greg_foundry_fault_simulation.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Real in-memory provider fault emulator executes. Adapter-specific real provider reconciliation and guarantees remain separately unqualified.",
+      "next_gate": "Real in-memory provider fault emulator executes. Adapter-specific real provider reconciliation and guarantees remain separately unqualified.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/emulator.py": "bbee5f7df3e9f6252b76ed087f04f9162cbc72642c0b0ee7dcca0d92b8b9bdd0"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-21",
+      "system_id": 21,
+      "name": "Virtual machines and snapshots",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Virtual machines and snapshots within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/backup.py",
+        "twins/twin.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        20
+      ],
+      "implementation_refs": [
+        "greg/backup.py",
+        "twins/twin.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_backup.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Native body file snapshot exists; actual VM save/restore state is not implemented and cannot be inferred from file snapshots.",
+      "next_gate": "Native body file snapshot exists; actual VM save/restore state is not implemented and cannot be inferred from file snapshots.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/backup.py": "bf3439b4ef73773abfe136fefb36a6ca1af11951f2152bd313fcf1f31a17df56",
+        "twins/twin.py": "2fff1c34d80a0907e3ca4fcfe0a1587af2a2cb1f538c84fd561a40719af77bd9"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-22",
+      "system_id": 22,
+      "name": "Simulation engines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Simulation engines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/scenarios.py",
+        "twins/tribunal.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only_simulation",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        20,
+        21
+      ],
+      "implementation_refs": [
+        "foundry/systems/scenarios.py",
+        "twins/tribunal.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_fault_simulation.py",
+        "tests/integration/test_greg_foundry_fault_simulation.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Declared seeded shock model executes; reality calibration, compound shocks and external participant outcomes remain unsupported.",
+      "next_gate": "Declared seeded shock model executes; reality calibration, compound shocks and external participant outcomes remain unsupported.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/scenarios.py": "02b3d60dfae346599dc270f181bf0b12227e225946a9484b40ee35912ff61233",
+        "twins/tribunal.py": "29a836ffecb3c146879677b2453fafd012ae02a911bf9e76e6b476053f2900af"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-23",
+      "system_id": 23,
+      "name": "Distributed-systems controls",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Distributed-systems controls within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "provenance/ledger.py",
+        "events/bridge_state.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5
+      ],
+      "implementation_refs": [
+        "provenance/ledger.py",
+        "events/bridge_state.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_shared_durable_boundary.py",
+        "tests/unit/test_shared_recovery.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Single-writer/durable bridge controls exist; cross-body fencing/consensus and split-brain revocation propagation remain unbuilt.",
+      "next_gate": "Single-writer/durable bridge controls exist; cross-body fencing/consensus and split-brain revocation propagation remain unbuilt.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "provenance/ledger.py": "534f4b4a3e28e7e8557b406b155ae4df9d593f09b47564afde73c19003a0cb4f",
+        "events/bridge_state.py": "24431269da5f9f114882689fff2c6564c42819ecc3e30fb2c06f352d54da5adc"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-24",
+      "system_id": 24,
+      "name": "Message queues",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Message queues within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/body.py",
+        "events/bridge_state.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5,
+        23
+      ],
+      "implementation_refs": [
+        "greg/body.py",
+        "events/bridge_state.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_continuity.py",
+        "tests/unit/test_shared_durable_boundary.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Native inbox/event delivery survives restart; bounded queue backpressure/dead letters and generic adapter delivery semantics need qualification.",
+      "next_gate": "Native inbox/event delivery survives restart; bounded queue backpressure/dead letters and generic adapter delivery semantics need qualification.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/body.py": "dd9dc51c779a0c9d715b09d216c5461be9fd62730b5634860707e177abc0d2cb",
+        "events/bridge_state.py": "24431269da5f9f114882689fff2c6564c42819ecc3e30fb2c06f352d54da5adc"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-25",
+      "system_id": 25,
+      "name": "Cognitive router",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Cognitive router within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/cognition/cortex.py",
+        "greg/models.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        19
+      ],
+      "implementation_refs": [
+        "greg/cognition/cortex.py",
+        "greg/models.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_cognition.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Deterministic hard-eligibility routing exists; superiority remains inconclusive and learned routing needs held-out evidence.",
+      "next_gate": "Deterministic hard-eligibility routing exists; superiority remains inconclusive and learned routing needs held-out evidence.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/cognition/cortex.py": "0a66de8b16f72e9980bf468f5af450a636218b28ab3a1a4b203fd7780d3801ee",
+        "greg/models.py": "e99307dc7fbef108fab70daec92e460d9eabb2d0a4848bb93b0e4e14078c1c2a"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-26",
+      "system_id": 26,
+      "name": "Zero-trust computer networks",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Zero-trust computer networks within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/remote.py",
+        "adapters/bridge_transport.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        7,
+        8
+      ],
+      "implementation_refs": [
+        "greg/remote.py",
+        "adapters/bridge_transport.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_remote.py",
+        "tests/unit/test_shared_durable_boundary.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Authenticated scoped loopback/bridge boundaries exist; actual zero-trust network enrollment/revocation on intended bodies remains unverified.",
+      "next_gate": "Authenticated scoped loopback/bridge boundaries exist; actual zero-trust network enrollment/revocation on intended bodies remains unverified.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/remote.py": "1f9c21a94fe54a5fe6a4aca7d993ab390df90e1e2c24e1a68c4b1ee3351beea5",
+        "adapters/bridge_transport.py": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-27",
+      "system_id": 27,
+      "name": "RPC and service discovery",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "RPC and service discovery within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "adapters/bridge_transport.py",
+        "linker/manifest.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        13,
+        26
+      ],
+      "implementation_refs": [
+        "adapters/bridge_transport.py",
+        "linker/manifest.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_shared_durable_boundary.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Signed bridge contracts exist; governed durable service registration/discovery and native RPC failover need integration.",
+      "next_gate": "Signed bridge contracts exist; governed durable service registration/discovery and native RPC failover need integration.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "adapters/bridge_transport.py": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f",
+        "linker/manifest.py": "b7b14a9177717ae0cdd8a5c702a1efc202b522f2e488a7666042d7e9aab8e33f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-28",
+      "system_id": 28,
+      "name": "MCP integration",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "MCP integration within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/genesis.py",
+        "greg/capabilities.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "unbuilt_software",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        8,
+        27
+      ],
+      "implementation_refs": [
+        "greg/genesis.py",
+        "greg/capabilities.py"
+      ],
+      "native_qualification_candidates": [],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "No qualified native MCP adapter found. Implement discovery and bounded invocation with explicit schemas/grants/refusal, without self-attachment or a second registry.",
+      "next_gate": "No qualified native MCP adapter found. Implement discovery and bounded invocation with explicit schemas/grants/refusal, without self-attachment or a second registry.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f",
+        "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-29",
+      "system_id": 29,
+      "name": "Agent-to-agent protocols",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Agent-to-agent protocols within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "omnimorph/engine.py",
+        "adapters/bridge_transport.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        8,
+        26,
+        27
+      ],
+      "implementation_refs": [
+        "omnimorph/engine.py",
+        "adapters/bridge_transport.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_omnimorph_v1.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Typed organization proposals exist; real bounded worker lease/task-fabric execution and durable external agent interoperability remain to be evidenced.",
+      "next_gate": "Typed organization proposals exist; real bounded worker lease/task-fabric execution and durable external agent interoperability remain to be evidenced.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "omnimorph/engine.py": "1e5c2e91c7a6dec62a2d8abdb018728b57147b1ebb8e8092a98a1365a48493e2",
+        "adapters/bridge_transport.py": "930d63af8d798a844fbc81a1055c2659b2fca85824c44198074c0547bd4c460f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-30",
+      "system_id": 30,
+      "name": "API gateway and Consequence Gate",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "API gateway and Consequence Gate within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "policy/consequence_gate.py",
+        "greg/authority.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5,
+        6,
+        8
+      ],
+      "implementation_refs": [
+        "policy/consequence_gate.py",
+        "greg/authority.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_consequence_gate.py",
+        "tests/unit/test_greg_founder_and_scope.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Canonical Gate path exists; every future effect adapter requires its own tested idempotency/reconciliation contract.",
+      "next_gate": "Canonical Gate path exists; every future effect adapter requires its own tested idempotency/reconciliation contract.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "policy/consequence_gate.py": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
+        "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-31",
+      "system_id": 31,
+      "name": "Web servers",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Web servers within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/console.py",
+        "greg/remote.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [],
+      "implementation_refs": [
+        "greg/console.py",
+        "greg/remote.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_interface.py",
+        "tests/unit/test_greg_remote.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Existing local console/phone HTTP interfaces work; intended phone/Chromebook physical acceptance remains pending.",
+      "next_gate": "Existing local console/phone HTTP interfaces work; intended phone/Chromebook physical acceptance remains pending.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+        "greg/remote.py": "1f9c21a94fe54a5fe6a4aca7d993ab390df90e1e2c24e1a68c4b1ee3351beea5"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-32",
+      "system_id": 32,
+      "name": "Owned social networks",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Owned social networks within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/company.py",
+        "foundry/distribution.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        31
+      ],
+      "implementation_refs": [
+        "foundry/company.py",
+        "foundry/distribution.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Media-company draft governance exists; owned community software participation/consent/appeal/outcome interface remains unfinished, not merely a publication gate.",
+      "next_gate": "Media-company draft governance exists; owned community software participation/consent/appeal/outcome interface remains unfinished, not merely a publication gate.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/company.py": "6d889995443a94812373f33283117e5a360e178832bf805dc57678d454215816",
+        "foundry/distribution.py": "8521b507ce0ffe289843072d046b9bf304234266c31252007c89f896e5579096"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-33",
+      "system_id": 33,
+      "name": "Federated protocols",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Federated protocols within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/remote.py",
+        "foundry/distribution.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "unbuilt_software_and_account_gate",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        31
+      ],
+      "implementation_refs": [
+        "greg/remote.py",
+        "foundry/distribution.py"
+      ],
+      "native_qualification_candidates": [],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Implement bounded federated transport and test locally before real account/domain/consent authorization; no external federation activation here.",
+      "next_gate": "Implement bounded federated transport and test locally before real account/domain/consent authorization; no external federation activation here.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/remote.py": "1f9c21a94fe54a5fe6a4aca7d993ab390df90e1e2c24e1a68c4b1ee3351beea5",
+        "foundry/distribution.py": "8521b507ce0ffe289843072d046b9bf304234266c31252007c89f896e5579096"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-34",
+      "system_id": 34,
+      "name": "Recommendation-graph observability",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Recommendation-graph observability within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/distribution.py",
+        "foundry/systems/observability.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        19,
+        44
+      ],
+      "implementation_refs": [
+        "foundry/distribution.py",
+        "foundry/systems/observability.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Internal distribution model/journal observability exists; actual recommendation graph measurements and causal attribution require authorized source data.",
+      "next_gate": "Internal distribution model/journal observability exists; actual recommendation graph measurements and causal attribution require authorized source data.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/distribution.py": "8521b507ce0ffe289843072d046b9bf304234266c31252007c89f896e5579096",
+        "foundry/systems/observability.py": "93368d25d1da669a525fcf9286292468c422ba7979467d40d46917aff97f2c00"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-35",
+      "system_id": 35,
+      "name": "Graphics, audio, video, and game engines",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Graphics, audio, video, and game engines within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/capabilities.py",
+        "foundry/company.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "unbuilt_software",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        31
+      ],
+      "implementation_refs": [
+        "greg/capabilities.py",
+        "foundry/company.py"
+      ],
+      "native_qualification_candidates": [],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "ffmpeg is installed. Implement bounded local media rendering/metadata/checking adapters; protect source facts, licensing and per-file grants before publication.",
+      "next_gate": "ffmpeg is installed. Implement bounded local media rendering/metadata/checking adapters; protect source facts, licensing and per-file grants before publication.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c",
+        "foundry/company.py": "6d889995443a94812373f33283117e5a360e178832bf805dc57678d454215816"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-36",
+      "system_id": 36,
+      "name": "Content-addressed storage",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Content-addressed storage within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/artifacts.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        6
+      ],
+      "implementation_refs": [
+        "greg/artifacts.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_artifacts.py",
+        "tests/integration/test_greg_artifact_process.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Receipt-bound body-local content addressing works; large-media/off-body independently held custody remains scoped expansion.",
+      "next_gate": "Receipt-bound body-local content addressing works; large-media/off-body independently held custody remains scoped expansion.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/artifacts.py": "90b3808cf18bca05ccaf12a1e6949346fe038e36a2f1dec425802396091de32f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-37",
+      "system_id": 37,
+      "name": "Marketplace systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Marketplace systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "business/commercial_loop.py",
+        "foundry/systems/mechanism.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        18,
+        23,
+        38
+      ],
+      "implementation_refs": [
+        "business/commercial_loop.py",
+        "foundry/systems/mechanism.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_business.py",
+        "tests/unit/test_foundry_extracted_native.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Bargaining/procurement computation exists; durable real participant matching/consent/appeal/settlement through native missions remains unfinished.",
+      "next_gate": "Bargaining/procurement computation exists; durable real participant matching/consent/appeal/settlement through native missions remains unfinished.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "business/commercial_loop.py": "a6bc61ad283d99e0efb1009f0be3d8b069f2f18d45f24011f0c08ea2e4b019ca",
+        "foundry/systems/mechanism.py": "c0f3c2ff5ca6854d24658a10a6ed22fbb16beac4bce2a388a7e43dcac5493eea"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-38",
+      "system_id": 38,
+      "name": "Payment systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Payment systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "business/commercial_loop.py",
+        "policy/consequence_gate.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner_and_account_gate",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        30
+      ],
+      "implementation_refs": [
+        "business/commercial_loop.py",
+        "policy/consequence_gate.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_business.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Payment intent/Gate contracts exist; no qualified real payment adapter/credentials here. Build adapter/reconciliation before separately authorized account activation.",
+      "next_gate": "Payment intent/Gate contracts exist; no qualified real payment adapter/credentials here. Build adapter/reconciliation before separately authorized account activation.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "business/commercial_loop.py": "a6bc61ad283d99e0efb1009f0be3d8b069f2f18d45f24011f0c08ea2e4b019ca",
+        "policy/consequence_gate.py": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-39",
+      "system_id": 39,
+      "name": "Double-entry accounting",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Double-entry accounting within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "capital/treasury.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner_with_executable_gap",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        38
+      ],
+      "implementation_refs": [
+        "capital/treasury.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_treasury.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Current postings/balances use floats and volatile memory. Implement exact minor-unit replay/corrections on canonical ledger, without another book or spending authority.",
+      "next_gate": "Current postings/balances use floats and volatile memory. Implement exact minor-unit replay/corrections on canonical ledger, without another book or spending authority.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "capital/treasury.py": "a61388a1f35478ee4b5ec1dc93f84f43e5c7f4581526a2885588994bb65a2f26"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-40",
+      "system_id": 40,
+      "name": "Game theory and mechanism design",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Game theory and mechanism design within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/mechanism.py",
+        "greg/cognition/network.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        18
+      ],
+      "implementation_refs": [
+        "foundry/systems/mechanism.py",
+        "greg/cognition/network.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_extracted_native.py",
+        "tests/unit/test_cognition_native_network_lp.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Brier/procurement and bounded optimization calculations work; actor assumptions, incentive robustness and real participant economics remain conditional.",
+      "next_gate": "Brier/procurement and bounded optimization calculations work; actor assumptions, incentive robustness and real participant economics remain conditional.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/mechanism.py": "c0f3c2ff5ca6854d24658a10a6ed22fbb16beac4bce2a388a7e43dcac5493eea",
+        "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-41",
+      "system_id": 41,
+      "name": "Reputation systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Reputation systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/reputation.py",
+        "greg/cognition/settlement.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5,
+        18,
+        40
+      ],
+      "implementation_refs": [
+        "foundry/systems/reputation.py",
+        "greg/cognition/settlement.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_bridge_boundaries.py",
+        "tests/integration/test_cognition_multi_claim_settlement.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Conditional evidence-linked reputation/calibration computations work; they create neither authorization nor a universal superiority badge.",
+      "next_gate": "Conditional evidence-linked reputation/calibration computations work; they create neither authorization nor a universal superiority badge.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/reputation.py": "b0d5b1770cff583bd51fd03b4f69620a15b0e802d8741b144d9aafe338cf50bc",
+        "greg/cognition/settlement.py": "62d048f7cc9722809510ee30d823c26d2bf900ce3516a3ef457485aa769e67c5"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-42",
+      "system_id": 42,
+      "name": "Digital twins",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Digital twins within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "twins/twin.py",
+        "twins/tribunal.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5,
+        22
+      ],
+      "implementation_refs": [
+        "twins/twin.py",
+        "twins/tribunal.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_twins.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Sandbox twins exist; empirically calibrated real target model and native scoped integration remain to be qualified.",
+      "next_gate": "Sandbox twins exist; empirically calibrated real target model and native scoped integration remain to be qualified.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "twins/twin.py": "2fff1c34d80a0907e3ca4fcfe0a1587af2a2cb1f538c84fd561a40719af77bd9",
+        "twins/tribunal.py": "29a836ffecb3c146879677b2453fafd012ae02a911bf9e76e6b476053f2900af"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-43",
+      "system_id": 43,
+      "name": "Formal methods",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Formal methods within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/cognition/solvers.py",
+        "foundry/systems/model_check.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        1,
+        2
+      ],
+      "implementation_refs": [
+        "greg/cognition/solvers.py",
+        "foundry/systems/model_check.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry_bridge_boundaries.py",
+        "tests/unit/test_greg_cognition.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Real SMT and declared finite-state checker execute; encoded-model validity is not general world/legal/formalization completeness.",
+      "next_gate": "Real SMT and declared finite-state checker execute; encoded-model validity is not general world/legal/formalization completeness.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/cognition/solvers.py": "a8cef28dd4f6387d4b9e47fae990846011846c9e96c2f046fa3843958dadb382",
+        "foundry/systems/model_check.py": "ba2d7fe1d28e2b4f931d00e55cc2cf5d99ed02aa3d6a2e45870360fc334bce2e"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-44",
+      "system_id": 44,
+      "name": "Observability systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Observability systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/systems/observability.py",
+        "greg/presence.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_read_only",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        5
+      ],
+      "implementation_refs": [
+        "foundry/systems/observability.py",
+        "greg/presence.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/integration/test_greg_foundry_appraisal.py",
+        "tests/unit/test_greg_presence.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Own-mission canonical journal projection and heartbeat accounting work; actual external system metrics and physical device sleep evidence remain pending.",
+      "next_gate": "Own-mission canonical journal projection and heartbeat accounting work; actual external system metrics and physical device sleep evidence remain pending.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/systems/observability.py": "93368d25d1da669a525fcf9286292468c422ba7979467d40d46917aff97f2c00",
+        "greg/presence.py": "fad4c593a4eef8f10c8a1f00f494a6dd145d1158647c98f3792edcaf907f8a58"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-45",
+      "system_id": 45,
+      "name": "Security information and event management",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Security information and event management within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/genesis.py",
+        "greg/dataplane.py",
+        "greg/sop.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        26,
+        44
+      ],
+      "implementation_refs": [
+        "greg/genesis.py",
+        "greg/dataplane.py",
+        "greg/sop.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_self_repair.py",
+        "tests/unit/test_greg_improvement_attacks.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Quarantine/protected update checks exist; native SIEM detection/control/falsity workflow remains to be implemented over canonical evidence.",
+      "next_gate": "Quarantine/protected update checks exist; native SIEM detection/control/falsity workflow remains to be implemented over canonical evidence.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f",
+        "greg/dataplane.py": "3ccc12f4e6da6e25b5f366d7f294458e62a22da83cf8f3f887503f4d069535b7",
+        "greg/sop.py": "599764004503fa09b64c77b9048ec588e76a87a1c8578937e4d82bba512fc95c"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-46",
+      "system_id": 46,
+      "name": "Backup and disaster recovery",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Backup and disaster recovery within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/backup.py",
+        "greg/body.py",
+        "greg/cli.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "native_operator_cli",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        3,
+        4,
+        36
+      ],
+      "implementation_refs": [
+        "greg/backup.py",
+        "greg/body.py",
+        "greg/cli.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_backup.py",
+        "tests/integration/test_greg_backup_restore.py"
+      ],
+      "evidence_refs": [
+        "foundry/evidence/extraction-20261001/qualification-20261002.json"
+      ],
+      "current_evidence_state": "CURRENT_BOUNDED_NATIVE_QUALIFICATION",
+      "remaining_requirement": "Real encrypted stopped-body export/restore, nonce-bound current authority verification and crash-safe guard execute. Physical off-body custody, inaccessible latest revocations and replica consensus remain unverified.",
+      "next_gate": "Real encrypted stopped-body export/restore, nonce-bound current authority verification and crash-safe guard execute. Physical off-body custody, inaccessible latest revocations and replica consensus remain unverified.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/backup.py": "bf3439b4ef73773abfe136fefb36a6ca1af11951f2152bd313fcf1f31a17df56",
+        "greg/body.py": "dd9dc51c779a0c9d715b09d216c5461be9fd62730b5634860707e177abc0d2cb",
+        "greg/cli.py": "25ac8a5248aa62a62c54d575604d546a183ef578181e857e3121615938497a37"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-47",
+      "system_id": 47,
+      "name": "Business Architecture Compiler",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Business Architecture Compiler within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "business/genome.py",
+        "foundry/advantage.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        1,
+        12,
+        13
+      ],
+      "implementation_refs": [
+        "business/genome.py",
+        "foundry/advantage.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_business.py",
+        "tests/unit/test_advantage_foundry_v1.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Compiled bounded business drafts exist; native governed construction/closure path and valid observed economics remain to be completed.",
+      "next_gate": "Compiled bounded business drafts exist; native governed construction/closure path and valid observed economics remain to be completed.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "business/genome.py": "0d7a6a37d34fd8a1a50d4db20e468ec02a3b5044bbef7e0a6e4683672c2b4780",
+        "foundry/advantage.py": "6ad64e6827992395db4543dc063b9ba3d765c3841efc01e073ece90c82494549"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-48",
+      "system_id": 48,
+      "name": "Agent swarm architectures",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Agent swarm architectures within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "omnimorph/engine.py",
+        "greg/genesis.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        12,
+        15,
+        29
+      ],
+      "implementation_refs": [
+        "omnimorph/engine.py",
+        "greg/genesis.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_omnimorph_v1.py",
+        "tests/unit/test_greg_genesis_builder.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Bounded organizations/builders exist; real heterogeneous worker composition/leases/permissions/outcome qualification remains distinct from proposals.",
+      "next_gate": "Bounded organizations/builders exist; real heterogeneous worker composition/leases/permissions/outcome qualification remains distinct from proposals.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "omnimorph/engine.py": "1e5c2e91c7a6dec62a2d8abdb018728b57147b1ebb8e8092a98a1365a48493e2",
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-49",
+      "system_id": 49,
+      "name": "AI influencer company systems",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "AI influencer company systems within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/company.py",
+        "foundry/research_consumers.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner_and_account_gate",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        19,
+        31,
+        35,
+        48
+      ],
+      "implementation_refs": [
+        "foundry/company.py",
+        "foundry/research_consumers.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_research_line.py",
+        "tests/unit/test_foundry.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Truthful inert media drafts exist; real owned company workflow/software before live account activation remains unfinished.",
+      "next_gate": "Truthful inert media drafts exist; real owned company workflow/software before live account activation remains unfinished.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/company.py": "6d889995443a94812373f33283117e5a360e178832bf805dc57678d454215816",
+        "foundry/research_consumers.py": "b438c71cd34d97ca5a8ac32ba61dc517e1c08e436e5b5ca1cb644e914729a3c7"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-50",
+      "system_id": 50,
+      "name": "Rabbit Hole Engine",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Rabbit Hole Engine within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "foundry/territory.py",
+        "foundry/distribution.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        18,
+        19,
+        34,
+        49
+      ],
+      "implementation_refs": [
+        "foundry/territory.py",
+        "foundry/distribution.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_foundry.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Territory graphs/draft pathways exist; truthful consent-based content recommendations and native measured audience benefit remain to be evidenced.",
+      "next_gate": "Territory graphs/draft pathways exist; truthful consent-based content recommendations and native measured audience benefit remain to be evidenced.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "foundry/territory.py": "7539ff4a9f1892e081e21a88324984502a8ab5f4d9d9c3cf5cd2f9c258c4e665",
+        "foundry/distribution.py": "8521b507ce0ffe289843072d046b9bf304234266c31252007c89f896e5579096"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-51",
+      "system_id": 51,
+      "name": "Automated software development",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Automated software development within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/genesis.py",
+        "greg/builders.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        3,
+        9,
+        16,
+        48
+      ],
+      "implementation_refs": [
+        "greg/genesis.py",
+        "greg/builders.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_genesis_builder.py",
+        "tests/unit/test_greg_self_repair.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Bounded verified generated source on native path exists; held-out maintained software benefit/security requires each new candidate qualification.",
+      "next_gate": "Bounded verified generated source on native path exists; held-out maintained software benefit/security requires each new candidate qualification.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f",
+        "greg/builders.py": "38746a778f5cbb486ea5ca168b45eda919a6713ed258ddc1f6f91ba23c3f1aa7"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": false,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-52",
+      "system_id": 52,
+      "name": "Failure-driven program repair",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Failure-driven program repair within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "greg/genesis.py",
+        "evolution/repair/harness.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        16,
+        20,
+        44,
+        51
+      ],
+      "implementation_refs": [
+        "greg/genesis.py",
+        "evolution/repair/harness.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_greg_self_repair.py",
+        "tests/unit/test_repair_harness.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Quarantine/rebuild and laboratory repair harness exist; independent held-out repair gains and safe native integration remain condition-specific.",
+      "next_gate": "Quarantine/rebuild and laboratory repair harness exist; independent held-out repair gains and safe native integration remain condition-specific.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f",
+        "evolution/repair/harness.py": "b4b450e479e09d2cceb6db4d689faa37544e69568cb487d6d44b1e72b79d591f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-53",
+      "system_id": 53,
+      "name": "Self-hosting toolchains",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Self-hosting toolchains within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "compiler/ucl_compiler.py",
+        "greg/genesis.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        1,
+        3,
+        12
+      ],
+      "implementation_refs": [
+        "compiler/ucl_compiler.py",
+        "greg/genesis.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_ucl_compiler.py",
+        "tests/unit/test_greg_genesis_builder.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Portable declarative/generated toolchain mechanisms exist; native bootstrap/rebuild on a clean replacement body is not proven by manifests.",
+      "next_gate": "Portable declarative/generated toolchain mechanisms exist; native bootstrap/rebuild on a clean replacement body is not proven by manifests.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "compiler/ucl_compiler.py": "ac5b2ead10b6573bd266dd0ef5c5580a7cc31e682ce0406b23672d845437f1b5",
+        "greg/genesis.py": "dc3259e646abbe3f0defc71b4e95db042faee2c84b97ba6b08a016743d3f5d1f"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-54",
+      "system_id": 54,
+      "name": "Agent-native commerce",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Agent-native commerce within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "business/commercial_loop.py",
+        "omnimorph/engine.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner_and_account_gate",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        29,
+        37,
+        38,
+        41
+      ],
+      "implementation_refs": [
+        "business/commercial_loop.py",
+        "omnimorph/engine.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_business.py",
+        "tests/unit/test_omnimorph_v1.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Commerce contracts/proposals exist; durable authenticated agent counterparties, payment reconciliation and genuine accepted outcomes remain unfinished.",
+      "next_gate": "Commerce contracts/proposals exist; durable authenticated agent counterparties, payment reconciliation and genuine accepted outcomes remain unfinished.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "business/commercial_loop.py": "a6bc61ad283d99e0efb1009f0be3d8b069f2f18d45f24011f0c08ea2e4b019ca",
+        "omnimorph/engine.py": "1e5c2e91c7a6dec62a2d8abdb018728b57147b1ebb8e8092a98a1365a48493e2"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    },
+    {
+      "requirement_id": "FOUNDRY-55",
+      "system_id": 55,
+      "name": "Regenerative Treasury",
+      "exact_source_excerpt": "Every one of the 55 systems must have a working implementation, an integrated interface, meaningful tests, and reproducible execution evidence. Documentation, registry entries, empty interfaces, mocks, and proposed architectures alone do not satisfy completion.",
+      "source_location": "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md; foundry/arsenal.py inventory lineage",
+      "source_date": "2026-09-27",
+      "intended_effect": "Regenerative Treasury within the complete Body + Organs + Mind",
+      "canonical_owner": [
+        "capital/treasury.py"
+      ],
+      "lifecycle_state": "active",
+      "implementation_state": "existing_owner_with_executable_gap",
+      "authority_scope": "reversible development only; existing Kernel/grants/shutdown control all effects",
+      "dependencies": [
+        39
+      ],
+      "implementation_refs": [
+        "capital/treasury.py"
+      ],
+      "native_qualification_candidates": [
+        "tests/unit/test_treasury.py"
+      ],
+      "evidence_refs": [],
+      "current_evidence_state": "EXISTING_SOURCE_INSPECTED; ITEM_ACCEPTANCE_NOT_RERUN_IN_THIS_RECORD",
+      "remaining_requirement": "Declared waterfall exists; canonical replay/exact accounting/protected debt reconciliation and native GREG projection remain unfinished before real capital use.",
+      "next_gate": "Declared waterfall exists; canonical replay/exact accounting/protected debt reconciliation and native GREG projection remain unfinished before real capital use.",
+      "failure_condition": "Catalog metadata, local test or narrowed mechanism is represented as complete numbered-system or full-machine delivery",
+      "owner": "Canonical owner maintainers; Alfonso remains root authority",
+      "review_trigger": "Each integrated proof automatically resumes parent objective and this item residual",
+      "source_sha256": {
+        "capital/treasury.py": "a61388a1f35478ee4b5ec1dc93f84f43e5c7f4581526a2885588994bb65a2f26"
+      },
+      "complete_numbered_item": false,
+      "identified_unblocked_software_residual": true,
+      "residual_counting_limits": "Counts distinct numbered items with identified executable software work, not all subtasks; excludes pure external/use evidence from this count, without canceling any obligation."
+    }
+  ],
+  "identified_unblocked_software_residual_count": 32,
+  "identified_unblocked_software_residual_ids": [
+    3,
+    4,
+    9,
+    10,
+    11,
+    13,
+    14,
+    16,
+    19,
+    21,
+    23,
+    24,
+    27,
+    28,
+    29,
+    32,
+    33,
+    34,
+    35,
+    37,
+    38,
+    39,
+    42,
+    45,
+    47,
+    48,
+    49,
+    50,
+    52,
+    53,
+    54,
+    55
+  ],
+  "counting_limits": "32 numbered items have specifically identified unblocked software residuals, including items that also need later physical/account/host evidence. This is an inspection result, not proof that the remaining 23 are globally complete; their scope/evidence obligations are retained."
+}

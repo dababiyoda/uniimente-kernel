@@ -1,0 +1,35 @@
+{
+  "schema": "trace-reconciliation/1",
+  "recorded_at_utc": "2026-10-02T09:40:12.863038+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "shared working tree; final integrated commit/regression owned by root",
+  "path": "docs/intent/INTENT-20261001-cognition-seed-trace.json",
+  "path_sha256": "586e00539c0bf67d87f5b5fb576973b789c2f308abfb7971dd8afbfc582f1d12",
+  "supersedes_record": "trace-reconciliation.json",
+  "command": "python /workspace/scratch/reconcile_cognition_trace_full_machine.py; literal source-export, required-field, path-existence and dependency invariant checks",
+  "result": {
+    "records": 234,
+    "review_sections": 121,
+    "literal_source_export_matches": 217,
+    "source_text_and_lineage_preserved": true,
+    "unconditional_N1_software_dependencies": 0,
+    "separate_live_device_evidence_gates": 228,
+    "all_local_reference_paths_exist": true,
+    "distinct_test_reference_lists": 17,
+    "lifecycle_counts": {
+      "needs_evidence": 45,
+      "active": 101,
+      "exploratory": 40,
+      "deferred": 48
+    }
+  },
+  "negative_coverage": [
+    "Source coverage is not executable completeness.",
+    "Compound sections still need native scope-specific qualification.",
+    "Candidate P5 validators are being integrated, aligned with producers and qualified; direct observation preserves original MDP source-binding failure.",
+    "No authenticated founder-device, external outcome, comparative superiority or live authority is created."
+  ],
+  "runtime_changed": false,
+  "authority_changed": false
+}

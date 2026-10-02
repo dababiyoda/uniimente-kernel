@@ -1,0 +1,441 @@
+{
+  "scope": "Discoverable existing and new boundaries; an index is not execution evidence. Test run logs define what passed.",
+  "tests": {
+    "tests/unit/test_greg_cognition.py::test_hard_constraints_cannot_be_bought_off_with_upside": {
+      "line": 78
+    },
+    "tests/unit/test_greg_cognition.py::test_missing_model_detached_solver_and_unknown_geometry_are_deficits": {
+      "line": 92
+    },
+    "tests/unit/test_greg_cognition.py::test_repeated_correlated_votes_cannot_create_a_quorum": {
+      "line": 127
+    },
+    "tests/unit/test_greg_cognition.py::test_independent_verifier_refutes_a_solver_lie": {
+      "line": 134
+    },
+    "tests/unit/test_greg_cognition.py::test_no_profile_creates_a_second_authority_or_changes_legacy_digests": {
+      "line": 149
+    },
+    "tests/unit/test_greg_cognition.py::test_protection_preserves_vectors_and_requires_authentic_human_authority": {
+      "line": 175
+    },
+    "tests/unit/test_greg_spiderweb.py::test_vepmc_is_derived_from_evidence_and_needs_designated_founder_body": {
+      "line": 142
+    },
+    "tests/unit/test_greg_spiderweb.py::test_integration_watch_escalates_a_real_authority_defect_once_then_holds_after_the_fix": {
+      "line": 254
+    },
+    "tests/unit/test_greg_self_repair.py::test_tampered_capability_is_reformed_after_restart_instead_of_crash_looping": {
+      "line": 92
+    },
+    "tests/unit/test_greg_self_repair.py::test_repairs_share_the_one_signed_build_budget": {
+      "line": 115
+    },
+    "tests/unit/test_greg_self_repair.py::test_a_replacement_is_judged_on_its_own_faults_and_budget_caps_do_not_ratchet": {
+      "line": 142
+    },
+    "tests/unit/test_morphogenesis.py::test_missing_or_low_confidence_evidence_blocks_convergence": {
+      "line": 120
+    },
+    "tests/unit/test_morphogenesis.py::test_action_ranking_filters_unauthorized_and_over_budget_actions": {
+      "line": 140
+    },
+    "tests/unit/test_greg_improvement_attacks.py::test_relabelling_the_training_brief_is_never_held_out_evidence": {
+      "line": 176
+    },
+    "tests/unit/test_greg_improvement_attacks.py::test_a_candidate_without_enough_evidence_expires_as_no_improvement": {
+      "line": 223
+    },
+    "tests/unit/test_local_model.py::test_untrusted_model_output_cannot_supply_authority_or_invalid_contracts": {
+      "line": 94
+    },
+    "tests/unit/test_local_model.py::test_redirect_is_refused_instead_of_reaching_paid_provider": {
+      "line": 100
+    },
+    "tests/unit/test_greg_anchor.py::test_configuration_refusals": {
+      "line": 226
+    },
+    "tests/unit/test_autonomy.py::test_clean_evidence_promotes_one_level_with_verifier": {
+      "line": 85
+    },
+    "tests/unit/test_autonomy.py::test_renewal_requires_fresh_complete_evidence": {
+      "line": 126
+    },
+    "tests/unit/test_developmental_inheritance.py::test_evidence_without_refs_is_unresolved_and_later_horizons_name_prerequisites": {
+      "line": 194
+    },
+    "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence": {
+      "line": 207
+    },
+    "tests/unit/test_greg_platform.py::test_new_compute_node_gets_bounded_identity_not_founder_authority": {
+      "line": 51
+    },
+    "tests/unit/test_greg_platform.py::test_supervisor_configs_restart_crashes_but_respect_stop": {
+      "line": 110
+    },
+    "tests/unit/test_greg_platform.py::test_guardrail_autonomy_is_not_authority": {
+      "line": 160
+    },
+    "tests/unit/test_greg_routing_integrity.py::test_a_provider_policy_flag_is_a_refusal_and_is_never_shopped_to_another_vendor": {
+      "line": 57
+    },
+    "tests/unit/test_greg_routing_integrity.py::test_the_planner_reports_the_refusal_class_and_proposes_nothing": {
+      "line": 90
+    },
+    "tests/unit/test_greg_routing_integrity.py::test_a_bare_invalid_prompt_is_not_a_policy_refusal_and_may_fail_over": {
+      "line": 147
+    },
+    "tests/unit/test_greg_routing_integrity.py::test_invalid_prompt_corroborated_by_policy_wording_is_a_terminal_refusal": {
+      "line": 157
+    },
+    "tests/unit/test_greg_routing_integrity.py::test_a_structured_policy_code_alone_is_a_terminal_refusal": {
+      "line": 167
+    },
+    "tests/unit/test_migration_spec_frozen.py::test_authority_invariants_cover_the_founder_required_properties": {
+      "line": 275
+    },
+    "tests/unit/test_greg_founder_asks.py::test_a_paid_approval_is_a_full_resource_ask_and_every_surface_shows_its_costs": {
+      "line": 187
+    },
+    "tests/unit/test_greg_founder_asks.py::test_an_expired_mandate_is_a_resource_ask_for_authority_not_a_plea": {
+      "line": 229
+    },
+    "tests/unit/test_greg_founder_asks.py::test_a_plea_quoted_into_evidence_is_withheld_but_error_text_is_data": {
+      "line": 262
+    },
+    "tests/unit/test_shared_durable_boundary.py::test_claim_result_restart_and_conflict": {
+      "line": 27
+    },
+    "tests/unit/test_shared_durable_boundary.py::test_nonce_survives_real_process_restart": {
+      "line": 70
+    },
+    "tests/unit/test_shared_durable_boundary.py::test_workflow_identity_cannot_restart_from_zero": {
+      "line": 201
+    },
+    "tests/unit/test_shared_durable_boundary.py::test_consequence_label_cannot_mint_missing_authority": {
+      "line": 213
+    },
+    "tests/unit/test_migration_inertness.py::test_harness_detects_a_candidate_reaching_for_authority": {
+      "line": 203
+    },
+    "tests/unit/test_research_line.py::test_connected_bundle_preserves_evidence_and_pending_review": {
+      "line": 70
+    },
+    "tests/unit/test_research_line.py::test_revoked_pattern_refuses_resume": {
+      "line": 149
+    },
+    "tests/unit/test_research_line.py::test_hallucinated_citations_or_authority_fields_are_refused": {
+      "line": 178
+    },
+    "tests/unit/test_research_line.py::test_empty_search_preserves_missing_evidence": {
+      "line": 282
+    },
+    "tests/unit/test_research_line.py::test_supplied_observations_need_no_network_authority": {
+      "line": 468
+    },
+    "tests/unit/test_greg_missions.py::test_bounded_mission_closes_only_on_reobserved_evidence": {
+      "line": 34
+    },
+    "tests/unit/test_greg_missions.py::test_tampered_acquired_binary_is_quarantined_on_restart": {
+      "line": 270
+    },
+    "tests/unit/test_greg_routing_integrity_sdk.py::test_the_real_openai_sdk_policy_error_is_a_terminal_refusal": {
+      "line": 44
+    },
+    "tests/unit/test_greg_open_source_first_routing.py::test_a_paid_route_is_used_only_when_the_founder_selection_names_it": {
+      "line": 53
+    },
+    "tests/unit/test_greg_open_source_first_routing.py::test_default_order_names_no_paid_route": {
+      "line": 60
+    },
+    "tests/unit/test_institutional_leverage.py::test_order_independent_identity_and_no_mutation": {
+      "line": 158
+    },
+    "tests/unit/test_institutional_leverage.py::test_budget_and_total_hop_limit_filter_routes_without_erasing_alternatives": {
+      "line": 169
+    },
+    "tests/unit/test_institutional_leverage.py::test_no_request_consumes_no_builtin_budget_and_zero_budget_hibernates": {
+      "line": 282
+    },
+    "tests/unit/test_core_venture_boundary.py::test_rule7_ventures_define_no_authority_artifacts": {
+      "line": 190
+    },
+    "tests/unit/test_capabilities.py::test_unbounded_authority_refused": {
+      "line": 42
+    },
+    "tests/unit/test_capabilities.py::test_budget_above_ceiling_refused": {
+      "line": 70
+    },
+    "tests/unit/test_shared_compatibility.py::test_legacy_omitted_execution_contract_cannot_gain_retry_permission": {
+      "line": 81
+    },
+    "tests/unit/test_shared_compatibility.py::test_existing_workflow_still_refuses_contract_change_after_restart": {
+      "line": 87
+    },
+    "tests/unit/test_greg_precedents.py::test_signed_mission_uses_past_action_and_distinct_local_appraisal_after_restart": {
+      "line": 34
+    },
+    "tests/unit/test_greg_learning_gate.py::test_labels_are_bounded_and_cannot_express_authority": {
+      "line": 137
+    },
+    "tests/unit/test_migration_adversarial.py::test_2_duplicate_step_names_cause_refusal_not_a_guess": {
+      "line": 105
+    },
+    "tests/unit/test_migration_adversarial.py::test_12_the_original_is_the_provider_after_a_process_restart": {
+      "line": 386
+    },
+    "tests/unit/test_migration_adversarial.py::test_15_no_candidate_module_reaches_for_authority_or_the_outside_world": {
+      "line": 481
+    },
+    "tests/unit/test_greg_account_access.py::test_refused_reads_become_one_evidenced_access_ask_and_the_mission_still_closes": {
+      "line": 48
+    },
+    "tests/unit/test_greg_account_access.py::test_start_after_a_stop_names_this_platforms_restart_command": {
+      "line": 119
+    },
+    "tests/unit/test_greg_account_access.py::test_an_authenticated_refusal_does_not_ask_for_the_token_it_already_has": {
+      "line": 127
+    },
+    "tests/unit/test_cognition_seed_gates.py::test_real_solver_unknown_not_sat_or_optimal": {
+      "line": 40
+    },
+    "tests/unit/test_cognition_seed_gates.py::test_forged_or_stale_evidence_abstains": {
+      "line": 57
+    },
+    "tests/unit/test_cognition_seed_gates.py::test_dropped_source_constraint_is_refuted": {
+      "line": 68
+    },
+    "tests/unit/test_cognition_seed_gates.py::test_semantic_misleading_quote_is_not_evidence": {
+      "line": 102
+    },
+    "tests/unit/test_cognition_seed_gates.py::test_catalog_not_eligibility_and_no_paid_fallback": {
+      "line": 125
+    },
+    "tests/unit/test_fast_evolution.py::test_structural_doctrinal_refusal_halts_cycle": {
+      "line": 166
+    },
+    "tests/unit/test_identity.py::test_identity_is_not_authority": {
+      "line": 28
+    },
+    "tests/unit/test_greg_presence.py::test_a_boot_with_no_evidence_of_its_duration_counts_none_of_it": {
+      "line": 75
+    },
+    "tests/unit/test_goal_chase_contracts.py::test_schema_is_valid_and_standing_budget_cannot_silently_expand": {
+      "line": 18
+    },
+    "tests/unit/test_goal_chase_contracts.py::test_goal_cannot_create_authority_or_expand_sandbox": {
+      "line": 33
+    },
+    "tests/unit/test_goal_chase_contracts.py::test_pure_candidate_interface_has_no_io_or_authority_imports": {
+      "line": 92
+    },
+    "tests/unit/test_greg_models.py::test_a_refusal_is_final_and_never_shopped_to_another_vendor": {
+      "line": 61
+    },
+    "tests/unit/test_foundry_intake_v1.py::test_schema_rejects_any_execution_authority": {
+      "line": 114
+    },
+    "tests/unit/test_foundry_intake_v1.py::test_invalid_human_approval_reference_fails_closed": {
+      "line": 131
+    },
+    "tests/unit/test_developmental_substrate_v1.py::test_frozen_v01_contracts_validate_and_carry_no_authority": {
+      "line": 18
+    },
+    "tests/unit/test_developmental_substrate_v1.py::test_invalid_authority_or_restoration_genomes_are_refused": {
+      "line": 124
+    },
+    "tests/unit/test_greg_artifacts.py::test_founder_signed_import_survives_restart_and_materializes_in_later_mission": {
+      "line": 31
+    },
+    "tests/unit/test_greg_artifacts.py::test_gate_refuses_unscoped_import_and_signed_detach_survives_restart": {
+      "line": 183
+    },
+    "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working": {
+      "line": 70
+    },
+    "tests/unit/test_greg_remote.py::test_a_founder_stop_survives_restart_until_a_human_clears_it": {
+      "line": 201
+    },
+    "tests/unit/test_events.py::test_approval_wait_blocks_without_approver": {
+      "line": 159
+    },
+    "tests/unit/test_founder_effect_doctrine.py::test_doctrine_preserves_authority_separation": {
+      "line": 55
+    },
+    "tests/unit/test_evolution.py::test_tree_preserves_rejected_branches_with_revival_evidence": {
+      "line": 54
+    },
+    "tests/unit/test_evolution.py::test_baseline_floor_admits_weak_evidence": {
+      "line": 160
+    },
+    "tests/unit/test_greg_local_mission.py::test_reserved_matter_cannot_execute_without_approval": {
+      "line": 167
+    },
+    "tests/unit/test_repair_adapters.py::test_detector_catches_correct_edges_with_broken_refusal_behaviour": {
+      "line": 281
+    },
+    "tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent": {
+      "line": 537
+    },
+    "tests/unit/test_omnimorph_v1.py::test_aggregate_budget_cannot_escape_plan_ceiling": {
+      "line": 137
+    },
+    "tests/unit/test_omnimorph_v1.py::test_retirement_requires_accountability_approval_and_reconciliation": {
+      "line": 234
+    },
+    "tests/unit/test_memory.py::test_outcome_weighting_prefers_verified_evidence": {
+      "line": 80
+    },
+    "tests/unit/test_memory.py::test_decay_settles_to_calm": {
+      "line": 124
+    },
+    "tests/unit/test_memory.py::test_authority_ceiling_only_descends": {
+      "line": 131
+    },
+    "tests/unit/test_greg_ollama.py::test_local_model_proposes_through_one_router_without_a_key_or_authority": {
+      "line": 64
+    },
+    "tests/unit/test_greg_ollama.py::test_local_model_refusal_is_terminal_and_outage_can_fail_over": {
+      "line": 81
+    },
+    "tests/unit/test_greg_ventures.py::test_binding_verdict_never_outruns_the_evidence": {
+      "line": 109
+    },
+    "tests/unit/test_greg_ventures.py::test_packet_never_invents_an_unevidenced_buyer": {
+      "line": 117
+    },
+    "tests/unit/test_greg_ventures.py::test_evidenced_buyer_lets_the_engine_verdict_stand": {
+      "line": 145
+    },
+    "tests/unit/test_greg_ventures.py::test_refusals_outside_roots_without_delivery_and_on_organ_failure": {
+      "line": 177
+    },
+    "tests/unit/test_greg_ventures.py::test_standing_mission_reassesses_when_evidence_changes_and_each_hold_is_appraised": {
+      "line": 242
+    },
+    "tests/unit/test_greg_ventures.py::test_flip_condition_names_the_gap_or_says_evidence_will_not_help": {
+      "line": 274
+    },
+    "tests/unit/test_greg_ventures.py::test_counterevidence_travels_on_the_wire": {
+      "line": 297
+    },
+    "tests/unit/test_repair_candidates.py::test_r2_explains_every_refusal_by_name": {
+      "line": 246
+    },
+    "tests/unit/test_repair_candidates.py::test_r3_reports_how_many_rounds_it_used_within_the_frozen_budget": {
+      "line": 381
+    },
+    "tests/unit/test_repair_inertness.py::test_harness_detects_a_candidate_reaching_for_authority": {
+      "line": 189
+    },
+    "tests/unit/test_loom.py::test_irreversible_step_requires_approval_gate": {
+      "line": 44
+    },
+    "tests/unit/test_loom.py::test_approval_gate_blocks_until_human_ratifies": {
+      "line": 132
+    },
+    "tests/unit/test_embassy.py::test_revoked_guest_cannot_request": {
+      "line": 100
+    },
+    "tests/unit/test_greg_genesis_builder.py::test_no_signed_build_budget_means_no_build": {
+      "line": 106
+    },
+    "tests/unit/test_consequence_gate.py::test_reserved_matter_with_approval_proceeds": {
+      "line": 145
+    },
+    "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit": {
+      "line": 152
+    },
+    "tests/unit/test_consequence_gate.py::test_effect_mismatch_is_hard_refusal_and_incident": {
+      "line": 183
+    },
+    "tests/unit/test_consequence_gate.py::test_budget_overflow_refused": {
+      "line": 195
+    },
+    "tests/unit/test_consequence_gate.py::test_weak_evidence_refused_for_external_contact": {
+      "line": 202
+    },
+    "tests/unit/test_consequence_gate.py::test_executor_explosion_fails_closed_and_preserves_evidence": {
+      "line": 226
+    },
+    "tests/unit/test_business.py::test_weak_evidence_payment_does_not_happen": {
+      "line": 113
+    },
+    "tests/unit/test_shared_recovery.py::test_restart_recovers_deduplication": {
+      "line": 47
+    },
+    "tests/unit/test_greg_continuity.py::test_mark_reviewed_while_running_is_a_clear_refusal_not_a_crash": {
+      "line": 92
+    },
+    "tests/unit/test_morning_review.py::test_critique_survives_restart_without_rewriting_original_or_authority": {
+      "line": 74
+    },
+    "tests/unit/test_morning_review.py::test_authority_and_unbounded_note_inputs_refused": {
+      "line": 103
+    },
+    "tests/unit/test_morning_review.py::test_failure_claim_requires_evidence_and_stays_a_claim": {
+      "line": 112
+    },
+    "tests/unit/test_morning_review.py::test_note_cannot_borrow_evidence_outside_its_mission_snapshot": {
+      "line": 125
+    },
+    "tests/unit/test_greg_briefs.py::test_signed_brief_mission_stops_for_approval_delivers_once_and_is_independently_verified": {
+      "line": 104
+    },
+    "tests/unit/test_repair_spec_frozen.py::test_authority_invariants_and_kill_conditions_are_declared": {
+      "line": 245
+    },
+    "tests/unit/test_repair_spec_frozen.py::test_repair_cost_is_measured_in_points_and_no_money_is_budgeted": {
+      "line": 267
+    },
+    "tests/unit/test_egregore_runtime.py::test_attention_never_replenishes_budget_or_changes_authority": {
+      "line": 246
+    },
+    "tests/unit/test_egregore_runtime.py::test_financial_candidate_still_has_zero_execution_authority": {
+      "line": 257
+    },
+    "tests/unit/test_egregore_runtime.py::test_restart_reconstructs_signals_cycles_and_suspension_from_ledger": {
+      "line": 305
+    },
+    "tests/integration/test_phase_zero_connection.py::test_assessment_adapter_refuses_authority_inflation": {
+      "line": 225
+    },
+    "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it": {
+      "line": 48
+    },
+    "tests/integration/test_goal_chase.py::test_path_b_persistent_boundary_approval_resume_and_duplicate": {
+      "line": 101
+    },
+    "tests/integration/test_goal_chase.py::test_rejection_survives_restart_new_facts_and_repeated_ticks": {
+      "line": 182
+    },
+    "tests/integration/test_goal_chase.py::test_reality_types_never_promote_to_sandbox_evidence": {
+      "line": 201
+    },
+    "tests/integration/test_goal_chase.py::test_stale_observation_and_expired_accepted_approval_block": {
+      "line": 213
+    },
+    "tests/integration/test_goal_chase.py::test_fresh_material_observation_invalidates_old_approval": {
+      "line": 227
+    },
+    "tests/integration/test_goal_chase.py::test_authority_does_not_create_missing_capability": {
+      "line": 303
+    },
+    "tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval": {
+      "line": 18
+    },
+    "tests/integration/test_goal_chase_attention.py::test_reconfirmation_cannot_extend_freshness_or_authority": {
+      "line": 65
+    },
+    "tests/integration/test_goal_chase_attention.py::test_restart_preserves_question_and_observation_high_water_mark": {
+      "line": 94
+    }
+  },
+  "residuals": [
+    "No complete shared-specification independence proof",
+    "Native exact quotation does not detect every misleading factual source",
+    "No real multi-body authority continuity or backup restore tested here",
+    "No universal exactly-once external effects",
+    "Evaluation source frozen; no independent expert usefulness annotation"
+  ]
+}

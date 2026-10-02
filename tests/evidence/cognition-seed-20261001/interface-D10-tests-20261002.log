@@ -1,0 +1,5 @@
+........................................................................ [ 96%]
+...                                                                      [100%]
+=========================== short test summary info ============================
+SKIPPED [2] tests/integration/test_greg_phone_e2e.py:24: could not import 'playwright.sync_api': No module named 'playwright'
+75 passed, 2 skipped in 28.58s

@@ -21,8 +21,9 @@ at <https://support.google.com/chromebook/answer/9145439>.
 In the Linux Terminal, check `python3 --version` (at least 3.11) and
 `git --version`. Debian in the Linux environment ships without the Python venv
 package: install it with `sudo apt install python3-venv` (the doctor below reports
-it as `python_venv_available`). ARM and Intel Chromebooks both work: every compiled dependency publishes Linux ARM64
-and x86-64 wheels for Python 3.11 (checked on PyPI 2026-09-30), so no compiler is needed.
+it as `python_venv_available`). Confirm package, wheel and memory fit for this
+device's architecture and Python version. The reviewed cognition packages were
+tested on Python 3.12 Linux; that does not verify an ARM or Intel Chromebook.
 Keep the repository and `~/.uniimente` **inside Linux
 files**, not on a shared ChromeOS mount. After cloning below, before creating
 any key or body, run `python3 -m greg doctor --chromebook` from the repository.
@@ -46,6 +47,25 @@ body, creates your key (you type the passphrase; the script never sees it),
 enrolls it, enables `greg-body.service`, and asks you to sign the designation of
 this machine as your first body. Re-running it changes nothing that is already
 done. Then skip to step 2. The manual steps below do the same thing by hand.
+
+The default installation adds the basic body dependencies. To explicitly add
+the reviewed seed solver packages, run `bash greg/chromebook/install.sh --with-engines`.
+`--with-expanded-engines` selects the separately reviewed
+expanded recipe, including the seed. `--no-engines` is the default; the first
+repository mission needs no solver or model. These options use exact pins and
+binary wheels from [`requirements-cognition.txt`](../requirements-cognition.txt)
+and [`requirements-cognition-expanded.txt`](../requirements-cognition-expanded.txt).
+An unavailable wheel is reported without a source-build or version fallback.
+Package installation can partially succeed; inspect `greg doctor --chromebook`
+before depending on a method. This does not attach or authorize a capability,
+download model weights, or start a model server.
+
+The doctor separates package/version presence, declared dependency availability,
+and retained capability attachment. `null` task qualification, authority or
+native execution means it was not established by this read-only check. A signed
+mission and its native evidence are required to qualify actual use. Missing
+optional packages do not block the basic repository mission. The extraction and
+test limits are in the [D9 review](../docs/collaboration/CHROMEBOOK-D9-ENGINE-READINESS-20261001.md).
 
 **Manual install (equivalent):**
 

@@ -4,6 +4,12 @@
 
 **Foundry delivery scope (2026-09-27):** `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json` keeps all 55 numbered systems as active obligations; each needs executable GREG/Foundry integration, tests and reproducible evidence before completion can be claimed. Catalog status and a plan do not suffice. Hardware for the first founder-owned body remains open because Alfonso owns no Mac. This changes no constitutional or external-effect authority.
 
+## Controlling founder correction — complete machine, 2026-10-01
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.** Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. A seed, experiment, sandbox, benchmark, PR, registry, VEPMC milestone or smallest falsifiable increment is a sequencing unit, never the project stopping condition. Prove and integrate each increment, then automatically resume the parent founder objective and its highest-priority unblocked dependency until the currently achievable machine is integrated and executable. Record precise founder-only, external-dependency or demonstrated technology blockers per requirement; continue unrelated achievable work. Pending founder-use evidence does not justify unfinished buildable software. Existing authority, activation, consequence, refusal, consent, budget and shutdown gates remain effective.
+
+Use maximum lawful reuse before original construction; source records and qualification rules live in `docs/intent/INTENT-20261001-open-source-mechanism-harvest.json` and `docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md`. DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE and RECOMBINE are distinct reuse modes. Pin provenance, exact licenses/notices, security/resource fit, native tests and replacement/rollback. Successful reuse is followed by the next unfinished machine dependency.
+
 ## Latest founder correction — BUILD THE REAL PRODUCT
 
 Before selecting work, read `@docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and `@docs/intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`.

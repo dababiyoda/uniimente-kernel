@@ -86,6 +86,12 @@ async function refresh() {
         el("p", "Uncertainty: " + JSON.stringify(r.uncertainty)),
         el("p", `Time: ${r.latency} seconds · Cost: $${r.money_cost}`),
         el("p", "Next permitted step: " + ((r.missing_information || []).join("; ") || "Review the scoped result; effects still require existing authority.")));
+      if (r.proposal_review) {
+        const review = r.proposal_review;
+        card.append(el("p", "Proposal review: " + Object.entries(review.obligations).map(([name, state]) => `${name.replaceAll("_", " ")}: ${state}`).join("; ")),
+          el("p", `Institutional acceptance: ${review.acceptance} · Options for review: ${review.options_for_review.join(", ")}`),
+          el("p", review.next_step));
+      }
       return card;
     }));
     renderDecisions((await api("/api/decisions")).data);

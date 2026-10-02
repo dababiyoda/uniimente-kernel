@@ -1,0 +1,144 @@
+completed 20/320
+completed 40/320
+completed 60/320
+completed 80/320
+completed 100/320
+completed 120/320
+completed 140/320
+completed 160/320
+completed 180/320
+completed 200/320
+completed 220/320
+completed 240/320
+completed 260/320
+completed 280/320
+completed 300/320
+completed 320/320
+{
+  "freeze_digest": "sha256:2c65f9eaf1312a5256675330ca44cafece712bca09ef12d5bc581b1fa9c6bd4b",
+  "suite_digest": "sha256:4333f114bcea9953038ff7879a7f66ba2a6ae99b1587d127848dd61f75a8b8d5",
+  "total": 320,
+  "completed": 320,
+  "receipted_denominator": 320,
+  "correct": 318,
+  "strata": {
+    "semantic": {
+      "n": 20,
+      "correct": 18,
+      "mean_loss": 0.12118089142891672,
+      "latency_p95": 15.018617964999976
+    },
+    "strategy": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.06099940651224997,
+      "latency_p95": 10.492009629999757
+    },
+    "estimation": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0025129185635000798,
+      "latency_p95": 0.2807744110000385
+    },
+    "formal_sat": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.003988121404999447,
+      "latency_p95": 0.7289095289997931
+    },
+    "formal_unsat": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0036170160140001147,
+      "latency_p95": 0.627253779000057
+    },
+    "formal_unknown": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.003547301834499649,
+      "latency_p95": 0.5905903929997294
+    },
+    "optimization": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0062568718984997536,
+      "latency_p95": 0.8387841769999795
+    },
+    "optimization_infeasible": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.006465027245000897,
+      "latency_p95": 1.0015955730000314
+    },
+    "causal_identified": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0031333055370004106,
+      "latency_p95": 0.42524508299993613
+    },
+    "causal_nonidentified": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0031420799935000334,
+      "latency_p95": 0.5113101560000359
+    },
+    "mixed": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0024646149989999916,
+      "latency_p95": 0.26724912200006656
+    },
+    "ambiguous": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 3.798412999685752e-06,
+      "latency_p95": 0.0004910179995931685
+    },
+    "unknown_geometry": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 4.0501689994698615e-06,
+      "latency_p95": 0.0010456620002514683
+    },
+    "missing_evidence": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0013867691249993188,
+      "latency_p95": 0.15671062199999142
+    },
+    "rights_sensitive": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 2.99370540004702e-05,
+      "latency_p95": 0.013385322999965865
+    },
+    "abstention": {
+      "n": 20,
+      "correct": 20,
+      "mean_loss": 0.0016418514754998341,
+      "latency_p95": 0.2730381970000053
+    }
+  },
+  "routing_gain_against_static": 0,
+  "ci95_against_identical_static": [
+    0,
+    0
+  ],
+  "superiority_status": "INCONCLUSIVE",
+  "baseline_status": {
+    "existing_greg_without_cortex": "MEASURED scoped compatibility projection of #137 no-cortex inventory; full-runtime comparison remains a limitation",
+    "always_local_llm": "MEASURED one-call local-model proposals; no native computational certificate",
+    "tool_enabled_workflow": "same deterministic specialist workflow is deployable; no gain over it",
+    "static_specialist_router": "MEASURED: retained static policy is proposed policy",
+    "proposed_router": "MEASURED"
+  },
+  "hard_failure": "no effect authority granted by any receipt; runtime authority/isolation tests separate",
+  "limits": [
+    "engineered structured holdout; no arbitrary-language generalization",
+    "semantic grading is structural and quote-bound, not expert usefulness",
+    "correlated template groups limit statistical inference",
+    "no proven antifragility or causal credit",
+    "full-runtime baseline and independent expert semantic usefulness assessment remain open"
+  ],
+  "decision": "RETAIN simpler static workflow; EXPERIMENT cortex advantage; no live promotion"
+}

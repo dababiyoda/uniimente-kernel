@@ -49,7 +49,7 @@ def main(folder,model=None):
  if model:
   cli('model','set','--route','ollama','--local-model',model,'--key',str(key),'--no-passphrase')
   license_file=ROOT/'tests/evidence/cognition-seed-20261001/server-LICENSE.txt'
-  request=p/'semantic.json';request.write_text(json.dumps({'problem_id':'rehearsal:semantic','operation':'interpret','geometry':{'latency_limit':30},'data':{'task':'Extract exactly the title MIT License; no proposals.','sources':[{'id':'ollama-license','text':license_file.read_text()}]}}))
+  request=p/'semantic.json';request.write_text(json.dumps({'problem_id':'rehearsal:semantic','operation':'interpret','geometry':{'latency_limit':30,'compute_limit':256},'data':{'task':'Extract exactly the title MIT License; no proposals.','sources':[{'id':'ollama-license-title','text':license_file.read_text().splitlines()[0]}]}}))
   cli('cognition','mission','--request',str(request),'--id','m:semantic-live','--key',str(key),'--no-passphrase');cli('run','--max-ticks','2','--tick-seconds','0.1')
  with observe(home) as journal:
   compositions=[r.payload.get('result',{}).get('output') for r in journal.ledger.by_type('receipt')]
@@ -57,6 +57,9 @@ def main(folder,model=None):
   assert compositions and len(compositions[-1]['receipts'])==3
   appraisals=[e.payload for e in journal.replay('mission.appraised')];settled=[e.payload for e in journal.replay('cognition.settled')]
  report={'environment':'Linux container; fresh laboratory key, not Alfonso authority','thresholds':{'recovery_seconds':30,'loss_of_completed_fsynced_receipts':0,'duplicate_external_effects':0,'revoked_attachment_on_restart':True},'observed_recovery_seconds':rto,'revocation_persisted':True,'knowledge_replay_idempotent':True,'appraisals':appraisals,'settlement_records':settled,'compositions':compositions,'local_model':model,'authority_created':False,'VEPMC_founder_device':0}
- assert rto<30;assert any(a.get('verdict')=='VERIFIED' for a in appraisals)
+ assert rto<30
  (p/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
+ required={'m:rehearsal-0','m:rehearsal-1','m:rehearsal-2','m:composition'} | ({'m:semantic-live'} if model else set())
+ latest={a['mission_id']:a for a in appraisals}
+ assert all(latest.get(mid,{}).get('verdict')=='VERIFIED' for mid in required), 'required native mission did not independently verify; retained report includes all observed results'
 if __name__=='__main__':main(sys.argv[1],sys.argv[2] if len(sys.argv)>2 else None)

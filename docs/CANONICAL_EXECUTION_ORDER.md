@@ -75,7 +75,8 @@ Current product priority is `collaboration/OPUS-RECONCILIATION.md` and the
 2026-09-11 sequencing correction at the top of Final Build Order. Its first
 embodied persistent mission takes precedence over completing the historical
 Phase Zero catalog. Existing components and history remain preserved. Build
-only the dependency required by the active outcome; do not create another
+the dependencies required by the active outcome first, then continue the next
+unblocked complete-machine requirement; do not create another
 authority plane, mandatory organization or blanket registration prerequisite.
 
 1. Founder-effect compilation for the active mission.

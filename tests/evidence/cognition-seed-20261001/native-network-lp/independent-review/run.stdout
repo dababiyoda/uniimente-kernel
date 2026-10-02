@@ -1,0 +1,4 @@
+250 flow cases: antiparallel/selfloop/dense arcs match exhaustive mincut
+250 graph cases: directed/undirected/unreachable/selfloop match Fraction relaxation
+LP adversarial retest {'coefficient': 1e-07, 'bounds': [0, 1000000000.0], 'actual_optimum': 0.0, 'forged_objective': 100.0, 'verdict': 'REFUTED', 'dissent': ['a multiplier has the wrong sign', 'LP primal/dual checks use relative 1e-7 numerical tolerance. Native INFEASIBLE/UNBOUNDED is unproven and cannot close a mission.']}
+LP adversarial retest {'coefficient': 1e-08, 'bounds': [-1000000000.0, 0], 'actual_optimum': -10.0, 'forged_objective': 0.0, 'verdict': 'REFUTED', 'dissent': ['primal and rigorously corrected dual objectives differ: optimality is not shown', 'LP primal/dual checks use relative 1e-7 numerical tolerance. Native INFEASIBLE/UNBOUNDED is unproven and cannot close a mission.']}

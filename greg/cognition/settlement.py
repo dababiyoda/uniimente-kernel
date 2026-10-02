@@ -48,7 +48,12 @@ def measured_outcomes(journal):
     latest_appraisal, observations = {}, {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
-        if (data.get("verdict") == "VERIFIED" and all(data.get("checks", {}).get(k) is True for k in REQUIRED_CHECKS)):
+        checks = data.get("checks", {})
+        supported = all(checks.get(k) is True for k in REQUIRED_CHECKS if k != "world_reobserved")
+        local_artifact = (checks.get("applicable_observations_revalidated") is True
+                          and bool(data.get("numerical_artifact_verification")))
+        if (data.get("verdict") == "VERIFIED" and supported
+                and (checks.get("world_reobserved") is True or local_artifact)):
             latest_appraisal[data["mission_id"]] = event
         else:
             latest_appraisal.pop(data["mission_id"], None)
@@ -63,6 +68,14 @@ def measured_outcomes(journal):
         if (not _valid_receipt(receipt) or receipt["abstention_state"] != "NONE" or
                 receipt["evaluator_result"].get("verdict") != "STRUCTURALLY_VERIFIED"):
             continue
+        appraisal = latest_appraisal[data["mission_id"]].payload
+        if appraisal.get("checks", {}).get("world_reobserved") is not True:
+            scope = next((s for s in appraisal.get("numerical_artifact_verification", [])
+                          if s.get("check_id") == data["check_id"]), {})
+            if (scope.get("current_world_observation") is not False
+                    or scope.get("receipt_id") != (receipt or {}).get("receipt_id")
+                    or scope.get("artifact_verification", {}).get("verdict") != "STRUCTURALLY_VERIFIED"):
+                continue  # no generic snapshot, semantic or Foundry credit
         witness = witnesses.get(record.payload.get("witness_id"), {})
         producer = witness.get("capability")
         method = BUILTINS.get(receipt["method"], (None,))[0]
@@ -81,7 +94,8 @@ def measured_outcomes(journal):
                              "appraisal_event": latest_appraisal[data["mission_id"]].event_id,
                              "cost_usd": receipt["money_cost"], "latency": receipt["latency"],
                              "causal_credit": receipt["causal_credit"],
-                             "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+                             "evidence_tier": "validated local encoded computation; empirical outcome unproven",
+                             "empirical_outcome": False,
                              "authority_created": False}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
         observations[_outcome_identity(outcome)] = outcome

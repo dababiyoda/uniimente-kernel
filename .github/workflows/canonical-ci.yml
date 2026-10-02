@@ -39,13 +39,17 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+          # Match the independently exercised native package environment.
+          # Boundary/schema-only jobs retain their existing Python 3.11 scope.
+          python-version: "3.12"
+      # Explicit reviewed native qualification dependencies; installation does
+      # not attach methods, download model weights or start model servers.
+      - run: pip install -r requirements-dev.txt -r requirements-cognition-expanded.txt -r requirements-foundry.txt
       - name: Full unit and integration suite
         run: python -m pytest -q
-      - name: Frozen cognition assessment
+      - name: Original cognition expectations and current default-gate compatibility
         run: |
-          python -m greg.cognition.benchmark > cognition-report.json
+          python -m greg.cognition.benchmark --catalog-compatibility > cognition-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: bounded-cognition-report

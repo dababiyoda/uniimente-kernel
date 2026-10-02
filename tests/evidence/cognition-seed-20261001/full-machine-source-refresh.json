@@ -1,0 +1,23 @@
+{
+  "repo": "dababiyoda/uniimente-kernel",
+  "main": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+  "source_branches": {
+    "foundry132": "da3d4ac8643ecf6791ffadcac064f8bb1cc6269d",
+    "cognition143": "7105a7cbd013edd6bce88b9500e2b4477635c912",
+    "sourcing144": "f83b31da0f3b382ced34c59297f4655b408aed95"
+  },
+  "recorded_at": "2026-10-01T20:25:33.225460+00:00",
+  "commands": [
+    "git fetch origin claude/foundry-55",
+    "git fetch origin claude/greg-seed-genome-build-y43kmg founder/open-source-mechanism-harvest-20261001",
+    "git show <commit>:<path>",
+    "git diff 3ced61d..<source ref> -- <canonical path>"
+  ],
+  "lineage": "actual code inspected; remote PR claims retained as attributed author reports until rerun",
+  "exclusions": [
+    "competing cortex registry/routing imported by143 not adopted",
+    "generic Foundry own grants/stores/registry/promotion and caller Python repair refused",
+    "default-branch changes, merges, deployments and live organs excluded",
+    "physical body/founder keys unavailable in environment"
+  ]
+}

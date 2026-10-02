@@ -23,19 +23,31 @@ from collections import defaultdict
 from greg.journal import Journal
 
 SUCCESS = {"DONE"}
-FAILURE = {"REFUSED", "UNAVAILABLE", "UNCERTAIN", "RECONCILED_NOT_EXECUTED"}
+FAILURE = {"UNAVAILABLE", "UNCERTAIN", "RECONCILED_NOT_EXECUTED"}
 EFFECT_CHECKS = ("checks_rederived_from_receipts", "world_reobserved")  # appraiser checks a capability owns
+AUTHENTICITY_CHECKS = ("chain_intact", "founder_signature_verified", "approval_boundaries_honored", "exactly_once")
 
 
 def track_record(journal: Journal) -> dict[str, dict]:
-    record = defaultdict(lambda: {"done": 0, "failed": 0, "ineffective": 0, "refuted": 0, "verified": 0})
+    record = defaultdict(lambda: {"done": 0, "failed": 0, "ineffective": 0, "refuted": 0,
+                                  "verified": 0, "computationally_verified": 0, "refused": 0})
     appraisals = {}
+    negative_invocations = {r.hash for r in journal.ledger.by_type("receipt")
+                            if r.payload.get("result", {}).get("result_class") == "negative"
+                            and (r.payload["result"].get("failure_kind") == "CAPABILITY_ERROR"
+                                 or r.payload["result"].get("observed_outcome", "").startswith("capability refused: "))}
     for event in journal.replay("mission.appraised"):
         data = event.payload
         effect_ok = all(data.get("checks", {}).get(c, False) for c in EFFECT_CHECKS)
-        if data["verdict"] == "VERIFIED":
-            appraisals[data["mission_id"]] = "verified"
-        elif data["verdict"] == "REFUTED" and not effect_ok:
+        authentic = all(data.get("checks", {}).get(c) is True for c in AUTHENTICITY_CHECKS)
+        if data["verdict"] == "VERIFIED" and authentic:
+            if effect_ok:
+                appraisals[data["mission_id"]] = "verified"
+            elif data.get("checks", {}).get("applicable_observations_revalidated") is True:
+                appraisals[data["mission_id"]] = "computationally_verified"
+            else:
+                appraisals.pop(data["mission_id"], None)
+        elif data["verdict"] == "REFUTED" and authentic and not effect_ok:
             appraisals[data["mission_id"]] = "refuted"
         else:
             appraisals.pop(data["mission_id"], None)
@@ -50,6 +62,15 @@ def track_record(journal: Journal) -> dict[str, dict]:
                 record[capability][appraisals[data["mission_id"]]] += 1
         elif data["status"] in FAILURE:
             record[capability]["failed"] += 1
+        elif data["status"] == "REFUSED":
+            # Founder/policy/provider refusal is an authority outcome, never a
+            # capability outage. Keep it visible without reducing reliability.
+            record[capability]["refused"] += 1
+            if data.get("receipt") in negative_invocations:
+                # Legacy REFUSED also represents an invoked adapter exception.
+                # Native negative receipts distinguish it from pre-invocation
+                # founder/policy refusal without guessing from caller text.
+                record[capability]["failed"] += 1
     for event in journal.replay("routing.outcome"):
         if event.payload["verdict"] == "ineffective":
             record[event.payload["capability"]]["ineffective"] += 1

@@ -1,0 +1,30 @@
+{
+  "schema": "environment-interruption/1",
+  "at": "2026-10-01T15:16:22.275440+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "source_commit": "083ec0d",
+  "observed": "Managed environment reported starting, then pending/offline at specification revisions 40/41. Shell access later recovered; prior test, evaluation and Ollama processes were absent. Their final exit codes are unavailable.",
+  "interrupted_runs": [
+    {
+      "log": "full-suite-v3-serial.log",
+      "progress": "44% plus partial following line",
+      "observed_failures": "one F indicator; detailed failure not flushed; not a completed result"
+    },
+    {
+      "log": "heldout-v3-stable-run.log",
+      "progress": "60/320",
+      "report": "no final report; not a completed benchmark"
+    }
+  ],
+  "completed_prior_evidence": {
+    "rehearsal": "cli-rehearsal-v3/report.json",
+    "recovery_seconds": 2.9846676510023826,
+    "revocation_persisted": true,
+    "three_distinct_settlements": true
+  },
+  "after_restart": {
+    "python": "3.12.14",
+    "boundary_checks": "post-restart-boundary-check.log:41 passed in4.84s"
+  },
+  "action": "Retain partial logs; final stable code/environment needs new fully automated runs. No passing result inferred from interruption."
+}

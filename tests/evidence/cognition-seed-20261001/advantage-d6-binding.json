@@ -1,0 +1,31 @@
+{
+  "decision": "SEED-20261001-D6",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "shared working tree; parent final commit/regression remains required",
+  "python": "3.12.14",
+  "environment": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "command": "/workspace/scratch/cortex-patched-venv/bin/python -m pytest -q tests/unit/test_cognition_advantage_review.py tests/integration/test_cognition_advantage_mission.py tests/unit/test_cognition_artifact_boundaries.py tests/integration/test_greg_cognition_mission.py",
+  "result": "51 passed in 4.18s",
+  "component_status": {
+    "proposal_builder": "executes through actual signed Body receipt and restart",
+    "correspondence_helper": "executable focused substitution tests; canonical appraisal hook delegated to boundary agent",
+    "external_acceptance": "UNPROVEN",
+    "external_use_authorized": false,
+    "authority_changed": false
+  },
+  "source_hashes": {
+    "greg/cognition/advantage.py": "sha256:7778dbe97c9cddd4b4722f239939585daa8f03f3c2906e1cb391d57988f2b5b7",
+    "greg/cognition/contracts.py": "sha256:aa0df002db274c5430b24242adf1bc59bee19ee438292977bb9d40fdc526ce98",
+    "greg/cognition/cortex.py": "sha256:2a22246713d19fbd8e9f36cb9627c671f05c683286d6d503c0d115f8d5aeafb6",
+    "greg/appraisal.py": "sha256:e6f277d533fa9b72a30018f3dcbf02497b25e20bc2a30a0150087cfb0b1d5e18",
+    "tests/unit/test_cognition_advantage_review.py": "sha256:b8dedf12db8aef37f9560c699a4d00f00b9dd5bfca0c2a14a1f69dd9f54e03a2",
+    "tests/integration/test_cognition_advantage_mission.py": "sha256:64e754cfcf337f36690cce254a729f1e861bf11091e68541a467a3fc765fcb90"
+  },
+  "limitations": [
+    "Source/parser/ledger/Pareto dependencies shared; no empirical independence",
+    "No original ledger payload copied; supplied summaries can be sensitive; no general PII detection",
+    "No professional, legal, benefit, deterrence or institutional acceptance outcome established",
+    "Full Body + Organs + Mind and founder-device completion remain ongoing"
+  ],
+  "previous_failure": "advantage-d6-parallel-fixture-failure.log: missing parallel v4 input file; not relabelled a pass"
+}

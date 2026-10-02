@@ -9,5 +9,16 @@ def cognitive_summaries(journal):
             card={k:answer.get(k) for k in keys}
             card['selection_rationale']=answer.get('method_selection_reason')
             card['proof_class']=answer.get('proof_type')
+            case = answer.get('advantage_case')
+            packet = answer.get('selective_disclosure')
+            if isinstance(case, dict) and isinstance(packet, dict):
+                card['proposal_review'] = {
+                    'obligations': {name: value.get('state', 'unresolved') for name, value in case.get('obligations', {}).items()
+                                    if isinstance(value, dict)},
+                    'options_for_review': case.get('conditional_scenario_frontier', []),
+                    'acceptance': packet.get('institutional_acceptance', {}).get('state', 'UNPROVEN'),
+                    'next_step': case.get('next_step'),
+                    'authority_created': False,
+                }
             result.append(card)
     return result[-10:][::-1]

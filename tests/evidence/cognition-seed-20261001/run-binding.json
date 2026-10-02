@@ -1,0 +1,19 @@
+{
+  "repository": "dababiyoda/uniimente-kernel",
+  "source_commit": "26e44d7545e90d28bb84fb5445b7625a70ccb05e",
+  "cognition_core_commit": "d17baffa5707e0bb0ee530a45b97b770dea7563e",
+  "integration_base": "3ced61db403a3d16908c915aef2e6d2acc8eda38",
+  "at": "2026-10-01T09:57:40.796308+00:00",
+  "environment_file": "dependencies.json",
+  "commands": [
+    "python -m pytest -q",
+    "python scripts/ci/check_seed_mutants.py <report.json>",
+    "python -m greg.cognition.seed_evaluation --model seed-qwen3:0.6b --output <report.json>",
+    "python scripts/rehearse_cognition_seed.py <fresh-folder> seed-qwen3:0.6b"
+  ],
+  "limitations": "Full-suite collection began on d17baff; later phone presentation-only changes are separately covered by phone-console-projection-corrected.log. Frozen cognition core code digests unchanged; original 9.14 and patched 9.15 environments are separate runs on the same held-out instances, not independent samples.",
+  "patched_evaluation": "heldout-patched.json",
+  "full_suite_result": "1253 passed,18 skipped,3warnings; source d17baff; later presentation and inheritance checked separately",
+  "patched_gain": 0,
+  "superiority_status": "INCONCLUSIVE"
+}

@@ -1,0 +1,11 @@
+{
+ "observed_at": "2026-10-01T20:27:13.083556+00:00",
+ "request": {
+  "package": {
+   "ecosystem": "PyPI",
+   "name": "wasmtime"
+  },
+  "version": "49.0.0"
+ },
+ "response": {}
+}

@@ -1,0 +1,85 @@
+141	claude/polyintelligence-cortex-primitives-20260930	3606c7aaaf92b9ca457752b64845089469988d1f	Add GREG Polyintelligence Cortex seed (frozen eval INCONCLUSIVE, unpromoted)
+140	codex/polyintelligence-founder-directive-20260930	3ced61db403a3d16908c915aef2e6d2acc8eda38	Add bounded cognitive solvers to GREG signed missions
+139	codex/polyintelligence-seed-v0.1	30d162b6016a2edc1a8c2e87cd54aa4ec3609d86	Add governed polyintelligence seed with typed proofs and outcome hooks
+138	codex/greg-vepmc-proof-integrity-20260930	11ba6610752c0a313f98441fa66fb154f20357a3	Repair GREG closure proof and founder signer enrollment
+137	claude/uniimente-greg-reconciliation-39syff	3d2bb1762ff709ce74d3053aced060e70d4e6674	One GREG: converge the lineages; developmental path; one-command Body 1; asks on the merits (incl. professionals); N2 without a model; every open PR placed
+134	codex/greg-foundry-artifact-store	1391e04feebb54e183606b6cb89382f67635d175	GREG: receipt-bound content-addressed artifacts across missions
+133	codex/greg-foundry-precedent-tool	19d30ca888394cac484bd08d359cd6378546767e	Make canonical action precedents usable by signed GREG missions
+132	claude/foundry-55	da3d4ac8643ecf6791ffadcac064f8bb1cc6269d	Foundry: 55-system completion contract + 31/55 systems built and integrated with GREG
+131	codex/greg-detach-respects-founder	23cb3d669334519e67cd0aa4952b1e56dc46a3c7	Keep founder-detached tools detached when GREG discovers replacements
+130	codex/greg-local-open-model-route	e7dac6ffebb9f0fa1162f0c4b39407c9bcd855d3	Add founder-swappable local model cognition to canonical GREG router
+129	claude/opensource-llm-integration-rkr14o	4efc58f8b221796689d9a0d5cc0decf67a26f574	Egregore: detachable, swappable parts with shadow trials and rollback
+128	claude/greg-venture-bridge-122	03217e41f29423a251fcc60d088fd9dde3136074	ONE-GREG child: standing missions appraised per closure; venture.assess (verdict may not outrun evidence)
+127	codex/arsenal-02-ucl-duplicate-field-refusal	0a99a71ec560423d229d6c70b533361756c5d16f	Refuse duplicate constitutional DSL assignments
+126	codex/arsenal-01-verified-sop-compiler	0097eb55a20e885436fd0c2f70ce75ddcbd94144	Guard reusable GREG procedures with current mission appraisal
+125	codex/chromebook-first-body	e169e57814f2bf09ffde3a53dbeb217973d3eedb	Draft: founder-designated Chromebook first body and honest VEPMC gate
+124	claude/greg-venture-bridge	e6131ff7e0354bfb96902cb60a48e3ce99685475	[DEFERRED UNTIL AFTER VEPMC] GREG venture watch (evidence; mechanisms ported to #128 on #122)
+122	codex/one-greg-vepmc-convergence	3edbcfe32c2bc1192ddf504e79e03ab929fb7c72	ONE GREG frontier: #114 + routing (#118) + witness (#115) + one learning engine (#120, #119 metabolized) — first Mac mission path
+121	claude/greg-correction-loop	cb53196325330ea9e9753a9864dc8d5bf4060acb	GREG: founder corrections become bounded, evidence-tested routing knowledge
+120	claude/greg-114-learning-gate	19f59b3c87ad8d005c60aec3a9dd2f138b57e682	[child of #114] One learning substrate: brief changes kept only if they beat the unchanged brief on later labelled briefs (absorbs #119)
+119	claude/greg-founder-learning-t0vqu7	7086a8aaf99668130cc57df7a25f11d0dc6285d2	[evidence — not for merge; learning owner is #122] GREG learns from founder corrections, only when a later held-out case proves it (child of #114)
+118	claude/greg-114-routing-integrity	7766b0784198d2669a480c8b62f2f50ece7498c6	[child of #114] Routing integrity: provider policy verdicts are refusals, not outages; record the served model
+115	claude/55-tech-arsenal-docs-ne5v2b	6c32edd2450eb44179bd7fc9422a383109ad6feb	GREG: externally detectable rewrite/rollback of witnessed ledger history (RFC 3161 + independent witness)
+114	claude/greg-persistent-mission-build-t0vqu7	14b44e5128a18bb00e46e5f5132c1e8b29eac7f9	GREG product path: one interface, useful mission, building + self-repairing Genesis, any model vendor, power-loss continuity
+113	claude/egregore-project-overview-btn5y2	51c1374ab2b23ecf6ade765bd448e55f582d3f93	GREG Body 1 + Spider-Web + phone & browser: persistent founder-sovereign operating layer (converges #101/#102/#110, #108/#109, #111; ports #112/#70 fixes)
+111	feat/institutional-leverage-paths	527153f13d46c65b389f48f94c38a9d17649586b	Build institutional leverage paths into egregore cognition
+110	codex/host-failure-reconciliation-20260923	27c3c2a283237764dec528938b8aaab438debc49	Retain bounded host startup failures as explicit mission blockers
+109	codex/goal-chase-main-convergence-20260922	955f07e62bbea61ffb945667d2c7b04ebf40b7fb	Integrate sandbox GoalChase with current Kernel recovery
+108	codex/intent-first-body-20260922	7c24afaac503b321798a6a6ff36453ff39d6e87e	Record first-body founder intent and bounded product decision
+105	codex/provider-change-intake-2026-09-15	85bc0bf69da4907db77e1b3004f11e0f0d4d32db	Govern weekly model-provider change intake
+102	agent/opus-reconciliation-20260911	57b7aa4cace86b43d21fd5cfc2a08c0d1f02a150	Reconcile embodied GREG intent and retain morning evidence review
+101	agent/greg-persistent-mission-proof-20260910	d4ee7b6cc37c16479e7122c7809a6e9f3b28cc52	Prove one bounded local GREG mission with durable recovery and appraisal
+97	codex/goal-chase-verification-2026-09-07	ca4ae479485d6636baa1a5f2ddd8542f9eba4423	Fix Goal Chase duplicate founder interruptions and expired delivery
+95	agent/collaboration-bootstrap-20260907	8d62edf0fa4744d45e7a750ced2f539d387ffaa4	Stage canonical AI collaboration bootstrap and SOP entrypoint
+94	agent/cathedral-metabolism-closure-phase4	5e2f221b1911309db10de26246065553c1bdcbfc	fix(cmc): protected evidence appraisal and reconciled Phase 4 experiment
+93	agent/founder-goal-chase-sandbox-v0	21fb21ed803f43e47acb8e6420f6cdc4f74925cd	Infinite Goal Chase: founder-facing persistent sandbox closure
+92	agent/omnimorph-zero-trust-compiler-phase3	c137e863851f0f7d8dce7bcb060b4e1d5066ea80	Phase 3: compile zero-trust organization hypotheses
+90	agent/organizational-task-fabric-phase2	8c01c800978ca1dde8352359607546b3638e2cf6	Phase 2: add replay-derived organizational task fabric
+88	agent/organizational-morphogenesis-experiment-v1	3dfe6fd90fcacd11032398327e6fd184ba15a01a	Phase 1: organizational morphogenesis contracts and falsification plan
+87	claude/uniimente-infinite-goal-chase-rjxvzo	dfd491d8b34fa963e4902008b5d8dc7690fdde63	FOUNDER-RULING-2026-08-23: 0002, 0003, Witness v2 live, identity adopted, goal chase recomputed
+86	chatgpt/infinite-goal-chase-protocol-2026-08-22	06024204910a0cae1f35937106fef83f94a5e64b	Codify Infinite Goal Chase living goal graph
+85	kimi/verifier-run-record-head-binding	d611771a38b2679f6f8b5c6c57e819ff0d433b53	verifier: bind run records to the tree they measure (Finding 3 repair proposal)
+83	kimi/independent-verification-8cb3074a	8ef0b1ad32b41082355992fa8b066ebfe7104e61	Independent verification of canonical-v1 (main @ 8cb3074a): 291/291 byte-exact mirror, full battery re-run, v1 C2 stale-canary defect + separable repair
+81	build/fast-evolution	69af80db2d2fd6410ba87790a020dfdef16600e9	WP-06: Fast Capability Evolution — first automated cycle (matrix protocol, mechanical audit, founder-ratified adoption)
+79	build/evolution-cycle	b3bcc4314463b628ad48e48db53eb932fe4ded5b	WP-05: First evolution cycle — closure loop, governed self-improvement, baseline beaten
+78	build/pg-spine	5b45be9a22d8836050571398365fc4fd3ad31cf8	WP-04: Postgres spine backend + rebuild-from-spine drill
+77	connect-railscout-repo-2026-08-19	02e67603e371fbc3341111b2179ba17f826cb9d5	Connect RailScout organ to repository
+76	railscout-recurring-cognition-2026-08-19	ff54b9cf451971484066ac08c49eb718dfa9ab2e	Connect RailScout organ to dedicated repository
+73	agent/opus-part2-governed-boundary	622d76f6285061212fe1aa14fe3a94d382f687de	Build inert Part 2 loader, MCP/A2A boundaries, and containment
+72	agent/railscout-cognitive-refinery-canon	4648e1c27dc8c65ce2bcbd342ebffb8083f9e0e4	Canonize RailScout as the multi-agent cognitive refinery
+71	claude/opus-maximus-audit-eay0ek	2221705421eed655e5edcb0608593cdf9d3cd72b	Opus Maximus: blueprint, bridges, and the 2026-08-22 founder rulings
+70	claude/track-a-runtime-spine	c6b3f351d351cc5f5bc32b2c4456be43079ec303	Track A: INERT runtime spine and P3 linker-controlled Route B
+68	claude/super-planning-prompt-h8l0oj	ffd9df9d5bfc2d18dab495fcbe6c3b0b95c6ae0d	Super-planning round: whole-system reconciliation and the developmental-machine decision (PLANNING ONLY)
+66	claude/uniimente-repo-audit-jpytcy	a6f14d344f2ca073fd334a885e5c2bdb921d082e	Phase 3G: author-direction classification + canonical decision authority (Gates F/G UNMEASURED, R8 NOT RUN)
+64	agent/autonomous-interior-reinitiation-v1	45254207a19ce573abc946d2df3e1d53aa98ccea	Phase 3F: autonomous interior re-initiation achieved; restoration fails on an over-broad provenance fence (CONTINUE)
+63	agent/bidirectional-developmental-demand-v1	a5d0722d3d7602bec1266cf7c79c9f8eaf1cc6d0	Phase 3E: bidirectional developmental demand, real function semantics, measured phenotypes (CONTINUE — gates still open)
+62	agent/bounded-local-multibranch-morphogenesis-v1	1dd43f05d07e6ad838a392f79fa9ff111e9ed068	Phase 3D: bounded-local multi-branch developmental substrate (both gates FAILED, two bottlenecks named)
+60	agent/motif-conditional-causal-escape-v2	b5bc990d47c687c298a6a767c4e40b855e97c52e	Phase 3C: motif channel fixes the defect; Gate F REOPENED under real qualification
+59	agent/failure-causal-morphological-escape-v1	3105c0fa5480365872a3285460cb000dbdfc2f7b	Causal escape: correct what the gate measures (Gate F CLOSED, Gate G OPEN)
+58	agent/local-competency-regeneration-v1	e2384223cb6b128db585e382b26ae0f277c166f4	Gate F attempt: constraint-gated diffusion (OPEN at 6/10 held-out)
+57	agent/governed-functional-regeneration-v1	977fd1f08542a65602a1c4df48e095bffb37c88e	Gate E: governed functional regeneration (function identity that outlives organs)
+56	agent/canonical-authority-rc1	dae5578f1b88021bea4a430cece524437c289919	RC1: Reality Aperture — proof-carrying authorization supersedes Strategy C
+55	claude/integration-canonicalization-audit	e44dbdee61cfef813f236946b7601bb37932cfdb	Merge-train recovery: the integration merges nearly clean (analysis only)
+54	claude/uniimente-system-design-hczheq	caa7acfd749b3fe6322ef8f25b78a0f9913728e1	Single Bottleneck Metric, PumpStation as fourth organ, and the founder-intent protocol
+53	strategy/cvo-001-venture-selection	7a7846559f23682983898975ba89174a99c50c10	CVO-001 venture selection — C9 recommended (PLAN ONLY)
+52	governance/founder-command-ordering-plan	6fe785cc42f4ba06ba246dfe1bb73899f0cc8cb5	Founder Command Ordering Guard design + CVO-001 readiness packet (PLAN ONLY)
+51	agent/cognitive-kingmaker-protocol	db9ce00a8b0da0fcd4694f175601d1254cb446f5	Add governed Cognitive Kingmaker and Opus novelty routing
+46	agent/register-pumpstation-venture-cell	9f88800f5dd57782b0e4bca8c6f6d194cdc7b71d	Propose inactive PumpStation Venture Cell registration
+44	claude/disruptive-design-configs-hi1ab0	1b4ffbc5df11d0e9246a3ee607ef67610e2e9326	feat: two-track architecture + morphogenetic runtime — Stage 2 run, does not pass
+35	agent/proof-to-settlement-trust-rail	e09c20885176183ccd88fd499d8b431a00ca747c	Add the OpenClaw proof-to-settlement trust rail
+26	build/real-adapter-loop	87480072069beb69d02d8e3f8726241f5df04549	WP-03: Real Adapter Loop — first verified external consequence (Proof Capsule)
+25	phase7/fast-capability-evolution	640ec9d24d2a282bd062ea0dbcab1baa46758867	Phase 3: Fast Capability Evolution — automated loop + first automated cycle (RETAIN)
+24	build/ucl-compiler	bb1a62e5fb84ba4c591c5e2c5046ee5585197b3a	WP-02: UCL Constitutional Compiler — the constitution becomes gate law
+23	phase6/first-evolution-cycle	a9c176ef815a5d8eb0ccb393a491b833fba4a848	Phase 2: First Evolution Cycle — machinery + first machine-recorded cycle (RETAIN)
+22	phase5/consequence-gate	9afd22169587fea25d830dff89eef8ce2af32771	Phase 1 complete: the Consequence Gate (SDK v0.8.0)
+21	build/consequence-gate	5b70e2459f215a64689d31de864d6ee3d84b92e6	WP-01: Consequence Gate vertical slice (Order One, Phase 1 consequence integrity)
+20	docs/egregore	cf4a63a0f6933d485912c9d62a1623b3b3cf4be3	Docs: THE EGREGORE — grand vision and the complete 55-technology asymmetry stack
+19	phase4/commit-witness	e5a28987c685f49e3f1e3bae984101413c584140	Phase 1 (consequence integrity): commit witness + event spine contract repairs
+18	phase4/event-spine	bec8c74ac0e2ecc416a5176d5711275f5daf483d	Phase 4 (1/2): durable event spine (events module, v0.6.0)
+17	phase3/signal-contracts	15c7d4908afdcf9044428c67e625e0d97fa1106f	Phase 3: unified signal wire contracts (venture-signal/signal-assessment + contracts module, v0.5.0)
+16	phase2/sdk-package-absorption	3e23cd2572907fed77491af80ab1a918bfce4cd3	Absorb constitution guard, heartbeat, approval queue into the SDK package (v0.4.0)
+15	phase2/sdk-packaging	c1deb5f77bda9099b70ea33fbb6aa1efdaf89acc	Phase 2: make SDK pip-installable + verifier v3 (C10)
+14	phase2/guard-heartbeat-approval-extraction	e55a9da191e191d17488bc18143028053d6ee0ca	Phase 2: Extract constitution guard, heartbeat, and approval queue
+13	phase2/firewall-context-extraction	b5e58577110d5402353ff5cabe1429576b69ca20	Phase 2: Extract prompt firewall and ContextPacket builders into uniimente_kernel SDK
+12	phase2/raw-vault-capability-extraction	f53b975467911a4f224afd6f940ea1f485aa13ce	Phase 2: Extract raw vault and capability service into uniimente_kernel SDK
+11	phase2/decision-ledger-extraction	88906a576a4e6cac31a81244d685887e517aebce	Phase 2: Extract decision ledger from DALEOBANKS into uniimente_kernel SDK

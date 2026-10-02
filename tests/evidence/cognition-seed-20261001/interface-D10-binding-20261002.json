@@ -1,0 +1,98 @@
+{
+  "captured_at": "2026-10-02T09:32:47.888654+00:00",
+  "head_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "working_tree": "uncommitted shared development, exact file digests bound; no commit-level completed-machine claim",
+  "files": {
+    "greg/templates.py": "2c38cec138d9b9131a1ceadddae4b3caa9917146542ebe1cff015b516250a095",
+    "greg/planner.py": "63d8b57e820f0a2cd9b328a8a05f6cdf2a741208fcf8a0476604f30d1118199f",
+    "greg/asks.py": "07007a8977020f0ff4d9badea6892e2c5533e35eef9bb47900b636b3202cebad",
+    "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+    "greg/cli.py": "9b2d80203bffbe60910c0f1515e2da758dde4b08b46a6497e7f19cb652b0699c",
+    "greg/doctor.py": "27a3a26a088b4b609207712eb018d05eab2ff2e3f600d13a271d45ed9d5081a7",
+    "greg/chromebook/install.sh": "b3a88254622164cdb2e5e0b71ce114ab04490d4577fe0b875d43836136eff1a8",
+    "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c",
+    "greg/body.py": "0e4dfce4998844d04b5e9e9d7327bef32ea9b063ec4310d669ce2f5084f0ead7",
+    "greg/missions.py": "17adbf49c3b2cff23bdd0a4f9ddfee26d7c73381f96e4ac732f5e1220e091d37",
+    "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098",
+    "greg/appraisal.py": "d4004dfb1d1a0b3bbf22d3e46983fc76f70bf41ec389b6e0a92b66d428a3a3e9",
+    "greg/cognition/contracts.py": "58dd4936d1abd1fa174c149c509e41694c68a1ed9633480c98946ea58ad5bf3e",
+    "greg/cognition/cortex.py": "21d2bf1ab026016c23ce037350b84c7e8ad80d87699a08c02360c24b5a276eba",
+    "greg/cognition/catalog.py": "db5c4f5def5defa24c3069b866d325b902bb9d15bf4ad1cb58420ba14b1b3b1f",
+    "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3",
+    "greg/cognition/linear.py": "55c0e4e255640bdf5df019333faed655ce54837726a52afa1b1aac887950bbe2",
+    "greg/cognition/solvers.py": "dc233f05c421f0429bd708099c764f856bb0f047eaae605bae76211fcb4151c3",
+    "greg/cognition/verification.py": "44f369c1edd1691b9218fbd9a2a7bef351732ae4a038fe2cfe9d8b6b4483aab6",
+    "tests/unit/test_greg_controlled_words.py": "8fd1dec12a4396e39ab8a334caf74274005ac3b37c1ee2b9ce62136b274030aa",
+    "tests/integration/test_greg_controlled_words.py": "32201d5e6995704e771fbe43cecd77673dcc7009b20050cdb745108378f8d4de"
+  },
+  "completed_at": "2026-10-02T09:34:12.646277+00:00",
+  "source_hashes_after_test": {
+    "greg/templates.py": "2c38cec138d9b9131a1ceadddae4b3caa9917146542ebe1cff015b516250a095",
+    "greg/planner.py": "63d8b57e820f0a2cd9b328a8a05f6cdf2a741208fcf8a0476604f30d1118199f",
+    "greg/asks.py": "07007a8977020f0ff4d9badea6892e2c5533e35eef9bb47900b636b3202cebad",
+    "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+    "greg/cli.py": "9b2d80203bffbe60910c0f1515e2da758dde4b08b46a6497e7f19cb652b0699c",
+    "greg/doctor.py": "27a3a26a088b4b609207712eb018d05eab2ff2e3f600d13a271d45ed9d5081a7",
+    "greg/chromebook/install.sh": "b3a88254622164cdb2e5e0b71ce114ab04490d4577fe0b875d43836136eff1a8",
+    "greg/capabilities.py": "d81a0e83fe9a789830d323f02bef6e3c437e226bb2f3697deaea338caa59fa9c",
+    "greg/body.py": "0e4dfce4998844d04b5e9e9d7327bef32ea9b063ec4310d669ce2f5084f0ead7",
+    "greg/missions.py": "17adbf49c3b2cff23bdd0a4f9ddfee26d7c73381f96e4ac732f5e1220e091d37",
+    "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098",
+    "greg/appraisal.py": "d4004dfb1d1a0b3bbf22d3e46983fc76f70bf41ec389b6e0a92b66d428a3a3e9",
+    "greg/cognition/contracts.py": "58dd4936d1abd1fa174c149c509e41694c68a1ed9633480c98946ea58ad5bf3e",
+    "greg/cognition/cortex.py": "21d2bf1ab026016c23ce037350b84c7e8ad80d87699a08c02360c24b5a276eba",
+    "greg/cognition/catalog.py": "db5c4f5def5defa24c3069b866d325b902bb9d15bf4ad1cb58420ba14b1b3b1f",
+    "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3",
+    "greg/cognition/linear.py": "55c0e4e255640bdf5df019333faed655ce54837726a52afa1b1aac887950bbe2",
+    "greg/cognition/solvers.py": "dc233f05c421f0429bd708099c764f856bb0f047eaae605bae76211fcb4151c3",
+    "greg/cognition/verification.py": "53f8a2323f750a611fd2c912fdba2b91ad7ef42598f3c1acf7e2536bf35d2140",
+    "tests/unit/test_greg_controlled_words.py": "8fd1dec12a4396e39ab8a334caf74274005ac3b37c1ee2b9ce62136b274030aa",
+    "tests/integration/test_greg_controlled_words.py": "32201d5e6995704e771fbe43cecd77673dcc7009b20050cdb745108378f8d4de"
+  },
+  "changed_during_test": [
+    "greg/cognition/verification.py"
+  ],
+  "command": "/workspace/scratch/cortex-patched-venv/bin/python -m pytest -q -ra tests/unit/test_greg_controlled_words.py tests/integration/test_greg_controlled_words.py tests/unit/test_greg_chromebook_install.py tests/unit/test_greg_chromebook_doctor.py tests/unit/test_greg_interface.py tests/unit/test_greg_remote.py tests/integration/test_greg_phone_e2e.py tests/integration/test_greg_phone_asks.py",
+  "result": {
+    "exit_code": 0,
+    "passed": 75,
+    "skipped": 2,
+    "seconds": 28.58,
+    "skip_reason": "playwright.sync_api unavailable; no real phone/browser verification claimed"
+  },
+  "environment": {
+    "python": "Python 3.12.14",
+    "platform": "Linux x86_64",
+    "dependencies": {
+      "z3-solver": "4.15.4.0",
+      "ortools": "9.15.6755",
+      "protobuf": "6.33.5",
+      "networkx": "3.6.1",
+      "sympy": "1.14.0",
+      "scipy": "1.17.1",
+      "mpmath": "1.3.0"
+    }
+  },
+  "limits": [
+    "Laboratory Ed25519 keys, not Alfonso authentication",
+    "Linux container, not Chromebook or iOS Safari",
+    "Native encoded computation, WORLD_UNVERIFIED",
+    "No merge/deployment/external action or authority expansion",
+    "Whole Body + Organs + Mind remains parent objective; this dependency does not terminate it"
+  ],
+  "evidence_hashes": {
+    "interface-D10-initial-failed-20261002.log": "d56d68bc8531a9563599e7248c275edd71839ab5e734d0a4ab308e683e54cbe3",
+    "interface-D10-missing-test-path-20261002.log": "58255df89fe8c6f9e2f9692ab6394b9b76fdf4d44050a07b1207f13a94fa24ad",
+    "interface-D10-tests-20261002.log": "c33568e3edb82094731eba16a81ee2f87181de38260e2b59b2a8af1a385cb7f6",
+    "interface-D10-doctor-20261002.json": "3ed54320fe523e4129c6ce460d81d656bdf9d4dcfae6a9ff1fa513e2f37b7083"
+  },
+  "doctor": {
+    "command": "python -m greg --home /workspace/scratch/interface-doctor-unused-20261002 doctor --chromebook",
+    "exit_code": 2,
+    "missing_prerequisite": "Linux user-service access; no Crostini host detection",
+    "engine_metadata_present": 7,
+    "engine_metadata_total": 7,
+    "body_created": false,
+    "native_execution_or_authentication_inferred": false
+  }
+}

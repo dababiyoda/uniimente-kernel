@@ -23,10 +23,13 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-# 0.3.0: payload keys graph and linear_program route to two organs that recruit founder-attached
-# formed functions (Capability Genesis); cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the
-# consequence class. 0.2.0: CP-SAT second formal engine.
-CORTEX_VERSION = "0.3.0"
+# 0.4.0: bounded n-part composition (MAX_COMPOSITION 2 -> 4) with cap honesty — parts the
+# bound drops are named as cap-dropped, never as unrequired — and aggregate solver-call
+# budget refusal; cortex-route-policy/0.4.0. 0.3.0: payload keys graph and linear_program
+# route to two organs that recruit founder-attached formed functions (Capability Genesis);
+# cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the consequence class.
+# 0.2.0: CP-SAT second formal engine.
+CORTEX_VERSION = "0.4.0"
 
 
 class CortexError(ValueError):
@@ -485,8 +488,7 @@ class OrganResult:
 
     def to_dict(self) -> dict:
         return {"organ_id": self.organ_id, "organ_version": self.organ_version, "state": self.state,
-                "answer": None if self.answer is None else dict(self.answer),
-                "proof": dict(self.proof), "assumptions": list(self.assumptions),
+                "answer": None if self.answer is None else dict(self.answer), "proof": dict(self.proof), "assumptions": list(self.assumptions),
                 "uncertainty": self.uncertainty, "expenditure": self.expenditure.to_dict(),
                 "dependencies": list(self.dependencies), "origin": self.origin,
                 "notes": list(self.notes)}

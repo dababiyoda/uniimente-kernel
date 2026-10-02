@@ -56,6 +56,28 @@ jobs:
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
 
+  owned_oci:
+    name: "7 · Owned OCI capability rebuild and execution"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Build immutable owned capability twice and run second environment
+        run: python scripts/ci/prove_oci.py oci-evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owned-oci-capability-evidence
+          path: oci-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
   contracts:
     name: "2 · Contract schema references resolve"
     runs-on: ubuntu-latest

@@ -155,7 +155,16 @@
   - Podman
   existing:
   - WealthMachineIntelligence:Dockerfile
-  gap: One organ ships a Dockerfile; the kernel and capabilities are not packaged as reproducible containers.
+  implementation:
+  - foundry/systems/oci.py
+  - foundry/oci_entry.py
+  - scripts/ci/prove_oci.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply package; foundry.query inspect (system9); disposable hosted builder produces and runs OCI artifacts
+  tests:
+  - tests/unit/test_greg_oci.py
+  limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG and organ dependency images and stronger general-code execution remain unfinished.
+  gap: Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution obligations.
   state: PARTIAL
 10:
   acceptance:

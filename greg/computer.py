@@ -66,6 +66,26 @@ def chromium() -> str:
     raise CapabilityError("no Chromium installed on this body")
 
 
+def computer_use_ready() -> dict:
+    """Report, read-only, whether this body has what ``browser.session`` needs.
+
+    Checks the Playwright package, a Chromium binary and certutil without importing
+    Playwright's driver, launching a browser or running any subprocess.
+    """
+    import importlib.util
+    try:
+        playwright = importlib.util.find_spec("playwright") is not None
+    except (ImportError, ValueError):
+        playwright = False
+    try:
+        chromium_path = chromium()
+    except CapabilityError:
+        chromium_path = None
+    certutil = os.access("/usr/bin/certutil", os.X_OK)
+    return {"ready": playwright and chromium_path is not None and certutil,
+            "playwright": playwright, "chromium": chromium_path, "certutil": certutil}
+
+
 def _trust_profile(home: Path) -> int:
     """Import an operator-configured CA bundle into this session's NSS store.
 

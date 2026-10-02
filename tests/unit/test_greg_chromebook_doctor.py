@@ -26,3 +26,15 @@ def test_chromebook_doctor_does_not_probe_service_outside_linux(monkeypatch):
     monkeypatch.setattr(doctor.shutil, "which", lambda binary: "/usr/bin/" + binary)
     monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: 1 / 0)
     assert not doctor.chromebook()["ready_for_linux_service"]
+
+
+def test_doctor_reports_frontier_workers_without_running_them(monkeypatch):
+    monkeypatch.setattr(doctor.platform, "system", lambda: "Linux")
+    present = ("git", "systemctl", "codex")
+    monkeypatch.setattr(doctor.shutil, "which", lambda binary: "/usr/bin/" + binary if binary in present else None)
+    calls = []
+    monkeypatch.setattr(doctor.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
+    report = doctor.chromebook()
+    assert report["frontier_workers_installed"] == {"claude": False, "codex": True, "aider": False}
+    assert calls == [["systemctl", "--user", "show-environment"]]  # no worker was executed
+    assert report["ready_for_linux_service"] and "frontier_workers_installed" not in report["checks"]

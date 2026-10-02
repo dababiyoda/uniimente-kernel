@@ -96,14 +96,15 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
-    # The MCP SDK's extension modules load librt after confinement. Include
-    # that reviewed dependency explicitly, without granting host directories
+    # Reviewed extension modules load glibc compatibility libraries lazily.
+    # Include these named runtime dependencies without granting host directories
     # or every shared library installed on the host.
     triplet = {"x86_64": "x86_64-linux-gnu", "aarch64": "aarch64-linux-gnu"}[platform.machine()]
     for base in (Path("/lib") / triplet, Path("/usr/lib") / triplet):
         if not base.is_dir():
             continue
-        for candidate in (base / "librt.so.1",):
+        for candidate in (base / name for name in (
+                "librt.so.1", "libdl.so.2", "libpthread.so.0", "libutil.so.1")):
             if not candidate.exists():
                 continue
             path = candidate.resolve(strict=True)

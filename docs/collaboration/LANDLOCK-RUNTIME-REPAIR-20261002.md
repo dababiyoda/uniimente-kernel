@@ -11,3 +11,5 @@ The native escape test now loads that lazy library after restriction and still c
 The seven linked decision records omitted the schema-required rejected-alternatives array. Restore it from each already recorded competing architecture's disadvantages and revival evidence, preserving the original two passes and the wider capability horizon. This is schema repair, not invented independent review or retrospective successful proof.
 
 A successful repair resumes the complete Body + Organs + Mind objective automatically. Next executable dependency: pinned OCI capability packaging and execution using the observed disposable CI Docker host; context files alone will not establish completion.
+
+Follow-up counterevidence: repaired head `4e314c3f` run36993709647 passed the native probes but exposed the next lazy glibc compatibility dependency, `libdl.so.2` (5 passed,1 failed). The explicit closure is now the four glibc compatibility files librt, libdl, libpthread and libutil, each under the same protected ELF checks; native probes load all four after restriction. No general library wildcard is granted. Fresh CI remains required.

@@ -1,5 +1,5 @@
 {
-  "cortex_version": "0.3.0",
+  "cortex_version": "0.4.0",
   "evidence_reference_forms": {
     "path": "file exists",
     "path#/json/pointer": "pointer resolves in that JSON file",
@@ -34,7 +34,7 @@
       ],
       "id": "R00.2",
       "item": 0,
-      "notes": "Destination, not a v0.1 claim. Selecting and evaluating exist; composing is bounded (two-part composition); developing is a reserved stage.",
+      "notes": "Destination, not a v0.1 claim. Selecting and evaluating exist; composing is bounded (n-part composition, cap 4, cap-dropped parts named honestly); developing is a reserved stage.",
       "status": "preserved"
     },
     {

@@ -1,0 +1,225 @@
+{
+  "schema": "seed-characterization/1",
+  "dimensions": {
+    "responsiveness": {
+      "measurement": "bounded held-out wall-clock latency by stratum",
+      "workload": "320 native held-out cases",
+      "evidence": {
+        "semantic": {
+          "n": 20,
+          "correct": 18,
+          "mean_loss": 0.12118089142891672,
+          "latency_p95": 15.018617964999976
+        },
+        "strategy": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.06099940651224997,
+          "latency_p95": 10.492009629999757
+        },
+        "estimation": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0025129185635000798,
+          "latency_p95": 0.2807744110000385
+        },
+        "formal_sat": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.003988121404999447,
+          "latency_p95": 0.7289095289997931
+        },
+        "formal_unsat": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0036170160140001147,
+          "latency_p95": 0.627253779000057
+        },
+        "formal_unknown": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.003547301834499649,
+          "latency_p95": 0.5905903929997294
+        },
+        "optimization": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0062568718984997536,
+          "latency_p95": 0.8387841769999795
+        },
+        "optimization_infeasible": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.006465027245000897,
+          "latency_p95": 1.0015955730000314
+        },
+        "causal_identified": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0031333055370004106,
+          "latency_p95": 0.42524508299993613
+        },
+        "causal_nonidentified": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0031420799935000334,
+          "latency_p95": 0.5113101560000359
+        },
+        "mixed": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0024646149989999916,
+          "latency_p95": 0.26724912200006656
+        },
+        "ambiguous": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 3.798412999685752e-06,
+          "latency_p95": 0.0004910179995931685
+        },
+        "unknown_geometry": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 4.0501689994698615e-06,
+          "latency_p95": 0.0010456620002514683
+        },
+        "missing_evidence": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0013867691249993188,
+          "latency_p95": 0.15671062199999142
+        },
+        "rights_sensitive": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 2.99370540004702e-05,
+          "latency_p95": 0.013385322999965865
+        },
+        "abstention": {
+          "n": 20,
+          "correct": 20,
+          "mean_loss": 0.0016418514754998341,
+          "latency_p95": 0.2730381970000053
+        }
+      }
+    },
+    "memory_depth": {
+      "measurement": "last 32 observation references per projected cell; durable journal has retention controls",
+      "workload": "CLI cognition knowledge across process restart",
+      "evidence": {
+        "replay_unchanged": true,
+        "limit": "not a measured semantic context-memory horizon"
+      }
+    },
+    "prediction_horizon": {
+      "state": "not_applicable",
+      "reason": "seed makes no qualified forecasting/control prediction"
+    },
+    "adaptability": {
+      "state": "not_applicable",
+      "reason": "static routing is frozen; learning does not alter permitted choices"
+    },
+    "persistence": {
+      "measurement": "recovery wall-clock seconds after process kill; no loss of completed fsynced receipts",
+      "workload": "canonical CLI kill/restart with revoked attachment",
+      "evidence": {
+        "seconds": 6.143189897999946,
+        "revocation": true
+      }
+    },
+    "error_correction": {
+      "measurement": "critical removed gates detected by tests; later refutation removes current competence",
+      "workload": "seven disposable-source mutations and native appraisal correction test",
+      "evidence": {
+        "detected": 7,
+        "denominator": 7
+      }
+    },
+    "supported_problem_space_size": {
+      "measurement": "declared finite input ceilings, not general domain coverage",
+      "workload": "bounded linear-real SMT, bounded integer CP-SAT, product ranges and randomized complete two-arm data",
+      "evidence": "See greg/cognition/solvers.py input validators; no broad field solved claim"
+    },
+    "cooperation": {
+      "measurement": "three separately typed method receipts in signed composition",
+      "workload": "optimization, estimation and synthetic causal first passes",
+      "evidence": {
+        "receipt_count": 3,
+        "gain": "unproven; shared source/runtime specification dependencies"
+      }
+    },
+    "generalization": {
+      "measurement": "exact evaluator success per stratum with template correlation disclosed",
+      "workload": "20 held-out cases per stratum, native transformations",
+      "evidence": {
+        "correct": 318,
+        "denominator": 320,
+        "limits": "64 correlated groups; insufficient broad generalization evidence"
+      }
+    },
+    "higher_scale_coherence": {
+      "measurement": "claim/proof jurisdiction preserved by metaconsensus; no voting empirical truth",
+      "workload": "signed heterogeneous composition",
+      "evidence": {
+        "state": "RECOMMENDATION_ONLY",
+        "conflicting_questions": [],
+        "conflicting_classes": [],
+        "jurisdictions": {
+          "optimization": [
+            "sha256:3b50d6e541d6d2a6a0bc46c9b6301105561083ac7276b0a778de8e8e599ee0e0"
+          ],
+          "estimate": [
+            "sha256:4f224c43c9d1bcca80d5dad96114f0e70d1a8dfafe8646060297335711e3d3f6"
+          ],
+          "causal": [
+            "sha256:526c61f47feacd113e8442679a13f031fda6db300a3c0f36a0122d87db2b5dea"
+          ]
+        },
+        "questions": [
+          {
+            "problem_id": "rehearsal:0",
+            "method": "cognition.optimization",
+            "epistemic_class": "optimization",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "optimization_certificate",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          },
+          {
+            "problem_id": "rehearsal:1",
+            "method": "cognition.estimation",
+            "epistemic_class": "estimate",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "bounded_estimate",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          },
+          {
+            "problem_id": "rehearsal:2",
+            "method": "cognition.causal",
+            "epistemic_class": "causal",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "causal_identification",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          }
+        ],
+        "dissent": [
+          "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.",
+          "Bounds are assumptions; no calibrated probability or external market proof follows.",
+          "Randomization and identification assumptions have not been independently established in reality."
+        ],
+        "authority_created": false
+      }
+    }
+  },
+  "calibration": "real-world confidence/calibration unmeasured; geometry-specific local predicate counts only",
+  "correlated_failure": "shared Python, source requirements, declarative translation and deployment; separate numerical checks do not remove these dependencies",
+  "authority_created": false
+}

@@ -1,0 +1,371 @@
+{
+ "info": {
+  "author": null,
+  "author_email": "The Wasmtime Project Developers <hello@bytecodealliance.org>",
+  "bugtrack_url": null,
+  "classifiers": [
+   "Programming Language :: Python",
+   "Programming Language :: Python :: 3",
+   "Programming Language :: Python :: 3.10",
+   "Programming Language :: Python :: 3.11",
+   "Programming Language :: Python :: 3.12",
+   "Programming Language :: Python :: 3.13",
+   "Programming Language :: Python :: 3.14",
+   "Programming Language :: Python :: 3.9",
+   "Programming Language :: Python :: Implementation :: CPython",
+   "Programming Language :: Python :: Implementation :: PyPy",
+   "Programming Language :: Rust",
+   "Topic :: Software Development :: Compilers",
+   "Topic :: Software Development :: Interpreters"
+  ],
+  "description": "<div align=\"center\">\n  <h1><code>wasmtime-py</code></h1>\n\n  <p>\n    <strong>Python embedding of\n    <a href=\"https://github.com/bytecodealliance/wasmtime\">Wasmtime</a></strong>\n  </p>\n\n  <strong>A <a href=\"https://bytecodealliance.org/\">Bytecode Alliance</a> project</strong>\n\n  <p>\n    <!-- Badge links contain no whitespace, to eliminate underlines in rendered page -->\n    <a href=\"https://github.com/bytecodealliance/wasmtime-py/actions?query=workflow%3ACI\"><img src=\"https://github.com/bytecodealliance/wasmtime-py/workflows/CI/badge.svg\" alt=\"CI status\"/></a>\n    <a href=\"https://pypi.org/project/wasmtime/\"><img src=\"https://img.shields.io/pypi/v/wasmtime.svg\" alt=\"Latest Version\"/></a>\n    <a href=\"https://pypi.org/project/wasmtime/\"><img src=\"https://img.shields.io/pypi/pyversions/wasmtime.svg\" alt=\"Latest Version\"/></a>\n    <a href=\"https://bytecodealliance.github.io/wasmtime-py/\"><img src=\"https://img.shields.io/badge/docs-main-green\" alt=\"Documentation\"/></a>\n    <a href=\"https://bytecodealliance.github.io/wasmtime-py/coverage/\"><img src=\"https://img.shields.io/badge/coverage-main-green\" alt=\"Code Coverage\"/></a>\n  </p>\n\n</div>\n\n## Installation\n\nTo install `wasmtime-py`, run this command in your terminal:\n\n```bash\n$ pip install wasmtime\n```\n\nThe package currently supports 64-bit builds of Python 3.9+ on Windows,\nmacOS, and Linux, for x86\\_64 and arm64 architectures.\n\n## Versioning\n\n`wasmtime-py` follows the Wasmtime versioning scheme, with a new major version being\nreleased every month. As with Wasmtime itself, new major versions of `wasmtime-py`\ncan contain changes that break code written against the previous major version.\n\nSince every installed Python package needs to agree on a single version of\n`wasmtime-py`, to use the upper bound on the major version in the dependency\nrequirement should be bumped reguarly, ideally as soon as a new `wasmtime-py`\nversion is released. To automate this process it is possible to use\nthe [whitequark/track-pypi-dependency-version][] script. [YoWASP/runtime][] is\nan example of a project that automatically publishes releases on PyPI once a new\nversion of `wasmtime-py` is released if it passes the testsuite.\n\n[whitequark/track-pypi-dependency-version]: https://github.com/whitequark/track-pypi-dependency-version\n[YoWASP/runtime]: https://github.com/YoWASP/runtime\n\n## Usage\n\nIn this example, we compile and instantiate a WebAssembly module and use it from Python:\n\n```python\nfrom wasmtime import Store, Module, Instance, Func, FuncType\n\nstore = Store()\nmodule = Module(store.engine, \"\"\"\n  (module\n    (func $hello (import \"\" \"hello\"))\n    (func (export \"run\") (call $hello))\n  )\n\"\"\")\n\ndef say_hello():\n    print(\"Hello from Python!\")\nhello = Func(store, FuncType([], []), say_hello)\n\ninstance = Instance(store, module, [hello])\nrun = instance.exports(store)[\"run\"]\nrun(store)\n```\n\nBe sure to check out the [`examples` directory], which has other usage patterns\nas well as the [full API documentation][apidoc] of the `wasmtime-py` package.\n\n[`examples` directory]: https://github.com/bytecodealliance/wasmtime-py/tree/main/examples\n[apidoc]: https://bytecodealliance.github.io/wasmtime-py/\n\n## Components\n\nComponents are also supported in `wasmtime-py`. For more information see the\ndocumentation of\n[`wasmtime.component`](https://bytecodealliance.github.io/wasmtime-py/component/index.html).\nUsing a component is similar to using core wasm modules, and for examples see\nthe `tests/component/` directory.\n\n## Contributing\n\nSee [`CONTRIBUTING.md`](./CONTRIBUTING.md).\n",
+  "description_content_type": "text/markdown",
+  "docs_url": null,
+  "download_url": null,
+  "downloads": {
+   "last_day": -1,
+   "last_month": -1,
+   "last_week": -1
+  },
+  "dynamic": [
+   "License-File"
+  ],
+  "home_page": null,
+  "keywords": null,
+  "license": null,
+  "license_expression": "Apache-2.0 WITH LLVM-exception",
+  "license_files": [
+   "LICENSE"
+  ],
+  "maintainer": null,
+  "maintainer_email": null,
+  "name": "wasmtime",
+  "package_url": "https://pypi.org/project/wasmtime/",
+  "platform": null,
+  "project_url": "https://pypi.org/project/wasmtime/",
+  "project_urls": {
+   "Bug Tracker": "https://github.com/bytecodealliance/wasmtime-py/issues",
+   "Documentation": "https://bytecodealliance.github.io/wasmtime-py/",
+   "Homepage": "https://github.com/bytecodealliance/wasmtime-py",
+   "Source Code": "https://github.com/bytecodealliance/wasmtime-py"
+  },
+  "provides_extra": [
+   "testing"
+  ],
+  "release_url": "https://pypi.org/project/wasmtime/49.0.0/",
+  "requires_dist": [
+   "coverage; extra == \"testing\"",
+   "pycparser; extra == \"testing\"",
+   "pytest-mypy; extra == \"testing\"",
+   "pytest; extra == \"testing\""
+  ],
+  "requires_python": ">=3.9",
+  "summary": "A WebAssembly runtime powered by Wasmtime",
+  "version": "49.0.0",
+  "yanked": false,
+  "yanked_reason": null
+ },
+ "last_serial": 41303219,
+ "ownership": {
+  "organization": null,
+  "roles": [
+   {
+    "role": "Owner",
+    "user": "alexcrichton"
+   },
+   {
+    "role": "Owner",
+    "user": "tschneidereit"
+   }
+  ]
+ },
+ "urls": [
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "d01733c1df06ddf0ae5e085def2f4cbe1cc7aa79af1619f624e71cdca1c7138e",
+    "md5": "ca5aca2789110100ae85486b869596ff",
+    "sha256": "376c60e195b22bbe07b10d517ed4a83bbcc1896df0065e523dd4801b22570a8c"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-android_26_arm64_v8a.whl",
+   "has_sig": false,
+   "md5_digest": "ca5aca2789110100ae85486b869596ff",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8981381,
+   "upload_time": "2026-09-21T18:58:34",
+   "upload_time_iso_8601": "2026-09-21T18:58:34.690443Z",
+   "url": "https://files.pythonhosted.org/packages/d0/17/33c1df06ddf0ae5e085def2f4cbe1cc7aa79af1619f624e71cdca1c7138e/wasmtime-49.0.0-py3-none-android_26_arm64_v8a.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "9cfca5b6fba6132de20494526a1b600612a4a0e10ca4c49f3fb005685ff0c86d",
+    "md5": "04d2f778c8c6a442cd52b42ae99f639d",
+    "sha256": "0153c9d5fe061dd21e761f47cd65be36bf6656970c52df034e4db4871ad2b11a"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-android_26_x86_64.whl",
+   "has_sig": false,
+   "md5_digest": "04d2f778c8c6a442cd52b42ae99f639d",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 9928209,
+   "upload_time": "2026-09-21T18:58:37",
+   "upload_time_iso_8601": "2026-09-21T18:58:37.753386Z",
+   "url": "https://files.pythonhosted.org/packages/9c/fc/a5b6fba6132de20494526a1b600612a4a0e10ca4c49f3fb005685ff0c86d/wasmtime-49.0.0-py3-none-android_26_x86_64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "173aff1b49ef5f66a2cfe6ff24eee44e092927fcc8e8374216fbd7de094320c7",
+    "md5": "449162a213ba1e175a9ceb7b7377264f",
+    "sha256": "3afc071340d9bb0cdf0fc0213e670c6c06ac193f2d73caf9b92d928496e49a51"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-any.whl",
+   "has_sig": false,
+   "md5_digest": "449162a213ba1e175a9ceb7b7377264f",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8262567,
+   "upload_time": "2026-09-21T18:58:40",
+   "upload_time_iso_8601": "2026-09-21T18:58:40.244173Z",
+   "url": "https://files.pythonhosted.org/packages/17/3a/ff1b49ef5f66a2cfe6ff24eee44e092927fcc8e8374216fbd7de094320c7/wasmtime-49.0.0-py3-none-any.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "9f1b2595e986f3f283b2942c410d655917064e4e8126b082d354cb1dea4db2fc",
+    "md5": "8b7bc56b1eddc4cd89b308d85a9ec0f8",
+    "sha256": "839225359e01360974795bd7869c25d4305da96627df0af360b0668e20ecf1fb"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-macosx_10_13_x86_64.whl",
+   "has_sig": false,
+   "md5_digest": "8b7bc56b1eddc4cd89b308d85a9ec0f8",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 9460810,
+   "upload_time": "2026-09-21T18:58:42",
+   "upload_time_iso_8601": "2026-09-21T18:58:42.183762Z",
+   "url": "https://files.pythonhosted.org/packages/9f/1b/2595e986f3f283b2942c410d655917064e4e8126b082d354cb1dea4db2fc/wasmtime-49.0.0-py3-none-macosx_10_13_x86_64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "b7c12333bb9b9364c28b4d113853d4e002e6ee3ee8d87d33b413dfdb220ce4d1",
+    "md5": "af087d2a758b3c5a54cd152ff623f508",
+    "sha256": "de98d6282c61d5dd4dc1ff1b410936ceb6fff3a27439e9cab51a375b8da2ec2f"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-macosx_11_0_arm64.whl",
+   "has_sig": false,
+   "md5_digest": "af087d2a758b3c5a54cd152ff623f508",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8438112,
+   "upload_time": "2026-09-21T18:58:44",
+   "upload_time_iso_8601": "2026-09-21T18:58:44.747346Z",
+   "url": "https://files.pythonhosted.org/packages/b7/c1/2333bb9b9364c28b4d113853d4e002e6ee3ee8d87d33b413dfdb220ce4d1/wasmtime-49.0.0-py3-none-macosx_11_0_arm64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "6b49d62b41a6ae9063681bb6af018ff49b75d49f853bbf672c7ddebedf21d69e",
+    "md5": "bcc204f84d8950d668af2b64e0e63c22",
+    "sha256": "94f0288f9e1c33924995a72bb769f4c4e2885002391589dd6992cdaa35d1990a"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-manylinux1_x86_64.whl",
+   "has_sig": false,
+   "md5_digest": "bcc204f84d8950d668af2b64e0e63c22",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 9919038,
+   "upload_time": "2026-09-21T18:58:47",
+   "upload_time_iso_8601": "2026-09-21T18:58:47.212115Z",
+   "url": "https://files.pythonhosted.org/packages/6b/49/d62b41a6ae9063681bb6af018ff49b75d49f853bbf672c7ddebedf21d69e/wasmtime-49.0.0-py3-none-manylinux1_x86_64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "9cf47889eb2fdbb11423e61f442af218441e0ae5749452bf8d2c1ade4ce630c5",
+    "md5": "b11af17cd38e2cc27fe1bf6eac1da100",
+    "sha256": "263b924576d9519c43d5a1acff50a03ab03209d16d26c53543c9ab9a409fb93f"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-manylinux2014_aarch64.whl",
+   "has_sig": false,
+   "md5_digest": "b11af17cd38e2cc27fe1bf6eac1da100",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8853040,
+   "upload_time": "2026-09-21T18:58:50",
+   "upload_time_iso_8601": "2026-09-21T18:58:50.112423Z",
+   "url": "https://files.pythonhosted.org/packages/9c/f4/7889eb2fdbb11423e61f442af218441e0ae5749452bf8d2c1ade4ce630c5/wasmtime-49.0.0-py3-none-manylinux2014_aarch64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "d18bfb187eaed30738ce4b1f8ecdbb0be1b4c1750269ed63605286e253153329",
+    "md5": "f9f9b079de63e9ff6c9fec14a821ca62",
+    "sha256": "8ab7e74c730bdda9613a8cd28b54aafa9e7f5d64aaff1a808751ccb142a76994"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-musllinux_1_2_aarch64.whl",
+   "has_sig": false,
+   "md5_digest": "f9f9b079de63e9ff6c9fec14a821ca62",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8911214,
+   "upload_time": "2026-09-21T18:58:52",
+   "upload_time_iso_8601": "2026-09-21T18:58:52.449229Z",
+   "url": "https://files.pythonhosted.org/packages/d1/8b/fb187eaed30738ce4b1f8ecdbb0be1b4c1750269ed63605286e253153329/wasmtime-49.0.0-py3-none-musllinux_1_2_aarch64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "2db632cd30e1a38a06e01499aa50274a91b175a09b64754a06a0680e9881aa12",
+    "md5": "727cea17e06a5e0d79578ea687469a20",
+    "sha256": "7198903d53c63673acdbe4753594703d090842c4c9e050d2d4ff14ecfebed00f"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-musllinux_1_2_x86_64.whl",
+   "has_sig": false,
+   "md5_digest": "727cea17e06a5e0d79578ea687469a20",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 9948354,
+   "upload_time": "2026-09-21T18:58:56",
+   "upload_time_iso_8601": "2026-09-21T18:58:56.016454Z",
+   "url": "https://files.pythonhosted.org/packages/2d/b6/32cd30e1a38a06e01499aa50274a91b175a09b64754a06a0680e9881aa12/wasmtime-49.0.0-py3-none-musllinux_1_2_x86_64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "c741b1d78d0ea1506abfa3005c8a50eee724b95a9cffbb2a0ed541f0965f5ab9",
+    "md5": "1291d9c507bdfcc477bdad0a70f6d36f",
+    "sha256": "46a4e4220fd1bee45ad9c29a73cadad54373dad840eff104726490527bc7ef89"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-win_amd64.whl",
+   "has_sig": false,
+   "md5_digest": "1291d9c507bdfcc477bdad0a70f6d36f",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 8262572,
+   "upload_time": "2026-09-21T18:58:58",
+   "upload_time_iso_8601": "2026-09-21T18:58:58.580887Z",
+   "url": "https://files.pythonhosted.org/packages/c7/41/b1d78d0ea1506abfa3005c8a50eee724b95a9cffbb2a0ed541f0965f5ab9/wasmtime-49.0.0-py3-none-win_amd64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": {
+    "sha256": "09df648870079625d4aceff6bd76e17d1086d5cdd7b012f8de245918be1e103c"
+   },
+   "digests": {
+    "blake2b_256": "5dfe484658110d9b6ff54f4c16104f1313489432568a7eeb61b5bcf2c045a5ab",
+    "md5": "52da5a982787d3a2e512aae81c7ed3e4",
+    "sha256": "95ab8d3da870f38202f11c0933650cbdf014885335fcd407d6ae1a6b3d647599"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0-py3-none-win_arm64.whl",
+   "has_sig": false,
+   "md5_digest": "52da5a982787d3a2e512aae81c7ed3e4",
+   "packagetype": "bdist_wheel",
+   "python_version": "py3",
+   "requires_python": ">=3.9",
+   "size": 7157718,
+   "upload_time": "2026-09-21T18:59:00",
+   "upload_time_iso_8601": "2026-09-21T18:59:00.864848Z",
+   "url": "https://files.pythonhosted.org/packages/5d/fe/484658110d9b6ff54f4c16104f1313489432568a7eeb61b5bcf2c045a5ab/wasmtime-49.0.0-py3-none-win_arm64.whl",
+   "yanked": false,
+   "yanked_reason": null
+  },
+  {
+   "comment_text": null,
+   "core-metadata": false,
+   "digests": {
+    "blake2b_256": "487eeb4b868529a2ae444cd24ea3c2cf1dd6dd2ce8d67ed4fb27b4e84529a1bf",
+    "md5": "b72150c343c76a8842820c42a6bcdcf0",
+    "sha256": "fe0bf510ebdaf9432b756e320d2da2347f159e241f468c961b95164ab06cfdc1"
+   },
+   "downloads": -1,
+   "filename": "wasmtime-49.0.0.tar.gz",
+   "has_sig": false,
+   "md5_digest": "b72150c343c76a8842820c42a6bcdcf0",
+   "packagetype": "sdist",
+   "python_version": "source",
+   "requires_python": ">=3.9",
+   "size": 129562,
+   "upload_time": "2026-09-21T18:59:02",
+   "upload_time_iso_8601": "2026-09-21T18:59:02.159735Z",
+   "url": "https://files.pythonhosted.org/packages/48/7e/eb4b868529a2ae444cd24ea3c2cf1dd6dd2ce8d67ed4fb27b4e84529a1bf/wasmtime-49.0.0.tar.gz",
+   "yanked": false,
+   "yanked_reason": null
+  }
+ ],
+ "vulnerabilities": []
+}

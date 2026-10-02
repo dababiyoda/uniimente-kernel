@@ -90,8 +90,25 @@ def compounding_metrics(journal: Journal) -> dict:
     outcomes = len(achieved.intersection(verified_appraisals(journal)))
     actions = sum(1 for e in journal.replay("mission.action") if e.payload["status"] == "DONE")
     decisions = len(journal.replay("decision.requested"))
+    # Recorded provider attempts and cognitive workers are different seams.
+    # These are a lower bound: historical planner calls can lack a durable
+    # event, so absence of records cannot establish zero model expenditure.
+    model_attempts = sum(e.payload.get("outcome") in {"ok", "failed", "refused"}
+                         for e in journal.replay("model.route"))
+    def cognitive_attempts(output):
+        if not isinstance(output, dict):
+            return 0
+        if "receipts" in output:
+            return sum(cognitive_attempts(r) for r in output["receipts"] if isinstance(r, dict))
+        count = output.get("compute_cost", {}).get("model_calls", 0)
+        return count if type(count) is int and count >= 0 else 0
+    model_attempts += sum(cognitive_attempts(r.payload.get("result", {}).get("output"))
+                          for r in journal.ledger.by_type("receipt"))
     return {"verified_outcomes": outcomes,
             "actions_per_outcome": (actions / outcomes) if outcomes else None,
             "founder_decisions_per_outcome": (decisions / outcomes) if outcomes else None,
-            "model_calls_per_outcome": 0 if outcomes else None,
-            "note": "null means no verified outcome yet; not zero cost and not infinite improvement"}
+            "model_calls_per_outcome": None,
+            "recorded_model_call_attempts": model_attempts,
+            "model_calls_per_outcome_lower_bound": model_attempts / outcomes if outcomes else None,
+            "model_call_coverage": "partial retained observations; total unmeasured",
+            "note": "null means no complete measurement; local computation and founder attention also cost resources"}

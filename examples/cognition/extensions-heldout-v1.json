@@ -1,0 +1,4942 @@
+{
+  "schema": "cognition-extension-heldout/1",
+  "decision": "P5-20261002-E1",
+  "split": "heldout",
+  "cases": [
+    {
+      "id": "extension:ee7f1892f55dbdf66ef8efcc",
+      "stratum": "graph",
+      "family": "indirect_chain",
+      "group": "graph:indirect_chain",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:ee7f1892f55dbdf66ef8efcc",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "a",
+              "b",
+              0.5
+            ],
+            [
+              "b",
+              "t",
+              2
+            ],
+            [
+              "s",
+              "t",
+              6
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 4.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:2bf4f776b0b14b14f9e0fb43",
+      "stratum": "search_alias",
+      "family": "indirect_chain",
+      "group": "search_alias:indirect_chain",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:2bf4f776b0b14b14f9e0fb43",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              2
+            ],
+            [
+              "b",
+              "a",
+              0.5
+            ],
+            [
+              "t",
+              "b",
+              2
+            ],
+            [
+              "t",
+              "s",
+              6
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 4.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:3db39cfa573f06e86a6dbe30",
+      "stratum": "graph",
+      "family": "unreachable_component",
+      "group": "graph:unreachable_component",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:3db39cfa573f06e86a6dbe30",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "b",
+              "t",
+              2
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:e75c59399b7f6a4e786f7425",
+      "stratum": "search_alias",
+      "family": "unreachable_component",
+      "group": "search_alias:unreachable_component",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:e75c59399b7f6a4e786f7425",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              2
+            ],
+            [
+              "t",
+              "b",
+              2
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:954987b692fd25cc35dee301",
+      "stratum": "graph",
+      "family": "parallel_and_self_loop",
+      "group": "graph:parallel_and_self_loop",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:954987b692fd25cc35dee301",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              7
+            ],
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "a",
+              "t",
+              1
+            ],
+            [
+              "s",
+              "t",
+              6
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 3.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:55777b52b25b0e99604d24d1",
+      "stratum": "search_alias",
+      "family": "parallel_and_self_loop",
+      "group": "search_alias:parallel_and_self_loop",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:55777b52b25b0e99604d24d1",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              7
+            ],
+            [
+              "a",
+              "s",
+              2
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "t",
+              "a",
+              1
+            ],
+            [
+              "t",
+              "s",
+              6
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 3.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:cc89022abb9854c535feb3e8",
+      "stratum": "graph",
+      "family": "undirected_zero_weight",
+      "group": "graph:undirected_zero_weight",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:cc89022abb9854c535feb3e8",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              2
+            ],
+            [
+              "a",
+              "b",
+              0
+            ],
+            [
+              "t",
+              "b",
+              3
+            ],
+            [
+              "s",
+              "t",
+              8
+            ]
+          ],
+          "start": "s",
+          "goal": "t",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 5.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:16b74b485794f252896abe1e",
+      "stratum": "search_alias",
+      "family": "undirected_zero_weight",
+      "group": "search_alias:undirected_zero_weight",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:16b74b485794f252896abe1e",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "b",
+              "a",
+              0
+            ],
+            [
+              "b",
+              "t",
+              3
+            ],
+            [
+              "t",
+              "s",
+              8
+            ]
+          ],
+          "start": "t",
+          "goal": "s",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 5.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:b3f99bfbbc675e40f575b349",
+      "stratum": "flow",
+      "family": "layered_bottleneck",
+      "group": "flow:layered_bottleneck",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:b3f99bfbbc675e40f575b349",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "s",
+              "b",
+              2
+            ],
+            [
+              "a",
+              "t",
+              2
+            ],
+            [
+              "b",
+              "t",
+              4
+            ],
+            [
+              "a",
+              "b",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 5
+        }
+      }
+    },
+    {
+      "id": "extension:e6c659625c9a46982555b7de",
+      "stratum": "flow",
+      "family": "antiparallel_cycle",
+      "group": "flow:antiparallel_cycle",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:e6c659625c9a46982555b7de",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "a",
+              "b",
+              2
+            ],
+            [
+              "b",
+              "a",
+              3
+            ],
+            [
+              "b",
+              "t",
+              1
+            ],
+            [
+              "a",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 2
+        }
+      }
+    },
+    {
+      "id": "extension:731ba68e9bcc224885e19b3d",
+      "stratum": "flow",
+      "family": "disconnected_sink",
+      "group": "flow:disconnected_sink",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:731ba68e9bcc224885e19b3d",
+        "operation": "max_flow",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "a",
+              "b",
+              2
+            ],
+            [
+              "b",
+              "s",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "extension:777a626712e33ea710885c1f",
+      "stratum": "flow",
+      "family": "parallel_and_self_loop",
+      "group": "flow:parallel_and_self_loop",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:777a626712e33ea710885c1f",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              2
+            ],
+            [
+              "s",
+              "a",
+              1
+            ],
+            [
+              "a",
+              "a",
+              9
+            ],
+            [
+              "a",
+              "t",
+              4
+            ],
+            [
+              "s",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 4
+        }
+      }
+    },
+    {
+      "id": "extension:71fab84cd8e813e74a700ebc",
+      "stratum": "linear_optimal",
+      "family": "covering",
+      "group": "linear_optimal:covering",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:71fab84cd8e813e74a700ebc",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ],
+            "y": [
+              0,
+              6
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 3
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 3.0
+        }
+      }
+    },
+    {
+      "id": "extension:84f35d9352d106c3dcbf5000",
+      "stratum": "linear_optimal",
+      "family": "packing",
+      "group": "linear_optimal:packing",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:84f35d9352d106c3dcbf5000",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              5
+            ],
+            "y": [
+              0,
+              2
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 4
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 6.0
+        }
+      }
+    },
+    {
+      "id": "extension:a64583c0da1ae334b7a09136",
+      "stratum": "linear_optimal",
+      "family": "fractional_equality",
+      "group": "linear_optimal:fractional_equality",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:a64583c0da1ae334b7a09136",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              -2,
+              2
+            ],
+            "y": [
+              -2,
+              2
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "==",
+              "rhs": 0.5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": -0.75
+        }
+      }
+    },
+    {
+      "id": "extension:f26371d58a94099392b523c3",
+      "stratum": "linear_optimal",
+      "family": "degenerate_faces",
+      "group": "linear_optimal:degenerate_faces",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:f26371d58a94099392b523c3",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              2
+            ],
+            "y": [
+              0,
+              2
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": "<=",
+              "rhs": 2
+            },
+            {
+              "coefficients": {
+                "x": 2,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 4
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 2.0
+        }
+      }
+    },
+    {
+      "id": "extension:debd2aeed886317ccd646bac",
+      "stratum": "linear_no_optimum",
+      "family": "infeasible",
+      "group": "linear_no_optimum:infeasible",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:debd2aeed886317ccd646bac",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              2
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1
+              },
+              "op": ">=",
+              "rhs": 3
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN",
+        "output": {
+          "solver_status": "INFEASIBLE"
+        }
+      }
+    },
+    {
+      "id": "extension:91ee2dde3604330ae45a9b29",
+      "stratum": "linear_no_optimum",
+      "family": "zero_solver_budget",
+      "group": "linear_no_optimum:zero_solver_budget",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:91ee2dde3604330ae45a9b29",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              2
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          },
+          "solver_budget_seconds": 0
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "UNKNOWN",
+        "output": {
+          "solver_status": "NOT_SOLVED"
+        }
+      }
+    },
+    {
+      "id": "extension:0fb0fc4b8a59292b93b67361",
+      "stratum": "linear_no_optimum",
+      "family": "invalid_bounds",
+      "group": "linear_no_optimum:invalid_bounds",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:0fb0fc4b8a59292b93b67361",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              2,
+              0
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:de9ad7dfceb012ae5006e9b0",
+      "stratum": "linear_no_optimum",
+      "family": "unrepresented_clause",
+      "group": "linear_no_optimum:unrepresented_clause",
+      "transformation": 0,
+      "request": {
+        "problem_id": "extension:de9ad7dfceb012ae5006e9b0",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              2
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min",
+            "protected_party": "may not be ignored"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:254709c13742986f4893a7ca",
+      "stratum": "graph",
+      "family": "indirect_chain",
+      "group": "graph:indirect_chain",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:254709c13742986f4893a7ca",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "a",
+              "b",
+              0.5
+            ],
+            [
+              "b",
+              "t",
+              3
+            ],
+            [
+              "s",
+              "t",
+              9
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 6.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:cdccb71e73753b43500169ef",
+      "stratum": "search_alias",
+      "family": "indirect_chain",
+      "group": "search_alias:indirect_chain",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:cdccb71e73753b43500169ef",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              3
+            ],
+            [
+              "b",
+              "a",
+              0.5
+            ],
+            [
+              "t",
+              "b",
+              3
+            ],
+            [
+              "t",
+              "s",
+              9
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 6.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:2793098d5affa23f88c919c4",
+      "stratum": "graph",
+      "family": "unreachable_component",
+      "group": "graph:unreachable_component",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:2793098d5affa23f88c919c4",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "b",
+              "t",
+              3
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:1696832a8bceababb235f76f",
+      "stratum": "search_alias",
+      "family": "unreachable_component",
+      "group": "search_alias:unreachable_component",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:1696832a8bceababb235f76f",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              3
+            ],
+            [
+              "t",
+              "b",
+              3
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:07f436b770840534ea9c0e6d",
+      "stratum": "graph",
+      "family": "parallel_and_self_loop",
+      "group": "graph:parallel_and_self_loop",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:07f436b770840534ea9c0e6d",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              8
+            ],
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "a",
+              "t",
+              1
+            ],
+            [
+              "s",
+              "t",
+              7
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 4.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:f8e998fc528e1524db260a4b",
+      "stratum": "search_alias",
+      "family": "parallel_and_self_loop",
+      "group": "search_alias:parallel_and_self_loop",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:f8e998fc528e1524db260a4b",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              8
+            ],
+            [
+              "a",
+              "s",
+              3
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "t",
+              "a",
+              1
+            ],
+            [
+              "t",
+              "s",
+              7
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 4.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:dfa88c39704f5a38a184d5c6",
+      "stratum": "graph",
+      "family": "undirected_zero_weight",
+      "group": "graph:undirected_zero_weight",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:dfa88c39704f5a38a184d5c6",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              3
+            ],
+            [
+              "a",
+              "b",
+              0
+            ],
+            [
+              "t",
+              "b",
+              4
+            ],
+            [
+              "s",
+              "t",
+              12
+            ]
+          ],
+          "start": "s",
+          "goal": "t",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 7.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:fdc44b5cd975d3f02d5683d5",
+      "stratum": "search_alias",
+      "family": "undirected_zero_weight",
+      "group": "search_alias:undirected_zero_weight",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:fdc44b5cd975d3f02d5683d5",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "b",
+              "a",
+              0
+            ],
+            [
+              "b",
+              "t",
+              4
+            ],
+            [
+              "t",
+              "s",
+              12
+            ]
+          ],
+          "start": "t",
+          "goal": "s",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 7.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:134d7d2c33041deaf05f54ce",
+      "stratum": "flow",
+      "family": "layered_bottleneck",
+      "group": "flow:layered_bottleneck",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:134d7d2c33041deaf05f54ce",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "s",
+              "b",
+              3
+            ],
+            [
+              "a",
+              "t",
+              3
+            ],
+            [
+              "b",
+              "t",
+              6
+            ],
+            [
+              "a",
+              "b",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 7
+        }
+      }
+    },
+    {
+      "id": "extension:a25079c142f9c58f9c47c78e",
+      "stratum": "flow",
+      "family": "antiparallel_cycle",
+      "group": "flow:antiparallel_cycle",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:a25079c142f9c58f9c47c78e",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "a",
+              "b",
+              3
+            ],
+            [
+              "b",
+              "a",
+              4
+            ],
+            [
+              "b",
+              "t",
+              2
+            ],
+            [
+              "a",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 3
+        }
+      }
+    },
+    {
+      "id": "extension:e703e760bc1abbadaf365524",
+      "stratum": "flow",
+      "family": "disconnected_sink",
+      "group": "flow:disconnected_sink",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:e703e760bc1abbadaf365524",
+        "operation": "max_flow",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "a",
+              "b",
+              3
+            ],
+            [
+              "b",
+              "s",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "extension:0ef17e81e4b075d30da84a2f",
+      "stratum": "flow",
+      "family": "parallel_and_self_loop",
+      "group": "flow:parallel_and_self_loop",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:0ef17e81e4b075d30da84a2f",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              3
+            ],
+            [
+              "s",
+              "a",
+              1
+            ],
+            [
+              "a",
+              "a",
+              10
+            ],
+            [
+              "a",
+              "t",
+              5
+            ],
+            [
+              "s",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 5
+        }
+      }
+    },
+    {
+      "id": "extension:a94fc7919576593a50ac0e95",
+      "stratum": "linear_optimal",
+      "family": "covering",
+      "group": "linear_optimal:covering",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:a94fc7919576593a50ac0e95",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              7
+            ],
+            "y": [
+              0,
+              7
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 4
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 4.0
+        }
+      }
+    },
+    {
+      "id": "extension:3f265cb0901d82bfd853d010",
+      "stratum": "linear_optimal",
+      "family": "packing",
+      "group": "linear_optimal:packing",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:3f265cb0901d82bfd853d010",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ],
+            "y": [
+              0,
+              3
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 7.5
+        }
+      }
+    },
+    {
+      "id": "extension:f869083df5ad1b407619aad8",
+      "stratum": "linear_optimal",
+      "family": "fractional_equality",
+      "group": "linear_optimal:fractional_equality",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:f869083df5ad1b407619aad8",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              -3,
+              3
+            ],
+            "y": [
+              -3,
+              3
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "==",
+              "rhs": 0.5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": -1.25
+        }
+      }
+    },
+    {
+      "id": "extension:c0c03acc93e343e66d467b4f",
+      "stratum": "linear_optimal",
+      "family": "degenerate_faces",
+      "group": "linear_optimal:degenerate_faces",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:c0c03acc93e343e66d467b4f",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              3
+            ],
+            "y": [
+              0,
+              3
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": "<=",
+              "rhs": 3
+            },
+            {
+              "coefficients": {
+                "x": 2,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 6
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 3.0
+        }
+      }
+    },
+    {
+      "id": "extension:ffd0bae67c82bb57f03ce53b",
+      "stratum": "linear_no_optimum",
+      "family": "infeasible",
+      "group": "linear_no_optimum:infeasible",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:ffd0bae67c82bb57f03ce53b",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              3
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1
+              },
+              "op": ">=",
+              "rhs": 4
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN",
+        "output": {
+          "solver_status": "INFEASIBLE"
+        }
+      }
+    },
+    {
+      "id": "extension:c50acf766dd4bfb27db8d477",
+      "stratum": "linear_no_optimum",
+      "family": "zero_solver_budget",
+      "group": "linear_no_optimum:zero_solver_budget",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:c50acf766dd4bfb27db8d477",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              3
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          },
+          "solver_budget_seconds": 0
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "UNKNOWN",
+        "output": {
+          "solver_status": "NOT_SOLVED"
+        }
+      }
+    },
+    {
+      "id": "extension:e9d626997fc91424a8899580",
+      "stratum": "linear_no_optimum",
+      "family": "invalid_bounds",
+      "group": "linear_no_optimum:invalid_bounds",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:e9d626997fc91424a8899580",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              3,
+              0
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:9a56b7597849ad2ee1eb6cf3",
+      "stratum": "linear_no_optimum",
+      "family": "unrepresented_clause",
+      "group": "linear_no_optimum:unrepresented_clause",
+      "transformation": 1,
+      "request": {
+        "problem_id": "extension:9a56b7597849ad2ee1eb6cf3",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              3
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min",
+            "protected_party": "may not be ignored"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:2fc6d4fc3dd4c5a433332272",
+      "stratum": "graph",
+      "family": "indirect_chain",
+      "group": "graph:indirect_chain",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:2fc6d4fc3dd4c5a433332272",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "a",
+              "b",
+              0.5
+            ],
+            [
+              "b",
+              "t",
+              4
+            ],
+            [
+              "s",
+              "t",
+              12
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 8.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:f50dd1272cdccc79c8628639",
+      "stratum": "search_alias",
+      "family": "indirect_chain",
+      "group": "search_alias:indirect_chain",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:f50dd1272cdccc79c8628639",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              4
+            ],
+            [
+              "b",
+              "a",
+              0.5
+            ],
+            [
+              "t",
+              "b",
+              4
+            ],
+            [
+              "t",
+              "s",
+              12
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 8.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:49566665d27f5b4bbc513b8d",
+      "stratum": "graph",
+      "family": "unreachable_component",
+      "group": "graph:unreachable_component",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:49566665d27f5b4bbc513b8d",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "b",
+              "t",
+              4
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:05ac2accf73d020b1ea22b96",
+      "stratum": "search_alias",
+      "family": "unreachable_component",
+      "group": "search_alias:unreachable_component",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:05ac2accf73d020b1ea22b96",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              4
+            ],
+            [
+              "t",
+              "b",
+              4
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:ba53bfb18897bf9e24d0297e",
+      "stratum": "graph",
+      "family": "parallel_and_self_loop",
+      "group": "graph:parallel_and_self_loop",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:ba53bfb18897bf9e24d0297e",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              9
+            ],
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "a",
+              "t",
+              1
+            ],
+            [
+              "s",
+              "t",
+              8
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 5.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:fac958a88a2fdb587fc26c7a",
+      "stratum": "search_alias",
+      "family": "parallel_and_self_loop",
+      "group": "search_alias:parallel_and_self_loop",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:fac958a88a2fdb587fc26c7a",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              9
+            ],
+            [
+              "a",
+              "s",
+              4
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "t",
+              "a",
+              1
+            ],
+            [
+              "t",
+              "s",
+              8
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 5.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:a4adace2b35afa542c99856b",
+      "stratum": "graph",
+      "family": "undirected_zero_weight",
+      "group": "graph:undirected_zero_weight",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:a4adace2b35afa542c99856b",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              4
+            ],
+            [
+              "a",
+              "b",
+              0
+            ],
+            [
+              "t",
+              "b",
+              5
+            ],
+            [
+              "s",
+              "t",
+              16
+            ]
+          ],
+          "start": "s",
+          "goal": "t",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 9.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:70328ab25a99bc73eeea5389",
+      "stratum": "search_alias",
+      "family": "undirected_zero_weight",
+      "group": "search_alias:undirected_zero_weight",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:70328ab25a99bc73eeea5389",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "b",
+              "a",
+              0
+            ],
+            [
+              "b",
+              "t",
+              5
+            ],
+            [
+              "t",
+              "s",
+              16
+            ]
+          ],
+          "start": "t",
+          "goal": "s",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 9.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:ee08f1aaf476f6652d5db933",
+      "stratum": "flow",
+      "family": "layered_bottleneck",
+      "group": "flow:layered_bottleneck",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:ee08f1aaf476f6652d5db933",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              8
+            ],
+            [
+              "s",
+              "b",
+              4
+            ],
+            [
+              "a",
+              "t",
+              4
+            ],
+            [
+              "b",
+              "t",
+              8
+            ],
+            [
+              "a",
+              "b",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 9
+        }
+      }
+    },
+    {
+      "id": "extension:576956c548173d18e6427049",
+      "stratum": "flow",
+      "family": "antiparallel_cycle",
+      "group": "flow:antiparallel_cycle",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:576956c548173d18e6427049",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "a",
+              "b",
+              4
+            ],
+            [
+              "b",
+              "a",
+              5
+            ],
+            [
+              "b",
+              "t",
+              3
+            ],
+            [
+              "a",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 4
+        }
+      }
+    },
+    {
+      "id": "extension:0a4fbc3ee232db3ea2f0c960",
+      "stratum": "flow",
+      "family": "disconnected_sink",
+      "group": "flow:disconnected_sink",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:0a4fbc3ee232db3ea2f0c960",
+        "operation": "max_flow",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "a",
+              "b",
+              4
+            ],
+            [
+              "b",
+              "s",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "extension:22e1be116c3a1939d22935a9",
+      "stratum": "flow",
+      "family": "parallel_and_self_loop",
+      "group": "flow:parallel_and_self_loop",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:22e1be116c3a1939d22935a9",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              4
+            ],
+            [
+              "s",
+              "a",
+              1
+            ],
+            [
+              "a",
+              "a",
+              11
+            ],
+            [
+              "a",
+              "t",
+              6
+            ],
+            [
+              "s",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 6
+        }
+      }
+    },
+    {
+      "id": "extension:7df65c393b3dbd822362fade",
+      "stratum": "linear_optimal",
+      "family": "covering",
+      "group": "linear_optimal:covering",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:7df65c393b3dbd822362fade",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              8
+            ],
+            "y": [
+              0,
+              8
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 5.0
+        }
+      }
+    },
+    {
+      "id": "extension:e21f8996c47f306f02ca6e2e",
+      "stratum": "linear_optimal",
+      "family": "packing",
+      "group": "linear_optimal:packing",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:e21f8996c47f306f02ca6e2e",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              7
+            ],
+            "y": [
+              0,
+              4
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 6
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 9.0
+        }
+      }
+    },
+    {
+      "id": "extension:6d24bcaa652e8b0adf530aa9",
+      "stratum": "linear_optimal",
+      "family": "fractional_equality",
+      "group": "linear_optimal:fractional_equality",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:6d24bcaa652e8b0adf530aa9",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              -4,
+              4
+            ],
+            "y": [
+              -4,
+              4
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "==",
+              "rhs": 0.5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": -1.75
+        }
+      }
+    },
+    {
+      "id": "extension:7e6f446cdd4bacaa31fc9e60",
+      "stratum": "linear_optimal",
+      "family": "degenerate_faces",
+      "group": "linear_optimal:degenerate_faces",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:7e6f446cdd4bacaa31fc9e60",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              4
+            ],
+            "y": [
+              0,
+              4
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": "<=",
+              "rhs": 4
+            },
+            {
+              "coefficients": {
+                "x": 2,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 8
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 4.0
+        }
+      }
+    },
+    {
+      "id": "extension:86238bc50bd3f01594fe5688",
+      "stratum": "linear_no_optimum",
+      "family": "infeasible",
+      "group": "linear_no_optimum:infeasible",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:86238bc50bd3f01594fe5688",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              4
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1
+              },
+              "op": ">=",
+              "rhs": 5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN",
+        "output": {
+          "solver_status": "INFEASIBLE"
+        }
+      }
+    },
+    {
+      "id": "extension:1a1d23d8c4ba4439f5dc3f33",
+      "stratum": "linear_no_optimum",
+      "family": "zero_solver_budget",
+      "group": "linear_no_optimum:zero_solver_budget",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:1a1d23d8c4ba4439f5dc3f33",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              4
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          },
+          "solver_budget_seconds": 0
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "UNKNOWN",
+        "output": {
+          "solver_status": "NOT_SOLVED"
+        }
+      }
+    },
+    {
+      "id": "extension:83592b176c61b2379a02d373",
+      "stratum": "linear_no_optimum",
+      "family": "invalid_bounds",
+      "group": "linear_no_optimum:invalid_bounds",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:83592b176c61b2379a02d373",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              4,
+              0
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:5919bf20247a1d60e0c69dc2",
+      "stratum": "linear_no_optimum",
+      "family": "unrepresented_clause",
+      "group": "linear_no_optimum:unrepresented_clause",
+      "transformation": 2,
+      "request": {
+        "problem_id": "extension:5919bf20247a1d60e0c69dc2",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              4
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min",
+            "protected_party": "may not be ignored"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:0885bceaab176dd491161bad",
+      "stratum": "graph",
+      "family": "indirect_chain",
+      "group": "graph:indirect_chain",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:0885bceaab176dd491161bad",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "a",
+              "b",
+              0.5
+            ],
+            [
+              "b",
+              "t",
+              5
+            ],
+            [
+              "s",
+              "t",
+              15
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 10.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:46c4f368730bd4fb6a2458f2",
+      "stratum": "search_alias",
+      "family": "indirect_chain",
+      "group": "search_alias:indirect_chain",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:46c4f368730bd4fb6a2458f2",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              5
+            ],
+            [
+              "b",
+              "a",
+              0.5
+            ],
+            [
+              "t",
+              "b",
+              5
+            ],
+            [
+              "t",
+              "s",
+              15
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 10.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:357fa34950d800cd025c0b68",
+      "stratum": "graph",
+      "family": "unreachable_component",
+      "group": "graph:unreachable_component",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:357fa34950d800cd025c0b68",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "b",
+              "t",
+              5
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:95be193ecb9a68ecb9c790d3",
+      "stratum": "search_alias",
+      "family": "unreachable_component",
+      "group": "search_alias:unreachable_component",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:95be193ecb9a68ecb9c790d3",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              5
+            ],
+            [
+              "t",
+              "b",
+              5
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:3f16f94f7bb472c4d2506a7e",
+      "stratum": "graph",
+      "family": "parallel_and_self_loop",
+      "group": "graph:parallel_and_self_loop",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:3f16f94f7bb472c4d2506a7e",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              10
+            ],
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "a",
+              "t",
+              1
+            ],
+            [
+              "s",
+              "t",
+              9
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 6.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:5299fa5779ca80a49c261c6e",
+      "stratum": "search_alias",
+      "family": "parallel_and_self_loop",
+      "group": "search_alias:parallel_and_self_loop",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:5299fa5779ca80a49c261c6e",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              10
+            ],
+            [
+              "a",
+              "s",
+              5
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "t",
+              "a",
+              1
+            ],
+            [
+              "t",
+              "s",
+              9
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 6.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:66c233712ca215e7acc1eebf",
+      "stratum": "graph",
+      "family": "undirected_zero_weight",
+      "group": "graph:undirected_zero_weight",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:66c233712ca215e7acc1eebf",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              5
+            ],
+            [
+              "a",
+              "b",
+              0
+            ],
+            [
+              "t",
+              "b",
+              6
+            ],
+            [
+              "s",
+              "t",
+              20
+            ]
+          ],
+          "start": "s",
+          "goal": "t",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 11.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:c41b852575be2cd1103b788f",
+      "stratum": "search_alias",
+      "family": "undirected_zero_weight",
+      "group": "search_alias:undirected_zero_weight",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:c41b852575be2cd1103b788f",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "b",
+              "a",
+              0
+            ],
+            [
+              "b",
+              "t",
+              6
+            ],
+            [
+              "t",
+              "s",
+              20
+            ]
+          ],
+          "start": "t",
+          "goal": "s",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 11.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:ae693d0d166bd9c9b215fe16",
+      "stratum": "flow",
+      "family": "layered_bottleneck",
+      "group": "flow:layered_bottleneck",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:ae693d0d166bd9c9b215fe16",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              10
+            ],
+            [
+              "s",
+              "b",
+              5
+            ],
+            [
+              "a",
+              "t",
+              5
+            ],
+            [
+              "b",
+              "t",
+              10
+            ],
+            [
+              "a",
+              "b",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 11
+        }
+      }
+    },
+    {
+      "id": "extension:ffc6dc6e23eb61df273c643f",
+      "stratum": "flow",
+      "family": "antiparallel_cycle",
+      "group": "flow:antiparallel_cycle",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:ffc6dc6e23eb61df273c643f",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "a",
+              "b",
+              5
+            ],
+            [
+              "b",
+              "a",
+              6
+            ],
+            [
+              "b",
+              "t",
+              4
+            ],
+            [
+              "a",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 5
+        }
+      }
+    },
+    {
+      "id": "extension:adebfc042614e0b37c73bf98",
+      "stratum": "flow",
+      "family": "disconnected_sink",
+      "group": "flow:disconnected_sink",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:adebfc042614e0b37c73bf98",
+        "operation": "max_flow",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "a",
+              "b",
+              5
+            ],
+            [
+              "b",
+              "s",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "extension:8af1a2ca131f6b774b9a1ee2",
+      "stratum": "flow",
+      "family": "parallel_and_self_loop",
+      "group": "flow:parallel_and_self_loop",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:8af1a2ca131f6b774b9a1ee2",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              5
+            ],
+            [
+              "s",
+              "a",
+              1
+            ],
+            [
+              "a",
+              "a",
+              12
+            ],
+            [
+              "a",
+              "t",
+              7
+            ],
+            [
+              "s",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 7
+        }
+      }
+    },
+    {
+      "id": "extension:3ad6f021bf9bb5c08c46f640",
+      "stratum": "linear_optimal",
+      "family": "covering",
+      "group": "linear_optimal:covering",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:3ad6f021bf9bb5c08c46f640",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              9
+            ],
+            "y": [
+              0,
+              9
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 6
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 6.0
+        }
+      }
+    },
+    {
+      "id": "extension:ac8311f779aebbdc727a5e75",
+      "stratum": "linear_optimal",
+      "family": "packing",
+      "group": "linear_optimal:packing",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:ac8311f779aebbdc727a5e75",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              8
+            ],
+            "y": [
+              0,
+              5
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 7
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 10.5
+        }
+      }
+    },
+    {
+      "id": "extension:b74294c433b1cffebddd15a2",
+      "stratum": "linear_optimal",
+      "family": "fractional_equality",
+      "group": "linear_optimal:fractional_equality",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:b74294c433b1cffebddd15a2",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              -5,
+              5
+            ],
+            "y": [
+              -5,
+              5
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "==",
+              "rhs": 0.5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": -2.25
+        }
+      }
+    },
+    {
+      "id": "extension:bdd9c6d1343e1206734a8b44",
+      "stratum": "linear_optimal",
+      "family": "degenerate_faces",
+      "group": "linear_optimal:degenerate_faces",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:bdd9c6d1343e1206734a8b44",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              5
+            ],
+            "y": [
+              0,
+              5
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": "<=",
+              "rhs": 5
+            },
+            {
+              "coefficients": {
+                "x": 2,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 10
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 5.0
+        }
+      }
+    },
+    {
+      "id": "extension:3646ee0ce9fc2446b7df382d",
+      "stratum": "linear_no_optimum",
+      "family": "infeasible",
+      "group": "linear_no_optimum:infeasible",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:3646ee0ce9fc2446b7df382d",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              5
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1
+              },
+              "op": ">=",
+              "rhs": 6
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN",
+        "output": {
+          "solver_status": "INFEASIBLE"
+        }
+      }
+    },
+    {
+      "id": "extension:78ea8d84c2ab08a6d85169ef",
+      "stratum": "linear_no_optimum",
+      "family": "zero_solver_budget",
+      "group": "linear_no_optimum:zero_solver_budget",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:78ea8d84c2ab08a6d85169ef",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              5
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          },
+          "solver_budget_seconds": 0
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "UNKNOWN",
+        "output": {
+          "solver_status": "NOT_SOLVED"
+        }
+      }
+    },
+    {
+      "id": "extension:555f86067d1433b96972587e",
+      "stratum": "linear_no_optimum",
+      "family": "invalid_bounds",
+      "group": "linear_no_optimum:invalid_bounds",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:555f86067d1433b96972587e",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              5,
+              0
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:bbf7dd3e0e1dc771d4bd8fc8",
+      "stratum": "linear_no_optimum",
+      "family": "unrepresented_clause",
+      "group": "linear_no_optimum:unrepresented_clause",
+      "transformation": 3,
+      "request": {
+        "problem_id": "extension:bbf7dd3e0e1dc771d4bd8fc8",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              5
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min",
+            "protected_party": "may not be ignored"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:5867daa86a70d83975758808",
+      "stratum": "graph",
+      "family": "indirect_chain",
+      "group": "graph:indirect_chain",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:5867daa86a70d83975758808",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "a",
+              "b",
+              0.5
+            ],
+            [
+              "b",
+              "t",
+              6
+            ],
+            [
+              "s",
+              "t",
+              18
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 12.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:b6d41d318921ccd4612b9fe8",
+      "stratum": "search_alias",
+      "family": "indirect_chain",
+      "group": "search_alias:indirect_chain",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:b6d41d318921ccd4612b9fe8",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              6
+            ],
+            [
+              "b",
+              "a",
+              0.5
+            ],
+            [
+              "t",
+              "b",
+              6
+            ],
+            [
+              "t",
+              "s",
+              18
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 12.5,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:8019935bf57a1ad21a7e14db",
+      "stratum": "graph",
+      "family": "unreachable_component",
+      "group": "graph:unreachable_component",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:8019935bf57a1ad21a7e14db",
+        "operation": "shortest_path",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "b",
+              "t",
+              6
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:b2dd4c0a02ced9f4f34aa321",
+      "stratum": "search_alias",
+      "family": "unreachable_component",
+      "group": "search_alias:unreachable_component",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:b2dd4c0a02ced9f4f34aa321",
+        "operation": "state_search",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "a",
+              "s",
+              6
+            ],
+            [
+              "t",
+              "b",
+              6
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": null,
+          "reachable": false
+        }
+      }
+    },
+    {
+      "id": "extension:aa1bf0bf9409c09c1e2950ba",
+      "stratum": "graph",
+      "family": "parallel_and_self_loop",
+      "group": "graph:parallel_and_self_loop",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:aa1bf0bf9409c09c1e2950ba",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              11
+            ],
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "a",
+              "t",
+              1
+            ],
+            [
+              "s",
+              "t",
+              10
+            ]
+          ],
+          "start": "s",
+          "goal": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 7.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:4edbb215a2b206c63facd10b",
+      "stratum": "search_alias",
+      "family": "parallel_and_self_loop",
+      "group": "search_alias:parallel_and_self_loop",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:4edbb215a2b206c63facd10b",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              11
+            ],
+            [
+              "a",
+              "s",
+              6
+            ],
+            [
+              "a",
+              "a",
+              0
+            ],
+            [
+              "t",
+              "a",
+              1
+            ],
+            [
+              "t",
+              "s",
+              10
+            ]
+          ],
+          "start": "t",
+          "goal": "s"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 7.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:499d1701549777e6c94638a1",
+      "stratum": "graph",
+      "family": "undirected_zero_weight",
+      "group": "graph:undirected_zero_weight",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:499d1701549777e6c94638a1",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "s",
+              6
+            ],
+            [
+              "a",
+              "b",
+              0
+            ],
+            [
+              "t",
+              "b",
+              7
+            ],
+            [
+              "s",
+              "t",
+              24
+            ]
+          ],
+          "start": "s",
+          "goal": "t",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 13.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:6ed57d50f4cdc177c731cd49",
+      "stratum": "search_alias",
+      "family": "undirected_zero_weight",
+      "group": "search_alias:undirected_zero_weight",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:6ed57d50f4cdc177c731cd49",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "b",
+              "a",
+              0
+            ],
+            [
+              "b",
+              "t",
+              7
+            ],
+            [
+              "t",
+              "s",
+              24
+            ]
+          ],
+          "start": "t",
+          "goal": "s",
+          "directed": false
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "search_trace",
+        "output": {
+          "cost": 13.0,
+          "reachable": true
+        }
+      }
+    },
+    {
+      "id": "extension:d1471a03cdc898cdc07eeae1",
+      "stratum": "flow",
+      "family": "layered_bottleneck",
+      "group": "flow:layered_bottleneck",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:d1471a03cdc898cdc07eeae1",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              12
+            ],
+            [
+              "s",
+              "b",
+              6
+            ],
+            [
+              "a",
+              "t",
+              6
+            ],
+            [
+              "b",
+              "t",
+              12
+            ],
+            [
+              "a",
+              "b",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 13
+        }
+      }
+    },
+    {
+      "id": "extension:3ffc87bac8757f3c3172ad99",
+      "stratum": "flow",
+      "family": "antiparallel_cycle",
+      "group": "flow:antiparallel_cycle",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:3ffc87bac8757f3c3172ad99",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "a",
+              "b",
+              6
+            ],
+            [
+              "b",
+              "a",
+              7
+            ],
+            [
+              "b",
+              "t",
+              5
+            ],
+            [
+              "a",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 6
+        }
+      }
+    },
+    {
+      "id": "extension:ce0a3501a3f457e7b33a0da2",
+      "stratum": "flow",
+      "family": "disconnected_sink",
+      "group": "flow:disconnected_sink",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:ce0a3501a3f457e7b33a0da2",
+        "operation": "max_flow",
+        "data": {
+          "nodes": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "a",
+              "b",
+              6
+            ],
+            [
+              "b",
+              "s",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "extension:90f6494947e8863355a4d26b",
+      "stratum": "flow",
+      "family": "parallel_and_self_loop",
+      "group": "flow:parallel_and_self_loop",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:90f6494947e8863355a4d26b",
+        "operation": "max_flow",
+        "data": {
+          "edges": [
+            [
+              "s",
+              "a",
+              6
+            ],
+            [
+              "s",
+              "a",
+              1
+            ],
+            [
+              "a",
+              "a",
+              13
+            ],
+            [
+              "a",
+              "t",
+              8
+            ],
+            [
+              "s",
+              "t",
+              1
+            ]
+          ],
+          "source": "s",
+          "sink": "t"
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "flow_certificate",
+        "output": {
+          "value": 8
+        }
+      }
+    },
+    {
+      "id": "extension:f5af38b9e657ac3c9f311561",
+      "stratum": "linear_optimal",
+      "family": "covering",
+      "group": "linear_optimal:covering",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:f5af38b9e657ac3c9f311561",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              10
+            ],
+            "y": [
+              0,
+              10
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 7
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 7.0
+        }
+      }
+    },
+    {
+      "id": "extension:6bd640e31094ca0a3af5722d",
+      "stratum": "linear_optimal",
+      "family": "packing",
+      "group": "linear_optimal:packing",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:6bd640e31094ca0a3af5722d",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              9
+            ],
+            "y": [
+              0,
+              6
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 8
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 3
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 12.0
+        }
+      }
+    },
+    {
+      "id": "extension:679e88a7f920d3a233c94e70",
+      "stratum": "linear_optimal",
+      "family": "fractional_equality",
+      "group": "linear_optimal:fractional_equality",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:679e88a7f920d3a233c94e70",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              -6,
+              6
+            ],
+            "y": [
+              -6,
+              6
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 2
+              },
+              "op": "==",
+              "rhs": 0.5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": -2.75
+        }
+      }
+    },
+    {
+      "id": "extension:24bf5c2561c8412379e9de45",
+      "stratum": "linear_optimal",
+      "family": "degenerate_faces",
+      "group": "linear_optimal:degenerate_faces",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:24bf5c2561c8412379e9de45",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ],
+            "y": [
+              0,
+              6
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": "<=",
+              "rhs": 6
+            },
+            {
+              "coefficients": {
+                "x": 2,
+                "y": 2
+              },
+              "op": "<=",
+              "rhs": 12
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 1
+            },
+            "sense": "max"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "NONE",
+        "proof_type": "linear_program_certificate",
+        "output": {
+          "solver_status": "OPTIMAL",
+          "objective_value": 6.0
+        }
+      }
+    },
+    {
+      "id": "extension:f36632586e3bc87d8e61611b",
+      "stratum": "linear_no_optimum",
+      "family": "infeasible",
+      "group": "linear_no_optimum:infeasible",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:f36632586e3bc87d8e61611b",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1
+              },
+              "op": ">=",
+              "rhs": 7
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN",
+        "output": {
+          "solver_status": "INFEASIBLE"
+        }
+      }
+    },
+    {
+      "id": "extension:812216d36d91aef8d6ab5c87",
+      "stratum": "linear_no_optimum",
+      "family": "zero_solver_budget",
+      "group": "linear_no_optimum:zero_solver_budget",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:812216d36d91aef8d6ab5c87",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          },
+          "solver_budget_seconds": 0
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "UNKNOWN",
+        "output": {
+          "solver_status": "NOT_SOLVED"
+        }
+      }
+    },
+    {
+      "id": "extension:e17fa69a1a408e74bd8f4018",
+      "stratum": "linear_no_optimum",
+      "family": "invalid_bounds",
+      "group": "linear_no_optimum:invalid_bounds",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:e17fa69a1a408e74bd8f4018",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              6,
+              0
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    },
+    {
+      "id": "extension:5dc5b1fac366806a7606cba0",
+      "stratum": "linear_no_optimum",
+      "family": "unrepresented_clause",
+      "group": "linear_no_optimum:unrepresented_clause",
+      "transformation": 4,
+      "request": {
+        "problem_id": "extension:5dc5b1fac366806a7606cba0",
+        "operation": "linear_program",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              6
+            ]
+          },
+          "constraints": [],
+          "objective": {
+            "coefficients": {
+              "x": 1
+            },
+            "sense": "min",
+            "protected_party": "may not be ignored"
+          }
+        },
+        "geometry": {
+          "latency_limit": 10,
+          "compute_limit": 100000
+        }
+      },
+      "expected": {
+        "state": "ABSTAIN"
+      }
+    }
+  ],
+  "families": {
+    "flow": [
+      "antiparallel_cycle",
+      "disconnected_sink",
+      "layered_bottleneck",
+      "parallel_and_self_loop"
+    ],
+    "graph": [
+      "indirect_chain",
+      "parallel_and_self_loop",
+      "undirected_zero_weight",
+      "unreachable_component"
+    ],
+    "linear_no_optimum": [
+      "infeasible",
+      "invalid_bounds",
+      "unrepresented_clause",
+      "zero_solver_budget"
+    ],
+    "linear_optimal": [
+      "covering",
+      "degenerate_faces",
+      "fractional_equality",
+      "packing"
+    ],
+    "search_alias": [
+      "indirect_chain",
+      "parallel_and_self_loop",
+      "undirected_zero_weight",
+      "unreachable_component"
+    ]
+  },
+  "scope": "five strata, 20 cases each, four structural families with five transformations; engineered examples are not population samples",
+  "search_scope": "state_search is a bounded weighted graph alias, not an independently implemented general search mechanism",
+  "oracle_scope": "enumerated simple paths, all directed cuts, exact bounded one/two-variable vertices; original inputs, no candidate normalization/certificate reuse"
+}

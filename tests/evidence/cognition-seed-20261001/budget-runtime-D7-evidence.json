@@ -1,0 +1,41 @@
+{
+  "decision": "SEED-20261001-D7",
+  "timestamp_utc": "2026-10-01T20:05:56.727906+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "working-tree hashes; parent agent owns final integrated commit",
+  "source_hashes": {
+    "greg/capabilities.py": "d700e0f83cad39d265be8808cdc440fe84ac06d9b109d7bad7b6a64b6a46cc49",
+    "greg/authority.py": "b7288e002afb9e5cbac65ec6d49ae598e7ca07e5ecf4a273fcb588e9deeaaff6",
+    "greg/cognition/budget.py": "495ce47980f8ea0138af62b440cbe777281d008cf350663ce14e841a31e0bce4",
+    "greg/cognition/cortex.py": "21d2bf1ab026016c23ce037350b84c7e8ad80d87699a08c02360c24b5a276eba",
+    "tests/unit/test_cognition_runtime_budget.py": "a974346f1e58d401171eeff69fbce20636f49aee250f437c4b952777d894ee0f",
+    "tests/integration/test_cognition_budget_authority.py": "d4c5ce23eec236142d388604af1ed80e30e798c9d8d6105bb66eae73a9019ad7",
+    "docs/collaboration/COGNITION-SEED-D7-BUDGET-REVIEW-20261001.md": "cfdfab98c1ef24e27cbdc149f8aefc8e1f912410bd4069b486d4d799f0ef999f"
+  },
+  "command": "/workspace/scratch/cortex-patched-venv/bin/python -m pytest -q tests/unit/test_cognition_runtime_budget.py tests/integration/test_cognition_budget_authority.py tests/unit/test_cognition_seed_gates.py tests/integration/test_greg_cognition_mission.py tests/unit/test_greg_semantic_appraisal.py tests/unit/test_cognition_artifact_boundaries.py tests/integration/test_cognition_multi_claim_settlement.py",
+  "result": "93 passed in 14.41s",
+  "real_components": [
+    "signed laboratory mission on canonical Body/Kernel/Gate",
+    "isolated exact arithmetic",
+    "separate isolated numerical verifier",
+    "canonical authority/event pointers"
+  ],
+  "fixture_components": [
+    "deterministic budget-boundary solver outputs",
+    "refusing local-model protocol fixture"
+  ],
+  "authority_changes": "none; read-only limits projected after existing Gate checks",
+  "remaining_limits": [
+    "optional value ranges declared, not independently calibrated",
+    "no optional branch executes",
+    "actual CPU operation count and energy unmeasured",
+    "no founder device, live promotion, commercial outcome or superiority established"
+  ],
+  "additional_gate_evidence": [
+    "shared parent latency deadline across composition",
+    "non-replenishing declared compute allocation across children",
+    "terminal refusal suppresses optional rerouting",
+    "catalog availability remains distinct from task/grant eligibility"
+  ]
+}

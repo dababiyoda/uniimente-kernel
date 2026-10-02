@@ -1,0 +1,44 @@
+........................................................F...             [100%]
+=================================== FAILURES ===================================
+__________ test_contaminated_evaluation_stops_before_any_computation ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-37/test_contaminated_evaluation_s0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f12a8a1d250>
+
+    def test_contaminated_evaluation_stops_before_any_computation(tmp_path,monkeypatch):
+        from greg.cognition import seed_evaluation as evaluation
+        monkeypatch.setattr(evaluation,'FREEZE',evaluation.ROOT/'examples/cognition/seed-freeze-v2.json')
+        monkeypatch.setattr(evaluation,'code_digests',lambda:{'changed':'candidate'})
+        monkeypatch.setattr(evaluation,'reason',lambda *a,**kw:pytest.fail('contaminated candidate must not execute'))
+        with pytest.raises(RuntimeError,match='CONTAMINATED_EVALUATION'):
+>           evaluation.assess(tmp_path/'result.json')
+
+tests/unit/test_cognition_seed_gates.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+greg/cognition/seed_evaluation.py:272: in assess
+    frozen=json.loads(FREEZE.read_text());suite=json.loads(SUITE.read_text())
+                                                           ^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/uniimente-kernel/examples/cognition/seed-heldout-v4.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/uniimente-kernel/examples/cognition/seed-heldout-v4.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/unit/test_cognition_seed_gates.py::test_contaminated_evaluation_stops_before_any_computation
+1 failed, 59 passed in 9.23s

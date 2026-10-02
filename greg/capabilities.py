@@ -213,6 +213,28 @@ class SecretBroker:
 
 # -- invocation context and adapters ---------------------------------------------
 
+@dataclass(frozen=True)
+class InvocationBudgetWindow:
+    """Read-only limits projected by AuthorityOffice after the canonical Gate.
+
+    This is neither a grant nor a request field. A cognition request can narrow
+    its ceilings; it cannot create or replenish the enclosing authority.
+    """
+    horizon: str
+    grant_expires_at: str
+    remaining_money_usd: float
+    authority_ref: str
+    grant_id: str
+    grant_digest: str | None = None
+    mission_id: str | None = None
+    scope_digest: str | None = None
+    proposal_id: str | None = None
+    witness_id: str | None = None
+    dispatch_effect_digest: str | None = None
+    latency_ceiling_seconds: float = 30.0
+    compute_ceiling_operations: int = 100000
+
+
 @dataclass
 class InvocationContext:
     workspace: Path                    # the only place internal writes may land
@@ -226,6 +248,7 @@ class InvocationContext:
     artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
     capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
     cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
+    cognition_budget: InvocationBudgetWindow | None = None  # office-projected limits, never caller authority
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -508,6 +531,7 @@ STRENGTHENS = {
     "repo.integration_audit": ("proof", "eligibility", "reliability"),
     "browser.render": ("proof", "capability_formation"),
     "memory.precedents": ("proof", "routing", "compounding"),
+    "foundry.query": ("eligibility", "routing", "proof", "capability_formation"),
     "artifact.store": ("proof", "reliability", "compounding"),
     "artifact.inspect": ("proof", "reliability"),
     "artifact.materialize": ("proof", "reliability", "compounding"),
@@ -536,6 +560,16 @@ def _builtin(capability_id, function, description, route, consequence, target_pr
 
 
 BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
+    "foundry.query": (_builtin("foundry.query", "foundry.query",
+                                "Use bounded Foundry mechanisms inside the signed mission scope", "api", "read_only",
+                                "foundry:", {"system": "int", "op": "str", "args": "bounded dict"},
+                                {"system": "int", "op": "str", "result": "dict", "authority_created": "false"},
+                                strengthens=("eligibility", "routing", "proof", "capability_formation"),
+                                retry_safe=True, network="none", tests=("tests/unit/test_foundry_bridge_boundaries.py",
+                                                                        "tests/integration/test_greg_foundry_extraction.py"),
+                                provenance={"source": "uniimente-kernel/greg/foundry_bridge.py",
+                                            "mechanism_from": "PR132 da3d4ac8643ecf6791ffadcac064f8bb1cc6269d; bounded allowlist"}),
+                      _lazy("greg.foundry_bridge", "query")),
     "artifact.store": (_builtin("artifact.store", "artifact.store",
                                  "Retain one scoped file by SHA-256 for later missions", "api",
                                  "internal_write", "artifact:", {"namespace": "str", "path": "str"},

@@ -28,12 +28,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 import json
 from pathlib import Path
-import secrets
 
 from events.spine import EventSpine
 from greg.body import Layout, device_delegations, status
 from greg.founder import FounderAuthError, FounderVerifier
 from greg.journal import Journal
+from greg.command_queue import CommandQueueError, enqueue
 from provenance.ledger import EvidenceLedger
 
 PHONE = Path(__file__).resolve().parent / "phone"
@@ -100,6 +100,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                 principal = reader.verifier.verify_read(headers, method=method, path=path, now=now)
             except (FounderAuthError, ValueError) as exc:
                 raise RemoteError(401, str(exc))
+            from greg.presentation import cognitive_summaries
+            cognitive = cognitive_summaries(reader.journal) if path == "/api/status" else []
             if path == "/api/vepmc":
                 from greg import metrics
                 return _json(200, {"principal": principal, **metrics.vepmc(reader.journal)})
@@ -110,6 +112,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                                    "rejected": [{"file": e.payload["file"], "reason": e.payload["reason"]}
                                                 for e in reader.journal.replay("command.rejected")][-10:]})
         full = status(home)
+        if path == "/api/status":
+            full["cognitive"] = cognitive
         data = full["decisions_required"] if path == "/api/decisions" else full
         return _json(200, {"principal": principal, "data": data})
     if method == "POST" and path == "/api/command":
@@ -125,13 +129,10 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                 principal = reader.verifier.principal(envelope, now=now)
             except (FounderAuthError, ValueError, KeyError, TypeError) as exc:
                 raise RemoteError(403, str(exc))
-        if len(list(layout.inbox.glob("*.json"))) >= MAX_PENDING:
-            raise RemoteError(429, "inbox full; the body is not keeping up")
-        name = f"{envelope['issued_at'].replace(':', '')}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"
-        target = layout.inbox / f"{name}-{secrets.token_hex(4)}.json"
-        tmp = target.with_suffix(".tmp")
-        tmp.write_text(json.dumps(envelope))
-        tmp.replace(target)
+        try:
+            target = enqueue(layout.inbox, envelope, max_pending=MAX_PENDING)
+        except CommandQueueError as exc:
+            raise RemoteError(429 if "inbox full" in str(exc) else 409, str(exc)) from exc
         return _json(202, {"delivered_to_inbox": target.name, "signer": principal, "nonce": envelope["nonce"],
                            "note": "the body verifies and applies it; check /api/commands"})
     raise RemoteError(404, "not found")

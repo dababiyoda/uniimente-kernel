@@ -1,0 +1,125 @@
+......F..................F.............F.........F...................... [ 46%]
+......................................F................................. [ 93%]
+...s.s..s.                                                               [100%]
+=================================== FAILURES ===================================
+_____ test_native_artifact_has_actual_source_checks[sequential-mdp-data6] ______
+
+family = 'sequential', operation = 'mdp'
+data = {'transitions': {'s': {'stay': {'s': 1}}}, 'rewards': {'s': {'stay': 2}}, 'horizon': 3}
+
+    @pytest.mark.parametrize("family,operation,data", CASES)
+    def test_native_artifact_has_actual_source_checks(family, operation, data):
+        answer = SOLVERS[family](deepcopy(data), GEOMETRY)
+        report = verify(family, data, answer, FAMILIES[family][3])
+>       assert report["verdict"] == "STRUCTURALLY_VERIFIED", report
+E       AssertionError: {'verdict': 'REFUTED', 'checks': {'typed_artifact': True, 'native_source_bound': False, 'independent_bellman_values': ...n identification.'], 'artifact_digest': 'sha256:3f6b13144fa44396d88b57abffebaea323ebdf40de91099aaf425e8e5f06ff91', ...}
+E       assert 'REFUTED' == 'STRUCTURALLY_VERIFIED'
+E         
+E         - STRUCTURALLY_VERIFIED
+E         + REFUTED
+
+tests/unit/test_cognition_native_repertoire.py:35: AssertionError
+_ test_unconsumed_authority_clause_and_compute_exhaustion_prevent_execution[simulation-simulate-data3] _
+
+family = 'simulation', operation = 'simulate'
+data = {'seed': 5, 'samples': 16, 'steps': 3, 'step_probability': 1}
+
+    @pytest.mark.parametrize("family,operation,data", CASES)
+    def test_unconsumed_authority_clause_and_compute_exhaustion_prevent_execution(family, operation, data):
+        with pytest.raises(CognitionError, match="restricted"):
+            SOLVERS[family]({**data, "authority_created": True}, GEOMETRY)
+>       with pytest.raises(CognitionError, match="BUDGET_EXHAUSTED"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'BUDGET_EXHAUSTED'
+E         Actual message: 'integer in [1, 1] required'
+
+tests/unit/test_cognition_native_repertoire.py:99: AssertionError
+_ test_future_method_stays_unattached_and_signed_research_route_stays_world_unverified[sequential-mdp-data6] _
+
+family = 'sequential', operation = 'mdp'
+data = {'transitions': {'s': {'stay': {'s': 1}}}, 'rewards': {'s': {'stay': 2}}, 'horizon': 3}
+
+    @pytest.mark.parametrize("family,operation,data", CASES[:-1])
+    def test_future_method_stays_unattached_and_signed_research_route_stays_world_unverified(family, operation, data):
+        assert initial_state("cognition." + family) == "VERIFIED"
+        registry = registry_view()
+        request = {"problem_id": "native:" + family, "operation": operation, "data": data, "geometry": {"latency_limit": 10, "compute_limit": 100000}}
+        before = reason(request, registry=registry)
+        assert before["abstention_state"] == ("HUMAN_REVIEW_REQUIRED" if family == "human" else "CAPABILITY_DEFICIT")
+        registry.set_state("cognition." + family, "ATTACHED")
+        after = reason(request, registry=registry)
+>       assert after["abstention_state"] == ("HUMAN_REVIEW_REQUIRED" if family == "human" else "NONE"), after
+E       AssertionError: {'problem_id': 'native:sequential', 'geometry': {'objective_type': 'answer', 'domain': 'bounded_computation', 'epistem...lass': 'read_only', 'consequence_vector': {'physical': 0.0, 'financial': 0.0, 'privacy': 0.0, 'rights': 0.0, ...}, ...}
+E       assert 'REFUTED' == 'NONE'
+E         
+E         - NONE
+E         + REFUTED
+
+tests/unit/test_cognition_native_repertoire.py:112: AssertionError
+__ test_bellman_choices_use_future_value_and_every_source_reward_is_consumed ___
+
+    def test_bellman_choices_use_future_value_and_every_source_reward_is_consumed():
+        data = {"transitions": {"a": {"now": {"a": 1}, "later": {"b": 1}}, "b": {"stay": {"b": 1}}},
+                "rewards": {"a": {"now": 3, "later": 0}, "b": {"stay": 10}}, "horizon": 2}
+        answer = SOLVERS["sequential"](data, GEOMETRY)
+        assert answer["output"]["policy"]["a"] == "later" and answer["output"]["values"]["a"] == 10
+>       assert verify("sequential", data, answer, "search_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+E       AssertionError: assert 'REFUTED' == 'STRUCTURALLY_VERIFIED'
+E         
+E         - STRUCTURALLY_VERIFIED
+E         + REFUTED
+
+tests/unit/test_cognition_native_repertoire.py:186: AssertionError
+_______ test_boolean_is_not_a_certified_numeric_output[graph-data0-cost] _______
+
+family = 'graph', data = {'edges': [['s', 't', 1]], 'start': 's', 'goal': 't'}
+field = 'cost'
+
+    @pytest.mark.parametrize("family,data,field", [
+        ("graph", {"edges": [["s", "t", 1]], "start": "s", "goal": "t"}, "cost"),
+        ("flow", {"edges": [["s", "t", 1]], "source": "s", "sink": "t"}, "cut"),
+        ("linear", {"variables": {"x": [1, 2]}, "objective": {"coefficients": {"x": 1}, "sense": "min"}}, "solution"),
+        ("linear", {"variables": {"x": [1, 2]}, "objective": {"coefficients": {"x": 1}, "sense": "min"}}, "objective_value"),
+    ])
+    def test_boolean_is_not_a_certified_numeric_output(family, data, field):
+        answer = SOLVERS[family](data, GEOMETRY)
+        if field == "cost":
+            answer["output"]["cost"] = answer["proof"]["cost"] = True
+        elif field == "cut":
+            answer["output"]["min_cut"]["capacity"] = True
+            answer["proof"]["flow"] = deepcopy(answer["output"])
+        elif field == "solution":
+            answer["output"]["solution"]["x"] = True
+        else:
+            answer["output"][field] = True
+        proof = {"graph": "search_trace", "flow": "flow_certificate", "linear": "linear_program_certificate"}[family]
+>       assert verify(family, data, answer, proof)["verdict"] == "REFUTED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_cognition_native_network_lp.py:226: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+greg/cognition/verification.py:166: in verify
+    ProofArtifact(proof_class, answer["proof"]).validate()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ProofArtifact(proof_class='search_trace', payload={'states': ['s', 't'], 'path': ['s', 't'], 'cost': True, 'model': {'... PR143 certificate lineage', 'limits': 'nonnegative weights; parallel arcs use minimum; topology validity unverified'})
+
+    def validate(self):
+        required = PROOF_FIELDS.get(self.proof_class)
+        if not isinstance(self.payload, dict) or not required or any(key not in self.payload for key in required):
+            raise CognitionError("proof artifact does not satisfy its epistemic contract")
+        for name, expected in SEED_ARTIFACT_TYPES.get(self.proof_class, {}).items():
+            allowed = expected if isinstance(expected, tuple) else (expected,)
+            if type(self.payload[name]) not in allowed:
+>               raise CognitionError(f"proof field {name} has the wrong type")
+E               greg.cognition.contracts.CognitionError: proof field cost has the wrong type
+
+greg/cognition/contracts.py:349: CognitionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_cognition_native_repertoire.py::test_native_artifact_has_actual_source_checks[sequential-mdp-data6]
+FAILED tests/unit/test_cognition_native_repertoire.py::test_unconsumed_authority_clause_and_compute_exhaustion_prevent_execution[simulation-simulate-data3]
+FAILED tests/unit/test_cognition_native_repertoire.py::test_future_method_stays_unattached_and_signed_research_route_stays_world_unverified[sequential-mdp-data6]
+FAILED tests/unit/test_cognition_native_repertoire.py::test_bellman_choices_use_future_value_and_every_source_reward_is_consumed
+FAILED tests/unit/test_cognition_native_network_lp.py::test_boolean_is_not_a_certified_numeric_output[graph-data0-cost]
+5 failed, 146 passed, 3 skipped in 9.08s

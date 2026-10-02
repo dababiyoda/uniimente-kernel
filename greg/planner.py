@@ -42,6 +42,9 @@ SHA256 = re.compile(r"\b([0-9a-fA-F]{64})\b")
 WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{1,7})\s+words?\b", re.I)
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
+NETWORK_QUESTION = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|"
+                              r"(?:maximum|max|most)\s+(?:flow|units|throughput|capacity))\s+from\b", re.I)
+LINEAR_OBJECTIVE = re.compile(r"(?:^|[.!?;\n]\s*)(?:maximi[sz]e|minimi[sz]e)\s+\S", re.I)
 
 
 @dataclass
@@ -91,7 +94,7 @@ def discover(read_roots, *, max_depth: int = 2, limit: int = 12) -> dict:
 
 def _proposal(spec: dict, origin: str, *, notes=(), questions=(), status="PROPOSED", extra=None) -> dict:
     spec = dict(spec)
-    spec["provenance"] = {"origin": origin, "planner": PLANNER, **(extra or {})}
+    spec["provenance"] = {**spec.get("provenance", {}), "origin": origin, "planner": PLANNER, **(extra or {})}
     try:
         validate_mission(spec)
     except MissionError as exc:
@@ -141,8 +144,26 @@ def _verify_route(text: str, ctx: PlannerContext) -> dict:
                             "digest matches"])
 
 
-def template_route(text: str, ctx: PlannerContext) -> dict | None:
+def template_route(text: str, ctx: PlannerContext, *, source_text: str | None = None) -> dict | None:
     lowered = text.lower()
+    # Recognize the question before ordinary repository/note routes: an unread material
+    # condition stops this route instead of being discarded or repaired by another model.
+    if NETWORK_QUESTION.search(text) or LINEAR_OBJECTIVE.search(text):
+        network = bool(NETWORK_QUESTION.search(text))
+        origin = "template:network-in-words" if network else "template:plan-in-words"
+        try:
+            # Recognition may collapse whitespace; the controlled reader and
+            # signed source digest retain exact bytes and newline clauses.
+            spec = (templates.network_in_words if network else templates.plan_in_words)(
+                text=source_text if source_text is not None else text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": origin, "questions": [str(exc)]}
+        return _proposal(spec, origin, notes=[
+            "read-only: computes a scoped answer; nothing is routed, shipped, bought or made",
+            "every clause must fit the displayed controlled language; unknown material conditions stop the proposal",
+            "review the parsed constraints and unit scope below before signing",
+            "a registered VERIFIED method still needs a separate signed attachment; this proposal never attaches it",
+            "computational validity is conditional on the supplied model; real-world applicability remains unverified"])
     if SHA256.search(text):                 # a published digest: verification, never a repository brief
         return _verify_route(text, ctx)
     if (limit := WORD_LIMIT.search(text)) and FILE_PATH.search(text):
@@ -391,10 +412,11 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
 
 def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
     """Cheapest sufficient route first. Returns a proposal; never signs or submits."""
-    text = " ".join(str(text).split())
+    source_text = str(text)
+    text = " ".join(source_text.split())
     if not text:
         return {"status": "NEEDS_INPUT", "origin": "planner", "questions": ["What should GREG achieve?"]}
-    proposal = template_route(text, ctx)
+    proposal = template_route(text, ctx, source_text=source_text)
     if proposal is not None:
         return proposal
     if transport is None:

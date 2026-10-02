@@ -36,9 +36,9 @@ from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
-from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
+from greg.capabilities import BUILTINS, CapabilityManifest, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
-from greg.genesis import Genesis
+from greg.genesis import FORMED, Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
 from identity.machine_passport import PassportRegistry
@@ -65,6 +65,31 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
+def _builtin_registry() -> CapabilityRegistry:
+    """Use the same declared defaults for execution and read-only inventory."""
+    from greg.cognition.catalog import initial_state
+    registry = CapabilityRegistry()
+    for manifest, adapter in BUILTINS.values():
+        registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
+    return registry
+
+
+def _replay_capability_states(registry: CapabilityRegistry, journal: Journal, *, metadata_only=False):
+    """Project canonical state events without attachment or effect authority.
+
+    The observer may display formed manifests, but installs no generated
+    adapter and does not run Genesis restoration, which can write quarantine
+    events. State here describes retained history, not a fresh integrity test.
+    """
+    for event in journal.replay("capability."):
+        data = event.payload
+        if metadata_only and event.type == "greg.capability.registered" and data["manifest"]["provider"].startswith(FORMED):
+            manifest = CapabilityManifest.from_dict(data["manifest"])
+            registry.register(manifest, None, state=data.get("state", "VERIFIED"))
+        elif event.type == "greg.capability.state" and data["capability_id"] in registry.manifests:
+            registry.set_state(data["capability_id"], data["state"])
+
+
 class Layout:
     def __init__(self, home: str | Path):
         self.home = Path(home).expanduser().resolve()
@@ -82,6 +107,7 @@ class Layout:
         self.heartbeat = self.home / "heartbeat.json"
         self.stop_file = self.home / "STOP"
         self.pause_file = self.home / "PAUSE"
+        self.restore_pending = self.home / "RESTORE_PENDING"
 
 
 def _private_write(path: Path, data: bytes):
@@ -142,6 +168,9 @@ class Body:
 
     # -- open / close ------------------------------------------------------------
     def open(self):
+        if self.layout.restore_pending.exists():
+            raise BodyError("restored authority is unverified; obtain a fresh restoration-specific checkpoint "
+                            "from the authoritative stopped source and run `greg backup verify-authority`")
         self.compiled = compile_constitution(str(KERNEL_ROOT))
         if self.compiled.constitution_hash != self.config["constitution_hash"]:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
@@ -158,9 +187,7 @@ class Body:
         signer = WitnessSigner(key=self.layout.witness_key.read_bytes(), env="production")
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)
-        self.registry = CapabilityRegistry()
-        for manifest, adapter in BUILTINS.values():
-            self.registry.register(manifest, adapter, state="ATTACHED")
+        self.registry = _builtin_registry()
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
         self._refresh_builder()
@@ -204,10 +231,7 @@ class Body:
         self.close()
 
     def _apply_capability_states(self):
-        for event in self.spine.replay("greg.capability.state"):
-            cid = event.payload["capability_id"]
-            if cid in self.registry.manifests:
-                self.registry.set_state(cid, event.payload["state"])
+        _replay_capability_states(self.registry, self.journal)
 
     # -- founder identity ----------------------------------------------------------
     def enrolled_keys(self) -> dict[str, str]:
@@ -433,7 +457,7 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        appraised = {e.payload["mission_id"]: e.payload for e in self.journal.replay("mission.appraised")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:
@@ -442,7 +466,7 @@ class Body:
                     "platform": os.uname().sysname, "body_id": self.config["body_id"],
                     "hosted": getattr(self, "boot_id", None) is not None,
                     "at": iso(now)}, key=[mid, "context"])
-            if mid not in appraised:
+            if mid not in appraised or self._attachment_changed_after_refutation(mid, appraised[mid]):
                 verdict = self.appraise(mid)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
@@ -451,6 +475,34 @@ class Body:
                 mid = event.payload["mission_id"]
                 verdict = self.appraise(mid, closure_event=event.event_id)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", event.event_id])
+
+    def _attachment_changed_after_refutation(self, mission_id, appraisal):
+        """One fresh appraisal after a relevant explicit attachment correction.
+
+        A failed retained appraisal remains history. New signed attachment can
+        remove an availability blocker; it cannot bless the original artifact.
+        The next appraisal's head includes that state change, bounding retries.
+        """
+        if appraisal.get("verdict") != "REFUTED":
+            return False
+        records = self.ledger.records
+        at = next((i for i, r in enumerate(records) if r.hash == appraisal.get("head")), None)
+        if at is None:
+            return False
+        methods = set()
+        for event in self.journal.replay("mission.observed"):
+            if event.payload.get("mission_id") != mission_id or not event.payload.get("receipt"):
+                continue
+            receipt = self.ledger.find(event.payload["receipt"])
+            output = receipt.payload.get("result", {}).get("output") if receipt else None
+            if isinstance(output, dict):
+                methods.add(output.get("method"))
+                methods.update(r.get("method") for r in output.get("receipts", []) if isinstance(r, dict))
+        return any(r.record_type == "event" and r.payload.get("type") == "greg.capability.state"
+                   and r.payload.get("payload", {}).get("capability_id") in methods
+                   and r.payload.get("payload", {}).get("state") == "ATTACHED"
+                   and r.payload.get("payload", {}).get("command_digest")
+                   for r in records[at + 1:])
 
     def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
         import subprocess
@@ -561,11 +613,8 @@ def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta 
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
-    temporary = target.with_suffix(".tmp")
-    temporary.write_text(json.dumps(envelope, indent=1))
-    temporary.replace(target)
-    return target
+    from greg.command_queue import enqueue
+    return enqueue(layout.inbox, envelope)
 
 
 def morning_projection(home: str | Path) -> dict:
@@ -600,9 +649,8 @@ def status(home: str | Path) -> dict:
         requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
-        registry = CapabilityRegistry()
-        for manifest, adapter in BUILTINS.values():
-            registry.register(manifest, adapter, state="ATTACHED")
+        registry = _builtin_registry()
+        _replay_capability_states(registry, journal, metadata_only=True)
         ok, chain = ledger.verify_chain()
         return {
             "body_id": config["body_id"], "version": config["version"],
@@ -611,12 +659,15 @@ def status(home: str | Path) -> dict:
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
-                         "pause_file_present": layout.pause_file.exists()},
+                         "pause_file_present": layout.pause_file.exists(),
+                         "restore_authority_pending": layout.restore_pending.exists()},
             "goals": [{"mission_id": mid, "intended_effect": spec["intended_effect"],
                        "closure": spec["closure"]["kind"], "achieved": mid in achieved}
                       for mid, spec in registered.items()],
             "decisions_required": [asks.surface(r) for r in requests],
-            "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
+            "capabilities": registry.inventory(),
+            "capability_inventory_limits": "retained lifecycle states and current dependency availability; no fresh generated-artifact integrity verification or permission grant",
+            "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")

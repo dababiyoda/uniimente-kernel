@@ -1,0 +1,114 @@
+{
+  "schema": "verification-index/1",
+  "updated_at": "2026-10-02T09:31:06.982010+00:00",
+  "source_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "working_tree": "uncommitted extensions; exact manifests in individual records",
+  "runs": [
+    {
+      "record": "authority-singleton-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "scripts/ci/check_authority_singleton.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.09783633399638347,
+      "source_before_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "source_after_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "changed_during_run": []
+    },
+    {
+      "record": "critical-original-artifact-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_greg_semantic_appraisal.py",
+        "tests/integration/test_greg_native_artifact_appraisal.py",
+        "tests/integration/test_greg_composition_appraisal.py",
+        "tests/integration/test_greg_advantage_appraisal.py",
+        "tests/integration/test_greg_cognition_mission.py",
+        "tests/integration/test_cognition_multi_claim_settlement.py",
+        "tests/integration/test_cognition_budget_authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/unit/test_cognition_seed_gates.py",
+        "tests/unit/test_cognition_artifact_boundaries.py",
+        "tests/unit/test_greg_status_capabilities.py"
+      ],
+      "exit_code": 0,
+      "seconds": 41.26195995499438,
+      "source_before_sha256": "6f13eb5aae593c79f295a7f2dec67d6ee359862d3fa2ca0acb3cc81056296cfa",
+      "source_after_sha256": "4b0d3a1bbff5b729ec7e081c7ae256b0dad0471e87f2a219e4707da5612dbab6",
+      "changed_during_run": [
+        "tests/integration/test_greg_controlled_words.py"
+      ]
+    },
+    {
+      "record": "foundry-original-appraisal-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_foundry_bridge_boundaries.py",
+        "tests/unit/test_foundry_extracted_native.py",
+        "tests/integration/test_greg_foundry_extraction.py",
+        "tests/integration/test_greg_foundry_appraisal.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.847918932005996,
+      "source_before_sha256": "a1fec689a8808a4dc63a931755ab47fa62ffd604fcdece2c5124245d61351f54",
+      "source_after_sha256": "e76fe434949d680bff70205bfa1c3391c0f6eff1b7ee16b02c78d2f425011668",
+      "changed_during_run": [
+        "greg/cli.py",
+        "greg/console.py"
+      ]
+    },
+    {
+      "record": "mutations-eight-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "scripts/ci/check_seed_mutants.py",
+        "tests/evidence/cognition-seed-20261001/verification-20261002/mutations-eight-first-results.json"
+      ],
+      "exit_code": 0,
+      "seconds": 13.218647629997577,
+      "source_before_sha256": "8a167f509834e4f699f44096045495120bb9f9e20592d4ee0f0dc00432b57b00",
+      "source_after_sha256": "06a044c84a9581ee6ea38db7bf2a750b99551219deaa76d7518d101c9d6b83b6",
+      "changed_during_run": [
+        "tests/integration/test_greg_foundry_wasm.py",
+        "tests/unit/test_foundry_wasm_native.py"
+      ]
+    },
+    {
+      "record": "schema-reference-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "scripts/ci/check_schema_refs.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.06924195399915334,
+      "source_before_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "source_after_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "changed_during_run": []
+    },
+    {
+      "record": "sealed-developmental-first.json",
+      "command": [
+        "/workspace/scratch/cortex-patched-venv/bin/python",
+        "scripts/ci/check_sealed_developmental.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.12999059200228658,
+      "source_before_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "source_after_sha256": "3b4ac9f2c730e0418b4cad061208a04de8c9673b0f78f92c5e24f3663664bf3d",
+      "changed_during_run": []
+    }
+  ],
+  "limits": [
+    "Focused checks on Linux laboratory with test signing keys, not complete-machine proof.",
+    "Full final source freeze and complete regression remain pending owner stabilization.",
+    "No independent human approval, external outcome, real founder hardware, live deployment or new authority is inferred.",
+    "A passed gate continues the parent Body + Organs + Mind objective; it is not a stopping condition."
+  ]
+}

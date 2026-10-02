@@ -1,0 +1,1372 @@
+{
+  "authority_delta": "none",
+  "canonical_source_commit": "a5b121f9a8cc86c3385445427dd625a3b48eea85",
+  "file_writes": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 83,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/83",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "77bbdc328c8a7393f07ed8198975a11adb48fb63",
+      "before_blob": "58631ce9ade2846909ac9e948a2cac2e82695c62",
+      "result": {
+        "commit_sha": "2dbcb2260335db9c8a8b71ae78ce4bd064751eac",
+        "content_sha": "15ac558587310f975b910d588e9685e71a7ac427"
+      },
+      "updated_at": "2026-10-01T20:09:36.635Z"
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 40,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/40",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "fab34cf767814ba091866a35101c668129924779",
+      "before_blob": "e37480cb27ef161b7711138f45e57f9ff2d554b7",
+      "result": {
+        "commit_sha": "e9122b7762cd2a11a9c4369e047d05f1d79a4b64",
+        "content_sha": "6a0faf146fdab0a48a82de9596907979c1e46725"
+      },
+      "updated_at": "2026-10-01T20:09:38.950Z"
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 11,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/11",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "1d5af1872416bb4146dc1e2805d8a3983bc1e21d",
+      "before_blob": "5d6d16364dd65f1cf04f698cc8a19cd74bb5dc07",
+      "result": {
+        "commit_sha": "0283ff4216d4a30e39a76ccd9c58bdf5e97bdbb6",
+        "content_sha": "bce33becfeef8331cae87de3b83b2dce43d879f1"
+      },
+      "updated_at": "2026-10-01T20:09:41.103Z"
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 20,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/20",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "68fb653e03acab19a25cb85c1062bf77ebeeb768",
+      "before_blob": "9b89034a4d2e65827d0b34b6b8597e9e97c698d8",
+      "result": {
+        "commit_sha": "8275e130ee5e04223451f17649a6d693483920ad",
+        "content_sha": "351010ae2c8cb57601ad5ced76367518041dcc21"
+      },
+      "updated_at": "2026-10-01T20:09:43.975Z"
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 22,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/22",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "359fa66591a82a84563f9ef4f36df4ea0d425575",
+      "before_blob": "966163ec9163060266da69a712e3d52aa48f09ce",
+      "result": {
+        "commit_sha": "9c2a876bdc7720b452a7ce2ffb113d11cd93b752",
+        "content_sha": "d769ef5f7c438cb73eed49a87f2304bafc41f2a5"
+      },
+      "updated_at": "2026-10-01T20:09:47.225Z"
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/3",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "b73b04a2f5a3c45eaf967637d89a45c550137b7d",
+      "before_blob": "cabe3fbd9ca927e85a14cdad4ecf22276d41ef80",
+      "result": {
+        "commit_sha": "859adf858a124745d99074b92b33b0765b1b8f2e",
+        "content_sha": "e00787cf57ff082b53c7dc53d730dd0821b66ddd"
+      },
+      "updated_at": "2026-10-01T20:09:49.524Z"
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/3",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "before_commit": "2367816cd6a1b1f364364b32ad7918465a0a1289",
+      "before_blob": "5042ee903f54d1bcadec37458920b2a69c897346",
+      "result": {
+        "commit_sha": "930813a9924707ddf540b0d6cd99c04d813f3937",
+        "content_sha": "5b1b48b52bd7aad60acba85de62edb9e419e2a8c"
+      },
+      "updated_at": "2026-10-01T20:09:51.957Z"
+    }
+  ],
+  "file_read_back": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "15ac558587310f975b910d588e9685e71a7ac427",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.477Z"
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "6a0faf146fdab0a48a82de9596907979c1e46725",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.477Z"
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "bce33becfeef8331cae87de3b83b2dce43d879f1",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.478Z"
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "351010ae2c8cb57601ad5ced76367518041dcc21",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.478Z"
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "d769ef5f7c438cb73eed49a87f2304bafc41f2a5",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.479Z"
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "e00787cf57ff082b53c7dc53d730dd0821b66ddd",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.479Z"
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "path": "AGENTS.md",
+      "branch": "claude/uniimente-greg-reconciliation-39syff",
+      "blob": "5b1b48b52bd7aad60acba85de62edb9e419e2a8c",
+      "exact_match": true,
+      "verified_at": "2026-10-01T20:10:10.480Z"
+    }
+  ],
+  "pr_counts": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "open_count": 22,
+      "numbers": [
+        83,
+        81,
+        80,
+        79,
+        76,
+        75,
+        74,
+        73,
+        71,
+        70,
+        69,
+        68,
+        67,
+        66,
+        65,
+        62,
+        61,
+        60,
+        59,
+        58,
+        53,
+        1
+      ]
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "open_count": 19,
+      "numbers": [
+        40,
+        38,
+        37,
+        34,
+        32,
+        31,
+        30,
+        29,
+        28,
+        24,
+        23,
+        22,
+        21,
+        20,
+        19,
+        18,
+        17,
+        16,
+        15
+      ]
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "open_count": 8,
+      "numbers": [
+        11,
+        10,
+        9,
+        6,
+        5,
+        4,
+        3,
+        2
+      ]
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "open_count": 12,
+      "numbers": [
+        20,
+        17,
+        16,
+        15,
+        14,
+        13,
+        7,
+        6,
+        5,
+        4,
+        2,
+        1
+      ]
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "open_count": 13,
+      "numbers": [
+        22,
+        21,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        3
+      ]
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "open_count": 2,
+      "numbers": [
+        3,
+        1
+      ]
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "open_count": 2,
+      "numbers": [
+        3,
+        2
+      ]
+    }
+  ],
+  "progress": {
+    "verified": 78,
+    "total": 78,
+    "state": "complete_for_inspected_open_inventory"
+  },
+  "observed_at": "2026-10-01T20:13:53.193Z",
+  "scope": {
+    "included": "Seven participating repository current default and convergence draft entry instructions, all recursive-tree instruction matches, all current open PR pages and original PR body text.",
+    "excluded": "Unrelated repositories, closed PRs, full organ implementation/deployment audits, external founder conversations and physical device/use evidence.",
+    "defaults_updated": false,
+    "merges": false,
+    "live_authority_changes": false,
+    "skill": "Named founder protocol unavailable; explicit founder correction and existing canonical recursive protocol applied; propagation executes linked FM-20261001-D1 decision, without an extra strengthening pass."
+  },
+  "pr_records": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 83,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/83",
+      "verified_at": "2026-10-01T20:11:28.969Z",
+      "old_body_sha256": "cc0b7dd5660d1ac87ce9a1b75083e63931a385fd31449a4409555784d6c7ea6b",
+      "new_body_sha256": "8858f9c3c128b7502fc60734767bc9ecdadbe2db4b717be45687a36e42487d5d",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 81,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/81",
+      "verified_at": "2026-10-01T20:11:31.486Z",
+      "old_body_sha256": "f5e9e488ab739b7da2be3988d29670adc16754b1cfb47fa64e2393dbd1f8430c",
+      "new_body_sha256": "dc70fc637226b0d94f7f342dacff4ad8f080a0e6321df1264e59671a72106d9b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 80,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/80",
+      "verified_at": "2026-10-01T20:11:33.596Z",
+      "old_body_sha256": "96548bf6312056a308fdecf45a3b33d7c29cb9672b4572a6bc6662716dfbe3f7",
+      "new_body_sha256": "0a57824d7ddf191fed851a0c50fee365a98969f9b78d3ca496bcab78e9c93075",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 79,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/79",
+      "verified_at": "2026-10-01T20:11:36.284Z",
+      "old_body_sha256": "e3c4fc4fa824ed9fb6e6ce90933d96fef164b5f6e641428d693e819582229156",
+      "new_body_sha256": "79b6c698e2d6f32ca1a8c53f550a6ffe5b50f3260b8fe2dad69b2658376eb7f7",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 76,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/76",
+      "verified_at": "2026-10-01T20:11:38.373Z",
+      "old_body_sha256": "c4db2f80f08c95c7ca4a47748f762bc4088cbe1e6565db5e07038f61a0c2a935",
+      "new_body_sha256": "7f8964a8a5ec384c3a894e1f3fbd6548cc28915b95da59089f542029a9434091",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 75,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/75",
+      "verified_at": "2026-10-01T20:11:40.875Z",
+      "old_body_sha256": "2d4c3a03a4f4dd177c1716505f3c062cf7a8078ceb8921bf2b4c7f862b2556d6",
+      "new_body_sha256": "5066d665dacf918881faa946f541e4f72a8476060be80bb23fb5b6fc73f00243",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 74,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/74",
+      "verified_at": "2026-10-01T20:11:43.182Z",
+      "old_body_sha256": "61e03f0664d3d5ef7d5d1d850e7461d5ff40ac3f2b39a381c2f689d70329e58f",
+      "new_body_sha256": "6985d9c13b9e1baf8823232e3c7ad3c8f13d510f44c601430109289e690b4fdd",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 73,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/73",
+      "verified_at": "2026-10-01T20:11:45.663Z",
+      "old_body_sha256": "cfce2b5970ec44b026c5223cf4c5e79c8b41d4dd53fecba008d6660f3d5a96ad",
+      "new_body_sha256": "2ac71f94aa21b116d2df911b97699fd66b998cd6d0a3ff71f0470660d505c900",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 71,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/71",
+      "verified_at": "2026-10-01T20:11:47.774Z",
+      "old_body_sha256": "0fd6fdcf1451a80b4958c7928da072f70d51c03d16d1f646d1d47164fb5a138c",
+      "new_body_sha256": "d9aa2bde5477745f46aa1f164294882bc46a41406eb74af0514c0d4da9ac22c0",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 70,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/70",
+      "verified_at": "2026-10-01T20:11:50.387Z",
+      "old_body_sha256": "58a0db3feeedf39118aa79256d132f8f4a03ebf8edc4adc99323be757042a5fc",
+      "new_body_sha256": "910d606202e48dfa5ce0680a5d6d1a9f2d2923718be31ebf9789485d3cebfdf6",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 69,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/69",
+      "verified_at": "2026-10-01T20:11:53.049Z",
+      "old_body_sha256": "d5147feeba2d878a612e642e3b7c9648e0e45fbcb9ba2f8d1ca07d293bf32c60",
+      "new_body_sha256": "e7b4322b226bc5beb9eb0d17448f995a9fb4a2f088ed4ad4b1483dca98237c45",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 68,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/68",
+      "verified_at": "2026-10-01T20:11:55.737Z",
+      "old_body_sha256": "ebe91821d9b1ec41a6b271fd4c4d985aae9657870e7c3a9dbf9785ef1524bb96",
+      "new_body_sha256": "47aad179ff5f044b01888be7d74c11fb0bbff731c0d017466481e29d3843ee73",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 67,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/67",
+      "verified_at": "2026-10-01T20:12:37.973Z",
+      "old_body_sha256": "7aa352bd646dfde0048defa26d922bac57356b0f91e6b2cfcdb660704d26b4de",
+      "new_body_sha256": "d0479081beecef35fb39e12e08931a83e3703ee9094a26c9c1f279ac994fd615",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 66,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/66",
+      "verified_at": "2026-10-01T20:12:40.459Z",
+      "old_body_sha256": "c74ccde0e859878f2cea4be4298262db96c245fd14cdba54cdc8bd98db0e7661",
+      "new_body_sha256": "bb0420f6d956160b9b9ac636f6a95c33790433ffd9c437e1b3ac6c942d8e88df",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 65,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/65",
+      "verified_at": "2026-10-01T20:12:43.092Z",
+      "old_body_sha256": "f4501076f9863ed6186f780d397edf559c0d291356135fad703c4ea7b83dd731",
+      "new_body_sha256": "03b9e7d12dd28dc7f2211490d55c6c5c676eb2ea760b523bb030747e4aed1476",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 62,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/62",
+      "verified_at": "2026-10-01T20:12:45.688Z",
+      "old_body_sha256": "88ec6efc96959417e52e467cd0bf381214a90c678d7b4177e7ce4c6217219d19",
+      "new_body_sha256": "66135f8c8b9840a08b434b27dcec71ee790d34af5087960ee5b052d83b5da0ee",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 61,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/61",
+      "verified_at": "2026-10-01T20:12:48.120Z",
+      "old_body_sha256": "4351e7e5023f12ecdb1355a28d53bd0880d9e7d40c3218a427380ba6b572c0d7",
+      "new_body_sha256": "e81eb2cde0eb2f0e59ad25d2849b4e9f2e4db2a0e7026fd9ec7af08eef9a80c6",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 60,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/60",
+      "verified_at": "2026-10-01T20:12:50.840Z",
+      "old_body_sha256": "ab59c69853bcb9c5cc114b93f47e82fde7423d74db051255fe03f13815c5f206",
+      "new_body_sha256": "dec3f939e011b6b2bfef3ca63516515aa368e2627cacb7b9372098cac0fccd36",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 59,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/59",
+      "verified_at": "2026-10-01T20:12:53.154Z",
+      "old_body_sha256": "65136e618649f4898d4851a26384d7c16e026eb911bb437e0ec00dcd981bf5a0",
+      "new_body_sha256": "217e581476198b47eb2606a6494590934d15199c2898f6b7c929b977bf2d6f84",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 58,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/58",
+      "verified_at": "2026-10-01T20:12:55.668Z",
+      "old_body_sha256": "c546673a442dcbf89f06e37006eb1d97cceabc1b8acb0c06f9afe441b10c16a9",
+      "new_body_sha256": "9f4092ef7cb0cb45f0e59a6ed4a0e2c290991026fdab4d39b880dc48e49ee356",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 53,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/53",
+      "verified_at": "2026-10-01T20:12:58.312Z",
+      "old_body_sha256": "aeb487a32402c2b776a45ef1768fb7413c23cfc7efb0ee54d64e8455f9bd716f",
+      "new_body_sha256": "6c1c2160810cd4aefbcfd6ba0ee0c384b97b26cd677a1f598e73c2041c1a57f0",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "pr_number": 1,
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/1",
+      "verified_at": "2026-10-01T20:13:01.060Z",
+      "old_body_sha256": "e623074f372750bafd5c71619b6985b3fbf16de9f22cb3acb3c286e211cf6706",
+      "new_body_sha256": "8fad2392adfdd55011eeb032ef128c9882bc7cf2fa7edfd1fcbe234549b2e99d",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 40,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/40",
+      "verified_at": "2026-10-01T20:13:07.124Z",
+      "old_body_sha256": "ab63e4a4ccbac7b54fffdccaf79de33915342828385ae0175b89c7d2193ba5bc",
+      "new_body_sha256": "751d8dbf644fa44ac5e2b93c7ff9364f28ae0e1f8586b4a9be5c5031a3b64663",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 38,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/38",
+      "verified_at": "2026-10-01T20:13:09.655Z",
+      "old_body_sha256": "f5d3191924fd0a3453583320565752c0f78a45c43d38faa50b6096a35706e31b",
+      "new_body_sha256": "9d28cac98cd50817da11bc9bba603942231ff189d41fc8e6d4ce0ddc3d96be8b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 37,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/37",
+      "verified_at": "2026-10-01T20:13:12.140Z",
+      "old_body_sha256": "f433e3986a6232c3947512912e63899cac36645f28d33f9d353bf317abd14198",
+      "new_body_sha256": "a5c7d99e65157cb3376894ae3df3a2de2fd1cc686801b2578999677516ad9e38",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 34,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/34",
+      "verified_at": "2026-10-01T20:13:14.576Z",
+      "old_body_sha256": "00955e452654c4c5112328a5462b61132e8a8adeaa96ba4893687347d5c3fbb0",
+      "new_body_sha256": "e9f3c17b3585508cd78ac28d3638ea378b454c062132ac5fdf078e34ab1f3079",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 32,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/32",
+      "verified_at": "2026-10-01T20:13:17.689Z",
+      "old_body_sha256": "fbff7519b109ecf290b1a90099ee91dc115ef48fbb4505761a32be987c457817",
+      "new_body_sha256": "ce039755060f513bd24791fae312f191625ad25623b7355a3573b3c69071acfc",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 31,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/31",
+      "verified_at": "2026-10-01T20:13:19.982Z",
+      "old_body_sha256": "6c4f72abb710103ed9230116ed40a327fdd89de18f239dc0b268d6c5472b27d8",
+      "new_body_sha256": "70bb1f91cd2b06d72a0685b206667ddb37283e72ac7ad9d1cf9534733d9c9e7c",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 30,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/30",
+      "verified_at": "2026-10-01T20:13:22.316Z",
+      "old_body_sha256": "9952faffc7df47dd0720c968390ac959e68266e0ec7c7eaafb43991128b4cc63",
+      "new_body_sha256": "82cbb503c12182f4e631f31b89bb849244338881705c7ae5873a5aa596083191",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 29,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/29",
+      "verified_at": "2026-10-01T20:13:24.562Z",
+      "old_body_sha256": "ed92ad4ca324c8905431a7159dc7bdec1f1aed8a1c83e7b34f14887ffef97341",
+      "new_body_sha256": "d5715a11f1611408bb44b9f2e86ee3237c47df9d34565889af7be556794e7e83",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 28,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/28",
+      "verified_at": "2026-10-01T20:13:26.983Z",
+      "old_body_sha256": "d4b8b898e077a7a99b18764c8bafce1e173cd9f84df62b69e9c429d78f56b67d",
+      "new_body_sha256": "61767929d531088b8a0fdcef036ad581c880f2a17e09e23d701a8015b429bf3a",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 24,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/24",
+      "verified_at": "2026-10-01T20:13:29.555Z",
+      "old_body_sha256": "a74cc6f128484a00ce9333728044a6b8b7d7bb1505b747d51663af961f89fb1a",
+      "new_body_sha256": "0eee5a647e1442a04df88e7fe088aad787655de567cfeae2bee41ad43c61581a",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 23,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/23",
+      "verified_at": "2026-10-01T20:14:09.392Z",
+      "old_body_sha256": "a2b6cf7e8b17b038be97dcf10c880f9d0975b24e889b53888f0e4830a3e6b87c",
+      "new_body_sha256": "50580fb1087360838300eb62aab78d73ad7b880ff0ecce6c11ec1d72a2238e68",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 22,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/22",
+      "verified_at": "2026-10-01T20:14:13.006Z",
+      "old_body_sha256": "e23865dc4e9dbc39f2a19c7b6ef97756f03b84f75e183c63db841bb8350db108",
+      "new_body_sha256": "e6fd8fb6e92c7fa8b660a73a604602c532b736b5421dc3f74688cbef7695db82",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 21,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/21",
+      "verified_at": "2026-10-01T20:14:16.150Z",
+      "old_body_sha256": "02355afde334ad8a471111962908bcc431f866331c86eeea151895e5d0ae7810",
+      "new_body_sha256": "37fed0cc253d8be68982a3ca963a73f56a6ebc8aeaa5d1d9f5051f2a7502953c",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 20,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/20",
+      "verified_at": "2026-10-01T20:14:18.666Z",
+      "old_body_sha256": "a2df708745a7843b7d330a21aaf0d3c7784e1f3ad0bf951bd39ec91cd5829afa",
+      "new_body_sha256": "ac516007e6808797d3513b6fbb46b2d44bd44597ec68632de5ad646e3ffb1080",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 19,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/19",
+      "verified_at": "2026-10-01T20:14:21.049Z",
+      "old_body_sha256": "33d034091d83d8145d79d16b82c25e6fae5c1a24c0ff82b2760d913980c8bc6d",
+      "new_body_sha256": "25fc286af0ba4b1bb199e569118edd4ed8d904155d62cde32c84950208b97555",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 18,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/18",
+      "verified_at": "2026-10-01T20:14:24.138Z",
+      "old_body_sha256": "30f49e2c2f11515f51114a9cb13de37fbb3625815347d0b3513565a2aa9524d1",
+      "new_body_sha256": "9d1c7794c375a1882f00a025f59cf880c9c00a4e5fcbea99048df513e60cb574",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 17,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/17",
+      "verified_at": "2026-10-01T20:14:26.603Z",
+      "old_body_sha256": "1a9aa7f6c52555062b89b39792d80a2e4ec427a129b290357bea240af747d410",
+      "new_body_sha256": "6573510010dd92a7f275cc5168156af83266d4677fc5dd0cd72cb205e17a6f59",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 16,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/16",
+      "verified_at": "2026-10-01T20:14:29.142Z",
+      "old_body_sha256": "effca097456d0806ef0590d4301f97f361d8873836678e1bea44e90a3f4566e2",
+      "new_body_sha256": "d86d6c215bd5700df0b71d4cfc07f9e8feff11b8cd3bc8b5364e64462a64f064",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "pr_number": 15,
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/15",
+      "verified_at": "2026-10-01T20:14:31.396Z",
+      "old_body_sha256": "9a59b321dcbc6def3767e79891ca21a29e7799f95bef186146580163c9339b0a",
+      "new_body_sha256": "2c525e39df24cf022e96d38ce4e9839b226d8713b01361bbfda219382bad7836",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 11,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/11",
+      "verified_at": "2026-10-01T20:14:34.964Z",
+      "old_body_sha256": "d56367df8badec46bcf63a44ae909d2de02fe3e5dee715afefa6979c652c2c0a",
+      "new_body_sha256": "e3d26e5174d719aea90ad0053bf775e8fbfba8551573a719d3e5892b376e69e6",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 10,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/10",
+      "verified_at": "2026-10-01T20:14:52.774Z",
+      "old_body_sha256": "f5d3191924fd0a3453583320565752c0f78a45c43d38faa50b6096a35706e31b",
+      "new_body_sha256": "9d28cac98cd50817da11bc9bba603942231ff189d41fc8e6d4ce0ddc3d96be8b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 9,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/9",
+      "verified_at": "2026-10-01T20:14:55.555Z",
+      "old_body_sha256": "c5d93713b654df0a2cdb609af7cabe90d76af134e240f90beb955206df9e7f22",
+      "new_body_sha256": "041216fbec701da484e7d5ab50d4e0a0d7bc269e7d613f37d44776570399f8a7",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 6,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/6",
+      "verified_at": "2026-10-01T20:14:58.105Z",
+      "old_body_sha256": "b8275ab11dc56a8fee7b195b7bbd0699fb56ed7d4c6fb96680a1eb4ea20e4b52",
+      "new_body_sha256": "89b042247113338964d48179e5666279a249fb4ca50d5867fb3e41bd998d73f7",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 5,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/5",
+      "verified_at": "2026-10-01T20:15:00.685Z",
+      "old_body_sha256": "3ecc5d1449610b326fc8e7cc0c54ce8e2dc75629cb1730bafd73afc0beb67ed5",
+      "new_body_sha256": "546de52ae7493e04990c99836ad623f209a792540b548520af835fca3e79bc4a",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 4,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/4",
+      "verified_at": "2026-10-01T20:15:03.193Z",
+      "old_body_sha256": "06fe68313ace584291e8db67df8cd3a737741ebbb6bc5488af77c6b7ca53668c",
+      "new_body_sha256": "e692edbee422c739dea3e190b5329e2cd5d28a5ae2fcbc7f62b91365ae86c681",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/3",
+      "verified_at": "2026-10-01T20:15:05.668Z",
+      "old_body_sha256": "ff93995662d3947b86d63325dca551e49443c16ca0530eefcacd7c4a6f30c682",
+      "new_body_sha256": "9792a88770fece0ef971afa6ee6f618c899487703a8a3d206c248b07ba333837",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "pr_number": 2,
+      "url": "https://github.com/dababiyoda/RAILSCOUT/pull/2",
+      "verified_at": "2026-10-01T20:15:08.091Z",
+      "old_body_sha256": "9c569cc97db192a0580a1f479fb500ace0ea29f9e5b935d695fc9823ebdec95f",
+      "new_body_sha256": "21fc07664a572141609fa9ec7a44e42b7e2bbce6c56f0bf8be7c1f881befcb31",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 20,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/20",
+      "verified_at": "2026-10-01T20:15:11.295Z",
+      "old_body_sha256": "aab488d63cadbee54719e1db24709bd8b9bab5a2ab6c96381dc046f8a78ece3e",
+      "new_body_sha256": "601f9c2e1adec4aa94efa4530f76e72bc898bef835d604a50193dc3095ab41f1",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 17,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/17",
+      "verified_at": "2026-10-01T20:15:13.581Z",
+      "old_body_sha256": "49fe038410edac5e862f0ca8b22c6ce81f36a48b13490f7060ffbfd96d82e6e3",
+      "new_body_sha256": "6e052ff0c42dbaa7224b97e0524c38775e3b79a5dd44a2486c70ad504c3483f7",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 16,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/16",
+      "verified_at": "2026-10-01T20:15:16.445Z",
+      "old_body_sha256": "fd12b63e342f53394f5092326d9cce4236e1b97860cb8e50ec992a1a3efd60d1",
+      "new_body_sha256": "8320f3fba3c11ff15324fa040fc483342f7bdd2d1a1ae452d937c72578b7f6ac",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 15,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/15",
+      "verified_at": "2026-10-01T20:15:27.530Z",
+      "old_body_sha256": "a24239f82622242ce81a6e6bee646c28878731ddd489fa53e542cb423e1b62cf",
+      "new_body_sha256": "0f77d55156a47649d3ddac7cc81bb77db9b8d866a296acbab5c0463f1f8d3fee",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 14,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/14",
+      "verified_at": "2026-10-01T20:15:30.215Z",
+      "old_body_sha256": "d726e6fa2248e6cbf7ff2a9805c6aabbb885229cabcc2c9604daaa0156759394",
+      "new_body_sha256": "16ef5ae970355c5174805c86dcd3cd07589bc29d48b36891080c636cf74d0a33",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 13,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/13",
+      "verified_at": "2026-10-01T20:15:32.675Z",
+      "old_body_sha256": "8767bd48d2f19c473753e2703d7b3cbd244f286bae7379e72c07d6cdb95d8693",
+      "new_body_sha256": "26502368371ccd16bb8eb0415ef948306ad8df47287dfc0ea64f88b1e33b702c",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 7,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/7",
+      "verified_at": "2026-10-01T20:15:38.169Z",
+      "old_body_sha256": "619919abdb935a981e45ac1d88055dc8263b88995425c8efd98729847f822444",
+      "new_body_sha256": "d763831b2ae303f37d69ccf9dd15b4a3adf1c734b832cdb89e682dbacff982bb",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 6,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/6",
+      "verified_at": "2026-10-01T20:15:40.372Z",
+      "old_body_sha256": "0012a8db9adf3c976902ff3799f2715e94bff3afa1d13389dddbbe70f2641fd1",
+      "new_body_sha256": "4f946c65a5aba416ccc6a85c6020a76e799361bfab9846422600b6f2e358deb8",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 5,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/5",
+      "verified_at": "2026-10-01T20:15:42.713Z",
+      "old_body_sha256": "b63d9468604b336c674cf729b0cfd525d2b84a2dfaf94cb5704197c896521d30",
+      "new_body_sha256": "22bb8d24cef5ff124c878e8d7dc019d7a0924c5ddeeedf475d72d97f7d061051",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 4,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/4",
+      "verified_at": "2026-10-01T20:15:44.986Z",
+      "old_body_sha256": "de2fb97ba7ae343d5b76c333ebf095edfcacbda5e94186a87ee9d11af79a5991",
+      "new_body_sha256": "1ceec943dc9403fd7751d9145add99db89917eef6db47a8954a572f831ab4913",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 2,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/2",
+      "verified_at": "2026-10-01T20:15:47.375Z",
+      "old_body_sha256": "a54f82862fc3691e85adc1567afd6e352f76f8e871ba892ca1e9cd886ca79dbc",
+      "new_body_sha256": "0214df795accecc4eb638e8ba812c3ccb0996e5992544713ee726d3f2f17319c",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "pr_number": 1,
+      "url": "https://github.com/dababiyoda/PumpStation/pull/1",
+      "verified_at": "2026-10-01T20:15:49.478Z",
+      "old_body_sha256": "57e1e04fe96b95a0c3849f935db570bf6afabf2cf4eaa353b2bbcd8565403725",
+      "new_body_sha256": "528bf6021fbbc7a153782b2a7926ac65148a549690950cbeec3f9bc18bff92ad",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 22,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/22",
+      "verified_at": "2026-10-01T20:15:52.561Z",
+      "old_body_sha256": "475c68dd1b0671fb48595dc0116566db2601bbff261b3e282e15b64f6308d84b",
+      "new_body_sha256": "55f7cfe1ebcfc832277ac8752472c1e9f0c9294d200b72f17dae01f41b61dc57",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 21,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/21",
+      "verified_at": "2026-10-01T20:16:09.303Z",
+      "old_body_sha256": "f5d3191924fd0a3453583320565752c0f78a45c43d38faa50b6096a35706e31b",
+      "new_body_sha256": "9d28cac98cd50817da11bc9bba603942231ff189d41fc8e6d4ce0ddc3d96be8b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 15,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/15",
+      "verified_at": "2026-10-01T20:16:12.149Z",
+      "old_body_sha256": "8a50ffec10e078a10e510d7569315fd92e604c13fe6c564b34215d05c9072e6c",
+      "new_body_sha256": "8e0a03f6ce07a027af4d4b1e4750b9ddbc845d19fd15d0eb4404e3e6320cb118",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 14,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/14",
+      "verified_at": "2026-10-01T20:16:14.424Z",
+      "old_body_sha256": "2f57fe6cd428df00e0d97747ff5594f7f15473ffc6ad6bb03a2cf17088c8dec7",
+      "new_body_sha256": "d4f31f2697bd203d891d295f58ca544d0d3008f9f8228402fe13e5438f78a1d4",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 13,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/13",
+      "verified_at": "2026-10-01T20:16:16.281Z",
+      "old_body_sha256": "e54776d14a8d8c535935d91f0af2fcee74a1f818599dfec3e8757b98b903e9b1",
+      "new_body_sha256": "b23edad29839504c61d6d86f77be1ce4560f5ce9e5a4e5c16595fb80cce85ac1",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 12,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/12",
+      "verified_at": "2026-10-01T20:16:19.189Z",
+      "old_body_sha256": "bab5de379b215025c06ea550034dba6d4e0a599a86f042c1d337b26ff8c1bcbb",
+      "new_body_sha256": "228683a309e5a8fd5a607db9fd94ccb75cf0fd057998c043358cc3d4e1824c64",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 11,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/11",
+      "verified_at": "2026-10-01T20:16:21.493Z",
+      "old_body_sha256": "eb25a4e38f75fd3bcc719ec0df1862ff0ea8decb9f575369e5ef42c87edb1f09",
+      "new_body_sha256": "f8c56b66a44ba33ed5905c63d1137235432564a0e19fd45e64f98384c665feed",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 10,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/10",
+      "verified_at": "2026-10-01T20:16:24.162Z",
+      "old_body_sha256": "e7bde5c5d17d4cb5680c70efa606cf18c842af8e77a559395fe75ed45d67537e",
+      "new_body_sha256": "cf6cdfc27d721670f36b2bc87937bbdb8ce2bbda8168cf120d1998bde27b9a4e",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 9,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/9",
+      "verified_at": "2026-10-01T20:16:26.514Z",
+      "old_body_sha256": "5c9cb4c992c898133cda8248d49f700f777232665b05f0b8550ff052bd263623",
+      "new_body_sha256": "f6099a48433e104f3caa295c7fb115af36c95c6fbfe9f1a384a108fbde263aeb",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 8,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/8",
+      "verified_at": "2026-10-01T20:16:28.833Z",
+      "old_body_sha256": "16b117f52834f0c7750092027c3193e9616a3df4ff46ac5e66c2906576fcbb27",
+      "new_body_sha256": "d56c3f93ad9510e2a77f46344556984c92c17c573568f12bf9b320335995f170",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 7,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/7",
+      "verified_at": "2026-10-01T20:16:36.490Z",
+      "old_body_sha256": "34af2422e6b13e975891175ecf6ccee875f3c2630da87e66a086bc04f3455fc9",
+      "new_body_sha256": "af3833a2d68c4db272a3bded62e9bd2c05916924230646897a20e4072d5b823b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 6,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/6",
+      "verified_at": "2026-10-01T20:16:38.590Z",
+      "old_body_sha256": "e65c40080f21fd191c67c8aa05f5872200d3a6b91b59244674a208d85888fc87",
+      "new_body_sha256": "830f8cd880eb894639b8b1307533ac31e4e24a27f4fbe7d6ec4199352ec9f067",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/RESEARCH-IN/pull/3",
+      "verified_at": "2026-10-01T20:16:40.789Z",
+      "old_body_sha256": "bf37d43ce338714ec2bde4c7fbc21a15c477d961482a14f075dedb5b0b2dad5a",
+      "new_body_sha256": "c144e66db2311d2c6cc24644468f6bea03f4dba3cad36652750a6be39159c5a3",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/3",
+      "verified_at": "2026-10-01T20:16:43.296Z",
+      "old_body_sha256": "28cce5cac552ceea370c6433be890d382df0d3a7bf45fdf809b85c82249d16f5",
+      "new_body_sha256": "b0b6f38c550a35c14da8ddc07ec76e2d3bac92171b392abcf9aeda8566977781",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "pr_number": 1,
+      "url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/1",
+      "verified_at": "2026-10-01T20:16:45.714Z",
+      "old_body_sha256": "f5d3191924fd0a3453583320565752c0f78a45c43d38faa50b6096a35706e31b",
+      "new_body_sha256": "9d28cac98cd50817da11bc9bba603942231ff189d41fc8e6d4ce0ddc3d96be8b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "pr_number": 3,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/3",
+      "verified_at": "2026-10-01T20:16:48.736Z",
+      "old_body_sha256": "f34813954559cd89d49fd3ad1e9dd20e8c1e983baf7f1b2bd81af3c2a37aab9c",
+      "new_body_sha256": "389b1ec6405af24f05d815a9d027ad5d4ef0432864686bc58e0a886af8aeed7c",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "pr_number": 2,
+      "url": "https://github.com/dababiyoda/build-your-own-x/pull/2",
+      "verified_at": "2026-10-01T20:16:51.129Z",
+      "old_body_sha256": "f5d3191924fd0a3453583320565752c0f78a45c43d38faa50b6096a35706e31b",
+      "new_body_sha256": "9d28cac98cd50817da11bc9bba603942231ff189d41fc8e6d4ce0ddc3d96be8b",
+      "original_body_preserved": true,
+      "title_state_draft_base_preserved": true
+    }
+  ],
+  "commit_file_verifications": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "commit": "2dbcb2260335db9c8a8b71ae78ce4bd064751eac",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:35Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "commit": "e9122b7762cd2a11a9c4369e047d05f1d79a4b64",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:38Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "commit": "0283ff4216d4a30e39a76ccd9c58bdf5e97bdbb6",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:40Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "commit": "8275e130ee5e04223451f17649a6d693483920ad",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:43Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "commit": "9c2a876bdc7720b452a7ce2ffb113d11cd93b752",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:46Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "commit": "859adf858a124745d99074b92b33b0765b1b8f2e",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:48Z",
+      "only_requested_file_changed": true
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "commit": "930813a9924707ddf540b0d6cd99c04d813f3937",
+      "changed_paths": [
+        "AGENTS.md"
+      ],
+      "created_at": "2026-10-01T20:09:51Z",
+      "only_requested_file_changed": true
+    }
+  ],
+  "instructions": [
+    {
+      "repository": "dababiyoda/DALEOBANKS",
+      "default_branch": "main",
+      "default_commit": "a8341ba81622dbd1180583bc6660fa1e7ed707b8",
+      "prior_integration_commit": "77bbdc328c8a7393f07ed8198975a11adb48fb63",
+      "review_url": "https://github.com/dababiyoda/DALEOBANKS/pull/83",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "default_branch": "main",
+      "default_commit": "ec82b8027d987c865dc123215afb53d20916908f",
+      "prior_integration_commit": "fab34cf767814ba091866a35101c668129924779",
+      "review_url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/40",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/RAILSCOUT",
+      "default_branch": "main",
+      "default_commit": "017d9f32f9ad8f194854de1c4207f2daa0653b59",
+      "prior_integration_commit": "1d5af1872416bb4146dc1e2805d8a3983bc1e21d",
+      "review_url": "https://github.com/dababiyoda/RAILSCOUT/pull/11",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/PumpStation",
+      "default_branch": "main",
+      "default_commit": "db6758dfa8621a4f6fb0504c20343e60db5336c1",
+      "prior_integration_commit": "68fb653e03acab19a25cb85c1062bf77ebeeb768",
+      "review_url": "https://github.com/dababiyoda/PumpStation/pull/20",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/RESEARCH-IN",
+      "default_branch": "main",
+      "default_commit": "15ceb62c40941f6915c8b8ce8ce40915d4e7b01c",
+      "prior_integration_commit": "359fa66591a82a84563f9ef4f36df4ea0d425575",
+      "review_url": "https://github.com/dababiyoda/RESEARCH-IN/pull/22",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+      "default_branch": "main",
+      "default_commit": "f3282e8ecad501d0a47b38c4f6449021343f96f3",
+      "prior_integration_commit": "b73b04a2f5a3c45eaf967637d89a45c550137b7d",
+      "review_url": "https://github.com/dababiyoda/gods-eye-view-EGGREGORE-TOOL/pull/3",
+      "entry_redirects_verified": [
+        "CLAUDE.md"
+      ]
+    },
+    {
+      "repository": "dababiyoda/build-your-own-x",
+      "default_branch": "master",
+      "default_commit": "7141ae657b7c89a91a3ae59f5559487f27898b0a",
+      "prior_integration_commit": "2367816cd6a1b1f364364b32ad7918465a0a1289",
+      "review_url": "https://github.com/dababiyoda/build-your-own-x/pull/3",
+      "entry_redirects_verified": [
+        "CLAUDE.md",
+        ".github/copilot-instructions.md"
+      ]
+    }
+  ],
+  "known_gap": "Gods Eye default branch lacks AGENTS.md. Its existing draft PR #3 contains and now updates the entry contract; no unapproved default-branch write was made.",
+  "rollback": "Revert the seven listed AGENTS commits on their draft branches and restore each preserved original PR body if operational rollback is required. Founder intent remains binding and preserved in canonical source.",
+  "completed_at": "2026-10-01T20:19:23.982327+00:00",
+  "post_inventory_verification": {
+    "parser_correction": "Connector normalizes search result numbers to issue_number, not number. Original parser artifact retained; corrected comparison below.",
+    "records": [
+      {
+        "repository": "dababiyoda/DALEOBANKS",
+        "post_open_numbers": [
+          1,
+          53,
+          58,
+          59,
+          60,
+          61,
+          62,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          73,
+          74,
+          75,
+          76,
+          79,
+          80,
+          81,
+          83
+        ],
+        "count": 22,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.529Z"
+      },
+      {
+        "repository": "dababiyoda/WealthMachineIntelligence",
+        "post_open_numbers": [
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          28,
+          29,
+          30,
+          31,
+          32,
+          34,
+          37,
+          38,
+          40
+        ],
+        "count": 19,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.530Z"
+      },
+      {
+        "repository": "dababiyoda/RAILSCOUT",
+        "post_open_numbers": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          9,
+          10,
+          11
+        ],
+        "count": 8,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.530Z"
+      },
+      {
+        "repository": "dababiyoda/PumpStation",
+        "post_open_numbers": [
+          1,
+          2,
+          4,
+          5,
+          6,
+          7,
+          13,
+          14,
+          15,
+          16,
+          17,
+          20
+        ],
+        "count": 12,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.530Z"
+      },
+      {
+        "repository": "dababiyoda/RESEARCH-IN",
+        "post_open_numbers": [
+          3,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          21,
+          22
+        ],
+        "count": 13,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.531Z"
+      },
+      {
+        "repository": "dababiyoda/gods-eye-view-EGGREGORE-TOOL",
+        "post_open_numbers": [
+          1,
+          3
+        ],
+        "count": 2,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.531Z"
+      },
+      {
+        "repository": "dababiyoda/build-your-own-x",
+        "post_open_numbers": [
+          2,
+          3
+        ],
+        "count": 2,
+        "original_paginated_inventory_matches": true,
+        "search_limit": 100,
+        "number_field": "issue_number",
+        "checked_at": "2026-10-01T20:19:23.531Z"
+      }
+    ]
+  }
+}

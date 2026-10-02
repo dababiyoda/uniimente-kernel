@@ -1,0 +1,240 @@
+{
+ "route": "Linux user-service prerequisites for the Chromebook candidate",
+ "ready_for_linux_service": false,
+ "checks": {
+  "python_3_11": true,
+  "python_venv_available": true,
+  "linux_runtime": true,
+  "git_available": true,
+  "systemctl_available": true,
+  "user_service_available": false
+ },
+ "missing": [
+  "user_service_available"
+ ],
+ "crostini_detected": false,
+ "engines": {
+  "present": 7,
+  "total": 7,
+  "missing": [],
+  "version_mismatches": [],
+  "engines": [
+   {
+    "distribution": "z3-solver",
+    "package_present": true,
+    "installed": true,
+    "version": "4.15.4.0",
+    "reviewed_version": "4.15.4.0",
+    "reviewed_recipe": "requirements-cognition.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "MIT License",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": [
+     {
+      "capability": "cognition.formal",
+      "operations": [
+       "constraints"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "declared family dependency"
+     }
+    ]
+   },
+   {
+    "distribution": "ortools",
+    "package_present": true,
+    "installed": true,
+    "version": "9.15.6755",
+    "reviewed_version": "9.15.6755",
+    "reviewed_recipe": "requirements-cognition.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "Apache 2.0",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": [
+     {
+      "capability": "cognition.optimization",
+      "operations": [
+       "optimize"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "declared family dependency"
+     },
+     {
+      "capability": "cognition.linear",
+      "operations": [
+       "linear_program"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "declared family dependency"
+     }
+    ]
+   },
+   {
+    "distribution": "protobuf",
+    "package_present": true,
+    "installed": true,
+    "version": "6.33.5",
+    "reviewed_version": "6.33.5",
+    "reviewed_recipe": "requirements-cognition.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "3-Clause BSD License",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": []
+   },
+   {
+    "distribution": "networkx",
+    "package_present": true,
+    "installed": true,
+    "version": "3.6.1",
+    "reviewed_version": "3.6.1",
+    "reviewed_recipe": "requirements-cognition-expanded.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "BSD-3-Clause",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": []
+   },
+   {
+    "distribution": "sympy",
+    "package_present": true,
+    "installed": true,
+    "version": "1.14.0",
+    "reviewed_version": "1.14.0",
+    "reviewed_recipe": "requirements-cognition-expanded.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "BSD",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": [
+     {
+      "capability": "cognition.exact",
+      "operations": [
+       "polynomial"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "polynomial needs SymPy; Fraction arithmetic does not"
+     }
+    ]
+   },
+   {
+    "distribution": "scipy",
+    "package_present": true,
+    "installed": true,
+    "version": "1.17.1",
+    "reviewed_version": "1.17.1",
+    "reviewed_recipe": "requirements-cognition-expanded.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers.\n All rights reserved.\n\n Redistribution and use in source and binary forms, with or without\n modification, are permitted provided that the following conditions\n are met:\n\n 1. Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n 2. Redistributions in binary form must reproduce the above\n    copyright notice, this list of conditions and the following\n    disclaimer in th",
+    "license_metadata_truncated": true,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": [
+     {
+      "capability": "cognition.game",
+      "operations": [
+       "minimax"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "declared family dependency"
+     },
+     {
+      "capability": "cognition.evolutionary",
+      "operations": [
+       "evolve_vector"
+      ],
+      "lifecycle_state": null,
+      "attached": null,
+      "available": null,
+      "availability_scope": "package metadata/path and declared adapter only; native execution not probed",
+      "qualified_for_task": null,
+      "authorized_for_task": null,
+      "dependency_scope": "declared family dependency"
+     }
+    ]
+   },
+   {
+    "distribution": "mpmath",
+    "package_present": true,
+    "installed": true,
+    "version": "1.3.0",
+    "reviewed_version": "1.3.0",
+    "reviewed_recipe": "requirements-cognition-expanded.txt",
+    "version_matches_reviewed_pin": true,
+    "module_path_present": true,
+    "metadata_error": null,
+    "dependency_available": true,
+    "native_execution_verified": null,
+    "license_metadata": "BSD",
+    "license_metadata_truncated": false,
+    "license_verification": "metadata only; consult the exact license/dependency evidence before use",
+    "capabilities": []
+   }
+  ],
+  "body_registry": {
+   "inspected": false,
+   "reason": "no retained body registry history",
+   "body_exists": false
+  },
+  "authority_created": false,
+  "note": "Package presence, declared adapter availability, attachment, task qualification and authorization are separate. This read-only doctor runs no solver/model, downloads nothing and makes no body/device acceptance claim. Optional installation is human-invoked with --with-engines or --with-expanded-engines."
+ },
+ "not_verified": [
+  "ChromeOS host identity and ownership",
+  "VM restart at login",
+  "sleep continuity",
+  "founder identity",
+  "real mission outcome"
+ ],
+ "next": "resolve missing prerequisites on the Chromebook before creating a key or body"
+}

@@ -6,6 +6,9 @@ light cone explicitly (capabilities, targets, ceiling, budget, horizon).
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 import re
 
 from datetime import datetime, timedelta, timezone
@@ -308,3 +311,206 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+
+
+# Controlled-language reader lineage: PR143, commit
+# 7105a7cbd013edd6bce88b9500e2b4477635c912, greg/templates.py (MIT).
+# Every clause must match; these readers do not formalize arbitrary natural language.
+NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
+NETWORK_NUMBER = r"\d+(?:\.\d+)?"
+NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"
+                          rf"(?P<n>{NETWORK_NUMBER})(?:\s+(?P<unit>[A-Za-z]+))?$", re.I)
+NETWORK_SHORTEST = re.compile(rf"^(?P<metric>shortest|cheapest|fastest|quickest)\s+(?:route|path|way)\s+from\s+"
+                              rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+NETWORK_FLOW = re.compile(rf"^(?:maximum|max|most)\s+(?:flow|units|throughput|capacity)\s+from\s+"
+                          rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+NETWORK_UNITS = {
+    "m": "m", "meter": "m", "meters": "m", "metre": "m", "metres": "m",
+    "km": "km", "kilometer": "km", "kilometers": "km", "kilometre": "km", "kilometres": "km",
+    "second": "seconds", "seconds": "seconds", "minute": "minutes", "minutes": "minutes",
+    "hour": "hours", "hours": "hours", "usd": "USD", "dollar": "USD", "dollars": "USD",
+    "unit": "units", "units": "units", "item": "items", "items": "items",
+}
+
+
+def _controlled_clauses(text: str) -> list[str]:
+    if not isinstance(text, str) or not text.strip() or len(text) > 4000:
+        raise ValueError("a controlled request of 1-4000 characters is required")
+    clauses = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    if not clauses or len(clauses) > 80:
+        raise ValueError("state 1-80 complete clauses")
+    if any(len(clause) > 450 for clause in clauses):
+        raise ValueError("each controlled clause must fit 450 characters for the signed review record")
+    return clauses
+
+
+def _controlled_number(text: str):
+    value = float(text) if "." in text else int(text)
+    if abs(value) > 1e9 or not math.isfinite(value):
+        raise ValueError("numbers must be finite and have magnitude at most 1e9")
+    return value
+
+
+def _read_network_words(text: str) -> tuple[str, dict, dict]:
+    clauses = _controlled_clauses(text)
+    edges, questions, units, unread = [], [], [], []
+    for clause in clauses:
+        if link := NETWORK_LINK.fullmatch(clause):
+            number = _controlled_number(link["n"])
+            stated = link["unit"]
+            if stated is not None and stated.lower() not in NETWORK_UNITS:
+                raise ValueError(f"unsupported unit {stated!r}; use one declared unit on every link")
+            units.append(NETWORK_UNITS[stated.lower()] if stated else "dimensionless")
+            edges.append([link["a"], link["b"], number])
+            if link["how"].lower() == "and":
+                edges.append([link["b"], link["a"], number])
+        elif ask := NETWORK_SHORTEST.fullmatch(clause):
+            questions.append(("shortest_path", ask["s"], ask["t"], ask["metric"].lower()))
+        elif ask := NETWORK_FLOW.fullmatch(clause):
+            questions.append(("max_flow", ask["s"], ask["t"], "flow"))
+        else:
+            unread.append(clause)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". State every link and condition in the supported controlled language.")
+    if len(questions) != 1 or not edges:
+        raise ValueError("state at least one link and exactly one question, such as 'Shortest route from A to C.'")
+    if len(set(units)) != 1:
+        raise ValueError("all links must use the same explicit unit, or all be dimensionless; convert mixed units first")
+    operation, source, target, metric = questions[0]
+    unit = units[0]
+    if metric in ("fastest", "quickest") and unit not in ("seconds", "minutes", "hours"):
+        raise ValueError("fastest/quickest requires time units on every link")
+    if metric == "cheapest" and unit != "USD":
+        raise ValueError("cheapest requires dollar/USD costs on every link")
+    if operation == "max_flow":
+        if unit not in ("dimensionless", "units", "items"):
+            raise ValueError("flow capacities must use dimensionless counts, units or items")
+        if any(not isinstance(e[2], int) for e in edges):
+            raise ValueError("maximum-flow capacities must be whole numbers")
+        params = {"edges": edges, "source": source, "sink": target}
+        from greg.cognition.network import flow_request
+        flow_request(params)
+    else:
+        params = {"edges": edges, "start": source, "goal": target}
+        from greg.cognition.network import shortest_request
+        shortest_request(params)
+    return operation, params, {"clauses": clauses, "unit": unit, "all_clauses_represented": True,
+                               "scope": "restricted grammar only; real topology, availability and units unverified"}
+
+
+def read_network_words(text: str) -> tuple[str, dict]:
+    """Read all controlled clauses; reject unknown conditions and incompatible units."""
+    operation, params, _ = _read_network_words(text)
+    return operation, params
+
+
+PLAN_NAME = r"[A-Za-z][A-Za-z0-9_]{0,31}"
+PLAN_NUMBER = r"-?\d+(?:\.\d+)?"
+PLAN_TERM = re.compile(rf"\s*(?P<sign>[+-])?\s*(?P<coef>\d+(?:\.\d+)?)?\s*\*?\s*(?P<name>{PLAN_NAME})\s*")
+PLAN_OBJECTIVE = re.compile(r"^(?P<sense>maximi[sz]e|minimi[sz]e)\s+(?P<expr>.+)$", re.I)
+PLAN_CONSTRAINT = re.compile(rf"^(?P<expr>.+?)\s*(?P<op><=|>=|=|≤|≥|\bat most\b|\bat least\b|\bequals\b)\s*"
+                             rf"(?P<rhs>{PLAN_NUMBER})$", re.I)
+PLAN_BETWEEN = re.compile(rf"^(?P<name>{PLAN_NAME})\s+between\s+(?P<lo>{PLAN_NUMBER})\s+and\s+(?P<hi>{PLAN_NUMBER})$", re.I)
+PLAN_KEYWORDS = {"maximize", "maximise", "minimize", "minimise", "between", "and", "at", "most", "least", "equals"}
+
+
+def _plan_expr(text: str) -> dict:
+    coefficients, position = {}, 0
+    for term in PLAN_TERM.finditer(text):
+        if term.start() != position or (position and not term["sign"]) or term["name"].lower() in PLAN_KEYWORDS:
+            raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+        value = _controlled_number(term["coef"]) if term["coef"] else 1
+        coefficients[term["name"]] = coefficients.get(term["name"], 0) + (-value if term["sign"] == "-" else value)
+        position = term.end()
+    if position != len(text) or not coefficients:
+        raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+    return coefficients
+
+
+def _read_plan_words(text: str) -> tuple[dict, dict]:
+    clauses = _controlled_clauses(text)
+    objectives, constraints, bounds, unread = [], [], {}, []
+    for index, clause in enumerate(clauses):
+        if goal := PLAN_OBJECTIVE.fullmatch(clause):
+            objectives.append({"sense": "max" if goal["sense"].lower().startswith("max") else "min",
+                               "coefficients": _plan_expr(goal["expr"])})
+        elif bound := PLAN_BETWEEN.fullmatch(clause):
+            if bound["name"] in bounds:
+                raise ValueError(f"duplicate bounds for {bound['name']}; state one explicit lower/upper range")
+            bounds[bound["name"]] = [_controlled_number(bound["lo"]), _controlled_number(bound["hi"])]
+        elif con := PLAN_CONSTRAINT.fullmatch(clause):
+            op = {"<=": "<=", "≤": "<=", "at most": "<=", ">=": ">=", "≥": ">=", "at least": ">=",
+                  "=": "==", "equals": "=="}[con["op"].lower()]
+            constraints.append({"name": f"clause-{index + 1}", "coefficients": _plan_expr(con["expr"]),
+                                "op": op, "rhs": _controlled_number(con["rhs"])})
+        else:
+            unread.append(clause)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Units, integer requirements and other conditions cannot be silently dropped.")
+    if len(objectives) != 1 or not constraints:
+        raise ValueError("state exactly one objective and at least one linear constraint")
+    names = sorted({n for part in objectives + constraints for n in part["coefficients"]} | set(bounds))
+    missing = sorted(set(names) - set(bounds))
+    if missing:
+        raise ValueError("finite explicit bounds required for " + ", ".join(missing)
+                         + "; write each as 'x between 0 and 3.'")
+    params = {"variables": {name: bounds[name] for name in names}, "objective": objectives[0], "constraints": constraints}
+    from greg.cognition.linear import canonical_request
+    canonical_request(params)
+    return params, {"clauses": clauses, "unit": "dimensionless model", "all_clauses_represented": True,
+                    "scope": "continuous variables; no arbitrary language, real-unit formalization or empirical completeness claim"}
+
+
+def read_plan_words(text: str) -> dict:
+    """Read a dimensionless continuous LP, with every constraint and finite bound explicit."""
+    params, _ = _read_plan_words(text)
+    return params
+
+
+def _controlled_cognition_mission(text: str, operation: str, data: dict, coverage: dict, *, horizon_days: float) -> dict:
+    family = {"shortest_path": "graph", "max_flow": "flow", "linear_program": "linear"}[operation]
+    source_digest = "sha256:" + hashlib.sha256(text.encode()).hexdigest()
+    slug = hashlib.sha256(json.dumps({"operation": operation, "data": data, "source_digest": source_digest},
+                                    sort_keys=True).encode()).hexdigest()[:10]
+    step = {"capability": f"cognition.{family}", "target": f"cognition:words-{slug}",
+            "params": {"problem_id": f"words:{slug}", "operation": operation, "data": data,
+                       "assumptions": [f"Controlled-language source {source_digest}; represented only within the declared grammar.",
+                                       f"Declared unit scope: {coverage['unit']}; real observations and applicability unverified.",
+                                       coverage["scope"]], "geometry": {"latency_limit": 10, "compute_limit": 10000}}}
+    native = {"shortest_path": ("output.reachable", "equals", True),
+              "max_flow": ("output.value", "gte", 0), "linear_program": ("output.solver_status", "equals", "OPTIMAL")}[operation]
+    checks = [("independent-proof", "independent evidence contract verifies the scoped computation",
+               "evaluator_result.verdict", "equals", "STRUCTURALLY_VERIFIED"),
+              ("within-competence", "the result does not abstain", "abstention_state", "equals", "NONE"),
+              ("native-answer", "the requested bounded result exists", *native)]
+    return {"mission_id": f"m:words-{slug}", "founder_expression": text,
+            "intended_effect": f"a checked {operation.replace('_', ' ')} result for every stated controlled-language clause",
+            "beneficiaries": ["Alfonso"], "unacceptable_outcomes": ["acting on the plan", "dropping an unread condition", "claiming real-world verification"],
+            "constraints": [f"Controlled source digest: {source_digest}", "Reader: greg-controlled-words/0.1",
+                            f"Coverage: all {len(coverage['clauses'])} clauses represented within the restricted grammar; no general completeness claim.",
+                            f"Unit scope: {coverage['unit']}; {coverage['scope']}"]
+                           + [f"Clause {index + 1}: {clause}" for index, clause in enumerate(coverage["clauses"])],
+            "priority": 60, "closure": {"kind": "bounded"},
+            "success_checks": [{"check_id": cid, "description": description, "sensor": step,
+                                "predicate": {"field": field, "op": op, "value": value}} for cid, description, field, op, value in checks],
+            "strategies": [], "light_cone": {"capabilities": [step["capability"]], "targets": ["cognition:*"],
+                                             "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+            "provenance": {"origin": "template:controlled-" + operation, "planner": "greg-controlled-words/0.1",
+                           "prompt_sha256": source_digest}}
+
+
+def network_in_words(*, text: str, horizon_days: float = 2) -> dict:
+    """Propose existing graph/flow cognition; attachment and signing remain human decisions."""
+    operation, data, coverage = _read_network_words(text)
+    return _controlled_cognition_mission(text, operation, data, coverage, horizon_days=horizon_days)
+
+
+def plan_in_words(*, text: str, horizon_days: float = 2) -> dict:
+    """Propose a finite-bounded continuous LP through the canonical GLOP/verifier contracts."""
+    data, coverage = _read_plan_words(text)
+    return _controlled_cognition_mission(text, "linear_program", data, coverage, horizon_days=horizon_days)
+
+
+TEMPLATES.update({"network-in-words": network_in_words, "plan-in-words": plan_in_words})

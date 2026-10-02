@@ -1,0 +1,937 @@
+{
+  "environment": "Linux container; fresh laboratory key, not Alfonso authority",
+  "thresholds": {
+    "recovery_seconds": 30,
+    "loss_of_completed_fsynced_receipts": 0,
+    "duplicate_external_effects": 0,
+    "revoked_attachment_on_restart": true
+  },
+  "observed_recovery_seconds": 2.9846676510023826,
+  "revocation_persisted": true,
+  "knowledge_replay_idempotent": true,
+  "appraisals": [
+    {
+      "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+      "checks": {
+        "achieved_claimed": true,
+        "approval_boundaries_honored": true,
+        "approval_boundary_encountered": false,
+        "arrived_via_inbox": true,
+        "chain_intact": true,
+        "checks_rederived_from_receipts": true,
+        "deliveries_bound_to_evidence": true,
+        "exactly_once": true,
+        "founder_signature_verified": true,
+        "preconditions_honored": true,
+        "registered_once": true,
+        "world_reobserved": true
+      },
+      "findings": [],
+      "head": "sha256:e483058862fb617153830cf26ca9ddb657ee4377b955ab22daf6fe6509004f79",
+      "limits": "shares reviewed Kernel code; not an independent implementation",
+      "mission_id": "m:rehearsal-1",
+      "verdict": "VERIFIED"
+    },
+    {
+      "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+      "checks": {
+        "achieved_claimed": true,
+        "approval_boundaries_honored": true,
+        "approval_boundary_encountered": false,
+        "arrived_via_inbox": true,
+        "chain_intact": true,
+        "checks_rederived_from_receipts": true,
+        "deliveries_bound_to_evidence": true,
+        "exactly_once": true,
+        "founder_signature_verified": true,
+        "preconditions_honored": true,
+        "registered_once": true,
+        "world_reobserved": true
+      },
+      "findings": [],
+      "head": "sha256:b6d57f031614b4e12449fcd05fdbba62888aeae8220cda2257765d7ed3b10e40",
+      "limits": "shares reviewed Kernel code; not an independent implementation",
+      "mission_id": "m:rehearsal-2",
+      "verdict": "VERIFIED"
+    },
+    {
+      "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+      "checks": {
+        "achieved_claimed": true,
+        "approval_boundaries_honored": true,
+        "approval_boundary_encountered": false,
+        "arrived_via_inbox": true,
+        "chain_intact": true,
+        "checks_rederived_from_receipts": true,
+        "deliveries_bound_to_evidence": true,
+        "exactly_once": true,
+        "founder_signature_verified": true,
+        "preconditions_honored": true,
+        "registered_once": true,
+        "world_reobserved": true
+      },
+      "findings": [],
+      "head": "sha256:6a8a1b1ab0f2cad42d136a4d0ace7be995366d8eb029630320656b6200c4dcb9",
+      "limits": "shares reviewed Kernel code; not an independent implementation",
+      "mission_id": "m:rehearsal-0",
+      "verdict": "VERIFIED"
+    },
+    {
+      "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+      "checks": {
+        "achieved_claimed": true,
+        "approval_boundaries_honored": true,
+        "approval_boundary_encountered": false,
+        "arrived_via_inbox": true,
+        "chain_intact": true,
+        "checks_rederived_from_receipts": true,
+        "deliveries_bound_to_evidence": true,
+        "exactly_once": true,
+        "founder_signature_verified": true,
+        "preconditions_honored": true,
+        "registered_once": true,
+        "world_reobserved": true
+      },
+      "findings": [],
+      "head": "sha256:bb23352c9d06aca5895353585f8d436575dd3b3ac3f5a5a9204d41e8897c0def",
+      "limits": "shares reviewed Kernel code; not an independent implementation",
+      "mission_id": "m:composition",
+      "verdict": "VERIFIED"
+    }
+  ],
+  "settlement_records": [
+    {
+      "identity_version": "signed-claim/1",
+      "mission_id": "m:rehearsal-1",
+      "command_digest": "sha256:87f93ee3f8ce6dcc3ba3725bd3eee369d39cfdeb7b1946ca5a13c6c5b36cd34b",
+      "check_id": "cognitive-answer",
+      "check_digest": "sha256:3e821d7e276c6d86f13f0f190457e4439ba87c5f5be51f15b4207ee358bed0dc",
+      "input_digest": "sha256:74d7852e6a759b258609767196c8d047981eebb4a952ddfe024644d813b52fa4",
+      "problem_id": "rehearsal:1",
+      "receipt": "sha256:462d7a627b201efd5e780212d67d4d1654b9c8d3b6b811b1a075e1838d8375c2",
+      "cognitive_receipt": "sha256:c449523c2f9c392844d596299571f6b6eebcbba500d5afc1d6030dce5f6b4ff3",
+      "method": "cognition.estimation",
+      "method_version": "0.2.0",
+      "geometry_key": "sha256:edc110144cf4585272f25f05b4e09800b84fa8ea4a46bb87ac79a9eb3f234de4",
+      "correct": true,
+      "observation_event": "76d69f43-27f0-5fa1-b3a9-fc167e2b43ea",
+      "appraisal_event": "faa87442-28fb-559e-8dc5-cb16dde3ff9e",
+      "cost_usd": 0.0,
+      "latency": 0.2822256239996932,
+      "causal_credit": [
+        {
+          "method": "cognition.estimation",
+          "role": "solver"
+        },
+        {
+          "method": "greg.cognition.verification",
+          "role": "falsifier"
+        }
+      ],
+      "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+      "authority_created": false,
+      "outcome_id": "sha256:38d8a133df1b465c57504da4836d9ef26364c0198dee0d94ee1ae10661d5cfc3",
+      "evidence_class": "validated_local_computation",
+      "invalidated": false,
+      "supersedes": null
+    },
+    {
+      "identity_version": "signed-claim/1",
+      "mission_id": "m:rehearsal-2",
+      "command_digest": "sha256:c5890f15f3bed8891d3e4cfb78f20abf86051d649a4190892b0f6c4b745cf008",
+      "check_id": "cognitive-answer",
+      "check_digest": "sha256:f027e21afbbd00d1128ffe504978246ce1e7bc4c6ffb116a7d241e7c0a8ca3e4",
+      "input_digest": "sha256:eb2cc86ad6535a910a36a4a59ef38500070a1af5ac7a9c20781e0da6c8f89822",
+      "problem_id": "rehearsal:2",
+      "receipt": "sha256:4deaba2ed94468a0f514931248306953cfc55d5007a7da91e9b4512fb3f4d981",
+      "cognitive_receipt": "sha256:a96bf01059d552bab8c8bd998095db5997493028794f00b515b8389d0576b338",
+      "method": "cognition.causal",
+      "method_version": "0.2.0",
+      "geometry_key": "sha256:b9c7a3c5a8a63c9acccb46740d3bcc3efb512ac7bf4af76bb91785249e8a977a",
+      "correct": true,
+      "observation_event": "d83d6520-fbed-5c32-ac79-b7683723644d",
+      "appraisal_event": "8a25f75e-6245-5130-b5b2-e3aa6549fed8",
+      "cost_usd": 0.0,
+      "latency": 0.27610590499898535,
+      "causal_credit": [
+        {
+          "method": "cognition.causal",
+          "role": "solver"
+        },
+        {
+          "method": "greg.cognition.verification",
+          "role": "falsifier"
+        }
+      ],
+      "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+      "authority_created": false,
+      "outcome_id": "sha256:c142500a9b57d2701b22d20d315662dfa31e5f521beea2f457942848d205064e",
+      "evidence_class": "validated_local_computation",
+      "invalidated": false,
+      "supersedes": null
+    },
+    {
+      "identity_version": "signed-claim/1",
+      "mission_id": "m:rehearsal-0",
+      "command_digest": "sha256:9aa05ef92aacf7aee7ae5494b6c7ed6f84ab1ff2189601714b9696c3538ffc10",
+      "check_id": "cognitive-answer",
+      "check_digest": "sha256:70bac1229834f9256a5a8aadb3330524aef85c9b78b99c636a0d6854bbf4d0a4",
+      "input_digest": "sha256:ccc06e482abc29b08ca5635bf591d5efafbf1ce1152dcc7789d6abca609e1a03",
+      "problem_id": "rehearsal:0",
+      "receipt": "sha256:e675217e2ee0a6a2c340df1e4f04aafdb33ed65ca304812e1b2169fe23e3e75f",
+      "cognitive_receipt": "sha256:f797c87ac8332c588cd0ad1f73558a62b5b223fb3200c8010a70f9dc131f3e68",
+      "method": "cognition.optimization",
+      "method_version": "0.2.0",
+      "geometry_key": "sha256:9a0d37b2a454db165c659c0486ddc7336745bdd2bbd6d4032218feef32635f94",
+      "correct": true,
+      "observation_event": "483c7341-4402-5ee5-9b6c-a204ced0bc0c",
+      "appraisal_event": "f5fe34ac-a5b3-5db4-8e07-1af01f392ce1",
+      "cost_usd": 0.0,
+      "latency": 0.6748910479982442,
+      "causal_credit": [
+        {
+          "method": "cognition.optimization",
+          "role": "solver"
+        },
+        {
+          "method": "greg.cognition.verification",
+          "role": "falsifier"
+        }
+      ],
+      "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+      "authority_created": false,
+      "outcome_id": "sha256:7934bf8d0bf204e769314183e84fb5d173fab070aa583f68e0d9b3c3a45e0e75",
+      "evidence_class": "validated_local_computation",
+      "invalidated": false,
+      "supersedes": null
+    }
+  ],
+  "compositions": [
+    {
+      "receipts": [
+        {
+          "problem_id": "rehearsal:0",
+          "geometry": {
+            "objective_type": "answer",
+            "domain": "bounded_computation",
+            "epistemic_class": "optimization",
+            "semantic_ambiguity": 0.0,
+            "exactness_required": false,
+            "deterministic": true,
+            "stochastic": false,
+            "partially_observed": false,
+            "static_or_sequential": "static",
+            "discrete_or_continuous": "discrete",
+            "graph_structure": false,
+            "constraint_density": 0.0,
+            "search_space_size": 0,
+            "causal_question": false,
+            "forecasting_question": false,
+            "optimization_question": false,
+            "control_question": false,
+            "allocation_question": false,
+            "adversariality": 0.0,
+            "multi_actor": false,
+            "incentive_interaction": false,
+            "data_volume": 0,
+            "evidence_quality": 0.0,
+            "identifiability": "unknown",
+            "novelty_requirement": false,
+            "embodiment_requirement": false,
+            "time_horizon": 0.0,
+            "latency_limit": 5.0,
+            "compute_limit": 10000,
+            "financial_limit": 0.0,
+            "consequence_class": "read_only",
+            "reversibility": "reversible",
+            "rights_impact": false,
+            "legal_content": false,
+            "human_value_content": false,
+            "classification_uncertainty": 0.0,
+            "unknown_geometry": false,
+            "out_of_distribution": false,
+            "success_criteria": [],
+            "failure_criteria": [],
+            "subclaims": [],
+            "assumptions": [],
+            "omitted_conditions": [],
+            "data_provenance": [],
+            "data_missingness": "unknown",
+            "deadline": null,
+            "attention_ceiling_seconds": 0.0
+          },
+          "consequence_class": "read_only",
+          "consequence_vector": {
+            "physical": 0.0,
+            "financial": 0.0,
+            "privacy": 0.0,
+            "rights": 0.0,
+            "reputation": 0.0,
+            "innocent_third_party": 0.0,
+            "irreversibility": 0.0,
+            "disclosure": 0.0,
+            "dependency": 0.0,
+            "systemic_externality": 0.0,
+            "tail_risk": 0.0,
+            "discrimination": 0.0,
+            "lawful": null,
+            "consent": null,
+            "exposure_details": {}
+          },
+          "method": "cognition.optimization",
+          "method_version": "0.2.0",
+          "epistemic_class": "optimization",
+          "input_digest": "sha256:ccc06e482abc29b08ca5635bf591d5efafbf1ce1152dcc7789d6abca609e1a03",
+          "evidence_refs": [],
+          "assumptions": [
+            "Input and model validity are not established by computation"
+          ],
+          "excluded_variables": [],
+          "output": {
+            "objective_value": 4.0,
+            "solution": {
+              "x": 4
+            },
+            "solver_status": "OPTIMAL"
+          },
+          "uncertainty": {
+            "conditional_on_input": true,
+            "world_confidence": null
+          },
+          "proof_type": "optimization_certificate",
+          "proof_artifact": {
+            "bound": 4.0,
+            "constraints": [
+              {
+                "coefficients": {
+                  "x": 1
+                },
+                "op": ">=",
+                "rhs": 4
+              }
+            ],
+            "objective": {
+              "coefficients": {
+                "x": 1
+              },
+              "sense": "min"
+            },
+            "optimality_gap": 0.0,
+            "solution": {
+              "x": 4
+            },
+            "solver_status": "OPTIMAL",
+            "solver_version": "9.15.6755",
+            "variables": {
+              "x": [
+                0,
+                20
+              ]
+            }
+          },
+          "alternative_methods_considered": [
+            {
+              "method": "cognition.optimization",
+              "version": "0.2.0",
+              "family": "optimization",
+              "eligible": true,
+              "reason": "available",
+              "quality": 0.6666666666666666,
+              "expected_cost": 0.0,
+              "expected_latency": 1.0,
+              "evidence": 1,
+              "proof_class": "optimization_certificate"
+            }
+          ],
+          "method_selection_reason": "eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
+          "strongest_counterargument": "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.",
+          "falsification_condition": "independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
+          "abstention_state": "NONE",
+          "missing_information": [],
+          "compute_cost": {
+            "operation_ceiling": 10000,
+            "memory_ceiling_bytes": 2147483648,
+            "model_calls": 0,
+            "energy": "unmeasured"
+          },
+          "money_cost": 0.0,
+          "latency": 0.6221294210008637,
+          "evaluator": "greg.cognition.verification/0.1.0",
+          "evaluator_result": {
+            "artifact_digest": "sha256:2f313bed8f413944588d57bf8e35883d7cd842421b19a2f46e56bb907ab0d8b4",
+            "checks": {
+              "artifact_constraints_match_input": true,
+              "artifact_objective_matches_input": true,
+              "artifact_solution_matches_output": true,
+              "artifact_status_matches_output": true,
+              "artifact_variables_match_input": true,
+              "bounded_solution": true,
+              "constraint_substitution": true,
+              "integer_domain": true,
+              "native_status_contract": true,
+              "objective_substitution": true,
+              "requirement_coverage": true,
+              "solution_variable_set": true,
+              "typed_artifact": true
+            },
+            "dissent": [
+              "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding."
+            ],
+            "execution_contract": "separate network-denied process, scrubbed environment, bounded CPU/RAM",
+            "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+            "verdict": "STRUCTURALLY_VERIFIED"
+          },
+          "formal_validity": "VALID_CONDITIONAL_ON_MODEL",
+          "empirical_validity": "WORLD_UNVERIFIED",
+          "legitimate_authority": "EXISTING_KERNEL_GATE_REQUIRED",
+          "later_outcome": null,
+          "calibration_error": null,
+          "causal_credit": [
+            {
+              "method": "cognition.optimization",
+              "role": "solver"
+            },
+            {
+              "method": "greg.cognition.verification",
+              "role": "falsifier"
+            }
+          ],
+          "authority_created": false,
+          "schema_version": "greg-cognition/0.2",
+          "policy_version": "seed-static/0.2",
+          "execution_mode": "consequence_inert",
+          "reason_code": null,
+          "outcome_state": "ANSWERED_WITHIN_SCOPE",
+          "model_provenance": null,
+          "stopping_reason": "smallest sufficient bounded calculation; mandatory verification retained",
+          "formalization_coverage": {
+            "represented": [],
+            "omissions": [],
+            "review": "encoded property only; general completeness undecidable"
+          },
+          "authority_refs": {
+            "scope": "enclosing canonical Kernel witness/grant/receipt",
+            "new_authority": false
+          },
+          "contribution_attribution": [
+            {
+              "method": "cognition.optimization",
+              "role": "calculation",
+              "uncertainty": "not causal credit"
+            }
+          ],
+          "receipt_id": "sha256:d1ca57cab0e98cee260bb59217de7d4c285bce90b8b5fda086ab009016e587ce"
+        },
+        {
+          "problem_id": "rehearsal:1",
+          "geometry": {
+            "objective_type": "answer",
+            "domain": "bounded_computation",
+            "epistemic_class": "estimate",
+            "semantic_ambiguity": 0.0,
+            "exactness_required": false,
+            "deterministic": true,
+            "stochastic": false,
+            "partially_observed": false,
+            "static_or_sequential": "static",
+            "discrete_or_continuous": "discrete",
+            "graph_structure": false,
+            "constraint_density": 0.0,
+            "search_space_size": 0,
+            "causal_question": false,
+            "forecasting_question": false,
+            "optimization_question": false,
+            "control_question": false,
+            "allocation_question": false,
+            "adversariality": 0.0,
+            "multi_actor": false,
+            "incentive_interaction": false,
+            "data_volume": 0,
+            "evidence_quality": 0.0,
+            "identifiability": "unknown",
+            "novelty_requirement": false,
+            "embodiment_requirement": false,
+            "time_horizon": 0.0,
+            "latency_limit": 5.0,
+            "compute_limit": 10000,
+            "financial_limit": 0.0,
+            "consequence_class": "read_only",
+            "reversibility": "reversible",
+            "rights_impact": false,
+            "legal_content": false,
+            "human_value_content": false,
+            "classification_uncertainty": 0.0,
+            "unknown_geometry": false,
+            "out_of_distribution": false,
+            "success_criteria": [],
+            "failure_criteria": [],
+            "subclaims": [],
+            "assumptions": [],
+            "omitted_conditions": [],
+            "data_provenance": [],
+            "data_missingness": "unknown",
+            "deadline": null,
+            "attention_ceiling_seconds": 0.0
+          },
+          "consequence_class": "read_only",
+          "consequence_vector": {
+            "physical": 0.0,
+            "financial": 0.0,
+            "privacy": 0.0,
+            "rights": 0.0,
+            "reputation": 0.0,
+            "innocent_third_party": 0.0,
+            "irreversibility": 0.0,
+            "disclosure": 0.0,
+            "dependency": 0.0,
+            "systemic_externality": 0.0,
+            "tail_risk": 0.0,
+            "discrimination": 0.0,
+            "lawful": null,
+            "consent": null,
+            "exposure_details": {}
+          },
+          "method": "cognition.estimation",
+          "method_version": "0.2.0",
+          "epistemic_class": "estimate",
+          "input_digest": "sha256:74d7852e6a759b258609767196c8d047981eebb4a952ddfe024644d813b52fa4",
+          "evidence_refs": [],
+          "assumptions": [
+            "Input and model validity are not established by computation"
+          ],
+          "excluded_variables": [],
+          "output": {
+            "central": 15.0,
+            "high": 24.0,
+            "low": 8.0,
+            "units": {}
+          },
+          "uncertainty": {
+            "conditional_on_input": true,
+            "world_confidence": null
+          },
+          "proof_type": "bounded_estimate",
+          "proof_artifact": {
+            "assumptions": [],
+            "cheapest_evidence": "measure the dominant uncertain factor",
+            "decomposition": [
+              {
+                "central": 3,
+                "high": 4,
+                "low": 2,
+                "name": "count"
+              },
+              {
+                "central": 5,
+                "high": 6,
+                "low": 4,
+                "name": "rate"
+              }
+            ],
+            "dependence": "interval enclosure; no independence assumption or probabilistic interval",
+            "dominant_variable": "count",
+            "outside_view_anchor": null,
+            "range": {
+              "central": 15.0,
+              "high": 24.0,
+              "low": 8.0,
+              "units": {}
+            },
+            "sensitivity": {
+              "count": 0.6666666666666666,
+              "rate": 0.4
+            }
+          },
+          "alternative_methods_considered": [
+            {
+              "method": "cognition.estimation",
+              "version": "0.2.0",
+              "family": "estimation",
+              "eligible": true,
+              "reason": "available",
+              "quality": 0.6666666666666666,
+              "expected_cost": 0.0,
+              "expected_latency": 0.1,
+              "evidence": 1,
+              "proof_class": "bounded_estimate"
+            }
+          ],
+          "method_selection_reason": "eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
+          "strongest_counterargument": "Bounds are assumptions; no calibrated probability or external market proof follows.",
+          "falsification_condition": "independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
+          "abstention_state": "NONE",
+          "missing_information": [],
+          "compute_cost": {
+            "operation_ceiling": 10000,
+            "memory_ceiling_bytes": 2147483648,
+            "model_calls": 0,
+            "energy": "unmeasured"
+          },
+          "money_cost": 0.0,
+          "latency": 0.27135156100121094,
+          "evaluator": "greg.cognition.verification/0.1.0",
+          "evaluator_result": {
+            "artifact_digest": "sha256:cdb805743b3def43589094714765c9ec606d89464ded0897f1f16d8855da974c",
+            "checks": {
+              "artifact_decomposition_matches_input": true,
+              "artifact_range_matches_output": true,
+              "expected_units": true,
+              "independent_products": true,
+              "ordered_range": true,
+              "typed_artifact": true,
+              "unit_balance": true
+            },
+            "dissent": [
+              "Bounds are assumptions; no calibrated probability or external market proof follows."
+            ],
+            "execution_contract": "separate network-denied process, scrubbed environment, bounded CPU/RAM",
+            "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+            "verdict": "STRUCTURALLY_VERIFIED"
+          },
+          "formal_validity": "NOT_APPLICABLE",
+          "empirical_validity": "WORLD_UNVERIFIED",
+          "legitimate_authority": "EXISTING_KERNEL_GATE_REQUIRED",
+          "later_outcome": null,
+          "calibration_error": null,
+          "causal_credit": [
+            {
+              "method": "cognition.estimation",
+              "role": "solver"
+            },
+            {
+              "method": "greg.cognition.verification",
+              "role": "falsifier"
+            }
+          ],
+          "authority_created": false,
+          "schema_version": "greg-cognition/0.2",
+          "policy_version": "seed-static/0.2",
+          "execution_mode": "consequence_inert",
+          "reason_code": null,
+          "outcome_state": "ANSWERED_WITHIN_SCOPE",
+          "model_provenance": null,
+          "stopping_reason": "smallest sufficient bounded calculation; mandatory verification retained",
+          "formalization_coverage": {
+            "represented": [],
+            "omissions": [],
+            "review": "encoded property only; general completeness undecidable"
+          },
+          "authority_refs": {
+            "scope": "enclosing canonical Kernel witness/grant/receipt",
+            "new_authority": false
+          },
+          "contribution_attribution": [
+            {
+              "method": "cognition.estimation",
+              "role": "calculation",
+              "uncertainty": "not causal credit"
+            }
+          ],
+          "receipt_id": "sha256:a4357eec28b3b01fd08c112f38f6e5d1e8c7ae4b59cec5e0e35595df31deb534"
+        },
+        {
+          "problem_id": "rehearsal:2",
+          "geometry": {
+            "objective_type": "answer",
+            "domain": "bounded_computation",
+            "epistemic_class": "causal",
+            "semantic_ambiguity": 0.0,
+            "exactness_required": false,
+            "deterministic": true,
+            "stochastic": false,
+            "partially_observed": false,
+            "static_or_sequential": "static",
+            "discrete_or_continuous": "discrete",
+            "graph_structure": false,
+            "constraint_density": 0.0,
+            "search_space_size": 0,
+            "causal_question": false,
+            "forecasting_question": false,
+            "optimization_question": false,
+            "control_question": false,
+            "allocation_question": false,
+            "adversariality": 0.0,
+            "multi_actor": false,
+            "incentive_interaction": false,
+            "data_volume": 0,
+            "evidence_quality": 0.0,
+            "identifiability": "unknown",
+            "novelty_requirement": false,
+            "embodiment_requirement": false,
+            "time_horizon": 0.0,
+            "latency_limit": 5.0,
+            "compute_limit": 10000,
+            "financial_limit": 0.0,
+            "consequence_class": "read_only",
+            "reversibility": "reversible",
+            "rights_impact": false,
+            "legal_content": false,
+            "human_value_content": false,
+            "classification_uncertainty": 0.0,
+            "unknown_geometry": false,
+            "out_of_distribution": false,
+            "success_criteria": [],
+            "failure_criteria": [],
+            "subclaims": [],
+            "assumptions": [],
+            "omitted_conditions": [],
+            "data_provenance": [],
+            "data_missingness": "unknown",
+            "deadline": null,
+            "attention_ceiling_seconds": 0.0
+          },
+          "consequence_class": "read_only",
+          "consequence_vector": {
+            "physical": 0.0,
+            "financial": 0.0,
+            "privacy": 0.0,
+            "rights": 0.0,
+            "reputation": 0.0,
+            "innocent_third_party": 0.0,
+            "irreversibility": 0.0,
+            "disclosure": 0.0,
+            "dependency": 0.0,
+            "systemic_externality": 0.0,
+            "tail_risk": 0.0,
+            "discrimination": 0.0,
+            "lawful": null,
+            "consent": null,
+            "exposure_details": {}
+          },
+          "method": "cognition.causal",
+          "method_version": "0.2.0",
+          "epistemic_class": "causal",
+          "input_digest": "sha256:eb2cc86ad6535a910a36a4a59ef38500070a1af5ac7a9c20781e0da6c8f89822",
+          "evidence_refs": [],
+          "assumptions": [
+            "Input and model validity are not established by computation"
+          ],
+          "excluded_variables": [],
+          "output": {
+            "effect": 4,
+            "identified_conditionally": true,
+            "uncertainty": {
+              "normal_approximation_95": [
+                3.3722976370840585,
+                4.627702362915942
+              ],
+              "scope": "large-sample approximation using sample variance; small samples may undercover",
+              "standard_error": 0.32025630761017426
+            }
+          },
+          "uncertainty": {
+            "conditional_on_input": true,
+            "world_confidence": null
+          },
+          "proof_type": "causal_identification",
+          "proof_artifact": {
+            "confounders": [],
+            "dag": [
+              [
+                "random_assignment",
+                "treatment"
+              ],
+              [
+                "treatment",
+                "outcome"
+              ]
+            ],
+            "data": {
+              "digest": "sha256:fa24d39acc830cc515be98b5413b04d26c83c5330175e7811c1b0d696e1582a6",
+              "sample_sizes": [
+                40,
+                40
+              ]
+            },
+            "estimand": "difference in mean outcomes in the supplied trial population",
+            "estimate": 4,
+            "identification_assumptions": [
+              "random assignment",
+              "consistency",
+              "no interference",
+              "complete observations",
+              "independent units"
+            ],
+            "limits": "conditional randomized sample estimate; no general causal inference or randomization audit",
+            "missingness": "none",
+            "outcome": "numeric observed response",
+            "population": "supplied sample only",
+            "refutations": {
+              "randomization_verified": false,
+              "selection_bias_sensitivity": {
+                "additive_bias": [
+                  -0.32025630761017426,
+                  0.32025630761017426
+                ],
+                "interpretation": "subtract a supplied bias from the estimate; no identification proof"
+              },
+              "split_sample_effects": [
+                4,
+                4
+              ]
+            },
+            "selection": "complete",
+            "synthetic": true,
+            "treatment": "declared two-arm assignment",
+            "uncertainty": {
+              "normal_approximation_95": [
+                3.3722976370840585,
+                4.627702362915942
+              ],
+              "scope": "large-sample approximation using sample variance; small samples may undercover",
+              "standard_error": 0.32025630761017426
+            }
+          },
+          "alternative_methods_considered": [
+            {
+              "method": "cognition.causal",
+              "version": "0.2.0",
+              "family": "causal",
+              "eligible": true,
+              "reason": "available",
+              "quality": 0.6666666666666666,
+              "expected_cost": 0.0,
+              "expected_latency": 0.1,
+              "evidence": 1,
+              "proof_class": "causal_identification"
+            }
+          ],
+          "method_selection_reason": "eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
+          "strongest_counterargument": "Randomization and identification assumptions have not been independently established in reality.",
+          "falsification_condition": "independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
+          "abstention_state": "NONE",
+          "missing_information": [],
+          "compute_cost": {
+            "operation_ceiling": 10000,
+            "memory_ceiling_bytes": 2147483648,
+            "model_calls": 0,
+            "energy": "unmeasured"
+          },
+          "money_cost": 0.0,
+          "latency": 0.2539850360008131,
+          "evaluator": "greg.cognition.verification/0.1.0",
+          "evaluator_result": {
+            "artifact_digest": "sha256:e308b7a711f1fc342f18599bede35e64cbaa60cb8a62512ecc3ff2e9f3dc368d",
+            "checks": {
+              "artifact_data_matches_input": true,
+              "artifact_estimate_matches_output": true,
+              "artifact_uncertainty_matches_output": true,
+              "identified_scope": true,
+              "independent_effect": true,
+              "independent_uncertainty": true,
+              "typed_artifact": true
+            },
+            "dissent": [
+              "Randomization and identification assumptions have not been independently established in reality."
+            ],
+            "execution_contract": "separate network-denied process, scrubbed environment, bounded CPU/RAM",
+            "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+            "verdict": "STRUCTURALLY_VERIFIED"
+          },
+          "formal_validity": "NOT_APPLICABLE",
+          "empirical_validity": "WORLD_UNVERIFIED",
+          "legitimate_authority": "EXISTING_KERNEL_GATE_REQUIRED",
+          "later_outcome": null,
+          "calibration_error": null,
+          "causal_credit": [
+            {
+              "method": "cognition.causal",
+              "role": "solver"
+            },
+            {
+              "method": "greg.cognition.verification",
+              "role": "falsifier"
+            }
+          ],
+          "authority_created": false,
+          "schema_version": "greg-cognition/0.2",
+          "policy_version": "seed-static/0.2",
+          "execution_mode": "consequence_inert",
+          "reason_code": null,
+          "outcome_state": "ANSWERED_WITHIN_SCOPE",
+          "model_provenance": null,
+          "stopping_reason": "smallest sufficient bounded calculation; mandatory verification retained",
+          "formalization_coverage": {
+            "represented": [],
+            "omissions": [],
+            "review": "encoded property only; general completeness undecidable"
+          },
+          "authority_refs": {
+            "scope": "enclosing canonical Kernel witness/grant/receipt",
+            "new_authority": false
+          },
+          "contribution_attribution": [
+            {
+              "method": "cognition.causal",
+              "role": "calculation",
+              "uncertainty": "not causal credit"
+            }
+          ],
+          "receipt_id": "sha256:ed20a947b8dbc2ee8b5cd02f629e161303711cc53e9c336a9f224e3c7644f27a"
+        }
+      ],
+      "metaconsensus": {
+        "state": "RECOMMENDATION_ONLY",
+        "conflicting_questions": [],
+        "conflicting_classes": [],
+        "jurisdictions": {
+          "optimization": [
+            "sha256:d1ca57cab0e98cee260bb59217de7d4c285bce90b8b5fda086ab009016e587ce"
+          ],
+          "estimate": [
+            "sha256:a4357eec28b3b01fd08c112f38f6e5d1e8c7ae4b59cec5e0e35595df31deb534"
+          ],
+          "causal": [
+            "sha256:ed20a947b8dbc2ee8b5cd02f629e161303711cc53e9c336a9f224e3c7644f27a"
+          ]
+        },
+        "questions": [
+          {
+            "problem_id": "rehearsal:0",
+            "method": "cognition.optimization",
+            "epistemic_class": "optimization",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "optimization_certificate",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          },
+          {
+            "problem_id": "rehearsal:1",
+            "method": "cognition.estimation",
+            "epistemic_class": "estimate",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "bounded_estimate",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          },
+          {
+            "problem_id": "rehearsal:2",
+            "method": "cognition.causal",
+            "epistemic_class": "causal",
+            "assumptions": [
+              "Input and model validity are not established by computation"
+            ],
+            "proof_type": "causal_identification",
+            "missing_information": [],
+            "dominance": "not inferred across different questions or classes"
+          }
+        ],
+        "dissent": [
+          "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.",
+          "Bounds are assumptions; no calibrated probability or external market proof follows.",
+          "Randomization and identification assumptions have not been independently established in reality."
+        ],
+        "authority_created": false
+      },
+      "authority_created": false,
+      "superiority": "unproven until compared with every constituent and strongest simple baseline"
+    }
+  ],
+  "local_model": null,
+  "authority_created": false,
+  "VEPMC_founder_device": 0
+}

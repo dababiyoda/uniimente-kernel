@@ -1,0 +1,7 @@
+eligibility True
+constraint True
+unknown True
+evidence True
+duplicate_settlement True
+paid_fallback True
+protected_party True

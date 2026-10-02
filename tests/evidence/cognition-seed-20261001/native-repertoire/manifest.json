@@ -1,0 +1,63 @@
+{
+  "recorded_at_utc": "2026-10-02T15:30:36.728546+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "head_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "working tree; source hashes identify tested edits separately from HEAD",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "dependencies": {
+    "pytest": "9.1.1",
+    "sympy": "1.14.0",
+    "scipy": "1.17.1",
+    "ortools": "9.15.6755",
+    "protobuf": "6.33.5"
+  },
+  "command": "/workspace/scratch/cortex-patched-venv/bin/python -m pytest -q tests/unit/test_cognition_native_repertoire.py tests/integration/test_cognition_native_repertoire_mission.py tests/unit/test_cognition_native_network_lp.py tests/integration/test_cognition_network_lp_mission.py tests/unit/test_greg_cognition.py tests/unit/test_cognition_seed_gates.py",
+  "cwd": "/workspace/uniimente-kernel",
+  "final_result": {
+    "exit_code": 0,
+    "passed": 207,
+    "skipped": 3,
+    "duration_seconds": 34.19
+  },
+  "source_sha256": {
+    "greg/cognition/solvers.py": "a8cef28dd4f6387d4b9e47fae990846011846c9e96c2f046fa3843958dadb382",
+    "greg/cognition/verification.py": "1f2652a1bf816115479345ef3e63037f31a3a1219a4e71d7608e4709cadb2666",
+    "greg/cognition/contracts.py": "bface3eb0d309a06768d1fe8042dddb8587d5b79e96c4bbbf1108b3ef15916bc",
+    "greg/cognition/catalog.py": "93ce3e305a27d5701da102656eb6aaa8e1c95ac836619c2cd018226de0274217",
+    "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3",
+    "greg/cognition/linear.py": "55c0e4e255640bdf5df019333faed655ce54837726a52afa1b1aac887950bbe2",
+    "greg/appraisal.py": "d4004dfb1d1a0b3bbf22d3e46983fc76f70bf41ec389b6e0a92b66d428a3a3e9",
+    "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098",
+    "greg/body.py": "dd9dc51c779a0c9d715b09d216c5461be9fd62730b5634860707e177abc0d2cb",
+    "greg/cognition/budget.py": "495ce47980f8ea0138af62b440cbe777281d008cf350663ce14e841a31e0bce4",
+    "greg/cognition/cortex.py": "0a66de8b16f72e9980bf468f5af450a636218b28ab3a1a4b203fd7780d3801ee",
+    "greg/cognition/settlement.py": "62d048f7cc9722809510ee30d823c26d2bf900ce3516a3ef457485aa769e67c5",
+    "greg/missions.py": "17adbf49c3b2cff23bdd0a4f9ddfee26d7c73381f96e4ac732f5e1220e091d37",
+    "tests/unit/test_cognition_native_repertoire.py": "1e4142b2529ed47292cb0678e967f2d9e885b4fecfe7478e688fabe2b0a5ee9f",
+    "tests/integration/test_cognition_native_repertoire_mission.py": "f36c35a74e5487343cf16c27f987b41d777e355abf6592af416fe98eb0de9c67"
+  },
+  "raw_attempts": {
+    "native-repertoire-first.log": "56177964833d71d6e35f8a4ff341c090d8570602c8dc4dfdee71497c069ce3ce",
+    "native-repertoire-second.log": "0d12ef4c4043e6aa9dbdd2048c43572d0309743c6fe93665731ac6e346dcd190",
+    "native-repertoire-integration-first.log": "f6038e4e16b25a58bb7ad4e5776fa6b54b1fd5be72d3dab664cbf58659d52f34",
+    "native-repertoire-integration-second.log": "7553a89b1c63141961635d2a9f5547bb993c92840794ae381425f8777d82b689",
+    "native-repertoire-third.log": "2a0bc296ef913818dc8be731a6f39158b7cf8d552d2cb5506f295a4ef3b45cb8",
+    "native-repertoire-final.log": "633f63967f7a2dd3c377531bd00d435b8869d7d5a17877839e897e12250e2c2b",
+    "native-repertoire-typed-boundary-final.log": "a2bfebad79a3be2be7c4e63051852fc6bb690e0e66eea0bd60574a6b91a93465"
+  },
+  "limits": [
+    "Linux laboratory keys and native/synthetic sources only; no Alfonso device/founder use or live authorization.",
+    "Nine future families stay VERIFIED until authenticated attachment; group labels and human roles are untrusted declarations.",
+    "Encoded computations and local snapshots are WORLD_UNVERIFIED; appraisals do not establish empirical outcome or physical plant stability.",
+    "Minimax and native moment checks use declared numerical tolerance; simulation replay shares Python PRNG dependency; source normalization/checker dependencies are disclosed.",
+    "Evolution searches a fixed bounded quadratic and is checked against a stronger analytic baseline; no new algorithms or automatic promotion.",
+    "Independent Fraction Sturm implementation certifies bounded real-root intervals, multiplicity, completeness and factor coefficients; irrational output is interval-labelled.",
+    "Qualification is not frozen held-out routing superiority, general-field completeness or full-machine completion.",
+    "First integration attempt used invalid colon-containing mission IDs and was rejected by actual canonical schema; corrected fixtures use canonical IDs without weakening validation.",
+    "Historical tests/skips and earlier failures remain unedited; new bounded qualification tests execute those mechanisms rather than pretending the skipped old research tests ran.",
+    "A subsequent typed-artifact attack before final benchmark freeze found Python bool/int equality in prefix counts, indices and observations; explicit native types now reject it, with all earlier evidence retained."
+  ],
+  "source_capture_point": "after final run; owned native runtime source was stable throughout it; this is not a globally atomic source freeze",
+  "review_record": "docs/collaboration/COGNITION-SEED-20261001.md#linked-decision-seed-20261002-native-qualification--execute-and-challenge-the-existing-repertoire"
+}

@@ -1,0 +1,23 @@
+........................F....                                            [100%]
+=================================== FAILURES ===================================
+___________ test_founder_asks_reviews_signs_and_the_body_applies_it ____________
+
+running = (PosixPath('/tmp/pytest-of-agent/pytest-135/test_founder_asks_reviews_sign0/body'), <cryptography.hazmat.bindings._rust.openssl.ed25519.Ed25519PrivateKey object at 0x7f4fcd62ba30>, <greg.console.Console object at 0x7f4fcd6c78f0>, 34749)
+
+    def test_founder_asks_reviews_signs_and_the_body_applies_it(running):
+        home, key, console, port = running
+        page = _get(port, "/")
+        token = re.search(r"name=csrf value='([^']+)'", page).group(1)
+        url, review = _post(port, "/ask", {"csrf": token, "text": "Brief me on the state of my repositories"})
+        assert "/proposal/" in url and "What signing lets GREG do" in review and "Must ask you first" in review
+        pid = url.rsplit("/", 1)[1]
+        _post(port, "/sign", {"csrf": token, "proposal": pid})
+        envelopes = list((Layout(home).inbox).glob("*-mission-*.json"))
+>       assert len(envelopes) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/unit/test_greg_interface.py:183: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_interface.py::test_founder_asks_reviews_signs_and_the_body_applies_it
+1 failed, 28 passed in 14.86s

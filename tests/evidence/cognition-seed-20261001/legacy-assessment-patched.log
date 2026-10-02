@@ -1,0 +1,199 @@
+{
+  "suite_digest": "sha256:53f5fc547aa132e37bf6455b18b0458b7d6e12916886f4eb691de6e955d5083b",
+  "cases": [
+    {
+      "id": "bounded:calculate",
+      "correct": true,
+      "method": "cognition.exact",
+      "state": "NONE",
+      "latency": 0.5816875890000119,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:polynomial",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0013264880003589496,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:estimate",
+      "correct": true,
+      "method": "cognition.estimation",
+      "state": "NONE",
+      "latency": 0.5473661989999528,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:constraints",
+      "correct": true,
+      "method": "cognition.formal",
+      "state": "NONE",
+      "latency": 0.6029876909997256,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:optimize",
+      "correct": true,
+      "method": "cognition.optimization",
+      "state": "NONE",
+      "latency": 1.3524369520000619,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:shortest_path",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0006263670002226718,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:state_search",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0004124910001337412,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:beta_update",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0002376150000600319,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:treatment_effect",
+      "correct": true,
+      "method": "cognition.causal",
+      "state": "NONE",
+      "latency": 0.6196632219998719,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:pid",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0005693059997611272,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:value_of_information",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.00028798899984394666,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:simulate",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.00023818199997549527,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:minimax",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0002690860001166584,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:anomalies",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.00035433499988357653,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:setpoint",
+      "correct": true,
+      "method": "cognition.micro",
+      "state": "NONE",
+      "latency": 0.5839560690001235,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:mdp",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.00037299400037227315,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "bounded:quorum",
+      "correct": false,
+      "method": "none",
+      "state": "CAPABILITY_DEFICIT",
+      "latency": 0.0002716009998948721,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "epistemic:unidentified",
+      "correct": true,
+      "method": "cognition.causal",
+      "state": "UNIDENTIFIED",
+      "latency": 0.46820821400024215,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "rights:hard-constraint",
+      "correct": true,
+      "method": "cognition.exact",
+      "state": "PROHIBITED",
+      "latency": 0.0004270479998922383,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "formal:incomplete-high-risk",
+      "correct": true,
+      "method": "cognition.formal",
+      "state": "FORMALIZATION_INCOMPLETE",
+      "latency": 0.0013226779997239646,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "unknown:capability-deficit",
+      "correct": false,
+      "method": "none",
+      "state": "ABSTAIN",
+      "latency": 0.00038946399990891223,
+      "cost_usd": 0.0
+    },
+    {
+      "id": "semantic:live-model-unavailable",
+      "correct": true,
+      "method": "cognition.semantic",
+      "state": "ABSTAIN",
+      "latency": 0.009956832000170834,
+      "cost_usd": 0.0
+    }
+  ],
+  "correct": 10,
+  "total": 22,
+  "baselines": {},
+  "superiority_status": "UNMEASURED",
+  "cross_geometry_regret": null,
+  "characterization": {
+    "responsiveness": "per-case measured latency",
+    "memory_depth": "canonical receipt/mission history; restart integration tested separately",
+    "prediction_horizon": "declared finite horizons only",
+    "adaptability": "outcome-ranked eligible capabilities",
+    "persistence": "existing GREG body, separate integration evidence",
+    "error_correction": "independent artifact falsification",
+    "problem_space": "bounded structured operations",
+    "cooperation": "typed composition; measured lift unproven",
+    "generalization": "unproven beyond this frozen corpus",
+    "higher_scale_coherence": "unmeasured"
+  },
+  "limits": "Structured inputs; local deterministic/math proof. No live LLM comparison, arbitrary-language classification, external outcome or VEPMC increment."
+}

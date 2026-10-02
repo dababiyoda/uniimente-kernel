@@ -1,0 +1,31 @@
+..F......................                                                [100%]
+=================================== FAILURES ===================================
+______ test_console_exposes_scoped_cognitive_result_from_retained_receipt ______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-18/test_console_exposes_scoped_co0')
+
+    def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path):
+        from greg.console import Console, render_home
+        home,key,body_id,_=make_body(tmp_path)
+        params={"problem_id":"console:exact", "operation":"calculate", "data":{"expression":"2+3"}}
+        spec=mission("m:console-cognition", checks=[{"check_id":"sum", "description":"exact sum", "sensor":{"capability":"cognition.solve","target":"cognition:sum","params":params},"predicate":{"op":"equals","field":"output.exact","value":"5"}}],strategies=[],capabilities=["cognition.solve"],targets=("cognition:*",),ceiling="read_only")
+        drop(home,signed(key,body_id,"MISSION",spec))
+        with Body(home) as body:body.boot();body.tick()
+        console=Console(home)
+        snapshot=console.snapshot();assert snapshot['cognitive'][0]['method']=='cognition.exact'
+        page=render_home(console).decode()
+        assert 'console:exact' in page and 'Next permitted step' in page and 'Uncertainty:' in page and 'Evidence:' in page
+        assert 'and a Mac body' not in page
+        from greg import remote
+        from greg.founder import sign_read
+        from datetime import datetime, timezone
+        import json, pytest
+        with pytest.raises(remote.RemoteError):
+>           remote.dispatch(home, 'GET', '/api/status', {}, b'')
+            ^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.remote' has no attribute 'dispatch'
+
+tests/integration/test_greg_cognition_mission.py:78: AttributeError
+=========================== short test summary info ============================
+FAILED tests/integration/test_greg_cognition_mission.py::test_console_exposes_scoped_cognitive_result_from_retained_receipt
+1 failed, 24 passed in 10.54s

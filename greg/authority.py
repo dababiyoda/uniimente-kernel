@@ -22,7 +22,7 @@ import urllib.parse
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
-from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext
+from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext, InvocationBudgetWindow
 from greg.lightcone import LightCone
 from policy.consequence_gate import ConsequenceGate, GrantIssuer
 from policy.engine import Proposal, Verdict, evaluate
@@ -133,10 +133,23 @@ class AuthorityOffice:
 
         def execute(p):
             try:
-                output = adapter(params, replace(ctx, target=target))
+                # Projection only: the existing Gate still authorizes and
+                # revalidates dispatch. Reserved action cost is not refunded to
+                # optional cognition, and caller data cannot replace this window.
+                bounded_compute = manifest.capability_id.startswith("cognition.") or manifest.capability_id == "foundry.query"
+                dispatch, _ = self._prior(proposal_id) if bounded_compute else (None, None)
+                budget_window = (InvocationBudgetWindow(
+                    horizon=cone.horizon, grant_expires_at=grant["expires_at"],
+                    remaining_money_usd=max(0.0, cone.budget_usd - spent_usd - cost_usd),
+                    authority_ref=command_digest, grant_id=grant["grant_id"], grant_digest=sha256_json(grant),
+                    mission_id=mission_id, scope_digest=scope, proposal_id=proposal_id,
+                    witness_id=dispatch.payload.get("witness_id") if dispatch else None,
+                    dispatch_effect_digest=dispatch.payload.get("effect_digest") if dispatch else None)
+                    if bounded_compute else None)
+                output = adapter(params, replace(ctx, target=target, cognition_budget=budget_window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
-                        "output": None, "validation_status": "self_reported"}
+                        "output": None, "failure_kind": "CAPABILITY_ERROR", "validation_status": "self_reported"}
             return {"observed_outcome": expected_outcome, "result_class": "positive",
                     "output": bounded(output), "validation_status": "self_reported"}
 

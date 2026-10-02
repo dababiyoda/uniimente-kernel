@@ -1,0 +1,21 @@
+...F..............................s.s..s....................             [100%]
+=================================== FAILURES ===================================
+_________ test_optional_symbolic_dependency_unavailability_is_explicit _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efe0503eed0>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-129/test_optional_symbolic_depende0')
+
+    def test_optional_symbolic_dependency_unavailability_is_explicit(monkeypatch, tmp_path):
+        import importlib.util
+        original = importlib.util.find_spec
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None if name == "sympy" else original(name))
+        path = suite(tmp_path, [{"id": "symbolic", "request": {"problem_id": "compat:symbolic", "operation": "polynomial", "data": {"polynomial": [-4, 0, 1]}},
+                                 "expected": {"method": "cognition.exact", "state": "NONE", "output": {"real_roots": ["-2", "2"]}}}])
+        report = benchmark.compatibility(suite=path)
+>       assert report["correct"] == 0 and report["compatibility_correct"] == 1
+E       assert (1 == 0)
+
+tests/unit/test_cognition_benchmark_compatibility.py:74: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_cognition_benchmark_compatibility.py::test_optional_symbolic_dependency_unavailability_is_explicit
+1 failed, 56 passed, 3 skipped in 9.44s

@@ -1378,6 +1378,54 @@
         "developmental"
       ],
       "activation_evidence": "Research lineage under INTENT-0030; gates recorded OPEN/CLOSED as negative and positive evidence"
+    },
+    {
+      "id": "cognition.seed.future_family_gating",
+      "lineage": [
+        "PR #140 3ced61db403a3d16908c915aef2e6d2acc8eda38",
+        "PR #139 30d162b",
+        "PR #141 3606c7aaaf92b9ca457752b64845089469988d1f"
+      ],
+      "intended_effect": "Full interchangeable specialized and developmental cognition repertoire under one governed identity",
+      "intended_effect_status": "active",
+      "classification": "TEMPORARILY_DEFERRED",
+      "node": "N1",
+      "subordinate_nodes": [
+        "P5",
+        "P6",
+        "P7",
+        "P8",
+        "P9",
+        "P10",
+        "P11",
+        "P12",
+        "P13"
+      ],
+      "changed_axes": [
+        "sequence",
+        "maturity_level",
+        "budget",
+        "immediate_priority"
+      ],
+      "surviving_mechanisms": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md",
+        "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md"
+      ],
+      "adaptation": "The current seed attaches only its bounded primitive/exact helpers and four classes. Future built-ins retain source and profiles but are not automatically executable; original research qualifications remain behind native dependency gates.",
+      "activation_evidence": "Demand-led native qualification and authenticated grant/attachment; catalog or benchmark score grants no authority.",
+      "inheritance_test": {
+        "q1_original_capability": "Broad source-described interchangeable intelligence ecology and bounded generation",
+        "q2_still_in_destination": "Yes; retained P5–P13 and all review sections/items in founder trace",
+        "q3_assumption_that_became_false": "An executable adapter or broad library does not establish all-domain qualification or permission to activate every family now",
+        "q4_replace_without_discarding": "Yes; reuse canonical registry/adapters and disable future execution by default",
+        "q5_portable_parts": "Typed profiles, receipts, restricted input, independent checks, outcome ledger and original mechanism sources",
+        "q6_later_node_parts": "Graph/probability/control/search at P5; collective P6; generation/evolution P7/P8; release/morphogenesis P9/P10; ecology/substrates/bodies P11–P13",
+        "q7_extract_into_current_path": "Narrow four-class seed, numeric computation, source binding, typed verification, durable outcome reconciliation",
+        "q8_incompatible_with_corrected_destination": "Only automatic broad activation or competing authority conflicts; intended effects remain",
+        "q9_cheapest_distinguishing_test": "For one genuine mission deficit, execute one native adapter and independent validator against strongest simpler alternative under a declared budget"
+      }
     }
   ]
 }

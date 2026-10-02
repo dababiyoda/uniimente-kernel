@@ -1,0 +1,36 @@
+.................................F..                                     [100%]
+=================================== FAILURES ===================================
+___ test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body ____
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-100/test_cognition_is_durable_rece0')
+
+    def test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        params = {"problem_id": "real:numeric", "operation": "calculate", "data": {"expression": "0.1+0.2"}}
+        spec = mission("m:cognition", checks=[{
+            "check_id": "exact", "description": "independently checked exact arithmetic",
+            "sensor": {"capability": "cognition.solve", "target": "cognition:arithmetic", "params": params},
+            "predicate": {"op": "equals", "field": "output.exact", "value": "3/10"}}],
+            strategies=[{"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:arithmetic",
+                         "params": params, "advances": ["exact"], "rationale": "recompute the exact numerical answer"}],
+            capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+        drop(home, signed(key, body_id, "MISSION", spec))
+        with Body(home) as body:
+            body.boot()
+            outcome = body.tick()
+            assert outcome["missions"][0]["state"] == "ACHIEVED"
+            receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+            cognitive = next(r for r in receipts if isinstance(r, dict) and r.get("problem_id") == "real:numeric")
+            assert cognitive["method"] == "cognition.exact" and cognitive["authority_created"] is False
+            appraised = body.journal.replay("mission.appraised")[-1].payload
+            assert appraised["verdict"] == "VERIFIED", appraised
+>           assert len(competence(body.journal)) == 1
+E           assert 0 == 1
+E            +  where 0 = len({})
+E            +    where {} = competence(<greg.journal.Journal object at 0x7f46cf3c9250>)
+E            +      where <greg.journal.Journal object at 0x7f46cf3c9250> = <greg.body.Body object at 0x7f46d0df14c0>.journal
+
+tests/integration/test_greg_cognition_mission.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_greg_cognition_mission.py::test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body
+1 failed, 35 passed in 10.82s

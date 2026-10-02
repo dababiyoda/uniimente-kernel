@@ -22,7 +22,12 @@ def main():
     if sys.platform != "darwin":
         resource.setrlimit(resource.RLIMIT_AS, (2 * 1024**3, 2 * 1024**3))
     try:
-        answer = SOLVERS[family](request["data"], request["geometry"])
+        if family == "verify":
+            from greg.cognition.verification import verify
+            answer = verify(request["family"], request["data"], request["answer"], request["proof_class"])
+            answer["execution_contract"] = "separate network-denied process, scrubbed environment, bounded CPU/RAM"
+        else:
+            answer = SOLVERS[family](request["data"], request["geometry"])
         text = canonical(answer)
         if len(text.encode()) > 256 * 1024:
             raise CognitionError("solver output exceeds 256 KiB")

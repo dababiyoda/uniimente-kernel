@@ -101,3 +101,32 @@ A competent new coding agent entering through a normal repository instruction su
 9. handoff procedure.
 
 If not, propagation for that repository is incomplete.
+
+## Context checksum — cognition delivery, 2026-10-01
+
+Product: one persistent founder-facing GREG, shared authority and memory, replaceable bounded competencies.
+Current runtime: `greg/` on PR #137's convergence, reused via PR #140; main is still 19fa33c22684a8953e3607e3aaf0e5fbd926bd88 at inspection.
+Root: Alfonso; authenticated decisions, not model scores. First body: Chromebook with phone interface; Mac retained behind a separate gate.
+Operational bottleneck: VEPMC 0 -> 1; no founder hardware/key available here. Subordinate cognition experiment: Verified Cross-Geometry Routing Gain.
+Owners: CapabilityGenome/CapabilityRegistry own metadata; MissionEngine owns missions; AuthorityOffice/Kernel Gate own invocation; EventSpine/EvidenceLedger own durable truth; appraiser owns closure; GREG settlement projects competence.
+Reuse: #140 real adapters and mission integration; #141 source exports and research design; #139 scoped implementation inspected as an alternative, no duplicate runtime imported.
+Dependencies: pinned Z3/OR-Tools in a separate test environment; locally served free weights for semantic tests, with exact artifact/license evidence.
+Coverage: entry instructions, effect compiler, founder ledger, build orders, source census, #117, all pages of open kernel PR/issues inventories; relevant #137/#139/#140/#141 source and #140/#141 file inventories. Full corpus, all branch diffs and every organ implementation were not audited. Organ deployment and ChatGPT Project originals remain evidence gaps.
+Named requested skills absent: install-recursive-founder-intent-collaboration-protocol, spider-web-hegemony, mechanism-recombination-foundry, writing-style. Equivalent explicit directive and repository protocols applied; no skill execution fabricated. Acumen skill was read for dependency freshness, but its research_brief tool was unavailable; exact primary release/license records were used.
+No new identity, authority, registry, scheduler, memory database or external deployment. See the seed trace and tested evidence for narrower reality states.
+
+## Controlling checksum correction — full machine, 2026-10-01
+
+Body + Organs + Mind is the parent completion boundary; seed/P0–P3 and VEPMC are subordinate sequencing/evidence units. Complete currently achievable machinery before sustained founder use. After each verified integration continue the next unblocked requirement automatically. Existing effect authority remains unchanged. Canonical source: `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json`. Cross-repository/PR propagation and precise external blockers are recorded in `docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md`; do not infer universal propagation.
+
+## Continuing checksum — 2026-10-02
+
+The same persistent GREG remains the product; Body + Organs + Mind remains its fixed boundary. Current delivery branch is `codex/cortex-seed-delivery-20261001`, stacked through #145/#140/#137. Main is still `19fa33c22684a8953e3607e3aaf0e5fbd926bd88`; #143 moved to `68b484bb45a681655274c8b23d7722424bb99488`. Its actual four-file change from the earlier extraction pin was inspected: additional LP negative-result certification and package-genesis follow-up execution are reuse candidates, not automatically imported authority or qualification. Finite-bound native GLOP currently abstains on uncertified infeasibility; that declared limitation is preserved pending the linked extension test. Other branch prose remains author-reported until independently executed.
+
+Root remains Alfonso. Immediate body/interface direction remains Chromebook and phone, with Mac and other embodiments retained. Project-wide VEPMC remains 0 without authentic body/use/acceptance; software completion continues. The subordinate deterministic cognition comparison is an experiment: recorded outcomes do not yet establish earned learned routing or superiority over its identical static policy.
+
+Canonical owners remain MissionBook/Body, CapabilityRegistry, AuthorityOffice/Kernel/ConsequenceGate, EvidenceLedger/EventSpine/Journal, appraiser and existing conditional learning projections. Native source-bound math checks now cover the four seed classes and additional finite repertoire; computation verification explicitly keeps world re-observation false. Encrypted backup/guarded restore, controlled native requests, grant-aware budgets and truthful phone/console projections extend those owners. None creates deployment or promotion authority.
+
+Coverage includes the prior source census, current main and relevant integration sources, all 89 open Kernel and 78 open organ PR guidance surfaces, seven organ draft entry instructions, #132/#143/#144 actual extraction sources, native dependencies and all 55 owner/gap records. Fresh timestamps, commands, source hashes and retained negative attempts are under `tests/evidence/cognition-seed-20261001/`. This is not every historical branch, private prior conversation, absent original Project attachment or organ deployment.
+
+Highest unblocked machinery: exact durable treasury accounting, commercial recovery/authenticated scoped acceptance, bounded native MCP/worker execution, local media rendering and remaining per-item Foundry software. Work proceeds while founder keys, physical body/use, genuine buyer/processor evidence and later host capabilities remain item-specific gaps. Named skills remain unavailable; explicit directive and existing protocols apply. No paid fallback, new authority principal, external publication or live activation follows from these builds. Source commits and benchmark freezes bind exact tested revisions; this dated checksum alone does not certify a deployment.

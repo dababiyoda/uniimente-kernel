@@ -4,6 +4,14 @@
 
 Status: **mandatory collaboration procedure on this development branch**. This SOP creates no runtime authority.
 
+Controlling completion boundary: **BODY + ORGANS + MIND = GREG / UNIIMENTE**.
+Read [the full-machine founder correction](intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json).
+Prove and integrate each increment, then automatically continue the highest-priority
+unblocked parent requirement. Seeds, PRs, experiments and VEPMC are sequencing or
+evidence gates; they do not replace the complete currently achievable machine.
+Record founder-only, external and demonstrated technology blockers per requirement
+while continuing unrelated buildable software. Existing authority limits remain effective.
+
 ## 0. Purpose
 
 UNIIMENTE is developed across ChatGPT project conversations, Project source files, GitHub repositories, branches, pull requests, issues, experiments, failures, external research and multiple coding agents. Context loss is therefore an architectural failure mode.

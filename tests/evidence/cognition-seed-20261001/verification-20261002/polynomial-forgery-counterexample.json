@@ -1,0 +1,91 @@
+{
+  "schema": "native-certificate-counterexample/1",
+  "timestamp": "2026-10-02T09:41:12.948700+00:00",
+  "source_sha256": {
+    "greg/cognition/solvers.py": "beaed4c2621698e0f8337052d2b8cab06e59ce6fe17c2321fd094c19ca5044d2",
+    "greg/cognition/verification.py": "fced5c19f47243f65d6e641b669643b4a3fc5f64df5377e8fabdc3a9d7a3f029",
+    "greg/cognition/contracts.py": "bface3eb0d309a06768d1fe8042dddb8587d5b79e96c4bbbf1108b3ef15916bc"
+  },
+  "data": {
+    "polynomial": [
+      -4,
+      0,
+      1
+    ]
+  },
+  "original": {
+    "output": {
+      "real_roots": [
+        "-2",
+        "2"
+      ],
+      "factored": "(x - 2)*(x + 2)"
+    },
+    "proof": {
+      "expression": {
+        "polynomial": [
+          -4,
+          0,
+          1
+        ]
+      },
+      "result": {
+        "real_roots": [
+          "-2",
+          "2"
+        ],
+        "factored": "(x - 2)*(x + 2)"
+      },
+      "engine": "SymPy",
+      "domain": "real numbers; coefficients in ascending degree"
+    },
+    "status": "ANSWER",
+    "formal_validity": "VALID_CONDITIONAL_ON_INPUT",
+    "missing_information": [],
+    "empirical_validity": "WORLD_UNVERIFIED"
+  },
+  "coherent_forgery": {
+    "output": {
+      "real_roots": [
+        "999"
+      ],
+      "factored": "(x - 2)*(x + 2)"
+    },
+    "proof": {
+      "expression": {
+        "polynomial": [
+          -4,
+          0,
+          1
+        ]
+      },
+      "result": {
+        "real_roots": [
+          "999"
+        ],
+        "factored": "(x - 2)*(x + 2)"
+      },
+      "engine": "SymPy",
+      "domain": "real numbers; coefficients in ascending degree"
+    },
+    "status": "ANSWER",
+    "formal_validity": "VALID_CONDITIONAL_ON_INPUT",
+    "missing_information": [],
+    "empirical_validity": "WORLD_UNVERIFIED"
+  },
+  "verification": {
+    "verdict": "STRUCTURALLY_VERIFIED",
+    "checks": {
+      "typed_artifact": true,
+      "artifact_expression_matches_input": true,
+      "artifact_result_matches_output": true
+    },
+    "dissent": [
+      "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence."
+    ],
+    "artifact_digest": "sha256:e1b3dfb54706400214ae746f8e809f73dbe3b6d93f0b385cc37a11f19deaf666",
+    "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+  },
+  "failure_condition": "The asserted 999 is not a root of x^2-4; matching shape/result must not verify.",
+  "scope": "Direct synthetic verifier counterexample; no external effects, authority or empirical reality claim."
+}

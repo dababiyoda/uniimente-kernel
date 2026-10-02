@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-01T09:42:53.705459+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "current_main": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+  "integration_base": "3ced61db403a3d16908c915aef2e6d2acc8eda38",
+  "PR137": "3d2bb1762ff709ce74d3053aced060e70d4e6674",
+  "PR139_alternative": "30d162b6016a2edc1a8c2e87cd54aa4ec3609d86",
+  "PR141_review_exports": "3606c7aaaf92b9ca457752b64845089469988d1f",
+  "commands": [
+    "git fetch origin; git show origin/main:AGENTS.md; git show origin/claude/uniimente-greg-reconciliation-39syff:AGENTS.md",
+    "gh api --paginate repos/dababiyoda/uniimente-kernel/pulls?state=open&per_page=100",
+    "gh api --paginate repos/dababiyoda/uniimente-kernel/issues?state=open&per_page=100",
+    "gh api --paginate repos/dababiyoda/uniimente-kernel/pulls/140/files?per_page=100",
+    "gh api --paginate repos/dababiyoda/uniimente-kernel/pulls/141/files?per_page=100"
+  ],
+  "coverage": "Current main entry instructions and canonical build/runtime/authority contracts; PR137 convergence runtime; PR140 actual cognitive implementation; PR139 and141 relevant alternative code; accessible original review exports; all open issue/PR listing pages. This is not an exhaustive audit of all organs, every historical message or every open diff.",
+  "inaccessible": [
+    "Founder Chromebook/phone, founder private authority key and authentic acceptance",
+    "Named original Appendix B files not independently supplied",
+    "Private prior conversations beyond supplied accessible context",
+    "Named project skills unavailable (executor skill list empty, no matching supplied skills/skill files)"
+  ],
+  "excluded": [
+    "Other organs not required to alter canonical seed seam; no external services, deployment, publishing, contacts, paid acquisition or live policy changes"
+  ],
+  "files": {
+    "AGENTS.md": {
+      "sha256": "326721903bd8379e133bed0ddb53afbe7b949b8759923f28adce0af6a9c20505",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "docs/FOUNDER_INTENT_LEDGER.md": {
+      "sha256": "8640124ed268a712308fa48309a8bd690f4e2f96ba6ef7ef069206b8953a4740",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "docs/FOUNDER_EFFECT_COMPILER.md": {
+      "sha256": "06a6faaee2aa64d6f385f7d28ef0d399d2860d4107f85e57b2ee13cb7522f2f4",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md": {
+      "sha256": "299f6cb9eabef75a6530792636d52d70f3a8576d6f6297fdc62bdab2b75e48af",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "docs/PROJECT_COGNITION_CONTINUITY.md": {
+      "sha256": "cc4b480308f25cd2b70037d139117d9e083e92d3f5b9572078cc3da47c9ff022",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/cognition/contracts.py": {
+      "sha256": "c13d5796974223e4c63d67ecac3fba9630df4c12754c6e5b10aa9df671ad013f",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/cognition/cortex.py": {
+      "sha256": "1f1a095291b5c852cb6139844d7bcc0a2226a04252d3bf8d1c65474f9f5ffcb1",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/models.py": {
+      "sha256": "e99307dc7fbef108fab70daec92e460d9eabb2d0a4848bb93b0e4e14078c1c2a",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/body.py": {
+      "sha256": "bf6d2035126824a174bf33a32ab8eacf6173491553e12cb4cd6340b0eee5ef0a",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/authority.py": {
+      "sha256": "e744260011aabae10c14f7de9193dc117972fb03e2bcae90db00c4aeafa9b8fe",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "greg/path.json": {
+      "sha256": "7f3d84609410483a829d4353f2a3ee19177d737a06087d63b4994781bb278011",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    },
+    "requirements-cognition.txt": {
+      "sha256": "5d8b94c4fa4ecfa3222fae769f61ce6894316e868cc467b2e021600cd6ac8267",
+      "source": "d17baffa5707e0bb0ee530a45b97b770dea7563e"
+    }
+  },
+  "source_commit": "d17baffa5707e0bb0ee530a45b97b770dea7563e",
+  "source_commit_at": "2026-10-01T09:48:04Z",
+  "original_reviews": {
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md": "18db9f8d1f899d43b7a4fa9742e72807d3c651d6d1410b56f7a1e62e0acb503b",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md": "d03841b5e2a3b7659db3e3ffecd19e82ef2de786ed6383b75b0257386ca8de31"
+  }
+}

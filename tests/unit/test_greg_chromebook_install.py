@@ -88,3 +88,75 @@ def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):
     out = subprocess.run([str(fake_bin / "bash"), str(SCRIPT), "--allow-other-linux", "--no-service"],
                          capture_output=True, text=True, env=env, timeout=60)
     assert out.returncode == 11 and "sudo apt install -y python3 python3-venv git" in out.stderr
+
+
+def fixture_python(tmp: Path, *, fail_engines=False):
+    """Record package command construction; pip/venv operations are fixtures.
+
+    Other commands use the actual test interpreter and canonical CLI. No package
+    downloads, native builds, services or models are launched by these tests.
+    """
+    wrapper = tmp / "fixture-python"
+    calls = tmp / "pip-commands.jsonl"
+    wrapper.write_text(f'''#!{sys.executable}
+import json,os,pathlib,shutil,sys
+args=sys.argv[1:]
+if args[:2]==['-m','venv']:
+    target=pathlib.Path(args[2])/'bin'/'python'
+    target.parent.mkdir(parents=True,exist_ok=True)
+    shutil.copyfile(__file__,target);target.chmod(0o755)
+    raise SystemExit(0)
+if args[:2]==['-m','pip']:
+    with open({str(calls)!r},'a') as stream:stream.write(json.dumps(args)+'\\n')
+    failed={fail_engines!r} and any('requirements-cognition' in item for item in args)
+    raise SystemExit(1 if failed else 0)
+os.execv({sys.executable!r},[{sys.executable!r},*args])
+''')
+    wrapper.chmod(0o755)
+    return wrapper, calls
+
+
+def install_args(tmp: Path, python: Path):
+    return ["--allow-other-linux", "--no-service", "--no-passphrase", "--python", str(python),
+            "--venv", str(tmp / "venv"), "--home", str(tmp / "body"), "--key", str(tmp / "founder.pem"),
+            "--bin-dir", str(tmp / "bin"), "--read-root", str(tmp / "src"), "--deliver-root", str(tmp / "GREG")]
+
+
+@pytest.mark.parametrize("mode,recipe", [(None, None), ("--no-engines", None),
+                                        ("--with-engines", "requirements-cognition.txt"),
+                                        ("--with-expanded-engines", "requirements-cognition-expanded.txt")])
+def test_installer_builds_explicit_engine_commands_only_and_never_attaches(mode, recipe, tmp_path):
+    if recipe and not (ROOT / recipe).is_file():
+        pytest.skip("reviewed expanded recipe not yet present")
+    python, calls = fixture_python(tmp_path)
+    args = install_args(tmp_path, python) + ([mode] if mode else [])
+    result = run(args, tmp_path)
+    assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-2000:]
+    commands = [json.loads(line) for line in calls.read_text().splitlines()]
+    engine_calls = [args for args in commands if any("requirements-cognition" in value for value in args)]
+    if recipe:
+        assert engine_calls == [["-m", "pip", "install", "--quiet", "--only-binary=:all:", "-r", str(ROOT / recipe)]]
+        assert "Requested reasoning-package recipe installed" in result.stdout
+    else:
+        assert engine_calls == [] and "were not requested" in result.stdout
+    # A designation is queued by the human-invoked script, not self-accepted;
+    # installing packages creates no attachment/activation command.
+    inbox = list((tmp_path / "body/inbox").glob("*.json"))
+    assert inbox and all("capability_attach" not in path.name for path in inbox)
+    assert not list((tmp_path / "home").rglob("greg-body.service"))
+
+
+def test_requested_engine_install_failure_is_truthful_and_keeps_basic_body(tmp_path):
+    python, calls = fixture_python(tmp_path, fail_engines=True)
+    result = run(install_args(tmp_path, python) + ["--with-engines"], tmp_path)
+    assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-2000:]
+    assert "did not fully install" in result.stdout and "Requested reasoning-package recipe installed" not in result.stdout
+    assert (tmp_path / "body/body.json").exists()
+    commands = [json.loads(line) for line in calls.read_text().splitlines()]
+    assert len([args for args in commands if any("requirements-cognition" in value for value in args)]) == 1
+
+
+def test_skip_deps_cannot_silently_override_explicit_engine_install(tmp_path):
+    result = run(dev_args(tmp_path) + ["--with-engines"], tmp_path)
+    assert result.returncode == 64 and "--skip-deps cannot install engines" in result.stderr
+    assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()

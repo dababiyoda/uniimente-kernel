@@ -1,5 +1,10 @@
 # CANONICAL EXECUTION ORDER
 
+## Controlling founder correction — complete machine, 2026-10-01
+
+**Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
+
+
 Repository-grounded execution and reconciliation order. Read together with:
 
 - `FOUNDER_EFFECT_COMPILER.md` — governs interpretation of founder language;
@@ -70,7 +75,8 @@ Current product priority is `collaboration/OPUS-RECONCILIATION.md` and the
 2026-09-11 sequencing correction at the top of Final Build Order. Its first
 embodied persistent mission takes precedence over completing the historical
 Phase Zero catalog. Existing components and history remain preserved. Build
-only the dependency required by the active outcome; do not create another
+the dependencies required by the active outcome first, then continue the next
+unblocked complete-machine requirement; do not create another
 authority plane, mandatory organization or blanket registration prerequisite.
 
 1. Founder-effect compilation for the active mission.
@@ -119,4 +125,4 @@ Governing transaction: Alfonso expresses an authorized intention → GREG conver
 >
 > A capability that adds complexity without strengthening this web must be reconfigured, archived, or killed.
 
-The rule is enforced in code: `greg.capabilities.CapabilityRegistry.register` refuses a capability that declares none of these control points, and `greg/routing.py` turns receipts and independent appraisals into the next mission's routing. "Archived or killed" applies to executable complexity; history and evidence stay preserved as the Final Build Order requires. Termination trigger: a workstream that cannot materially advance the first Verified Embodied Persistent Mission Closure (VEPMC 0 → 1) or strengthen a reusable control node stops and is metabolized. Current dispositions are proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json` for founder review.
+The rule is enforced in code: `greg.capabilities.CapabilityRegistry.register` refuses a capability that declares none of these control points, and `greg/routing.py` turns receipts and independent appraisals into the next mission's routing. "Archived or killed" applies to executable complexity; history and evidence stay preserved as the Final Build Order requires. Work selection: a workstream must advance a remaining Body + Organs + Mind requirement or a reusable control node. Completing a local proof resumes the parent machine objective; VEPMC is an evidence milestone, not a stopping definition. Current dispositions are proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json` for founder review.

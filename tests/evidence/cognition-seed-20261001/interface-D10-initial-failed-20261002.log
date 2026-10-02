@@ -1,0 +1,193 @@
+........................FFF..                                            [100%]
+=================================== FAILURES ===================================
+_ test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[A to B: 2 km. B to C: 3 km. A to C: 9 km. Shortest route from A to C.-cognition.graph-search_trace-cost-5] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-82/test_words_wait_for_signed_att0')
+text = 'A to B: 2 km. B to C: 3 km. A to C: 9 km. Shortest route from A to C.'
+capability = 'cognition.graph', proof = 'search_trace', field = 'cost'
+expected = 5
+
+    @pytest.mark.parametrize("text,capability,proof,field,expected", [
+        (ROUTE, "cognition.graph", "search_trace", "cost", 5),
+        (FLOW, "cognition.flow", "flow_certificate", "value", 4),
+        (LP, "cognition.linear", "linear_program_certificate", "objective_value", 11),
+    ])
+    def test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart(tmp_path, text, capability, proof, field, expected):
+        if capability == "cognition.linear":
+            pytest.importorskip("ortools")
+        home, key, body_id, _ = make_body(tmp_path)
+        console = Console(home, key=key)
+        pid = console.ask(text)
+        proposal = console.proposals[pid]["proposal"]
+        assert proposal["status"] == "PROPOSED", proposal
+        spec = proposal["spec"]
+        console.sign_proposal(pid)
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "VERIFIED"
+            assert not body.journal.replay("mission.achieved")
+        request = next(r for r in status(home)["decisions_required"] if r["kind"] == "CAPABILITY_ATTACH")
+        assert any(c["capability_id"] == capability and c["state"] == "VERIFIED" for c in request["evidence"]["registered"])
+        page = render_home(console).decode()
+        assert "Attach " + capability in page and "separate signed" in page
+        # Real loopback HTTP writes a signed command; it does not mutate registry state itself.
+        server = serve(console, port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            port = server.server_address[1]
+            for fields, origin, code in [({"csrf": "forged", "request_id": request["request_id"], "capability_id": capability}, None, 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability}, "https://evil.example", 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": "fs.write"}, None, 400)]:
+                with pytest.raises(HTTPError) as exc:
+                    _post(port, "/attach", fields, origin=origin)
+                assert exc.value.code == code
+            _post(port, "/attach", {"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability})
+        finally:
+            server.shutdown()
+            server.server_close()
+        envelope = json.loads(next(Layout(home).inbox.glob("*-capability_attach-*.json")).read_text())
+        assert envelope["kind"] == "CAPABILITY_ATTACH" and envelope["body"]["capability_id"] == capability
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "ATTACHED"
+            state = body.engine.book.missions[spec["mission_id"]]
+>           assert state.status == "ACHIEVED", state.blocker
+E           AssertionError: None
+E           assert 'ACTIVE' == 'ACHIEVED'
+E             
+E             - ACHIEVED
+E             + ACTIVE
+
+tests/integration/test_greg_controlled_words.py:66: AssertionError
+_ test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[A to B: 4 items. B to C: 3 items. A to C: 1 items. Maximum flow from A to C.-cognition.flow-flow_certificate-value-4] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-82/test_words_wait_for_signed_att1')
+text = 'A to B: 4 items. B to C: 3 items. A to C: 1 items. Maximum flow from A to C.'
+capability = 'cognition.flow', proof = 'flow_certificate', field = 'value'
+expected = 4
+
+    @pytest.mark.parametrize("text,capability,proof,field,expected", [
+        (ROUTE, "cognition.graph", "search_trace", "cost", 5),
+        (FLOW, "cognition.flow", "flow_certificate", "value", 4),
+        (LP, "cognition.linear", "linear_program_certificate", "objective_value", 11),
+    ])
+    def test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart(tmp_path, text, capability, proof, field, expected):
+        if capability == "cognition.linear":
+            pytest.importorskip("ortools")
+        home, key, body_id, _ = make_body(tmp_path)
+        console = Console(home, key=key)
+        pid = console.ask(text)
+        proposal = console.proposals[pid]["proposal"]
+        assert proposal["status"] == "PROPOSED", proposal
+        spec = proposal["spec"]
+        console.sign_proposal(pid)
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "VERIFIED"
+            assert not body.journal.replay("mission.achieved")
+        request = next(r for r in status(home)["decisions_required"] if r["kind"] == "CAPABILITY_ATTACH")
+        assert any(c["capability_id"] == capability and c["state"] == "VERIFIED" for c in request["evidence"]["registered"])
+        page = render_home(console).decode()
+        assert "Attach " + capability in page and "separate signed" in page
+        # Real loopback HTTP writes a signed command; it does not mutate registry state itself.
+        server = serve(console, port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            port = server.server_address[1]
+            for fields, origin, code in [({"csrf": "forged", "request_id": request["request_id"], "capability_id": capability}, None, 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability}, "https://evil.example", 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": "fs.write"}, None, 400)]:
+                with pytest.raises(HTTPError) as exc:
+                    _post(port, "/attach", fields, origin=origin)
+                assert exc.value.code == code
+            _post(port, "/attach", {"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability})
+        finally:
+            server.shutdown()
+            server.server_close()
+        envelope = json.loads(next(Layout(home).inbox.glob("*-capability_attach-*.json")).read_text())
+        assert envelope["kind"] == "CAPABILITY_ATTACH" and envelope["body"]["capability_id"] == capability
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "ATTACHED"
+            state = body.engine.book.missions[spec["mission_id"]]
+>           assert state.status == "ACHIEVED", state.blocker
+E           AssertionError: None
+E           assert 'ACTIVE' == 'ACHIEVED'
+E             
+E             - ACHIEVED
+E             + ACTIVE
+
+tests/integration/test_greg_controlled_words.py:66: AssertionError
+_ test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[Maximize 3 x + 2 y. x + y <= 4. x between 0 and 3. y between 0 and 4.-cognition.linear-linear_program_certificate-objective_value-11] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-82/test_words_wait_for_signed_att2')
+text = 'Maximize 3 x + 2 y. x + y <= 4. x between 0 and 3. y between 0 and 4.'
+capability = 'cognition.linear', proof = 'linear_program_certificate'
+field = 'objective_value', expected = 11
+
+    @pytest.mark.parametrize("text,capability,proof,field,expected", [
+        (ROUTE, "cognition.graph", "search_trace", "cost", 5),
+        (FLOW, "cognition.flow", "flow_certificate", "value", 4),
+        (LP, "cognition.linear", "linear_program_certificate", "objective_value", 11),
+    ])
+    def test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart(tmp_path, text, capability, proof, field, expected):
+        if capability == "cognition.linear":
+            pytest.importorskip("ortools")
+        home, key, body_id, _ = make_body(tmp_path)
+        console = Console(home, key=key)
+        pid = console.ask(text)
+        proposal = console.proposals[pid]["proposal"]
+        assert proposal["status"] == "PROPOSED", proposal
+        spec = proposal["spec"]
+        console.sign_proposal(pid)
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "VERIFIED"
+            assert not body.journal.replay("mission.achieved")
+        request = next(r for r in status(home)["decisions_required"] if r["kind"] == "CAPABILITY_ATTACH")
+        assert any(c["capability_id"] == capability and c["state"] == "VERIFIED" for c in request["evidence"]["registered"])
+        page = render_home(console).decode()
+        assert "Attach " + capability in page and "separate signed" in page
+        # Real loopback HTTP writes a signed command; it does not mutate registry state itself.
+        server = serve(console, port=0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            port = server.server_address[1]
+            for fields, origin, code in [({"csrf": "forged", "request_id": request["request_id"], "capability_id": capability}, None, 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability}, "https://evil.example", 403),
+                                        ({"csrf": console.csrf, "request_id": request["request_id"], "capability_id": "fs.write"}, None, 400)]:
+                with pytest.raises(HTTPError) as exc:
+                    _post(port, "/attach", fields, origin=origin)
+                assert exc.value.code == code
+            _post(port, "/attach", {"csrf": console.csrf, "request_id": request["request_id"], "capability_id": capability})
+        finally:
+            server.shutdown()
+            server.server_close()
+        envelope = json.loads(next(Layout(home).inbox.glob("*-capability_attach-*.json")).read_text())
+        assert envelope["kind"] == "CAPABILITY_ATTACH" and envelope["body"]["capability_id"] == capability
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            assert body.registry.state[capability] == "ATTACHED"
+            state = body.engine.book.missions[spec["mission_id"]]
+>           assert state.status == "ACHIEVED", state.blocker
+E           AssertionError: None
+E           assert 'ACTIVE' == 'ACHIEVED'
+E             
+E             - ACHIEVED
+E             + ACTIVE
+
+tests/integration/test_greg_controlled_words.py:66: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_greg_controlled_words.py::test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[A to B: 2 km. B to C: 3 km. A to C: 9 km. Shortest route from A to C.-cognition.graph-search_trace-cost-5]
+FAILED tests/integration/test_greg_controlled_words.py::test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[A to B: 4 items. B to C: 3 items. A to C: 1 items. Maximum flow from A to C.-cognition.flow-flow_certificate-value-4]
+FAILED tests/integration/test_greg_controlled_words.py::test_words_wait_for_signed_attachment_then_execute_verify_and_survive_restart[Maximize 3 x + 2 y. x + y <= 4. x between 0 and 3. y between 0 and 4.-cognition.linear-linear_program_certificate-objective_value-11]
+3 failed, 26 passed in 7.07s

@@ -1,5 +1,10 @@
 > Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
 
+## Controlling founder correction — complete machine, 2026-10-01
+
+**Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
+
+
 > **Project cognition prerequisite:** use `docs/PROJECT_COGNITION_SOP.md` and `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md` to reconstruct the relevant project source field before applying this protocol. Source coverage must be stated; do not claim inaccessible conversations were inspected.
 
 # Recursive Collaboration Protocol

@@ -1,0 +1,51 @@
+{
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+    "achieved_claimed": true,
+    "applicable_observations_revalidated": true,
+    "approval_boundaries_honored": true,
+    "approval_boundary_encountered": false,
+    "arrived_via_inbox": true,
+    "chain_intact": true,
+    "checks_rederived_from_receipts": true,
+    "deliveries_bound_to_evidence": true,
+    "exactly_once": true,
+    "founder_signature_verified": true,
+    "preconditions_honored": true,
+    "registered_once": true,
+    "world_reobserved": false
+  },
+  "findings": [],
+  "head": "sha256:d27d31c0e5ded401ea131e6e71b7fef854dace8169aa37549b5f3ec639a2741c",
+  "limits": "shares reviewed Kernel code; not an independent implementation; semantic snapshot/source structure only, no fresh-world truth, strategy usefulness or observed outcome credit",
+  "mission_id": "m:semantic-title-short",
+  "semantic_snapshot_verification": [
+    {
+      "artifact_verification": {
+        "artifact_digest": "sha256:bbc9879fa2a18c6cbd9a4c84009d91ce8f82e308d197da1915d163564a16cc03",
+        "checks": {
+          "artifact_sources_match_input": true,
+          "bound_extractions": true,
+          "claims_match_artifact": true,
+          "typed_artifact": true
+        },
+        "dissent": [
+          "Only exact extracts are bound; synthesis is provisional. A source may itself be false or contaminated."
+        ],
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+        "verdict": "STRUCTURALLY_VERIFIED"
+      },
+      "check_id": "cognitive-answer",
+      "current_world_observation": false,
+      "empirical_validity": "WORLD_UNVERIFIED",
+      "model_reexecuted": false,
+      "outcome_credit": false,
+      "receipt_id": "sha256:2cfcce6bcd24b7a79920db3a4ac3d1d466aa363e5311f4bbfea2053df6ef5654",
+      "scope": "signed source snapshot and provisional proposal structure"
+    }
+  ],
+  "verdict": "VERIFIED",
+  "review_source": "working tree after direct-original artifact correction; retained original mission input and original actual local model result",
+  "reviewed_at": "2026-10-01T20:22:48.039159+00:00",
+  "authority": "per-rehearsal laboratory key, not Alfonso"
+}

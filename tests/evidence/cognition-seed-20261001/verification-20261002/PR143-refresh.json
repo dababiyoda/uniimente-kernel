@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-10-02T15:37:50.071023+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "previous_extraction_pin": "7105a7cbd013edd6bce88b9500e2b4477635c912",
+  "current_pr143_head": "68b484bb45a681655274c8b23d7722424bb99488",
+  "current_main": "19fa33c22684a8953e3607e3aaf0e5fbd926bd88",
+  "command": [
+    "git",
+    "diff",
+    "7105a7cbd013edd6bce88b9500e2b4477635c912",
+    "68b484bb45a681655274c8b23d7722424bb99488",
+    "--",
+    "greg/cognition/linear.py",
+    "greg/console.py",
+    "greg/genesis.py",
+    "greg/templates.py"
+  ],
+  "returncode": 0,
+  "diff_sha256": "1fbeddf4f1ae979370653aaf0a20ddfbeac52800b33bb78c6a42ee8d0862667f",
+  "paths": [
+    "greg/cognition/linear.py",
+    "greg/console.py",
+    "greg/genesis.py",
+    "greg/templates.py"
+  ],
+  "result": "actual new LP negative certificate/follow-up code inspected; current native finite-bound adapter preserves uncompelled negative abstention; broader follow-up and unbounded ray qualification remain linked reuse experiment",
+  "implementation_adopted": false,
+  "excluded": "competing registry/provider-genesis runtime not imported wholesale; PR titles/body are not executable evidence"
+}

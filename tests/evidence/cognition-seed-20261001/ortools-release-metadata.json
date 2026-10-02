@@ -1,0 +1,831 @@
+{
+  "version": "9.15.6755",
+  "requires_dist": [
+    "absl-py>=2.0.0",
+    "numpy>=2.0.2",
+    "pandas>=2.0.0",
+    "protobuf<6.34,>=6.33.1",
+    "typing-extensions>=4.12",
+    "immutabledict>=3.0.0"
+  ],
+  "requires_python": ">=3.9",
+  "license": "Apache 2.0",
+  "releases": [
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "e8026df7c8f0c56b69e7f821af852cd3232a70d7ef23ab8ebc1a4717297d7532"
+      },
+      "digests": {
+        "blake2b_256": "e4cd0b6cd038bca8fb3eec55df289c9946ef35cfc572399aea4c59cdc893480b",
+        "md5": "c2114c4477c4c8970540cbfd4bd419cd",
+        "sha256": "e4559603031ed371c5d86b1e9357fa49fb89236452e4b9bc429a0cf4a2fab05d"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp310-cp310-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "c2114c4477c4c8970540cbfd4bd419cd",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp310",
+      "requires_python": ">=3.9",
+      "size": 23863273,
+      "upload_time": "2026-01-14T15:38:48",
+      "upload_time_iso_8601": "2026-01-14T15:38:48.276894Z",
+      "url": "https://files.pythonhosted.org/packages/e4/cd/0b6cd038bca8fb3eec55df289c9946ef35cfc572399aea4c59cdc893480b/ortools-9.15.6755-cp310-cp310-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "e8026df7c8f0c56b69e7f821af852cd3232a70d7ef23ab8ebc1a4717297d7532"
+      },
+      "digests": {
+        "blake2b_256": "9ca1f0befea070b3166c1b003b86789dd214ad9689cb61680b27886116085240",
+        "md5": "b4fde9f04e330383149c0ab1cf8a3d28",
+        "sha256": "5bb2b434f4ae01ce81813d01db722d9dedcc452aede681211ee4d4df8963a410"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp310-cp310-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "b4fde9f04e330383149c0ab1cf8a3d28",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp310",
+      "requires_python": ">=3.9",
+      "size": 21889603,
+      "upload_time": "2026-01-14T15:38:51",
+      "upload_time_iso_8601": "2026-01-14T15:38:51.124261Z",
+      "url": "https://files.pythonhosted.org/packages/9c/a1/f0befea070b3166c1b003b86789dd214ad9689cb61680b27886116085240/ortools-9.15.6755-cp310-cp310-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "115f3db77a13931ab53499ab4c82a3ab1bd40913df84a45b66bb61930f43defd",
+        "md5": "b6c755f46a356b0f088ca2a8771dc773",
+        "sha256": "0b26655d25ab28030aef30e675e24d96d35940974de3a70ace01cf82ca301b69"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp310-cp310-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "b6c755f46a356b0f088ca2a8771dc773",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp310",
+      "requires_python": ">=3.9",
+      "size": 27632261,
+      "upload_time": "2026-01-14T15:37:43",
+      "upload_time_iso_8601": "2026-01-14T15:37:43.936570Z",
+      "url": "https://files.pythonhosted.org/packages/11/5f/3db77a13931ab53499ab4c82a3ab1bd40913df84a45b66bb61930f43defd/ortools-9.15.6755-cp310-cp310-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "496de822f983a9ddc020fd37172f1008b4d385381d3477a125aa23dbe906843b",
+        "md5": "e89ecadf8f1d8a2deced6bc8967ab20e",
+        "sha256": "03424136aa48555e7f4d1bc73edeb99f80ec35a2e5f17700e2072640344980fc"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "e89ecadf8f1d8a2deced6bc8967ab20e",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp310",
+      "requires_python": ">=3.9",
+      "size": 29802795,
+      "upload_time": "2026-01-14T15:37:47",
+      "upload_time_iso_8601": "2026-01-14T15:37:47.109400Z",
+      "url": "https://files.pythonhosted.org/packages/49/6d/e822f983a9ddc020fd37172f1008b4d385381d3477a125aa23dbe906843b/ortools-9.15.6755-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "ec6cdf214167dd789403948f1d4143b45d280f1905e51a943f4ab0cb03d57651"
+      },
+      "digests": {
+        "blake2b_256": "a80cf2353926dbe150cdf974a5cec7b12923362ef9adf4bbef64ea1159a416a3",
+        "md5": "cc6f41406915e95513fcfadf946b386c",
+        "sha256": "4f4964f8ed47ac76b5cfd23238618299f5a3c289d8e0ed66a75885ba9766eb6f"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp310-cp310-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "cc6f41406915e95513fcfadf946b386c",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp310",
+      "requires_python": ">=3.9",
+      "size": 23846401,
+      "upload_time": "2026-01-14T15:39:38",
+      "upload_time_iso_8601": "2026-01-14T15:39:38.357245Z",
+      "url": "https://files.pythonhosted.org/packages/a8/0c/f2353926dbe150cdf974a5cec7b12923362ef9adf4bbef64ea1159a416a3/ortools-9.15.6755-cp310-cp310-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "e8026df7c8f0c56b69e7f821af852cd3232a70d7ef23ab8ebc1a4717297d7532"
+      },
+      "digests": {
+        "blake2b_256": "0b16a08369f1d2022b5aea8d9ceede08df417622015447b817019e11ef4a1d9b",
+        "md5": "806e0d930fe8862519e7ff5cd7020b35",
+        "sha256": "55e291560d2fdb9590656cbee06ba99ee7f2476bd7d316ff757eeab33e9b20d6"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp311-cp311-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "806e0d930fe8862519e7ff5cd7020b35",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp311",
+      "requires_python": ">=3.9",
+      "size": 23886068,
+      "upload_time": "2026-01-14T15:38:55",
+      "upload_time_iso_8601": "2026-01-14T15:38:55.095851Z",
+      "url": "https://files.pythonhosted.org/packages/0b/16/a08369f1d2022b5aea8d9ceede08df417622015447b817019e11ef4a1d9b/ortools-9.15.6755-cp311-cp311-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "e8026df7c8f0c56b69e7f821af852cd3232a70d7ef23ab8ebc1a4717297d7532"
+      },
+      "digests": {
+        "blake2b_256": "620f302f019d08ec5870fae6d0d2075d2fbcef2f39ef8104d2ae6563b2c7a0b5",
+        "md5": "f287e469d7f4aa4ebc1ae76b25a50ce8",
+        "sha256": "e51ae55569650e5381fd6e50c655ccf6368a9532f5720ea41396bb90e0247a21"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp311-cp311-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "f287e469d7f4aa4ebc1ae76b25a50ce8",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp311",
+      "requires_python": ">=3.9",
+      "size": 21910495,
+      "upload_time": "2026-01-14T15:38:58",
+      "upload_time_iso_8601": "2026-01-14T15:38:58.429357Z",
+      "url": "https://files.pythonhosted.org/packages/62/0f/302f019d08ec5870fae6d0d2075d2fbcef2f39ef8104d2ae6563b2c7a0b5/ortools-9.15.6755-cp311-cp311-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "e20aaca166f878189acadaadb43d6f97aab1288a082947e7aeb56d866915daed",
+        "md5": "8aebea086b3a84c7a71c305bbf23eb26",
+        "sha256": "c3bcccd15ef3fc6ac10bfa11630ba6dfe437d4fd1374a5b33f4773b7fee0f877"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "8aebea086b3a84c7a71c305bbf23eb26",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp311",
+      "requires_python": ">=3.9",
+      "size": 27649965,
+      "upload_time": "2026-01-14T15:37:50",
+      "upload_time_iso_8601": "2026-01-14T15:37:50.311470Z",
+      "url": "https://files.pythonhosted.org/packages/e2/0a/aca166f878189acadaadb43d6f97aab1288a082947e7aeb56d866915daed/ortools-9.15.6755-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "0a7c8c732ddea429ad009553ee278f9a4aacb1e8b950a76647c36514d5619a1d",
+        "md5": "a3e3536e4132f23536696b34a1a82c9a",
+        "sha256": "7a85a68ffb3fc1967e78624f40d3707aae459e82e3f2d9fe02e91788b3c7bf2a"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "a3e3536e4132f23536696b34a1a82c9a",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp311",
+      "requires_python": ">=3.9",
+      "size": 29821193,
+      "upload_time": "2026-01-14T15:37:53",
+      "upload_time_iso_8601": "2026-01-14T15:37:53.961141Z",
+      "url": "https://files.pythonhosted.org/packages/0a/7c/8c732ddea429ad009553ee278f9a4aacb1e8b950a76647c36514d5619a1d/ortools-9.15.6755-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "cf37a9e211022467186c50d8a28bebe83c93e5c484c747c6b1ef6c561d37b69b"
+      },
+      "digests": {
+        "blake2b_256": "a3302574d469613b8fe14664ffc7b01887a0afa385f6052bb8a1194e3df15e4a",
+        "md5": "ed88bba5ee6ca16fa584f6b9e804a267",
+        "sha256": "781fb09d6c9f46015291f706bd7c7e0815db1bec6e92c74716342fb7ea2d0532"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp311-cp311-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "ed88bba5ee6ca16fa584f6b9e804a267",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp311",
+      "requires_python": ">=3.9",
+      "size": 23861559,
+      "upload_time": "2026-01-14T15:39:42",
+      "upload_time_iso_8601": "2026-01-14T15:39:42.166344Z",
+      "url": "https://files.pythonhosted.org/packages/a3/30/2574d469613b8fe14664ffc7b01887a0afa385f6052bb8a1194e3df15e4a/ortools-9.15.6755-cp311-cp311-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "6afc9fa53f1a13710e6183df4d00fe4988c79a55b501e282645d49f1e250437f",
+        "md5": "5176c42424d2542486255cfd6cc107c6",
+        "sha256": "ae1c6e1fd844b4d756b22eb6c0ed574ea4342ee206d807c4f903039e748228fa"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp312-cp312-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "5176c42424d2542486255cfd6cc107c6",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp312",
+      "requires_python": ">=3.9",
+      "size": 23926322,
+      "upload_time": "2026-01-14T15:39:01",
+      "upload_time_iso_8601": "2026-01-14T15:39:01.626048Z",
+      "url": "https://files.pythonhosted.org/packages/6a/fc/9fa53f1a13710e6183df4d00fe4988c79a55b501e282645d49f1e250437f/ortools-9.15.6755-cp312-cp312-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "f1b67e6618ef7a88e8eb706a8a876806b4d336f1bef8c574f8a02d2da3e483ef",
+        "md5": "ae4c75d9fee6c6fa154a78158e2fc322",
+        "sha256": "1e16686c2b457fa6242c474ab890ee1712347ab53678e0d2fab307ae03e97a4b"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp312-cp312-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "ae4c75d9fee6c6fa154a78158e2fc322",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp312",
+      "requires_python": ">=3.9",
+      "size": 21912940,
+      "upload_time": "2026-01-14T15:39:04",
+      "upload_time_iso_8601": "2026-01-14T15:39:04.403794Z",
+      "url": "https://files.pythonhosted.org/packages/f1/b6/7e6618ef7a88e8eb706a8a876806b4d336f1bef8c574f8a02d2da3e483ef/ortools-9.15.6755-cp312-cp312-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "86a937cb31fc5ffbec2650ebb0d2538a83842b5693a788a0ec6057559dab1169",
+        "md5": "27b0fda65d3818b7127a10eacb1b2eca",
+        "sha256": "3cd6bec0a2e00e3891a53e3b436f45a1000269f302085572f49e9856b7f8eaf0"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "27b0fda65d3818b7127a10eacb1b2eca",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp312",
+      "requires_python": ">=3.9",
+      "size": 27646561,
+      "upload_time": "2026-01-14T15:37:57",
+      "upload_time_iso_8601": "2026-01-14T15:37:57.414182Z",
+      "url": "https://files.pythonhosted.org/packages/86/a9/37cb31fc5ffbec2650ebb0d2538a83842b5693a788a0ec6057559dab1169/ortools-9.15.6755-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "490f6d6d722102a0ceccf4a5038e2bc91d023da84a6dba98482a4634df3d27ab",
+        "md5": "52380bfb41733ef8e9340eee214ca3a5",
+        "sha256": "033836c0eb33bc72697a299e0caedbb25fc9d1cee0b13832d69cb30405f57b3e"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "52380bfb41733ef8e9340eee214ca3a5",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp312",
+      "requires_python": ">=3.9",
+      "size": 29838435,
+      "upload_time": "2026-01-14T15:38:01",
+      "upload_time_iso_8601": "2026-01-14T15:38:01.047039Z",
+      "url": "https://files.pythonhosted.org/packages/49/0f/6d6d722102a0ceccf4a5038e2bc91d023da84a6dba98482a4634df3d27ab/ortools-9.15.6755-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "a50b6306309b25be452f74d76a94b2b59251b45cf6201f47f9d60d0a5a14cc27"
+      },
+      "digests": {
+        "blake2b_256": "83a25aaf12e34bcd47ae16e70ae81b5c7fbc209da0615c0b79a93c9a0b1cda02",
+        "md5": "970fc3bf10d4110aeb0acca08382537f",
+        "sha256": "487796301fd9dad55f9cf21f9313c834697f74306d1a59f002e152862f8eb1b5"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp312-cp312-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "970fc3bf10d4110aeb0acca08382537f",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp312",
+      "requires_python": ">=3.9",
+      "size": 23883161,
+      "upload_time": "2026-01-14T15:39:45",
+      "upload_time_iso_8601": "2026-01-14T15:39:45.104023Z",
+      "url": "https://files.pythonhosted.org/packages/83/a2/5aaf12e34bcd47ae16e70ae81b5c7fbc209da0615c0b79a93c9a0b1cda02/ortools-9.15.6755-cp312-cp312-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "f153e21c54ff10002cc2e2b9748012ffc324ec32ea4acdcc85e190a920ab2766",
+        "md5": "e413fe435faf9511c44e2c428c47f8d7",
+        "sha256": "27a10474e62c9dceed37cfa0e4845c5ffaf792138ebf5b61483771b96f1290b6"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "e413fe435faf9511c44e2c428c47f8d7",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 23927705,
+      "upload_time": "2026-01-14T15:39:07",
+      "upload_time_iso_8601": "2026-01-14T15:39:07.290548Z",
+      "url": "https://files.pythonhosted.org/packages/f1/53/e21c54ff10002cc2e2b9748012ffc324ec32ea4acdcc85e190a920ab2766/ortools-9.15.6755-cp313-cp313-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "cee6f7019048ffdf41f8a1bff6815b2203cf7b9117ba9e26bf46c4585421d1c4",
+        "md5": "00a6560be94212fcccf8fecc4ce03fcd",
+        "sha256": "076565b803c85c4f87863e0616f537dd37f99c03e6f092e4068404f7b425d2b0"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "00a6560be94212fcccf8fecc4ce03fcd",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 21914246,
+      "upload_time": "2026-01-14T15:39:10",
+      "upload_time_iso_8601": "2026-01-14T15:39:10.584140Z",
+      "url": "https://files.pythonhosted.org/packages/ce/e6/f7019048ffdf41f8a1bff6815b2203cf7b9117ba9e26bf46c4585421d1c4/ortools-9.15.6755-cp313-cp313-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "8dadaaacd340918b03e22c42f6ae4a9c72aac09810b4b398e99a7eeee58d9c42",
+        "md5": "9a8ef23fae4df1fff11cdeb15b61ae34",
+        "sha256": "b85bd20259b146abce5e0721ce1bfd8fd273efc904216aa3be178c31b6d34057"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "9a8ef23fae4df1fff11cdeb15b61ae34",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 27646600,
+      "upload_time": "2026-01-14T15:38:04",
+      "upload_time_iso_8601": "2026-01-14T15:38:04.790266Z",
+      "url": "https://files.pythonhosted.org/packages/8d/ad/aaacd340918b03e22c42f6ae4a9c72aac09810b4b398e99a7eeee58d9c42/ortools-9.15.6755-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "08b928d5efb832190b6edfccc5a703e88e64779c1eda34a42ea96d03307236c0",
+        "md5": "71ad70527e596b274a7b9143469a5ac0",
+        "sha256": "ebd5aea00374e3aad7a78de59058aca5e871a26a3c385cd0860ef1d685d03c9a"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "71ad70527e596b274a7b9143469a5ac0",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 29838741,
+      "upload_time": "2026-01-14T15:38:07",
+      "upload_time_iso_8601": "2026-01-14T15:38:07.945521Z",
+      "url": "https://files.pythonhosted.org/packages/08/b9/28d5efb832190b6edfccc5a703e88e64779c1eda34a42ea96d03307236c0/ortools-9.15.6755-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "a353ada4146ae491d7798c6eb045d93135158c0b66030853c7cd9607768dda59",
+        "md5": "83fb7688d4b81bef1a305fe9dc9e2868",
+        "sha256": "82b4a8e6e4f9380b453ab5fa4382ea7ee91e628f9b8be89d9ad760b33fca3323"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "83fb7688d4b81bef1a305fe9dc9e2868",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 27681510,
+      "upload_time": "2026-01-14T15:38:11",
+      "upload_time_iso_8601": "2026-01-14T15:38:11.033765Z",
+      "url": "https://files.pythonhosted.org/packages/a3/53/ada4146ae491d7798c6eb045d93135158c0b66030853c7cd9607768dda59/ortools-9.15.6755-cp313-cp313t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "32e6239e96912fc8c4e0e917e72ec413983bc042cd9a0b20c3c6a7e43fc3002b",
+        "md5": "15c1a348716fbc4cef1ab88afdf70163",
+        "sha256": "2d1f2fb2088e8953ccb902e68ffd06032cce0c7dcf7268b6135f3b6c553ca52b"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "15c1a348716fbc4cef1ab88afdf70163",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 29850935,
+      "upload_time": "2026-01-14T15:38:14",
+      "upload_time_iso_8601": "2026-01-14T15:38:14.595471Z",
+      "url": "https://files.pythonhosted.org/packages/32/e6/239e96912fc8c4e0e917e72ec413983bc042cd9a0b20c3c6a7e43fc3002b/ortools-9.15.6755-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "b23616bfcdd16ba4c5516fa1b49816834f1f0c961459dccf49c3d520e50ea759"
+      },
+      "digests": {
+        "blake2b_256": "be22ab894b6f846b4b1a89795c1ba966834e56cac394c4cf2b72433909739982",
+        "md5": "2ad805a0f1b6a89978d08d7578f478ca",
+        "sha256": "caac1d48b967adb877da2abcaf82c28f0f908a7cc208a6a1bbe01bc69590816c"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp313-cp313-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "2ad805a0f1b6a89978d08d7578f478ca",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp313",
+      "requires_python": ">=3.9",
+      "size": 23908100,
+      "upload_time": "2026-01-14T15:39:48",
+      "upload_time_iso_8601": "2026-01-14T15:39:48.398159Z",
+      "url": "https://files.pythonhosted.org/packages/be/22/ab894b6f846b4b1a89795c1ba966834e56cac394c4cf2b72433909739982/ortools-9.15.6755-cp313-cp313-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "53ef53a172ad12cf0d762b9a5af681b1f13f1b4105b38bf65c2b383d530ed97f",
+        "md5": "6ffd85841e27c0c061e131164d0706f7",
+        "sha256": "acdf06a167933307608e7eba23a9490255933504df44c8de5f62c48656c29688"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "6ffd85841e27c0c061e131164d0706f7",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 23916963,
+      "upload_time": "2026-01-14T15:39:13",
+      "upload_time_iso_8601": "2026-01-14T15:39:13.282092Z",
+      "url": "https://files.pythonhosted.org/packages/53/ef/53a172ad12cf0d762b9a5af681b1f13f1b4105b38bf65c2b383d530ed97f/ortools-9.15.6755-cp314-cp314-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "1354ed73ec00369fb6d6c71049d62e4b7c87c918b61f86ddd55a11c20ada395e",
+        "md5": "7ab36f73a65e931d578c23064f1123ea",
+        "sha256": "1a0677270b0cd317a6b8dae42514264eaf5da5756c5bc7215eeea409424577df"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "7ab36f73a65e931d578c23064f1123ea",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 21923649,
+      "upload_time": "2026-01-14T15:39:16",
+      "upload_time_iso_8601": "2026-01-14T15:39:16.831363Z",
+      "url": "https://files.pythonhosted.org/packages/13/54/ed73ec00369fb6d6c71049d62e4b7c87c918b61f86ddd55a11c20ada395e/ortools-9.15.6755-cp314-cp314-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "1ce0ac57dd43eaadd73748bb542b30912e16c7dbf3a75f393f69efb8a1a2f032",
+        "md5": "68e4959cf362f13d5295adda16c3e3a4",
+        "sha256": "899b92afe3f775ab5867b9a8aa2850f81f2d95232db9b4ceec3456d69e6b8528"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "68e4959cf362f13d5295adda16c3e3a4",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 27657273,
+      "upload_time": "2026-01-14T15:38:18",
+      "upload_time_iso_8601": "2026-01-14T15:38:18.375309Z",
+      "url": "https://files.pythonhosted.org/packages/1c/e0/ac57dd43eaadd73748bb542b30912e16c7dbf3a75f393f69efb8a1a2f032/ortools-9.15.6755-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "b2e011144feb4ddadc491dc9d833d3a2080e6556245f912bebe2c0c7e174f2a1",
+        "md5": "db74d3216add015a080fd0675470cd2d",
+        "sha256": "7181183cdcafe2b0d83ca5505b65048c7953dc7b5ad479361dded607964cc1b3"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "db74d3216add015a080fd0675470cd2d",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 29843939,
+      "upload_time": "2026-01-14T15:38:21",
+      "upload_time_iso_8601": "2026-01-14T15:38:21.457304Z",
+      "url": "https://files.pythonhosted.org/packages/b2/e0/11144feb4ddadc491dc9d833d3a2080e6556245f912bebe2c0c7e174f2a1/ortools-9.15.6755-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "46990932d6d7d6ad326adf68f4ce9063ef07db7e9859859dddbcd200102aedff",
+        "md5": "5b68e1e884ba699267a5146f1bf6bee3",
+        "sha256": "d9d07cddca201e25e2e219006a9d6cda10c7e9ee2c712c50d19d508f9ed8a888"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "5b68e1e884ba699267a5146f1bf6bee3",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 27682088,
+      "upload_time": "2026-01-14T15:38:25",
+      "upload_time_iso_8601": "2026-01-14T15:38:25.174041Z",
+      "url": "https://files.pythonhosted.org/packages/46/99/0932d6d7d6ad326adf68f4ce9063ef07db7e9859859dddbcd200102aedff/ortools-9.15.6755-cp314-cp314t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "0e4dbd75961e2c82db69bb41dd2c4a82131ca580e997485be2d5f59f8d26f31e",
+        "md5": "fb70e1466ae020d976f9f03ef6b6ae74",
+        "sha256": "990838ad66a052e72a50e69da500878710e3420e91717fe88bf3071995caba9e"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "fb70e1466ae020d976f9f03ef6b6ae74",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 29851493,
+      "upload_time": "2026-01-14T15:38:28",
+      "upload_time_iso_8601": "2026-01-14T15:38:28.168324Z",
+      "url": "https://files.pythonhosted.org/packages/0e/4d/bd75961e2c82db69bb41dd2c4a82131ca580e997485be2d5f59f8d26f31e/ortools-9.15.6755-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "df83f44b4f15c527938f5556ec491e86c768b1dc801232289dbefb46ef310f6a"
+      },
+      "digests": {
+        "blake2b_256": "9697771515ba3a05da3903b7da55a190d9f88f36a08c4bf848852e0ea4e3a731",
+        "md5": "2ddb4b447e2042310e11980499e3e250",
+        "sha256": "afabb869e5fabeb704bd8147b22bf8139dee042e55fabd0d447a996428009e0c"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp314-cp314-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "2ddb4b447e2042310e11980499e3e250",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp314",
+      "requires_python": ">=3.9",
+      "size": 24673633,
+      "upload_time": "2026-01-14T15:39:51",
+      "upload_time_iso_8601": "2026-01-14T15:39:51.212933Z",
+      "url": "https://files.pythonhosted.org/packages/96/97/771515ba3a05da3903b7da55a190d9f88f36a08c4bf848852e0ea4e3a731/ortools-9.15.6755-cp314-cp314-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "547b862063c84b0862ff31d6d5b89b45b743a27cf9c46709d3f9672820557214"
+      },
+      "digests": {
+        "blake2b_256": "f862f5d4e24a641bbb5a1c38515080af4d8732e885022900454133c9780c1c60",
+        "md5": "a0f27186a327d37e87446168c9557e18",
+        "sha256": "73b229dbc2b225441cb3bc5790ea8d55f14e3cd7f32d5185784f60b102308457"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp39-cp39-macosx_10_15_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "a0f27186a327d37e87446168c9557e18",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp39",
+      "requires_python": ">=3.9",
+      "size": 23864025,
+      "upload_time": "2026-01-14T15:39:19",
+      "upload_time_iso_8601": "2026-01-14T15:39:19.739935Z",
+      "url": "https://files.pythonhosted.org/packages/f8/62/f5d4e24a641bbb5a1c38515080af4d8732e885022900454133c9780c1c60/ortools-9.15.6755-cp39-cp39-macosx_10_15_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "547b862063c84b0862ff31d6d5b89b45b743a27cf9c46709d3f9672820557214"
+      },
+      "digests": {
+        "blake2b_256": "936841979bad04fadbf9673ed330ecb08fc12ed6b8d5752295bcd69eff21d008",
+        "md5": "b574de81971d9e4594cb24f1350ce6e1",
+        "sha256": "8881e9620bf0bf8303891e171feb03d6e86c75a05fb9325a09ae7fbf93093f4a"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp39-cp39-macosx_11_0_arm64.whl",
+      "has_sig": false,
+      "md5_digest": "b574de81971d9e4594cb24f1350ce6e1",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp39",
+      "requires_python": ">=3.9",
+      "size": 21890702,
+      "upload_time": "2026-01-14T15:39:22",
+      "upload_time_iso_8601": "2026-01-14T15:39:22.545312Z",
+      "url": "https://files.pythonhosted.org/packages/93/68/41979bad04fadbf9673ed330ecb08fc12ed6b8d5752295bcd69eff21d008/ortools-9.15.6755-cp39-cp39-macosx_11_0_arm64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "3c5b4f7adb5ebdf1c0a5dcbb631787a6ea6b60d59676b63d2b7eb199d690dab1",
+        "md5": "091c97e2c7f852292619f0e69632e4bf",
+        "sha256": "87c73acda29f03ded74c7d2388f6efcbe45fa45a3f2bae4d85e1b5f1cc4cd9c1"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp39-cp39-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "has_sig": false,
+      "md5_digest": "091c97e2c7f852292619f0e69632e4bf",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp39",
+      "requires_python": ">=3.9",
+      "size": 27635070,
+      "upload_time": "2026-01-14T15:38:31",
+      "upload_time_iso_8601": "2026-01-14T15:38:31.161163Z",
+      "url": "https://files.pythonhosted.org/packages/3c/5b/4f7adb5ebdf1c0a5dcbb631787a6ea6b60d59676b63d2b7eb199d690dab1/ortools-9.15.6755-cp39-cp39-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "fb373ef11eed8e84ba0b59675ec06489ff6d317f6b2a773396e1f6ad8cd0b598"
+      },
+      "digests": {
+        "blake2b_256": "34c29d80b155adc3d132d17110801fad322514e9a2901bfeba471b169929f5f6",
+        "md5": "9e5655859634aee66385dcbb70701279",
+        "sha256": "76150c4dd5927d0ab138344a5121b1f63e32501371ca93e632e2e10d8261064b"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "has_sig": false,
+      "md5_digest": "9e5655859634aee66385dcbb70701279",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp39",
+      "requires_python": ">=3.9",
+      "size": 29803462,
+      "upload_time": "2026-01-14T15:37:15",
+      "upload_time_iso_8601": "2026-01-14T15:37:15.704449Z",
+      "url": "https://files.pythonhosted.org/packages/34/c2/9d80b155adc3d132d17110801fad322514e9a2901bfeba471b169929f5f6/ortools-9.15.6755-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    },
+    {
+      "comment_text": null,
+      "core-metadata": {
+        "sha256": "ec6cdf214167dd789403948f1d4143b45d280f1905e51a943f4ab0cb03d57651"
+      },
+      "digests": {
+        "blake2b_256": "67714948e99d2305ed4b9680c3a2edf1ff67c1808be28bac0801a9b685f77d08",
+        "md5": "fd14d840fdb07f80a3e8b12bc4464ed0",
+        "sha256": "d72c136fd6e4b112bf154680290490da0aca60b7ddfc4163581c069c67016d4a"
+      },
+      "downloads": -1,
+      "filename": "ortools-9.15.6755-cp39-cp39-win_amd64.whl",
+      "has_sig": false,
+      "md5_digest": "fd14d840fdb07f80a3e8b12bc4464ed0",
+      "packagetype": "bdist_wheel",
+      "python_version": "cp39",
+      "requires_python": ">=3.9",
+      "size": 24056711,
+      "upload_time": "2026-01-14T15:39:54",
+      "upload_time_iso_8601": "2026-01-14T15:39:54.266460Z",
+      "url": "https://files.pythonhosted.org/packages/67/71/4948e99d2305ed4b9680c3a2edf1ff67c1808be28bac0801a9b685f77d08/ortools-9.15.6755-cp39-cp39-win_amd64.whl",
+      "yanked": false,
+      "yanked_reason": null
+    }
+  ]
+}

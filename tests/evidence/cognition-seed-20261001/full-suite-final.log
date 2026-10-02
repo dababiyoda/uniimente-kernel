@@ -1,0 +1,62 @@
+........................................................................ [  5%]
+...ss..ss............................................................... [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 22%]
+........................................................................ [ 28%]
+...............................ss..................s.................... [ 34%]
+........s.s..s.......................................................... [ 39%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 56%]
+...........F......................s..................................... [ 62%]
+........................................................................ [ 68%]
+........................................................................ [ 73%]
+........................................................................ [ 79%]
+........................................................................ [ 85%]
+................................................................ssss.... [ 90%]
+........................................................................ [ 96%]
+...........................................                              [100%]
+=================================== FAILURES ===================================
+_ test_a_replacement_is_judged_on_its_own_faults_and_budget_caps_do_not_ratchet _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-12/test_a_replacement_is_judged_o0')
+
+    def test_a_replacement_is_judged_on_its_own_faults_and_budget_caps_do_not_ratchet(tmp_path):
+        home, key, body_id, data = make_body(tmp_path)
+        drop(home, signed(key, body_id, "MISSION", _holding(data)))
+    
+        class Capped(builders.StaticBuilder):
+            max_budget_usd = 0.75
+    
+        # The replacement also has a (different) latent bug, triggered only by a later, even longer input.
+        LATER_BUG = BUGGY.replace("400", "2000")
+        builder = Capped(BUGGY, LATER_BUG, GOOD)
+        clock = Clock()
+        body = Body(home, clock=clock, builder=builder).open()
+        body.boot()
+        _ticks(body, clock, 4, 30)
+        doc = data / "FIRST_MISSION.md"
+        doc.write_text(doc.read_text() + "- [x] a finished step with a longer description\n" * 12)
+        states = [r["state"] for r in _ticks(body, clock, 4)]
+        assert states.count("REPAIRED") == 1 and states[-1] == "HOLDING"
+        doc.write_text(doc.read_text() + "- [x] another finished step with a longer description\n" * 40)
+        states = [r["state"] for r in _ticks(body, clock, 2)]
+>       assert states == ["SENSOR_RETRY", "REPAIRED"]    # one fault is not yet a pattern; two of its own are
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ['HOLDING', 'HOLDING'] == ['SENSOR_RETRY', 'REPAIRED']
+E         
+E         At index 0 diff: 'HOLDING' != 'SENSOR_RETRY'
+E         Use -v to get more diff
+
+tests/unit/test_greg_self_repair.py:162: AssertionError
+=============================== warnings summary ===============================
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_local_mission.py::test_missing_grant_blocks_and_stays_remembered
+  /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=7607) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_self_repair.py::test_a_replacement_is_judged_on_its_own_faults_and_budget_caps_do_not_ratchet
+1 failed, 1251 passed, 18 skipped, 3 warnings in 480.96s (0:08:00)

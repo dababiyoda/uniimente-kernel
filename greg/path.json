@@ -984,5 +984,325 @@
         "INTENT-0030"
       ]
     }
-  ]
+  ],
+  "cognition_workstream": {
+    "subordinate_to": "N1",
+    "metric": "Verified Cross-Geometry Routing Gain",
+    "state": "EXPERIMENT; no graduation from elapsed time or tests",
+    "C_mapping": {
+      "C1": [
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "C2": [
+        "P5"
+      ],
+      "C3": [
+        "P4",
+        "budget controller"
+      ],
+      "C4": [
+        "P6",
+        "P11"
+      ],
+      "C5": [
+        "P7",
+        "P8"
+      ],
+      "C6": [
+        "P9",
+        "P10"
+      ],
+      "C7": [
+        "P12",
+        "P13"
+      ],
+      "C8": [
+        "P11",
+        "P13"
+      ]
+    },
+    "nodes": [
+      {
+        "id": "P0",
+        "title": "Inspect and anchor",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "N0"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 1800,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Run the frozen native cross-geometry suite and signed CLI recovery rehearsal",
+        "gate": "Reproducible inspected source map",
+        "state": "partial_scoped_experiment"
+      },
+      {
+        "id": "P1",
+        "title": "Cognitive contracts",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P0"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 1800,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Run the frozen native cross-geometry suite and signed CLI recovery rehearsal",
+        "gate": "Typed contracts without authority expansion",
+        "state": "partial_scoped_experiment"
+      },
+      {
+        "id": "P2",
+        "title": "Seed proof",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P1"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 1800,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Run the frozen native cross-geometry suite and signed CLI recovery rehearsal",
+        "gate": "Real integrated methods and honest frozen advantage result",
+        "state": "partial_scoped_experiment"
+      },
+      {
+        "id": "P3",
+        "title": "Proof/outcome ledger",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P2"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 1800,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Run the frozen native cross-geometry suite and signed CLI recovery rehearsal",
+        "gate": "Idempotent correction and provenance across restart",
+        "state": "partial_scoped_experiment"
+      },
+      {
+        "id": "P4",
+        "title": "Cognitive settlement and learned routing",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P3"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Replay appraised receipts in shadow; compare one proposed conditional default against the frozen static router on untouched tasks.",
+        "gate": "Held-out gain with drift, rollback, exploration ceiling and no authority change.",
+        "state": "deferred"
+      },
+      {
+        "id": "P5",
+        "title": "Demand-led repertoire expansion",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P4"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Select a mission deficit for one graph-path query; independently check returned path against its edges and compare to direct traversal.",
+        "gate": "Real family adapter, native benchmark, bounded limits and integrated mission value.",
+        "state": "deferred"
+      },
+      {
+        "id": "P6",
+        "title": "Heterogeneous compositions and collective mechanisms",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P5"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Compare one exact+optimization typed pipeline against each constituent, direct workflow and ordinary committee under equal budget.",
+        "gate": "Net lift after communication overhead and shared-failure analysis.",
+        "state": "deferred"
+      },
+      {
+        "id": "P7",
+        "title": "Cognitive Capability Genesis",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P6"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Start a sandbox mission without a bounded graph adapter; search compatible open source before generating code, test independently, register without attachment and retry.",
+        "gate": "Verified deficit solved by capability absent at start; distinguish acquisition/composition/invention.",
+        "state": "deferred"
+      },
+      {
+        "id": "P8",
+        "title": "Evolutionary cognition",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P7"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Mutate one bounded numeric candidate with a protected external evaluator and frozen untouched holdout.",
+        "gate": "Repeated gain without evaluator mutation, leakage or unauthorized promotion.",
+        "state": "deferred"
+      },
+      {
+        "id": "P9",
+        "title": "Constraint-release discovery",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P8"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Vary communication topology of a bounded sandbox composition while fixing policy and evaluator.",
+        "gate": "Previously unlisted permitted organization beats strong simpler baseline and independent replication.",
+        "state": "deferred"
+      },
+      {
+        "id": "P10",
+        "title": "Functional morphogenesis",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P9"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Remove an unseen permitted solver node in a laboratory; require different organization to recover the frozen target function.",
+        "gate": "Unscripted recovery rate against centralized adaptive baseline with identity/revocation preserved.",
+        "state": "deferred"
+      },
+      {
+        "id": "P11",
+        "title": "Open cognitive ecology",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P10"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Replay a shifting synthetic workload with rare-method retention and explicit resource carrying capacity.",
+        "gate": "Sustained benefit without evaluator capture, runaway resources or authority drift.",
+        "state": "deferred"
+      },
+      {
+        "id": "P12",
+        "title": "Substrate-plural execution",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P11"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "Run the same bounded arithmetic/revocation/restart contract on a second approved body with measured memory/latency.",
+        "gate": "Executed portability and state continuity, not just a portable manifest.",
+        "state": "deferred"
+      },
+      {
+        "id": "P13",
+        "title": "Poly-embodied developmental institution",
+        "owner": "GREG cognition maintainer; Alfonso owns live promotion",
+        "dependencies": [
+          "P12"
+        ],
+        "budget_ceiling": {
+          "current_authorized_external_spend_usd": 0,
+          "current_authorized_live_effects": 0,
+          "proposed_sandbox_wall_clock_seconds": 300,
+          "promotion": "No budget enlargement or activation without the existing authenticated grant path"
+        },
+        "review_trigger": "Founder correction, failure, distribution shift, dependency change or attempted promotion",
+        "falsification_condition": "No independently supported gain/qualification within declared scope or violation of any protected constraint",
+        "smallest_next_experiment": "After N1 founder-device acceptance, scope one phone-mediated mission to an approved additional body.",
+        "gate": "One identity/authority, authentic acceptance and effective shutdown across the authorized bodies.",
+        "state": "deferred"
+      }
+    ]
+  },
+  "completion_boundary": {
+    "intent_ref": "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "product": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+    "rule": "After every proved integrated increment automatically resume the parent machine objective and highest-priority unblocked dependency. No seed, PR or VEPMC milestone closes it.",
+    "founder_use": "Separate evidence gate; does not stop achievable implementation before sustained use.",
+    "allowed_blockers": [
+      "inherently founder-only action",
+      "genuine external dependency",
+      "demonstrated current technology limit with strongest defensible approximation/backcast"
+    ],
+    "build_state": "in_progress_not_complete",
+    "authority_changed": false
+  }
 }

@@ -1,0 +1,41 @@
+{
+  "captured_at": "2026-10-02T09:40:36.235127+00:00",
+  "head_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "files": {
+    "greg/templates.py": "034164b8bec177856714ea0ff9bb665c5cae65df40cfe12471cc07626a75df98",
+    "greg/planner.py": "63d8b57e820f0a2cd9b328a8a05f6cdf2a741208fcf8a0476604f30d1118199f",
+    "greg/asks.py": "07007a8977020f0ff4d9badea6892e2c5533e35eef9bb47900b636b3202cebad",
+    "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+    "greg/cli.py": "25ac8a5248aa62a62c54d575604d546a183ef578181e857e3121615938497a37",
+    "tests/unit/test_greg_controlled_words.py": "3d3b8241172dc9175e43d9de9694f75b1fbd4c3fb9f9f85a1c724cbbed95b898",
+    "tests/integration/test_greg_controlled_words.py": "32201d5e6995704e771fbe43cecd77673dcc7009b20050cdb745108378f8d4de",
+    "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3",
+    "greg/cognition/linear.py": "55c0e4e255640bdf5df019333faed655ce54837726a52afa1b1aac887950bbe2",
+    "greg/cognition/verification.py": "fced5c19f47243f65d6e641b669643b4a3fc5f64df5377e8fabdc3a9d7a3f029"
+  },
+  "command": "python -m pytest -q tests/unit/test_greg_controlled_words.py tests/integration/test_greg_controlled_words.py",
+  "purpose": "Latest controlled-source identity regression; final aggregate freeze separately owned",
+  "completed_at": "2026-10-02T09:41:27.980550+00:00",
+  "source_hashes_after_test": {
+    "greg/templates.py": "034164b8bec177856714ea0ff9bb665c5cae65df40cfe12471cc07626a75df98",
+    "greg/planner.py": "63d8b57e820f0a2cd9b328a8a05f6cdf2a741208fcf8a0476604f30d1118199f",
+    "greg/asks.py": "07007a8977020f0ff4d9badea6892e2c5533e35eef9bb47900b636b3202cebad",
+    "greg/console.py": "94d824470bcc5d119a62d721053e25772705fc5815857b8e5257e6468d9476b1",
+    "greg/cli.py": "25ac8a5248aa62a62c54d575604d546a183ef578181e857e3121615938497a37",
+    "tests/unit/test_greg_controlled_words.py": "3d3b8241172dc9175e43d9de9694f75b1fbd4c3fb9f9f85a1c724cbbed95b898",
+    "tests/integration/test_greg_controlled_words.py": "32201d5e6995704e771fbe43cecd77673dcc7009b20050cdb745108378f8d4de",
+    "greg/cognition/network.py": "ec40fc418ffcf4ed9a5a21925756d5786ce0c67e224e5cad8d55810f70b2c3e3",
+    "greg/cognition/linear.py": "55c0e4e255640bdf5df019333faed655ce54837726a52afa1b1aac887950bbe2",
+    "greg/cognition/verification.py": "fced5c19f47243f65d6e641b669643b4a3fc5f64df5377e8fabdc3a9d7a3f029"
+  },
+  "changed_during_test": [],
+  "result": {
+    "exit_code": 0,
+    "passed": 38,
+    "seconds": 9.84
+  },
+  "log_sha256": "f8b9431bd93430f5ba94621fcd6f0b994babae780d9ae63755f0c257d41ea1a4",
+  "authority_changes": false,
+  "real_device_verified": false,
+  "whole_machine_complete": false
+}

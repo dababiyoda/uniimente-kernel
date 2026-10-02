@@ -1,0 +1,220 @@
+{
+  "schema": "native-direct-mutation-observation/1",
+  "timestamp_utc": "2026-10-02T09:37:26.730098+00:00",
+  "commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "shared working tree during native-qualification development",
+  "command": "Direct SOLVERS call; verify original; replace one output with impossible value; preserve both check results",
+  "source_sha256": {
+    "greg/cognition/solvers.py": "dc233f05c421f0429bd708099c764f856bb0f047eaae605bae76211fcb4151c3",
+    "greg/cognition/verification.py": "f771b2beadda89e24f557ad4551ab1d51efa4faab8037b7dcf916869070b543a"
+  },
+  "python": "3.12.14",
+  "cases": [
+    {
+      "family": "probabilistic",
+      "input": {
+        "alpha": 1,
+        "beta": 1,
+        "successes": 3,
+        "failures": 1
+      },
+      "computed": 0.6666666666666666,
+      "mutated_field": "mean",
+      "forged_value": 0.99,
+      "original_check": {
+        "verdict": "STRUCTURALLY_VERIFIED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "posterior_conjugate_update": true,
+          "posterior_artifact_binding": true,
+          "prior_sensitivity": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Conditional Beta-Bernoulli conjugacy; exchangeability, observation quality and predictive calibration are unverified."
+        ],
+        "artifact_digest": "sha256:ee5cea393d640efb1c1bfe431c7b3f0f5f4353a1567e24bf80b053628a1c1e9b",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      },
+      "mutation_check": {
+        "verdict": "REFUTED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "posterior_conjugate_update": false,
+          "posterior_artifact_binding": true,
+          "prior_sensitivity": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Conditional Beta-Bernoulli conjugacy; exchangeability, observation quality and predictive calibration are unverified."
+        ],
+        "artifact_digest": "sha256:1b608e83f5f977c46b2dda27e0cf86ce35ad2def698ce4a2ed19b0b51524de68",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      }
+    },
+    {
+      "family": "information",
+      "input": {
+        "prior_best_value": 10,
+        "cost": 2,
+        "posterior_scenarios": [
+          {
+            "probability": 0.5,
+            "best_value": 16
+          },
+          {
+            "probability": 0.5,
+            "best_value": 12
+          }
+        ]
+      },
+      "computed": 2.0,
+      "mutated_field": "net_value",
+      "forged_value": 999,
+      "original_check": {
+        "verdict": "STRUCTURALLY_VERIFIED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "voi_probability_model": true,
+          "decision_value_not_entropy": true,
+          "voi_artifact_binding": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Decision-value calculation depends on declared scenarios, utilities and costs; mandatory authority and verification remain outside optional VOI ranking."
+        ],
+        "artifact_digest": "sha256:65200e49f7d242c3246f7d9f772030e93d55e9b7c1cc6ce91c1c2300cd9a673c",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      },
+      "mutation_check": {
+        "verdict": "REFUTED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "voi_probability_model": true,
+          "decision_value_not_entropy": false,
+          "voi_artifact_binding": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Decision-value calculation depends on declared scenarios, utilities and costs; mandatory authority and verification remain outside optional VOI ranking."
+        ],
+        "artifact_digest": "sha256:65200e49f7d242c3246f7d9f772030e93d55e9b7c1cc6ce91c1c2300cd9a673c",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      }
+    },
+    {
+      "family": "control",
+      "input": {
+        "observed": 2,
+        "target": 10,
+        "kp": 2,
+        "correction_limit": 3
+      },
+      "computed": 3,
+      "mutated_field": "correction",
+      "forged_value": 999,
+      "original_check": {
+        "verdict": "STRUCTURALLY_VERIFIED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "independent_pid_and_antiwindup": true,
+          "pid_artifact_binding": true,
+          "bounded_correction": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "One bounded numeric PID proposal, without a plant/stability model or physical actuation authority."
+        ],
+        "artifact_digest": "sha256:628ef4fcd7055c16fd0579eded2c94ab3bbb364bb6a3d171d9a80296840ebcd0",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      },
+      "mutation_check": {
+        "verdict": "REFUTED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": true,
+          "independent_pid_and_antiwindup": false,
+          "pid_artifact_binding": false,
+          "bounded_correction": false
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "One bounded numeric PID proposal, without a plant/stability model or physical actuation authority."
+        ],
+        "artifact_digest": "sha256:628ef4fcd7055c16fd0579eded2c94ab3bbb364bb6a3d171d9a80296840ebcd0",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      }
+    },
+    {
+      "family": "sequential",
+      "input": {
+        "transitions": {
+          "s": {
+            "stay": {
+              "s": 1
+            }
+          }
+        },
+        "rewards": {
+          "s": {
+            "stay": 2
+          }
+        },
+        "horizon": 3
+      },
+      "computed": {
+        "s": 6.0
+      },
+      "mutated_field": "values",
+      "forged_value": {
+        "s": 999
+      },
+      "original_check": {
+        "verdict": "REFUTED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": false,
+          "independent_bellman_values": true,
+          "sequential_original_model": true,
+          "all_horizon_policies": true,
+          "all_horizon_values": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Finite-horizon fully observed supplied MDP; no open-world RL, exploration permission or empirical transition identification."
+        ],
+        "artifact_digest": "sha256:3f6b13144fa44396d88b57abffebaea323ebdf40de91099aaf425e8e5f06ff91",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      },
+      "mutation_check": {
+        "verdict": "REFUTED",
+        "checks": {
+          "typed_artifact": true,
+          "native_source_bound": false,
+          "independent_bellman_values": false,
+          "sequential_original_model": true,
+          "all_horizon_policies": true,
+          "all_horizon_values": true
+        },
+        "dissent": [
+          "Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.",
+          "Finite-horizon fully observed supplied MDP; no open-world RL, exploration permission or empirical transition identification."
+        ],
+        "artifact_digest": "sha256:3f6b13144fa44396d88b57abffebaea323ebdf40de91099aaf425e8e5f06ff91",
+        "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"
+      }
+    }
+  ],
+  "limits": [
+    "Four direct deterministic computational mutation observations only; native qualification is still in progress.",
+    "Original MDP result may fail its new verifier during producer/verifier integration; this is preserved as a failed original observation.",
+    "No canonical signed mission, frozen statistical qualification, or founder/device outcome claimed.",
+    "Shared code/specification/data dependencies; not independent human approval."
+  ],
+  "authority_created": false
+}

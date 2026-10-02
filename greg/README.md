@@ -266,6 +266,34 @@ or a completed run on founder-owned hardware.
 Mission contract: `contracts/greg-mission.schema.json`. Native macOS verification package:
 `greg/mac/verify_mac_body.sh` (must be run by Alfonso on the Mac; nothing here claims it ran).
 
+### Route and planning requests in controlled words
+
+The existing console accepts a bounded network or continuous linear-program
+request without a model. For example: `A to B: 4 items. B to C: 3 items. A to C:
+1 items. Maximum flow from A to C.` Check the displayed reading and unit scope,
+then sign the mission. A method still at `VERIFIED` waits for a separate signed
+attachment, available through the founder console's Attach button or `greg attach`.
+Approving an ask from the phone records an answer; it cannot attach a capability.
+
+The same request can be reviewed through the canonical CLI:
+
+```bash
+python -m greg mission new network-in-words --text \
+  'A to B: 4 items. B to C: 3 items. A to C: 1 items. Maximum flow from A to C.' --print-only
+python -m greg mission new plan-in-words --text \
+  'Maximize 3 x + 2 y. x + y <= 4. x between 0 and 3. y between 0 and 4.' --print-only
+```
+
+For a configured body, replace `--print-only` with `--key <founder-key>` to sign
+the reviewed mission. Network links must use one declared unit, or all be
+dimensionless; flow capacities are integer counts. Linear programs are continuous
+and dimensionless, with finite explicit bounds for every variable. An unread
+condition stops the proposal. Graph/flow proofs and LP certificates establish only
+the encoded computation; uncertified infeasibility blocks truthfully. Nothing is
+shipped, purchased or acted on. The [D10 decision and evidence](../docs/collaboration/GREG-D10-CONTROLLED-WORDS-20261002.md)
+states the tested limits. Completing this interface continues the Body + Organs +
+Mind build; founder-device use and whole-machine completion remain separate.
+
 ## Buildability standard (14 conditions)
 
 - **Existing mechanism:** Kernel EvidenceLedger, EventSpine, policy engine, ConsequenceGate, GrantIssuer, PassportRegistry, CapabilityGenome registry; commodity `cryptography` (Ed25519), launchd/systemd/supervisord, installed CLI tools, seccomp / macOS sandbox-exec.
@@ -294,5 +322,21 @@ no external business outcome. **Externally verified VEPMC = 0**: Linux fixtures 
 ledger conditions, but they use test keys and test machines. Alfonso's Chromebook Linux availability, his own key,
 physical first-body designation and acceptance remain untested. Self-repair and the model router are TESTED on the product path (real body, real
 isolated interpreters; model SDKs faked, no live key used); a live OpenAI/Anthropic API route awaits Alfonso's own keys.
-Human work fabric and business runtime are PROPOSED. Presence accounting and open-source-first routing are
+Bounded human work handoff, durable waits and file-deliverable intake are implemented;
+authentic professional role, consent, quality review and participant outcomes require
+separate evidence. The full business runtime remains unfinished. Presence accounting and open-source-first routing are
 UNIT/INTEGRATION TESTED in a Linux container (2026-09-30), not observed on the founder's Chromebook.
+
+### Bounded cognition seed (2026-10-01)
+
+The signed mission path supports bounded source extraction, scenario estimation,
+SMT feasibility, integer optimization, evidence binding and randomized two-arm
+computation with typed receipts and separate-process checks. See
+[cognition operator instructions](cognition/README.md), the
+[seed decision and limits](../docs/collaboration/COGNITION-SEED-20261001.md), and
+[retained test evidence](../tests/evidence/cognition-seed-20261001/).
+The existing console and authenticated phone status view show scoped cognitive
+results. This is a consequence-inert experiment; real founder-device acceptance
+and comparative superiority remain separate gates.
+
+The controlling [full-machine correction](../docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) fixes Body + Organs + Mind as the completion boundary. After each proved integration, continue the next unblocked parent requirement. Seed and VEPMC are sequencing/evidence units; pending founder use does not stop achievable machinery.

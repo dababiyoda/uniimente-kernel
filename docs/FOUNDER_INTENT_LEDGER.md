@@ -2,6 +2,26 @@
 
 # Founder Intent Ledger
 
+## INTENT-20261001 open-source mechanism harvesting — 2026-10-01
+
+**State:** active. **Owner:** Alfonso Lopez; repository maintainers and coding agents implement.
+
+Founder correction: use free/open-source tools, repositories, algorithms and public technical information aggressively while coding UNIIMENTE so solved mechanisms are reused rather than rebuilt. Multiple repositories may be mined and recombined with Mechanism Recombination Foundry to close the remaining novel deficits.
+
+Controlling interpretation: **maximum lawful reuse before original construction**. For a material CapabilityDeficit, classify candidates as DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE, or RECOMBINE. Preserve exact upstream revision/path, license/notices, provenance, maintenance/security evidence, assumptions, qualification, replacement and rollback. Educational/reference code is not production-qualified merely because it runs.
+
+This extends `INTENT-20260930-open-source-first` from paid-software substitution into a project-wide construction strategy for completing Body + Organs + Mind. It does not authorize installation, attachment, activation, deployment or external consequences. Imported capability never inherits authority.
+
+Source and implementation references:
+- `docs/intent/sources/OPEN-SOURCE-MECHANISM-HARVEST-2026-10-01-source.md`
+- `docs/intent/INTENT-20261001-open-source-mechanism-harvest.json`
+- `docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md`
+- `docs/collaboration/OPEN_SOURCE_MECHANISM_HARVEST_REVIEW_2026-10-01.md`
+
+**Full-machine continuation:** a seed, experiment, benchmark, PR or reused component is an intermediate build artifact. It must not redefine the stopping condition. Continue all unblocked authorized work toward the complete currently achievable Body + Organs + Mind; stop only on a genuine external dependency, missing authority, unavailable resource/evidence, or currently unavailable technology.
+
+
+
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 
 `INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.
@@ -190,3 +210,14 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Polyintelligence Seed Genome — 2026-10-01
+
+Controlling source: [founder quotations and execution lineage](intent/sources/POLYINTELLIGENCE-SEED-DIRECTIVE-20261001.md).
+Requirement states now also include `conflicted` and `needs_evidence`; these are intent states, separate from implementation maturity.
+The [seed trace](intent/INTENT-20261001-cognition-seed-trace.json) retains every A/B section anchor and expands executable seed gates. The [decision](collaboration/COGNITION-SEED-20261001.md) records two strengthening passes, source coverage and limitations.
+Semantic, Estimation, Formal/Optimization and Evidence/Causal plus a separate verifier control this delivery. Later repertoire and Foundry-55 remain binding horizons. One canonical path remains `greg/path.json`; cognition metrics do not displace VEPMC. Metaphors compile to bounded prevention, recovery and evidence, never invulnerability, coercion or scientific consciousness.
+
+## Full-machine completion correction — 2026-10-01
+
+[Controlling intent](intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) preserves the exact correction. Body + Organs + Mind is the fixed product boundary. Seed and VEPMC scopes sequence proofs; they never permanently defer feasible machinery. After each integration, continue the parent objective automatically. Founder-use, external effects and technology limits remain separately evidenced item-specific gates.

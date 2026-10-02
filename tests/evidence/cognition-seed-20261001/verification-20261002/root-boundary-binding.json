@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-10-02T15:37:50.071023+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_binding": "uncommitted source hashes; earlier failed attempts retained; final stable source rechecked separately",
+  "source_sha256": {
+    "greg/command_queue.py": "b456a790ebf1c7e73e37914af6c38207bee2173215ddbc6b8e5506e4318f04ca",
+    "greg/body.py": "63c58e339a3b5507ffcfb77bb721a4feacdabd7df531278df41c73810bd6e81c",
+    "greg/remote.py": "16e66bbd4f6dd7cea94443179e6f7c70e7f9be72334c2974b32711c259194a08",
+    "greg/routing.py": "e439f7570676c145c28ade21ed605e194e0aeec20340f4f2a7f82b42b3e6671a",
+    "greg/sop.py": "599764004503fa09b64c77b9048ec588e76a87a1c8578937e4d82bba512fc95c",
+    "greg/authority.py": "1c6d0da701601205214aed9b34e8d463ec1b868a3c23c0e5a09bb2c3915b2098",
+    "greg/appraisal.py": "d4004dfb1d1a0b3bbf22d3e46983fc76f70bf41ec389b6e0a92b66d428a3a3e9",
+    "greg/cognition/settlement.py": "62d048f7cc9722809510ee30d823c26d2bf900ce3516a3ef457485aa769e67c5",
+    "greg/cognition/cortex.py": "0a66de8b16f72e9980bf468f5af450a636218b28ab3a1a4b203fd7780d3801ee",
+    "greg/cognition/semantic.py": "d9d91e755dd924c841c30f49d740c88fe091b604e43e289252c87595d3e06a63",
+    "tests/unit/test_greg_command_queue.py": "496a8d700c98b8fc745ebc59344aab73c7e93ca0ac6702deab07ce13e3196963",
+    "tests/integration/test_greg_routing_evidence_scope.py": "cd1374206ca2ed82266ae4c5425b16c720ddf1500113322a8b73c7d53b6fa5c9",
+    "tests/unit/test_semantic_preflight_evidence.py": "6dbb9bb32e1fa81e7a2094fba04de7e435c9e366e2855a3e8b3d1cd3f58ef48b",
+    "scripts/rehearse_cognition_seed.py": "6a47e7bd277fa2826fb60815b2fa4e61b585b5a6cf8b06cccef204d5952feb25"
+  },
+  "scope": "actual Linux laboratory native queues, signatures, local computation appraisal and recovery; no Alfonso identity/device or empirical outcome",
+  "authority_created": false
+}

@@ -56,3 +56,30 @@ def test_detachment_survives_restart_and_solver_cannot_bypass_it(tmp_path):
                                 target="cognition:test", capability_registry=body.registry)
         out = adapter({"problem_id": "detached", "operation": "calculate", "data": {"expression": "1+1"}}, ctx)
         assert out["abstention_state"] == "CAPABILITY_DEFICIT" and out["output"] is None
+
+
+def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path):
+    from greg.console import Console, render_home
+    home,key,body_id,_=make_body(tmp_path)
+    params={"problem_id":"console:exact", "operation":"calculate", "data":{"expression":"2+3"}}
+    spec=mission("m:console-cognition", checks=[{"check_id":"sum", "description":"exact sum", "sensor":{"capability":"cognition.solve","target":"cognition:sum","params":params},"predicate":{"op":"equals","field":"output.exact","value":"5"}}],strategies=[],capabilities=["cognition.solve"],targets=("cognition:*",),ceiling="read_only")
+    drop(home,signed(key,body_id,"MISSION",spec))
+    with Body(home) as body:body.boot();body.tick()
+    console=Console(home)
+    snapshot=console.snapshot();assert snapshot['cognitive'][0]['method']=='cognition.exact'
+    assert snapshot['cognitive'][0]['selection_rationale']
+    assert snapshot['cognitive'][0]['proof_class']=='exact_calculation'
+    page=render_home(console).decode()
+    assert 'console:exact' in page and 'Next permitted step' in page and 'Uncertainty:' in page and 'Evidence:' in page
+    assert 'and a Mac body' not in page
+    from greg import remote
+    from greg.founder import sign_read
+    from datetime import datetime, timezone
+    import json, pytest
+    with pytest.raises(remote.RemoteError):
+        remote.handle(home, 'GET', '/api/status', {}, b'')
+    now=datetime.now(timezone.utc)
+    headers=sign_read(key,body_id=body_id,method='GET',path='/api/status',now=now)
+    response=remote.handle(home,'GET','/api/status',headers,b'',now=now)
+    data=json.loads(response[2])['data']
+    assert data['cognitive'][0]['receipt_id']==snapshot['cognitive'][0]['receipt_id']

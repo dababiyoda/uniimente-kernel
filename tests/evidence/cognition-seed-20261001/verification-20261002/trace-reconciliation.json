@@ -1,0 +1,28 @@
+{
+  "schema": "trace-reconciliation/1",
+  "recorded_at_utc": "2026-10-02T09:35:07.167381+00:00",
+  "repository": "dababiyoda/uniimente-kernel",
+  "base_commit": "e09e44a068b53ac27df7584bb54c79be71dae4c1",
+  "source_state": "shared working tree; final integrated commit/regression owned by root",
+  "path": "docs/intent/INTENT-20261001-cognition-seed-trace.json",
+  "path_sha256": "b258ab08846bd3d6d7645e942a408186650691dee6c4e3a44015d46a5e457bcd",
+  "command": "python /workspace/scratch/reconcile_cognition_trace_full_machine.py; source-export substring, required-field, path existence and dependency checks",
+  "result": {
+    "records": 234,
+    "review_sections": 121,
+    "literal_source_export_matches": 217,
+    "source_text_and_lineage_preserved": true,
+    "unconditional_N1_software_dependencies": 0,
+    "separate_live_device_evidence_gates": 228,
+    "all_local_reference_paths_exist": true,
+    "distinct_test_reference_lists": 17
+  },
+  "negative_coverage": [
+    "Source coverage is not executable completeness.",
+    "Most compound sections need native scope-specific qualification.",
+    "Candidate P5 producers lack independent computational checks.",
+    "No authenticated founder-device, external outcome, comparative superiority or live authority is created."
+  ],
+  "runtime_changed": false,
+  "authority_changed": false
+}

@@ -1,8 +1,22 @@
 # Egregore: open-source-first AI and software
 
-Open-source directive and local protocol adapters, 2026-09-30. Applies across UNIIMENTE Kernel,
-DALEOBANKS, WealthMachineIntelligence and attached tools. This records the current
-request as a software-selection directive, not a runtime grant or deployment.
+Open-source directive and local protocol adapters, 2026-09-30, extended by the
+2026-10-01 **open-source mechanism harvesting** correction. Applies across UNIIMENTE
+Kernel, Cortex, DALEOBANKS, WealthMachineIntelligence, attached tools and future
+capability genesis. These are software/construction selection directives, not runtime
+grants or deployment authority.
+
+The 2026-10-01 correction broadens open-source-first from "replace paid commodity
+capabilities" to "reuse the world's lawful open technical machinery to accelerate
+the complete currently achievable Body + Organs + Mind." See
+`docs/intent/INTENT-20261001-open-source-mechanism-harvest.json` and
+`docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md`.
+
+Default reuse modes are **DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE, RECOMBINE**.
+Do not equate "free" with license-free, maintenance-free, secure, production-ready,
+or zero-resource-cost. Do not bulk-copy repositories merely to increase capability
+surface. Import the smallest coherent mechanism that survives license, provenance,
+security, compatibility, resource, native-qualification and rollback review.
 
 ## Founder direction and observable effect
 
@@ -223,3 +237,10 @@ DALEOBANKS drafts, durable checkpoints and optional DuckDB reporting.
 The [review record](OPEN_SOURCE_RESEARCH_LINE_REVIEW.md) preserves alternatives,
 dissent, residual capabilities and two strengthening passes. Catalogue entries
 for browser/PDF/audio/vector/automation tools do not imply deployed integrations.
+
+The bounded cognition seed explicitly installs only the pinned dependencies in
+`requirements-cognition.txt`; future research families remain dependency gated.
+Exact tested packages, licenses, weight digest, isolated local server provenance
+and the reported protobuf dependency correction are recorded in
+`tests/evidence/cognition-seed-20261001/dependencies.json`. See
+`greg/cognition/README.md` for installation, limits, migration and rollback.

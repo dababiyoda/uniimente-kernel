@@ -1,0 +1,72 @@
+F...F............................                                        [100%]
+=================================== FAILURES ===================================
+______ test_real_numeric_appraisal_cannot_become_empirical_routing_credit ______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-96/test_real_numeric_appraisal_ca0')
+
+    def test_real_numeric_appraisal_cannot_become_empirical_routing_credit(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        params = {"problem_id": "routing:scope", "operation": "calculate", "data": {"expression": "4+5"}}
+        spec = mission("m:scope", checks=[{
+            "check_id": "numeric", "description": "encoded exact calculation",
+            "sensor": {"capability": "cognition.solve", "target": "cognition:scope", "params": params},
+            "predicate": {"op": "equals", "field": "output.exact", "value": "9"}}],
+            strategies=[], capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+        drop(home, signed(key, body_id, "MISSION", spec))
+        with Body(home) as body:
+            body.boot(); body.tick()
+            appraisal = body.journal.replay("mission.appraised")[-1].payload
+>           assert appraisal["verdict"] == "VERIFIED" and appraisal["checks"]["world_reobserved"] is False
+E           AssertionError: assert ('VERIFIED' == 'VERIFIED'
+E             
+E               VERIFIED and True is False)
+
+tests/integration/test_greg_routing_evidence_scope.py:21: AssertionError
+______ test_routing_learns_from_one_missions_failure_for_the_next_mission ______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-96/test_routing_learns_from_one_m0')
+
+    def test_routing_learns_from_one_missions_failure_for_the_next_mission(tmp_path):
+        home, key, body_id, data = make_body(tmp_path)
+        calls = []
+    
+        def flaky(params, ctx):
+            calls.append("flaky")
+            raise CapabilityError("upstream service returned 500")
+    
+        flaky_manifest = CapabilityManifest(capability_id="demo.flaky_write", version="1.0.0", provider="test",
+                                            function="note.write", description="unreliable writer", route="api",
+                                            consequence_class="internal_write", inputs={"x": "str"},
+                                            outputs={"ok": "bool"}, target_prefix="workspace:",
+                                            strengthens=("settlement",))
+        clock = Clock()
+        for n in (1, 2):
+            mid = f"m:route-learning-{n}"
+            drop(home, signed(key, body_id, "MISSION", mission(
+                mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "ok")],
+                strategies=[{"action_id": "cheap-flaky", "capability": "demo.flaky_write", "params": {},
+                             "target": "workspace:n.txt", "advances": ["n"], "rationale": "cheap"},
+                            write_strategy("reliable", "n.txt", "ok", ["n"], cost_usd=0.1)],  # 0.5-0.1=0.4 > 1/3 after one failure
+                capabilities=["fs.read", "fs.write", "demo.flaky_write"], budget=1.0, priority=10 - n)))
+        with Body(home, clock=clock) as body:
+            body.registry.register(flaky_manifest, flaky, state="ATTACHED")
+            for _ in range(10):
+                body.tick()
+                clock.advance(1)
+            actions = [e.payload for e in body.journal.replay("mission.action")]
+            knowledge = {r["capability"]: r for r in routing.routing_knowledge(body.journal)}
+        first = [a["action_id"] for a in actions if a["mission_id"] == "m:route-learning-1"]
+        second = [a["action_id"] for a in actions if a["mission_id"] == "m:route-learning-2"]
+        assert first[0] == "cheap-flaky" and "reliable" in first          # no history: cheapest first
+>       assert second[0] == "reliable" and "cheap-flaky" not in second     # history: routed around failure
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ('cheap-flaky' == 'reliable'
+E         
+E         - reliable
+E         + cheap-flaky)
+
+tests/unit/test_greg_spiderweb.py:62: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_greg_routing_evidence_scope.py::test_real_numeric_appraisal_cannot_become_empirical_routing_credit
+FAILED tests/unit/test_greg_spiderweb.py::test_routing_learns_from_one_missions_failure_for_the_next_mission
+2 failed, 31 passed in 9.43s

@@ -1,0 +1,160 @@
+{
+  "problem_id": "live:source-extraction",
+  "geometry": {
+    "objective_type": "answer",
+    "domain": "bounded_computation",
+    "epistemic_class": "semantic",
+    "semantic_ambiguity": 0.0,
+    "exactness_required": false,
+    "deterministic": true,
+    "stochastic": false,
+    "partially_observed": false,
+    "static_or_sequential": "static",
+    "discrete_or_continuous": "discrete",
+    "graph_structure": false,
+    "constraint_density": 0.0,
+    "search_space_size": 0,
+    "causal_question": false,
+    "forecasting_question": false,
+    "optimization_question": false,
+    "control_question": false,
+    "allocation_question": false,
+    "adversariality": 0.0,
+    "multi_actor": false,
+    "incentive_interaction": false,
+    "data_volume": 0,
+    "evidence_quality": 0.0,
+    "identifiability": "unknown",
+    "novelty_requirement": false,
+    "embodiment_requirement": false,
+    "time_horizon": 0.0,
+    "latency_limit": 30,
+    "compute_limit": 512,
+    "financial_limit": 0.0,
+    "consequence_class": "read_only",
+    "reversibility": "reversible",
+    "rights_impact": false,
+    "legal_content": false,
+    "human_value_content": false,
+    "classification_uncertainty": 0.0,
+    "unknown_geometry": false,
+    "out_of_distribution": false,
+    "success_criteria": [],
+    "failure_criteria": [],
+    "subclaims": [],
+    "assumptions": [],
+    "omitted_conditions": [],
+    "data_provenance": [],
+    "data_missingness": "unknown",
+    "deadline": null,
+    "attention_ceiling_seconds": 0.0
+  },
+  "consequence_class": "read_only",
+  "consequence_vector": {
+    "physical": 0.0,
+    "financial": 0.0,
+    "privacy": 0.0,
+    "rights": 0.0,
+    "reputation": 0.0,
+    "innocent_third_party": 0.0,
+    "irreversibility": 0.0,
+    "disclosure": 0.0,
+    "dependency": 0.0,
+    "systemic_externality": 0.0,
+    "tail_risk": 0.0,
+    "discrimination": 0.0,
+    "lawful": null,
+    "consent": null,
+    "exposure_details": {}
+  },
+  "method": "cognition.semantic",
+  "method_version": "0.1.0",
+  "epistemic_class": "semantic",
+  "input_digest": "sha256:ba6e89cd5ec6348a4853bb7ab97c0665a41cb50953a041a93a44ec46a8bb6bf6",
+  "evidence_refs": [],
+  "assumptions": [
+    "Input and model validity are not established by computation"
+  ],
+  "excluded_variables": [],
+  "output": null,
+  "uncertainty": {
+    "conditional_on_input": true,
+    "world_confidence": null
+  },
+  "proof_type": null,
+  "proof_artifact": null,
+  "alternative_methods_considered": [
+    {
+      "method": "cognition.semantic",
+      "version": "0.1.0",
+      "family": "semantic",
+      "eligible": true,
+      "reason": "available",
+      "quality": 0.5,
+      "expected_cost": 0.0,
+      "expected_latency": 1.0,
+      "evidence": 0,
+      "proof_class": "sourced_claims"
+    }
+  ],
+  "method_selection_reason": "eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
+  "strongest_counterargument": "Missing or incomplete evidence prevents a stronger conclusion.",
+  "falsification_condition": "independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
+  "abstention_state": "ABSTAIN",
+  "missing_information": [
+    "RouteError: Exception: error starting llama-server: llama-server binary not found (checked: /workspace/scratch/local-inference/lib/ollama/llama-server, /workspace/scratch/local-inference/bin/build/lib/ollama/llama-server, /workspace/scratch/local-inference/bin/d"
+  ],
+  "compute_cost": {
+    "operation_ceiling": 512,
+    "memory_ceiling_bytes": 2147483648,
+    "model_calls": 0,
+    "energy": "unmeasured"
+  },
+  "money_cost": 0.0,
+  "latency": 0.05154046200004814,
+  "evaluator": "greg.cognition.verification/0.1.0",
+  "evaluator_result": {
+    "verdict": "NOT_RUN",
+    "dissent": []
+  },
+  "formal_validity": "NOT_APPLICABLE",
+  "empirical_validity": "WORLD_UNVERIFIED",
+  "legitimate_authority": "EXISTING_KERNEL_GATE_REQUIRED",
+  "later_outcome": null,
+  "calibration_error": null,
+  "causal_credit": [
+    {
+      "method": "cognition.semantic",
+      "role": "solver"
+    },
+    {
+      "method": "greg.cognition.verification",
+      "role": "falsifier"
+    }
+  ],
+  "authority_created": false,
+  "schema_version": "greg-cognition/0.2",
+  "policy_version": "seed-static/0.2",
+  "execution_mode": "consequence_inert",
+  "reason_code": "INSUFFICIENT_EVIDENCE",
+  "outcome_state": "ABSTAIN",
+  "model_provenance": null,
+  "stopping_reason": "smallest sufficient bounded calculation; mandatory verification retained",
+  "formalization_coverage": {
+    "represented": [],
+    "omissions": [],
+    "review": "encoded property only; general completeness undecidable"
+  },
+  "authority_refs": {
+    "scope": "enclosing canonical Kernel witness/grant/receipt",
+    "new_authority": false
+  },
+  "contribution_attribution": [
+    {
+      "method": "cognition.semantic",
+      "role": "calculation",
+      "uncertainty": "not causal credit"
+    }
+  ],
+  "receipt_id": "sha256:722c8755882763984fe2ddfadf2db6caed55fe026f244308c295fef609674145"
+}

@@ -1,0 +1,54 @@
+........................................................................ [  5%]
+......ss...ss........................................................... [ 11%]
+........................................................................ [ 16%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+..........................................................ss............ [ 33%]
+......s..F.........................s.s..s............................... [ 38%]
+........................................................................ [ 44%]
+........................................................................ [ 50%]
+........................................................................ [ 55%]
+.............................................................s.......... [ 61%]
+........................................................................ [ 66%]
+........................................................................ [ 72%]
+........................................................................ [ 77%]
+........................................................................ [ 83%]
+........................................................................ [ 89%]
+...................ssss................................................. [ 94%]
+......................................................................   [100%]
+=================================== FAILURES ===================================
+_ test_real_bounded_cognition_selects_different_mechanisms[optimize-data4-optimization-objective_value-5] _
+
+operation = 'optimize'
+data = {'variables': {'x': [0, 10], 'y': [0, 10]}, 'constraints': [{'coefficients': {'x': 1, 'y': 1}, 'op': '>=', 'rhs': 5}], 'objective': {'coefficients': {'x': 1, 'y': 2}, 'sense': 'min'}}
+family = 'optimization', field = 'objective_value', expected = 5
+
+    @pytest.mark.parametrize("operation,data,family,field,expected", CASES)
+    def test_real_bounded_cognition_selects_different_mechanisms(operation, data, family, field, expected):
+        from greg.cognition.catalog import SEED_FAMILIES
+        if family not in SEED_FAMILIES:
+            receipt = reason(request(operation, data), registry=registry_view())
+            assert receipt["abstention_state"] == "CAPABILITY_DEFICIT"
+            return
+        if operation == "polynomial":
+            pytest.importorskip("sympy", reason="optional P5 symbolic dependency not acquired for this seed")
+        receipt = reason(request(operation, data), registry=registry_view())
+>       assert receipt["abstention_state"] == "NONE", receipt["missing_information"]
+E       AssertionError: ['TIMEOUT']
+E       assert 'UNKNOWN' == 'NONE'
+E         
+E         - NONE
+E         + UNKNOWN
+
+tests/unit/test_greg_cognition.py:52: AssertionError
+=============================== warnings summary ===============================
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_local_mission.py::test_missing_grant_blocks_and_stays_remembered
+  /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=18760) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[optimize-data4-optimization-objective_value-5]
+1 failed, 1278 passed, 18 skipped, 3 warnings in 425.15s (0:07:05)

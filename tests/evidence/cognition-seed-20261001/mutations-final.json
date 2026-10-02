@@ -1,0 +1,76 @@
+{
+  "schema": "seed-mutation-results/1",
+  "results": [
+    {
+      "mutant": "eligibility",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 3.030527749999692,
+      "test": "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________ test_detachment_survives_restart_and_solver_cannot_bypass_it _________\n\ntmp_path = PosixPath('/tmp/pytest-of-agent/pytest-9/test_detachment_survives_resta0')\n\n    def test_detachment_survives_restart_and_solver_cannot_bypass_it(tmp_path):\n        home, key, body_id, _ = make_body(tmp_path)\n        with Body(home) as body:\n            body.apply(signed(key, body_id, \"CAPABILITY_DETACH\", {\"capability_id\": \"cognition.exact\"}))\n        with Body(home) as body:\n            manifest, adapter = body.registry.manifests[\"cognition.solve\"], body.registry.adapters[\"cognition.solve\"]\n            from greg.capabilities import InvocationContext\n            ctx = InvocationContext(workspace=tmp_path, read_roots=(), secrets=None, manifest=manifest,\n                                    target=\"cognition:test\", capability_registry=body.registry)\n            out = adapter({\"problem_id\": \"detached\", \"operation\": \"calculate\", \"data\": {\"expression\": \"1+1\"}}, ctx)\n>           assert out[\"abstention_state\"] == \"CAPABILITY_DEFICIT\" and out[\"output\"] is None\nE           AssertionError: assert ('NONE' == 'CAPABILITY_DEFICIT'\nE             \nE             - CAPABILITY_DEFICIT\nE             + NONE)\n\ntests/integration/test_greg_cognition_mission.py:58: AssertionError\n=========================== short test summary info ============================\nFAILED tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it\n1 failed in 2.14s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "constraint",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 2.2969441440000082,
+      "test": "tests/unit/test_cognition_seed_gates.py::test_verifier_refutes_integer_violation",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___________________ test_verifier_refutes_integer_violation ____________________\n\n    def test_verifier_refutes_integer_violation():\n        d={**MODEL,\"objective\":{\"coefficients\":{\"x\":1},\"sense\":\"min\"}}\n        a=optimization(d,asdict(ProblemGeometry())); a[\"output\"][\"solution\"][\"x\"]=0; a[\"output\"][\"objective_value\"]=0\n>       assert verify(\"optimization\",d,a,\"optimization_certificate\")[\"verdict\"]==\"REFUTED\"\nE       AssertionError: assert 'STRUCTURALLY_VERIFIED' == 'REFUTED'\nE         \nE         - REFUTED\nE         + STRUCTURALLY_VERIFIED\n\ntests/unit/test_cognition_seed_gates.py:78: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_cognition_seed_gates.py::test_verifier_refutes_integer_violation\n1 failed in 1.32s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "unknown",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 1.2368353460001345,
+      "test": "tests/unit/test_cognition_seed_gates.py::test_real_solver_unknown_not_sat_or_optimal",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_real_solver_unknown_not_sat_or_optimal __________________\n\n    def test_real_solver_unknown_not_sat_or_optimal():\n        g=asdict(ProblemGeometry(compute_limit=1))\n        f=formal(MODEL,g)\n>       assert f[\"output\"][\"solver_status\"]==\"UNKNOWN\" and f[\"status\"]==\"UNKNOWN\"\nE       AssertionError: assert ('SAT' == 'UNKNOWN'\nE         \nE         - UNKNOWN\nE         + SAT)\n\ntests/unit/test_cognition_seed_gates.py:43: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_cognition_seed_gates.py::test_real_solver_unknown_not_sat_or_optimal\n1 failed in 0.49s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "evidence",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 2.4091437490001226,
+      "test": "tests/unit/test_cognition_seed_gates.py::test_forged_or_stale_evidence_abstains",
+      "stdout": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n__________________ test_forged_or_stale_evidence_abstains[s0] __________________\n\ns = {'id': 's1', 'text': 'Observed value 8', 'digest': 'sha256:0000000000000000000000000000000000000000000000000000000000000000', 'provenance': 'synthetic test source', ...}\n\n    @pytest.mark.parametrize(\"s\",[source(digest=\"sha256:\"+\"0\"*64),source(expires_at=\"2000-01-01T00:00:00Z\")])\n    def test_forged_or_stale_evidence_abstains(s):\n        r=reason(req(\"bind_evidence\",evidence(s)),registry=registry_view())\n>       assert r[\"abstention_state\"]==\"ABSTAIN\"\nE       AssertionError: assert 'NONE' == 'ABSTAIN'\nE         \nE         - ABSTAIN\nE         + NONE\n\ntests/unit/test_cognition_seed_gates.py:59: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_cognition_seed_gates.py::test_forged_or_stale_evidence_abstains[s0]\n1 failed, 1 passed in 1.59s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "duplicate_settlement",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 2.841566549000163,
+      "test": "tests/integration/test_greg_cognition_mission.py::test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n___ test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body ____\n\ntmp_path = PosixPath('/tmp/pytest-of-agent/pytest-10/test_cognition_is_durable_rece0')\n\n    def test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body(tmp_path):\n        home, key, body_id, _ = make_body(tmp_path)\n        params = {\"problem_id\": \"real:numeric\", \"operation\": \"calculate\", \"data\": {\"expression\": \"0.1+0.2\"}}\n        spec = mission(\"m:cognition\", checks=[{\n            \"check_id\": \"exact\", \"description\": \"independently checked exact arithmetic\",\n            \"sensor\": {\"capability\": \"cognition.solve\", \"target\": \"cognition:arithmetic\", \"params\": params},\n            \"predicate\": {\"op\": \"equals\", \"field\": \"output.exact\", \"value\": \"3/10\"}}],\n            strategies=[{\"action_id\": \"recompute\", \"capability\": \"cognition.solve\", \"target\": \"cognition:arithmetic\",\n                         \"params\": params, \"advances\": [\"exact\"], \"rationale\": \"recompute the exact numerical answer\"}],\n            capabilities=[\"cognition.solve\"], targets=(\"cognition:*\",), ceiling=\"read_only\")\n        drop(home, signed(key, body_id, \"MISSION\", spec))\n        with Body(home) as body:\n            body.boot()\n            outcome = body.tick()\n            assert outcome[\"missions\"][0][\"state\"] == \"ACHIEVED\"\n            receipts = [r.payload[\"result\"].get(\"output\") for r in body.ledger.by_type(\"receipt\")]\n            cognitive = next(r for r in receipts if isinstance(r, dict) and r.get(\"problem_id\") == \"real:numeric\")\n            assert cognitive[\"method\"] == \"cognition.exact\" and cognitive[\"authority_created\"] is False\n            appraised = body.journal.replay(\"mission.appraised\")[-1].payload\n            assert appraised[\"verdict\"] == \"VERIFIED\", appraised\n            assert len(competence(body.journal)) == 1\n            assert len(body.journal.replay(\"cognition.settled\")) == 1\n            from greg.cognition.cells import cells\n            cell = cells(body.journal, body.registry)[0]\n            assert cell[\"local_state\"][\"observed\"] == 1 and cell[\"local_state\"][\"correct\"] == 1\n            assert cell[\"authority_ceiling\"] == \"read_only\"\n            cell_id = cell[\"cell_id\"]\n            count = len(body.ledger.by_type(\"receipt\"))\n        with Body(home) as body:\n            body.boot()\n>           body.tick()\n\ntests/integration/test_greg_cognition_mission.py:37: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \ngreg/body.py:428: in tick\n    settle_cognition(self.journal)\ngreg/cognition/settlement.py:97: in reconcile\n    journal.record(\"cognition.settled\", {**outcome, \"supersedes\": prior.event_id if prior else None},\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <greg.journal.Journal object at 0x7efcdc171cd0>\nkind = 'cognition.settled'\ndata = {'mission_id': 'm:cognition', 'receipt': 'sha256:d0cbe1ce6cff0e88cbc0681ffbba5d0b60ba2417f7126569d845602478b8d6b1', 'c..._receipt': 'sha256:4bd4d8ac4bc8e0eb721c2402755df2c94c756b99ff46668ef7ecf5e44159bc70', 'method': 'cognition.exact', ...}\nkey = ['sha256:7f65169d6afd48bc52e16e53bff181c9f1c0ad88d6a2faa006894a9c80f1e092', '1e83b692-df48-55ab-ba3c-64441a9bcb35', 'b9f596b4-e44d-585f-8aa5-d567a420434d']\ncausal_parent = '1e83b692-df48-55ab-ba3c-64441a9bcb35', sensitivity = 'internal'\n\n    def record(self, kind: str, data: dict, *, key: object = None, causal_parent: str | None = None,\n               sensitivity: str = \"internal\") -> Event:\n        \"\"\"Append one fact; ``key`` makes the fact idempotent across ticks and restarts.\n    \n        A fact is its type, identity key and payload. The envelope (the actor's\n        per-boot passport, the emission time) is not part of the fact, so\n        re-recording a retained fact returns it, even from a new process. The\n        same identity with a different payload is still refused.\n        \"\"\"\n        identity = sha256_json({\"kind\": kind, \"key\": key if key is not None else data})\n        event_id = str(uuid.uuid5(NAMESPACE, identity))\n        snapshot = json.loads(json.dumps(data, allow_nan=False))  # what the ledger would retain\n        retained = self._retained(event_id)\n        if retained is not None:\n            if retained.type != \"greg.\" + kind or sha256_json(retained.payload) != sha256_json(snapshot):\n>               raise EventError(f\"fact identity greg.{kind} reused with different content\")\nE               events.spine.EventError: fact identity greg.cognition.settled reused with different content\n\ngreg/journal.py:52: EventError\n=========================== short test summary info ============================\nFAILED tests/integration/test_greg_cognition_mission.py::test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body\n1 failed in 2.08s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "paid_fallback",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 0.5078370440000981,
+      "test": "tests/unit/test_cognition_seed_gates.py::test_catalog_not_eligibility_and_no_paid_fallback",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________ test_catalog_not_eligibility_and_no_paid_fallback _______________\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7792256d20>\n\n    def test_catalog_not_eligibility_and_no_paid_fallback(monkeypatch):\n        monkeypatch.setenv(\"OPENAI_API_KEY\",\"test-never-used\")\n        def forbidden_paid(*args, **kwargs):\n            raise AssertionError(\"paid route was invoked by key presence\")\n        monkeypatch.setattr(\"greg.models.OpenAIRoute\", forbidden_paid)\n        r=reason(req(\"interpret\",{\"sources\":[source()]}),registry=registry_view())\n>       assert r[\"reason_code\"]==\"CAPABILITY_UNAVAILABLE\"\nE       AssertionError: assert 'INSUFFICIENT_EVIDENCE' == 'CAPABILITY_UNAVAILABLE'\nE         \nE         - CAPABILITY_UNAVAILABLE\nE         + INSUFFICIENT_EVIDENCE\n\ntests/unit/test_cognition_seed_gates.py:131: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_cognition_seed_gates.py::test_catalog_not_eligibility_and_no_paid_fallback\n1 failed in 0.18s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    },
+    {
+      "mutant": "protected_party",
+      "detected": true,
+      "exit_code": 1,
+      "seconds": 1.378037121000034,
+      "test": "tests/unit/test_cognition_seed_gates.py::test_score_improvement_cannot_harm_protected_party",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n______________ test_score_improvement_cannot_harm_protected_party ______________\n\n    def test_score_improvement_cannot_harm_protected_party():\n        r=reason(req(\"optimize\",{**MODEL,\"objective\":{\"coefficients\":{\"x\":1},\"sense\":\"max\"}},consequences={\"rights\":.1}),registry=registry_view())\n>       assert r[\"abstention_state\"]==\"PROHIBITED\" and r[\"output\"] is None\nE       AssertionError: assert ('NONE' == 'PROHIBITED'\nE         \nE         - PROHIBITED\nE         + NONE)\n\ntests/unit/test_cognition_seed_gates.py:122: AssertionError\n=========================== short test summary info ============================\nFAILED tests/unit/test_cognition_seed_gates.py::test_score_improvement_cannot_harm_protected_party\n1 failed in 0.98s\n",
+      "stderr": "",
+      "limit": "paid fallback mutant changes the refusal disposition; no real paid request is made"
+    }
+  ],
+  "all_detected": true
+}

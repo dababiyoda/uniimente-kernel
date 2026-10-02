@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-01T14:34:16.013058+00:00",
+  "event": "execution environment replacement stopped the ephemeral model process; retained verified binaries and weights were reused",
+  "authority": "Development-only server restart under existing user authorization; no GREG live authority renewal or model-server installation",
+  "trial": "heldout-v3.json was launched while server unavailable; server restarted near its end. Preserve as environment-disturbed trial, not the final uninterrupted model comparison."
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uniimente.example/contracts/cortex-receipt.schema.json",
-  "title": "Cortex CognitiveReceipt v0.1",
+  "title": "Cortex CognitiveReceipt v0.2",
   "description": "Content-addressed record of one cortex decision. Separates formal validity, empirical validity and legitimate authority. Cognitive results create no authority.",
   "type": "object",
   "additionalProperties": false,
@@ -39,7 +39,10 @@
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "schema": {
-      "const": "cortex-receipt/0.1"
+      "enum": [
+        "cortex-receipt/0.1",
+        "cortex-receipt/0.2"
+      ]
     },
     "created_at": {
       "type": "string",
@@ -171,7 +174,8 @@
               "simulation",
               "human_adjudication",
               "measurement",
-              "institutional_observation"
+              "institutional_observation",
+              "extraction"
             ]
           }
         }
@@ -533,6 +537,150 @@
           "const": "competence evidence and proof narrow disputes; they never create authority"
         }
       }
+    },
+    "l1_checks": {
+      "description": "Layer-1 primitive checks (0.2). Four distinct values: pass, fail, unknown, not_applicable.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "check",
+          "value",
+          "detail"
+        ],
+        "properties": {
+          "check": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "enum": [
+              "pass",
+              "fail",
+              "unknown",
+              "not_applicable"
+            ]
+          },
+          "detail": {}
+        }
+      }
+    },
+    "budget_controller": {
+      "description": "Thinking-budget decisions (0.2): optional deeper cognition taken or declined, with the reason.",
+      "type": "object",
+      "required": [
+        "policy",
+        "decisions",
+        "mandatory",
+        "note"
+      ],
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "step",
+              "taken",
+              "reason"
+            ],
+            "properties": {
+              "step": {
+                "type": "string"
+              },
+              "taken": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "mandatory": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "outcome": {
+      "description": "Directive section 6 outcome and machine-readable reasons, projected from state and disposition.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "reasons",
+        "taxonomy"
+      ],
+      "properties": {
+        "outcome": {
+          "enum": [
+            "ANSWERED_WITHIN_SCOPE",
+            "CONDITIONAL_RESULT",
+            "ABSTAIN",
+            "WAIT",
+            "REQUEST_EVIDENCE",
+            "SMALL_EXPERIMENT",
+            "ESCALATE"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "UNKNOWN_GEOMETRY",
+              "NO_ELIGIBLE_METHOD",
+              "INSUFFICIENT_EVIDENCE",
+              "WORLD_UNVERIFIED",
+              "NON_IDENTIFIABLE",
+              "FORMALIZATION_INCOMPLETE",
+              "MODEL_INVALID",
+              "SOLVER_UNKNOWN",
+              "TIMEOUT",
+              "BUDGET_EXHAUSTED",
+              "CONTRADICTION",
+              "OUT_OF_DISTRIBUTION",
+              "HUMAN_JUDGMENT_REQUIRED",
+              "AUTHORITY_REQUIRED",
+              "POLICY_REFUSAL",
+              "CAPABILITY_UNAVAILABLE"
+            ]
+          }
+        },
+        "taxonomy": {
+          "type": "string"
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema": {
+            "const": "cortex-receipt/0.2"
+          }
+        },
+        "required": [
+          "schema"
+        ]
+      },
+      "then": {
+        "required": [
+          "l1_checks",
+          "budget_controller",
+          "outcome"
+        ]
+      }
+    }
+  ]
 }

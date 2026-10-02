@@ -206,7 +206,14 @@
       "simplest_viable_alternative": "Add local signed community records and observed journeys through existing guarded GREG; reuse TerritoryGraph and SQLite.",
       "strongest_competing_architecture": "Integrate self-hosted Discourse/Ghost and PostHog with owned deployment.",
       "reversible_experiment": "Signed synthetic members, export/import, hostile mutations, temporal-control fixtures and signed GREG missions in CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: No owned instance is connected; installation/deployment cannot be inferred from fixture tests. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Authorized available owned deployment and verified export/authority contracts."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Attack identity overclaim, signature/history forgery, fabricated causality, export truncation and parallel graph/authority drift; strengthen each before implementation.",

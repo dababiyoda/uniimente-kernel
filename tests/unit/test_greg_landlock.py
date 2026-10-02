@@ -36,6 +36,7 @@ libc=ctypes.CDLL(None,use_errno=True)
 libc.open.argtypes=[ctypes.c_char_p,ctypes.c_int]
 libc.open.restype=ctypes.c_int
 installed=confine(root,[public])
+lazy_runtime=ctypes.CDLL('librt.so.1')
 native_read=libc.open(os.fsencode(private),os.O_RDONLY)
 native_errno=ctypes.get_errno()
 try:

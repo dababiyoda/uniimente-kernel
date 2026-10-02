@@ -3,11 +3,11 @@
     "z"
   ],
   "ci95_bootstrap": [
-    1.7894413709111396,
-    2.1590794719145205
+    1.78944137091114,
+    2.159079471914521
   ],
   "estimand": "average treatment effect of t on y",
-  "estimate": 1.9649018006827108,
+  "estimate": 1.9649018006827104,
   "evidence_assessment": {
     "as_of": "2026-09-30",
     "available": [],
@@ -52,7 +52,7 @@
   ],
   "method": "stratified",
   "n": 600,
-  "naive_difference": 3.14197321214276,
+  "naive_difference": 3.1419732121427613,
   "outcome": "y",
   "positivity": {
     "dropped_fraction": 0.0,
@@ -61,17 +61,17 @@
   "proof_class": "causal_estimate",
   "refutations": [
     {
-      "estimate": -0.012219575573566314,
+      "estimate": -0.012219575573566177,
       "name": "placebo_treatment",
       "passed": true
     },
     {
       "estimates": [
-        1.8268750119231076,
+        1.8268750119231065,
         1.7914404845070528,
-        2.0655001060330047,
-        1.8829210703770642,
-        1.9901477738982207
+        2.065500106033005,
+        1.882921070377065,
+        1.9901477738982198
       ],
       "name": "data_subset_stability",
       "passed": true

@@ -488,7 +488,8 @@ class OrganResult:
 
     def to_dict(self) -> dict:
         return {"organ_id": self.organ_id, "organ_version": self.organ_version, "state": self.state,
-                "answer": None if self.answer is None else dict(self.answer), "proof": dict(self.proof), "assumptions": list(self.assumptions),
+                "answer": None if self.answer is None else dict(self.answer),
+                "proof": dict(self.proof), "assumptions": list(self.assumptions),
                 "uncertainty": self.uncertainty, "expenditure": self.expenditure.to_dict(),
                 "dependencies": list(self.dependencies), "origin": self.origin,
                 "notes": list(self.notes)}

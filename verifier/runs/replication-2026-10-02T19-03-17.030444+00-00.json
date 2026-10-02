@@ -1,0 +1,17 @@
+{
+  "verifier": "local-clone-tip-replication",
+  "ts_utc": "2026-10-02T19:03:17.030444+00:00",
+  "command": "same local single-branch clone after fetching pinned historical objects 3e059c20 (ancestor of spec.BASE_COMMIT 5e02e47f) and cb234faf from the local shared object store via temporary refs (sandbox has no git credentials and the GitHub MCP server is unavailable this turn; objects are content-addressed, so the bytes are the bytes origin would serve); /tmp/greg-venv/bin/python -m pytest tests/unit -q",
+  "head_commit": "042074fba743aaf115e3d14d21c2bebecd16ffe6",
+  "tracked_tree": "e19afbe5dd586ae20fe1474b8c099a54fd487a19 (clean single-branch clone)",
+  "exit_code": 1,
+  "passes": [
+    "pytest tests/unit on an independent clean clone of local tip 042074f: 1831 passed, 6 skipped, 2 failed in 419.45s (0:06:59) - byte-identical result profile to the worktree run, from a tree carrying no worktree state; the six 0.4.0 composition / cap-honesty / freeze-non-contamination tests pass within the 1831"
+  ],
+  "skips": [
+    "6 skipped (matches the worktree run)"
+  ],
+  "failures": [
+    "tests/unit/test_migration_spec_frozen.py::test_base_commit_is_the_verified_package_3_merge and tests/unit/test_repair_spec_frozen.py::test_baseline_commit_is_the_merged_canonical_head: the two documented pre-existing ancestry-lock environment failures - cb234faf present but not an ancestor of the MCP-built branch line; reproduced identically at pre-slice tip d31848a; resolvable only by merge into canonical history. With cb234faf absent these two skip but three unguarded git-show continuity tests fail instead (see the previous run record): no clone of this branch line can be fully green pre-merge, by construction of the frozen specs"
+  ]
+}

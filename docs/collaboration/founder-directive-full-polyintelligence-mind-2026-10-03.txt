@@ -997,7 +997,8 @@ Where possible, cognition should emit not only an answer but the evidence needed
 
 Examples:
 
-* solver output
+solver output
+
 * constraints
 * witness
 * independent checker.

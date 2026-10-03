@@ -42,10 +42,10 @@ def profile(family):
 # capability: founder CAPABILITY_DETACH withholds the organ from cortex routing.
 # capability id -> (version, epistemic classes, deterministic, network, description)
 CORTEX_ENTRIES = {
-    "cognition.cortex": ("0.3.0", ("constraint_feasibility", "deductive", "optimization", "estimate", "causal",
+    "cognition.cortex": ("0.4.0", ("constraint_feasibility", "deductive", "optimization", "estimate", "causal",
                                    "prediction", "semantic", "strategic", "unresolved"), True, "egress-allowlist",
                          "Cortex router: geometry, hard eligibility, two formal engines, formed-function "
-                         "organs, verifier, typed receipt"),
+                         "organs, bounded n-part composition with cap honesty, verifier, typed receipt"),
     "cognition.cortex.formal.z3": ("0.2.0", ("deductive", "constraint_feasibility", "optimization", "arithmetic"),
                                    True, "none", "Z3 feasibility, entailment and certified optimization"),
     "cognition.cortex.optimization.cpsat": ("0.2.0", ("deductive", "constraint_feasibility", "optimization"), True,

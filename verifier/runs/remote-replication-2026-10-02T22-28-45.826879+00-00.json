@@ -1,0 +1,24 @@
+{
+  "verifier": "remote-clone-tip-replication",
+  "ts_utc": "2026-10-02T22:28:45.826879+00:00",
+  "command": "git clone --single-branch --branch kimi/cortex-npart-composition-20261003 https://github.com/dababiyoda/uniimente-kernel (anonymous; no credentials); git fetch origin 3e059c20331d96e05a44daac1b097896aaabde93 and git fetch origin cb234faf932d239d79b0e7ab28e54f576b8a15bf (both succeeded over the public remote this run); uv venv --python 3.12 with requirements-cortex.txt + requirements-cognition.txt + pytest jsonschema pyyaml rfc3339-validator cryptography rfc3161-client supervisor pandas 'mpmath<1.4'; /tmp/remote-repl-venv/bin/python -m pytest tests/unit -q",
+  "head_commit": "b1286267587d043884641f5ce043fabaa834726e",
+  "tracked_tree": "41f21587a232d657f078a7f93d54acd7a3a8f247 (fresh anonymous clone of the pushed remote branch; tree identical to the intended local tip e516df54be4039fe80c962d0c4e03026b2b9a684)",
+  "exit_code": 0,
+  "passes": [
+    "pytest tests/unit on the fresh remote clone: 1833 passed, 6 skipped, 0 failed in 427.58s (solo run) and again 1833 passed, 6 skipped, 0 failed in 892.43s (-rs re-run overlapping verifier run 1) - the six 0.4.0 composition / cap-honesty / freeze-non-contamination tests pass within the 1833",
+    "frozen-spec ancestry tests pass natively on this branch line: cb234faf932d239d79b0e7ab28e54f576b8a15bf and 5e02e47f604770fdee2c05b25418ef003f5b2b92 are ancestors of the remote branch tip (cb234faf is the merge base of the 0.3.0 base c5801136); test_migration_spec_frozen.py + test_repair_spec_frozen.py 35 passed standalone",
+    "verifier/v4/verify.py second run on the same clone: PASS V1, V2 (1833 passed, 6 skipped in 428.56s), V3, V4, V5, V6 - record verifier/runs/v4-2026-10-02T22-24-16.849187+00-00.json",
+    "CORRECTION to the earlier structural finding carried in replication-2026-10-02T19-03-17.030444+00-00.json ('no clone of this branch line can be fully green pre-merge'): that finding describes the LOCAL master-based line (tips d31848a/e516df5, descended from the PR #143 frontier 68b484bb), where cb234faf is genuinely absent from ancestry and the 2 ancestry-lock failures reproduce. The REMOTE branch line descends from c5801136, which already contains cb234faf; a fresh clone of it is fully green (1833/6/0) with no ancestry failures. The earlier claim is hereby narrowed to the local master-based line only"
+  ],
+  "skips": [
+    "tests/unit/test_greg_routing_integrity_sdk.py:11 - could not import 'httpx2' (optional dependency absent)",
+    "tests/unit/test_greg_ventures.py:218 - set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts (environment fixtures absent)",
+    "tests/unit/test_research_line.py:294 - could not import 'duckdb' (optional dependency absent)",
+    "tests/unit/test_research_line.py:307 [3 tests] - Real composition requires clean pinned consumer checkouts (environment fixtures absent)"
+  ],
+  "failures": [
+    "verifier/v4/verify.py first run on this clone: FAIL V2 with pytest tests/unit reporting 1 failed, 1832 passed, 6 skipped in 881.52s; V1, V3, V4, V5, V6 all PASS; overall verdict FAIL - preserved verbatim in verifier/runs/v4-2026-10-02T22-11-55.982277+00-00.json",
+    "the single failing test was identified from .pytest_cache/v/cache/lastfailed as tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms[polynomial-data1-exact-real_roots-expected1]; it passed in the solo standalone run, in the -rs standalone run (both 1833/6/0), and in isolated re-run (17/17 parametrizations, 5.77s); the failure occurred while the verifier's internal suite and the -rs suite were running concurrently on shared CPUs; classified as a non-reproducing environmental flake, NOT a defect of the pushed tree, and NOT hidden - both verifier run records ship on the branch"
+  ]
+}

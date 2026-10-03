@@ -524,10 +524,12 @@
       "evidence": [
         "cortex/genome.py",
         "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_committee_records_shared_dependency",
-        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry"
+        "tests/unit/test_cortex_pipeline.py::TestGeometry::test_composition_checks_each_part_against_its_own_geometry",
+        "tests/unit/test_cortex_npart_composition.py",
+        "verifier/v4/"
       ],
       "backcast": "N3",
-      "notes": "Failure-diversity keys, shared-dependency records and a model-free verifier; multi-mechanism composition is bounded to the parts present in a problem.",
+      "notes": "Failure-diversity keys, shared-dependency records and a model-free verifier; multi-mechanism composition is bounded to the parts present in a problem, up to four parts (0.4.0), with cap-dropped parts named honestly and aggregate solver-call demand refused before spending.",
       "items": null
     },
     {
@@ -1069,10 +1071,12 @@
       "disposition": "implemented_partial",
       "evidence": [
         "cortex/routing.py",
-        "docs/cortex/examples/receipt-gates-incomparable.json"
+        "docs/cortex/examples/receipt-gates-incomparable.json",
+        "tests/unit/test_cortex_npart_composition.py",
+        "verifier/v4/"
       ],
       "backcast": "N3",
-      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages.",
+      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. 0.4.0: compose extends to bounded n-part compositions (cap 4) with cap honesty. Metaconsensus, value-of-information budgeting and capability genesis are later stages.",
       "items": null
     },
     {
@@ -1455,10 +1459,12 @@
       "anchor": "27. Layer 5: Macro-Cognition / Meta-Intelligence",
       "disposition": "implemented_partial",
       "evidence": [
-        "cortex/routing.py"
+        "cortex/routing.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "verifier/v4/"
       ],
       "backcast": "N3",
-      "notes": "The router decides how a problem is represented, attacked, verified and decided for the seed families.",
+      "notes": "The router decides how a problem is represented, attacked, verified and decided for the seed families; 0.4.0 extends the attack step to bounded n-part compositions (cap 4) with honest cap-drop reporting.",
       "items": null
     },
     {
@@ -1507,10 +1513,11 @@
       "disposition": "implemented_partial",
       "evidence": [
         "cortex/routing.py",
-        "docs/cortex/README.md#pipeline"
+        "docs/cortex/README.md#pipeline",
+        "tests/unit/test_cortex_npart_composition.py"
       ],
       "backcast": "N4",
-      "notes": "The mature diagram's seed subset runs end to end; other branches are reserved.",
+      "notes": "The mature diagram's seed subset runs end to end, now with bounded n-part composition (0.4.0: cap 4, cap-dropped parts named honestly); other branches are reserved.",
       "items": null
     },
     {
@@ -1577,10 +1584,11 @@
         "cortex/organs/deterrence.py",
         "tests/unit/test_cortex_routes.py::TestDeterrence::test_certainty_beats_severity_and_coercion_is_never_ranked",
         "tests/unit/test_cortex_pipeline.py::TestDeterrenceRouting::test_action_reaching_another_party_is_handed_off",
-        "scripts/ci/check_cortex_mutants.py"
+        "scripts/ci/check_cortex_mutants.py",
+        "tests/unit/test_cortex_npart_composition.py::TestBoundedComposition::test_five_parts_hit_the_cap_and_the_dropped_part_is_named_honestly"
       ],
       "backcast": "N3",
-      "notes": "Cortex 0.1.5 adds a lawful deterrence organ: the Becker expected-value condition over declared ranges, a closed lawful intervention vocabulary, coercive and hard-harm interventions refused before ranking, each intervention labelled certainty/severity/opportunity (Nagin 2013: certainty deters more reliably), and any action reaching another party handed to the competent authority. Composition with game, causal and graph families (actor incentives, causal effect of controls, control points) remains Node 3/4.",
+      "notes": "Cortex 0.1.5 adds a lawful deterrence organ: the Becker expected-value condition over declared ranges, a closed lawful intervention vocabulary, coercive and hard-harm interventions refused before ranking, each intervention labelled certainty/severity/opportunity (Nagin 2013: certainty deters more reliably), and any action reaching another party handed to the competent authority. 0.4.0: the composition half advances — one payload now composes up to four parts (deterrence alongside formal, estimation, graph and continuous-optimization parts) with cap-dropped parts named honestly; composition with the game family remains Node 3/4.",
       "items": null
     },
     {
@@ -1870,10 +1878,12 @@
       "disposition": "implemented_partial",
       "evidence": [
         "cortex/routing.py",
-        "cortex/memory.py"
+        "cortex/memory.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "verifier/v4/"
       ],
       "backcast": "N4",
-      "notes": "Competency Compiler questions answered now: problem kind, epistemology, competency class, legitimate proof, independent falsifier, budget, existing capability, authority, outcome link, future routing. Not yet: recombination beyond two parts, capability generation.",
+      "notes": "Competency Compiler questions answered now: problem kind, epistemology, competency class, legitimate proof, independent falsifier, budget, existing capability, authority, outcome link, future routing. 0.4.0: recombination beyond two parts — bounded n-part composition (cap 4) with cap honesty and aggregate solver-budget refusal. Not yet: capability generation.",
       "items": null
     },
     {

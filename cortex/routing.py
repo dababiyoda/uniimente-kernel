@@ -39,7 +39,7 @@ from .organs.schedule_extraction import ScheduleExtractionOrgan
 from .organs import schedule_extraction
 from .organs.semantic import SemanticOrgan
 
-POLICY_VERSION = "cortex-route-policy/0.3.0"
+POLICY_VERSION = "cortex-route-policy/0.4.0"
 BUDGET_POLICY = "cortex-thinking-budget/0.1"
 RECEIPT_SCHEMA = "cortex-receipt/0.2"
 FORMAL = "cortex.formal.z3@0.2.0"
@@ -64,7 +64,11 @@ SOLVER_CALLERS = FORMAL_ENGINES + (GRAPH, CONOPT)
 # Policy 0.3 (issue #117, PR #143 handoff): graph -> the graph.search organ and
 # linear_program -> the continuous-optimization organ; both recruit founder-attached
 # formed functions (Capability Genesis) and accept answers only on GREG's certificate.
-MAX_COMPOSITION = 2
+# Policy 0.4 (register rows A36/B47/B36/A52/B27/B31): bounded n-part composition. The cap
+# rises 2 -> 4 (seven route kinds exist; formal_model and schedule_request are exclusive,
+# so at most seven parts can ever be required). The bound stays hard so spend and coupling
+# stay bounded, and parts it drops are named honestly as cap-dropped, never as unrequired.
+MAX_COMPOSITION = 4
 
 # State -> disposition, before verifier findings and gates can only lower it.
 STATE_DISPOSITION = {
@@ -360,27 +364,41 @@ class Cortex:
                 parts[i] = (lead, part_class)
                 rows = {e.key: e for e in self.registry.eligibility(replace(geometry, epistemic_class=part_class))}
                 part_eligibility.update({k: rows[k] for k in FORMAL_ENGINES if k in rows})
-        selected = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible][:MAX_COMPOSITION]
+        eligible_parts = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible]
+        if self.memory is not None and len(eligible_parts) > 1:
+            # Learning reorders among the eligible only, before the cap, so verified
+            # competence decides which parts survive the bound; it never widens it.
+            eligible_parts = self.memory.reorder(eligible_parts, geometry)
+        selected = eligible_parts[:MAX_COMPOSITION]
+        cap_dropped = [k for k in eligible_parts if k not in selected]
         by_key = {e.key: e for e in eligibility}
         by_key.update(part_eligibility)
         eligibility = [by_key[k] for k in sorted(by_key)]
-        if self.memory is not None and len(selected) > 1:
-            selected = self.memory.reorder(selected, geometry)
-        alternatives = [{"route": e.key, "why_not": list(e.reasons) or ["not required by this payload"]}
-                        for e in eligibility if e.key not in selected]
+        alternatives = []
+        for e in eligibility:
+            if e.key in selected:
+                continue
+            if e.key in cap_dropped:
+                why_not = [f"required by this payload and eligible; dropped by the composition "
+                           f"bound (MAX_COMPOSITION={MAX_COMPOSITION}, {POLICY_VERSION})"]
+            else:
+                why_not = list(e.reasons) or ["not required by this payload"]
+            alternatives.append({"route": e.key, "why_not": why_not})
 
         # budget: refuse before spending, never after
         limits = geometry.resource_limits
         profiles = self.registry.profiles()
         planned_cost = sum(profiles[k].cost_usd_per_call for k in selected)
         planned_model_calls = sum(1 for k in selected if k == SEMANTIC)
+        planned_solver_calls = len(set(SOLVER_CALLERS) & set(selected))
         budget_problem = None
         if planned_cost > limits.max_cost_usd:
             budget_problem = f"planned cost {planned_cost} exceeds {limits.max_cost_usd}"
         elif planned_model_calls > limits.max_model_calls:
             budget_problem = f"route needs {planned_model_calls} model call(s); budget allows {limits.max_model_calls}"
-        elif set(SOLVER_CALLERS) & set(selected) and limits.max_solver_calls < 1:
-            budget_problem = "route needs the solver; solver-call budget is zero"
+        elif planned_solver_calls > limits.max_solver_calls:
+            budget_problem = (f"route needs at least {planned_solver_calls} solver call(s); "
+                              f"budget allows {limits.max_solver_calls}")
 
         results: list[OrganResult] = []
         attempts: list[dict] = []
@@ -466,7 +484,7 @@ class Cortex:
         return self._receipt(source_problem, geometry, eligibility, selected, alternatives, results, verifier,
                              gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
                              formal_plan=formal_plan, attempts=attempts, decisions=decisions, l1=l1,
-                             extra_reasons=extra_reasons)
+                             extra_reasons=extra_reasons, cap_dropped=cap_dropped)
 
 
 
@@ -750,7 +768,7 @@ class Cortex:
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
                  ranking, state, disposition, reason, next_step, spent, protection=None, *, formal_plan=None,
-                 attempts=(), decisions=(), l1=(), extra_reasons=()) -> dict:
+                 attempts=(), decisions=(), l1=(), extra_reasons=(), cap_dropped=()) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -783,6 +801,8 @@ class Cortex:
             "eligibility": [e.to_dict() for e in eligibility],
             "route": {"policy": POLICY_VERSION, "selected": list(selected),
                       "composition": len(selected) > 1,
+                      "max_parts": MAX_COMPOSITION,
+                      "cap_dropped": list(cap_dropped),
                       "rationale": "structured payload fields select routes by the fixed policy table; "
                                    "eligibility and budget filter first",
                       "formal_plan": formal_plan, "attempts": list(attempts)},

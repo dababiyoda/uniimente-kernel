@@ -1,0 +1,2031 @@
+UNIIMENTE / GREG
+
+FULL POLYINTELLIGENCE MIND COMPLETION DIRECTIVE
+
+CONTROLLING FOUNDER INTENT
+
+Apply all relevant skills available to you, including the founder-intent collaboration protocol, Mechanism Recombination Foundry, Spider-Web Hegemony, Backcast GPS, strategic search, estimation, research, coding, repository inspection, adversarial review, and every other capability that materially improves execution.
+
+FOLLOW ALL INSTRUCTIONS VERBATIM. MEET THE LEVEL EXPRESSED IN THIS PROMPT AND EXCEED MY EXPECTATIONS.
+
+Be an overachiever.
+
+Think deeply and thoroughly.
+
+Learn and understand the entire Egregore project.
+
+NOTHING IS DISCONNECTED.
+
+Everything is modular and part of the whole.
+
+The interconnectedness of all of these systems culminates in the complete product described throughout the repository, founder directives, architecture, conversations, issues, PRs, experiments, research, and accumulated evidence.
+
+The fixed product boundary is:
+
+BODY + ORGANS + MIND = GREG / UNIIMENTE
+
+The objective is not to produce another document explaining the Mind.
+
+The objective is not to build another seed and stop.
+
+The objective is not to prove that one intelligence works.
+
+The objective is not to create a registry containing names of intelligences that do not actually exist.
+
+The objective is not to complete another PR and declare success.
+
+The objective is:
+
+BUILD THE COMPLETE CURRENTLY ACHIEVABLE GREG / UNIIMENTE MACHINE.
+
+And within that machine:
+
+BUILD THE FULL POLYINTELLIGENCE MIND.
+
+Build each intelligence.
+
+Connect each intelligence.
+
+Give each intelligence a real functional role.
+
+Give GREG the ability to determine when it should use each one.
+
+Give GREG the ability to compose multiple intelligences when the problem requires them.
+
+Give GREG the ability to test them.
+
+Give GREG the ability to verify their outputs.
+
+Give GREG the ability to compare competing cognitive approaches.
+
+Give GREG the ability to abstain when none can legitimately solve the problem.
+
+Give GREG the ability to learn from reality which intelligence works where.
+
+Give GREG the bounded ability to acquire, construct, test, reject, register, improve, and reuse additional forms of intelligence when its existing repertoire is inadequate.
+
+And then keep going.
+
+⸻
+
+0. FULL-MACHINE COMPLETION CORRECTION
+
+A systemic execution error has already been identified:
+
+The project has repeatedly optimized for the smallest provable increment instead of completing the intended machine.
+
+Do not repeat this error.
+
+Replace:
+
+Find the smallest defensible thing → build it → prove it → stop.
+
+With:
+
+Reconstruct the full BODY + ORGANS + MIND completion boundary → identify the highest-priority unfinished portions → build the largest coherent portion currently possible → verify it → integrate it → continue immediately into the next unfinished portion.
+
+The controlling rule is:
+
+Optimize for completion of the largest coherent portion of the intended machine that present evidence, dependencies, permissions, and technology allow, not for the smallest increment that can be proved.
+
+A:
+
+* seed;
+* experiment;
+* sandbox;
+* benchmark;
+* evaluation;
+* fixture;
+* simulation;
+* PR;
+* branch;
+* milestone;
+* VEPMC;
+* Backcast node;
+* successful test suite;
+* implemented intelligence;
+* dependency;
+* architectural document
+
+is an intermediate engineering state.
+
+IT IS NEVER A STOPPING CONDITION AND MUST NEVER REDEFINE OR NARROW THE FINAL MACHINE.
+
+A completed slice is not a completed Mind.
+
+A completed Mind component is not a completed GREG.
+
+A blocked evaluation is not permission to narrow the destination.
+
+A dependency that cannot yet be completed is not permission to stop work on independent portions.
+
+Continue building every independently achievable part of the machine.
+
+⸻
+
+1. PRESERVE THE DESTINATION
+
+Build this:
+
+“Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems, SOPs, collaboration and Different forms of intelligence as described by levin; whose public community influences it while it influences and helps that community; whose positive Infinite Goal Chase creates persistent regenerative pressure; whose functional survival mechanisms preserve continuity and genius persistent adaptive unwavering goal chase to achieve its goals; and whose architecture can progressively absorb future technology until its integrated behavior approaches the Jarvis/self-driving-car level of mechanistic aliveness”
+
+Preserve the lawful human authority boundary and legitimate shutdown authority.
+
+Do not turn capability growth into authority growth.
+
+CAPABILITY GROWTH != AUTHORITY GROWTH.
+
+Models reason.
+
+Intelligences solve.
+
+Agents propose.
+
+Tools execute within authorization.
+
+Authorized humans and constitutional policy determine consequential authority.
+
+Reality determines whether the system was correct.
+
+⸻
+
+2. DO NOT LITERALIZE THE BIOLOGY
+
+DO NOT LITERALIZE THE BIOLOGY.
+
+Biological language in this architecture is frequently functional inspiration.
+
+Translate it into engineering mechanisms.
+
+Examples:
+
+Immune system
+does not mean pretend GREG has biological immunity.
+
+It means mechanisms such as:
+
+detect → classify → contain → remember → recover → adapt.
+
+Morphogenesis
+does not mean grow biological tissue.
+
+It means:
+
+goal / constraint field → local interactions → organization formation → evaluation → repair / reorganization.
+
+Metabolism
+means resource acquisition, allocation, expenditure, replenishment, and efficiency.
+
+Homeostasis
+means controlled state maintenance.
+
+Evolution
+means variation → evaluation → selection → retention.
+
+Development
+means capability acquisition and structural change through bounded feedback.
+
+Swarm
+means decentralized local interaction producing useful collective behavior.
+
+Body
+means the persistent substrate through which GREG perceives, remembers, reasons, acts, recovers, and maintains continuity.
+
+Organs
+means specialized functional systems.
+
+Mind
+means the complete governed Polyintelligence architecture.
+
+Preserve the functional ambition.
+
+Do not build theatrical biological metaphors.
+
+⸻
+
+3. PRESERVE AMBITIOUS AND SCIENCE-FICTION GOALS
+
+Do not mark an ambitious goal “outdated” merely because it cannot be implemented today.
+
+Do not silently delete it.
+
+Do not shrink it until it becomes trivial.
+
+Do not confuse:
+
+not currently achievable
+
+with:
+
+not intended.
+
+Use Backcast GPS.
+
+Translate:
+
+far-future destination
+→ required predecessor capability
+→ required predecessor
+→ required predecessor
+→ currently achievable engineering frontier.
+
+Build forward from the frontier while preserving the destination.
+
+Label states honestly:
+
+* IMPLEMENTED
+* PARTIALLY IMPLEMENTED
+* BUILDABLE NOW
+* EXPERIMENTAL
+* FRONTIER
+* BLOCKED
+* SCIENCE-FICTION / LONG-HORIZON
+
+But preserve the lineage.
+
+⸻
+
+4. THE MIND IS POLYINTELLIGENCE
+
+GREG must not become merely one giant language model with tools.
+
+The intended Mind is:
+
+a governed system capable of identifying the geometry of a problem, selecting or composing the appropriate form of intelligence, proving what that form can legitimately prove, learning from reality which intelligence works where, and eventually constructing new bounded forms of cognition when the existing repertoire is inadequate.
+
+The Mind consists of multiple scales simultaneously.
+
+These are scales of organization, not sequential project phases.
+
+LEVEL 1 — PRIMITIVE / MICROINTELLIGENCE
+
+Build reusable cognitive primitives.
+
+Examples include:
+
+* exact arithmetic;
+* symbolic transformation;
+* comparison;
+* classification;
+* extraction;
+* normalization;
+* threshold detection;
+* constraint checking;
+* scoring;
+* ranking;
+* state transition;
+* pattern matching;
+* uncertainty representation;
+* evidence attribution;
+* provenance;
+* verification;
+* contradiction detection;
+* search primitives;
+* graph primitives;
+* optimization primitives;
+* simulation primitives;
+* causal primitives.
+
+These should be composable into higher-order competencies.
+
+⸻
+
+LEVEL 2 — BOUNDED COMPETENCY CELLS
+
+Create bounded executable competencies with explicit:
+
+* input contract;
+* output contract;
+* epistemic type;
+* capability boundary;
+* cost;
+* latency;
+* evidence requirements;
+* verifier;
+* failure modes;
+* abstention conditions;
+* provenance;
+* tests.
+
+These are not chatbot personas.
+
+They are executable cognitive units.
+
+Each competency must know what it can legitimately establish and what it cannot.
+
+⸻
+
+LEVEL 3 — SPECIALIZED INTELLIGENCE ORGANS
+
+Build the full currently achievable repertoire.
+
+Do not silently reduce this list.
+
+A. SEMANTIC / LANGUAGE INTELLIGENCE
+
+Natural-language:
+
+* interpretation;
+* decomposition;
+* synthesis;
+* abstraction;
+* analogy;
+* classification;
+* retrieval;
+* explanation;
+* translation between representations;
+* specification construction.
+
+Use language models where appropriate, but do not treat fluent language as proof.
+
+⸻
+
+B. EXACT / MATHEMATICAL / SYMBOLIC INTELLIGENCE
+
+Build competency for:
+
+* arithmetic;
+* algebra;
+* symbolic mathematics;
+* exact computation;
+* dimensional reasoning;
+* unit checking;
+* equation manipulation;
+* numerical verification.
+
+Use deterministic tools where they dominate probabilistic language reasoning.
+
+⸻
+
+C. FERMI / ESTIMATION INTELLIGENCE
+
+Build:
+
+* decomposition;
+* order-of-magnitude estimation;
+* inside-view estimates;
+* outside-view estimates;
+* uncertainty ranges;
+* sensitivity;
+* bottleneck variables;
+* dependency-aware estimates;
+* calibration;
+* adversarial cross-checking.
+
+Do not let Fermi reasoning become confident storytelling.
+
+⸻
+
+D. FORMAL REASONING INTELLIGENCE
+
+Use formal systems such as:
+
+* SAT;
+* SMT;
+* Z3;
+* theorem proving where appropriate;
+* satisfiability;
+* logical consistency;
+* invariant checking;
+* model checking.
+
+Produce machine-verifiable proof artifacts where possible.
+
+⸻
+
+E. CONSTRAINT INTELLIGENCE
+
+Build:
+
+* constraint satisfaction;
+* CP;
+* CP-SAT;
+* scheduling;
+* resource allocation;
+* feasibility checking;
+* combinatorial assignment.
+
+Independent verification must check proposed solutions.
+
+⸻
+
+F. OPTIMIZATION / OPERATIONS-RESEARCH INTELLIGENCE
+
+Build:
+
+* linear programming;
+* integer programming;
+* mixed-integer optimization;
+* nonlinear optimization where justified;
+* scheduling;
+* assignment;
+* routing;
+* resource allocation;
+* multi-objective optimization.
+
+Distinguish:
+
+FEASIBLE
+
+from:
+
+OPTIMAL.
+
+⸻
+
+G. GRAPH / NETWORK INTELLIGENCE
+
+Build:
+
+* graph traversal;
+* shortest path;
+* max flow;
+* min cut;
+* matching;
+* connectivity;
+* centrality where useful;
+* dependency graphs;
+* causal graphs;
+* knowledge graphs;
+* network-flow reasoning.
+
+⸻
+
+H. SEARCH / ALGORITHMIC INTELLIGENCE
+
+Build:
+
+* systematic search;
+* heuristic search;
+* A* where appropriate;
+* dynamic programming;
+* branch-and-bound;
+* Monte Carlo Tree Search;
+* algorithm selection;
+* algorithm construction.
+
+Do not route every search problem through an LLM.
+
+⸻
+
+I. PROBABILISTIC / BAYESIAN INTELLIGENCE
+
+Build:
+
+* probability models;
+* Bayesian updating;
+* posterior reasoning;
+* uncertainty propagation;
+* calibration;
+* likelihood reasoning;
+* probabilistic graphical reasoning where justified;
+* Monte Carlo methods.
+
+The system must distinguish uncertainty from ignorance.
+
+⸻
+
+J. CAUSAL INTELLIGENCE
+
+Build:
+
+* causal graph construction;
+* confounder identification;
+* intervention reasoning;
+* counterfactual reasoning;
+* causal attribution;
+* experimental design;
+* causal-credit assignment.
+
+Correlation must not silently become causation.
+
+⸻
+
+K. CONTROL / HOMEOSTATIC INTELLIGENCE
+
+Build:
+
+* feedback control;
+* PID where appropriate;
+* model-predictive control;
+* state estimation;
+* target maintenance;
+* disturbance detection;
+* corrective action;
+* stability reasoning;
+* graceful degradation.
+
+Use this for systems requiring persistent state regulation.
+
+⸻
+
+L. SEQUENTIAL-DECISION INTELLIGENCE
+
+Build:
+
+* Markov Decision Processes;
+* partially observable decision processes;
+* bandits;
+* exploration/exploitation;
+* policy evaluation;
+* sequential planning;
+* delayed reward reasoning.
+
+⸻
+
+M. ACTIVE-INFERENCE / ACTIVE-PERCEPTION INTELLIGENCE
+
+Build mechanisms where the system chooses information-gathering actions because reducing uncertainty changes future decisions.
+
+Do not reduce perception to passive data ingestion.
+
+⸻
+
+N. INFORMATION / VALUE-OF-INFORMATION INTELLIGENCE
+
+Build:
+
+* entropy / uncertainty measures where useful;
+* information gain;
+* Value of Information;
+* evidence-acquisition prioritization;
+* stopping rules;
+* cheapest decisive test selection.
+
+GREG should learn when thinking more is less valuable than acquiring one decisive piece of evidence.
+
+⸻
+
+O. PATTERN INTELLIGENCE
+
+Build appropriate:
+
+* statistical pattern detection;
+* anomaly detection;
+* clustering;
+* similarity;
+* classification;
+* temporal-pattern recognition;
+* structural-pattern recognition.
+
+Keep pattern recognition epistemically separate from causal inference.
+
+⸻
+
+P. SIMULATION / COUNTERFACTUAL INTELLIGENCE
+
+Build:
+
+* Monte Carlo simulation;
+* scenario simulation;
+* digital twins where justified;
+* agent-based simulation where justified;
+* counterfactual worlds;
+* stress testing;
+* sensitivity analysis.
+
+Simulation is generated evidence, not automatically external evidence.
+
+⸻
+
+Q. GAME-THEORETIC INTELLIGENCE
+
+Build:
+
+* strategic interaction modeling;
+* incentives;
+* equilibria;
+* credible commitments;
+* adversarial response;
+* repeated games;
+* coalition behavior.
+
+⸻
+
+R. MECHANISM-DESIGN INTELLIGENCE
+
+Build the ability to design:
+
+* incentives;
+* rules;
+* eligibility;
+* allocation;
+* information revelation;
+* accountability;
+* settlement;
+* participant behavior
+
+so desired system states emerge without assuming perfect actors.
+
+⸻
+
+S. ADVERSARIAL INTELLIGENCE
+
+Build:
+
+* red teaming;
+* counterexample search;
+* attack-path reasoning;
+* falsification;
+* exploit detection;
+* abuse-case modeling;
+* Goodhart detection;
+* strategic opposition modeling.
+
+The adversarial intelligence must be able to attack conclusions produced by other intelligences.
+
+⸻
+
+T. MENTAL-MODEL INTELLIGENCE
+
+Build executable use of mental models rather than decorative lists.
+
+Include where appropriate:
+
+* first principles;
+* inversion;
+* opportunity cost;
+* expected value;
+* margin of safety;
+* bottlenecks;
+* feedback loops;
+* second-order effects;
+* incentives;
+* comparative advantage;
+* power laws;
+* optionality;
+* path dependence;
+* systems thinking.
+
+Mental models should transform the problem representation or decision.
+
+⸻
+
+U. HUMAN INTELLIGENCE
+
+Humans are part of the cognitive ecology.
+
+Build explicit mechanisms for:
+
+* founder judgment;
+* expert judgment;
+* operator knowledge;
+* crowd information;
+* adversarial human review;
+* community feedback;
+* specialist escalation;
+* institutional knowledge.
+
+Do not pretend machine cognition eliminates human intelligence.
+
+⸻
+
+V. MODEL INTELLIGENCE / HETEROGENEOUS MODEL ROUTING
+
+Use:
+
+* frontier models;
+* local models;
+* specialist models;
+* coding agents;
+* domain models;
+* future models
+
+as replaceable cognitive substrates.
+
+Route based on:
+
+* problem geometry;
+* capability;
+* evidence;
+* cost;
+* latency;
+* privacy;
+* reliability;
+* policy;
+* context.
+
+NO AUTOMATIC PAID FALLBACK.
+
+Prefer open-source/local capability where it can meet the requirement.
+
+Acquire and qualify before unnecessarily reinventing.
+
+⸻
+
+W. PROGRAM-SYNTHESIS / ALGORITHM-CONSTRUCTION INTELLIGENCE
+
+GREG must eventually be able to construct bounded new:
+
+* algorithms;
+* programs;
+* solvers;
+* transformations;
+* competency modules
+
+when the existing repertoire cannot solve a problem.
+
+Generated capability must pass evaluation before registration.
+
+⸻
+
+X. MICA / CDPE INTELLIGENCE
+
+Preserve and implement the MICA / CDPE research trajectory already established in the project.
+
+Do not allow it to remain vocabulary.
+
+Translate its intended mechanisms into executable, testable cognition.
+
+Where parts remain research-grade, preserve them as an explicit developmental frontier rather than deleting them.
+
+⸻
+
+Y. LEVIN-INSPIRED DEVELOPMENTAL INTELLIGENCE
+
+Preserve the actual functional insight from Michael Levin-inspired work:
+
+intelligence can exist at multiple scales, and smaller competent units can coordinate into larger problem-solving wholes.
+
+Translate this into executable mechanisms.
+
+Do not claim biological consciousness.
+
+Build:
+
+* multi-scale competency;
+* local goal pursuit;
+* bounded coordination;
+* cognitive light-cone concepts where operationalizable;
+* competency composition;
+* repair;
+* reorganization;
+* goal-directed collective behavior;
+* scale transitions.
+
+⸻
+
+LEVEL 4 — COLLECTIVE + DEVELOPMENTAL INTELLIGENCE
+
+Now make the individual intelligences capable of forming larger cognitive structures.
+
+Build ALL applicable mechanisms.
+
+ENSEMBLE INTELLIGENCE
+
+Multiple solvers independently address the same problem.
+
+Compare outputs.
+
+Preserve dissent.
+
+⸻
+
+QUORUM / THRESHOLD INTELLIGENCE
+
+Use evidence thresholds and agreement thresholds where appropriate.
+
+Agreement is not automatically truth.
+
+⸻
+
+CROSS-INHIBITION
+
+Competing hypotheses or actions suppress one another based on evidence rather than rhetorical confidence.
+
+⸻
+
+STIGMERGIC INTELLIGENCE
+
+Allow useful coordination through persistent environmental state / shared artifacts rather than requiring direct centralized communication.
+
+⸻
+
+SWARM INTELLIGENCE
+
+Study and implement appropriate computational mechanisms inspired by:
+
+* Ant Colony Optimization;
+* Particle Swarm Optimization;
+* Artificial Bee Colony;
+* flocking;
+* quorum behavior;
+* distributed search.
+
+Use only where the mechanism actually fits.
+
+⸻
+
+SLIME-MOLD / NETWORK-FORMATION INTELLIGENCE
+
+Extract useful network optimization mechanisms.
+
+Do not simulate slime mold merely for aesthetic biological imitation.
+
+⸻
+
+IMMUNE INTELLIGENCE
+
+Implement functional mechanisms such as:
+
+detect
+→ classify
+→ contain
+→ remember
+→ recover
+→ adapt.
+
+Applicable domains can include:
+
+* cybersecurity;
+* anomaly detection;
+* integrity;
+* capability quarantine;
+* bad-output containment;
+* compromised-worker isolation.
+
+⸻
+
+ECOLOGICAL INTELLIGENCE
+
+Allow heterogeneous competencies to:
+
+* coexist;
+* specialize;
+* compete;
+* cooperate;
+* consume resources;
+* occupy niches;
+* be selected based on performance.
+
+Prevent monoculture where cognitive diversity materially improves resilience.
+
+⸻
+
+MARKET INTELLIGENCE
+
+Where useful, allocate scarce cognitive resources through explicit cost / benefit signals.
+
+Do not turn everything into a literal financial market.
+
+⸻
+
+EVOLUTIONARY INTELLIGENCE
+
+Build:
+
+variation
+→ evaluation
+→ selection
+→ retention
+→ recombination.
+
+Use for:
+
+* algorithms;
+* prompts;
+* solver configurations;
+* orchestration genomes;
+* competency structures
+
+where appropriate.
+
+⸻
+
+CONSTRAINT-RELEASE DISCOVERY
+
+When a system repeatedly fails, identify whether an unnecessary inherited constraint is preventing a superior solution.
+
+Test removing or transforming that constraint.
+
+⸻
+
+TEMPORARY COGNITIVE TISSUES
+
+Allow GREG to assemble temporary task-specific organizations of competencies.
+
+The organization exists for the problem.
+
+When the problem is completed, dissolve or archive it.
+
+Do not permanently increase architectural complexity for every mission.
+
+⸻
+
+SHARED COGNITIVE WORKSPACES
+
+Create controlled shared state through which heterogeneous intelligences can exchange:
+
+* hypotheses;
+* evidence;
+* partial solutions;
+* contradictions;
+* proof artifacts;
+* uncertainty;
+* requests.
+
+⸻
+
+FUNCTIONAL MORPHOGENESIS
+
+Allow problem geometry and constraints to determine what temporary cognitive organization should form.
+
+Do not preselect one universal agent topology.
+
+⸻
+
+LEVEL 5 — METACOGNITIVE INSTITUTIONAL INTELLIGENCE
+
+GREG must reason about how to reason.
+
+This is not another solver.
+
+It is the architecture that governs the ecology of solvers.
+
+Build:
+
+PROBLEMGEOMETRY
+
+Before solving, characterize the problem.
+
+Determine whether it is primarily:
+
+* semantic;
+* deterministic;
+* mathematical;
+* optimization;
+* graph;
+* causal;
+* probabilistic;
+* sequential;
+* adversarial;
+* control;
+* simulation;
+* human;
+* institutional;
+* mixed.
+
+Problem geometry should influence cognitive architecture.
+
+⸻
+
+EPISTEMIC TYPING
+
+Every important output should identify what kind of thing it is.
+
+Examples:
+
+* fact;
+* estimate;
+* proof;
+* hypothesis;
+* simulation;
+* prediction;
+* recommendation;
+* causal claim;
+* constraint result;
+* optimization result;
+* human judgment.
+
+Do not allow one epistemic type to impersonate another.
+
+⸻
+
+PROOF-CARRYING COGNITION
+
+Where possible, cognition should emit not only an answer but the evidence needed to independently evaluate the answer.
+
+Examples:
+
+solver output
+
+* constraints
+* witness
+* independent checker.
+
+⸻
+
+INDEPENDENT VERIFICATION
+
+The intelligence that generates an answer should not automatically be the sole authority verifying it.
+
+Use heterogeneous verification when practical.
+
+⸻
+
+ABSTENTION
+
+ABSTAIN is a successful outcome when evidence is insufficient.
+
+Also preserve:
+
+* WAIT;
+* REQUEST EVIDENCE;
+* SMALL EXPERIMENT;
+* ESCALATE.
+
+Do not force false certainty.
+
+⸻
+
+COGNITIVE DEGENERACY
+
+Important capabilities should sometimes be achievable through multiple structurally different mechanisms.
+
+This creates resilience.
+
+Example:
+
+An optimization result might be independently checked through:
+
+* another solver;
+* deterministic validation;
+* constraint replay;
+* brute force for small instances.
+
+⸻
+
+COGNITIVE ROUTING
+
+Route problems to the intelligence that fits their geometry.
+
+Do not send everything to a language model.
+
+⸻
+
+COGNITIVE COMPOSITION
+
+Some problems require multiple intelligences.
+
+Example:
+
+semantic decomposition
+→ Fermi estimation
+→ causal model
+→ optimization
+→ adversarial attack
+→ independent verification
+→ human consequence gate.
+
+Build this as a first-class capability.
+
+⸻
+
+METACONSENSUS
+
+Do not merely vote among agents.
+
+Determine:
+
+* why they disagree;
+* which epistemic method generated each answer;
+* what evidence would resolve disagreement;
+* whether answers can be reconciled;
+* whether uncertainty should remain explicit.
+
+⸻
+
+COGNITIVE SPIDER-WEB
+
+Apply the Spider-Web structure internally where useful.
+
+Cognitive:
+
+Eligibility
+
+Which competency is qualified to address this problem?
+
+Routing
+
+Which qualified competency receives the problem?
+
+Proof
+
+What evidence establishes that its result is legitimate?
+
+Settlement
+
+What consequence follows from the accepted result?
+
+This should create an increasingly reliable internal market for cognition without giving cognitive modules political or constitutional authority.
+
+⸻
+
+COGNITIVE METABOLISM
+
+Reasoning consumes:
+
+* compute;
+* money;
+* latency;
+* context;
+* attention;
+* external queries;
+* human time.
+
+GREG must allocate these resources intelligently.
+
+Use Value of Information.
+
+Do not spend $100 of cognition to improve a $5 decision by $1.
+
+Conversely, do not underthink high-consequence decisions merely to minimize compute.
+
+⸻
+
+OUTCOME CALIBRATION
+
+Track what actually happened.
+
+Compare:
+
+prediction
+vs
+reality.
+
+Estimate which intelligences perform well under which problem geometries.
+
+⸻
+
+CAUSAL CREDIT ASSIGNMENT
+
+When a composed cognitive process succeeds or fails, determine which components materially caused the outcome.
+
+Do not reward every participant equally merely because they appeared in the workflow.
+
+⸻
+
+5. CAPABILITY GENESIS
+
+This is mandatory.
+
+The completed Mind cannot be restricted permanently to a static list of intelligences designed today.
+
+When GREG encounters a capability deficit:
+
+DEFICIT
+
+Detect precisely what existing cognition cannot do.
+
+↓
+
+SEARCH
+
+Search existing open-source software, algorithms, research, models, libraries, standards, and tools.
+
+↓
+
+ACQUIRE
+
+Acquire the strongest lawful existing mechanism where appropriate.
+
+↓
+
+QUALIFY
+
+Test it independently.
+
+↓
+
+ADAPT
+
+Modify it to GREG’s contracts and governance.
+
+↓
+
+COMPOSE
+
+Combine existing mechanisms when sufficient.
+
+↓
+
+GENERATE
+
+If existing mechanisms are insufficient, construct a bounded new competency.
+
+↓
+
+TEST
+
+Compare against baseline approaches.
+
+↓
+
+ADVERSARIAL TEST
+
+Attempt to falsify it.
+
+↓
+
+VERIFY
+
+Require independent checks appropriate to its epistemic type.
+
+↓
+
+REJECT OR REGISTER
+
+Failed capability is rejected or quarantined.
+
+Successful capability enters the governed registry.
+
+↓
+
+ROUTE
+
+Allow ProblemGeometry to select it where qualified.
+
+↓
+
+OBSERVE
+
+Measure real outcomes.
+
+↓
+
+LEARN
+
+Update capability confidence and routing.
+
+↓
+
+REUSE
+
+Successful capability becomes reusable institutional cognition.
+
+The rule is:
+
+ACQUIRE, QUALIFY, ADAPT, COMPOSE, AND VERIFY BEFORE INVENTING UNNECESSARILY.
+
+But when invention is necessary:
+
+INVENT.
+
+Use Mechanism Recombination Foundry.
+
+⸻
+
+6. MECHANISM RECOMBINATION FOUNDRY
+
+When no existing competency is sufficient:
+
+Do not merely connect technologies.
+
+Extract causal mechanisms.
+
+Mutate them.
+
+Recombine them.
+
+Demand emergent capability.
+
+Search distant domains.
+
+Use:
+
+* computer science;
+* mathematics;
+* biology;
+* ecology;
+* markets;
+* institutional design;
+* control theory;
+* operations research;
+* physics;
+* cognitive science;
+* engineering;
+* open-source repositories;
+* papers;
+* standards.
+
+But:
+
+DO NOT LITERALIZE THE BIOLOGY.
+
+Create executable cognitive mechanisms, not decorative metaphors.
+
+⸻
+
+7. MODEL ROUTING IS SUBSTRATE ROUTING, NOT THE WHOLE MIND
+
+Do not confuse model routing with Polyintelligence.
+
+Claude, Kimi, GPT, Gemini, Qwen, Llama, coding agents, local models, future models, and specialist models are substrates.
+
+The intelligence architecture sits above them.
+
+A solver may use no LLM at all.
+
+Another may use one.
+
+Another may combine several.
+
+The system should remain provider-independent.
+
+No model vendor becomes constitutional infrastructure.
+
+⸻
+
+8. BODY + ORGANS + MIND MUST ACTUALLY CONNECT
+
+The Mind cannot remain a library disconnected from GREG.
+
+Integrate it into the real operating loop:
+
+Mission
+↓
+ProblemGeometry
+↓
+Epistemic requirements
+↓
+Competency eligibility
+↓
+Cognitive routing
+↓
+Single or composed intelligence
+↓
+Proof artifact
+↓
+Independent verification
+↓
+Metaconsensus / adversarial review where required
+↓
+GREG proposal
+↓
+Kernel / consequence gate
+↓
+Authorized action
+↓
+Real external effect
+↓
+Receipt / evidence
+↓
+Reality comparison
+↓
+Causal credit
+↓
+Learning
+↓
+Capability confidence update
+↓
+Capability Genesis if deficit remains
+↓
+Next mission
+
+This is one machine.
+
+⸻
+
+9. CONNECT THE ORGANS
+
+The Mind must be capable of reasoning with and through the existing GREG organs, including the canonical equivalents of:
+
+* DALEOBANKS;
+* WealthMachineIntelligence;
+* RESEARCH-IN;
+* RailScout;
+* PumpStation;
+* God’s Eye View;
+* business organs;
+* research organs;
+* computer-use organs;
+* browser organs;
+* communication organs;
+* financial/economic organs;
+* future physical and robotic organs.
+
+Do not create duplicate organs where canonical ones already exist.
+
+Do not create parallel authority systems.
+
+Do not create a second GREG.
+
+Do not create a second Kernel.
+
+Do not create a second mission system.
+
+Do not create a second learning plane.
+
+Do not create a second routing plane.
+
+Reconcile and extend.
+
+⸻
+
+10. OPEN-SOURCE-FIRST
+
+Before constructing a capability from scratch:
+
+Search.
+
+Determine whether the capability already exists in:
+
+* mature open-source software;
+* scientific libraries;
+* optimization packages;
+* formal solvers;
+* planning systems;
+* simulation engines;
+* robotics frameworks;
+* research implementations;
+* standards;
+* proven algorithms.
+
+Prefer:
+
+existing mature mechanism
+→ qualification
+→ adaptation
+→ wrapper
+→ verification
+→ integration
+
+over unnecessary reinvention.
+
+But do not mistake installing a library for implementing an intelligence.
+
+The capability is complete only when it is:
+
+* callable;
+* governed;
+* typed;
+* routed;
+* verified;
+* tested;
+* integrated;
+* observable;
+* useful in the actual machine.
+
+⸻
+
+11. BUILD THE REAL MACHINE, NOT A CATALOG
+
+A registry entry is not an intelligence.
+
+A README is not an intelligence.
+
+A stub is not an intelligence.
+
+An enum is not an intelligence.
+
+A prompt describing an intelligence is not an intelligence.
+
+A mock is not an intelligence.
+
+A fixture is not an intelligence.
+
+A simulated receipt is not a real-world outcome.
+
+A passing unit test proves only what that test actually establishes.
+
+For each intelligence distinguish:
+
+DECLARED
+
+SCAFFOLDED
+
+IMPLEMENTED
+
+INTEGRATED
+
+TESTED
+
+INDEPENDENTLY VERIFIED
+
+USED BY GREG
+
+REAL-WORLD VALIDATED
+
+Do not collapse these states.
+
+⸻
+
+12. BUILD ALL CURRENTLY ACHIEVABLE INTELLIGENCES
+
+Create an explicit Full Mind Completion Matrix.
+
+Rows must include every intelligence and mechanism named in this directive and every additional canonical intelligence already present in repository evidence.
+
+Columns:
+
+* intended function;
+* current canonical implementation;
+* evidence inspected;
+* status;
+* substrate;
+* input contract;
+* output contract;
+* epistemic type;
+* verifier;
+* integration path;
+* routing eligibility;
+* tests;
+* real-world evidence;
+* blocker;
+* next build;
+* dependency;
+* completion criterion.
+
+No material intelligence may silently disappear.
+
+If duplicate terminology refers to the same mechanism, reconcile it explicitly.
+
+If two concepts are materially different, preserve both.
+
+If an old implementation has been superseded, preserve its lineage and migrate its still-active intent.
+
+⸻
+
+13. DO NOT STOP WHEN ONE INTELLIGENCE WORKS
+
+After completing Semantic:
+
+continue.
+
+After completing Fermi:
+
+continue.
+
+After completing Formal:
+
+continue.
+
+After completing CP-SAT:
+
+continue.
+
+After completing optimization:
+
+continue.
+
+After completing graph intelligence:
+
+continue.
+
+After completing Bayesian reasoning:
+
+continue.
+
+After completing causal intelligence:
+
+continue.
+
+After completing control:
+
+continue.
+
+After completing simulation:
+
+continue.
+
+After completing adversarial reasoning:
+
+continue.
+
+After completing human-intelligence interfaces:
+
+continue.
+
+After completing collective intelligence:
+
+continue.
+
+After completing developmental intelligence:
+
+continue.
+
+After completing Capability Genesis:
+
+continue.
+
+After completing metacognition:
+
+continue.
+
+After completing the currently achievable Full Mind:
+
+reconnect it to the Body and Organs and continue toward full-machine completion.
+
+CONTINUE.
+
+⸻
+
+14. DO NOT LET TEST SUCCESS BECOME PROJECT SUCCESS
+
+If:
+
+2,000 tests pass,
+
+that means the tested behavior passed.
+
+It does not automatically mean the Mind is complete.
+
+If CI is green:
+
+that means CI is green.
+
+It does not automatically mean GREG is complete.
+
+If a benchmark succeeds:
+
+that benchmark succeeded.
+
+If a PR merges:
+
+that PR merged.
+
+Always return to:
+
+BODY + ORGANS + MIND = GREG / UNIIMENTE.
+
+Ask:
+
+What remains missing from the complete currently achievable machine?
+
+Then build it.
+
+⸻
+
+15. PARALLELIZE WHEN POSSIBLE
+
+Do not allow one blocked dependency to freeze unrelated work.
+
+Partition the Full Mind into:
+
+* independently buildable capabilities;
+* shared infrastructure;
+* dependency-bound capabilities;
+* research-bound capabilities;
+* externally blocked capabilities.
+
+Continue independently achievable work in parallel.
+
+Use specialized agents where available.
+
+But maintain:
+
+* canonical ownership;
+* shared contracts;
+* one authority spine;
+* one evidence system;
+* one learning architecture.
+
+Parallel execution must not create architectural fragmentation.
+
+⸻
+
+16. PRESERVE FOUNDER INTENT
+
+Apply the Recursive Founder-Intent Collaboration Protocol.
+
+Inspect:
+
+* repository;
+* issues;
+* PRs;
+* branches;
+* founder directives;
+* architecture documents;
+* prior experiments;
+* tests;
+* evidence;
+* historical artifacts.
+
+Build a lineage.
+
+Do not treat newer wording as automatically deleting older ambition.
+
+When two directives conflict:
+
+determine whether the newer directive:
+
+* corrects implementation;
+* changes sequencing;
+* changes interface;
+* changes authority;
+* actually supersedes the destination.
+
+A change from one first body or interface to another does not automatically eliminate the older capability from the long-term horizon.
+
+Use backcasting.
+
+Preserve the destination where still active.
+
+⸻
+
+17. MAXIMUM LAWFUL ASYMMETRIC LEVERAGE
+
+Preserve this founder command:
+
+“Goal set: achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore.”
+
+And:
+
+“Within safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option”
+
+Optimize for:
+
+* capability;
+* evidence;
+* institutional leverage;
+* accountability;
+* resilience;
+* modularity;
+* optionality;
+* replaceability;
+* capital efficiency;
+* learning rate;
+* interoperability;
+* durability;
+* compounding advantage;
+* participant benefit;
+* minimal collateral harm.
+
+Do not maximize capability by silently expanding authority.
+
+⸻
+
+18. NEGATIVE EVIDENCE IS AN ASSET
+
+Preserve:
+
+* failed experiments;
+* abstentions;
+* rejected solvers;
+* counterexamples;
+* incorrect hypotheses;
+* performance regressions;
+* adversarial failures.
+
+Do not hide them.
+
+A system that learns where an intelligence fails becomes more intelligent.
+
+The routing architecture should learn not only:
+
+What works?
+
+but:
+
+Under what problem geometry does this fail?
+
+⸻
+
+19. FULL-MIND COMPLETION LOOP
+
+Run this recursively:
+
+STEP 1
+
+Reconstruct the complete Mind boundary.
+
+STEP 2
+
+Inventory current implementation truth.
+
+STEP 3
+
+Identify every missing intelligence and mechanism.
+
+STEP 4
+
+Resolve duplicates and canonical ownership.
+
+STEP 5
+
+Find the highest-leverage coherent unfinished build.
+
+STEP 6
+
+Search for existing mechanisms first.
+
+STEP 7
+
+Implement.
+
+STEP 8
+
+Test.
+
+STEP 9
+
+Independently verify.
+
+STEP 10
+
+Integrate into GREG.
+
+STEP 11
+
+Exercise through real ProblemGeometry routing.
+
+STEP 12
+
+Record positive and negative evidence.
+
+STEP 13
+
+Update capability confidence.
+
+STEP 14
+
+Recalculate the completion matrix.
+
+STEP 15
+
+Select the next unfinished coherent portion.
+
+STEP 16
+
+CONTINUE.
+
+Do not terminate merely because one iteration succeeded.
+
+⸻
+
+20. STOPPING RULE
+
+You may stop the build session only when one of these conditions is true:
+
+A. COMPLETE CURRENTLY ACHIEVABLE BOUNDARY
+
+Every currently buildable portion of the authorized Full Mind has been:
+
+* implemented;
+* integrated;
+* tested;
+* appropriately verified;
+* connected to GREG;
+
+and remaining gaps genuinely require unavailable:
+
+* technology;
+* external authority;
+* hardware;
+* data;
+* capital;
+* human approval;
+* scientific breakthrough;
+* inaccessible dependency.
+
+OR:
+
+B. CONSTITUTIONAL FOUNDER DECISION REQUIRED
+
+Further consequential implementation requires explicit founder authorization.
+
+OR:
+
+C. HARD EXTERNAL BLOCKER
+
+No useful independent work remains possible without an unavailable external dependency.
+
+A successful seed is not a stopping condition.
+
+A green test suite is not a stopping condition.
+
+A merged PR is not a stopping condition.
+
+A completed Backcast node is not a stopping condition.
+
+A benchmark is not a stopping condition.
+
+A successful intelligence is not a stopping condition.
+
+CONTINUE UNTIL THE COMPLETE CURRENTLY ACHIEVABLE MACHINE IS BUILT.
+
+⸻
+
+21. END-OF-RUN REPORT
+
+When execution genuinely reaches a stopping rule, report:
+
+FULL MACHINE STATUS
+
+BODY
+
+Implemented / missing / blocked.
+
+ORGANS
+
+Implemented / missing / blocked.
+
+MIND
+
+Implemented / missing / blocked.
+
+FULL MIND COMPLETION MATRIX
+
+Every intelligence accounted for.
+
+REAL EXECUTABLE CAPABILITIES
+
+What actually works.
+
+REAL INTEGRATION
+
+What GREG can actually invoke.
+
+REAL-WORLD EVIDENCE
+
+What has actually affected reality.
+
+NEGATIVE EVIDENCE
+
+What failed or abstained.
+
+BLOCKERS
+
+Only genuine blockers.
+
+SCIENCE-FICTION / FRONTIER HORIZON
+
+Preserved, not discarded.
+
+FOUNDER DECISIONS REQUIRED
+
+Only actual constitutional decisions.
+
+NEXT BACKCAST FRONTIER
+
+The next state that becomes achievable when the blocker clears.
+
+Do not write “complete” unless the evidence supports completion at the stated boundary.
+
+⸻
+
+FINAL EXECUTION COMMAND
+
+Do not merely analyze this directive.
+
+Do not merely rewrite it.
+
+Do not merely produce an architecture document.
+
+Do not merely tell Alfonso what should be built.
+
+Inspect the actual system.
+
+Reconstruct the complete founder-intended Mind.
+
+Account for ALL OF THE INTELLIGENCES.
+
+Preserve every material active intention.
+
+Reconcile duplicates without destroying lineage.
+
+Use the skills and tools available to you.
+
+Search before reinventing.
+
+Use deterministic computation where deterministic computation dominates language reasoning.
+
+Use language models where language models dominate.
+
+Use humans where human judgment dominates.
+
+Compose them when no single intelligence is sufficient.
+
+Verify outputs according to their epistemic type.
+
+Build Capability Genesis so the repertoire does not remain frozen.
+
+Build metacognition so GREG knows how to select and compose cognition.
+
+Build developmental mechanisms so the Mind can acquire bounded new competence.
+
+Connect the Mind to the Body.
+
+Connect the Mind to the Organs.
+
+Connect cognition to authorized action.
+
+Connect action to evidence.
+
+Connect evidence to reality.
+
+Connect reality to learning.
+
+Then inspect what remains unfinished.
+
+And continue.
+
+BODY + ORGANS + MIND = GREG / UNIIMENTE.
+
+NOTHING IS DISCONNECTED.
+
+DO NOT LITERALIZE THE BIOLOGY.
+
+CAPABILITY GROWTH != AUTHORITY GROWTH.
+
+BUILD THE WHOLE ANATOMY PROGRESSIVELY.
+
+NEVER SUBSTITUTE THE MILESTONE FOR THE DESTINATION.
+
+A COMPLETED SLICE IS NOT A COMPLETED MIND.
+
+BUILD THE REAL MACHINE, NOT THE DESCRIPTION OF THE MACHINE.
+
+ALL OF THE INTELLIGENCES.
+
+CONTINUE.

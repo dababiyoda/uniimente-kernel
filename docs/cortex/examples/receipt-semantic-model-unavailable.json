@@ -152,7 +152,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 1,
-    "seconds": 0.135269,
+    "seconds": 0.350637,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -280,7 +280,7 @@
         ],
         "expenditure": {
           "model_calls": 1,
-          "seconds": 0.134894,
+          "seconds": 0.350246,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -311,12 +311,14 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:359c77c0bcb1dcf33497a87af60d52b9e24fc857de5eabc5fd210a9196a43b85",
+  "receipt_id": "sha256:f761c96fc9ebcc1a5d30345409b2b906f426ee288812f6dc954abdb3263b7adb",
   "route": {
     "attempts": [],
+    "cap_dropped": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.3.0",
+    "max_parts": 4,
+    "policy": "cortex-route-policy/0.4.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.semantic@0.1.0"
@@ -349,8 +351,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.3.0",
-    "policy": "cortex-route-policy/0.3.0",
+    "cortex": "0.4.0",
+    "policy": "cortex-route-policy/0.4.0",
     "routes": {
       "cortex.semantic@0.1.0": "0.1.0"
     }

@@ -23,10 +23,13 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-# 0.3.0: payload keys graph and linear_program route to two organs that recruit founder-attached
-# formed functions (Capability Genesis); cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the
-# consequence class. 0.2.0: CP-SAT second formal engine.
-CORTEX_VERSION = "0.3.0"
+# 0.4.0: bounded n-part composition (MAX_COMPOSITION 2 -> 4) with cap honesty — parts the
+# bound drops are named as cap-dropped, never as unrequired — and aggregate solver-call
+# budget refusal; cortex-route-policy/0.4.0. 0.3.0: payload keys graph and linear_program
+# route to two organs that recruit founder-attached formed functions (Capability Genesis);
+# cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the consequence class.
+# 0.2.0: CP-SAT second formal engine.
+CORTEX_VERSION = "0.4.0"
 
 
 class CortexError(ValueError):

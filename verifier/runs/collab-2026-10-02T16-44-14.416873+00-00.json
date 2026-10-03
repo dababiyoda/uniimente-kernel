@@ -1,0 +1,15 @@
+{
+ "verifier": "collab-protocol-skill-v1",
+ "ts_utc": "2026-10-02T16:44:14.416873+00:00",
+ "command": "validate_intent_ledger.py docs/collaboration/intent-records-kimi-0035.json && validate_intent_ledger.py docs/collaboration/intent-records-kimi-0036.json && validate_deliberation.py docs/collaboration/deliberation-cortex-formed-routing-20261002.json",
+ "head_commit": "d31848aff12130b755863fb8b357cce2e095d06e",
+ "tracked_tree": "dirty at validation time (repairs and INTENT-0036 uncommitted; validated bytes are the bytes on disk)",
+ "exit_code": 0,
+ "passes": [
+  "validate_intent_ledger.py: VALID (1 record) — INTENT-0035 repaired: next_review_trigger and implementation_refs now name draft PR #151 (head c5801136) explicitly",
+  "validate_intent_ledger.py: VALID (1 record) — INTENT-0036 captures the founder correction of 2026-10-03 (N1 is a local gate, not a global stopping condition) with source lineage, human owner, active state, review trigger",
+  "validate_deliberation.py: VALID — DELIB-KIMI-2026-10-02-001 repaired: implementation note, github_ops note, and new evidence E6 name draft PR #151 and the fresh-clone replication (1824 passed, 6 skipped at 88bc7135, two failed iterations preserved)"
+ ],
+ "skips": [],
+ "failures": []
+}

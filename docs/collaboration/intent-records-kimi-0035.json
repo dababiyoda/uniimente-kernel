@@ -37,7 +37,7 @@
       "installed packages networkx/scipy, digest re-pinned before every call"
     ],
     "conflicts": [],
-    "next_review_trigger": "founder review of the draft PR, or the first production CAPABILITY_DEFICIT on these routes (competence envelope too small), or any certificate failure in a served route",
+    "next_review_trigger": "founder review of draft PR #151 (kimi/cortex-formed-function-routing-20261002 @ c5801136 into claude/greg-seed-genome-build-y43kmg), or the first production CAPABILITY_DEFICIT on these routes (competence envelope too small), or any certificate failure in a served route",
     "supersedes": [],
     "superseded_by": null,
     "implementation_refs": [
@@ -52,7 +52,8 @@
       "greg/cognition/catalog.py",
       "tests/unit/test_cortex_formed_organs.py",
       "verifier/v3/",
-      "docs/cortex/verbatim-register.json (A09/A10/A46/B08/B09 rows updated; graph algorithms and network flow now implemented)"
+      "docs/cortex/verbatim-register.json (A09/A10/A46/B08/B09 rows updated; graph algorithms and network flow now implemented)",
+      "uniimente-kernel draft PR #151 (kimi/cortex-formed-function-routing-20261002, head c5801136, base claude/greg-seed-genome-build-y43kmg; opened 2026-10-02; merge authority founder-only)"
     ]
   }
 ]

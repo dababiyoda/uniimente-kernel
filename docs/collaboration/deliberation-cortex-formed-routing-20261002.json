@@ -53,7 +53,8 @@
     {"id": "E2", "description": "Full unit suite on the final tree: pytest tests/unit -q = 1824 passed, 6 skipped (baseline before the slice: 1795 passed, 8 skipped); both runs recorded in verifier/runs", "source_type": "unit_test", "claimed_tier": "unit_test"},
     {"id": "E3", "description": "verifier/v3 run: V1 layering (organs never import greg), V2 suite green, V3 truthful deficit on unattached, V4 INCONCLUSIVE withholding with engine_claim labeled unproven, V5 schema-valid certified receipt with authority_created false", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
     {"id": "E4", "description": "Skill validators: validate_intent_ledger.py VALID over INTENT-0035; validate_deliberation.py VALID over this record", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
-    {"id": "E5", "description": "PR #143 head 68b484b, issue #117, and the genesis/mechanisms/capabilities modules read directly from the fetched branch this session", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"}
+    {"id": "E5", "description": "PR #143 head 68b484b, issue #117, and the genesis/mechanisms/capabilities modules read directly from the fetched branch this session", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E6", "description": "Draft PR #151 opened (head c5801136, tree byte-exact against the local work branch: 978 files, empty diff). Independent fresh-clone replication of the full unit suite at 88bc7135: 1824 passed, 6 skipped in 430.74s; all three runs recorded in verifier/runs/replication-2026-10-02T*.json, including the two failed environment iterations (missing sympy, missing historical commits) that preceded the pass", "source_type": "unit_test", "claimed_tier": "unit_test"}
   ],
   "negative_evidence": {
     "deleted": "",
@@ -72,11 +73,11 @@
     "founder_authorization_ref": "founder goal-mode directive 2026-10-01 (resumed 2026-10-02): build the PR #143 handoff slice inside the safety/legality envelope",
     "note": "Attach/detach authority over formed functions is unchanged and remains founder-only; this slice creates no activation path. Cortex contracts were extended in place (0.2.0 -> 0.3.0, versioned), not paralleled."
   },
-  "implementation": {"performed": true, "note": "Code, tests, verifier v3, register updates, and records complete on the work branch; delivered as a draft PR against claude/greg-seed-genome-build-y43kmg. No merge, no attach, no activation."},
+  "implementation": {"performed": true, "note": "Code, tests, verifier v3, register updates, and records complete on the work branch; delivered as draft PR #151 (head c5801136) against claude/greg-seed-genome-build-y43kmg. No merge, no attach, no activation."},
   "github_ops": [
     {"op": "create_branch", "target_branch": "kimi/cortex-formed-function-routing-20261002", "protected": false, "explicit_authorization": true},
     {"op": "push_files", "target_branch": "kimi/cortex-formed-function-routing-20261002", "protected": false, "explicit_authorization": true},
-    {"op": "create_pull_request (draft)", "target_branch": "claude/greg-seed-genome-build-y43kmg", "protected": false, "explicit_authorization": true, "note": "draft PR into the PR #143 frontier branch per the standing draft-PR-only rule; references issue #117"}
+    {"op": "create_pull_request (draft)", "target_branch": "claude/greg-seed-genome-build-y43kmg", "protected": false, "explicit_authorization": true, "note": "opened as draft PR #151 into the PR #143 frontier branch per the standing draft-PR-only rule; references issue #117"}
   ],
   "inspected_sources": [
     {"source": "uniimente-kernel PR #143 head 68b484b (fetched refs/pull/143/head): cortex package, greg/cognition, greg/genesis.py, greg/mechanisms.py, greg/capabilities.py, tests/, verifier/, docs/cortex/", "inspected": true},

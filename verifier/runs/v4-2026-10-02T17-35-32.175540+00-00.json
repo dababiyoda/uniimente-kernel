@@ -1,0 +1,19 @@
+{
+  "verifier": "v4",
+  "ts_utc": "2026-10-02T17:35:32.175540+00:00",
+  "command": "python3 verifier/v4/verify.py",
+  "head_commit": "8721ee07524ab939d8af2dd8ab02aa4c2dc27041",
+  "tracked_tree": "clean",
+  "exit_code": 1,
+  "passes": [
+    "V1: formed/graphsearch/continuous organs exist and never import greg",
+    "V3: three-part payload -> selected ['cortex.formal.z3@0.2.0', 'cortex.estimation.fermi@0.1.0', 'cortex.evidence_causal@0.1.0'], proofs ['estimation', 'evidence_assessment', 'formal'], max_parts 4",
+    "V4: five-part payload -> 4 selected, cap_dropped ['cortex.deterrence.accountability@0.1.0'], why_not ['required by this payload and eligible; dropped by the composition bound (MAX_COMPOSITION=4, cortex-route-policy/0.4.0)']",
+    "V5: aggregate solver demand 3 > budget 2 -> BUDGET_EXHAUSTED; formed organs fired: 0",
+    "V6: prior freezes pinned; freeze-v0.4.0.json 51d660e2aa49cbe5223877bf1b21bb28829bb595582ae64e89a91016bad53933"
+  ],
+  "skips": [],
+  "failures": [
+    "V2: pytest tests/unit: \u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m, \u001b[32m1831 passed\u001b[0m, \u001b[33m6 skipped\u001b[0m\u001b[31m in 516.10s (0:08:36)\u001b[0m\u001b[0m"
+  ]
+}

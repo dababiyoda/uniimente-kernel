@@ -91,3 +91,32 @@ Foundry-55 and #145's native source family. The shared Foundry contract still
 records 37/55 complete and 18 open obligations; component success cannot close
 the complete machine. Founder hardware/use and authentic buyer/provider evidence
 remain item-specific external requirements, not a reason to stop agent builds.
+
+## Fresh package-aware appraisal continuation
+
+The separate read-only appraiser now reconstructs retained package registrations
+in VERIFIED state. It re-verifies a signed CAPABILITY_ATTACH command or the
+original mission's signed read-only auto_attach cone before projecting ATTACHED.
+The existing Cortex worker then re-pins actual package/runner files and checks
+the original computation again. Reconstruction emits no lifecycle event and
+does not activate a new function. Explicit detach remains effective. Retained
+receipt bytes and an engine ACHIEVED flag are insufficient for acceptance.
+
+Browser trace and worker appraisal sensors are also re-observed during closure;
+worker appraisal receives retained ledger context, and browser trace re-hashes
+the actual screenshots. This adds no external action authority.
+
+Review pass 1 (builder/operator/beneficiary): prefer a read-only projection over
+Genesis.restore, whose quarantine side effects would mutate appraisal evidence.
+Reuse retained Mechanism Cards and existing signed cones, rather than create a
+second package lifecycle owner. Review pass 2 (adversary/constitutional reviewer):
+attack unsigned attachment, qualified-but-unattached packages and explicit
+detach; require independent signature verification and current file/certificate
+checks. Five roles are analytical lenses of one agent, not independent people.
+Rollback is the prior re-observation behavior; owner is GREG/Cortex maintainers.
+
+Validation: 11 focused tests pass across NetworkX shortest path/max flow and
+SciPy LP, signed attachment, no-authority qualification, unsigned attachment
+refusal and detach. The parent mission/dataflow change separately exercises the
+automatic signed detour and separate-process closure on this projection. These
+checks prove supplied computation and scope; world applicability remains pending.

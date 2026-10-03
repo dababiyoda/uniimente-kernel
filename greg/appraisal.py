@@ -25,14 +25,15 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from events.spine import EventSpine
-from greg.capabilities import BUILTINS, InvocationContext
+from greg.capabilities import BUILTINS, CapabilityManifest, CapabilityRegistry, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query"}
+                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query",
+                "worker.appraise", "browser.trace"}
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
 
 
@@ -48,6 +49,77 @@ def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
             keys.pop(event.payload["old_key_id"], None)
             keys[event.payload["new_key_id"]] = event.payload["new_public_key"]
     return keys
+
+
+def _signed_command(journal, ledger, seq, command_digest, kind, expected_body):
+    """Independently authenticate retained scope; no reconstruction grants anything."""
+    accepted = [e.payload for e in journal.replay('command.accepted')
+                if e.payload['digest'] == command_digest]
+    if len(accepted) != 1 or not accepted[0].get('envelope'):
+        return False
+    env = accepted[0]['envelope']
+    public = _founder_keys(journal, seq, ledger).get(env.get('founder_key_id'))
+    try:
+        if not public or sha256_json(env) != command_digest or env['kind'] != kind or env['body'] != expected_body:
+            return False
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(
+            bytes.fromhex(env['signature']), _signing_bytes(env))
+        return True
+    except (InvalidSignature, ValueError, KeyError):
+        return False
+
+
+def _read_only_cognition_registry(journal, ledger, seq):
+    """Project retained package state without restoring/attaching or writing events.
+
+    Genesis.restore can append quarantine events. The read-only appraiser instead
+    authenticates each permission-bearing attachment and passes cards to the
+    worker, which re-pins package/runner files and independently checks the
+    engine's output. Conservative detached/quarantined state never enables use.
+    """
+    from greg.genesis import CATALOG, package_adapter
+    from greg.lightcone import LightCone
+    from greg.mechanisms import PackageCandidate
+    registry = CapabilityRegistry()
+    for manifest, adapter in BUILTINS.values():
+        registry.register(manifest, adapter, state='ATTACHED')
+    valid_authority = True
+    for event in journal.replay('capability.'):
+        data = event.payload
+        if event.type == 'greg.capability.registered' and data.get('origin', {}).get('kind') == 'package':
+            manifest = CapabilityManifest.from_dict(data['manifest'])
+            origin = data['origin']
+            candidate = next((c for c in CATALOG.get(origin['function'], {}).get('candidates', ())
+                              if isinstance(c, PackageCandidate) and c.runner == origin['runner'] and
+                              c.distribution == origin['distribution']), None)
+            if candidate is not None:
+                registry.register(manifest, package_adapter(origin['function'], candidate), state='VERIFIED')
+        elif event.type == 'greg.capability.state' and data['capability_id'] in registry.manifests:
+            cid, state = data['capability_id'], data['state']
+            if state != 'ATTACHED':
+                registry.set_state(cid, state)
+                continue
+            authorized = False
+            if data.get('by') == 'founder command':
+                authorized = _signed_command(journal, ledger, seq[event.event_id], data.get('command_digest'),
+                                              'CAPABILITY_ATTACH', {'capability_id': cid})
+            elif data.get('by') == 'founder-signed mission auto_attach (read_only)':
+                parents = [e for e in journal.replay('mission.registered')
+                           if e.payload['mission_id'] == data.get('mission_id') and
+                           seq[e.event_id] < seq[event.event_id]]
+                if len(parents) == 1:
+                    parent = parents[0]
+                    spec = parent.payload['spec']
+                    authorized = (spec.get('auto_attach', {}).get('max_consequence_class') == 'read_only' and
+                                  registry.manifests[cid].consequence_class == 'read_only' and
+                                  LightCone.from_dict(spec['light_cone'])._capability_inside(cid) and
+                                  _signed_command(journal, ledger, seq[parent.event_id], parent.payload['command_digest'],
+                                                  'MISSION', spec))
+            if authorized:
+                registry.set_state(cid, 'ATTACHED')
+            else:
+                valid_authority = False
+    return registry, valid_authority
 
 
 def appraise(request: dict) -> dict:
@@ -90,6 +162,12 @@ def appraise(request: dict) -> dict:
         if not signed:
             findings.append("mission body is not provably what an enrolled founder key signed")
         checks["arrived_via_inbox"] = bool(accepted) and accepted[0].get("channel") == "inbox"
+        cognitive_registry = None
+        if any(c['sensor'].get('capability') == 'cognition.status' for c in spec['success_checks']):
+            cognitive_registry, cognitive_authority = _read_only_cognition_registry(journal, ledger, seq)
+            checks['cognition_attachment_authority_rederived'] = cognitive_authority
+            if not cognitive_authority:
+                findings.append('cognition package attachment lacks independently verified founder scope')
 
         # 2. success checks re-derived from receipt bytes
         achieved_seq = seq[achieved[0].event_id]
@@ -119,8 +197,9 @@ def appraise(request: dict) -> dict:
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "cognition.status") else None,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "cognition.status", "worker.appraise") else None,
                                         mission_id=mid,
+                                        registry=cognitive_registry,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
                                         target=check["sensor"].get("target", ""))
@@ -213,6 +292,8 @@ def appraise(request: dict) -> dict:
         required = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
                     "approval_boundaries_honored", "preconditions_honored")
+        if cognitive_registry is not None:
+            required += ('cognition_attachment_authority_rederived',)
         return _verdict(request, checks, findings, required=required)
     finally:
         ledger.close()

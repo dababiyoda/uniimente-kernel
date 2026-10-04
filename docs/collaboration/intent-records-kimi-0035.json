@@ -1,0 +1,59 @@
+[
+  {
+    "intent_id": "INTENT-0035",
+    "title": "Competency Compiler slice: route cortex graph/linear_program payloads to founder-attached formed functions",
+    "statement": "The intended engineering result is a Competency Compiler: GREG recognizes a problem, determines which epistemic methods can answer it, recruits the smallest competent mechanism or composition, produces appropriately typed evidence, respects authority, observes outcomes, and improves future selection. This slice is the PR #143 handoff: cortex-dialect graph and linear_program payloads route through the cortex's one entry to organs that recruit the formed functions Capability Genesis qualified and the founder attached (graph.shortest_path, graph.max_flow, lp.optimize), where engines are never trusted and every served answer carries a GREG certificate sharing no code with the engine. Building != installation != activation != consequence authority: the organs serve only founder-attached functions, and a missing, detached, or changed function is a truthful CAPABILITY_DEFICIT (the genesis trigger), never a fabricated claim.",
+    "source_refs": [
+      "founder goal-mode directive, 2026-10-01 session (resumed 2026-10-02): Competency Compiler engineering target and executable translations",
+      "uniimente-kernel issue #117 (VEPMC bottleneck)",
+      "uniimente-kernel PR #143 frontier branch claude/greg-seed-genome-build-y43kmg @ 68b484b (stated handoff slice)",
+      "docs/collaboration/deliberation-greg-open-source-genesis-20261001.json (Capability Genesis: engines never trusted, founder attach)"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "implemented",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "A graph or continuous-LP question in cortex dialect is answered with a GREG-certified result (feasible potentials realised by predecessor chains; conservation plus no residual path plus an equal-capacity cut; primal/dual feasibility with zero duality gap) when the founder has attached the formed function, and with a truthful deficit or withheld claim otherwise. No answer is ever served on engine trust.",
+    "binding_scope": [
+      "uniimente-kernel"
+    ],
+    "constitutional_constraints": [
+      "Founder attach/detach is the only path that installs or removes a formed function; DETACH is respected at both the organ registry and the function registry layer.",
+      "No authority is created: receipts carry authority_created false, execution_authority none, expenditure 0 USD.",
+      "Certificates share no code with the engines they check; an engine that lies is withheld (INCONCLUSIVE), not served.",
+      "Uncertainty and tail-risk margins preserved: competence envelopes (size caps, non-negative weights, bounded CPU) deficit-out rather than stretch."
+    ],
+    "success_evidence": [
+      "verifier/runs/v3-*.json (V1 layering, V2 full unit suite green, V3 truthful deficit, V4 certificate withholding, V5 certified schema-valid receipt)",
+      "tests/unit/test_cortex_formed_organs.py (24 tests: routing, truthful negatives, formed resolution, e2e through the network-isolated worker, lying-engine withheld, detach -> deficit, drift guard)"
+    ],
+    "failure_evidence": [
+      "Any INCONCLUSIVE receipt whose engine_claim is labeled 'unproven; not asserted by this organ' is preserved as negative evidence about the engine, not deleted",
+      "First lying-engine e2e returned OK before the runner_source serialization fix; the failure and its fix are recorded in the deliberation's negative evidence"
+    ],
+    "dependencies": [
+      "Capability Genesis (frozen oracle qualification, Mechanism Cards, founder attach) from PR #143",
+      "cortex 0.3.0 contracts/routing; greg.cognition bridge and worker",
+      "installed packages networkx/scipy, digest re-pinned before every call"
+    ],
+    "conflicts": [],
+    "next_review_trigger": "founder review of draft PR #151 (kimi/cortex-formed-function-routing-20261002 @ c5801136 into claude/greg-seed-genome-build-y43kmg), or the first production CAPABILITY_DEFICIT on these routes (competence envelope too small), or any certificate failure in a served route",
+    "supersedes": [],
+    "superseded_by": null,
+    "implementation_refs": [
+      "cortex/organs/formed.py",
+      "cortex/organs/graphsearch.py",
+      "cortex/organs/continuous.py",
+      "cortex/genome.py",
+      "cortex/contracts.py",
+      "cortex/routing.py",
+      "greg/cognition/bridge.py",
+      "greg/cognition/worker.py",
+      "greg/cognition/catalog.py",
+      "tests/unit/test_cortex_formed_organs.py",
+      "verifier/v3/",
+      "docs/cortex/verbatim-register.json (A09/A10/A46/B08/B09 rows updated; graph algorithms and network flow now implemented)",
+      "uniimente-kernel draft PR #151 (kimi/cortex-formed-function-routing-20261002, head c5801136, base claude/greg-seed-genome-build-y43kmg; opened 2026-10-02; merge authority founder-only)"
+    ]
+  }
+]

@@ -1,0 +1,95 @@
+{
+  "record_id": "DELIB-KIMI-2026-10-03-001",
+  "classification": "standard",
+  "contributor": "kimi",
+  "decision_owner": "alfonso_lopez",
+  "title": "Bounded n-part composition with cap honesty (cortex 0.4.0): MAX_COMPOSITION 2 -> 4, cap-dropped parts named truthfully, aggregate solver-budget refusal, learning reorders before the cap",
+  "roles": {
+    "founder_intent_steward": "The Competency Compiler target recruits 'the smallest competent mechanism or composition'; review row B47 names 'recombination beyond two parts' as the known not-yet, and rows A36/A52/B27/B31/B36 all carry the composition clause as unfinished. The founder correction of 2026-10-03 (INTENT-0036) makes this slice mandatory-now: it is independently buildable (no verdict, outcomes, model, attach, or spend), and N1's local gate does not block it. The meniscus translation controls the bound: the composition cap is a hard resource/coupling frontier, so the cap stays — what changes is that parts it drops are named honestly, because a receipt that reports a required, eligible part as 'not required by this payload' is a false statement about the problem, and proximity to a truthfulness boundary is not a performance objective.",
+    "systems_architect": "One-file change inside the existing coordinator (cortex/routing.py): selection becomes eligible-parts -> memory reorder -> cap at MAX_COMPOSITION=4; cap-dropped parts are computed set-theoretically (eligible minus selected) and rendered in alternatives as 'required by this payload and eligible; dropped by the composition bound (MAX_COMPOSITION=4, cortex-route-policy/0.4.0)'; the receipt's route object gains max_parts and cap_dropped (schema allows additional properties; the boolean composition field is unchanged). Aggregate solver demand is planned as the count of solver-calling organs selected and refused before spending when it exceeds max_solver_calls. No new organ, registry, authority path, or learning system; version coupling follows the established pattern: contracts 0.4.0, policy 0.4.0, catalog 0.4.0, traceability 0.4.0, examples regenerated at the fixed clock, and a NEW freeze-v0.4.0.json (v0.3.0 and both crossgeo freezes hash-pinned in tests).",
+    "adversarial_reviewer": "Strongest attacks, each with a control: (1) The cap raise could silently multiply spend — control: aggregate pre-spend refusal now counts solver-calling parts (3 solver callers with budget 2 is BUDGET_EXHAUSTED with zero organs run; tested). (2) Cap honesty could mislabel — control: the cap-dropped set is computed as (eligible parts) minus (selected), so a part cannot be labeled cap-dropped unless it was required and eligible; ineligible parts keep their real reasons (tested via founder-detach projection: 'withheld by host registry'); unrequired parts keep 'not required by this payload'. (3) Memory could widen the cap by reordering — control: reorder permutes eligible parts only, the cap slices after reordering, and the ledger's never-widen-eligibility invariant is untouched (existing memory tests hold). (4) Freeze contamination — control: a new manifest file per version; the prior three freezes are sha256-pinned in the test file. (5) The EXTRACT->FORMAL chain could exceed the cap — it is one logical part (extraction compiles INTO the formal slot); the receipt lists every executed key, so the chain is visible, never hidden.",
+    "operator_maintainer": "Operational surface: behavior changes only for payloads with three or more eligible parts (previously cap-dropped parts now run, up to 4) and for solver-budget accounting (now aggregate). Both are disclosed in the receipt. Default budgets (0.05 USD, 64 solver calls) admit the new worst case; CPU bounds per organ are unchanged. Rollback: close the draft PR unmerged, revert the merge commit, or pin cortex-route-policy/0.3.0 behavior by reverting the single routing.py hunk — no state, no migration, no external effect exists to roll back. The slice runs behind the same entry; nothing is enabled that was disabled.",
+    "evidence_welfare_guardian": "No external effects, participants, or data subjects; all tests are deterministic fixtures with stubbed formed organs (no network, no engine trust). Evidence tiers: unit_test and deterministic_fixture only — no outcome or benchmark claim is made or implied; B55's promotion rule (a combination must beat every constituent alone) stays gated at N3 and this slice claims no gain. Negative evidence preserved: the two worktree suite failures (frozen ancestry locks reacting to off-branch objects present in this long-lived worktree) are recorded as environment artifacts, demonstrated pre-slice at d31848a; the canonical green comes from the fresh-clone replication. Nothing was deleted."
+  },
+  "alternatives": [
+    {"kind": "proposed_design", "name": "Raise the bound to 4 with cap honesty, aggregate solver-budget refusal, and reorder-before-cap inside the existing coordinator", "benefits": "Serves six register rows with the smallest sufficient intervention; fixes the truthfulness defect; spend stays hard-bounded; learning (when outcomes exist) decides which parts survive the cap; freeze discipline becomes test-pinned", "liabilities": "Richer payloads can now spend up to 4 organ calls inside budget; the alternatives list grows a third honesty category to maintain", "evidence": "unit_test: tests/unit/test_cortex_npart_composition.py (6 tests); verifier v4 V1-V6", "rollback": "Close the draft PR unmerged; revert the merge commit; no state or external effect exists", "kill_criteria": "If any cap-dropped part is ever reported as 'not required by this payload', or any organ runs after an aggregate budget refusal, kill and re-issue"},
+    {"kind": "do_nothing", "name": "Keep MAX_COMPOSITION=2 and the current alternatives text", "benefits": "Zero new code; zero new spend surface", "liabilities": "B47's named not-yet stays open against an explicit founder correction ordering independently buildable work to continue; the receipt keeps stating a falsehood (required, eligible parts reported as 'not required by this payload') on every 3+-part payload", "evidence": "model_output: projection", "rollback": "n/a", "kill_criteria": "n/a"},
+    {"kind": "strongest_competitor", "name": "Unbounded composition: select every eligible part and rely on budget refusal alone", "benefits": "No cap-honesty category needed; maximal recombination", "liabilities": "Removes the hard coupling frontier the meniscus translation requires; a 7-part payload would always plan 7 organs, pushing refusal into the budget path on every rich question and coupling the receipt to worst-case planner behavior; the bound is what keeps composition auditable", "evidence": "model_output: architecture comparison", "rollback": "n/a", "kill_criteria": "n/a"},
+    {"kind": "reversible_experiment", "name": "This slice is itself the reversible experiment: the change is additive inside one function, observable in every receipt (max_parts, cap_dropped), and reversible by reverting one hunk with no state to migrate", "benefits": "Tests n-part composition and cap honesty in review with zero irreversibility; every served receipt discloses the bound and any drop", "liabilities": "None beyond review attention", "evidence": "sandbox_execution: verifier v4 V3-V5 exercise 3-part composition, 5-part cap honesty, and aggregate refusal end to end", "rollback": "Revert the routing.py hunk; receipts from 0.4.0 remain valid historical records", "kill_criteria": "If composition ever hides an executed part from the receipt, kill and re-issue"}
+  ],
+  "passes": [
+    {
+      "pass": 1,
+      "summary": "Intended outcome independent of mechanism: a problem carrying several structured parts is attacked by all of the parts that are competent for it, up to a hard bound; the bound's victims are named truthfully; aggregate resource demand is refused before spending; learning (when real outcomes exist) orders eligible parts before the bound bites. Reversal condition: if the cap raise let spend or coupling grow unboundedly, the slice reverses into a liability; the controls are the aggregate pre-spend refusal and the unchanged per-organ budgets.",
+      "disadvantages": [
+        {"id": "D1", "text": "More parts per payload means more spend per question", "handling": "resolved by design: planned cost, model calls, and now solver calls are all summed over the selection and refused before spending; the defaults admit the 4-part worst case; tested (V5)"},
+        {"id": "D2", "text": "Cap honesty could itself lie (mislabel a part)", "handling": "resolved by construction: cap_dropped = eligible minus selected; the phrase attaches only to that set; ineligible parts keep registry reasons (V4 plus the founder-detach test)"},
+        {"id": "D3", "text": "Memory reorder could be read as learning widening the composition", "handling": "bounded: reorder permutes eligible parts only, before the cap; it cannot add a part or raise the bound; the ledger's never-widen invariant is untouched"},
+        {"id": "D4", "text": "The EXTRACT->FORMAL chain can extend the receipt's selected list beyond 4", "handling": "accepted with disclosure: the chain is one logical part (extraction compiles into the formal slot); every executed key appears in the receipt"},
+        {"id": "D5", "text": "Version bump could contaminate the frozen evaluation", "handling": "resolved by discipline made executable: new freeze-v0.4.0.json file; the three prior freezes are sha256-pinned in tests (V6)"}
+      ]
+    },
+    {
+      "pass": 2,
+      "summary": "Re-attacked as deployed. Bureaucracy: one routing hunk, one test file, one verifier version, one partition artifact, one draft PR — no new ceremony. Centralization: composition centralizes recruitment in the one coordinator, not authority; no new authority is created (authority_created false on every receipt). Fragility: the change is set arithmetic on an existing list; the frozen-spec and freeze-pin tests fail loudly on drift. Gaming: a part cannot game selection — eligibility is hard-gated per part geometry, and the cap phrase is computable only by being eligible and unselected. Dependence on one model: every claim cites an executable test or verifier check runnable by any contributor.",
+      "dispositions": [
+        {"id": "D1", "disposition": "resolved", "note": "test_aggregate_solver_budget_refuses_before_spending: 3 solver-calling parts, budget 2 -> BUDGET_EXHAUSTED, zero organ calls"},
+        {"id": "D2", "disposition": "resolved", "note": "test_five_parts_hit_the_cap_and_the_dropped_part_is_named_honestly + test_ineligible_part_is_named_by_its_reasons_not_by_the_cap"},
+        {"id": "D3", "disposition": "resolved", "note": "reorder precedes the cap and permutes the eligible list only; existing memory tests (learning moves only on verified outcomes, never widens eligibility) pass unchanged"},
+        {"id": "D4", "disposition": "accepted", "owner": "alfonso_lopez", "threshold": "any proposal to let chained stages exceed the visible receipt list, or to hide a chain stage from route.selected, requires founder review"},
+        {"id": "D5", "disposition": "resolved", "note": "TestFreezeNonContamination pins all three prior freeze hashes and requires a distinct new manifest"}
+      ],
+      "residual_risk": "Composition is parallel part execution with typed proofs, not yet cross-part inference (deterrence does not yet consume the causal part's estimate); that deeper composition is the metaconsensus/VOI queue. The receipt discloses the parts and their proofs; it does not claim their combination beats any constituent — that claim stays N3-gated."
+    }
+  ],
+  "dissent": {
+    "material": true,
+    "strongest_objection": "Raising the cap before N1 has a verdict lets the cortex do more while its comparative advantage is unproven — capability breadth ahead of evidence. The partition answers this: the slice is an engineering dependency of the full-Mind directive, not an evaluation dependency of N1; it manufactures no promotion evidence, spends nothing unauthorized, and contaminates no freeze. But the ordering concern is real: if GAIN_ABSENT ever returns, this composition work survives only as infrastructure, not as validated advantage.",
+    "resolution_threshold": "If the N1 verdict is GAIN_ABSENT, the composition machinery is re-reviewed as infrastructure-only: it may remain for gates/verifier value, but no capability-breadth claim may be made from it.",
+    "review_trigger": "the N1 verdict, or any receipt whose composition claim exceeds what its per-part proofs establish"
+  },
+  "evidence": [
+    {"id": "E1", "description": "tests/unit/test_cortex_npart_composition.py: 6 tests — 3-part composition with three typed proofs, 5-part cap honesty (dropped part named, never 'not required'), aggregate solver-budget refusal with zero organ calls, founder-detach ineligibility named by its real reason, three freeze pins plus new-manifest distinctness", "source_type": "unit_test", "claimed_tier": "unit_test"},
+    {"id": "E2", "description": "verifier/v4 run: V1 layering, V2 full unit suite, V3 composition, V4 cap honesty, V5 aggregate refusal, V6 freeze pins", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E3", "description": "Freeze discipline: freeze-v0.4.0.json created new (sha256 51d660e2…); freeze-v0.3.0.json verified byte-identical (4a4d2122…) after the bump; crossgeo freezes untouched (ce9abbc1…, 75ca409e…)", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E4", "description": "Skill validators: validate_intent_ledger.py VALID over INTENT-0035 (repaired) and INTENT-0036; validate_deliberation.py VALID over DELIB-KIMI-2026-10-02-001 (repaired) and this record", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E5", "description": "docs/cortex/dependency-partition-2026-10-03.json: 80 unfinished register rows classified 3 n1_dependent / 51 founder_reality_blocked / 26 independently_buildable_now, each with its actual dependency named; ledger requirements R05.1/R09.5/R09.6/R12.2 classified likewise", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"}
+  ],
+  "negative_evidence": {
+    "deleted": "",
+    "preserved": [
+      "The worktree full-suite run under 0.4.0 recorded 2 failed / 1828 passed / 6 skipped: both failures are the frozen ancestry locks (test_base_commit_is_the_verified_package_3_merge, test_baseline_commit_is_the_merged_canonical_head) reacting to main-line baseline objects present in this long-lived worktree's shared object store; the same git merge-base check fails at the pre-slice tip d31848a, demonstrating the failures are a pre-existing environment artifact, not a slice regression. The canonical green claim rests on the fresh-clone replication, where the off-branch objects are absent and the locks skip as designed.",
+      "First draft of the three-part test asserted proof class causal_estimate for the claim part; the organ's typed proof for that claim shape is evidence_assessment (NOT_IDENTIFIED). The test was corrected to the truthful class; the probe output is preserved in the session, not edited away.",
+      "The dependency-partition write initially failed on a pseudo-key (B55_mech) that does not exist as a register row; the pseudo-entry was folded into row B55's dependency note and the A12-VOI queue entry instead of forcing a synthetic row."
+    ]
+  },
+  "rollback": "Close the draft PR unmerged; or revert the merge commit; or revert the single routing.py hunk (MAX_COMPOSITION, cap-honesty block, aggregate solver check) — no state, migration, or external effect exists to roll back. Receipts already emitted under cortex-route-policy/0.4.0 remain valid historical records under their own version.",
+  "authority": {
+    "decision_owner": "alfonso_lopez",
+    "model_role": "propose and implement inside the standing directive; no approval self-granted",
+    "merge": "founder-only; draft PR per the standing rule",
+    "authority_created": false,
+    "spend": "0 USD"
+  },
+  "implementation": {
+    "performed": true,
+    "note": "routing.py hunk, test file, verifier v4, freeze-v0.4.0.json, version coupling (contracts/policy/catalog/traceability/examples), register rows A36/B47/B36/A52/B27/B31, partition artifact, INTENT-0036, repairs to INTENT-0035 and DELIB-KIMI-2026-10-02-001 naming draft PR #151. Delivered as a draft PR stacked on kimi/cortex-formed-function-routing-20261002. No merge, no attach, no activation."
+  },
+  "github_ops": [
+    {"op": "create_branch", "target_branch": "kimi/cortex-npart-composition-20261003", "protected": false, "explicit_authorization": true},
+    {"op": "push_files", "target_branch": "kimi/cortex-npart-composition-20261003", "protected": false, "explicit_authorization": true},
+    {"op": "create_pull_request (draft)", "target_branch": "kimi/cortex-formed-function-routing-20261002", "protected": false, "explicit_authorization": true, "note": "stacked draft PR on the #151 branch per the standing draft-PR-only rule; references issue #117 and INTENT-0036"}
+  ],
+  "inspected_sources": [
+    {"source": "cortex/routing.py, cortex/contracts.py, cortex/genome.py, cortex/evaluation/run.py, cortex/examples.py, cortex/evidence_refs.py at the working tip", "inspected": true},
+    {"source": "docs/cortex/verbatim-register.json (all 80 unfinished rows re-read for the partition)", "inspected": true},
+    {"source": "docs/cortex/BUILD_PROMPT_TRACEABILITY.json, docs/cortex/BACKCAST_GPS_CORTEX.md", "inspected": true},
+    {"source": "founder correction text (2026-10-03 upload)", "inspected": true},
+    {"source": "skill validators and schemas (install-recursive-founder-intent-collaboration-protocol/scripts)", "inspected": true}
+  ],
+  "not_inspected": [
+    "uniimente-kernel main since the PR #143 fetch (the slice stacks on the frontier branch, which is the canonical work line)",
+    "Claude/ChatGPT session state beyond what the repository records"
+  ],
+  "decision": "RETAIN"
+}

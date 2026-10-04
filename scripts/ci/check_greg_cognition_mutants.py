@@ -18,9 +18,9 @@ MUTANTS = [
  ('UNKNOWN relabeled', 'cortex/seed/methods.py', "if status == 'UNKNOWN':", 'if False:', 'test_solver_unknown_preserved'),
  ('replaced source', 'cortex/seed/verify.py', "assert r['source_digests'] == {i: s['sha256'] for i, s in items.items()}, 'source replacement'",
   'pass', 'test_verifier_rejects_replaced_source_digest'),
- ('duplicate settlement guard', 'greg/cognition.py', '    if prior:\n', '    if False:\n',
+ ('duplicate settlement guard', 'greg/cognition/selector.py', '    if prior:\n', '    if False:\n',
   'test_outcome_corrections_are_idempotent_and_cannot_edit_policy'),
- ('paid key activates unconfigured method', 'greg/cognition.py', "if c['kind'] == 'semantic' and not c['data'].get('model'):",
+ ('paid key activates unconfigured method', 'greg/cognition/selector.py', "if c['kind'] == 'semantic' and not c['data'].get('model'):",
   "if c['kind'] == 'semantic' and not c['data'].get('model') and not os.environ.get('OPENAI_API_KEY'):",
   'test_missing_model_never_uses_paid_key'),
 ]
@@ -39,10 +39,11 @@ def main():
             path.write_text(original.replace(old, new))
             try:
                 run = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-x', '-p', 'no:cacheprovider',
-                    'tests/unit/test_greg_cognition.py::' + test], cwd=repo,
-                    env={**os.environ, 'PYTHONPATH': str(repo)}, capture_output=True, text=True, timeout=45)
+                    'tests/unit/test_greg_cognition_selector.py::' + test], cwd=repo,
+                    env={**os.environ, 'PYTHONPATH': str(repo) + os.pathsep + os.environ.get('PYTHONPATH', '')},
+                    capture_output=True, text=True, timeout=45)
                 # Import errors and infrastructure crashes cannot count as caught safeguards.
-                caught = run.returncode == 1 and 'FAILED tests/unit/test_greg_cognition.py::' in run.stdout and 'ERROR collecting' not in run.stdout
+                caught = run.returncode == 1 and 'FAILED tests/unit/test_greg_cognition_selector.py::' in run.stdout and 'ERROR collecting' not in run.stdout
                 print('CAUGHT' if caught else 'SURVIVED_OR_INVALID', name, run.stdout.strip().splitlines()[-1:])
                 bad += not caught
             finally:

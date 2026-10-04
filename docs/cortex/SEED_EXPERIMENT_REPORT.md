@@ -54,10 +54,15 @@ code and adds no step to the Chromebook path.
 To show the cortex cannot delay VEPMC, this branch was trial-merged onto PR #137's head in a scratch worktree.
 
 - Merge onto PR #137 head `3d2bb17`: clean, no conflicts (re-checked at this branch's final head).
-- Full suite on the stack at the final head: **1556 passed, 12 skipped**; PR #137 alone: **1201 passed, 12 skipped**.
+- Full suite on the stack at cortex 0.1.5 (`71b6f74`): **1570 passed, 12 skipped**; PR #137 alone: **1201 passed, 12 skipped**.
   The stack adds only the cortex tests and no new skip or failure. Isolated venv with both branches' requirements
   (the container's system `cryptography` 41.0.7 panics on import, so the system interpreter cannot run #137's tests).
-- On the stacked tree the mutation check catches 22 of 22 mutants and verifier v2 passes.
+- On the stacked tree the mutation check catches 26 of 26 mutants and verifier v2 passes.
+- The execution-fabric line (#148) recorded the same class of measurement at its own final head: **1556 passed,
+  12 skipped** against the same PR #137 baseline (1201 passed, 12 skipped), with its mutation check catching
+  22 of 22 mutants and verifier v2 passing. The counts differ because the stacks differ: that line added its
+  execution-fabric tests, this line later grew the cortex suites and the mutant set to 26. Both records stand;
+  neither falsifies the other.
 
 ## What was built
 

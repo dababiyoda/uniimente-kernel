@@ -14,6 +14,7 @@ and authority dimensions in the receipt.
 """
 from __future__ import annotations
 
+import importlib.util
 import time
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -25,23 +26,49 @@ from .contracts import (CLAIM_TYPE_TO_EPISTEMIC, CORTEX_VERSION, EPISTEMIC_CLASS
                         consequence_rank, digest)
 from .gates import AuthorityRecord, Option, evaluate_gates, rank_after_gates
 from .genome import IntelligenceRegistry, seed_registry
-from .organs import adversarial
+from . import outcomes
+from .organs import adversarial, cpsat
+from .organs.cpsat import CpSatOrgan
+from .organs.continuous import ContinuousOptimizationOrgan
 from .organs.deterrence import DeterrenceOrgan
 from .organs.estimation import EstimationOrgan
 from .organs.evidence_causal import EvidenceCausalOrgan
 from .organs.formal import FormalOrgan
+from .organs.graphsearch import GraphSearchOrgan
+from .organs.schedule_extraction import ScheduleExtractionOrgan
+from .organs import schedule_extraction
 from .organs.semantic import SemanticOrgan
 
-POLICY_VERSION = "cortex-route-policy/0.1"
+POLICY_VERSION = "cortex-route-policy/0.4.0"
+BUDGET_POLICY = "cortex-thinking-budget/0.1"
+RECEIPT_SCHEMA = "cortex-receipt/0.2"
 FORMAL = "cortex.formal.z3@0.2.0"
 FERMI = "cortex.estimation.fermi@0.1.0"
 EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"
 DETERRENCE = "cortex.deterrence.accountability@0.1.0"
+CPSAT = cpsat.ORGAN_ID
+EXTRACT = schedule_extraction.ORGAN_ID
+GRAPH = "cortex.graph.search@0.2.0"
+CONOPT = "cortex.optimization.continuous@0.1.0"
+# Fault-diverse engines behind the one formal_model contract (directive 7C, 14).
+FORMAL_ENGINES = (FORMAL, CPSAT)
+# Routes that spend solver calls (formed-function organs run one isolated engine batch
+# per call, plus one for a follow-up proof); the budget is refused before spending.
+SOLVER_CALLERS = FORMAL_ENGINES + (GRAPH, CONOPT)
 
 # The deterministic route policy lives in _route_parts: formal_model -> Formal,
 # estimation_model -> Fermi, claim -> Evidence/Causal, sources -> Semantic.
-MAX_COMPOSITION = 2
+# Policy 0.2: the Formal slot has two engines (Z3, OR-Tools CP-SAT) chosen by
+# _formal_plan after hard eligibility; see that function for the fixed order.
+# Policy 0.3 (issue #117, PR #143 handoff): graph -> the graph.search organ and
+# linear_program -> the continuous-optimization organ; both recruit founder-attached
+# formed functions (Capability Genesis) and accept answers only on GREG's certificate.
+# Policy 0.4 (register rows A36/B47/B36/A52/B27/B31): bounded n-part composition. The cap
+# rises 2 -> 4 (seven route kinds exist; formal_model and schedule_request are exclusive,
+# so at most seven parts can ever be required). The bound stays hard so spend and coupling
+# stay bounded, and parts it drops are named honestly as cap-dropped, never as unrequired.
+MAX_COMPOSITION = 4
 
 # State -> disposition, before verifier findings and gates can only lower it.
 STATE_DISPOSITION = {
@@ -79,8 +106,16 @@ def _route_parts(payload: Mapping[str, Any]) -> list[tuple[str, str]]:
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
         parts.append((FORMAL, _formal_class(fm)))
+    elif isinstance(payload.get("schedule_request"), Mapping):
+        # Seed composition: words -> declarative model -> formal slot (planned after extraction).
+        parts.append((EXTRACT, "constraint_feasibility"))
     if isinstance(payload.get("estimation_model"), Mapping):
         parts.append((FERMI, "estimate"))
+    graph = payload.get("graph")
+    if isinstance(graph, Mapping):
+        parts.append((GRAPH, "optimization"))
+    if isinstance(payload.get("linear_program"), Mapping):
+        parts.append((CONOPT, "optimization"))
     if isinstance(payload.get("deterrence_model"), Mapping):
         parts.append((DETERRENCE, "strategic"))
     claim = payload.get("claim")
@@ -96,8 +131,12 @@ def _structural_classes(payload: Mapping[str, Any]) -> list[str]:
     fm = payload.get("formal_model")
     if isinstance(fm, Mapping):
         out.append(_formal_class(fm))
+    elif isinstance(payload.get("schedule_request"), Mapping):
+        out.append("constraint_feasibility")
     if isinstance(payload.get("estimation_model"), Mapping):
         out.append("estimate")
+    if isinstance(payload.get("graph"), Mapping) or isinstance(payload.get("linear_program"), Mapping):
+        out.append("optimization")
     if isinstance(payload.get("deterrence_model"), Mapping):
         out.append("strategic")
     claim = payload.get("claim")
@@ -159,6 +198,16 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
     harm = ConsequenceVector.from_partial(declared.get("harm"))
     if "harm" not in declared:
         unresolved.append("consequence_vector")
+    # v0.2.1 (crossgeo v0.2 hard failure): the declared harm vector may raise the consequence class,
+    # never lower it. High financial harm, or any hard violation, is at least "financial", which
+    # cognition hands off instead of recommending. The declaration that understated it is kept.
+    implied = "financial" if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) else None
+    if implied and consequence_rank(implied) > consequence_rank(consequence):
+        severe = {k: v for k, v in harm.levels.items() if v in ("high", "critical")}
+        rejected.append({"field": "consequence_class", "value": consequence, "source": "requester_declared",
+                         "why": f"declared harm {severe} implies at least {implied}"})
+        consequence = implied
+        prov["consequence_class"] = {"source": "raised_by_declared_harm", "confidence": None}
     claim = p.get("claim") if isinstance(p.get("claim"), Mapping) else None
     spec = p.get("causal_spec") if isinstance(p.get("causal_spec"), Mapping) else None
     if spec:
@@ -210,7 +259,9 @@ def _falsifier(result: OrganResult) -> str:
     pc = proof.get("proof_class")
     if answer is None:
         return "no claim asserted; nothing to falsify"
-    if pc == "formal":
+    if proof.get("falsification"):
+        return proof["falsification"]
+    if pc in ("formal", "optimization"):
         kind = (proof.get("structured_model") or {}).get("query", {}).get("kind", "feasibility")
         premises = [p.get("id") for p in proof.get("premises") or []]
         tail = f", or premise {premises} found false" if premises else ""
@@ -270,9 +321,13 @@ class Cortex:
     def __init__(self, registry: IntelligenceRegistry | None = None, *, organs: Mapping[str, Any] | None = None,
                  clock: Callable[[], str] | None = None, memory=None):
         self.registry = registry or seed_registry()
-        self.organs = dict(organs or {FORMAL: FormalOrgan(), FERMI: EstimationOrgan(),
+        self.organs = dict(organs or {FORMAL: FormalOrgan(), CPSAT: CpSatOrgan(), EXTRACT: ScheduleExtractionOrgan(),
+                                      FERMI: EstimationOrgan(),
                                       EVIDENCE: EvidenceCausalOrgan(), SEMANTIC: SemanticOrgan(),
-                                      DETERRENCE: DeterrenceOrgan()})
+                                      DETERRENCE: DeterrenceOrgan(),
+                                      # Formed-function organs default to no formed function: recruited they
+                                      # certify, absent they report DEPENDENCY_UNAVAILABLE truthfully.
+                                      GRAPH: GraphSearchOrgan(), CONOPT: ContinuousOptimizationOrgan()})
         self.clock = clock or (lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         self.memory = memory
 
@@ -301,35 +356,76 @@ class Cortex:
             rows = {e.key: e for e in self.registry.eligibility(replace(geometry, epistemic_class=part_class))}
             if key in rows:
                 part_eligibility[key] = rows[key]
-        selected = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible][:MAX_COMPOSITION]
+        formal_plan = None
+        for i, (key, part_class) in enumerate(parts):
+            if key == FORMAL:
+                formal_plan = self._formal_plan(problem, replace(geometry, epistemic_class=part_class))
+                lead = formal_plan["order"][0] if formal_plan["order"] else FORMAL
+                parts[i] = (lead, part_class)
+                rows = {e.key: e for e in self.registry.eligibility(replace(geometry, epistemic_class=part_class))}
+                part_eligibility.update({k: rows[k] for k in FORMAL_ENGINES if k in rows})
+        eligible_parts = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible]
+        if self.memory is not None and len(eligible_parts) > 1:
+            # Learning reorders among the eligible only, before the cap, so verified
+            # competence decides which parts survive the bound; it never widens it.
+            eligible_parts = self.memory.reorder(eligible_parts, geometry)
+        selected = eligible_parts[:MAX_COMPOSITION]
+        cap_dropped = [k for k in eligible_parts if k not in selected]
         by_key = {e.key: e for e in eligibility}
         by_key.update(part_eligibility)
         eligibility = [by_key[k] for k in sorted(by_key)]
-        if self.memory is not None and len(selected) > 1:
-            selected = self.memory.reorder(selected, geometry)
-        alternatives = [{"route": e.key, "why_not": list(e.reasons) or ["not required by this payload"]}
-                        for e in eligibility if e.key not in selected]
+        alternatives = []
+        for e in eligibility:
+            if e.key in selected:
+                continue
+            if e.key in cap_dropped:
+                why_not = [f"required by this payload and eligible; dropped by the composition "
+                           f"bound (MAX_COMPOSITION={MAX_COMPOSITION}, {POLICY_VERSION})"]
+            else:
+                why_not = list(e.reasons) or ["not required by this payload"]
+            alternatives.append({"route": e.key, "why_not": why_not})
 
         # budget: refuse before spending, never after
         limits = geometry.resource_limits
         profiles = self.registry.profiles()
         planned_cost = sum(profiles[k].cost_usd_per_call for k in selected)
         planned_model_calls = sum(1 for k in selected if k == SEMANTIC)
+        planned_solver_calls = len(set(SOLVER_CALLERS) & set(selected))
         budget_problem = None
         if planned_cost > limits.max_cost_usd:
             budget_problem = f"planned cost {planned_cost} exceeds {limits.max_cost_usd}"
         elif planned_model_calls > limits.max_model_calls:
             budget_problem = f"route needs {planned_model_calls} model call(s); budget allows {limits.max_model_calls}"
-        elif FORMAL in selected and limits.max_solver_calls < 1:
-            budget_problem = "route needs the solver; solver-call budget is zero"
+        elif planned_solver_calls > limits.max_solver_calls:
+            budget_problem = (f"route needs at least {planned_solver_calls} solver call(s); "
+                              f"budget allows {limits.max_solver_calls}")
 
         results: list[OrganResult] = []
+        attempts: list[dict] = []
+        decisions: list[dict] = []
+        source_problem = problem
         if budget_problem is None:
-            for key in selected:
-                results.append(self.organs[key].run(problem, geometry, limits))
+            for key in list(selected):
+                if key == EXTRACT:
+                    problem, executed, plan = self._compose_schedule(problem, geometry, limits, started, results,
+                                                                     attempts, decisions)
+                    selected = selected + [k for k in executed if k not in selected]
+                    formal_plan = plan
+                    continue
+                if key in FORMAL_ENGINES and formal_plan is not None:
+                    result, tried, decided = self._run_formal(problem, geometry, limits, formal_plan, started)
+                    results.append(result)
+                    attempts += tried
+                    decisions += decided
+                else:
+                    results.append(self.organs[key].run(problem, geometry, limits))
+        l1 = _l1_checks(problem, geometry, formal_plan)
         spent = Expenditure()
         for r in results:
             spent = spent.plus(r.expenditure)
+        for a in attempts:
+            spent = spent.plus(Expenditure(seconds=a["expenditure"]["seconds"],
+                                           solver_calls=a["expenditure"]["solver_calls"]))
 
         # gates before ranking, on consequential options
         gate_reports, ranking = {}, None
@@ -353,8 +449,12 @@ class Cortex:
 
         state, disposition, reason, next_step = self._dispose(
             geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options)
+        extra_reasons = []
+        if disposition == "handoff" and consequence_rank(geometry.consequence_class) >= consequence_rank("financial"):
+            extra_reasons.append("AUTHORITY_REQUIRED")
         if protection.relevant and (set(protection.required_actions) & set(HUMAN_LED_PROTECTION) or protection.gaps):
             human_led = [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]
+            extra_reasons.append("HUMAN_JUDGMENT_REQUIRED")
             if disposition != "handoff":
                 disposition = "handoff"
                 why = f"human-led action {human_led}" if human_led else f"unresolved protection gaps {list(protection.gaps)}"
@@ -367,6 +467,7 @@ class Cortex:
         if deterrent is not None:
             # Deterrence that reaches another party is decided by legitimate authority, never by cognition.
             kind = deterrent.answer["best_intervention"]["kind"]
+            extra_reasons.append("AUTHORITY_REQUIRED")
             if disposition != "handoff":
                 disposition = "handoff"
                 reason = f"strongest lawful deterrent ({kind}) reaches another party; {reason}"
@@ -380,8 +481,204 @@ class Cortex:
             reason = f"critical verifier finding(s): {sorted(kinds)}"
             next_step = "resolve the findings before relying on this result"
         spent = spent.plus(Expenditure(seconds=time.perf_counter() - started - spent.seconds))
-        return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
-                             gate_reports, ranking, state, disposition, reason, next_step, spent, protection)
+        return self._receipt(source_problem, geometry, eligibility, selected, alternatives, results, verifier,
+                             gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
+                             formal_plan=formal_plan, attempts=attempts, decisions=decisions, l1=l1,
+                             extra_reasons=extra_reasons, cap_dropped=cap_dropped)
+
+
+
+    # ------------------------------------------------------------------ seed composition
+    def _compose_schedule(self, problem, geometry, limits, started, results, attempts, decisions):
+        """Extraction -> compiled formal model -> formal slot. Returns (problem, executed keys, plan).
+
+        The formal stage sees the compiled model; the verifier re-checks against it. Whether the
+        compiled model is a faithful reading of the words is the extraction audit's and the
+        founder's question, recorded in the extraction proof, never assumed here."""
+        ext = self.organs[EXTRACT].run(problem, geometry, limits)
+        results.append(ext)
+        if ext.state != "OK":
+            decisions.append({"step": "formal stage", "taken": False,
+                              "reason": f"extraction state {ext.state}: no model to solve"})
+            return problem, [], None
+        model = ext.proof["compiled_model"]
+        composed = Problem(problem.problem_id, problem.question, {**problem.payload, "formal_model": model})
+        kind = (model.get("query") or {}).get("kind", "feasibility")
+        part_geometry = replace(geometry, epistemic_class="optimization" if kind == "optimize"
+                                else "constraint_feasibility")
+        plan = self._formal_plan(composed, part_geometry)
+        if not plan["order"]:
+            decisions.append({"step": "formal stage", "taken": False,
+                              "reason": f"no eligible formal engine: {plan['excluded']}"})
+            return composed, [], plan
+        result, tried, decided = self._run_formal(composed, part_geometry, limits, plan, started)
+        results.append(result)
+        attempts += tried
+        decisions += decided
+        return composed, [result.organ_id], plan
+
+    # ------------------------------------------------------------------ formal slot (policy 0.2)
+    def _engine_available(self, key: str, payload: Mapping[str, Any]) -> tuple[bool, str]:
+        faults = payload.get("faults", {}) or {}
+        if key == FORMAL:
+            if faults.get("solver_available") is False:
+                return False, "z3 outage injected by fault"
+            return (importlib.util.find_spec("z3") is not None, "z3-solver is not installed")
+        if key == CPSAT:
+            if faults.get("cpsat_available") is False:
+                return False, "CP-SAT outage injected by fault"
+            return (cpsat.available(), "ortools is not installed")
+        return True, ""
+
+    def _formal_plan(self, problem: Problem, part_geometry: ProblemGeometry) -> dict:
+        """Hard eligibility for each formal engine, then the fixed policy order.
+
+        Eligibility (all must hold): registry row eligible (lifecycle, enabled, geometry,
+        founder detach projected from GREG), dependency importable, model inside the
+        engine's declared fragment. Order among eligible engines: optimization queries
+        go to CP-SAT first (a dedicated OR engine; Z3 then supplies a fault-diverse
+        optimality certificate); feasibility and entailment go to Z3 first (its
+        per-constraint counterexample search and unsat core are the richer proof),
+        CP-SAT second. Competence memory may reorder eligible engines only."""
+        model = problem.payload.get("formal_model") or {}
+        kind = (model.get("query") or {}).get("kind", "feasibility") if isinstance(model, Mapping) else "feasibility"
+        rows = {e.key: e for e in self.registry.eligibility(part_geometry)}
+        policy = [CPSAT, FORMAL] if kind == "optimize" else [FORMAL, CPSAT]
+        order, excluded, unavailable = [], {}, []
+        for key in policy:
+            reasons = []
+            row = rows.get(key)
+            if row is None:
+                reasons.append("not registered")
+            elif not row.eligible:
+                reasons += list(row.reasons)
+            ok, why = self._engine_available(key, problem.payload)
+            if not ok:
+                reasons.append(f"dependency unavailable: {why}")
+            if key == CPSAT and isinstance(model, Mapping):
+                reasons += [f"outside fragment: {r}" for r in cpsat.unsupported(model)]
+            if reasons:
+                excluded[key] = reasons
+                if row is not None and row.eligible and all(r.startswith("dependency unavailable") for r in reasons):
+                    unavailable.append(key)
+            else:
+                order.append(key)
+        if self.memory is not None and len(order) > 1:
+            order = self.memory.reorder(order, part_geometry)
+        if not order and unavailable:
+            # Every engine the registry allows is down: run the first so the receipt states
+            # DEPENDENCY_UNAVAILABLE truthfully instead of claiming no method exists.
+            order = unavailable[:1]
+        return {"policy": POLICY_VERSION, "query_kind": kind, "order": order, "excluded": excluded,
+                "policy_order": policy}
+
+    def _run_formal(self, problem, geometry, limits, plan, started) -> tuple[OrganResult, list, list]:
+        """Run the lead engine, fall back on engine failure, then take only the optional
+        cross-checks whose result could change the decision (budget controller)."""
+        attempts, decisions = [], []
+        order = list(plan["order"])
+        result = self.organs[order[0]].run(problem, geometry, limits)
+        calls = result.expenditure.solver_calls
+        remaining = [k for k in order[1:]]
+        failing = ("DEPENDENCY_UNAVAILABLE", "TIMEOUT", "INCONCLUSIVE")
+        def rest():
+            """The latency budget that remains for a later engine; never a fresh budget."""
+            return replace(limits, max_latency_s=max(0.0, limits.max_latency_s - (time.perf_counter() - started)))
+
+        while result.state in failing and result.answer is None and remaining:
+            alt = remaining.pop(0)
+            if calls >= limits.max_solver_calls:
+                decisions.append({"step": f"fallback to {alt}", "taken": False,
+                                  "reason": "solver-call budget exhausted", "solver_calls_used": calls})
+                break
+            if rest().max_latency_s <= 0:
+                decisions.append({"step": f"fallback to {alt}", "taken": False,
+                                  "reason": f"latency budget of {limits.max_latency_s}s exhausted",
+                                  "solver_calls_used": calls})
+                break
+            decisions.append({"step": f"fallback to {alt}", "taken": True,
+                              "reason": f"{result.organ_id} returned {result.state}; a fault-diverse engine can "
+                                        f"still decide the same encoded question", "solver_calls_used": calls})
+            attempts.append(_attempt(result, "superseded by fallback"))
+            result = self.organs[alt].run(problem, geometry, rest())
+            calls += result.expenditure.solver_calls
+        others = [k for k in order if k != f"{result.organ_id}"]
+        answer = result.answer or {}
+        model = problem.payload.get("formal_model") or {}
+
+        def affordable() -> tuple[bool, str]:
+            elapsed = time.perf_counter() - started
+            if calls >= limits.max_solver_calls:
+                return False, "solver-call budget exhausted"
+            if elapsed > limits.max_latency_s / 2:
+                return False, f"latency budget: {elapsed:.3f}s of {limits.max_latency_s}s already spent"
+            return True, ""
+
+        if result.organ_id == CPSAT and answer.get("optimal") and FORMAL in others:
+            ok, why = affordable()
+            if not ok:
+                decisions.append({"step": "independent optimality certificate (z3)", "taken": False, "reason": why})
+            else:
+                cert = cpsat.z3_optimality_certificate(model, answer["objective"], max(1, min(
+                    int(model.get("timeout_ms", 5000)), int(rest().max_latency_s * 1000))))
+                calls += 1
+                decisions.append({"step": "independent optimality certificate (z3)", "taken": True,
+                                  "reason": "an optimality claim changes which assignment is recommended; a "
+                                            "different engine's UNSAT for a strictly better objective is cheap",
+                                  "result": cert["status"]})
+                proof = dict(result.proof)
+                proof["certificate"] = cert
+                state = result.state
+                notes = result.notes
+                if cert["status"] == "REFUTED":
+                    state = "CONTESTED"
+                    notes = notes + (f"z3 found a strictly better assignment {cert.get('better_assignment')}",)
+                result = replace(result, proof=proof, state=state, notes=notes,
+                                 expenditure=result.expenditure.plus(Expenditure(solver_calls=1)))
+        elif result.organ_id == CPSAT and answer.get("feasible") and answer.get("optimal") is False \
+                and FORMAL in others:
+            ok, why = affordable()
+            decisions.append({"step": "second engine to close the optimality gap (z3)", "taken": ok,
+                              "reason": why or f"gap {answer.get('gap')} > 0: a proof of optimality could change "
+                                               "the recommended assignment"})
+            if ok:
+                second = self.organs[FORMAL].run(problem, geometry, rest())
+                calls += second.expenditure.solver_calls
+                if second.state in ("OK", "WORLD_UNVERIFIED") and (second.answer or {}).get("optimal"):
+                    attempts.append(_attempt(result, "superseded: z3 proved optimality"))
+                    result = second
+                else:
+                    attempts.append(_attempt(second, "second engine did not close the gap"))
+        elif (answer.get("feasible") is False or answer.get("entailed") is True) and others:
+            alt = others[0]
+            ok, why = affordable()
+            decisions.append({"step": f"confirm the verdict with {alt}", "taken": ok,
+                              "reason": why or "an impossibility or entailment verdict ends or settles the plan; a "
+                                               "second engine's confirmation is cheap relative to acting on it"})
+            if ok:
+                second = self.organs[alt].run(problem, geometry, rest())
+                calls += second.expenditure.solver_calls
+                key = "feasible" if "feasible" in answer else "entailed"
+                agrees = second.answer is not None and second.answer.get(key) == answer.get(key)
+                attempts.append(_attempt(second, "confirmation" if agrees else "disagreement"))
+                if second.answer is not None and not agrees:
+                    proof = dict(result.proof)
+                    proof["engine_disagreement"] = {"engine": second.organ_id, "answer": second.answer}
+                    result = replace(result, state="CONTESTED", proof=proof,
+                                     notes=result.notes + (f"{second.organ_id} disagrees: {second.answer}",))
+                elif agrees:
+                    proof = dict(result.proof)
+                    proof["confirmed_by"] = {"engine": second.organ_id, "state": second.state}
+                    result = replace(result, proof=proof)
+        elif answer.get("feasible") is True or answer.get("entailed") is False:
+            decisions.append({"step": "second engine", "taken": False,
+                              "reason": "the returned assignment is re-checked against every source constraint by "
+                                        "the solver-independent evaluator; a second engine cannot change a verified "
+                                        "witness"})
+        else:
+            decisions.append({"step": "second engine", "taken": False,
+                              "reason": f"no answer to cross-check (state {result.state})"})
+        return result, attempts, decisions
 
     # ------------------------------------------------------------------ disposition
     def _dispose(self, geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options):
@@ -441,7 +738,7 @@ class Cortex:
 
     # ------------------------------------------------------------------ receipt
     def _truth(self, results: list[OrganResult]) -> dict:
-        formal = next((r for r in results if r.proof.get("proof_class") == "formal"), None)
+        formal = next((r for r in results if r.proof.get("proof_class") in ("formal", "optimization")), None)
         if formal is None:
             formal_validity = "not_applicable"
         elif formal.state in ("OK", "WORLD_UNVERIFIED"):
@@ -451,9 +748,9 @@ class Cortex:
         empirical = "unknown"
         for r in results:
             pc = r.proof.get("proof_class")
-            if pc == "formal" and r.state == "OK":
+            if pc in ("formal", "optimization") and r.state == "OK":
                 empirical = "premises_verified"
-            elif pc == "formal" and r.state == "WORLD_UNVERIFIED":
+            elif pc in ("formal", "optimization") and r.state == "WORLD_UNVERIFIED":
                 empirical = "unverified_premises"
             elif pc == "evidence_assessment" and r.state == "OK":
                 empirical = f"evidence_{r.answer['verdict']}"
@@ -470,7 +767,8 @@ class Cortex:
                 "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"}
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
-                 ranking, state, disposition, reason, next_step, spent, protection=None) -> dict:
+                 ranking, state, disposition, reason, next_step, spent, protection=None, *, formal_plan=None,
+                 attempts=(), decisions=(), l1=(), extra_reasons=(), cap_dropped=()) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -482,6 +780,10 @@ class Cortex:
             answer = {"chosen_option": ranking["chosen"], "route_answers": answer}
         versions = {"cortex": CORTEX_VERSION, "policy": POLICY_VERSION,
                     "routes": {r.organ_id: r.organ_version for r in results}}
+        outcome = outcomes.classify_cortex(
+            state, disposition, answer_present=answer is not None, verifier_blocking=bool(verifier["blocking"]),
+            refused_interventions=any((r.proof or {}).get("refused") for r in results))
+        outcome["reasons"] = list(dict.fromkeys(outcome["reasons"] + list(extra_reasons)))
         solver = next((r.proof.get("solver") for r in results if r.proof.get("solver")), None)
         if solver:
             versions["solver"] = {"name": solver.get("name"), "version": solver.get("version")}
@@ -489,7 +791,7 @@ class Cortex:
         if model:
             versions["model"] = model
         body = {
-            "schema": "cortex-receipt/0.1",
+            "schema": RECEIPT_SCHEMA,
             "created_at": self.clock(),
             "problem": {"problem_id": problem.problem_id, "question_digest": digest(problem.question),
                         "payload_digest": digest(dict(payload))},
@@ -499,8 +801,11 @@ class Cortex:
             "eligibility": [e.to_dict() for e in eligibility],
             "route": {"policy": POLICY_VERSION, "selected": list(selected),
                       "composition": len(selected) > 1,
+                      "max_parts": MAX_COMPOSITION,
+                      "cap_dropped": list(cap_dropped),
                       "rationale": "structured payload fields select routes by the fixed policy table; "
-                                   "eligibility and budget filter first"},
+                                   "eligibility and budget filter first",
+                      "formal_plan": formal_plan, "attempts": list(attempts)},
             "alternatives": alternatives,
             "assumptions": [a for r in results for a in r.assumptions],
             "output": {"state": state, "answer": answer, "per_route": [r.to_dict() for r in results]},
@@ -520,6 +825,13 @@ class Cortex:
             "accountability": _accountability(geometry, results, verifier, gate_reports, protection),
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
                              "memory_keys": [f"{k}|{geometry.epistemic_class}" for k in selected]},
+            "l1_checks": list(l1),
+            "budget_controller": {"policy": BUDGET_POLICY, "decisions": list(decisions),
+                                  "mandatory": ["eligibility gates", "adversarial verifier",
+                                                "independent assignment re-evaluation", "consequence ceiling"],
+                                  "note": "mandatory checks are never traded for cost; only optional deeper "
+                                          "cognition is gated on its chance of changing the decision"},
+            "outcome": outcome,
             "authority_created": False,
             "execution_authority": "none",
         }
@@ -528,7 +840,7 @@ class Cortex:
 
     def _malformed(self, raw, why, started, geometry=None) -> dict:
         body = {
-            "schema": "cortex-receipt/0.1", "created_at": self.clock(),
+            "schema": RECEIPT_SCHEMA, "created_at": self.clock(),
             "problem": {"problem_id": str((raw or {}).get("problem_id") if isinstance(raw, Mapping) else "unknown"),
                         "question_digest": digest(str((raw or {}).get("question") if isinstance(raw, Mapping) else "")),
                         "payload_digest": digest(str(raw))},
@@ -560,10 +872,67 @@ class Cortex:
                                "falsification_conditions": [], "missing_information": [f"well-formed input: {why}"],
                                "note": "competence evidence and proof narrow disputes; they never create authority"},
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None, "memory_keys": []},
+            "l1_checks": [{"check": "schema_valid", "value": "fail", "detail": why[:300]}],
+            "budget_controller": {"policy": BUDGET_POLICY, "decisions": [], "mandatory": [],
+                                  "note": "input rejected before any cognition was spent"},
+            "outcome": outcomes.classify_cortex("MALFORMED_INPUT", "abstain", answer_present=False),
             "authority_created": False, "execution_authority": "none",
         }
         body["receipt_id"] = digest(body)
         return body
+
+
+def _attempt(result: OrganResult, why: str) -> dict:
+    return {"organ_id": result.organ_id, "state": result.state, "answer": None if result.answer is None
+            else dict(result.answer), "why": why, "expenditure": result.expenditure.to_dict(),
+            "notes": list(result.notes)[:5]}
+
+
+L1_VALUES = ("pass", "fail", "unknown", "not_applicable")
+
+
+def _l1_checks(problem: Problem, geometry: ProblemGeometry, formal_plan) -> list[dict]:
+    """Layer-1 primitive checks: cheap, deterministic, four-valued (pass, fail, unknown,
+    not_applicable are distinct). They record local state; they never replace an organ's
+    own checks and never grant anything."""
+    p = problem.payload
+    out = [{"check": "schema_valid", "value": "pass", "detail": "problem and payload parsed"}]
+    as_of = p.get("as_of")
+    out.append({"check": "as_of_present", "value": "pass" if as_of else "unknown",
+                "detail": as_of or "no reference date; freshness cannot be judged"})
+    evidence = p.get("evidence") or []
+    if not evidence:
+        fresh, detail = "not_applicable", "no evidence items"
+    elif not as_of:
+        fresh, detail = "unknown", "no reference date"
+    else:
+        stale, unknown = [], []
+        ref = datetime.fromisoformat(str(as_of)[:10])
+        for e in evidence:
+            try:
+                age = (ref - datetime.fromisoformat(str(e.get("observed_at"))[:10])).days
+            except (TypeError, ValueError):
+                unknown.append(e.get("id"))
+                continue
+            if age < 0 or (e.get("max_age_days") is not None and age > e["max_age_days"]):
+                stale.append(e.get("id"))
+        fresh = "fail" if stale else ("unknown" if unknown else "pass")
+        detail = f"stale or future-dated {stale}; undated {unknown}" if stale or unknown else "all within max age"
+    out.append({"check": "evidence_fresh", "value": fresh, "detail": detail})
+    sources = p.get("sources") or []
+    injected = [s.get("id") for s in sources if adversarial._INJECTION.search(str(s.get("text", "")))]
+    out.append({"check": "no_instruction_text_in_sources",
+                "value": "not_applicable" if not sources else ("fail" if injected else "pass"),
+                "detail": f"instruction-like text in {injected}" if injected else "scanned sources"})
+    limits = geometry.resource_limits
+    out.append({"check": "budget_declared", "value": "pass" if "resources" in p else "unknown",
+                "detail": limits.to_dict()})
+    if formal_plan is None:
+        out.append({"check": "formal_engine_available", "value": "not_applicable", "detail": "no formal model"})
+    else:
+        out.append({"check": "formal_engine_available", "value": "pass" if formal_plan["order"] else "fail",
+                    "detail": {"order": formal_plan["order"], "excluded": formal_plan["excluded"]}})
+    return out
 
 
 def _lower(current: str, floor: str) -> str:

@@ -102,6 +102,42 @@ A competent new coding agent entering through a normal repository instruction su
 
 If not, propagation for that repository is incomplete.
 
+## Context checksum record — 2026-10-01, seed-genome directive
+
+Recorded by the coding agent before the cortex convergence (`INTENT-20261001-greg-seed-genome`,
+directive section 1 and backcast node P0). Answers are short and point at canonical records.
+
+- Root authority: Alfonso Lopez. Chat text is intent evidence, never runtime authentication.
+- GREG: one persistent, founder-governed operating layer (`greg/`) with one entry, one registry,
+  one ledger-backed journal and one consequence gate; the cortex is a set of GREG capabilities.
+- Current bottleneck: VEPMC 0 -> 1 on the founder's Chromebook (`greg path`, node N1). The cortex
+  metric, Verified Cross-Geometry Routing Gain, is subordinate (`greg/path.json` workstreams).
+- Functional morphogenesis: capability formation in response to a verified deficit; P10 is the
+  research form, held to a strong centralized baseline.
+- Capability Genesis: deficit -> search existing -> compose -> acquire -> build residual -> verify
+  -> register (no authority) -> resume the original mission (`greg/builders.py`, node N2, P7).
+- Acquire-before-invent: Z3 and OR-Tools CP-SAT were adopted, not written; only the routing,
+  receipts, verification and settlement layers are project code.
+- Build-Your-Own-X: a mechanism atlas, not a product to clone.
+- VEPMC counts only a founder-signed mission on the designated body that survives interruption,
+  honours approval, is independently appraised and is accepted; the container rehearsal does not.
+- Developmental authority ceiling: consequence-inert development, draft PRs, no merge, deploy,
+  publication, paid service or live-authority change.
+- Shared authority/evidence truth: the Kernel (constitution, ledger, gate).
+- Repositories: see the ecology registry above; this change touches the Kernel only.
+- Source families searched: the 2026-10-01 directive (verbatim in
+  `docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md`), Kernel entry and doctrine
+  files, PRs #137, #139, #140 and #141 and their branches, the cortex v0.1.x records.
+- Unavailable: the two supplied reviews as standalone files (the directive's Appendix A crosswalk
+  is the available form), the project-chat corpus, and any founder-selected local model (model
+  downloads return 403 through the egress proxy; not routed around).
+
+Propagation receipt: canonical source `INTENT-20261001-greg-seed-genome`; affected repository
+`dababiyoda/uniimente-kernel`; surfaces updated: Founder Intent Ledger, intent record and verbatim
+source, `greg/path.json`, developmental-inheritance placements, this addendum, `docs/cortex/`;
+organ repositories not updated (no organ contract changed); contracts changed: cortex receipt and
+proof-artifact schemas gained compatible fields; runtime integration: yes, through `cognition.solve`.
+
 ## October 1 Seed Genome continuation
 
 The [integration record](cortex/GREG_SEED_GENOME.md) and [complete supplied-source register](cortex/SEED_GENOME_REQUIREMENTS.json) anchor this work. Its intent remains active; implemented, integrated, tested and live-authorized states are separate. P0–P13/C1–C8 extend the existing `greg/path.json` under a subordinate workstream. No new primary node or external authority is created. PR137/141/139 lineage and inspected/unavailable scope are recorded there; no propagation to unseen organ repositories is claimed.

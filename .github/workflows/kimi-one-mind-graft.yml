@@ -1,0 +1,28 @@
+name: kimi-one-mind-graft
+# One-shot assembly of the reconciliation branch. Triggered only by the push that
+# delivers this workflow together with .github/kimi-one-mind-graft/apply.sh; the
+# script itself is idempotent and exits when the graft is already applied.
+on:
+  push:
+    branches: [kimi/one-mind-surface-20261003]
+    paths: ['.github/kimi-one-mind-graft/apply.sh']
+
+permissions:
+  contents: write
+
+jobs:
+  graft:
+    # The graft commit is pushed by github-actions[bot] and never touches
+    # apply.sh, so the paths filter alone prevents retrigger; this is a
+    # second, independent guard.
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: kimi/one-mind-surface-20261003
+          fetch-depth: 0
+      - name: Fetch cortex-line objects (graft source 3f61cfc is an ancestor)
+        run: git fetch origin kimi/cortex-npart-composition-20261003
+      - name: Apply the reconciliation graft
+        run: bash .github/kimi-one-mind-graft/apply.sh

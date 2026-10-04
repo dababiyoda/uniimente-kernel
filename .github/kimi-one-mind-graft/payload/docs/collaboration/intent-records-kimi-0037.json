@@ -1,0 +1,54 @@
+[
+  {
+    "intent_id": "INTENT-0037",
+    "title": "Build, don't just analyze: reconcile the two divergent Mind surfaces into one and stage it as a draft PR",
+    "statement": "CORRECTION — the audit was right, the stop was wrong. The repository distinguishes building from installation, activation and consequence authority. Writing code on a dedicated branch and opening a draft PR is not merging, activating, spending, or exercising external authority; founder-only merge authority was never a reason not to build. After the reconnaissance phase, continue automatically into the highest-value unblocked build work: (1) reconcile the #139/#143 Cortex line with #145 and the #148 execution fabric into one Mind surface; (2) close buildable gaps such as spend accounting and worker-output-to-input composition; (3) leave VEPMC and real-world founder gates to the founder.",
+    "source_refs": [
+      "founder message in this collaboration session, 2026-10-03 (correcting the under-execution of the full-machine completion audit)",
+      "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+      "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md",
+      "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+    ],
+    "owner": "Alfonso Lopez",
+    "state": "active",
+    "binding_scope": "uniimente-kernel repository; the Mind surface (cortex, greg/cognition, contracts, tests, cortex lineage records)",
+    "constitutional_constraints": [
+      "merge authority remains founder-only; this work stages a draft PR on a dedicated branch, never a merge",
+      "no new authority plane, no second Kernel/GREG/mission system/routing plane/learning plane",
+      "every receipt keeps authority_created=false; capability growth is not authority growth",
+      "negative evidence, dissent and lineage are preserved; nothing is silently deleted",
+      "honest status labels: never claim TESTED or INTEGRATED beyond the evidence tier actually reached",
+      "model output is never represented as external evidence",
+      "secrets never enter signed commands or the ledger"
+    ],
+    "success_evidence": [
+      "one branch where cortex 0.4.0, the seed line (cortex/seed, seed_genome), the deterministic selector and the execution fabric coexist and import",
+      "historical imports (from greg.cognition import evaluate_problem, solve, settle) keep working",
+      "kept-test regression count versus the #148 head under an identical environment: zero",
+      "grafted tests that can execute in the build environment pass; offline-dependency-blocked tests are recorded as blocked, not as failures",
+      "mutation checks and the v4 verifier run are executed and recorded append-only, including FAIL runs"
+    ],
+    "failure_evidence": [
+      "any kept test that passed at the #148 head fails on the reconciliation branch for a non-environmental reason",
+      "any file unique to either line disappearing from the tree without an explicit, recorded supersession",
+      "any claim that the reconciliation is merged, activated, or founder-approved",
+      "any parallel canonical contract, gate, registry or governance system introduced by the reconciliation"
+    ],
+    "dependencies": [
+      "GitHub access to push the branch and open the draft PR",
+      "z3-solver, ortools, rfc3161_client for full offline verification (absent in the build sandbox; recorded as environmental)"
+    ],
+    "conflicts": [
+      "cognition.solve has two implementations (deterministic selector vs 0.4.0 competency compiler); resolved by keeping the compiler on the mission path and the selector directly callable, recorded in deliberation-one-mind-surface-20261003.json"
+    ],
+    "next_review_trigger": "founder review of the draft PR; any request to merge, activate, or extend scope beyond the staged surface",
+    "supersedes": [],
+    "superseded_by": [],
+    "implementation_refs": [
+      "branch kimi/one-mind-surface-20261003",
+      "docs/cortex/ONE_MIND_SURFACE_RECONCILIATION_2026-10-03.md",
+      "docs/collaboration/deliberation-one-mind-surface-20261003.json",
+      "verifier/runs/v4-2026-10-03T12-56-35.629229+00-00.json"
+    ]
+  }
+]

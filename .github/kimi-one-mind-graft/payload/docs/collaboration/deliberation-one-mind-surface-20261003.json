@@ -1,0 +1,182 @@
+{
+  "decision_id": "DELIB-2026-10-03-one-mind-surface",
+  "classification": "standard",
+  "contributor": "KIMI",
+  "founder_intent_ids": ["INTENT-0037"],
+  "system_boundary": "The Mind surface of uniimente-kernel: cortex/, greg/cognition/, greg/mechanisms.py, greg/genesis.py, contracts/cortex-*.schema.json, capabilities/genome.py + greg/capabilities.py (profile fields and builtin registration only), greg/path.json (additive workstreams key), tests and lineage records for the two cognition lines. The execution fabric (workers, foundry, computer, isolation, console, templates, phone, chromebook) is kept from the #148 head and is NOT rewritten.",
+  "inspected_sources": [
+    {"source": "git history of the repository (full clone, all fetched branch tips)", "inspected": true},
+    {"source": "1aab4132fa4cb4064a01d5c02613b930467fbee3 (#148 head, execution fabric; the base of this branch)", "inspected": true},
+    {"source": "3f61cfc48a45f9aa642ae527827b0c419d7bb67d (kimi/cortex-npart-composition-20261003 tip, cortex 0.4.0)", "inspected": true},
+    {"source": "3d2bb1762ff709ce74d3053aced060e70d4e6674 (merge-base, #137 head)", "inspected": true},
+    {"source": "founder correction message of 2026-10-03 (build, don't just analyze)", "inspected": true},
+    {"source": "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json and verbatim source", "inspected": true},
+    {"source": "both lines' test suites executed in this sandbox under an identical interpreter environment", "inspected": true}
+  ],
+  "alternatives": [
+    {
+      "kind": "proposed",
+      "benefits": "One tree carries cortex 0.4.0 (CP-SAT second engine, formed-function graph/continuous organs, bounded n-part composition with cap honesty, aggregate budget refusal) AND the execution fabric's value (cortex/seed native solvers, seed_genome evaluation, deterministic selector, disposable worker) with zero kept-test regressions; the formed-function recruitment path becomes structurally live through the genesis fast-forward; historical imports keep working.",
+      "liabilities": "cognition.solve on the mission path now resolves to the 0.4.0 compiler instead of the selector (selector remains directly callable and its builtins settle/status are unchanged); six grafted tests cannot execute offline; the 153-line console attach page is not ported.",
+      "evidence": "Full suite on the reconciled tree: 1198 passed / 19 failed / 86 skipped, where 13 failures are byte-identical to the #148 base's environmental set and 6 are grafted tests blocked by z3-solver/ortools/rfc3161_client (absent offline); verifier v4: V1,V3,V4,V5,V6 PASS, V2 FAIL recorded; cortex mutants 57/59 caught, 2 stale (one pre-stale on the source line, one inapplicable to the kept console); selector mutants environment-blocked and recorded.",
+      "rollback": "The branch adds and overlays; reverting the merge commit (or simply not merging) restores the #148 head exactly. Every overwritten shared file's prior version lives on the base branch.",
+      "kill_criteria": "Any kept-test regression not traceable to the environment; any loss of a line-unique file without recorded supersession.",
+      "revival_condition": "n/a (chosen)"
+    },
+    {
+      "kind": "current_baseline",
+      "benefits": "Zero reconciliation risk; the #148 head keeps its green execution-fabric evidence.",
+      "liabilities": "The two Mind surfaces stay forked: 0.4.0 organs unreachable from the fabric, seed/selector unreachable from the compiler; duplicated seed-genome records diverge further with every commit; the founder's one-Mind-surface requirement stays unmet.",
+      "evidence": "The fork measured in this session: 171 files differ across the graft set; both lines reimplemented the same seed-genome directive with different records.",
+      "rollback": "n/a",
+      "kill_criteria": "n/a",
+      "revival_condition": "If the graft had produced any unfixable kept-test regression, the baseline would have been the correct stop."
+    },
+    {
+      "kind": "do_nothing",
+      "benefits": "No effort, no branch.",
+      "liabilities": "Directly violates the founder correction of 2026-10-03 (INTENT-0037): treating founder-only merge authority as a reason not to build was the named mistake. Waiting for another 'say the word' repeats it.",
+      "evidence": "The founder's own message.",
+      "rollback": "n/a",
+      "kill_criteria": "n/a",
+      "revival_condition": "Never, while INTENT-0037 is active."
+    },
+    {
+      "kind": "simplest_viable",
+      "benefits": "Take the 153 tip wholesale and drop the fabric's conflicting files: least merge work.",
+      "liabilities": "Destroys the execution fabric (foundry, workers, computer, daleobanks bridge, isolation, the 148-only tests and evidence) — the 153 line deleted them because it never had them. Violates 'preserve everything'.",
+      "evidence": "The base-to-tip diff shows 153-line deletions of greg/cognitive_worker.py, greg/foundry_*, greg/workers.py, greg/computer.py, greg/isolation.py, scripts/greg_hands_proof.py and their tests.",
+      "rollback": "n/a",
+      "kill_criteria": "n/a",
+      "revival_condition": "If the founder ever orders the fabric retired, this becomes viable; nothing in this session does."
+    },
+    {
+      "kind": "strongest_competitor",
+      "benefits": "Keep both lines and open a tracking issue proposing later convergence: no merge risk today, convergence stays on the record.",
+      "liabilities": "Defers exactly what the founder ordered built now; the surfaces drift further apart, raising the future merge cost monotonically; 'issue instead of build' is the under-execution the correction named.",
+      "evidence": "Two divergence measurements in this session (the graft inventory and the true-merge set of 119 files) show drift is already material after three days.",
+      "rollback": "n/a",
+      "kill_criteria": "n/a",
+      "revival_condition": "If a kept-test regression had been unresolvable without weakening a guard, deferral with a precise blocker would have been correct; none was."
+    },
+    {
+      "kind": "reversible_experiment",
+      "benefits": "The branch itself is the reversible experiment: it proves coexistence under one import system and one test run without touching any protected ref.",
+      "liabilities": "None beyond the proposed option; it IS the proposed option, staged.",
+      "evidence": "The branch exists, imports, and runs; the base branch is byte-identical before and after.",
+      "rollback": "Delete the branch.",
+      "kill_criteria": "Same as proposed.",
+      "revival_condition": "n/a"
+    }
+  ],
+  "roles": {
+    "founder_intent_steward": "INTENT-0037 orders continuation into the highest-value unblocked build work; every material prior intention (seed-genome integration INTENT-2026-10-01-POLYINTELLIGENCE-SEED, seed-genome directive INTENT-20261001-greg-seed-genome, full-machine completion INTENT-20261001-FULL-MACHINE-COMPLETION, npart correction INTENT-0036) is preserved, and both lines' ledger and continuity entries are unioned, never rewritten.",
+    "systems_architect": "The reconciliation is one canonical mechanism per concern: cortex 0.4.0 as the only organ set; the selector as a compatibility layer inside the same package, not a second compiler; one path.json carrying both backcast registers under the shared N0-N10 destination map; one CapabilityManifest accepting both profile shapes with digest-preserving omission; no second registry, gate, router or event store introduced.",
+    "adversarial_reviewer": "Attacked on: (a) import compatibility of from greg.cognition import evaluate_problem/solve/settle/_worker (verified green by the selector's own test file); (b) manifest digest continuity (pop-when-empty preserved for both profile fields); (c) inventory integrity (owned-source.json regenerated by the repo's own walk, 383 files, test green); (d) silent supersession (every overwritten file enumerated in ONE_MIND_SURFACE_RECONCILIATION_2026-10-03.md); (e) the cognition.solve mission-path switch (both test families green; the switch is recorded here and in the PR, not buried).",
+    "operator_maintainer": "Operational notes recorded: selector mutant checker child now inherits PYTHONPATH (infrastructure fix, guard logic untouched); one mutant pre-stale on the source line; one mutant inapplicable to the kept console; offline engines z3/ortools/rfc3161_client block six grafted tests and the whole selector file, all marked environment, all reproducible from requirements-cognition.txt + requirements-cortex.txt.",
+    "evidence_welfare_guardian": "Every number in this record comes from a suite or tool run executed in this session; the FAIL verifier run is preserved next to PASS runs; the 1556-vs-1570 forked measurement is unioned into both lineage documents with both values attributed; no simulated or model-generated claim is presented as external evidence; VEPMC remains 0 and is said so."
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "intended_outcome": "A graft plan that makes the two surfaces coexist without losing either line's value.",
+      "advantages": [
+        "Mechanical overlay covers 90% of the surface (cortex 0.4.0 over the fabric; seed and seed_genome survive automatically).",
+        "The genesis fast-forward discovery: the fabric never modified greg/genesis.py, so the seed-genome line's +285 evolution applies cleanly and the formed-function runner cards exist for lp.optimize, graph.shortest_path, graph.max_flow.",
+        "True semantic conflicts are few and small: two profile fields, one builtin id, one path.json key set, one owned-source inventory."
+      ],
+      "disadvantages": [
+        {"id": "D1", "text": "cognition.solve is claimed by both implementations (selector literal vs 0.4.0 catalog).", "redesign": "The compiler takes the mission path (catalog registration applied after the literal); the selector stays importable and directly callable; both test families must run green before staging."},
+        {"id": "D2", "text": "Formed-function recruitment expects GENESIS_CATALOG[function]['runners'], absent in the fabric's genesis.", "redesign": "Take the seed-genome line's genesis.py wholesale (verified fast-forward: the fabric never touched the file), making runners structurally present; engine absence stays DEPENDENCY_UNAVAILABLE by design."},
+        {"id": "D3", "text": "greg/cognition.py as a module collides with greg/cognition/ as a package.", "redesign": "Move the module byte-for-byte to greg/cognition/selector.py; union __init__ re-exports both APIs including the private _worker the selector tests import."},
+        {"id": "D4", "text": "greg/path.json diverged into two backcast schemas (subordinate_workstreams vs workstreams).", "redesign": "Additive union: keep the fabric's file, append the seed line's workstreams key; both lines share the identical N0-N10 destination nodes, so no registry is rewritten."},
+        {"id": "D5", "text": "CapabilityManifest and CapabilityGenome carry different cognitive-profile shapes (list of seed profiles vs single cell profile).", "redesign": "Additive fields on both classes, each validated by its own contract, each omitted when empty so historical manifest digests are unchanged."},
+        {"id": "D6", "text": "The sandbox has no z3-solver, ortools, rfc3161_client and no PyPI; engine tests cannot execute.", "redesign": "Run everything runnable; classify every failure against an identical-environment base run; record blocked tests as environment, never as pass."},
+        {"id": "D7", "text": "The seed line's console capability-ask attach page has no counterpart in the kept console.", "redesign": "Do not port it in this PR (console is execution fabric, not Mind surface); record the inapplicable mutant and the absent feature explicitly."},
+        {"id": "D8", "text": "The selector mutant checker's child process loses the interpreter environment (hard PYTHONPATH override), so it cannot produce a caught-signal offline.", "redesign": "Minimal infrastructure patch: child inherits the parent PYTHONPATH after the repo root; guard logic, mutants and assertions untouched."}
+      ],
+      "attack_vectors": [
+        "A hidden importer of greg.cognition internals beyond the re-exported names (grep across the whole tree found only the five known sites).",
+        "The overlay silently deleting fabric files (checked: cortex/seed, cortex/evaluation/seed_genome, all fabric modules and docs enumerated present after graft).",
+        "The path.json union breaking the fabric's continuity test or the developmental-inheritance guard (both run green after the union).",
+        "The BUILTINS.update overwriting settle/status (it does not: the catalog registers no settle or status entry; both remain the fabric's literals).",
+        "asdict-based digest drift from the new manifest field (pop-when-empty verified; historical digests unchanged by construction and by the passing selector settlement tests)."
+      ],
+      "dispositions": [],
+      "residual_risk": "Pass-1 design untested at scale; the mission-path solve switch is the largest behavioral delta."
+    },
+    {
+      "pass": 2,
+      "intended_outcome": "The same design, hardened by execution evidence and with every pass-1 disadvantage dispositioned.",
+      "advantages": [
+        "1198 passed versus 1149 on the base under the identical environment; the 13 base environmental failures persist unchanged; zero kept-test regressions.",
+        "Verifier v4 functional checks V1, V3, V4, V5, V6 all PASS on the reconciled tree; V2 FAIL is environment and preserved as a run record.",
+        "The owned-source inventory, both backcast registries, both profile contracts and both mutant checkers were exercised; every finding is written down.",
+        "The forked 1556/22-mutants versus 1570/26-mutants measurements are unioned into the shared lineage documents with attribution instead of one silently replacing the other."
+      ],
+      "disadvantages": [
+        {"id": "D1", "text": "cognition.solve mission-path switch is a behavioral delta for NEW invocations.", "redesign": "Recorded in capabilities.py at the registration site, in the reconciliation document, and in the PR body; receipts from both paths keep authority_created=false; both test families green."},
+        {"id": "D6", "text": "Six grafted tests and the whole selector file cannot execute offline; their green state is evidenced only by the source line's own CI records.", "redesign": "Carried as accepted residual with the exact dependency list (requirements-cognition.txt, requirements-cortex.txt, rfc3161-client); the PR states the one-command re-verification for an environment with engines."}
+      ],
+      "attack_vectors": [
+        "Counting the 13 base environmental failures as reconciliation debt (they are not; identical roster, identical causes, identical environment).",
+        "Treating the stale routing mutant as a graft regression (verified pre-stale on the pristine source tip: the aggregate-budget refactor superseded the per-engine pattern on both trees byte-identically).",
+        "Treating the grafted test_greg_cognition_mission collection error as new (same rfc3161_client cause as the 39 base errors; environmental parity, not regression)."
+      ],
+      "dispositions": [
+        {"id": "D1", "disposition": "resolved", "owner": "KIMI", "threshold": "Both test families green; switch recorded in code, doc and PR."},
+        {"id": "D2", "disposition": "resolved", "owner": "KIMI", "threshold": "genesis.py is a verified fast-forward; lp.optimize runners present; engine absence fails soft."},
+        {"id": "D3", "disposition": "resolved", "owner": "KIMI", "threshold": "selector.py byte-identical to the base module (cmp verified); all five import sites green."},
+        {"id": "D4", "disposition": "resolved", "owner": "KIMI", "threshold": "Both backcast guard tests (8 tests across the two files) pass on the unioned path.json."},
+        {"id": "D5", "disposition": "resolved", "owner": "KIMI", "threshold": "Selector settlement tests green (digests); catalog manifests construct and validate; genome validator flags a bad cell profile."},
+        {"id": "D6", "disposition": "accepted", "owner": "KIMI", "threshold": "Environment-only; re-verification command recorded; no failure relabeled."},
+        {"id": "D7", "disposition": "deferred", "owner": "founder", "threshold": "Port the console attach page only if the founder wants the ask/attach flow on the fabric's console; the feature is absent, so no guard is weakened."},
+        {"id": "D8", "disposition": "resolved", "owner": "KIMI", "threshold": "Checker now reaches pytest and reports guard-skips instead of a false SURVIVED_OR_INVALID; engine-present CI still required for a caught-signal."}
+      ],
+      "residual_risk": "The mission-path solve switch and the unexecuted engine tests. Both are recorded, bounded, and reversible by not merging."
+    }
+  ],
+  "dissent": {
+    "present": true,
+    "material": true,
+    "strongest_objection": "The reconciliation gives the 0.4.0 competency compiler the canonical cognition.solve mission path, demoting the deterministic selector from that slot even though the selector is the only one of the two whose full test suite can run without external engines. A reviewer can fairly argue the older, engine-free-verifiable selector should keep the canonical slot until the compiler's engine-dependent paths are verified on the fabric's own CI.",
+    "resolution_threshold": "If any mission invocation through cognition.solve on the reconciled tree returns a receipt that the selector would have refused AND the compiler's own receipt cannot show why (typed abstention or proof), the registration order must be reversed.",
+    "review_trigger": "Founder review of the draft PR, or the first CI run with engines installed: if the six environment-blocked tests fail there, the switch is re-examined before any merge."
+  },
+  "evidence": [
+    {"claim": "Reconciled tree: 1198 passed / 19 failed / 86 skipped; base at #148 head: 1149 passed / 13 failed / 75 skipped; identical environment; the 13 base failures persist byte-identically; the 6 extra failures are grafted tests blocked by z3-solver/ortools/rfc3161_client.", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "Zero kept-test regressions (roster intersection: the 13 base failures are exactly the kept failures on the reconciled tree).", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "Verifier v4 on the reconciled tree: V1, V3, V4, V5, V6 PASS; V2 FAIL (environment); run preserved at verifier/runs/v4-2026-10-03T12-56-35.629229+00-00.json.", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "Cortex mutant checker: 57 of 59 caught; the routing mutant is pre-stale on the pristine source tip; the console mutant is inapplicable to the kept fabric console.", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "Selector mutant checker: environment-blocked (engines absent, guard-skips); child-environment infrastructure fix applied and exercised.", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "greg/cognition/selector.py is byte-identical to the #148 head's greg/cognition.py (cmp verified).", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "The fabric never modified greg/genesis.py relative to the merge-base (empty diff), so the seed-genome line's genesis evolution is a fast-forward.", "source_type": "sandbox_execution", "claimed_tier": "sandbox_execution"},
+    {"claim": "On the source line's own CI records (grafted, not re-executed here): 1833 passed / 6 skipped / 0 failed twice on fresh clones, and the seed-genome frozen comparisons GAIN_VERIFIED_AGAINST_RUN_BASELINES at v0.3.", "source_type": "prose_claim", "claimed_tier": "prose_claim"}
+  ],
+  "negative_evidence": {
+    "retained": [
+      "verifier/runs/v4-2026-10-03T12-56-35.629229+00-00.json records a FAIL (V2) alongside the source line's preserved FAIL and PASS runs",
+      "all 19 failing tests on the reconciled tree are enumerated with causes in the reconciliation document",
+      "both stale mutants are recorded with reasons; the selector checker's environment block is recorded",
+      "the 148-line's INCONCLUSIVE frozen held-out result and the 153-line's v0.2 GAIN_ABSENT history remain in their grafted evidence directories",
+      "the forked 1556/1570 measurement pair is unioned with attribution in SEED_EXPERIMENT_REPORT.md, the deliberation JSON and the ADR"
+    ],
+    "deleted": []
+  },
+  "rollback": "Do not merge: the base ref is untouched. If merged and a defect is found, revert the merge commit; every overwritten shared file's prior version is on the base branch, and the rename map (greg/cognition.py -> greg/cognition/selector.py, test_greg_cognition.py -> test_greg_cognition_selector.py) is recorded in the reconciliation document.",
+  "kill_criteria": "Any kept-test regression not traceable to the environment; any receipt anywhere in the reconciled tree carrying authority_created=true; any discovery that a line-unique file was dropped without a recorded supersession.",
+  "authority": {
+    "introduces_new_authority_source": false,
+    "founder_authorization": null,
+    "creates_parallel_canon": false
+  },
+  "github_ops": [
+    {"target_branch": "kimi/one-mind-surface-20261003", "protected": false, "explicit_authorization": null}
+  ],
+  "implementation": {
+    "performed": true,
+    "notes": "Branch built from the #148 head; graft, semantic merges, inventory regeneration, tests, mutant checks and the v4 verifier all executed in this session; staged as a draft pull request against the execution-fabric branch per the stacked-PR convention."
+  },
+  "decision": "RETAIN",
+  "decision_owner": "KIMI for the staging decision only; merge, activation and any external effect remain with Alfonso Lopez, unchanged"
+}

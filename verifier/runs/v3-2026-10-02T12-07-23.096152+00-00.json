@@ -1,0 +1,17 @@
+{
+  "verifier": "v3",
+  "ts_utc": "2026-10-02T12:07:23.096152+00:00",
+  "command": "python3 verifier/v3/verify.py",
+  "head_commit": "52e8e62f5899bda04b36a5e16283d5ed21d65024",
+  "tracked_tree": "clean",
+  "exit_code": 0,
+  "passes": [
+    "V1: formed/graphsearch/continuous organs exist and never import greg",
+    "V2: pytest tests/unit: 1824 passed, 6 skipped in 518.35s (0:08:38)",
+    "V3: nothing attached -> graph DEPENDENCY_UNAVAILABLE, lp DEPENDENCY_UNAVAILABLE, no answer, genesis-trigger state",
+    "V4: certificate failure -> INCONCLUSIVE; unproven claim -> INCONCLUSIVE (engine claim labeled 'unproven; not asserted by this organ'); nothing asserted",
+    "V5: certified answer -> schema-valid receipt, GREG certificate in proof, formed: dependency named, authority_created false"
+  ],
+  "skips": [],
+  "failures": []
+}

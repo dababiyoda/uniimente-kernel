@@ -1,0 +1,31 @@
+{
+  "version": "v4",
+  "created_utc": "2026-10-03T00:00:00Z",
+  "source": "Bounded n-part composition with cap honesty (cortex 0.4.0) — register rows A36/B47/B36/A52/B27/B31; founder correction 2026-10-03 (INTENT-0036): N1 is a local gate, independently buildable mechanisms continue",
+  "checks": [
+    {
+      "id": "V1",
+      "rule": "Layering (passthrough): cortex/organs/formed.py, graphsearch.py, continuous.py exist and never import greg"
+    },
+    {
+      "id": "V2",
+      "rule": "Regression: all executable unit tests pass: python3 -m pytest tests/unit -q (includes tests/unit/test_cortex_npart_composition.py)"
+    },
+    {
+      "id": "V3",
+      "rule": "Bounded n-part composition: a three-part payload (formal_model + estimation_model + claim) selects and runs all three parts, returns three typed proofs, composition true, route.max_parts 4, cap_dropped empty"
+    },
+    {
+      "id": "V4",
+      "rule": "Cap honesty: a five-part eligible payload selects exactly MAX_COMPOSITION parts; the dropped part is named 'dropped by the composition bound' in alternatives and route.cap_dropped, never 'not required by this payload'"
+    },
+    {
+      "id": "V5",
+      "rule": "Aggregate budget refusal: a payload whose selected parts need at least 3 solver calls with max_solver_calls 2 is BUDGET_EXHAUSTED before any organ runs (no formed callable fires)"
+    },
+    {
+      "id": "V6",
+      "rule": "Freeze non-contamination: freeze-v0.3.0.json and the crossgeo freezes match their pinned sha256; freeze-v0.4.0.json exists as a NEW manifest with a distinct hash (never a re-freeze in place)"
+    }
+  ]
+}

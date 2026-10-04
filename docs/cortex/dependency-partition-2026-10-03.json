@@ -1,0 +1,721 @@
+{
+  "schema": "cortex-dependency-partition/0.1",
+  "created_utc": "2026-10-03T00:00:00Z",
+  "cortex_version_at_partition": "0.3.0",
+  "correction_source": "founder correction 2026-10-03: N1 is a local gate, not a global stopping condition",
+  "rule": "classify by actual dependency (evaluation vs engineering), not by backcast position; N1 blocks only work that causally depends on an N1 verdict",
+  "classes": {
+    "n1_dependent": "causally needs the N1 evaluation verdict (real baselines, frozen held-out run, GAIN_VERIFIED)",
+    "founder_reality_blocked": "needs founder attachment, authorized spend, a reachable model, calibration, or real outcomes; the mechanism cannot be honestly completed without it",
+    "independently_buildable_now": "mechanism buildable now behind disabled/experimental interfaces, testable independently, contaminating neither the frozen N1 evaluation nor promotion evidence"
+  },
+  "rows": [
+    {
+      "id": "A02",
+      "anchor": "2. Layer 1: Microintelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none for the mechanism layer: L1 deterministic rules already run the gates; the three registered-disabled microcircuit profiles can be compiled into concrete mechanisms behind the disabled gate; enabling stays founder-attached"
+    },
+    {
+      "id": "A03",
+      "anchor": "3. Layer 2: Bounded Competency Cells",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none for the mechanism layer: the cell envelope (CognitiveProfile) exists; remaining family mechanisms compile behind the reserved gate; promotion comparisons stay evidence-gated"
+    },
+    {
+      "id": "A04",
+      "anchor": "4. Layer 3: Specialized Intelligence Organs",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: additional solver-organ mechanisms attach through the existing organ contract behind disabled gates; the semantic organ's live-model half stays model-blocked (ledger R05.1)"
+    },
+    {
+      "id": "A06",
+      "anchor": "6. Probabilistic intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.probabilistic.bayes reserved; Monte Carlo and Beta-posterior updating already run inside existing organs"
+    },
+    {
+      "id": "A09",
+      "anchor": "9. Constraint and operations-research intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: MIP and matching solver mechanisms are buildable behind the reserved gate with certificates on the existing pattern; enabling and promotion stay gated"
+    },
+    {
+      "id": "A10",
+      "anchor": "10. Graph and search intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: additional graph algorithms extend cortex.graph.search behind the existing contract; question-to-problem classification belongs to the B29 geometry compiler"
+    },
+    {
+      "id": "A11",
+      "anchor": "11. Control intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.control.feedback reserved"
+    },
+    {
+      "id": "A12",
+      "anchor": "12. Information-acquisition intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder dependency: real-world evidence acquisition has external effects and sits behind the attach gate; the VOI computation mechanism is independently buildable (queued as the A12-VOI slice)"
+    },
+    {
+      "id": "A13",
+      "anchor": "13. Simulation and counterfactual intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder + calibration dependency: simulation is not evidence about reality until calibrated; the twin family is reserved"
+    },
+    {
+      "id": "A14",
+      "anchor": "14. Game-theoretic and mechanism-design intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.game.mechanism reserved"
+    },
+    {
+      "id": "A15",
+      "anchor": "15. Pattern intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.pattern.anomaly reserved; institutional pattern work lives outside the cortex"
+    },
+    {
+      "id": "A16",
+      "anchor": "16. Program-synthesis and algorithm-discovery intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: program synthesis reserved; bounded evaluable domains enter by measured demand through N4; generalized self-improvement is frontier"
+    },
+    {
+      "id": "A17",
+      "anchor": "17. Layer 4: Collective and Developmental Intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: L4 collective/developmental families are registered disabled; each must beat the simpler baseline first"
+    },
+    {
+      "id": "A18",
+      "anchor": "18. Ant / stigmergic intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: stigmergy family reserved; must beat the simpler baseline on its native geometry before enabling"
+    },
+    {
+      "id": "A19",
+      "anchor": "19. Flock / PSO intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: swarm/PSO family reserved; must beat the simpler baseline on its native geometry"
+    },
+    {
+      "id": "A20",
+      "anchor": "20. Slime-mold intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: slime-network family reserved; must beat the simpler baseline on its native geometry"
+    },
+    {
+      "id": "A21",
+      "anchor": "21. Immune intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: immune family reserved; must beat the simpler baseline on its native geometry"
+    },
+    {
+      "id": "A22",
+      "anchor": "22. Ecological intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: the ecology family itself is reserved; correlated-dependency visibility is already built"
+    },
+    {
+      "id": "A23",
+      "anchor": "23. Market intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: competence settles per method x geometry only from real outcomes; ecology_market bidding stays reserved pending founder attach and measured demand"
+    },
+    {
+      "id": "A24",
+      "anchor": "24. Evolutionary intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: evolutionary search is reserved — only where evaluators are trustworthy; none demonstrated"
+    },
+    {
+      "id": "A25",
+      "anchor": "25. Human collective intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: structured human panels (cortex.human.panel) need real human participants and founder attach"
+    },
+    {
+      "id": "A26",
+      "anchor": "26. Neural-ensemble / global-workspace intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder dependency: global workspace is reserved; its named failure condition is 'becomes a second Kernel or authority path' — enabling needs an explicit founder decision"
+    },
+    {
+      "id": "A27",
+      "anchor": "27. Morphogenetic intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: functional morphogenesis stays in the research lab until it beats a centralized adaptive baseline; no such result exists"
+    },
+    {
+      "id": "A28",
+      "anchor": "28. Constraint-release intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: constraint-release usefulness is unproven; reserved until a baseline win exists"
+    },
+    {
+      "id": "A29",
+      "anchor": "29. Molecular associative intelligence has stronger support than I previously gave it",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "research dependency: molecular associative intelligence is an open research question; no lawful mechanism to build yet"
+    },
+    {
+      "id": "A30",
+      "anchor": "30. Layer 5: Metacognitive Institutional Intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: bounded signal exchange, minority views and metaconsensus are mechanism-only (verdict-typed, never averaging) — buildable behind the reserved gate; queued after the composition slice"
+    },
+    {
+      "id": "A33",
+      "anchor": "33. New mechanism: Proof-Carrying Cognition",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: ready-method disclosure shipped in 0.3.0; external publication of the protocol remains founder-gated — no code blocker"
+    },
+    {
+      "id": "A34",
+      "anchor": "34. New mechanism: Cognitive Spider-Web",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N5",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: settlement has zero real outcomes, so learned routing cannot move; learning without outcomes is refused"
+    },
+    {
+      "id": "A36",
+      "anchor": "36. New mechanism: Cognitive Degeneracy",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: multi-mechanism composition beyond two parts is pure coordinator mechanism; no verdict, outcomes, model, or attach needed — selected next slice"
+    },
+    {
+      "id": "A37",
+      "anchor": "37. New mechanism: Intelligence Characterization Harness",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: agency measures (memory depth, prediction horizon, adaptability) are instrumentation on the existing frozen harness; interpreting them stays evaluation-gated"
+    },
+    {
+      "id": "A38",
+      "anchor": "38. New mechanism: Cognitive Metabolism / Value of Information",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: value-of-information stopping (cortex.information.voi) is a computation mechanism buildable behind the reserved gate; spending real resources on acquisition stays gated"
+    },
+    {
+      "id": "A40",
+      "anchor": "40. Offline “dreaming” survives, with a different interpretation",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N5",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder dependency: offline consolidation is a Kernel memory concern — constitutional class; needs a founder/Kernel decision, not cortex code"
+    },
+    {
+      "id": "A48",
+      "anchor": "48. Frontier",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: frontier items stay goals with evidence gates; none has the required evidence"
+    },
+    {
+      "id": "A49",
+      "anchor": "49. Future substrate goals",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "destination",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: future substrates are destinations; the technology does not exist"
+    },
+    {
+      "id": "A52",
+      "anchor": "52. The final architecture is therefore not “many agents”",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none for composition: route-or-compose over typed proofs extends within the existing architecture; the metaconsensus/VOI remainder queues behind it"
+    },
+    {
+      "id": "B04",
+      "anchor": "4. Layer 2: Bounded Competency Cells",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: the remaining profile fields extend the existing CognitiveProfile schema; the recovery path is already present"
+    },
+    {
+      "id": "B06",
+      "anchor": "6. Organ family 2: Exact symbolic intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: an exact-symbolic organ (sympy-native) is buildable behind the existing reserved gate — sympy is already a cognition dependency; enabling stays founder-attached"
+    },
+    {
+      "id": "B07",
+      "anchor": "7. Organ family 3: Formal logical intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: temporal/deontic/first-order extensions are incremental work on the existing formal organ"
+    },
+    {
+      "id": "B08",
+      "anchor": "8. Organ family 4: Operations-research intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: MIP and matching extend the existing certified-optimization pattern behind the reserved gate"
+    },
+    {
+      "id": "B09",
+      "anchor": "9. Organ family 5: Graph intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: graph-family algorithms extend the seeded organ; classification work is B29"
+    },
+    {
+      "id": "B11",
+      "anchor": "11. Organ family 7: Probabilistic intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.probabilistic.bayes reserved"
+    },
+    {
+      "id": "B13",
+      "anchor": "13. Organ family 9: Search intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.search.heuristic reserved"
+    },
+    {
+      "id": "B14",
+      "anchor": "14. Organ family 10: Control intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.control.feedback reserved"
+    },
+    {
+      "id": "B15",
+      "anchor": "15. Organ family 11: Sequential-decision intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach + evidence dependency: sequential-decision families reserved; use requires a winner against PID/MPC/bandits/rules — no such comparison has run"
+    },
+    {
+      "id": "B16",
+      "anchor": "16. Organ family 12: Pattern intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.pattern.anomaly reserved; mechanism-pattern recognition belongs to the Mechanism Recombination Foundry"
+    },
+    {
+      "id": "B17",
+      "anchor": "17. Organ family 13: Information intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: information-theoretic selection (cortex.information.voi) is buildable behind the reserved gate; missing-observation naming already runs"
+    },
+    {
+      "id": "B18",
+      "anchor": "18. Organ family 14: Game and mechanism intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.game.mechanism reserved"
+    },
+    {
+      "id": "B20",
+      "anchor": "20. Organ family 16: Simulation intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder + calibration dependency: simulation is not evidence about reality until calibrated; cortex.simulation.twin reserved"
+    },
+    {
+      "id": "B22",
+      "anchor": "22. Layer 4: Collective and Developmental Intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: quorum/stigmergy/ecology/market families reserved; ensemble comparison already exists in evaluation"
+    },
+    {
+      "id": "B23",
+      "anchor": "23. Evolutionary intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: evolutionary search reserved; trustworthy evaluators absent"
+    },
+    {
+      "id": "B24",
+      "anchor": "24. Program-synthesis intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder + reality dependency: the deficit-to-retain loop is Node 4; needs founder attach and real deficits"
+    },
+    {
+      "id": "B25",
+      "anchor": "25. Constraint-release intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: constraint-release laboratory is reserved and experimental; no baseline win exists"
+    },
+    {
+      "id": "B26",
+      "anchor": "26. Morphogenetic intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: promotion requires unseen disruption repaired by a materially different structure; no such event or result exists"
+    },
+    {
+      "id": "B27",
+      "anchor": "27. Layer 5: Macro-Cognition / Meta-Intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: the router's decide-how-to-attack role extends to n-part composition deterministically"
+    },
+    {
+      "id": "B28",
+      "anchor": "28. A. Mental-model intelligence",
+      "disposition_at_partition": "reserved_profile",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "attach dependency: cortex.meta.mental_models reserved"
+    },
+    {
+      "id": "B29",
+      "anchor": "29. B. Problem Geometry Intelligence",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: the larger geometry schema (graph structure, constraint density, search-space size, adversariality, identifiability, embodiment) is a deterministic fields extension with unknowns explicit"
+    },
+    {
+      "id": "B30",
+      "anchor": "30. C. Metaconsensus intelligence",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: metaconsensus by epistemic jurisdiction is mechanism-only (verdict-typed composition; the verifier never averages) — buildable behind the reserved gate; queued after the composition slice"
+    },
+    {
+      "id": "B31",
+      "anchor": "31. The Polyintelligence Cortex therefore becomes this",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: the mature diagram's composition path extends within the existing coordinator; other branches stay reserved"
+    },
+    {
+      "id": "B32",
+      "anchor": "32. Spider-Web Hegemony applied to cognition",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: 'cheapest sufficient cognition' is deterministic cost-aware tie-breaking over declared profile costs"
+    },
+    {
+      "id": "B34",
+      "anchor": "34. Cognitive receipts should become stronger than your draft",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: receipt causal-credit fields are passive provenance on the existing receipt schema"
+    },
+    {
+      "id": "B36",
+      "anchor": "36. Lawful deterrence can be computational",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N3",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: the event-log half exists; the composition half is the selected slice"
+    },
+    {
+      "id": "B39",
+      "anchor": "39. Lawful Asymmetric Advantage becomes a constrained objective",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N5",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: the LAA advantage terms are deliberately unmeasured; measuring them needs real outcomes"
+    },
+    {
+      "id": "B44",
+      "anchor": "44. What remains FRONTIER",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: FRONTIER items are research targets; evidence gates unmet"
+    },
+    {
+      "id": "B45",
+      "anchor": "45. What remains SCIENCE-FICTION",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "destination",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: science-fiction destinations preserved; not buildable with present technology"
+    },
+    {
+      "id": "B47",
+      "anchor": "47. The deeper invention",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N4",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: 'recombination beyond two parts' is the named not-yet and is exactly the selected slice; capability generation stays N4-gated"
+    },
+    {
+      "id": "B51",
+      "anchor": "51. P2: Minimal Polyintelligence Proof",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N1",
+      "class": "n1_dependent",
+      "actual_dependency": "evaluation dependency: cross-geometry regret and raw/strong-LLM comparisons need the frozen N1 baselines to run; the deterministic comparison harness already exists"
+    },
+    {
+      "id": "B52",
+      "anchor": "52. P3: Cognitive Proof Ledger",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: receipted outcome rate is zero and learning without outcomes is refused; needs real use"
+    },
+    {
+      "id": "B53",
+      "anchor": "53. P4: Cognitive Spider-Web",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N5",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: routing-regret reduction cannot be measured until real outcomes arrive"
+    },
+    {
+      "id": "B54",
+      "anchor": "54. P5: Expand the arsenal",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: new classes enter by measured demand through the Developmental Cortex; no measured demand exists yet"
+    },
+    {
+      "id": "B55",
+      "anchor": "55. P6: Heterogeneous Cognitive Tissues",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N3",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: the promotion rule 'a combination must beat every constituent alone' is the N3 gate and needs frozen composition benchmarks with real gains; the composition mechanism itself is independently buildable — carried in row A36 and selected as the next slice"
+    },
+    {
+      "id": "B56",
+      "anchor": "56. P7: Capability Genesis for cognition",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "founder + reality dependency: capability genesis needs founder attach and real capability deficits; none recorded"
+    },
+    {
+      "id": "B57",
+      "anchor": "57. P8: Evolutionary Cognition",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N4",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: evolutionary cognition requires trustworthy evaluators and held-out anti-gaming tests; no measured demand exists"
+    },
+    {
+      "id": "B58",
+      "anchor": "58. P9: Constraint-Release Discovery",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: constraint-release discovery has no supporting evidence yet"
+    },
+    {
+      "id": "B59",
+      "anchor": "59. P10: Functional Morphogenesis",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N6",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "evidence dependency: functional morphogenesis (SBM unscripted recovery rate) has no measured result"
+    },
+    {
+      "id": "B60",
+      "anchor": "60. P11: Open Cognitive Ecology",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "N5",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: open cognitive ecology needs real use; its hard invariant (authority may not self-evolve) is already enforced"
+    },
+    {
+      "id": "B61",
+      "anchor": "61. P12: Substrate-plural GREG",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "destination",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: substrate-plural GREG is a destination; technology absent"
+    },
+    {
+      "id": "B62",
+      "anchor": "62. P13: Poly-embodied developmental institution",
+      "disposition_at_partition": "pursued_goal",
+      "backcast": "destination",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "reality dependency: poly-embodied developmental institution is a destination; technology absent"
+    },
+    {
+      "id": "B64",
+      "anchor": "64. The new pitch",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N2",
+      "class": "independently_buildable_now",
+      "actual_dependency": "none: same cheapest-sufficient mechanism as B32; the extension points already exist"
+    },
+    {
+      "id": "B65",
+      "anchor": "My proposed first build, if approved",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N1",
+      "class": "n1_dependent",
+      "actual_dependency": "evaluation dependency: the built baseline comparison is unrun; needs a reachable model and founder-authorized spend (<= USD 5 frontier baseline) — the N1 gate itself"
+    },
+    {
+      "id": "B66",
+      "anchor": "The decisive test is not whether it sounds intelligent.",
+      "disposition_at_partition": "implemented_partial",
+      "backcast": "N1",
+      "class": "n1_dependent",
+      "actual_dependency": "evaluation dependency: 'outperforming an always-LLM baseline' is unmeasured until the N1 baselines run; the construction-side claims are already demonstrated"
+    }
+  ],
+  "ledger_requirements": [
+    {
+      "id": "R05.1",
+      "state": "partial",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "a reachable live semantic model (founder infrastructure); the deterministic layer is built and certified"
+    },
+    {
+      "id": "R09.5",
+      "state": "blocked_external",
+      "class": "n1_dependent",
+      "actual_dependency": "reachable baselines; founder authorization for the <= USD 5 frontier baseline; no simulated baselines ever"
+    },
+    {
+      "id": "R09.6",
+      "state": "blocked_external",
+      "class": "n1_dependent",
+      "actual_dependency": "same gate as R09.5; the frozen held-out evaluation runs the moment a model is reachable"
+    },
+    {
+      "id": "R12.2",
+      "state": "partial",
+      "class": "founder_reality_blocked",
+      "actual_dependency": "real outcomes from real use; zero outcome rows exist; synthesis machinery marked non-operative until outcomes exist"
+    }
+  ],
+  "addenda": [
+    {
+      "id": "B50",
+      "disposition": "implemented",
+      "class": "independently_buildable_now",
+      "note": "free-text intake reads literal text only; deeper intake is decomposed into B51 (N1-dependent) and B52 (outcome-blocked); no further mechanism is buildable now"
+    },
+    {
+      "id": "coverage_note",
+      "note": "register rows not listed under rows[] (implemented, adopted_correction, classification, context, superseded_by_build_prompt) are complete or non-actionable; every unfinished row (implemented_partial, reserved_profile, pursued_goal) is classified exactly once above"
+    }
+  ],
+  "selected_next": {
+    "slice": "bounded n-part composition with cap honesty (cortex 0.4.0)",
+    "rows_served": [
+      "A36",
+      "B47",
+      "B36",
+      "A52",
+      "B27",
+      "B31"
+    ],
+    "why": [
+      "A36/B47 are the Competency Compiler spine ('recruits the smallest competent mechanism or composition'); B47 names 'recombination beyond two parts' as the known not-yet",
+      "pure mechanism: no verdict, outcomes, model, attach, or spend required; testable deterministically today",
+      "repairs a truthfulness defect: parts dropped by MAX_COMPOSITION=2 are currently reported as 'not required by this payload'",
+      "stays inside the existing coordinator (no parallel registry or authority plane); additive; frozen specs and freeze-v0.3.0 untouched via the established version-bump pattern",
+      "B36's event-log half is already implemented; the missing composition half is exactly this slice"
+    ],
+    "queue_after": [
+      "A12-VOI: value-of-information organ (cortex.information.voi; rows A12/A38/B17) behind the reserved gate",
+      "A30/B30 metaconsensus: verdict-typed composition of specialist verdicts; contradictions surface as CONTESTED, never averaged",
+      "B29 geometry fields: graph structure, constraint density, search-space size, adversariality, identifiability, embodiment",
+      "B04 profile fields: extend the CognitiveProfile schema",
+      "B06 exact-symbolic organ (sympy-native) behind the reserved gate",
+      "A37 agency measures: memory depth, prediction horizon, adaptability instrumentation on the frozen harness",
+      "B34 receipt causal-credit fields (passive provenance)",
+      "B32/B64 deterministic cost-aware tie-breaking in selection ('cheapest sufficient cognition')",
+      "B07 formal extensions: temporal, deontic, first-order"
+    ]
+  }
+}

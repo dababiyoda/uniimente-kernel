@@ -1,0 +1,51 @@
+[
+  {
+    "intent_id": "INTENT-0036",
+    "title": "N1 is a local gate, not a global stopping condition: partition unfinished requirements by actual dependency and continue all independently buildable work",
+    "statement": "CORRECTION — N1 IS A LOCAL GATE, NOT A GLOBAL STOPPING CONDITION. Do not interpret completion of PR #151, the N1 evaluation gate, VEPMC, a benchmark, experiment, PR, Backcast node, or any other intermediate dependency as completion of the full Polyintelligence Mind directive. The fixed completion boundary remains: BODY + ORGANS + MIND = GREG / UNIIMENTE. Preserve the N1 gate exactly. Do not fake its evidence, simulate prohibited baselines, spend without authorization, bypass founder authority, or claim GAIN_VERIFIED without the required real model runs. However, N1 blocks only work that causally depends on an N1 verdict. It does not authorize stopping the entire Mind build. Re-audit the complete founder directive requirement-by-requirement and partition every unfinished requirement into: (1) N1-DEPENDENT, (2) FOUNDER/REALITY-BLOCKED — escalate the exact smallest decision/dependency and continue elsewhere, (3) INDEPENDENTLY BUILDABLE NOW — continue building these immediately. Do not classify something as N1-dependent merely because the Backcast places it numerically after N1. Distinguish an evaluation dependency from an engineering dependency. If later work can be safely implemented behind disabled/experimental interfaces, tested independently, and does not contaminate the frozen N1 evaluation or manufacture promotion evidence, then N1 alone is not sufficient reason to stop it. Apply the anti-cathedral rule: every continuation must implement a concrete mechanism required by the controlling full-Mind directive and attach it to the canonical GREG path, applying the doctrine order existing -> compose -> commodity -> open source -> API/plugin/service -> authorized computer use -> bounded adapter -> coding agent -> mechanism recombination -> genuinely new architecture. Do not create parallel GREGs, Kernels, authority planes, registries, learning systems, or operating systems. Continue recursively: full completion boundary -> unfinished requirements -> dependency analysis -> highest-value unblocked implementation -> integrate -> verify -> update evidence -> automatically select next unblocked requirement -> repeat. Stop the overall build only when the complete currently achievable BODY + ORGANS + MIND boundary is actually satisfied and evidenced, or every remaining unfinished requirement is individually documented as genuinely blocked; if the second condition occurs, return the complete blocker frontier, not 'goal complete'. Do not optimize for keeping busy. Do not optimize for PR count. Do not build a cathedral. Do not manufacture evidence. Do not narrow the destination.",
+    "source_refs": [
+      "founder correction upload, 2026-10-03 session: 'CORRECTION — N1 IS A LOCAL GATE, NOT A GLOBAL STOPPING CONDITION' (verbatim statement above)",
+      "founder goal-mode directive, 2026-10-01 session (resumed 2026-10-02, corrected 2026-10-03): Competency Compiler engineering target and executable translations",
+      "docs/cortex/BACKCAST_GPS_CORTEX.md (N1 gate preserved exactly; this intent corrects its scope, not its evidence requirements)"
+    ],
+    "owner": "alfonso_lopez",
+    "state": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Every unfinished requirement of the full-Mind directive is classified by its actual dependency; work blocked only by backcast position resumes immediately behind disabled/experimental interfaces on the canonical GREG path; genuinely blocked requirements escalate their smallest exact decision; the build stops only at the evidenced BODY+ORGANS+MIND boundary or at a documented complete blocker frontier.",
+    "binding_scope": [
+      "uniimente-kernel"
+    ],
+    "constitutional_constraints": [
+      "The N1 gate is preserved exactly: no faked evidence, no simulated baselines, no unauthorized spend, no GAIN_VERIFIED without real model runs.",
+      "No parallel GREGs, Kernels, authority planes, registries, learning systems, or operating systems; every continuation attaches to the canonical GREG path.",
+      "Building != installation != activation != consequence authority: work behind disabled/experimental interfaces changes no production behavior without founder attach.",
+      "Merge authority remains founder-only; draft PRs only; no direct writes to protected branches.",
+      "Evidence is labeled truthfully; negative evidence and dissent are preserved; model output is never represented as external evidence."
+    ],
+    "rationale": "The correction explicitly overrides the session error of treating the N1 gate as a global stop. The classification rule is actual causal dependency, not backcast position: an evaluation dependency (needs the N1 verdict) blocks; an engineering dependency that can be built and tested independently does not.",
+    "success_evidence": [
+      "docs/cortex/dependency-partition-2026-10-03.json: every unfinished verbatim-register row (80) and every non-met ledger requirement (R05.1, R09.5, R09.6, R12.2) classified exactly once as n1_dependent, founder_reality_blocked, or independently_buildable_now, each with its actual dependency named",
+      "subsequent slices implement concrete mechanisms from the independently-buildable class, each attached to the canonical GREG path with verifier evidence and draft PRs",
+      "if the build ever stops, the artifact returned is the complete blocker frontier with the smallest exact decision per item"
+    ],
+    "failure_evidence": [
+      "any session that treats N1, a PR, a benchmark, or a Backcast node as the completion of the full-Mind directive",
+      "any requirement classified as blocked by backcast position rather than by a named causal dependency",
+      "busy-work slices that implement no concrete mechanism required by the controlling directive, or PR-count optimization",
+      "any parallel registry, authority plane, or learning system created instead of extending the canonical one"
+    ],
+    "dependencies": [],
+    "conflicts": [],
+    "next_review_trigger": "each completed slice re-runs the partition loop (boundary -> unfinished requirements -> dependency analysis -> highest-value unblocked implementation); re-examine this intent if any slice ships without a named register-row requirement it serves",
+    "supersedes": [],
+    "superseded_by": null,
+    "implementation_refs": [
+      "docs/cortex/dependency-partition-2026-10-03.json"
+    ],
+    "unresolved_questions": [
+      "The complete blocker frontier is returned only if every remaining requirement is individually documented as genuinely blocked; until then the loop continues."
+    ],
+    "recorded_at": "2026-10-03T00:00:00Z"
+  }
+]

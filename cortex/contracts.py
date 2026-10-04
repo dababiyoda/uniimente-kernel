@@ -23,7 +23,13 @@ from typing import Any, Mapping
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
-CORTEX_VERSION = "0.1.5"
+# 0.4.0: bounded n-part composition (MAX_COMPOSITION 2 -> 4) with cap honesty — parts the
+# bound drops are named as cap-dropped, never as unrequired — and aggregate solver-call
+# budget refusal; cortex-route-policy/0.4.0. 0.3.0: payload keys graph and linear_program
+# route to two organs that recruit founder-attached formed functions (Capability Genesis);
+# cortex-route-policy/0.3.0. 0.2.1: declared harm may raise the consequence class.
+# 0.2.0: CP-SAT second formal engine.
+CORTEX_VERSION = "0.4.0"
 
 
 class CortexError(ValueError):
@@ -98,11 +104,13 @@ PROOF_CLASSES = (
     # implemented in the seed
     "semantic_sourced", "estimation", "formal", "evidence_assessment",
     "causal_estimate", "gate_report", "verifier_findings", "deterrence_assessment",
-    # reserved for registered-but-disabled families (no executor in v0.1)
+    # 0.2.0: optimization is implemented (CP-SAT); the rest stay reserved for disabled families
     "optimization", "bayesian", "simulation", "human_adjudication",
     "measurement", "institutional_observation",
+    # 0.2.0: request text -> declarative model (seed composition, directive section 7)
+    "extraction",
 )
-IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:8]
+IMPLEMENTED_PROOF_CLASSES = PROOF_CLASSES[:9] + ("extraction",)  # 0.2.0: optimization (CP-SAT), extraction
 
 DISPOSITIONS = ("recommend", "abstain", "bounded_test", "handoff")
 
@@ -157,7 +165,7 @@ OBJECTIVES = ("decide_feasibility", "decide_entailment", "optimize_objective", "
 # Where a geometry value came from. Semantic proposals never count as
 # established unless validated against the structured payload.
 FIELD_SOURCES = ("payload_structure", "requester_declared", "semantic_proposal_validated",
-                 "default_unknown")
+                 "raised_by_declared_harm", "default_unknown")
 
 
 def _enum(name: str, value: Any, allowed: tuple) -> str:
@@ -307,7 +315,9 @@ class VictimProtection:
 
 
 # ------------------------------------------------------------------ problem
-PAYLOAD_KEYS = ("formal_model", "estimation_model", "deterrence_model", "sources", "evidence", "claim",
+PAYLOAD_KEYS = ("formal_model", "schedule_request", "estimation_model", "deterrence_model",
+                "graph", "linear_program", "sources",
+                "evidence", "claim",
                 "causal_spec", "options", "declared", "resources", "as_of", "victim_protection",
                 "faults")
 

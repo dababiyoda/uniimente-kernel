@@ -79,6 +79,7 @@ class CapabilityManifest:
     detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
     rollback: str = "detach; retained history is never rewritten"
     cognitive_profiles: tuple = ()
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -117,7 +118,8 @@ class CapabilityManifest:
                                         requires_human=self.consequence_class in ("financial", "irreversible")),
             acceptance_tests=list(self.tests) or ["declared-by-builder"],
             failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
-            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles))
+            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles),
+            cognitive_profile=self.cognitive_profile)
 
     def digest(self) -> str:
         return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
@@ -131,6 +133,8 @@ class CapabilityManifest:
             value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
         if not value['cognitive_profiles']:
             value.pop('cognitive_profiles')  # preserve historical manifest digests
+        if not value['cognitive_profile']:
+            value.pop('cognitive_profile')  # additive profile: legacy manifest digests are preserved
         return value
 
     @classmethod
@@ -224,6 +228,8 @@ class InvocationContext:
     journal: object | None = None     # canonical ledger for memory and receipt-bound artifacts
     target: str = ""                   # exact signed target set by the authority office
     artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
+    capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
+    cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
     mission_id: str = ""
     authority_ref: str = ""
     grant_id: str = ""
@@ -878,5 +884,14 @@ for _cid, _handler, _consequence, _inputs in (
         cognitive_profiles=tuple(_profile_dict(CognitiveCapabilityProfile(
             METHODS[k], k, PROOFS[k], 'bounded seed; availability checked per request'))
             for k in METHODS) if _handler == 'solve' else (),
-        provenance={'source': 'greg/cognition.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
+        provenance={'source': 'greg/cognition/selector.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
         _lazy('greg.cognition', _handler))
+
+# Cognitive families are the SAME capability manifests/genomes, lazily executed.
+# No second intelligence registry, event store, runtime, policy or model router.
+# The catalog's cognition.solve entry (the 0.4.0 competency compiler on the mission
+# path) supersedes the seed literal above for NEW invocations; the selector's
+# solve/settle/status remain importable and directly callable from greg.cognition,
+# and its settle/status builtins above are unchanged.
+from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
+BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))

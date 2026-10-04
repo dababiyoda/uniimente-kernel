@@ -43,6 +43,11 @@ genuinely strong baseline only under founder authorization, and defer every real
   passing the Kernel (G below).
 - **Current position:** Seed experiment complete and frozen at cortex 0.1.5; exit `INCONCLUSIVE`; VEPMC 0.
 - **Active node:** N1 — Seed proven or refuted.
+- **Scope of the gate (founder correction 2026-10-03):** N1 is a local gate, not a global stopping condition; it
+  blocks only work that causally depends on its verdict. Every unfinished requirement is partitioned by actual
+  dependency in `docs/cortex/dependency-partition-2026-10-03.json`; independently buildable mechanisms continue on
+  the canonical path (INTENT-0036). The gate itself is preserved exactly: no simulated baselines, no unauthorized
+  spend, no GAIN_VERIFIED without real model runs.
 - **Active gate:** No comparative evidence: the declared baselines cannot run without a reachable model.
 - **Gate-crossing evidence:** a held-out results file, run against the committed freeze manifest, in which
   `always_llm` and `llm_committee` both have `status: RUN` and the exit verdict is `GAIN_VERIFIED` or `GAIN_ABSENT`.

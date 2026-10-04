@@ -1,0 +1,13 @@
+{
+  "verifier": "fresh-clone-unit-suite-replication",
+  "ts_utc": "2026-10-02T15:48:19.481605+00:00",
+  "command": "same fresh clone after fetching historical subject commits 3e059c20331d96e05a44daac1b097896aaabde93 and 07af5758197501662df81ff05e2b34ce8224a322 (frozen-spec continuity fixtures); python -I -m pytest tests/unit -q",
+  "head_commit": "88bc713579e34b27c8e61f16e2ccec231c3f18f7",
+  "tracked_tree": "7014edf46d14d2356fecf0bb2d7e97a58237d464 (pushed branch tip 88bc7135; git ls-tree -r vs local tip fe895fc: empty diff, 975 files)",
+  "exit_code": 0,
+  "passes": [
+    "pytest tests/unit on a fresh clone of the pushed branch tip 88bc7135: 1824 passed, 6 skipped in 430.74s (0:07:10) - identical result to the local v3 record at 52e8e62 (518.35s run), confirming the pushed bytes carry the full working slice"
+  ],
+  "skips": [],
+  "failures": []
+}

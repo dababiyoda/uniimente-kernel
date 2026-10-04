@@ -1,0 +1,18 @@
+{
+  "verifier": "local-clone-tip-replication",
+  "ts_utc": "2026-10-02T18:46:56.430310+00:00",
+  "command": "git clone --single-branch --branch master /mnt/agents/work/frontier /tmp/tip-clone (local tip 042074f, cortex 0.4.0 slice); /tmp/greg-venv/bin/python -m pytest tests/unit -q",
+  "head_commit": "042074fba743aaf115e3d14d21c2bebecd16ffe6",
+  "tracked_tree": "e19afbe5dd586ae20fe1474b8c099a54fd487a19 (clean single-branch clone; historical spec objects not yet fetched)",
+  "exit_code": 1,
+  "passes": [],
+  "skips": [
+    "8 skipped (the 6 standard skips plus the 2 ancestry-lock tests, which skip when cb234faf is absent)"
+  ],
+  "failures": [
+    "tests/unit/test_migration_spec_frozen.py::test_the_subject_class_is_byte_identical_to_the_frozen_hash: git show 5e02e47f:events/spine.py - pinned spec.BASE_COMMIT absent from a single-branch clone (not an ancestor of the branch line)",
+    "tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now: git show 5e02e47f:constitution/constitution.ucl - same missing pinned object",
+    "tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now: git show cb234faf:constitution/constitution.ucl - same missing pinned object",
+    "result line: 3 failed, 1828 passed, 8 skipped in 422.27s (0:07:02) - preserved, not deleted; resolved by fetching the pinned objects (content-addressed, byte-identical) in the next iteration"
+  ]
+}

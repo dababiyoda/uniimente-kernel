@@ -33,7 +33,7 @@
 | Routing gain | unresolved claim | deterministic fixture | same file, `exit` | `INCONCLUSIVE` | baselines `NOT_RUN` (no reachable model) |
 | No authority created | implementation | unit test | `tests/unit/test_cortex_pipeline.py` | schema pins `authority_created: false`; no actuator import | — |
 | Safeguards load-bearing | implementation | unit test | `scripts/ci/check_cortex_mutants.py` | 26/26 mutants caught | mutants are hand-chosen |
-| Stacks on PR #137 | observation | sandbox execution | report § Stacking on PR #137 | clean merge at the final head; 1556 vs 1201 passed, same 12 skips | isolated venv; PR #137 may move |
+| Stacks on PR #137 | observation | sandbox execution | report § Stacking on PR #137 | clean merge at the final head; 1556 vs 1201 passed, same 12 skips (execution-fabric line record); re-measured by the cortex line at `71b6f74`: 1570 vs 1201 passed, same 12 skips — the stacks differ, both records stand | isolated venv; PR #137 may move |
 | Best Single is hard to beat | external evidence | primary source | LLMRouterBench (arXiv 2601.07206) | several routers fail to beat it | different task mix |
 
 ## Alternatives

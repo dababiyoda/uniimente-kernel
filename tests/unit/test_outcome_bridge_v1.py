@@ -14,10 +14,10 @@ RECONCILIATION = "sha256:" + "e" * 64
 
 def case(**overrides):
     values = dict(
-        case_id="case-1", business_id="business-1", buyer="facility CFO",
+        case_id="case-1", business_id="business-1", buyer="test_buyer",
         stage="retention_or_termination", payment_receipt_hash=PAYMENT,
         delivery_receipt_hash=DELIVERY, outcome_verified_by="external_receipt",
-        outcome_detail="facility accepted evidence and transport outcome",
+        outcome_detail="test operator accepted parsed-record.json",
         resolution="retained",
     )
     values.update(overrides)

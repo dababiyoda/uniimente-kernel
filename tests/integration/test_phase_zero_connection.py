@@ -1,9 +1,4 @@
-"""Phase Zero: the three-organ connection layer, tested end to end.
-
-Fixtures under tests/fixtures/ were produced by executing the sibling
-repositories' own code (see PROVENANCE.md) — these tests exercise the real
-wire shapes DALEOBANKS and WealthMachineIntelligence exchange today.
-"""
+"""Three-organ adapters and transport tested with synthetic schema inputs."""
 import json
 import os
 
@@ -17,7 +12,6 @@ from linker.linker import InstitutionalLinker
 from linker.manifest import ManifestError, load_all, load_manifest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-FIXTURES = os.path.join(ROOT, "tests", "fixtures")
 
 DALEOBANKS = "spiffe://uniimente.internal/organ/daleobanks"
 WEALTHMACHINE = "spiffe://uniimente.internal/organ/wealthmachine"
@@ -25,11 +19,11 @@ KERNEL = "spiffe://uniimente.internal/organ/constitutional-controller"
 
 
 def wire_packet():
-    return json.load(open(os.path.join(FIXTURES, "wire_opportunity_packet.json")))
+    return {'id': '00000000-0000-4000-8000-000000000001', 'schema_version': '1.1', 'created_at': '2026-09-15T00:00:00Z', 'source': 'daleobanks:test', 'observed_pain': 'A parser rejects an input format.', 'audience': 'test operators', 'buyer_type': 'test budget owner', 'smallest_validation_action': 'Run the parser against a generated input.', 'evidence': ['input A', 'input B', 'input C'], 'risk_flags': []}
 
 
 def wire_assessment():
-    return json.load(open(os.path.join(FIXTURES, "wire_venture_assessment.json")))
+    return {'id': '00000000-0000-4000-8000-000000000002', 'schema_version': '1.1', 'created_at': '2026-09-15T00:00:01Z', 'opportunity_packet_id': '00000000-0000-4000-8000-000000000001', 'go_no_go': 'go', 'requires_human_approval': True, 'reasons': ['Synthetic adapter input'], 'cases': [{'case': 'bull', 'stance': 'for', 'severity': 'low', 'argument': 'A test is cheap.'}, {'case': 'bear', 'stance': 'against', 'severity': 'low', 'argument': 'Results are unknown.'}, {'case': 'do_nothing', 'stance': 'against', 'severity': 'low', 'argument': 'Keep the current parser.'}]}
 
 
 # --------------------------------------------------------------- manifests
@@ -169,7 +163,7 @@ def test_packet_adapter_declares_the_honest_gap():
 def test_packet_adapter_resolution_is_attributed_and_bounded():
     result = pkt_adapter.adapt(wire_packet(), transport_identity="daleobanks")
     answer = {"governing_bottleneck":
-              "brokers accept only verifiable GPS evidence they currently refuse to standardize"}
+              "the parser needs an explicitly specified input format"}
 
     with pytest.raises(AdapterError):     # anonymous resolution refused
         pkt_adapter.resolve(result, answer, resolved_by="alfonso")
@@ -269,7 +263,7 @@ def test_cross_organ_causal_episode(monkeypatch):
     # 2. Adapt; the honest gap goes to an authorized human, attributed.
     result = pkt_adapter.adapt(wire_packet(), transport_identity=meta["identity"])
     packet = pkt_adapter.resolve(
-        result, {"governing_bottleneck": "brokers only accept verifiable GPS evidence"},
+        result, {"governing_bottleneck": "the parser needs an explicitly specified input format"},
         resolved_by=KERNEL + "/human/alfonso")
     ev_packet = spine.emit(Event(
         type="bridge.opportunity_adapted", source=KERNEL,

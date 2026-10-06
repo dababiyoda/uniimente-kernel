@@ -36,21 +36,21 @@ HASH = "sha256:" + "a" * 64
 def opportunity(**overrides):
     values = dict(
         opportunity_id="opp-001",
-        buyer="facility CFO",
-        beneficiary="patient",
-        pain_owner="case management",
-        budget_owner="facility CFO",
-        mandate_actor="compliance executive",
-        recurring_transaction="patient transport discharge",
-        broken_state="missing payer-grade transport proof",
+        buyer="test_buyer",
+        beneficiary="test_operator",
+        pain_owner="test_maintainer",
+        budget_owner="test_buyer",
+        mandate_actor="test_reviewer",
+        recurring_transaction="parse a synthetic input record",
+        broken_state="a parser rejects a synthetic input record",
         trapped_value_usd=250000.0,
-        accepted_artifact="Request-Accept-Evidence packet",
-        external_consequence="one accepted and reconciled transport outcome",
-        lawful_path="BAA plus fair-market-value evidence service",
+        accepted_artifact="parsed-record.json",
+        external_consequence="test operator accepts the parsed record",
+        lawful_path="test operator grants permission to parse synthetic input",
         evidence_refs=(HASH,),
         legal_operator="alfonso_lopez",
-        constraints=("HIPAA",),
-        prohibitions=("no referral payments",),
+        constraints=("synthetic inputs only",),
+        prohibitions=("no production inputs",),
     )
     values.update(overrides)
     return OpportunitySpec(**values)
@@ -90,9 +90,9 @@ def need():
 
 def composition_request(**overrides):
     values = dict(
-        market_failure="missing payer-grade transport proof",
-        beneficiaries=("patient",),
-        payer="facility CFO",
+        market_failure="a parser rejects a synthetic input record",
+        beneficiaries=("test_operator",),
+        payer="test_buyer",
         control_surfaces=("proof",),
         desired_metrics=("clean_verified_outcome_count",),
         legal_principal="alfonso_lopez",
@@ -113,7 +113,7 @@ def capability():
     return CapabilityGenome(
         name="proof.audit",
         version="1.0.0",
-        description="produce payer-grade evidence",
+        description="produce a parser test result",
         interface={"inputs": {"request": "dict"}, "outputs": {"packet": "dict"}},
         contracts=["event", "outcome"],
         authority=AuthorityEnvelope(
@@ -270,7 +270,7 @@ def test_false_and_partial_closure_are_not_genomes():
     assert foundry.closure_state(clean_outcome(authority_incidents=1)) is ClosureState.PARTIALLY_CLOSED
     with pytest.raises(AdvantageRefused, match="clean closed"):
         foundry.seal_advantage_genome(
-            "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+            "parser-test", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
             clean_outcome(authority_incidents=1),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",
@@ -281,15 +281,15 @@ def test_clean_external_outcome_seals_once_as_immutable_genome():
     foundry = AdvantageFoundry()
     arch = architecture(foundry)
     genome = foundry.seal_advantage_genome(
-        "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+        "parser-test", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
         clean_outcome(),
         time_to_validated_genome_days=30,
         rollback="retire organ and reconcile",
     )
-    assert genome.key == "generic-proof@1.0.0"
+    assert genome.key == "parser-test@1.0.0"
     with pytest.raises(AdvantageRefused, match="already exists"):
         foundry.seal_advantage_genome(
-            "generic-proof", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
+            "parser-test", "1.0.0", arch, "plan:abc", ("proof.audit@1.0.0",),
             clean_outcome(),
             time_to_validated_genome_days=30,
             rollback="retire organ and reconcile",

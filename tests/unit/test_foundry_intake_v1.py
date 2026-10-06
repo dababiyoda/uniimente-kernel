@@ -18,21 +18,21 @@ def packet():
         "schema_version": "1.1",
         "created_by": "spiffe://uniimente.internal/daleobanks",
         "created_at": "2026-07-22T10:00:00Z",
-        "observed_failure": "missing payer-grade transport proof",
-        "affected_actors": ["patient", "facility", "fleet"],
-        "pain_owner": "case management",
-        "budget_owner": "facility CFO",
-        "payer": "facility CFO",
-        "mandate_capable_actor": "compliance executive",
-        "existing_workaround": "manual phone calls and spreadsheets",
-        "missing_proof": "accepted transport evidence packet",
-        "governing_bottleneck": "proof-to-settlement closure",
-        "smallest_intervention": "Request-Accept-Evidence pilot",
-        "cheapest_decisive_test": "one paid facility pilot",
-        "possible_business_form": "evidence service",
+        "observed_failure": "a parser rejects a synthetic input record",
+        "affected_actors": ["test_operator", "test_workspace", "test_runner"],
+        "pain_owner": "test_maintainer",
+        "budget_owner": "test_buyer",
+        "payer": "test_buyer",
+        "mandate_capable_actor": "test_reviewer",
+        "existing_workaround": "manually convert a synthetic record",
+        "missing_proof": "parser output matches its schema",
+        "governing_bottleneck": "parser compatibility",
+        "smallest_intervention": "run one synthetic parser test",
+        "cheapest_decisive_test": "run one parser test",
+        "possible_business_form": "parser test utility",
         "capital_requirement_usd": 5000.0,
         "key_risks": ["privacy", "workflow adoption"],
-        "wedge_to_control_path": "evidence wedge to payer settlement rail",
+        "wedge_to_control_path": "test input to parsed output",
         "evidence_refs": [HASH],
     }
 
@@ -47,13 +47,13 @@ def assessment():
         "verdict": "go",
         "opportunity_score": 0.88,
         "adversarial_cases": {
-            "bull": "denial and delay costs create budget",
-            "bear": "facility workflow may resist adoption",
-            "fraud_manipulation": "evidence could be staged",
-            "incumbent_response": "brokers may add similar proof",
-            "adoption_friction": "staff effort must remain low",
-            "do_nothing": "current leakage and risk continue",
-            "opportunity_cost": "delay weakens facility access",
+            "bull": "an accepted input format reduces conversion work",
+            "bear": "the input format may be unsupported",
+            "fraud_manipulation": "expected output could be copied without parsing",
+            "incumbent_response": "an existing parser may support the format",
+            "adoption_friction": "the test should run with one command",
+            "do_nothing": "manual conversion remains necessary",
+            "opportunity_cost": "another parser may already work",
         },
         "structured_reasons": ["buyer and bottleneck are identifiable"],
         "evidence_state": {"confidence": 0.82, "evidence_refs": [HASH]},
@@ -64,17 +64,17 @@ def assessment():
 
 def supplement(**overrides):
     values = dict(
-        buyer="facility CFO",
-        beneficiary="patient",
-        recurring_transaction="patient transport discharge",
-        accepted_artifact="Request-Accept-Evidence packet",
-        external_consequence="accepted and reconciled transport outcome",
-        lawful_path="BAA plus fair-market-value evidence service",
+        buyer="test_buyer",
+        beneficiary="test_operator",
+        recurring_transaction="parse a synthetic input record",
+        accepted_artifact="parsed-record.json",
+        external_consequence="test operator accepts the parsed record",
+        lawful_path="test operator grants permission to parse synthetic input",
         legal_operator="alfonso_lopez",
         trapped_value_usd=250000.0,
         human_approval_record_hash=APPROVAL,
         constraints=("pilot only",),
-        prohibitions=("no referral payments",),
+        prohibitions=("no production inputs",),
     )
     values.update(overrides)
     return FoundryIntakeSupplement(**values)
@@ -82,8 +82,8 @@ def supplement(**overrides):
 
 def test_valid_phase_zero_contracts_create_governing_transaction():
     result = opportunity_from_canonical(packet(), assessment(), supplement())
-    assert result.buyer == "facility CFO"
-    assert result.mandate_actor == "compliance executive"
+    assert result.buyer == "test_buyer"
+    assert result.mandate_actor == "test_reviewer"
     assert APPROVAL in result.evidence_refs
     assert any("human_approval_record_hash" in item for item in result.constraints)
     assert "privacy" in result.prohibitions

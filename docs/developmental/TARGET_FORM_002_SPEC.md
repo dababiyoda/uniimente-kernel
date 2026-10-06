@@ -45,7 +45,7 @@ methodology intact — frozen contracts, no exact restoration, ≤4× planning w
 versus the adaptive centralized baseline, and the centralized comparator retained
 permanently.
 
-Generic function only. No IVIO, hospital, trip, facility, billing, or healthcare
+Generic function only. No hospital, trip, facility, billing, or healthcare
 framing: `input → verify → transform → deliver`.
 
 Topologies: evenly connected, mildly uneven, strongly hub-dependent, partially

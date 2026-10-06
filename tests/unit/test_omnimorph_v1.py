@@ -52,7 +52,7 @@ def architecture():
         architecture_id="adv-test",
         opportunity_digest=HASH,
         selected_route="fastest_path",
-        accepted_artifact="RAE packet",
+        accepted_artifact="parsed-record.json",
         external_consequence="accepted outcome",
         control_surfaces=("proof",),
         capability_needs=(CapabilityNeed(
@@ -91,8 +91,8 @@ def plan(*, executable=True, max_budget=100.0):
         technology_capabilities={5: ("proof.audit@1.0.0",)},
     )
     return composer.compose(CompositionRequest(
-        market_failure="missing proof", beneficiaries=("patient",),
-        payer="facility CFO", control_surfaces=("proof",),
+        market_failure="missing proof", beneficiaries=("test_operator",),
+        payer="test_buyer", control_surfaces=("proof",),
         desired_metrics=("clean_verified_outcome_count",),
         legal_principal="alfonso_lopez", max_budget_usd=max_budget,
         requested_technology_ids=(5,), evidence_refs=(HASH,),

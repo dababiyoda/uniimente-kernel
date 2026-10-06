@@ -40,7 +40,7 @@
 
 ## Five-role review
 
-- **Founder-Intent Steward:** retain the capability horizon but keep provider-native sessions, compaction, and permissions subordinate to INTENT-0029 and Kernel authority.
+- **Founder-Intent Steward:** retain the capability horizon but keep provider-native sessions, compaction, and permissions subordinate to INTENT-20260901-provider-change and Kernel authority.
 - **Systems Architect:** one adapter seam can consume provider sessions or summaries without duplicating workflows, event history, approvals, or receipts.
 - **Adversarial Reviewer:** provider convenience can normalize silent authority transfer; `auto` permissions and durable hosted sessions are the strongest current paths to a second runtime.
 - **Operator and Maintainer:** the only direct exposure is the existing DALEOBANKS OpenAI key and non-effectful generation path. Rotation readiness belongs in metadata; no secret or provider account action is justified.

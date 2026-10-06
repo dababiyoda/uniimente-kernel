@@ -3,7 +3,7 @@
   "title": "Bind provider-owned reasoning, fallback, billing, and transcript loss to canonical UNIIMENTE attempts",
   "problem": "Official provider changes from 2026-09-23 through 2026-09-29 introduce a new Claude Sonnet contract, account-bound reasoning artifacts that may be silently dropped, billed no-output refusals and multi-attempt fallback accounting, reduced Compliance API metadata, an incident that may have left Claude messages unsaved, an OpenAI image-encoder correction, and a Kimi file-service incident. UNIIMENTE must preserve one authority, event, attempt, evidence, cost, and runtime plane while its current Kernel history now proves direct Claude-assisted collaboration.",
   "founder_intent_refs": [
-    "INTENT-0029 weekly provider-change intake on draft PR 105",
+    "INTENT-20260901-provider-change weekly provider-change intake on draft PR 105",
     "INTENT-0030 preserve the effect; do not literalize the metaphor",
     "Founder automation directive observed 2026-09-29",
     "docs/RECURSIVE_COLLABORATION_PROTOCOL.md"
@@ -49,7 +49,7 @@
       "role": "Founder-Intent Steward",
       "position": "Preserve broad multi-model collaboration, including Claude-assisted coding, while keeping model sessions and reasoning artifacts subordinate to founder intent and canonical repository evidence.",
       "material_concerns": ["Model migration becoming de facto authority", "Provider transcript treated as institutional memory"],
-      "evidence_refs": ["INTENT-0029", "INTENT-0030", "Kernel commit 25ab9b4b"],
+      "evidence_refs": ["INTENT-20260901-provider-change", "INTENT-0030", "Kernel commit 25ab9b4b"],
       "recommendation": "NEEDS_FOUNDER_DECISION"
     },
     {

@@ -2,7 +2,7 @@
   "decision_id": "DELIB-PROVIDER-2026-09-15-001",
   "title": "Bind provider-native sessions, compaction, permissions, credentials, billing, and recovery to UNIIMENTE's single canonical control plane",
   "problem": "OpenAI and Anthropic added provider-hosted agent state, compaction, and automated permission decisions while Kimi changed billing allocation and reported repeated search degradation; these capabilities can improve workflows but can also create parallel runtime, authority, replay, privacy, and cost paths.",
-  "founder_intent_refs": ["INTENT-0027", "INTENT-0028", "INTENT-0029", "INTENT-0030", "founder directive 2026-09-15 automation scope"],
+  "founder_intent_refs": ["INTENT-0027", "INTENT-0028", "INTENT-20260901-provider-change", "INTENT-0030", "founder directive 2026-09-15 automation scope"],
   "baseline": "Kernel main at d7c235ae owns canonical authority, history, task/receipt semantics, and consequence controls; DALEOBANKS main at e2f1ebed has the only active provider adapter found, using OpenAI Chat Completions and optional embeddings; WMI and PumpStation defer constitutional authority to the Kernel.",
   "alternatives": [
     {
@@ -42,9 +42,9 @@
   "roles": [
     {
       "role": "Founder-Intent Steward",
-      "position": "Retain the provider capability horizon while binding every new surface to founder-authorized Kernel authority and INTENT-0029's reversible review boundary.",
+      "position": "Retain the provider capability horizon while binding every new surface to founder-authorized Kernel authority and INTENT-20260901-provider-change's reversible review boundary.",
       "material_concerns": ["Provider convenience must not narrow or replace the canonical UNIIMENTE destination", "No provider change grants production authority"],
-      "evidence_refs": ["INTENT-0029", "Kernel AGENTS.md", "OpenAI and Anthropic official release notes"],
+      "evidence_refs": ["INTENT-20260901-provider-change", "Kernel AGENTS.md", "OpenAI and Anthropic official release notes"],
       "recommendation": "NEEDS_FOUNDER_DECISION"
     },
     {

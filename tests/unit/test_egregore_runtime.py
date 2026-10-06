@@ -342,8 +342,9 @@ def test_suspend_always_stops_cognition_and_resume_requires_external_hash():
 
     with pytest.raises(ContractError):
         subject.resume(actor="operator:alice", authorization_hash="not-a-hash")
-    subject.resume(actor="operator:alice", authorization_hash="sha256:" + "b" * 64)
-    assert not subject.is_suspended
+    with pytest.raises(ContractError):
+        subject.resume(actor="operator:alice", authorization_hash="sha256:" + "b" * 64)
+    assert subject.is_suspended
 
 
 def test_self_modification_is_only_an_immutable_change_proposal():

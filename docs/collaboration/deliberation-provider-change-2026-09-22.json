@@ -2,7 +2,7 @@
   "decision_id": "DELIB-PROVIDER-2026-09-22-001",
   "title": "Bind model-specific replay, dynamic tools, provider search evidence, and billing corrections to UNIIMENTE's canonical control plane",
   "problem": "Anthropic released an agent-oriented model with breaking thinking, tool, replay, and computer-use contracts plus dynamic inline and MCP tools; Kimi launched standalone search APIs while scheduling its legacy search tool for retirement; OpenAI introduced key-creation controls and reported Agent API container overbilling and broad API errors. These changes can silently alter authority, replay, evidence, cost, and runtime boundaries.",
-  "founder_intent_refs": ["INTENT-0027", "INTENT-0028", "INTENT-0029", "INTENT-0030", "founder directive 2026-09-22 automation scope"],
+  "founder_intent_refs": ["INTENT-0027", "INTENT-0028", "INTENT-20260901-provider-change", "INTENT-0030", "founder directive 2026-09-22 automation scope"],
   "baseline": "Kernel main at 04b1b7e3 owns constitutional authority and canonical state but still lacks a merged provider-change section; draft PR 105 contains the bounded protocol. DALEOBANKS main at e2f1ebed has the only provider runtime found, using OpenAI Chat Completions and optional embeddings with deterministic fallbacks; WMI and PumpStation defer constitutional authority to the Kernel.",
   "alternatives": [
     {
@@ -44,7 +44,7 @@
       "role": "Founder-Intent Steward",
       "position": "Preserve access to stronger models, broad tools, retrieval, and computer use while keeping Alfonso's authority, the Consequence Gate, and the single Kernel runtime unchanged.",
       "material_concerns": ["Vendor features must not narrow the capability horizon", "New capability must not manufacture authority"],
-      "evidence_refs": ["INTENT-0029", "INTENT-0030", "Kernel AGENTS.md at 04b1b7e3"],
+      "evidence_refs": ["INTENT-20260901-provider-change", "INTENT-0030", "Kernel AGENTS.md at 04b1b7e3"],
       "recommendation": "NEEDS_FOUNDER_DECISION"
     },
     {

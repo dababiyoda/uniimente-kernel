@@ -110,11 +110,10 @@ GREG_MUTANTS = [
      "    _recheck_formal_answers(payload, results, add)\n", "    pass\n"),
     ("authority claim accepted from the worker", "greg/cognition/bridge.py",
      'if receipt["authority_created"] is not False or receipt["execution_authority"] != "none":', "if False:"),
+    # Converged #145 settlement: a revision is appended only when the claim's outcome changed.
     ("duplicate settlement", "greg/cognition/settlement.py",
-     '        if outcome["observation_event"] not in retained:\n            journal.record("cognition.settled", outcome, '
-     'key=outcome["observation_event"],',
-     '        if True:\n            journal.record("cognition.settled", outcome, '
-     'key=(outcome["observation_event"], __import__("uuid").uuid4().hex),'),
+     'if prior is None or digest({k:v for k,v in prior.payload.items() if k != "supersedes"}) != digest(outcome):',
+     "if True:"),
     ("paid fallback enabled: purchased inference accepted", "greg/cognition/bridge.py",
      'if receipt["expenditure"]["usd"] != 0:', "if False:"),
     ("paid fallback enabled: non-founder provider order selects a model", "greg/cognition/bridge.py",

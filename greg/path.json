@@ -1334,7 +1334,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 0 measured families with verified lift. P4 learned routing: INCONCLUSIVE, order equals static policy (2026-10-07). P6: orchestration lift only; cognitive lift unmeasured. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
+      "current": "VPL = 1 of 2 measured families (2026-10-07, constructed complementary families: F1 estimate->optimize lift p=0.00012; F2 identify->optimize 4 wins/0 losses p=0.0625, not lift). P4 learned routing: INCONCLUSIVE, order equals static policy. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
       "nodes": [
         {
           "id": "P0",
@@ -1464,17 +1464,20 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze a composition (cortex receipt -> worker) against its constituents and a simple pipeline with correlated-failure analysis",
+          "smallest_next_experiment": "F2 with more held-out items or larger samples; add families (Bayesian -> value of information, graph cut -> allocation, counterexample -> verifier -> repair); correlated-failure analysis across stages",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571",
-          "reality": "typed output->input edges between strategies IMPLEMENTED and live-run; cognitive composition lift unmeasured; exit not met",
-          "exit_met": false,
+          "reality": "typed receipt-to-param edges (missions) and geometry-routed cognitive composition (cognition.solve `chain`) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift: F1 lift, F2 not lift (p=0.0625)",
+          "exit_met": "partial: one family with measured net lift on constructed complementary families",
           "implementation_refs": [
-            "greg/missions.py",
             "contracts/greg-mission.schema.json",
+            "cortex/evaluation/composition_lift/run.py",
+            "greg/cognition/composition.py",
+            "greg/missions.py",
             "greg/templates.py",
+            "tests/integration/test_greg_cognitive_composition.py",
             "tests/unit/test_greg_bindings.py"
           ],
-          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0"
+          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0; docs/evidence/greg-composition-lift/2026-10-07/README.md: VPL = 1 of 2"
         },
         {
           "id": "P7",

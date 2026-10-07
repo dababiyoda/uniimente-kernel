@@ -151,6 +151,10 @@ def independent_verify(family, data, answer, proof_class, geometry):
 
 
 def reason(params, *, registry, journal=None, model_config=None, forced_family=None):
+    if isinstance(params, dict) and "chain" in params:
+        # Composite problem (P6): geometry-routed chain of cortex stages with typed translation.
+        from .composition import run as run_composition
+        return run_composition(params, registry=registry, journal=journal, model_config=model_config)
     if isinstance(params, dict) and "problem" in params:
         # Cortex contract (cortex-problem): one entry, one receipt envelope, one learning plane.
         from .bridge import reason_cortex

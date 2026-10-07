@@ -1,3 +1,5 @@
-# Optional bounded cognition solvers; shared Z3 pin with the inherited cortex.
+# Reviewed optional engines; one solver pin across the converged machine.
 -r requirements-cortex.txt
-ortools==9.14.6206
+sympy>=1.13,<2
+networkx>=3.4,<4
+scipy>=1.14,<2

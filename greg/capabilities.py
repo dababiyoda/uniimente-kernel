@@ -79,6 +79,7 @@ class CapabilityManifest:
     detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
     rollback: str = "detach; retained history is never rewritten"
     cognitive_profiles: tuple = ()
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -117,7 +118,8 @@ class CapabilityManifest:
                                         requires_human=self.consequence_class in ("financial", "irreversible")),
             acceptance_tests=list(self.tests) or ["declared-by-builder"],
             failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
-            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles))
+            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles),
+            cognitive_profile=self.cognitive_profile)
 
     def digest(self) -> str:
         return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
@@ -131,6 +133,8 @@ class CapabilityManifest:
             value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
         if not value['cognitive_profiles']:
             value.pop('cognitive_profiles')  # preserve historical manifest digests
+        if not value["cognitive_profile"]:
+            value.pop("cognitive_profile")  # additive profile: legacy manifest digests are preserved
         return value
 
     @classmethod
@@ -213,6 +217,24 @@ class SecretBroker:
 
 # -- invocation context and adapters ---------------------------------------------
 
+@dataclass(frozen=True)
+class InvocationBudgetWindow:
+    """Read-only limits projected by AuthorityOffice; this is not a grant."""
+    horizon: str
+    grant_expires_at: str
+    remaining_money_usd: float
+    authority_ref: str
+    grant_id: str
+    grant_digest: str | None = None
+    mission_id: str | None = None
+    scope_digest: str | None = None
+    proposal_id: str | None = None
+    witness_id: str | None = None
+    dispatch_effect_digest: str | None = None
+    latency_ceiling_seconds: float = 30.0
+    compute_ceiling_operations: int = 100000
+
+
 @dataclass
 class InvocationContext:
     workspace: Path                    # the only place internal writes may land
@@ -229,6 +251,9 @@ class InvocationContext:
     grant_id: str = ""
     policy_version: str = ""
     stop_check: object | None = None
+    capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
+    cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
+    cognition_budget: InvocationBudgetWindow | None = None
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -518,6 +543,13 @@ STRENGTHENS = {
     "artifact.materialize": ("proof", "reliability", "compounding"),
     "venture.assess": ("proof", "routing", "settlement", "compounding"),
     "venture.status": ("proof",),
+    "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
+    "worker.appraise": ("proof", "eligibility", "reliability"),
+    "browser.session": ("proof", "capability_formation", "settlement"),
+    "browser.trace": ("proof",),
+    "daleobanks.verify": ("proof", "eligibility"),
+    "daleobanks.publish": ("settlement", "routing"),
+    "daleobanks.outcome": ("proof", "settlement"),
 }
 
 
@@ -703,7 +735,104 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                provenance={"source": "uniimente-kernel/foundry/systems",
                                            "mechanism_from": "Foundry arsenal (55-system mandate)"}),
                       _lazy("greg.foundry_bridge", "apply")),
+    # -- execution fabric: GREG's hands (workers, computer use, DALEOBANKS work surface) -------
+    "worker.commission": (_builtin("worker.commission", "work.commission",
+                                   "Commission one bounded WorkOrder to a real tool-using worker (coding or "
+                                   "document) in a private workspace; GREG collects diff, tests and evidence",
+                                   "cli", "internal_write", "work:",
+                                   {"order": "str", "mode": "str?", "objective": "str", "repo": "path?",
+                                    "base": "str?", "inputs": "list[path]?", "acceptance": "dict",
+                                    "allowed_paths": "list[glob]", "provider": "str?", "max_budget_usd": "float",
+                                    "timeout_seconds": "int?", "context": "str?"},
+                                   {"status": "str", "branch": "str?", "commit": "str?", "changed_files": "list",
+                                    "patch_sha256": "str", "greg_tests_passed": "bool", "worker": "dict"},
+                                   filesystem="workspace-write", network="egress-allowlist",
+                                   egress_allowlist=("api.anthropic.com",), data_classes=("project_sources",),
+                                   binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                   tests=("tests/unit/test_greg_workers.py",),
+                                   provenance={"source": "uniimente-kernel/greg/workers.py",
+                                               "mechanism_from": "greg/builders.py ClaudeCodeBuilder; headless "
+                                                                 "agent CLIs (Claude Code, Codex, Aider)"}),
+                          _lazy("greg.workers", "commission")),
+    "worker.appraise": (_builtin("worker.appraise", "work.appraise",
+                                 "Independently appraise a WorkOrder: fresh clone, retained patch re-applied, "
+                                 "scope/protected-surface checks, acceptance re-run with no network",
+                                 "cli", "read_only", "work:", {"order": "str"},
+                                 {"verdict": "str", "findings": "list", "changed_files": "list",
+                                  "independent_tests": "list"},
+                                 filesystem="read-scoped", data_classes=("project_sources",), retry_safe=True,
+                                 binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                 tests=("tests/unit/test_greg_workers.py",),
+                                 provenance={"source": "uniimente-kernel/greg/workers.py",
+                                             "mechanism_from": "greg/appraisal.py separate re-derivation"}),
+                        _lazy("greg.workers", "appraise")),
+    "browser.session": (_builtin("browser.session", "computer.browser_session",
+                                 "Drive a disposable real browser through signed steps (navigate, type, click, "
+                                 "select, extract, download) with per-step screenshots; stops at consequential "
+                                 "steps, unprovisioned credentials and bot challenges",
+                                 "browser", "internal_write", "web:", {"url": "str", "steps": "list",
+                                                                       "session": "str?", "also_hosts": "list?",
+                                                                       "on_challenge": "str?"},
+                                 {"status": "str", "boundary": "str?", "steps": "list", "extracted": "dict",
+                                  "trace_sha256": "str"},
+                                 network="target-host-only", target_from="url", filesystem="workspace-write",
+                                 data_classes=("public_web",), tests=("tests/unit/test_greg_computer.py",),
+                                 provenance={"source": "uniimente-kernel/greg/computer.py",
+                                             "mechanism_from": "Playwright (Apache-2.0) + installed Chromium"}),
+                        _lazy("greg.computer", "session")),
+    "browser.trace": (_builtin("browser.trace", "computer.browser_trace",
+                               "Re-read a retained browser session trace and re-hash its screenshots",
+                               "api", "read_only", "web:", {"session": "str"},
+                               {"present": "bool", "status": "str", "screenshots_intact": "bool",
+                                "extracted": "dict"}, filesystem="read-scoped", retry_safe=True,
+                               tests=("tests/unit/test_greg_computer.py",),
+                               provenance={"source": "uniimente-kernel/greg/computer.py"}),
+                      _lazy("greg.computer", "session_status")),
+    "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
+                                   "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
+                                                   "python": "path?", "max_chars": "int?"},
+                                   {"verdict": "str", "findings": "list", "draft_sha256": "str"},
+                                   filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
+                                   data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
+                                   provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
+                                               "mechanism_from": "DALEOBANKS services/ethics_guard.py, critic.py, "
+                                                                 "prompt_firewall.py"}),
+                          _lazy("greg.daleobanks_bridge", "verify")),
+    "daleobanks.publish": (_builtin("daleobanks.publish", "media.publish_request",
+                                    "Request one publish through DALEOBANKS's own gate (decision ledger, LIVE kill "
+                                    "switch, rate governor); a dry-run is reported as a block, never as a post",
+                                    "cli", "external_contact", "daleobanks:",
+                                    {"daleobanks_root": "path", "draft": "path", "python": "path?"},
+                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
+                                    filesystem="workspace-write", binaries=(sys.executable,),
+                                    data_classes=("public_web",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
+                                    provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
+                                                "mechanism_from": "DALEOBANKS services/multiplexer.py, "
+                                                                  "social_base.py, ledger.py KillSwitch"}),
+                           _lazy("greg.daleobanks_bridge", "publish")),
+    "daleobanks.outcome": (_builtin("daleobanks.outcome", "media.publish_outcome",
+                                    "Read DALEOBANKS's hash-chained ledger for this mission's publish request",
+                                    "api", "read_only", "daleobanks:", {"none": "no parameters"},
+                                    {"requested": "bool", "outcome": "str", "results": "list"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_daleobanks_bridge.py",)),
+                           _lazy("greg.daleobanks_bridge", "publish_status")),
 }
+
+STRENGTHENS["pipeline.inspect"] = ("routing", "proof", "settlement")
+BUILTINS["pipeline.inspect"] = (_builtin("pipeline.inspect", "pipeline.inspect",
+    "Inspect typed output of a successful action in this signed mission", "internal", "read_only",
+    "pipeline:", {"action_id": "str", "field": "str", "type": "str"},
+    {"available": "bool", "value": "typed data", "bindings": "list"}, retry_safe=True,
+    strengthens=("routing", "proof", "settlement"), tests=("tests/integration/test_greg_pipeline.py",)),
+    _lazy("greg.pipeline", "inspect"))
+
+# Cognitive families are the SAME capability manifests/genomes, lazily executed.
+# No second intelligence registry, event store, runtime, policy or model router.
+from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
+BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
 
 
 class CapabilityRegistry:

@@ -1,0 +1,6 @@
+PASS V1: all v1 canonical artifacts present (45/45)
+PASS V2: pytest tests/unit: 1948 passed, 15 skipped, 3 warnings in 313.62s (0:05:13)
+PASS V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, embassy, events, evidence_ledger, evolution, foundry, greg_body, identity, linker, loom, memory, omnimorph, proof, treasury, twins
+PASS V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED
+PASS V5: 19 module READMEs declare the buildability standard
+run recorded -> verifier/runs/v2-2026-10-07T13-36-35.194900+00-00.json :: PASS

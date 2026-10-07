@@ -1,0 +1,103 @@
+{
+ "mission_id": "m:media-z3-release-post",
+ "founder_expression": "DALEOBANKS: tell builders about the new z3-solver release, only what we verified.",
+ "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing gate; the truthful outcome (posted or blocked) returns to GREG",
+ "priority": 50,
+ "closure": {
+  "kind": "bounded"
+ },
+ "success_checks": [
+  {
+   "check_id": "draft_verified",
+   "description": "DALEOBANKS checks and source binding pass",
+   "sensor": {
+    "capability": "daleobanks.verify",
+    "params": {
+     "daleobanks_root": "/home/user/DALEOBANKS",
+     "source": "/tmp/greg-hands/sources/z3-release.json",
+     "max_chars": 280,
+     "draft": "work-orders/z3-release-post/work/post.txt"
+    },
+    "target": "daleobanks:verify"
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "verdict",
+    "value": "VERIFIED"
+   }
+  },
+  {
+   "check_id": "publish_outcome_known",
+   "description": "DALEOBANKS's ledger holds the request's outcome",
+   "sensor": {
+    "capability": "daleobanks.outcome",
+    "params": {},
+    "target": "daleobanks:outcome"
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "requested",
+    "value": true
+   }
+  }
+ ],
+ "strategies": [
+  {
+   "action_id": "draft-post",
+   "capability": "worker.commission",
+   "target": "work:z3-release-post",
+   "params": {
+    "order": "z3-release-post",
+    "mode": "document",
+    "inputs": [
+     "/tmp/greg-hands/sources/z3-release.json"
+    ],
+    "objective": "Draft one short, factual DALEOBANKS post telling builders that a new z3-solver release is on PyPI, using only the version numbers in the input. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+    "acceptance": {
+     "output": "post.txt",
+     "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)"
+    },
+    "allowed_paths": [
+     "post.txt"
+    ],
+    "max_budget_usd": 2.0,
+    "timeout_seconds": 600
+   },
+   "cost_usd": 2.0,
+   "advances": [
+    "draft_verified"
+   ],
+   "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+  },
+  {
+   "action_id": "request-publish",
+   "capability": "daleobanks.publish",
+   "target": "daleobanks:publish",
+   "params": {
+    "daleobanks_root": "/home/user/DALEOBANKS",
+    "draft": "work-orders/z3-release-post/work/post.txt"
+   },
+   "advances": [
+    "publish_outcome_known"
+   ],
+   "requires": [
+    "draft_verified"
+   ],
+   "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"
+  }
+ ],
+ "light_cone": {
+  "capabilities": [
+   "worker.commission",
+   "daleobanks.verify",
+   "daleobanks.outcome"
+  ],
+  "targets": [
+   "work:z3-release-post",
+   "daleobanks:*"
+  ],
+  "max_consequence_class": "internal_write",
+  "budget_usd": 2.0,
+  "horizon": "2026-10-04T00:12:43.066497Z"
+ }
+}

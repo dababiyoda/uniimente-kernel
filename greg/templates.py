@@ -6,6 +6,8 @@ light cone explicitly (capabilities, targets, ceiling, budget, horizon).
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 
 from datetime import datetime, timedelta, timezone
@@ -331,3 +333,373 @@ def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
 
 
 TEMPLATES['cognition'] = cognitive_problem
+
+
+# -- execution fabric: work orders, computer use, DALEOBANKS ----------------------------------
+
+def _slug(text: str, limit: int = 40) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:limit] or "work"
+
+
+def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
+                tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
+                timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
+                workspace_root: Path | None = None) -> dict:
+    """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
+
+    1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
+       clone; GREG collects the diff, runs acceptance with no network and commits on ``greg/<order>``.
+    2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
+       checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
+       founder decision, never acceptance.
+    3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
+       the appraised result. Push, PR and merge stay with the existing authorized path.
+    """
+    order = order or _slug(objective, 30)
+    repo_path = str(Path(repo).expanduser().resolve())
+    allowed_paths = allowed_paths or ["greg/*", "tests/unit/*"]
+    acceptance = {"run_changed_tests": True, "max_changed_files": 8}
+    if tests:
+        acceptance["tests"] = tests
+    handoff = f"handoff-{order}.md"
+    mission_id = f"m:work-{order}"
+    handoff_path = str(Path(workspace_root or ".").resolve() / mission_id.replace(":", "_") / handoff)
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or f"Improve {Path(repo_path).name}: {objective}",
+        "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; "
+                           "promotion remains with the authorized repository path",
+        "priority": 55, "closure": {"kind": "bounded"},
+        "constraints": ["the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+                        "protected constitutional surfaces cannot be accepted without a founder decision"],
+        "success_checks": [
+            {"check_id": "work_accepted", "description": "independent appraisal ACCEPTED the work order",
+             "sensor": {"capability": "worker.appraise", "params": {"order": order}, "target": f"work:{order}"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}},
+            {"check_id": "handoff_written", "description": "the review handoff exists for the founder",
+             "sensor": {"capability": "fs.read", "params": {"path": handoff_path}, "target": f"fs:{handoff}"},
+             "predicate": {"op": "contains", "field": "text", "value": f"greg/{order}"}}],
+        "strategies": [
+            {"action_id": "commission-worker", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "repository", "repo": repo_path, "objective": objective,
+                        "acceptance": acceptance, "allowed_paths": allowed_paths, "provider": provider,
+                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds},
+             "cost_usd": budget_usd, "advances": ["work_accepted"],
+             "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
+             "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"},
+            {"action_id": "write-handoff", "capability": "fs.write", "target": f"workspace:{handoff}",
+             "params": {"relative_path": handoff,
+                        "content": f"# Proposed change ready for review: greg/{order}\n\nIndependently appraised "
+                                   f"ACCEPTED by worker.appraise. Evidence: work-orders/{order}/evidence.json and "
+                                   f"change.patch in this mission workspace. Promotion (push, PR, merge) requires "
+                                   "the existing authorized path; GREG holds no push or merge authority.\n"},
+             "advances": ["handoff_written"], "requires": ["work_accepted"],
+             "rationale": "continue the parent mission only on an independently accepted result"}],
+        "light_cone": {"capabilities": ["worker.commission", "worker.appraise", "fs.read", "fs.write"],
+                       "targets": [f"work:{order}", f"fs:{handoff}", f"workspace:{handoff}"],
+                       "max_consequence_class": "internal_write", "budget_usd": budget_usd,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
+def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, horizon_days: float = 1,
+                 founder_expression: str | None = None, on_challenge: str = "stop") -> dict:
+    """Bounded computer use: one disposable browser session; the trace sensor re-reads the evidence.
+
+    ``expect`` is a predicate over the ``browser.trace`` output (e.g. an extracted key exists).
+    """
+    from urllib.parse import urlsplit
+    host = urlsplit(url).hostname or ""
+    return {
+        "mission_id": f"m:browse-{_slug(session)}",
+        "founder_expression": founder_expression or f"Operate {host} in a browser: {session}",
+        "intended_effect": "the requested information is retrieved by operating the site, with per-step evidence; "
+                           "consequential steps stop at the authority boundary",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "retrieved", "description": "the session's retained trace holds the requested result",
+             "sensor": {"capability": "browser.trace", "params": {"session": session}, "target": f"web:{host}"},
+             "predicate": expect}],
+        "strategies": [
+            {"action_id": "operate-browser", "capability": "browser.session", "target": f"web:{host}",
+             "params": {"url": url, "steps": steps, "session": session, "on_challenge": on_challenge},
+             "advances": ["retrieved"], "rationale": "structured DOM control in a disposable real browser"}],
+        "light_cone": {"capabilities": ["browser.session", "browser.trace"], "targets": [f"web:{host}"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
+
+    The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
+    figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
+    external_contact: outside this cone, so it stops for a founder decision; even when approved,
+    DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+    """
+    source = str(Path(source).expanduser().resolve())
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    draft_name = "post.txt"
+    return {
+        "mission_id": f"m:media-{_slug(order)}",
+        "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
+        "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
+                           "gate; the truthful outcome (posted or blocked) returns to GREG",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [
+            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+             "sensor": {"capability": "daleobanks.verify",
+                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                   "draft": f"work-orders/{order}/work/{draft_name}"},
+                        "target": "daleobanks:verify"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+            {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
+             "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
+             "predicate": {"op": "equals", "field": "requested", "value": True}}],
+        "strategies": [
+            {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "document", "inputs": [source],
+                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                                     "stating only facts present in the input; every number must appear in the input.",
+                        "acceptance": {"output": draft_name,
+                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
+                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": ["draft_verified"],
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+            {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
+             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
+             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+                       "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
+                       "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }
+AVAILABILITY = re.compile(r"(?:^|(?<=[.!?\n]))\s*((?:the\s+)?machine\s+is\s+(?:free|available)\s+(?:all|the\s+whole)\s+"
+                          r"shift[^.!?\n]*[.!?]?)", re.I)
+
+
+def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
+    """A schedule written in the controlled language, solved by the cortex seed composition.
+
+    The words go to cognition.solve unchanged: extraction, a token audit independent of the
+    extractor, CP-SAT with a Z3 optimality certificate, the verifier, and a receipt with a
+    reverse translation. If the founder states that the machine is free all shift, that
+    sentence becomes the availability evidence; otherwise the result stays conditional on it.
+    The check needs a feasible schedule, so an impossible request never closes: GREG asks.
+    Read-only: nothing is scheduled or written; acting on the plan is a separate mission.
+    """
+    stated = AVAILABILITY.search(text)
+    request = AVAILABILITY.sub("", text).strip() if stated else text.strip()
+    if not request or len(request) > 4000:
+        raise ValueError("a schedule request of 1-4000 characters is required")
+    digest = __import__("hashlib").sha256(request.encode()).hexdigest()[:10]
+    payload = {"schedule_request": {"text": request},
+               "declared": {"consequence_class": "read_only", "reversibility": "reversible"}}
+    if stated:
+        payload["schedule_request"]["availability_evidence"] = f"founder statement in the signed mission: " \
+                                                               f"{stated.group(1).strip()!r}"
+    step = {"capability": "cognition.solve", "target": f"cognition:schedule-{digest}",
+            "params": {"problem_id": f"schedule:{digest}",
+                       "problem": {"question": "Best schedule for the stated jobs", "payload": payload}}}
+    return {
+        "mission_id": f"m:schedule-{digest}",
+        "founder_expression": text,
+        "intended_effect": "a certified schedule for the stated jobs, with the reading shown back for comparison",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "feasible-schedule", "description": "a feasible schedule, checked "
+                            "independently of the extractor and the solver",
+                            "sensor": step, "predicate": {"op": "equals", "field": "output.answer.1.feasible",
+                                                          "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["feasible-schedule"],
+                        "rationale": "compute through the cortex (read-only)"}],
+        "light_cone": {"capabilities": ["cognition.solve"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["schedule-in-words"] = schedule_in_words
+
+
+NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
+NETWORK_NUMBER = r"\d+(?:\.\d+)?"
+NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"
+                          rf"(?P<n>{NETWORK_NUMBER})(?:\s+[A-Za-z]+)?$", re.I)
+NETWORK_SHORTEST = re.compile(rf"^(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)\s+from\s+"
+                              rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+NETWORK_FLOW = re.compile(rf"^(?:maximum|max|most)\s+(?:flow|units|throughput|capacity)\s+from\s+"
+                          rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+
+
+def read_network_words(text: str) -> tuple[str, dict]:
+    """The controlled network language, read without a model. Unread sentences stop the plan.
+
+    ``A to B: 4.`` is one direction, ``A and B: 4.`` both; a trailing unit word is allowed.
+    One question: ``Shortest route from A to C.`` or ``Maximum flow from A to C.``"""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    edges, questions, unread = [], [], []
+    for sentence in sentences:
+        if link := NETWORK_LINK.match(sentence):
+            number = float(link["n"]) if "." in link["n"] else int(link["n"])
+            edges.append([link["a"], link["b"], number])
+            if link["how"].lower() == "and":
+                edges.append([link["b"], link["a"], number])
+        elif ask := NETWORK_SHORTEST.match(sentence):
+            questions.append(("graph.shortest_path", ask["s"], ask["t"]))
+        elif ask := NETWORK_FLOW.match(sentence):
+            questions.append(("graph.max_flow", ask["s"], ask["t"]))
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write links as 'A to B: 4.' or 'A and B: 4.'")
+    if len(questions) != 1 or not edges:
+        raise ValueError("state at least one link and exactly one question ('Shortest route from A to C.' or "
+                         "'Maximum flow from A to C.')")
+    function, source, target = questions[0]
+    if function == "graph.max_flow":
+        if any(isinstance(e[2], float) for e in edges):
+            raise ValueError("capacities for a maximum flow must be whole numbers")
+        return function, {"edges": edges, "source": source, "sink": target}
+    return function, {"edges": edges, "source": source, "target": target}
+
+
+def network_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A route or flow question in plain controlled words, answered by an open-source engine.
+
+    GREG has no built-in engine for these functions, so the first such mission opens a
+    CapabilityDeficit. Genesis looks for an installed open-source package (NetworkX, SciPy),
+    pins it on a Mechanism Card (version, license, upstream, file digest), qualifies it
+    against GREG's own oracle, and asks you to attach it unless this signed mission
+    pre-authorizes a read-only attach. Every answer is accepted only on GREG's certificate
+    (shortest distances: feasible potentials; maximum flow: an equal-capacity cut).
+    Read-only: nothing is routed, shipped or written.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a network question of 1-4000 characters is required")
+    function, params = read_network_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": function, "params": params, "target": f"cognition:network-{digest}"}
+    what = "shortest route" if function == "graph.shortest_path" else "maximum flow"
+    spec = {
+        "mission_id": f"m:network-{digest}",
+        "founder_expression": text,
+        "intended_effect": f"the {what} for the stated network, with a certificate GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-answer", "description": f"a {what} whose optimality GREG's own "
+                            "certificate proves, independent of the engine that computed it",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-answer"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": [f"acquired.{function}.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["network-in-words"] = network_in_words
+
+
+PLAN_NAME = r"[A-Za-z][A-Za-z0-9_]{0,31}"
+PLAN_NUMBER = r"-?\d+(?:\.\d+)?"
+PLAN_TERM = re.compile(rf"\s*(?P<sign>[+-])?\s*(?P<coef>\d+(?:\.\d+)?)?\s*\*?\s*(?P<name>{PLAN_NAME})\s*")
+PLAN_OBJECTIVE = re.compile(r"^(?P<sense>maximi[sz]e|minimi[sz]e)\s+(?P<expr>.+)$", re.I)
+PLAN_CONSTRAINT = re.compile(rf"^(?P<expr>.+?)\s*(?P<op><=|>=|=|≤|≥|\bat most\b|\bat least\b|\bequals\b)\s*"
+                             rf"(?P<rhs>{PLAN_NUMBER})$", re.I)
+PLAN_BETWEEN = re.compile(rf"^(?P<name>{PLAN_NAME})\s+between\s+(?P<lo>{PLAN_NUMBER})\s+and\s+(?P<hi>{PLAN_NUMBER})$",
+                          re.I)
+PLAN_KEYWORDS = {"maximize", "maximise", "minimize", "minimise", "between", "and", "at", "most", "least", "equals"}
+
+
+def _plan_number(text: str):
+    return float(text) if "." in text else int(text)
+
+
+def _plan_expr(text: str) -> dict:
+    coefficients, position = {}, 0
+    for term in PLAN_TERM.finditer(text):
+        if term.start() != position or (position and not term["sign"]) or term["name"].lower() in PLAN_KEYWORDS:
+            raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+        value = _plan_number(term["coef"]) if term["coef"] else 1
+        coefficients[term["name"]] = coefficients.get(term["name"], 0) + (-value if term["sign"] == "-" else value)
+        position = term.end()
+    if position != len(text) or not coefficients:
+        raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+    return coefficients
+
+
+def read_plan_words(text: str) -> dict:
+    """The controlled planning language, read without a model. Unread sentences stop the plan.
+
+    ``Maximize 40 chairs + 30 tables.`` one objective; ``2 chairs + 3 tables <= 120.`` (also >=, =,
+    at most, at least); ``chairs between 0 and 50.`` A quantity is taken as nonnegative unless a
+    sentence gives it a lower bound."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    objectives, constraints, bounds, unread = [], [], {}, []
+    for sentence in sentences:
+        try:
+            if goal := PLAN_OBJECTIVE.match(sentence):
+                objectives.append({"sense": "max" if goal["sense"].lower().startswith("max") else "min",
+                                   "coefficients": _plan_expr(goal["expr"])})
+            elif bound := PLAN_BETWEEN.match(sentence):
+                bounds[bound["name"]] = (_plan_number(bound["lo"]), _plan_number(bound["hi"]))
+            elif con := PLAN_CONSTRAINT.match(sentence):
+                op = {"<=": "<=", "≤": "<=", "at most": "<=", ">=": ">=", "≥": ">=", "at least": ">=", "=": "==",
+                      "equals": "=="}[con["op"].lower()]
+                constraints.append({"name": sentence[:40], "coefficients": _plan_expr(con["expr"]), "op": op,
+                                    "rhs": _plan_number(con["rhs"])})
+            else:
+                unread.append(sentence)
+        except ValueError:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Maximize 3 x + 2 y.', 'x + y <= 4.', 'x between 0 and 3.'")
+    if len(objectives) != 1 or not constraints:
+        raise ValueError("state exactly one objective ('Maximize ...' or 'Minimize ...') and at least one constraint")
+    names = sorted({n for part in objectives + constraints for n in part["coefficients"]} | set(bounds))
+    variables = [{"name": n, "lower": bounds.get(n, (0, None))[0], "upper": bounds.get(n, (0, None))[1]}
+                 for n in names]
+    return {"variables": variables, "objective": objectives[0], "constraints": constraints}
+
+
+def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A linear plan in plain controlled words, solved by an open-source engine and certified by GREG.
+
+    The first such mission opens a CapabilityDeficit: genesis looks for an installed open-source
+    LP engine (SciPy's HiGHS, OR-Tools GLOP), pins it on a Mechanism Card, qualifies it against
+    GREG's exact oracle and asks you to attach it. An answer counts only if GREG's duality
+    certificate holds: the plan is feasible and a set of prices proves no plan does better. If no
+    plan meets every limit, GREG proves that too (a certified elastic program) and names the
+    limits in conflict and the least total violation; if the objective has no limit, GREG shows a
+    plan and a direction that improves it forever. Read-only: nothing is bought, made or moved.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a plan of 1-4000 characters is required")
+    params = read_plan_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": "lp.optimize", "params": params, "target": f"cognition:plan-{digest}"}
+    spec = {
+        "mission_id": f"m:plan-{digest}",
+        "founder_expression": text,
+        "intended_effect": "the best plan under the stated limits with prices that prove no plan does better, or a "
+                           "proof that no plan meets them (naming the limits in conflict) or that the objective has "
+                           "no limit",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-plan", "description": "an optimal plan, or the impossibility of "
+                            "any plan, proved by GREG's own duality certificate, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-plan"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": ["acquired.lp.optimize.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["plan-in-words"] = plan_in_words

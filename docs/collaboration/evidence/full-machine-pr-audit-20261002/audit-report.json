@@ -1,0 +1,237 @@
+{
+  "audited_at": "2026-10-02T22:16:13.156968+00:00",
+  "founder_source_id": "01a0f6ab-f59b-76a8-b6a2-bb6408f710fa",
+  "coverage": {
+    "kernel_open_prs_at_snapshot": 95,
+    "kernel_comments_and_reviews_pagination_complete": true,
+    "daleobanks_open_prs": 23,
+    "wmi_open_prs": 20,
+    "organ_comments_and_reviews_pagination_complete": true,
+    "private_chats_and_founder_devices_inspected": false
+  },
+  "canonical_correction_pr": 152,
+  "findings": [
+    {
+      "priority": "highest",
+      "prs": [
+        151
+      ],
+      "failure": "N1 model-baseline gate stated to block all downstream cortex capability work, despite full-machine continuation direction.",
+      "evidence": "2026-10-02T16:09:02Z PR comment: one founder decision blocks everything downstream; stop adding organs/families before N1 verdict.",
+      "correction": "Missing model blocks declared baseline runs/verdict and dependent promotion; preserve v0.4 founder gate while continuing unrelated qualified code/integration."
+    },
+    {
+      "priority": "high",
+      "prs": [
+        149,
+        150,
+        151
+      ],
+      "failure": "New narrow proof PRs lack parent-objective continuation guidance.",
+      "correction": "Attach current full-machine controller and scoped next software requirement; verified WorkOrder/component never means complete machine."
+    },
+    {
+      "priority": "high",
+      "prs": [
+        137,
+        128,
+        124,
+        122,
+        120,
+        119,
+        115,
+        114
+      ],
+      "failure": "Historical after-VEPMC/global founder-use or Mac-only handoffs remain alongside older footer.",
+      "correction": "Preserve history; explicitly supersede global pauses and name current designated-body evidence gate separately."
+    },
+    {
+      "priority": "high",
+      "prs": [
+        148,
+        149,
+        150
+      ],
+      "failure": "Landlock core runtime library defect is known and unimplemented; readiness probe treats certutil as unconditional browser dependency.",
+      "correction": "Build runtime-library confinement repair on canonical security surface; readiness requires certutil conditionally when trust bundle configured."
+    },
+    {
+      "priority": "high",
+      "prs": [
+        143,
+        145,
+        151,
+        148
+      ],
+      "failure": "Competing cognition convergences are not ancestors of execution frontier; without reconciliation useful mechanisms stay disconnected.",
+      "correction": "Compare and integrate useful mechanisms on one canonical machine/authority path without manufacturing a founder operational-primary decision."
+    },
+    {
+      "priority": "medium",
+      "repositories": [
+        "DALEOBANKS",
+        "WealthMachineIntelligence"
+      ],
+      "failure": "Default AGENTS contracts have no full-machine continuation rule; WMI list ends after smallest missing capability + verify. Existing Oct1 corrections are on unmerged instruction drafts.",
+      "correction": "Main-compatible correction drafts needed; root has published DALEOBANKS85 and WMI42.",
+      "resolution": {
+        "status": "main-compatible-drafts-published",
+        "urls": [
+          "https://github.com/dababiyoda/DALEOBANKS/pull/85",
+          "https://github.com/dababiyoda/WealthMachineIntelligence/pull/42"
+        ],
+        "default_branch_adoption": "PENDING"
+      }
+    },
+    {
+      "priority": "medium",
+      "prs": [
+        "DALEOBANKS58",
+        "WealthMachineIntelligence17-24"
+      ],
+      "failure": "SDK adapter continuation still described after kernel merges; WMI retains independent local control-plane lineage.",
+      "correction": "Merge remains founder gate, but reversible adapter/conformance work can proceed. Retain canonical Kernel authority rather than adopting parallel control plane."
+    }
+  ],
+  "preservation": {
+    "comments_reviews_and_historical_evidence": "unchanged",
+    "merges": "none",
+    "default_branch_runtime_changes": "none",
+    "pr_body_metadata": "current controller replaces older controller, scope/failures/dissent preserved before footer",
+    "title_changes": [
+      {
+        "pr": 124,
+        "new_title": "GREG venture watch: preserved evidence and mechanisms carried into #128"
+      }
+    ]
+  },
+  "evidence_files": {
+    "audit_report": "docs/collaboration/evidence/full-machine-pr-audit-20261002/audit-report.json",
+    "verification": "docs/collaboration/evidence/full-machine-pr-audit-20261002/verification.json",
+    "continuation_record": "docs/collaboration/full-machine-continuation-evidence-20261002.json"
+  },
+  "metadata_verification": {
+    "original_inventory": 95,
+    "currently_open": 96,
+    "verified_updated": 95,
+    "metadata_success_requests": 98,
+    "metadata_failed_rest_requests": 4,
+    "failed_rest_ids": [
+      97,
+      95,
+      94,
+      93
+    ],
+    "initial_cli_failures": 54,
+    "new_prs_since_snapshot": [
+      152
+    ],
+    "canonical_pr_links_verified": [
+      151,
+      148,
+      137
+    ],
+    "canonical_152_link_count": 47
+  },
+  "raw_session_artifact_digests": [
+    {
+      "kind": "kernel-pr-inventory",
+      "session_artifact_name": "pr-audit-full.json",
+      "sha256": "115e32bb4cd3afad286746482fec5b8be9a6ed0c797fb2efa6f3849eeac3b7f8",
+      "bytes": 961060,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "daleobanks-pr-inventory",
+      "session_artifact_name": "pr-audit-daleobanks-full.json",
+      "sha256": "b329c9e97c8da0d4060a833568aade5d1120a8fd0b604edb619d8b91f841af99",
+      "bytes": 163451,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "wmi-pr-inventory",
+      "session_artifact_name": "pr-audit-wmi-full.json",
+      "sha256": "47b8083da7e7b3ee11da82e11188b3ca6964f73374c34b2131ce4b17797d38c6",
+      "bytes": 132552,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "kernel-after-inventory",
+      "session_artifact_name": "pr-audit-kernel-after.json",
+      "sha256": "a094f7ccee3895209b278fcf7d45d866da9f9f3ea159f82a95e7a3dbca250bef",
+      "bytes": 765736,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "initial-cli-failure-receipts",
+      "session_artifact_name": "pr-guidance-20261002/receipts.jsonl",
+      "sha256": "3100484e4c3e953a332358f4f0cc1de84b0fcf6c0b8a988d87a0c0369098d81c",
+      "bytes": 52462,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "rest-mutation-attempt-receipts",
+      "session_artifact_name": "pr-guidance-20261002/receipts-rest.jsonl",
+      "sha256": "003062681b1e71b6014e0b59376091adcc00290136c5901dc6a7dbcc96fe337a",
+      "bytes": 92125,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "rest-mutation-attempt-receipts-json",
+      "session_artifact_name": "pr-guidance-20261002/receipts-rest.json",
+      "sha256": "3f26335404f23e909866161d11edb6ecf0f183939a19b3d8f0191db7a05dcad2",
+      "bytes": 100245,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    }
+  ],
+  "portable_evidence_written_at": "2026-10-02T22:28:28.150230+00:00",
+  "runtime_verification": {
+    "status": "PENDING",
+    "full_machine_completion": "NOT_ESTABLISHED",
+    "note": "This evidence certifies inspected PR guidance and metadata propagation only. Runtime integration is still under development; its checks must be added by the root after actual execution."
+  },
+  "residual_guidance_read_only_review": [
+    {
+      "path": "docs/collaboration/GREG-RECONCILIATION-2026-09-30.md",
+      "lines": [
+        48,
+        63
+      ],
+      "classification": "historical-linked-record",
+      "finding": "Historical #121 VEPMC/N1 deferral persists without a local correction banner, while the active founder ledger supersedes global pauses.",
+      "recommended_scope": "Keep the historical disposition and explicitly separate empirical preference promotion from achievable implementation."
+    },
+    {
+      "path": "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+      "classification": "historical-linked-record",
+      "finding": "activation_evidence still describes Foundry-55 after VEPMC and founder merge after VEPMC.",
+      "recommended_scope": "Preserve source history; later full-machine intent controls reversible code sequencing. Merge and live activation remain founder gates."
+    },
+    {
+      "path": "docs/BUILD_ORDER.md",
+      "lines": [
+        72,
+        74
+      ],
+      "classification": "active-build-order-ambiguity",
+      "finding": "Global termination says substantial activity without an external outcome suspends expansion and says not to continue building the general platform without measured improvement.",
+      "recommended_scope": "Apply refusal/shutdown to the affected unsafe path and regress unjustified complexity; missing authentic founder/external outcomes must not globally stop other buildable machinery."
+    },
+    {
+      "path": "docs/cortex/INVENTION_DOSSIER.md",
+      "lines": [
+        185
+      ],
+      "classification": "historical-seed-experiment-gate",
+      "finding": "90-day externally authored free-text suite and real mission shadowing are listed only after GAIN_VERIFIED and VEPMC.",
+      "recommended_scope": "This is experiment/live evidence sequencing, not a gate on unrelated full-mind implementation; the current Cortex backcast now makes that separation."
+    }
+  ]
+}

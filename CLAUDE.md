@@ -8,6 +8,8 @@ Continue until the currently achievable machine is integrated and executable. A 
 
 # UNIIMENTE Permanent Operating Order
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 **Foundry delivery scope (2026-09-27):** `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json` keeps all 55 numbered systems as active obligations; each needs executable GREG/Foundry integration, tests and reproducible evidence before completion can be claimed. Catalog status and a plan do not suffice. Hardware for the first founder-owned body remains open because Alfonso owns no Mac. This changes no constitutional or external-effect authority.
 
 ## Latest founder correction — BUILD THE REAL PRODUCT

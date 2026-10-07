@@ -21,6 +21,15 @@ def is_crostini(markers=CROSTINI_MARKERS) -> bool:
     return any(Path(marker).exists() for marker in markers)
 
 
+FRONTIER_WORKERS = ("claude", "codex", "aider")
+
+
+def frontier_workers(names=FRONTIER_WORKERS, which=None) -> dict:
+    """Look up temporary worker CLIs on PATH without executing or authorizing them."""
+    which = which or shutil.which
+    return {name: which(name) is not None for name in names}
+
+
 def chromebook() -> dict:
     checks = {
         "python_3_11": sys.version_info >= (3, 11),
@@ -43,6 +52,7 @@ def chromebook() -> dict:
             "ready_for_linux_service": not missing,
             "checks": checks, "missing": missing,
             "crostini_detected": is_crostini(),
+            "frontier_workers_installed": frontier_workers(),
             **({"fix": {"python_venv_available": "sudo apt install python3-venv"}}
                if "python_venv_available" in missing else {}),
             "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",

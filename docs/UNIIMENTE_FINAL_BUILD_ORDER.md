@@ -1,5 +1,7 @@
 # UNIIMENTE FINAL BUILD ORDER
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 ## Controlling founder correction — complete machine, 2026-10-01
 
 **Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
@@ -23,8 +25,10 @@ institutional memory; the intended capability stays on `greg/path.json`.
 govern conflicting sequencing below. Preserve the historical catalog and all
 useful evidence, but do not require every compiler, graph, registry, adapter,
 organ or bridge before one useful mission. Preservation does not require active
-ownership or runtime registration of every alternative. Build an item only when
-it closes a demonstrated deficit better than the simpler route.
+ownership or runtime registration of every alternative. Select each increment by
+the unfinished full-machine dependency it closes and compare it with the simpler
+route. A demonstrated deficit sequences work; it does not remove an intended
+capability because founder use has not yet exposed it.
 
 Current dependency order: adopted shared integrity → bounded persistent mission
 and truthful review → canonical founder authentication plus host supervision →
@@ -32,8 +36,11 @@ GREG interface and real bounded computer use → native development installation
 one verified overnight mission and morning critique → first business loop →
 verified missing-capability acquisition and goal resumption → useful AI/human
 workforce integration → justified compute growth. Independent verification,
-authority limits, recovery and shutdown apply at every stage. Closures, not the
-number of architectures, determine advancement.
+authority limits, recovery and shutdown apply at every stage. This earlier order
+sequences dependent integration and authentic-use evidence; it does not gate
+unrelated buildable machinery behind founder use. Prove and integrate each
+increment, then immediately continue the next unblocked Body + Organs + Mind
+requirement under `INTENT-20261002-FULL-MACHINE-CONTINUATION`.
 
 The historical revenue allocation ordering below is not a new treasury policy:
 lawful obligations/reserves and Alfonso's explicit goals govern surplus. The

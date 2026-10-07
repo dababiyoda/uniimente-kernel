@@ -8,16 +8,18 @@ separate-process appraisal (file == render of receipted inputs) -> signed accept
 VEPMC conditions from the ledger -> signed stop. The founder key is a per-test key.
 """
 import json
+from http.cookiejar import CookieJar
 import os
 from pathlib import Path
 import re
+import select
 import signal
 import socket
 import subprocess
 import sys
 import time
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 import pytest
 
@@ -26,6 +28,7 @@ from tests.integration.test_greg_body_supervised import (ROOT, SUPERVISORD, even
                                                          supervisor_endpoint, wait_for)
 
 pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord (requirements-dev) not installed")
+_OWNER_CLIENTS = {}
 
 
 def free_port() -> int:
@@ -35,13 +38,36 @@ def free_port() -> int:
 
 
 def http(port, path, fields=None):
+    opener, prefix = _OWNER_CLIENTS[port]
+    path = path if path.startswith(prefix) else prefix + path.lstrip("/")
     headers = {"Host": f"127.0.0.1:{port}"}
     data = None
     if fields is not None:
         data = urlencode(fields).encode()
         headers["Content-Type"] = "application/x-www-form-urlencoded"
-    with urlopen(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
+    with opener.open(Request(f"http://127.0.0.1:{port}{path}", data=data, headers=headers), timeout=30) as r:
         return r.geturl(), r.read().decode()
+
+
+def authenticate_console(proc, port):
+    """Act as the local launching owner; a fresh loopback client has no access."""
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        readable, _, _ = select.select([proc.stdout], [], [], .2)
+        if readable:
+            line = proc.stdout.readline()
+            found = re.search(r"http://127\.0\.0\.1:(\d+)/owner/[^\s]+", line)
+            if found:
+                assert int(found[1]) == port
+                opener = build_opener(HTTPCookieProcessor(CookieJar()))
+                with opener.open(found[0], timeout=30) as response:
+                    assert "access=" not in response.geturl()
+                    prefix = response.geturl().split(f"127.0.0.1:{port}", 1)[1]
+                _OWNER_CLIENTS[port] = (opener, prefix)
+                return
+        if proc.poll() is not None:
+            raise AssertionError("console exited before providing its owner bootstrap link")
+    raise AssertionError("console did not provide its private owner bootstrap link")
 
 
 def console(home, key, port):
@@ -49,15 +75,8 @@ def console(home, key, port):
                              "--no-passphrase", "--no-model", "--port", str(port)], cwd=ROOT,
                             env={**os.environ, "PYTHONPATH": str(ROOT)}, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True)
-    deadline = time.time() + 30
-    while time.time() < deadline:
-        try:
-            http(port, "/")
-            return proc
-        except OSError:
-            assert proc.poll() is None, proc.stdout.read()
-            time.sleep(0.2)
-    raise AssertionError("console did not start")
+    authenticate_console(proc, port)
+    return proc
 
 
 def test_founder_product_path_survives_kill_and_torn_write_and_delivers_once(tmp_path):

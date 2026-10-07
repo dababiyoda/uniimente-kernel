@@ -229,6 +229,7 @@ class InvocationContext:
     grant_id: str = ""
     policy_version: str = ""
     stop_check: object | None = None
+    registry: object | None = None   # existing body projection; never supplied by a cognitive payload
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -360,11 +361,13 @@ CHROME_CANDIDATES = (
 
 def chrome_binary() -> str:
     """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
-    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
-                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
-        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
-            return candidate
-    return CHROME_CANDIDATES[0]
+    from greg.computer import chromium
+    try:
+        return chromium()
+    except CapabilityError:
+        # Keep import possible so readiness can report a missing/invalid body dependency.
+        # Manifest availability rejects this exact path; it never silently switches browsers.
+        return os.environ.get("GREG_CHROMIUM") or CHROME_CANDIDATES[0]
 
 
 class _VisibleText(HTMLParser):

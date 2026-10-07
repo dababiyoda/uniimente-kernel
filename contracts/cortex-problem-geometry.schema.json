@@ -310,6 +310,7 @@
               "payload_structure",
               "requester_declared",
               "semantic_proposal_validated",
+              "raised_by_declared_harm",
               "default_unknown"
             ]
           },

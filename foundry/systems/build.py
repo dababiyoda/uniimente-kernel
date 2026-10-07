@@ -37,7 +37,8 @@ def owned(root: Path = ROOT) -> list[str]:
                       and p.name not in ("tests",))
     return packages + [d for d in DATA_DIRS if (root / d).exists() and d not in packages]
 PINNED = ("PyYAML", "jsonschema", "cryptography", "pytest")
-RUNTIME = ("z3-solver", "ortools", "wasmtime", "mcp", "rfc3161-client", "supervisor")
+RUNTIME = ("z3-solver", "ortools", "networkx", "scipy", "playwright",
+           "wasmtime", "mcp", "rfc3161-client", "supervisor")
 EXCLUDE_PARTS = {"__pycache__", ".pytest_cache"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo"}
 

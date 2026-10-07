@@ -1,0 +1,5 @@
+# Optional installed OSS mechanism supply; no model/provider or runtime activation.
+# GREG qualifies these distributions and records their actual license and files
+# before a founder-scoped package function may attach. Mature packages, pinned.
+networkx==3.6.1
+scipy==1.17.1

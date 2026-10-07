@@ -10,8 +10,10 @@ working under its supervisor. The console is not the body and not a second Kerne
 * its only write is a founder-signed command file dropped into the body inbox;
 * the founder key is decrypted once at start and held in this process's memory only;
   without a key the console is read-only;
-* it binds to 127.0.0.1, refuses any other Host header (DNS rebinding), requires a
-  per-process CSRF token and same-origin POSTs, and caps request sizes.
+* it binds to 127.0.0.1 and refuses any other Host header (DNS rebinding);
+* private reads and every POST require the owner's private bootstrap/session,
+  in addition to per-process CSRF and same-origin checks. Loopback reachability
+  alone never authorizes use of the unlocked founder key.
 
 Mechanism lineage: #112 egregore/local_console.py (loopback page, Host check, CSRF,
 head-bound review), now driving the canonical #113 body with real Ed25519 signatures
@@ -21,9 +23,11 @@ instead of synthetic development authority. That module left the active tree on 
 from __future__ import annotations
 
 import html
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import secrets
 import threading
 import time
@@ -33,6 +37,7 @@ from greg import metrics, planner
 from greg.body import Layout, morning_projection, observe, send_signed, status
 
 MAX_BODY = 16 * 1024
+OWNER_COOKIE = "greg_console_owner"
 STYLE = """
 :root{--bg:#f5f6f4;--fg:#18242b;--muted:#5d6b73;--card:#fff;--line:#d5dcd9;--accent:#1f5f8b;--warn:#9a3b12;--ok:#2f6b3a}
 @media (prefers-color-scheme:dark){:root{--bg:#121719;--fg:#e4e9eb;--muted:#9aa7ad;--card:#1b2226;--line:#2d383d;
@@ -68,10 +73,27 @@ class Console:
         self.transport_factory = transport_factory
         self._route_revision = None
         self.csrf = secrets.token_urlsafe(32)
+        # Interface authentication only: commands still use the existing
+        # founder Ed25519 signature and body/Gate. None of these values is
+        # placed in argv/env, body events or unauthenticated page content.
+        self._bootstrap = secrets.token_urlsafe(32)
+        self._session = secrets.token_urlsafe(32)
+        self.owner_path = "/owner/" + secrets.token_urlsafe(24) + "/"
         self.proposals: dict[str, dict] = {}
         self.lock = threading.Lock()
         self.planner_context = planner_context
         self.flash: list[str] = []
+
+    def owner_url(self, port: int) -> str:
+        """Private, single-use link for the local owner who launched this console."""
+        return f"http://127.0.0.1:{port}{self.owner_path}?access={self._bootstrap}"
+
+    def bootstrap(self, token: str) -> bool:
+        with self.lock:
+            if self._bootstrap is None or not secrets.compare_digest(token.encode(), self._bootstrap.encode()):
+                return False
+            self._bootstrap = None
+            return True
 
     # -- reading ----------------------------------------------------------------------
     def snapshot(self) -> dict:
@@ -206,14 +228,13 @@ def _form(console: Console, action: str, fields: dict, label: str, *, cls: str =
 
 
 
-def owned_pages(console: Console) -> list[dict]:
-    """Pages must be bound to successful canonical receipts, not filesystem presence."""
-    pages = {}
+def owned_receipts(console: Console):
+    """One read-only receipt check for privately served owned product surfaces."""
     with observe(console.home, actor="spiffe://uniimente.internal/greg/owned-reader") as journal:
         ledger = journal.ledger
         ok, _ = ledger.verify_chain()
         if not ok:
-            return []
+            return
         witnesses = {r.payload["witness_id"]: r.payload["grant_id"] for r in ledger.by_type("witness")
                      if r.payload.get("action_class") == "greg.foundry.apply"
                      and r.payload.get("capability") == "foundry.apply"}
@@ -234,13 +255,69 @@ def owned_pages(console: Console) -> list[dict]:
             output = result.get("output") or {}
             if result.get("result_class") != "positive" or not isinstance(output, dict):
                 continue
-            page = output.get("result") if output.get("system") == 31 else (
-                (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
-            if isinstance(page, dict) and page.get("kind") == "owned-page":
-                item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
-                item["mission_id"] = p["mission_id"]
-                pages[(p["mission_id"], item["name"], item["version"])] = item
+            yield p["mission_id"], output
+
+
+def owned_pages(console: Console) -> list[dict]:
+    """Pages must be bound to successful canonical receipts, not filesystem presence."""
+    pages = {}
+    for mission_id, output in owned_receipts(console):
+        page = output.get("result") if output.get("system") == 31 else (
+            (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
+        if isinstance(page, dict) and page.get("kind") == "owned-page":
+            item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
+            item["mission_id"] = mission_id
+            pages[(mission_id, item["name"], item["version"])] = item
     return list(pages.values())
+
+
+def owned_communities(console: Console):
+    communities = {}
+    for mission_id, output in owned_receipts(console):
+        result = output.get("result") or {}
+        community = result if output.get("system") == 32 else (
+            result.get("community") if output.get("system") == 49 else None)
+        if isinstance(community, dict) and isinstance(community.get("community"), str) and \
+                isinstance(community.get("history_hash"), str):
+            item = {"mission_id": mission_id, "community": community["community"],
+                    "history_hash": community["history_hash"]}
+            communities[(mission_id, item["community"])] = item
+    return list(communities.values())
+
+
+def read_owned_community(console, mission_id, name, offset, *, export=False):
+    from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+    from greg import foundry_bridge
+    approved = [p for p in owned_communities(console) if
+                p["mission_id"] == mission_id and p["community"] == name]
+    if not approved:
+        raise FileNotFoundError("no canonical community receipt")
+    root = (console.layout.workspace / mission_id.replace(":", "_")).resolve()
+    if console.layout.workspace.resolve() not in root.parents:
+        raise FileNotFoundError("community mission outside workspace")
+    ctx = InvocationContext(root, (root,), SecretBroker(console.layout.secrets), BUILTINS["foundry.query"][0])
+    try:
+        result = foundry_bridge.query({"system": 32, "op": "export" if export else "render",
+                                     "args": {"community": name, "offset": offset, "limit": 8}}, ctx)["result"]
+    except CapabilityError as exc:
+        raise FileNotFoundError("community failed integrity checks") from exc
+    if result["history_hash"] != approved[-1]["history_hash"]:
+        raise FileNotFoundError("community differs from canonical receipt")
+    return result
+
+
+def render_community(console, mission_id, name, offset):
+    result = read_owned_community(console, mission_id, name, offset)
+    base = "/community/" + quote(mission_id, safe="") + "/" + quote(name, safe="")
+    links = []
+    if offset:
+        links.append(f"<a href='{base}?offset={max(0, offset-result['limit'])}'>Previous posts</a>")
+    if offset + result["posts"] < result["total_posts"]:
+        links.append(f"<a href='{base}?offset={offset+result['limit']}'>Next posts</a>")
+    export_url = "/community-export/" + quote(mission_id, safe="") + "/" + quote(name, safe="")
+    return _page(name, f"<h1>{_e(name)}</h1><p>Private signed community history. "
+                 "Member signatures establish key possession.</p>" + result["html"] +
+                 "<p>" + " · ".join(links) + f" · <a href='{export_url}'>Export signed history</a></p>")
 
 
 def render_owned_index(console: Console) -> bytes:
@@ -251,7 +328,10 @@ def render_owned_index(console: Console) -> bytes:
                      f"(version {_e(page['version'])})</li>")
     return _page("Owned content", "<h1>Owned content</h1><p>Private pages produced by GREG. "
                  "Public deployment requires its own authority.</p><ul>" + "".join(links) +
-                 "</ul><p><a href='/'>GREG</a></p>")
+                 "</ul><h2>Owned communities</h2><ul>" + "".join(
+                     "<li><a href='/community/" + quote(c["mission_id"], safe="") + "/" +
+                     quote(c["community"], safe="") + "'>" + _e(c["community"]) + "</a></li>"
+                     for c in owned_communities(console)) + "</ul><p><a href='/'>GREG</a></p>")
 
 
 def render_owned_page(console: Console, mission_id: str, name: str, version: int | None) -> bytes:
@@ -434,16 +514,43 @@ def make_handler(console: Console):
             port = self.server.server_address[1]
             return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
 
-        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None):
+        def _owner_authenticated(self) -> bool:
+            try:
+                cookies = SimpleCookie(self.headers.get("Cookie", ""))
+            except CookieError:
+                return False
+            value = cookies.get(OWNER_COOKIE)
+            return value is not None and secrets.compare_digest(value.value.encode(), console._session.encode())
+
+        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None,
+                  *, owner=False, public_content=False, establish_session=False):
+            if owner and ctype.startswith("text/html"):
+                # Cookies have no port scope. Keep private UI requests under
+                # a random narrow path so unrelated local services do not get
+                # the owner cookie on ordinary requests to their root/assets.
+                text = data.decode("utf-8")
+                text = re.sub(r"\b(href|action)=(['\"]?)/(?!/)",
+                              lambda match: match.group(1) + "=" + match.group(2) + console.owner_path, text)
+                data = text.encode("utf-8")
+            if owner and location and location.startswith("/"):
+                location = console.owner_path + location.lstrip("/")
             self.send_response(code)
             if location:
                 self.send_header("Location", location)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; "
-                             "script-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'")
+            policy = ("sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+                      "script-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'"
+                      if public_content else
+                      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+                      "form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+            self.send_header("Content-Security-Policy", policy)
             self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if establish_session:
+                self.send_header("Set-Cookie", f"{OWNER_COOKIE}={console._session}; "
+                                 f"Path={console.owner_path}; HttpOnly; SameSite=Strict")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -451,17 +558,48 @@ def make_handler(console: Console):
         def do_GET(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
-            path = urlsplit(self.path).path
+            parsed = urlsplit(self.path)
+            path = parsed.path
+            owner = path.startswith(console.owner_path)
+            if owner:
+                path = "/" + path[len(console.owner_path):]
+                supplied = parse_qs(parsed.query).get("access", [])
+                if path == "/" and len(supplied) == 1:
+                    if console.bootstrap(supplied[0]):
+                        return self._send(303, b"", location=console.owner_path, establish_session=True)
+                    if self._owner_authenticated():
+                        return self._send(303, b"", location=console.owner_path)
+                if not self._owner_authenticated():
+                    return self._send(403, b"private owner session required; open the link printed by greg console")
+            elif path != "/owned" and not path.startswith(("/owned/", "/community/", "/community-export/")):
+                return self._send(403, b"private owner session required; open the link printed by greg console")
             try:
                 if path == "/":
-                    return self._send(200, render_home(console))
+                    return self._send(200, render_home(console), owner=True)
                 if path.startswith("/proposal/"):
-                    return self._send(200, render_proposal(console, path.split("/", 2)[2]))
+                    return self._send(200, render_proposal(console, path.split("/", 2)[2]), owner=True)
                 if path.startswith("/delivery/"):
                     from urllib.parse import unquote
-                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
+                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])), owner=True)
                 if path == "/owned":
-                    return self._send(200, render_owned_index(console))
+                    return self._send(200, render_owned_index(console), owner=owner, public_content=True)
+                if path.startswith(("/community/", "/community-export/")):
+                    from urllib.parse import unquote
+                    parts = path.split("/")
+                    if len(parts) != 4:
+                        return self._send(404, b"not found")
+                    query = parse_qs(urlsplit(self.path).query)
+                    try:
+                        offset = int(query.get("offset", ["0"])[0])
+                        if not 0 <= offset <= 1024:
+                            raise ValueError("bounded offset required")
+                    except ValueError:
+                        return self._send(400, b"invalid community offset")
+                    mid, name = unquote(parts[2]), unquote(parts[3])
+                    if parts[1] == "community-export":
+                        data = read_owned_community(console, mid, name, offset, export=True)
+                        return self._send(200, json.dumps(data).encode(), "application/json", public_content=True)
+                    return self._send(200, render_community(console, mid, name, offset), owner=owner, public_content=True)
                 if path.startswith("/owned/"):
                     from urllib.parse import unquote
                     parts = path.split("/")
@@ -472,9 +610,10 @@ def make_handler(console: Console):
                         version = int(query["version"][0]) if "version" in query else None
                     except ValueError:
                         return self._send(400, b"invalid page version")
-                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version))
+                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version),
+                                      owner=owner, public_content=True)
                 if path == "/morning":
-                    return self._send(200, render_morning(console))
+                    return self._send(200, render_morning(console), owner=True)
                 if path == "/api/state":
                     return self._send(200, json.dumps(console.snapshot(), default=str).encode(), "application/json")
             except FileNotFoundError:
@@ -484,6 +623,9 @@ def make_handler(console: Console):
         def do_POST(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
+            parsed = urlsplit(self.path)
+            if not parsed.path.startswith(console.owner_path) or not self._owner_authenticated():
+                return self._send(403, b"private owner session required")
             origin = self.headers.get("Origin")
             port = self.server.server_address[1]
             if origin not in (None, "null", f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
@@ -495,10 +637,10 @@ def make_handler(console: Console):
                                                  keep_blank_values=True).items()}
             if not secrets.compare_digest(form.get("csrf", ""), console.csrf):
                 return self._send(403, b"invalid form token; reload the page")
-            path = urlsplit(self.path).path
+            path = "/" + parsed.path[len(console.owner_path):]
             try:
                 if path == "/ask":
-                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]), owner=True)
                 if path == "/sign":
                     target = console.sign_proposal(form.get("proposal", ""))
                     console.flash.append(f"Signed and sent: {target.name}. You can close this window.")
@@ -526,7 +668,7 @@ def make_handler(console: Console):
                 return self._send(403, str(exc).encode())
             except (KeyError, ValueError) as exc:
                 return self._send(400, f"{type(exc).__name__}: {exc}".encode()[:500])
-            return self._send(303, b"", location="/")
+            return self._send(303, b"", location="/", owner=True)
     return Handler
 
 

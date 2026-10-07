@@ -5,8 +5,10 @@ Founder corrections reroute it; they do not delete it (INTENT-2026-09-30-DEVELOP
 INHERITANCE). Every founder-intended capability horizon stays on it at the node where
 it becomes buildable, classified by present feasibility, never claimed as present.
 
-Exactly one node is operationally primary: the first whose exit evidence does not
-hold. Exit evidence comes from the body's ledger where a predicate exists; a node
+Exactly one founder-use node is operationally primary: the first whose exit evidence
+does not hold. This is an evidence projection, never a build stopping condition.
+Currently buildable horizons continue while an unrelated founder-use gate waits.
+Exit evidence comes from the body's ledger where a predicate exists; a node
 without a predicate is never counted as passed, however much code exists for it.
 Repository-attested nodes (N0) are labeled as such. Nothing here writes history,
 grants authority or changes the destination.
@@ -149,6 +151,14 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
     horizons = data.get("horizons", [])
     return {
         "reality_status": "RETAINED_EVIDENCE_PROJECTION",
+        "completion_boundary": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+        "continuation_rule": "Prove each increment, integrate it, and resume the parent objective. "
+                             "An unmet founder-use node blocks only its dependent evidence or activation.",
+        "currently_buildable_horizons": [
+            {"id": h["id"], "node": h["node"], "intended_effect": h["intended_effect"],
+             "current_reality": h["current_reality"], "nearest_precursor": h["nearest_precursor"]}
+            for h in horizons if h["feasibility"] == "CURRENTLY_BUILDABLE"
+        ],
         "achieved": achieved,
         "active": None if active is None else {
             "id": active["id"], "title": active["title"], "gate": active["gate"], "sbm": active["sbm"],

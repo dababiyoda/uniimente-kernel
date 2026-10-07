@@ -1,0 +1,3 @@
+# Optional real browser execution. Chromium is provisioned separately; no browser
+# or capability is activated by installing this dependency.
+playwright==1.63.0

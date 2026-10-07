@@ -42,19 +42,58 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt -r requirements-cortex-engines.txt
+      - name: Provision real browser regression dependencies
+        run: |
+          pip install -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+          python - <<'PY'
+          import os
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              with open(os.environ['GITHUB_ENV'], 'a') as f:
+                  f.write('GREG_CHROMIUM=' + p.chromium.executable_path + '\n')
+          PY
+      - name: Real browser and signed worker-composition regression checks
+        run: python -m pytest -q tests/unit/test_greg_computer.py tests/unit/test_greg_dataflow.py
       - name: Measure actual host isolation facilities
         run: python scripts/ci/probe_isolation.py
       - name: OS filesystem confinement and escape regression checks
         env:
           GREG_REQUIRE_LANDLOCK: "1"
         run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
+      - name: Provision worker namespace isolation
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - name: Worker confinement, acceptance and collector escape regressions
+        run: python -m pytest -q tests/unit/test_greg_worker_isolation.py tests/unit/test_greg_workers.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
       - name: Full unit and integration suite
         run: python -m pytest -q
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
+
+  owned_oci:
+    name: "7 · Owned OCI capability rebuild and execution"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Build immutable owned capability twice and run second environment
+        run: python scripts/ci/prove_oci.py oci-evidence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owned-oci-capability-evidence
+          path: oci-evidence/
+          if-no-files-found: error
+          retention-days: 30
 
   contracts:
     name: "2 · Contract schema references resolve"

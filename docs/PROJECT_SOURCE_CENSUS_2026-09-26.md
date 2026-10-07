@@ -17,6 +17,10 @@ For material product/architecture decisions, do not rely on one summary. Read th
 
 When a source conflicts with a later explicit founder correction, preserve the old source as lineage/mechanism/evidence and follow the later correction.
 
+## New controlling source — 2026-10-02
+
+The current user reaffirmed **BODY + ORGANS + MIND = GREG / UNIIMENTE** and required proof, integration and automatic continuation of every achievable parent requirement before sustained founder use. Source: [`intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md`](intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md); active record: [`INTENT-20261002-FULL-MACHINE-CONTINUATION`](intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json). User-supplied identifier `01a0f6ab-f59b-76a8-b6a2-bb6408f710fa` is preserved as unverified provenance and does not authenticate identity or runtime authority. This new chat source is additional to the historical 93-file census; the original inventory and frozen evidence remain unchanged.
+
 ## Source families
 
 | Source family | Copies visible |

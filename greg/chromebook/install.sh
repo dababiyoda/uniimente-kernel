@@ -98,7 +98,13 @@ else
   "$PY" -c 'import ensurepip' >/dev/null 2>&1 || fail "Python venv support is missing. In the Linux terminal: sudo apt install -y python3-venv" 12
   [ -x "$VENV/bin/python" ] || "$PY" -m venv "$VENV"
   "$VENV/bin/python" -m pip install --quiet --upgrade pip
-  "$VENV/bin/python" -m pip install --quiet -r "$REPO/requirements-dev.txt"
+  "$VENV/bin/python" -m pip install --quiet -r "$REPO/requirements-dev.txt" \
+    -r "$REPO/requirements-cognition.txt" -r "$REPO/requirements-cortex-engines.txt" \
+    -r "$REPO/requirements-browser.txt"
+  if ! command -v chromium >/dev/null 2>&1 && ! command -v chromium-browser >/dev/null 2>&1 \
+     && ! command -v google-chrome >/dev/null 2>&1; then
+    "$VENV/bin/python" -m playwright install chromium
+  fi
   GREG_PY="$VENV/bin/python"
 fi
 
@@ -185,7 +191,7 @@ fi
 cat <<EOF
 
 GREG is installed. Next, the first mission (greg/CHROMEBOOK_FIRST_MISSION.md, step 2):
-  greg console --key $KEY --no-model     then open http://localhost:8766/ in Chrome
+  greg console --key $KEY --no-model     then open the private owner link printed by the console in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)
   Approve the one waiting delivery in the console, read the brief in $DELIVER_ROOT/briefs/, accept or reject it.

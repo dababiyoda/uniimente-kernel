@@ -1,3 +1,6 @@
+
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 ## Parent machine continuation
 
 - Fixed completion boundary: BODY + ORGANS + MIND = GREG / UNIIMENTE.

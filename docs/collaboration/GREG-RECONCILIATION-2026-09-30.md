@@ -1,5 +1,7 @@
 # One GREG — reconciliation and build record (2026-09-30)
 
+> October 2 controlling correction: this is historical evidence. Any after-VEPMC/N1 deferral below applies only to its dependent live use, promotion or founder decision; it never pauses unrelated reversible Body + Organs + Mind implementation. Follow [the active continuation intent](../intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json).
+
 Intent: `INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE` ([source](../intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md)).
 Machine-readable dispositions, source coverage and conflicts: [`GREG-RECONCILIATION-2026-09-30.json`](GREG-RECONCILIATION-2026-09-30.json).
 Supersedes the "canonical frontier" claim of [`ONE-GREG-FRONTIER-2026-09-27.md`](ONE-GREG-FRONTIER-2026-09-27.md) by convergence;

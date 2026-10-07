@@ -7,6 +7,10 @@ any candidate exists, then searches reality in resourcefulness order:
     1. an ATTACHED capability with that function            (use what exists)
     2. a VERIFIED, never explicitly detached capability     (attach in signed scope)
     3. installed commodity software on this body            (acquire)
+       - an executable, or
+       - an installed open-source package (DEPEND, greg/mechanisms.py): Mechanism Card
+         with version, license, upstream and file digest; GREG's certificate checks
+         every answer it gives
     4. a pluggable builder (coding agent / human / model)   (build the residual)
     5. founder escalation                                   (ask, wait)
 
@@ -39,12 +43,15 @@ import random
 import stat
 import sys
 import tempfile
+import time
 
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders
+from greg import builders, mechanisms
+from greg.cortex_engines import linear, network
 from greg.journal import Journal, iso
+from greg.mechanisms import PackageCandidate
 from provenance.ledger import sha256_json
 
 
@@ -101,7 +108,112 @@ CATALOG = {
         "oracle": _vectors_wordcount, "output_field": "words",
         "candidates": (Candidate("wc", ("{binary}", "-w", "{file}"), "first_int"),),
     },
+    # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
+    "graph.shortest_path": {
+        "kind": "package", "description": "Every shortest distance from a source over nonnegative weights, and the "
+                                          "path to an optional target, with an optimality certificate",
+        "oracle": network.oracle_shortest, "oracle_kind": "Bellman-Ford in exact fractions (GREG)",
+        "output_field": "certified", "normalize": network.normalize_shortest, "certify": network.certify_shortest,
+        "judge": network.judge_shortest, "probe": network.probe_shortest, "size": network.size,
+        "baseline": ("local binary-heap Dijkstra (plain Python)", network.local_dijkstra, "distances"),
+        "project": [("cognition.graph", "PR #140 op: one s-t path, checked for validity but not optimality; no "
+                                        "distances or unreachability certificate")],
+        "candidates": (
+            PackageCandidate("networkx", "networkx", "networkx.shortest_path",
+                             ("networkx/__init__.py", "networkx/classes/", "networkx/algorithms/shortest_paths/",
+                              "networkx/utils/", "networkx/exception.py"),
+                             "Dijkstra with predecessor lists (networkx.dijkstra_predecessor_and_distance)",
+                             "nonnegative finite weights; GREG keeps the lightest of parallel edges"),
+            PackageCandidate("scipy", "scipy.sparse.csgraph", "scipy.shortest_path",
+                             ("scipy/__init__.py", "scipy/sparse/csgraph/"),
+                             "compiled Dijkstra on a sparse matrix (scipy.sparse.csgraph.dijkstra)",
+                             "nonnegative finite weights in float64; GREG keeps the lightest of parallel edges, "
+                             "since the sparse matrix would sum them", ("numpy",))),
+    },
+    "graph.max_flow": {
+        "kind": "package", "description": "Maximum flow from a source to a sink over integer arc capacities, with a "
+                                          "minimum cut as its certificate",
+        "oracle": network.oracle_max_flow, "oracle_kind": "brute-force minimum cut over every source side (GREG)",
+        "output_field": "certified", "normalize": network.normalize_max_flow, "certify": network.certify_max_flow,
+        "judge": network.judge_max_flow, "probe": network.probe_max_flow, "size": network.size,
+        "baseline": ("local Edmonds-Karp (plain Python)", network.local_edmonds_karp, "value"),
+        "project": [("cognition.graph", "PR #140 op: shortest paths only; no flow")],
+        "candidates": (
+            PackageCandidate("networkx", "networkx", "networkx.max_flow",
+                             ("networkx/__init__.py", "networkx/classes/", "networkx/algorithms/flow/",
+                              "networkx/utils/", "networkx/exception.py"),
+                             "preflow-push maximum flow (networkx.maximum_flow)",
+                             "integer capacities, total at most 2^31-1; directed arcs"),
+            PackageCandidate("scipy", "scipy.sparse.csgraph", "scipy.max_flow",
+                             ("scipy/__init__.py", "scipy/sparse/csgraph/"),
+                             "compiled Dinic maximum flow (scipy.sparse.csgraph.maximum_flow)",
+                             "int32 capacities, total at most 2^31-1; directed arcs", ("numpy",))),
+    },
 }
+
+
+CATALOG["lp.optimize"] = {
+    "kind": "package", "description": "Maximize or minimize a linear objective under linear constraints and bounds, "
+                                      "with a duality certificate",
+    "oracle": linear.oracle_lp, "oracle_kind": "vertex enumeration in exact fractions (GREG)",
+    "output_field": "certified", "normalize": linear.normalize_lp, "certify": linear.certify_lp,
+    "certificate_error": linear.CertificateError, "runners": linear.RUNNERS, "follow_up": linear.follow_up_lp,
+    "judge": linear.judge_lp, "probe": linear.probe_lp, "size": linear.size,
+    "inputs": {"variables": "list", "objective": "dict", "constraints": "list"},
+    "baseline": ("none simple at this size: GREG's exact vertex enumeration is exponential and serves only as "
+                 "the oracle", None, None),
+    "project": [("cognition.optimization", "PR #140 op: integer CP-SAT models; no continuous optimum and no dual "
+                                           "certificate"),
+                ("cognition.cortex.optimization.cpsat", "cortex organ: integer variables only")],
+    "candidates": (
+        PackageCandidate("scipy", "scipy.optimize", "scipy.lp", ("scipy/__init__.py", "scipy/optimize/_linprog",
+                                                                  "scipy/optimize/_highspy/", "scipy/optimize/__init__.py"),
+                         "HiGHS dual simplex and interior point (scipy.optimize.linprog, method='highs')",
+                         "at most 500 variables and 2,000 constraints; coefficients up to 1e9", ("numpy",)),
+        PackageCandidate("ortools", "ortools.linear_solver.pywraplp", "ortools.lp",
+                         ("ortools/__init__.py", "ortools/linear_solver/"),
+                         "GLOP primal and dual simplex (ortools.linear_solver)",
+                         "at most 500 variables and 2,000 constraints; coefficients up to 1e9",
+                         ("numpy", "protobuf"))),
+}
+for _spec in CATALOG.values():
+    if _spec.get("kind") == "package":
+        _spec.setdefault("certificate_error", network.CertificateError)
+        _spec.setdefault("runners", network.RUNNERS)
+
+
+def package_adapter(function: str, candidate: PackageCandidate):
+    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call."""
+    spec = CATALOG[function]
+
+    def adapter(params, ctx: InvocationContext):
+        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+        prov = ctx.manifest.provenance
+        dist = mechanisms.installed(candidate.distribution)
+        if dist is None or dist.version != prov["version"] \
+                or mechanisms.digest(dist, candidate.digest_paths)[0] != prov["package_digest"]:
+            raise CapabilityError("capability refused: package changed since qualification; quarantine required")
+        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
+                                 location=prov["location"], version=prov["version"])
+        if "error" in claim:
+            raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
+                                  f"{claim['error'][:200]}")
+        try:
+            answer = spec["certify"](request, claim["result"])
+            if answer.get("follow_up") and spec.get("follow_up"):
+                # The engine's negative claim is proved or refuted by a second, certified solve.
+                extras = mechanisms.run(candidate, spec["runners"][candidate.runner], answer["follow_up"],
+                                        location=prov["location"], version=prov["version"])
+                if any("error" in e for e in extras):
+                    raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
+                                          f"{next(e['error'] for e in extras if 'error' in e)[:200]}")
+                answer = spec["follow_up"](request, answer, [e["result"] for e in extras])
+        except spec["certificate_error"] as exc:
+            raise CapabilityError(f"capability refused: package output failed its certificate: {exc}") from exc
+        answer.pop("follow_up", None)
+        return {**answer, "engine": f"{candidate.distribution} {prov['version']}", "license": prov["license"],
+                "authority_created": False}
+    return adapter
 
 
 def catalog_adapter(function: str, candidate: Candidate, binary: str):
@@ -126,8 +238,77 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
     return adapter
 
 
+def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed: int) -> tuple[bool, dict]:
+    """Frozen oracle plus a scale probe, in one isolated run; compared with the simplest local implementation."""
+    spec = CATALOG[function]
+    cases = spec["oracle"](seed)
+    probe = spec["normalize"](spec["probe"](seed))
+    requests = [spec["normalize"](c["input"]) for c in cases] + [probe]
+    report = {"cases": len(cases), "failures": [], "isolation": "no-network interpreter", "platform": sys.platform,
+              "oracle": spec["oracle_kind"], "certificate": "GREG-owned, exact; shares no code with the package"}
+    started = time.perf_counter()
+    try:
+        claims = mechanisms.run(candidate, spec["runners"][candidate.runner], requests, location=card["location"],
+                                version=card["version"], cpu_seconds=60)
+    except CapabilityError as exc:
+        report["failures"].append({"case": "all", "error": str(exc)[:300]})
+        return False, report
+    wall = time.perf_counter() - started
+    named = cases + [{"name": "scale-probe"}]
+    answers = []
+    for case, request, claim in zip(named, requests, claims):
+        if "error" in claim:
+            report["failures"].append({"case": case["name"], "error": claim["error"][:160]})
+            answers.append(None)
+            continue
+        try:
+            answers.append(spec["certify"](request, claim["result"]))
+        except spec["certificate_error"] as exc:
+            report["failures"].append({"case": case["name"], "certificate": str(exc)[:160]})
+            answers.append(None)
+    pending = [i for i, a in enumerate(answers) if a and a.get("follow_up") and spec.get("follow_up")]
+    if pending:                                   # negative claims are proved by a second, certified solve
+        flat = [r for i in pending for r in answers[i]["follow_up"]]
+        try:
+            extras = mechanisms.run(candidate, spec["runners"][candidate.runner], flat, location=card["location"],
+                                    version=card["version"], cpu_seconds=60)
+        except CapabilityError as exc:
+            extras = [{"error": str(exc)}] * len(flat)
+        position = 0
+        for i in pending:
+            group = extras[position:position + len(answers[i]["follow_up"])]
+            position += len(answers[i]["follow_up"])
+            try:
+                if any("error" in e for e in group):
+                    raise spec["certificate_error"](next(e["error"] for e in group if "error" in e)[:160])
+                answers[i] = spec["follow_up"](requests[i], answers[i], [e["result"] for e in group])
+            except spec["certificate_error"] as exc:
+                report["failures"].append({"case": named[i]["name"], "certificate": str(exc)[:160]})
+                answers[i] = None
+    for case, answer in zip(named, answers):
+        if answer is not None and "expected" in case and not spec["judge"](answer, case["expected"]):
+            report["failures"].append({"case": case["name"], "expected": str(case["expected"])[:120],
+                                       "got": str({k: answer.get(k) for k in case["expected"]})[:120]})
+    probe_answer = answers[-1]
+    report["scale_probe"] = {**spec["size"](probe), "package_solve_seconds": round(claims[-1].get("seconds", 0.0), 4),
+                             "package_run_seconds_with_interpreter": round(wall, 3),
+                             "certified": bool(probe_answer and probe_answer.get("certified"))}
+    name, local, field = spec["baseline"]
+    if local is None:
+        report["scale_probe"]["simplest_local_alternative"] = name
+    else:
+        local_started = time.perf_counter()
+        local_answer = local(probe)
+        report["scale_probe"].update({"simplest_local_alternative": name,
+                                      "local_seconds": round(time.perf_counter() - local_started, 4),
+                                      "agrees_with_local": probe_answer is not None
+                                      and probe_answer[field] == local_answer[field]})
+    return not report["failures"] and report["scale_probe"]["certified"], report
+
+
 FORMED = ("built:", "installed:")      # providers Genesis formed, and therefore can re-form
-FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed")
+FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed",
+                 "capability refused: package")
 
 
 def is_formed(manifest) -> bool:
@@ -189,6 +370,9 @@ class Genesis:
                                                              "why": "built source missing or changed since verification"},
                                         key=[cid, "quarantine", origin["source_sha256"]])
                 continue
+            if origin.get("kind") == "package":
+                self._restore_package(cid, manifest, origin, state)
+                continue
             binary = manifest.binaries[0]
             candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
             intact = Path(binary).exists() and hashlib.sha256(
@@ -199,6 +383,30 @@ class Genesis:
                 self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
                                                          "why": "binary missing or changed since verification"},
                                     key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+
+    def _restore_package(self, cid, manifest, origin, state):
+        """A qualified package is trusted again only if its pinned files and shared dependencies are unchanged."""
+        candidate = next((c for c in CATALOG.get(origin["function"], {}).get("candidates", ())
+                          if isinstance(c, PackageCandidate) and c.runner == origin["runner"]), None)
+        why = None
+        dist = mechanisms.installed(origin["distribution"])
+        if candidate is None:
+            why = "no package candidate with this runner in the catalog"
+        elif dist is None or dist.version != manifest.provenance.get("version"):
+            why = "package missing or a different version since qualification"
+        else:
+            try:
+                if mechanisms.digest(dist, candidate.digest_paths)[0] != manifest.provenance.get("package_digest"):
+                    why = "pinned package files changed since qualification"
+                elif mechanisms.shared(candidate.common_mode) != manifest.provenance.get("common_mode"):
+                    why = "a shared dependency changed since qualification"
+            except CapabilityError as exc:
+                why = str(exc)
+        adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
+        self.registry.register(manifest, adapter, state="QUARANTINED" if why else state)
+        if why and state != "QUARANTINED":
+            self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
+                                key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
 
     # -- the loop -------------------------------------------------------------------
     def _deficit_for(self, mission_id: str, function: str):
@@ -269,6 +477,9 @@ class Genesis:
             opened = {"deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
                       "purpose": purpose, "acceptance": acceptance, "at": iso(now), "verification": verification,
                       "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"]}
+            if spec and spec.get("kind") == "package":
+                opened["search_order"] = ["attached", "verified_detached", "existing_project", "installed_package",
+                                          "builder", "founder"]
             if repair is not None:
                 opened["repair"] = repair
             self.journal.record("deficit.opened", opened, key=deficit_id)
@@ -283,6 +494,12 @@ class Genesis:
         if spec is None:
             self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
                         None)
+            return self._builder_route(mission, function, deficit_id, now, contract, repair)
+
+        if spec.get("kind") == "package":
+            found = self._package_route(mission, function, spec, deficit_id, seed, repair, now)
+            if found is not False:
+                return found
             return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         # 3. installed commodity software
@@ -315,6 +532,72 @@ class Genesis:
             self._route(deficit_id, "installed_software", "acquired", manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now)
         return self._builder_route(mission, function, deficit_id, now, contract, repair)
+
+    def _package_route(self, mission, function, spec, deficit_id, seed, repair, now):
+        """Existing project mechanisms first, then installed open-source packages (DEPEND).
+
+        Returns the attached manifest, None when one awaits the founder's attach, or False
+        when no package qualified (the caller continues to the builder route)."""
+        for cid, why_not in spec.get("project", ()):
+            self._route(deficit_id, "existing_project", f"{cid}: {why_not}", cid)
+        for candidate in spec["candidates"]:
+            dist = mechanisms.installed(candidate.distribution)
+            if dist is None:
+                self._route(deficit_id, "installed_package", f"{candidate.distribution} not installed (GREG installs "
+                                                             "nothing; you may)", None)
+                continue
+            try:
+                card = mechanisms.card(candidate, function, dist)
+            except CapabilityError as exc:
+                self._route(deficit_id, "installed_package", f"{candidate.distribution} cannot be pinned: {exc}"[:300],
+                            None)
+                continue
+            manifest = self._package_manifest(function, candidate, card, deficit_id)
+            if self.registry.state.get(manifest.capability_id) == "DETACHED":
+                self._route(deficit_id, "installed_package", "founder-detached; explicit attach required",
+                            manifest.capability_id)
+                continue
+            if repair and repair.get("capability_id") == manifest.capability_id:
+                self._route(deficit_id, "installed_package", "this package failed in service; a different provider is "
+                                                             "preferred (the founder may re-attach it)",
+                            manifest.capability_id)
+                continue
+            passed, report = qualify_package(function, candidate, card, seed)
+            self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                                                     "passed": passed, "report": report, "mechanism": card,
+                                                     "verifier": "frozen oracle and GREG certificate, independent of "
+                                                                 "the package"},
+                                key=[deficit_id, manifest.capability_id, card["package_digest"]])
+            if not passed:
+                self._route(deficit_id, "installed_package", f"{candidate.distribution} failed qualification", None)
+                continue
+            manifest = self._package_manifest(function, candidate, card, deficit_id, report)
+            self.registry.register(manifest, package_adapter(function, candidate), state="VERIFIED")
+            self.journal.record("capability.registered", {
+                "manifest": manifest.to_dict(), "state": "VERIFIED", "deficit_id": deficit_id,
+                "origin": {"kind": "package", "function": function, "distribution": candidate.distribution,
+                           "module": candidate.module, "runner": candidate.runner}},
+                key=[manifest.capability_id, manifest.digest()])
+            self._route(deficit_id, "installed_package", "acquired", manifest.capability_id)
+            return self._attach(mission, manifest, deficit_id, now)
+        return False
+
+    def _package_manifest(self, function, candidate: PackageCandidate, card: dict, deficit_id: str,
+                          report: dict | None = None) -> CapabilityManifest:
+        spec = CATALOG[function]
+        runner = spec["runners"][candidate.runner]
+        return CapabilityManifest(
+            capability_id=f"acquired.{function}.{candidate.distribution}", version="1.0.0",
+            provider=f"installed:python:{candidate.distribution}=={card['version']}", function=function,
+            description=spec["description"], route="internal", consequence_class="read_only",
+            inputs=spec.get("inputs", {"edges": "list", "source": "str"}),
+            outputs={spec["output_field"]: "bool", "certificate": "dict"},
+            target_prefix="cognition:", filesystem="none", retry_safe=True,
+            tests=(f"frozen-oracle:{function}", "certificate:every-call"), strengthens=("capability_formation", "proof"),
+            provenance={**card, "deficit_id": deficit_id, "runner": candidate.runner,
+                        "runner_sha256": hashlib.sha256(runner.encode()).hexdigest(),
+                        "builder": "none: installed open-source package acquired by search",
+                        **({"qualification": report} if report else {})})
 
     def _route(self, deficit_id, route, result, capability_id):
         self.journal.record("genesis.route", {"deficit_id": deficit_id, "route": route, "result": result,

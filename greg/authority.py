@@ -52,9 +52,16 @@ class AuthorityOffice:
 
     @staticmethod
     def scope_digest(*, mission_id: str, capability_id: str, params: dict, target: str,
-                     consequence_class: str, cost_usd: float) -> str:
-        return sha256_json({"mission_id": mission_id, "capability": capability_id, "params": params,
-                            "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd})
+                     consequence_class: str, cost_usd: float, spent_usd: float = 0.0,
+                     budget_usd: float | None = None) -> str:
+        material = {"mission_id": mission_id, "capability": capability_id, "params": params,
+                    "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd}
+        if cost_usd > 0 and budget_usd is not None:
+            # Approval of one paid attempt cannot also approve another attempt
+            # after known spend or an unknown-spend reservation changed the
+            # remaining mandate. Free reads retain their stable exact scope.
+            material["paid_budget_state"] = {"spent_usd": spent_usd, "budget_usd": budget_usd}
+        return sha256_json(material)
 
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
@@ -71,7 +78,8 @@ class AuthorityOffice:
             approved_scopes: set, evidence_confidence: float = 1.0) -> ActionOutcome:
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
-                                  target=target, consequence_class=consequence, cost_usd=cost_usd)
+                                  target=target, consequence_class=consequence, cost_usd=cost_usd,
+                                  spent_usd=spent_usd, budget_usd=cone.budget_usd)
         proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
@@ -86,6 +94,26 @@ class AuthorityOffice:
             if target != manifest.target_prefix + host:
                 return ActionOutcome("REFUSED", [f"target {target!r} does not name the host {host!r} "
                                                  f"that {manifest.target_from} would contact"], **base)
+        # Preserve exactly-once recovery for an old body stopped between its
+        # paid dispatch/receipt and the mission projection. Legacy approvals do
+        # not grant a new action; only a retained exact legacy dispatch is used.
+        legacy_scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
+                                         target=target, consequence_class=consequence, cost_usd=cost_usd)
+        if legacy_scope != scope:
+            legacy_id = "greg-" + sha256_json({"scope": legacy_scope, "attempt": attempt})[7:39]
+            old_claim, old_receipt = self._prior(legacy_id)
+            old_base = dict(proposal_id=legacy_id, scope_digest=legacy_scope)
+            if old_receipt is not None:
+                result = old_receipt.payload["result"]
+                positive = result.get("result_class") == "positive"
+                return ActionOutcome("DONE" if positive else "UNCERTAIN",
+                                     ["retained legacy receipt; no redispatch" if positive else
+                                      "negative legacy paid receipt has no billing evidence; reconcile and reserve cap"],
+                                     output=result.get("output"), receipt_hash=old_receipt.hash,
+                                     grant_id=old_receipt.payload.get("grant_id"),
+                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+            if old_claim is not None:
+                return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
         if outside and scope not in approved_scopes:

@@ -155,7 +155,16 @@
   - Podman
   existing:
   - WealthMachineIntelligence:Dockerfile
-  gap: One organ ships a Dockerfile; the kernel and capabilities are not packaged as reproducible containers.
+  implementation:
+  - foundry/systems/oci.py
+  - foundry/oci_entry.py
+  - scripts/ci/prove_oci.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply package; foundry.query inspect (system9); disposable hosted builder produces and runs OCI artifacts
+  tests:
+  - tests/unit/test_greg_oci.py
+  limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG and organ dependency images and stronger general-code execution remain unfinished.
+  gap: Actual restricted-capability OCI twin rebuild and six-case host/container execution passed on October 2 (docs/collaboration/evidence/oci-20261002/report.json). Full GREG/organ dependency images and general-code isolation remain unfinished; hosted CI reproduction remains required for the proposed commit.
   state: PARTIAL
 10:
   acceptance:
@@ -539,7 +548,7 @@
   - greg/foundry_bridge.py
   - tests/unit/test_greg_community_journeys.py
   interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
-  gap: Portable signed member identities, posts, edits, reactions, departures and paginated complete history export/import are implemented through GREG. Network enrollment, moderation operations, serving and real member use remain unfinished.
+  gap: Portable signed member identities, posts, edits, reactions, departures and complete history export/import are implemented through GREG. Private loopback posts and portable JSON export now bind current history to successful canonical mutation receipts. Network enrollment, moderation operations, public serving and real member use remain unfinished.
   limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
   state: PARTIAL
 33:
@@ -857,8 +866,7 @@
   - .github/pull_request_template.md
   - .github/workflows/canonical-ci.yml
   - tests/unit/test_founder_effect_doctrine.py
-  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
-    frozen contracts.
+  gap: Internal worker.commission now executes frozen WorkOrders and worker.appraise independently reconstructs and checks outputs; signed browser evidence composes into those orders. Actual Bubblewrap provider/acceptance confinement, collector metadata attacks, cancellation and bounded-output regressions pass locally. Current-commit hosted CI, real paid-provider execution and broader agent organizations remain unverified; provider egress policy and aggregate resource quotas remain unfinished.
   state: PARTIAL
 52:
   acceptance:

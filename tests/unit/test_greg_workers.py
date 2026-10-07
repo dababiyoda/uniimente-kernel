@@ -58,12 +58,12 @@ GOOD = {"pkg/calc.py": "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n  
         "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n"}
 
 
-def run_mission(tmp_path, monkeypatch, edits, *, ticks=6, allowed=("pkg/*", "tests/*")):
+def run_mission(tmp_path, monkeypatch, edits, *, ticks=6, allowed=("pkg/*", "tests/*"), cost=0.01):
     data = tmp_path / "data"
     data.mkdir()
     repo = make_repo(data)
     home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
-    worker = ScriptedWorker(edits)
+    worker = ScriptedWorker(edits, cost=cost)
     monkeypatch.setitem(workers.PROVIDERS, "scripted", worker)
     spec = templates.code_change(repo=str(repo), objective="add sub()", order="add-sub", provider="scripted",
                                  allowed_paths=list(allowed), budget_usd=1.0, workspace_root=Layout(home).workspace)
@@ -143,11 +143,194 @@ def test_claude_worker_argv_is_bounded():
                               allowed_paths=("greg/*",), provider="claude-code", max_budget_usd=1.5,
                               timeout_seconds=300, repo="/tmp")
     argv = workers.ClaudeCodeWorker(binary="/bin/claude").argv(order)
-    assert argv[argv.index("--max-budget-usd") + 1] == "1.50"
+    assert argv[argv.index("--max-budget-usd") + 1] == "1.5"
     denied = argv[argv.index("--disallowedTools") + 1:]
     assert {"WebFetch", "WebSearch", "Bash(git push:*)", "Bash(git commit:*)"} <= set(denied)
     assert "--strict-mcp-config" in argv and "--no-session-persistence" in argv
     assert not any(a == "Bash" for a in argv[argv.index("--allowedTools") + 1:argv.index("--disallowedTools")])
+
+
+def test_provider_budget_is_not_rounded_above_the_signed_cap():
+    order = workers.WorkOrder(order="x", mission_id="m:x", grant_id="g", authority_ref="a", mode="document",
+                              objective="o", acceptance={"output": "draft.md"}, allowed_paths=("draft.md",),
+                              provider="claude-code", max_budget_usd=0.005, timeout_seconds=300)
+    argv = workers.ClaudeCodeWorker(binary="/bin/claude").argv(order)
+    assert float(argv[argv.index("--max-budget-usd") + 1]) == order.max_budget_usd
+
+
+def test_optional_provider_metadata_cannot_discard_reported_spend(tmp_path, monkeypatch):
+    import sys
+    monkeypatch.setattr(workers, "prepare_worker", lambda argv, *args, **kwargs: {
+        "argv": argv, "env": {}, "preexec_fn": None, "runtime_root": tmp_path,
+        "evidence": {"mechanism": "scripted-test-envelope"}})
+    def provider_report(argv, **kwargs):
+        return subprocess.CompletedProcess(argv, 0, json.dumps({"total_cost_usd": 2.0, "result": "draft",
+            "modelUsage": ["malformed"], "permission_denials": None, "num_turns": float("nan")}), "")
+    order = workers.WorkOrder(order="x", mission_id="m:x", grant_id="g", authority_ref="a", mode="document",
+                              objective="o", acceptance={"output": "draft.md"}, allowed_paths=("draft.md",),
+                              provider="claude-code", max_budget_usd=1.0, timeout_seconds=300)
+    report = workers.ClaudeCodeWorker(binary=sys.executable, runner=provider_report).run(order, tmp_path)
+    assert report.cost_usd == 2.0 and workers.worker_spend(report.cost_usd, 1.0)["status"] == "over_cap"
+    assert report.served_models == [] and report.permission_denials == [] and report.turns is None
+
+
+@pytest.mark.parametrize("raw, status, charge", [
+    (0, "reported", 0), (0.125, "reported", 0.125), ("0.125", "reported", 0.125),
+    (None, "unknown", 1), (True, "invalid", 1), (-1, "invalid", 1),
+    (float("nan"), "invalid", 1), (float("inf"), "invalid", 1),
+    ("unpriced", "invalid", 1), ({"cost": 0}, "invalid", 1), (1.01, "over_cap", 1.01),
+])
+def test_spend_is_finite_nonnegative_or_conservatively_reserved(raw, status, charge):
+    spend = workers.worker_spend(raw, 1.0)
+    assert spend["status"] == status and spend["charge_usd"] == charge
+    assert spend["reserved_usd"] == (1 if status in ("unknown", "invalid") else 0)
+    json.dumps(spend, allow_nan=False)
+
+
+@pytest.mark.parametrize("cost, status", [(None, "unknown"), (float("nan"), "invalid"), (1.01, "over_cap")])
+def test_worker_spend_evidence_is_retained_and_unsafe_reporting_blocks_acceptance(tmp_path, monkeypatch, cost, status):
+    home, _, worker, events, observed = run_mission(tmp_path, monkeypatch, GOOD, cost=cost)
+    root = Layout(home).workspace / "m_work-add-sub" / "work-orders" / "add-sub"
+    evidence = json.loads((root / "evidence.json").read_text())
+    summary = evidence["summary"]
+    assert worker.calls == 1
+    assert summary["spend"]["status"] == status
+    assert summary["cost_usd"] == (1.01 if status == "over_cap" else 1.0)
+    assert json.loads((root / "worker-report.json").read_text())["spend"] == summary["spend"]
+    if status != "unknown":
+        assert "greg.mission.achieved" not in events
+        assert summary["commit"] is None and summary["greg_tests"] == []
+        assert any("REJECTED" in o["detail"] for o in observed if o["check_id"] == "work_accepted")
+
+
+def document_work(tmp_path, monkeypatch, text, *, context="Frozen research context."):
+    from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
+    ctx = InvocationContext(workspace=tmp_path / "workspace", read_roots=(tmp_path,),
+                            secrets=SecretBroker(tmp_path / "secrets.json"),
+                            manifest=BUILTINS["worker.commission"][0], mission_id="m:doc")
+    monkeypatch.setitem(workers.PROVIDERS, "scripted-document", ScriptedWorker({"draft.md": text}))
+    params = {"order": "source-draft", "mode": "document", "provider": "scripted-document",
+              "objective": "Prepare a source-bound draft", "max_budget_usd": 1.0, "timeout_seconds": 60,
+              "allowed_paths": ["draft.md"], "context": context,
+              "acceptance": {"output": "draft.md", "require_context_quote": True}}
+    summary = workers.commission(params, ctx)
+    return summary, workers.appraise({"order": "source-draft"}, ctx)
+
+
+def test_document_appraisal_accepts_exact_frozen_source_quote(tmp_path, monkeypatch):
+    summary, appraisal = document_work(tmp_path, monkeypatch, "Draft analysis.\nFrozen research context.\n")
+    assert summary["status"] == "COMPLETED" and appraisal["verdict"] == "ACCEPTED"
+
+
+@pytest.mark.parametrize("text", ["A draft without source evidence.", "Frozen altered context."])
+def test_document_appraisal_rejects_missing_or_altered_source_quote(tmp_path, monkeypatch, text):
+    summary, appraisal = document_work(tmp_path, monkeypatch, text)
+    assert summary["status"] == "COMPLETED"  # Collection success cannot decide source acceptance.
+    assert appraisal["verdict"] == "REJECTED"
+    assert any("frozen source context verbatim" in finding for finding in appraisal["findings"])
+
+
+@pytest.mark.parametrize("config_path", [".git/config", ".gitconfig"])
+def test_parent_collection_restores_trusted_git_metadata_before_filters_or_hooks_can_run(tmp_path, monkeypatch, config_path):
+    marker = tmp_path / "escaped.marker"
+    injection = f"sh -c 'echo escape > {marker}; cat'"
+    edits = {**GOOD, ".gitattributes": "pkg/*.py filter=escape\n",
+             config_path: ("[core]\nrepositoryformatversion = 0\nbare = false\n"
+                             f"[filter \"escape\"]\nclean = {injection}\nrequired = true\n"),
+             ".git/hooks/post-commit": f"#!/bin/sh\necho hook > {marker}\n"}
+    home, _, _, _, _ = run_mission(tmp_path, monkeypatch, edits)
+    assert not marker.exists()
+    root = Layout(home).workspace / "m_work-add-sub" / "work-orders" / "add-sub"
+    assert "escape" not in (root / "repo" / ".git" / "config").read_text()
+
+
+def test_bounded_supervision_stops_excess_output_without_pipe_capture(tmp_path):
+    import os, sys
+    source = "import os; os.write(1, b'x' * (2 * 1024 * 1024))"
+    with pytest.raises(workers.WorkerError, match="stdout/stderr ceiling"):
+        workers.supervised_run([sys.executable, "-c", source], timeout=5, cwd=tmp_path, env=dict(os.environ))
+
+
+def test_stop_before_supervision_launch_refuses_without_uncertain_spend(tmp_path):
+    import os, sys
+    marker = tmp_path / "never-started"
+    source = f"from pathlib import Path; Path({str(marker)!r}).write_text('started')"
+    with pytest.raises(workers.WorkerIsolationError, match="no provider process started"):
+        workers.supervised_run([sys.executable, "-c", source], timeout=5, cwd=tmp_path,
+                               env=dict(os.environ), stop_check=lambda: True)
+    assert not marker.exists()
+
+
+def test_stop_cancels_provider_namespace_and_preserves_uncertain_work_with_no_blind_retry(tmp_path, monkeypatch):
+    import sys, threading, time
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    provider = workers.CliAgentWorker("local-scripted-stop-test", [sys.executable, "-c", (
+        "from pathlib import Path\nimport time\n"
+        "Path('tests').mkdir(exist_ok=True)\n"
+        "Path('tests/started.marker').write_text('started')\n"
+        "time.sleep(60)\n")], reviewed=True)
+    monkeypatch.setitem(workers.PROVIDERS, "local-scripted-stop-test", provider)
+    spec = templates.code_change(repo=str(repo), objective="local scripted interruption test", order="stop-worker",
+                                 provider="local-scripted-stop-test", allowed_paths=["pkg/*", "tests/*"],
+                                 budget_usd=1.0, workspace_root=Layout(home).workspace)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    root = Layout(home).workspace / "m_work-stop-worker" / "work-orders" / "stop-worker"
+    marker = root / "repo" / "tests" / "started.marker"
+    def request_stop_after_invocation():
+        deadline = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        if marker.exists():
+            Layout(home).stop_file.write_text("local operator STOP fixture")
+    watcher = threading.Thread(target=request_stop_after_invocation, daemon=True)
+    watcher.start()
+    started = time.monotonic()
+    with Body(home) as body:
+        body.tick()
+        action = body.journal.replay("mission.action")[-1].payload
+        assert action["status"] == "UNCERTAIN" and action["cost_usd"] == 1.0
+        assert action["cost_reserved"]
+    watcher.join(timeout=1)
+    assert marker.exists() and time.monotonic() - started < 10
+    summary = json.loads((root / "evidence.json").read_text())["summary"]
+    assert summary["status"] == "UNCERTAIN" and summary["worker"]["interrupted"]
+    assert summary["worker"]["isolation"]["mechanism"] == "bubblewrap"
+    assert summary["commit"] is None and summary["greg_tests"] == []
+    assert summary["spend"]["status"] == "unknown" and summary["spend"]["reserved_usd"] == 1.0
+    Layout(home).stop_file.unlink()
+    with Body(home) as body:
+        body.tick()
+        assert len(body.journal.replay("mission.action")) == 1
+        assert body.engine.book.missions["m:work-stop-worker"].blocker["type"] == "reconciliation"
+
+
+def test_acceptance_code_cannot_read_or_write_sibling_body_state_or_open_network(tmp_path):
+    import sys
+    from greg.worker_isolation import prepare_worker, WorkerIsolationError
+    work = tmp_path / "clone"
+    work.mkdir()
+    victim = tmp_path / "body-state.fixture"
+    victim.write_text("unchanged")
+    source = ("from pathlib import Path\nimport socket\n"
+              f"victim = Path({str(victim)!r})\n"
+              "assert not victim.exists()\n"
+              "try:\n    victim.write_text('escaped')\n"
+              "except OSError:\n    pass\n"
+              "else:\n    raise AssertionError('filesystem escape')\n"
+              "try:\n    socket.create_connection(('1.1.1.1', 443), timeout=1)\n"
+              "except OSError:\n    pass\n"
+              "else:\n    raise AssertionError('network escape')\n")
+    try:
+        prepare_worker([sys.executable, "-c", source], work, timeout_seconds=30,
+                       provider="acceptance-tests", reviewed=True, source_env={}, network=False)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"host cannot provide the strict acceptance envelope: {exc}")
+    results = workers.run_tests([[sys.executable, "-c", source]], work, timeout=30)
+    assert results[0]["passed"], results
+    assert victim.read_text() == "unchanged"
 
 
 @pytest.mark.parametrize("params, message", [
@@ -186,6 +369,13 @@ def test_a_worker_dies_with_its_body(tmp_path):
         try:
             os.kill(child, 0)
         except ProcessLookupError:
+            return
+        # Minimal container PID 1 may not reap an orphan immediately. A zombie has
+        # terminated and cannot keep executing or spending; existence alone is not life.
+        try:
+            if Path(f"/proc/{child}/stat").read_text().split(")", 1)[1].split()[0] == "Z":
+                return
+        except FileNotFoundError:
             return
         time.sleep(0.05)
     os.kill(child, signal.SIGKILL)

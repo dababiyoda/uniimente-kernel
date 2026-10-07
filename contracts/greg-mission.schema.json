@@ -210,6 +210,38 @@
               "pattern": "^[a-z0-9_.-]{1,80}$"
             },
             "description": "check_ids that must be observed passing before this strategy may act (e.g. file a verification record only after the digest matched)"
+          },
+          "param_bindings": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "param",
+                "check_id",
+                "field"
+              ],
+              "properties": {
+                "param": {
+                  "enum": [
+                    "content",
+                    "context",
+                    "objective"
+                  ]
+                },
+                "check_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]{1,80}$"
+                },
+                "field": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9_-]+(?:[.][a-zA-Z0-9_-]+)*$",
+                  "maxLength": 200
+                }
+              }
+            },
+            "description": "Signed inert content substitutions from fresh, successful required-check Gate receipts. Capability, target, provider, authority, tools and acceptance remain fixed. Initially supported by fs.write (content) and worker.commission (context/objective)."
           }
         }
       }

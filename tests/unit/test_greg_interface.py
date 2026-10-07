@@ -4,13 +4,14 @@ The console is exercised over real loopback HTTP; the body applies what it signe
 Model routes use a fake transport here (a live Claude Code draft is retained in
 tests/evidence/greg-product/)."""
 import json
+from http.cookiejar import CookieJar
 from pathlib import Path
 import re
 import subprocess
 import threading
 from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 
 import pytest
 
@@ -20,6 +21,17 @@ from greg.capabilities import BUILTINS, CapabilityRegistry
 from greg.console import Console, serve
 from greg.founder import FounderVerifier
 from tests.greg_fixtures import Clock, make_body
+
+_SESSIONS = {}
+
+
+def _owner_client(console, port):
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    with opener.open(console.owner_url(port), timeout=10) as response:
+        assert response.geturl().endswith(console.owner_path)
+        assert "access=" not in response.geturl()
+    _SESSIONS[port] = (opener, console.owner_path)
+    return opener
 
 
 def inventory():
@@ -151,23 +163,29 @@ def running(tmp_path):
     server = serve(console, port=0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    _owner_client(console, server.server_address[1])
     yield home, key, console, server.server_address[1]
+    _SESSIONS.pop(server.server_address[1], None)
     server.shutdown()
     server.server_close()
 
 
 def _get(port, path, host=None):
+    opener, prefix = _SESSIONS[port]
+    path = path if path.startswith(prefix) else prefix + path.lstrip("/")
     request = Request(f"http://127.0.0.1:{port}{path}", headers={"Host": host or f"127.0.0.1:{port}"})
-    with urlopen(request, timeout=10) as response:
+    with opener.open(request, timeout=10) as response:
         return response.read().decode()
 
 
 def _post(port, path, fields, *, host=None, origin=None):
+    opener, prefix = _SESSIONS[port]
+    path = path if path.startswith(prefix) else prefix + path.lstrip("/")
     headers = {"Host": host or f"127.0.0.1:{port}", "Content-Type": "application/x-www-form-urlencoded"}
     if origin:
         headers["Origin"] = origin
     request = Request(f"http://127.0.0.1:{port}{path}", data=urlencode(fields).encode(), headers=headers)
-    with urlopen(request, timeout=30) as response:
+    with opener.open(request, timeout=30) as response:
         return response.geturl(), response.read().decode()
 
 
@@ -216,12 +234,14 @@ def test_console_without_a_key_is_read_only(tmp_path):
     server = serve(console, port=0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     port = server.server_address[1]
+    _owner_client(console, port)
     try:
         assert "read-only (start with --key to sign)" in _get(port, "/")
         with pytest.raises(HTTPError) as err:
             _post(port, "/stop", {"csrf": console.csrf, "mode": "signed"})
         assert err.value.code == 403 and not list(Layout(home).inbox.glob("*.json"))
     finally:
+        _SESSIONS.pop(port, None)
         server.shutdown()
         server.server_close()
 
@@ -237,3 +257,71 @@ def test_delivery_pages_cannot_escape_the_delivery_folder(running):
         with pytest.raises(HTTPError) as err:
             _get(port, bad)
         assert err.value.code == 404
+
+
+def test_loopback_worker_cannot_read_owner_state_or_sign_even_with_known_csrf(running):
+    home, _, console, port = running
+    original_inbox = list(Layout(home).inbox.glob("*.json"))
+    for path in ("/", "/api/state", "/morning", "/proposal/guessed", console.owner_path,
+                 console.owner_path + "api/state"):
+        with pytest.raises(HTTPError) as failure:
+            urlopen(f"http://127.0.0.1:{port}{path}", timeout=10)
+        assert failure.value.code == 403
+        content = failure.value.read().decode()
+        assert console.csrf not in content and console._session not in content
+    for action in ("ask", "sign", "decide", "accept", "stop", "discard"):
+        for path in ("/" + action, console.owner_path + action):
+            request = Request(f"http://127.0.0.1:{port}{path}", data=urlencode({
+                "csrf": console.csrf, "mode": "signed", "text": "Brief me on my repositories",
+                "request_id": "forged", "proposal": "forged", "event_id": "forged"}).encode())
+            with pytest.raises(HTTPError) as failure:
+                urlopen(request, timeout=10)
+            assert failure.value.code == 403
+    assert list(Layout(home).inbox.glob("*.json")) == original_inbox
+    assert not Layout(home).stop_file.exists()
+
+
+def test_owner_bootstrap_is_single_use_scoped_and_not_in_body_events(tmp_path):
+    home, key, _, _ = make_body(tmp_path)
+    console = Console(home, key=key)
+    bootstrap_secret = console._bootstrap
+    server = serve(console, port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
+    port = server.server_address[1]
+    link = console.owner_url(port)
+    try:
+        opener = _owner_client(console, port)
+        cookie_handler = next(handler for handler in opener.handlers if isinstance(handler, HTTPCookieProcessor))
+        cookie = next(iter(cookie_handler.cookiejar))
+        assert cookie.path == console.owner_path and cookie.has_nonstandard_attr("HttpOnly")
+        assert cookie.get_nonstandard_attr("SameSite") == "Strict"
+        assert not cookie_handler.cookiejar._cookies.get("127.0.0.1", {}).get("/")
+        with pytest.raises(HTTPError) as failure:
+            urlopen(link, timeout=10)
+        assert failure.value.code == 403
+        page = _get(port, "/")
+        assert f"action={console.owner_path}ask" in page
+        assert bootstrap_secret not in page and console._session not in page
+        _post(port, "/stop", {"csrf": console.csrf, "mode": "signed"})
+        envelope = json.loads(next(Layout(home).inbox.glob("*.json")).read_text())
+        assert envelope["kind"] == "BODY_STOP"
+        assert bootstrap_secret not in json.dumps(envelope) and console._session not in json.dumps(envelope)
+    finally:
+        _SESSIONS.pop(port, None)
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+def test_public_owned_assets_cannot_expose_session_or_execute_owner_forms(running, monkeypatch):
+    _, _, console, port = running
+    from greg import console as console_module
+    malicious = b"<script>fetch('/api/state').then(()=>fetch('/stop',{method:'POST'}))</script><form action=/stop method=post></form>"
+    monkeypatch.setattr(console_module, "render_owned_page", lambda *args: malicious)
+    with urlopen(f"http://127.0.0.1:{port}/owned/fixture/page", timeout=10) as response:
+        policy = response.headers["Content-Security-Policy"]
+        content = response.read().decode()
+        assert "sandbox;" in policy and "script-src 'none'" in policy and "form-action 'none'" in policy
+        assert response.headers["Referrer-Policy"] == "no-referrer"
+        assert response.headers.get("Set-Cookie") is None
+        assert console.csrf not in content and console._session not in content and console.owner_path not in content
+    with urlopen(f"http://127.0.0.1:{port}/owned", timeout=10) as response:
+        assert "name=csrf" not in response.read().decode()

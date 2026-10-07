@@ -1,5 +1,7 @@
 # Build Order: ten phases, stage-gated
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 ## Controlling founder correction — complete machine, 2026-10-01
 
 **Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
@@ -69,4 +71,4 @@ Exit evidence: measurable internal benefit over a simpler governed workflow (aut
 
 ## Global termination trigger
 
-Suspend autonomous expansion if any component can alter its own authority, bypass the action gateway, conceal negative evidence, spend outside its grant, resist shutdown, act without a named legal principal, or generate substantial activity without changing an external outcome. Do not continue building the general platform if the Kernel adds substantial complexity without improving authorized completion, state continuity, evidence integrity, or Alfonso Sovereignty Gain over a simpler governed workflow.
+Suspend the affected autonomous execution path if a component can alter its own authority, bypass the action gateway, conceal negative evidence, spend outside its grant, resist shutdown or act without a named legal principal. Repair and verify that path before resuming it; continue unrelated reversible Body + Organs + Mind requirements. If a mechanism adds activity or complexity without improving authorized completion, state continuity, evidence integrity or Alfonso Sovereignty Gain over a simpler governed workflow, replace or simplify that mechanism using retained evidence. Pending real-world use does not prove mechanism failure and does not terminate the complete machine objective.

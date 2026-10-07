@@ -1,5 +1,7 @@
 # CANONICAL EXECUTION ORDER
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 ## Controlling founder correction — complete machine, 2026-10-01
 
 **Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
@@ -75,8 +77,11 @@ Current product priority is `collaboration/OPUS-RECONCILIATION.md` and the
 2026-09-11 sequencing correction at the top of Final Build Order. Its first
 embodied persistent mission takes precedence over completing the historical
 Phase Zero catalog. Existing components and history remain preserved. Build
-only the dependency required by the active outcome; do not create another
-authority plane, mandatory organization or blanket registration prerequisite.
+the highest-priority unfinished dependency of the full Body + Organs + Mind
+boundary; do not create another authority plane, mandatory organization or
+blanket registration prerequisite. The earlier embodied-use order does not gate
+unrelated reversible build work. Prove, integrate and immediately continue each
+unblocked requirement under `INTENT-20261002-FULL-MACHINE-CONTINUATION`.
 
 1. Founder-effect compilation for the active mission.
 2. Phase Zero — institutional connection and capability preservation (see Final Build Order §13).

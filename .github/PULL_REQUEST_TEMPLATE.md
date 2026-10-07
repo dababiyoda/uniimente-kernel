@@ -13,6 +13,8 @@ A narrow PR is a sequencing unit. It never narrows the project or terminates the
 
 # UNIIMENTE pull request
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 > Material PRs must follow `docs/PROJECT_COGNITION_SOP.md`. Do not claim complete project context unless it was actually accessible and inspected.
 
 ## Product delta

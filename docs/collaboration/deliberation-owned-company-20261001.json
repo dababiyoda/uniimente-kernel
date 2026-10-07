@@ -6,7 +6,7 @@
     "INTENT-20261001-FULL-MACHINE-COMPLETION",
     "INTENT-2026-09-27-FOUNDRY-55"
   ],
-  "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1–V5 passed. This validates the prior checkpoint only.",
+  "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only.",
   "alternatives": [
     {
       "name": "simplest_viable_alternative",
@@ -123,7 +123,7 @@
       "claim": "Prior integrated checkpoint verified",
       "tier": "sandbox_execution",
       "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36936194535",
-      "finding": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1–V5 passed. This validates the prior checkpoint only."
+      "finding": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only."
     },
     {
       "claim": "Executable acceptance probes authored",
@@ -231,12 +231,19 @@
       }
     ],
     "comparisons": {
-      "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1–V5 passed. This validates the prior checkpoint only.",
+      "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only.",
       "simplest_viable_alternative": "Join existing charter/media/portal/community/journeys/version/accounting stores with native signed fixture offers; selected.",
       "strongest_competing_architecture": "Integrate an external commerce/community platform and actual test-mode payment APIs.",
       "do_nothing": "Retain registered-but-unimplemented37/54 and disconnected company models.",
       "reversible_experiment": "Signed GREG mission assembles, delivers, accepts, reconciles and privately serves; hostile manifest/signature/book substitutions must refute it."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: Requires founder-selected accounts/credentials and genuine provider access; cannot fabricate activation. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Authorized credentials and actual provider evidence."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Second pass attacks empty hash-valid manifests, changed terms, replay, foreign acknowledgements, hash-valid fabricated books, revision drift, inactive members and widened source scope.",

@@ -1,0 +1,352 @@
+{
+  "decision_id": "FM-COMMUNITY-SERVE-20261002",
+  "title": "Serve receipt-bound owned community history through the canonical private console",
+  "problem": "Portable signed community data exists but GREG cannot serve its posts/history privately. Close that executable product gap without treating signed member records or filesystem presence as authority.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "Linked FM-OWNED-COMMUNITY-JOURNEYS-20261001 and FM-OCI-20261002. Existing console owns loopback/Host protections, owned_pages verifies canonical Gate receipts. System32 signed history already validates and exports.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Use existing console and receipt verifier plus guarded read-only system32 queries.",
+      "advantages": [
+        "One authority and serving owner."
+      ],
+      "disadvantages": [
+        "Requires receipt-bound hash and escaped bounded pagination."
+      ],
+      "revival_evidence": "Remaining network/moderation requirements and new runtime evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Independent authenticated public community service with enrollment and moderation.",
+      "advantages": [
+        "Meets broader intended community horizon."
+      ],
+      "disadvantages": [
+        "Public deployment, transport authentication and moderation remain further implementation/authorization dependencies; not needed for this private read surface."
+      ],
+      "revival_evidence": "Remaining network/moderation requirements and new runtime evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Signed fixture Body ingestion then real loopback HTML/JSON export and restore with hostile history/Host tests.",
+      "advantages": [
+        "Exercises the actual product path with no public activation."
+      ],
+      "disadvantages": [
+        "Fixture key/member records cannot prove real community demand or founder use."
+      ],
+      "revival_evidence": "Remaining network/moderation requirements and new runtime evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave feasible private community serving unfinished after record tests.",
+    "advantages": [
+      "No console change."
+    ],
+    "disadvantages": [
+      "Does not advance the integrated owned-company experience."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Make existing community useful through the existing console; retain network enrollment, moderation, public deployment and real member use as active requirements. Distinct perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "A private read-only page is not the complete community or machine."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/community.py",
+        "tests/unit/test_greg_community_console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Share the existing canonical receipt validator with owned pages; extend ingestion receipts with actual community/history hash; use guarded query copies. Distinct perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "A new server or direct filesystem reader would create parallel owners or expose unapproved state."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/community.py",
+        "tests/unit/test_greg_community_console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Require chain/witness/grant-dispatch/successful receipt plus current history hash. A valid signed but unreceipted prefix must return404. Escape all content. Distinct perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "Member signature validity alone could authorize serving changed history."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/community.py",
+        "tests/unit/test_greg_community_console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Bound console pages and portable JSON export to eight records, paginate by offset, preserve current page receipt behavior and actual company integration. Distinct perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "Large escaped posts could overflow worker output or incomplete pagination could hide history."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/community.py",
+        "tests/unit/test_greg_community_console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Test real HTTP Host refusal, valid signed export/restore, unreceipted files and valid-prefix substitution. No community mutation HTTP endpoint or public binding. Distinct perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "Private key possession may be misrepresented as human identity or customer acquisition."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/community.py",
+        "tests/unit/test_greg_community_console.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Focused product integration",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_greg_community_console.py and existing company/portal/community tests",
+      "finding": "Local22passed before final bounded-pagination adjustment; fresh focused tests and hosted full suite still required for final delta."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "All community requirements completed",
+      "tier": "other",
+      "reference": "foundry/completion.yaml system32",
+      "finding": "False: network enrollment, moderation/public deployment and real member evidence remain open."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Portable signed community data exists but GREG cannot serve its posts/history privately. Close that executable product gap without treating signed member records or filesystem presence as authority.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Make existing community useful through the existing console; retain network enrollment, moderation, public deployment and real member use as active requirements.",
+        "amplified_value": "Advance integrated owned-company product under canonical authority."
+      },
+      {
+        "id": "A2",
+        "statement": "Share the existing canonical receipt validator with owned pages; extend ingestion receipts with actual community/history hash; use guarded query copies.",
+        "amplified_value": "Advance integrated owned-company product under canonical authority."
+      },
+      {
+        "id": "A3",
+        "statement": "Require chain/witness/grant-dispatch/successful receipt plus current history hash. A valid signed but unreceipted prefix must return404. Escape all content.",
+        "amplified_value": "Advance integrated owned-company product under canonical authority."
+      },
+      {
+        "id": "A4",
+        "statement": "Bound console pages and portable JSON export to eight records, paginate by offset, preserve current page receipt behavior and actual company integration.",
+        "amplified_value": "Advance integrated owned-company product under canonical authority."
+      },
+      {
+        "id": "A5",
+        "statement": "Test real HTTP Host refusal, valid signed export/restore, unreceipted files and valid-prefix substitution. No community mutation HTTP endpoint or public binding.",
+        "amplified_value": "Advance integrated owned-company product under canonical authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A private read-only page is not the complete community or machine.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Make existing community useful through the existing console; retain network enrollment, moderation, public deployment and real member use as active requirements."
+      },
+      {
+        "id": "D2",
+        "statement": "A new server or direct filesystem reader would create parallel owners or expose unapproved state.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Share the existing canonical receipt validator with owned pages; extend ingestion receipts with actual community/history hash; use guarded query copies."
+      },
+      {
+        "id": "D3",
+        "statement": "Member signature validity alone could authorize serving changed history.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Require chain/witness/grant-dispatch/successful receipt plus current history hash. A valid signed but unreceipted prefix must return404. Escape all content."
+      },
+      {
+        "id": "D4",
+        "statement": "Large escaped posts could overflow worker output or incomplete pagination could hide history.",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Bound console pages and portable JSON export to eight records, paginate by offset, preserve current page receipt behavior and actual company integration."
+      },
+      {
+        "id": "D5",
+        "statement": "Private key possession may be misrepresented as human identity or customer acquisition.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Test real HTTP Host refusal, valid signed export/restore, unreceipted files and valid-prefix substitution. No community mutation HTTP endpoint or public binding."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Linked FM-OWNED-COMMUNITY-JOURNEYS-20261001 and FM-OCI-20261002. Existing console owns loopback/Host protections, owned_pages verifies canonical Gate receipts. System32 signed history already validates and exports.",
+      "do_nothing": "Leave feasible private community serving unfinished after record tests.",
+      "simplest_viable_alternative": "Use existing console and receipt verifier plus guarded read-only system32 queries.",
+      "strongest_competing_architecture": "Independent authenticated public community service with enrollment and moderation.",
+      "reversible_experiment": "Signed fixture Body ingestion then real loopback HTML/JSON export and restore with hostile history/Host tests."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Public deployment, transport authentication and moderation remain further implementation/authorization dependencies; not needed for this private read surface. Wider requirements remain binding.",
+        "revival_evidence": "Authorized deployment and implemented transport/moderation proof."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack direct filesystem admission, signature-only authority, stale valid prefixes, HTML injection, quota overflow and local-page completion claims.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "Deleting a signed final leave event leaves a cryptographically valid prefix.",
+        "strengthening_response": "Bind current full history hash to canonical latest successful ingestion receipt; test valid-prefix change refuses both HTML and JSON."
+      },
+      {
+        "id": "N2",
+        "category": "fragility",
+        "statement": "Separate projection/hash reads could disagree; escaped long posts could exceed worker output.",
+        "strengthening_response": "Render from one loaded signed history snapshot and use eight-record console queries under existing output ceilings."
+      },
+      {
+        "id": "N3",
+        "category": "centralization",
+        "statement": "Owned page and community admission could diverge into separate receipt policies.",
+        "strengthening_response": "Extract one shared existing receipt validator without adding grants or authorities; retain page tests."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "experiment",
+        "rationale": "Make existing community useful through the existing console; retain network enrollment, moderation, public deployment and real member use as active requirements.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual HTTP and hosted regression evidence."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "experiment",
+        "rationale": "Share the existing canonical receipt validator with owned pages; extend ingestion receipts with actual community/history hash; use guarded query copies.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual HTTP and hosted regression evidence."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "Require chain/witness/grant-dispatch/successful receipt plus current history hash. A valid signed but unreceipted prefix must return404. Escape all content.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual HTTP and hosted regression evidence."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "experiment",
+        "rationale": "Bound console pages and portable JSON export to eight records, paginate by offset, preserve current page receipt behavior and actual company integration.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual HTTP and hosted regression evidence."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "experiment",
+        "rationale": "Test real HTTP Host refusal, valid signed export/restore, unreceipted files and valid-prefix substitution. No community mutation HTTP endpoint or public binding.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual HTTP and hosted regression evidence."
+      }
+    ],
+    "final_design": "Existing loopback console serves canonical receipt-bound community posts and complete paginated portable signed JSON. Shared receipt validation, staged read-only queries, exact current history binding, escaped posts, eight-record page limits, no public or mutation endpoint.",
+    "residual_risks": [
+      {
+        "risk": "A private read-only page is not the complete community or machine.",
+        "mitigation": "Make existing community useful through the existing console; retain network enrollment, moderation, public deployment and real member use as active requirements.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed transport/community/history or completion claim."
+      },
+      {
+        "risk": "A new server or direct filesystem reader would create parallel owners or expose unapproved state.",
+        "mitigation": "Share the existing canonical receipt validator with owned pages; extend ingestion receipts with actual community/history hash; use guarded query copies.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed transport/community/history or completion claim."
+      },
+      {
+        "risk": "Member signature validity alone could authorize serving changed history.",
+        "mitigation": "Require chain/witness/grant-dispatch/successful receipt plus current history hash. A valid signed but unreceipted prefix must return404. Escape all content.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed transport/community/history or completion claim."
+      },
+      {
+        "risk": "Large escaped posts could overflow worker output or incomplete pagination could hide history.",
+        "mitigation": "Bound console pages and portable JSON export to eight records, paginate by offset, preserve current page receipt behavior and actual company integration.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed transport/community/history or completion claim."
+      },
+      {
+        "risk": "Private key possession may be misrepresented as human identity or customer acquisition.",
+        "mitigation": "Test real HTTP Host refusal, valid signed export/restore, unreceipted files and valid-prefix substitution. No community mutation HTTP endpoint or public binding.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed transport/community/history or completion claim."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Retain scope objection and continuation obligation.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A private signed-history interface does not complete the broader community.",
+        "rationale": "Network enrollment/moderation and real use remain unfinished.",
+        "evidence_threshold": "Implemented remaining behavior and appropriate live evidence.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any community or full-machine completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Extend canonical community ingestion receipts and company initialization output; share console receipt checks; add private routes; preserve all old data and authority.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert new serving routes/shared helper and receipt metadata additions; preserve original signed history and negative evidence.",
+      "Keep active community/whole-machine horizon unchanged."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Valid unreceipted history publicly or privately served.",
+    "History hash mismatch or HTML injection accepted.",
+    "Page serving creates grants or writes community state.",
+    "Independent authority/server introduced.",
+    "Private proof treated as full machine closure."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh focused/hosted evidence; then automatically continue parent Body + Organs + Mind objective."
+}

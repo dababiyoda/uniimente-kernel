@@ -54,7 +54,9 @@ mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
 git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
 python3 -m venv ~/.uniimente/venv
-~/.uniimente/venv/bin/pip install -r requirements-dev.txt
+~/.uniimente/venv/bin/pip install -r requirements-dev.txt -r requirements-cognition.txt -r requirements-cortex-engines.txt -r requirements-browser.txt
+# If no system Chromium/Chrome is installed:
+~/.uniimente/venv/bin/python -m playwright install chromium
 alias greg='~/.uniimente/venv/bin/python -m greg'
 greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG
@@ -106,7 +108,7 @@ description is at
 greg console --key ~/.greg-founder.pem --no-model
 ```
 
-Open `http://localhost:8766/` in the Chromebook's Chrome browser. ChromeOS
+Open the private owner link printed by `greg console` in the Chromebook's Chrome browser. ChromeOS
 forwards local Linux ports into its browser. Ask **“Brief me on the state of my
 repositories.”** Review the proposed read and delivery scope, sign it, then
 close the browser tab and press Ctrl-C in the Terminal. The service should

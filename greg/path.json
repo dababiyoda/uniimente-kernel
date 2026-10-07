@@ -1334,7 +1334,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 1 of 2 measured families (2026-10-07, constructed complementary families: F1 estimate->optimize lift p=0.00012; F2 identify->optimize 4 wins/0 losses p=0.0625, not lift). P4 learned routing: INCONCLUSIVE, order equals static policy. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
+      "current": "VPL = 1 of 2 measured families (P6, 2026-10-07). P4 conditional memory: INCONCLUSIVE (57 vs 56 of 66; learned bin packing -> CP-SAT, knapsack -> Z3). Seed Genome v5: INCONCLUSIVE, gain 0.0.",
       "nodes": [
         {
           "id": "P0",
@@ -1418,18 +1418,21 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "add conditions (query kind, size class) to a new ledger version and re-freeze; settle from founder-used missions once they exist",
+          "smallest_next_experiment": "repeat each held-out run 3x and score the majority (timing noise), raise held-out n so >= 6 discordant items are possible, and learn latency as well as decided/correct",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
-          "reality": "IMPLEMENTED, INTEGRATED, TESTED; exit not met",
+          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2: INCONCLUSIVE (57 vs 56 of 66, p=0.5); learned per-sub-region orders, margin within timing noise; exit not met",
           "exit_met": false,
           "implementation_refs": [
-            "greg/cognition/learned_routing.py",
+            "cortex/evaluation/learned_routing/run.py",
+            "cortex/evaluation/learned_routing/run_v2.py",
             "greg/cognition/bridge.py",
+            "greg/cognition/conditional_competence.py",
+            "greg/cognition/learned_routing.py",
             "greg/cognition/worker.py",
-            "tests/integration/test_greg_learned_routing.py",
-            "cortex/evaluation/learned_routing/run.py"
+            "tests/integration/test_greg_conditional_competence.py",
+            "tests/integration/test_greg_learned_routing.py"
           ],
-          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: frozen held-out INCONCLUSIVE; learned order equals the static policy (no gain, no regression, no authority change)"
+          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE (order = static); v2 conditional INCONCLUSIVE (57 vs 56, bin packing 9 vs 7, knapsack kept 9/9)"
         },
         {
           "id": "P5",

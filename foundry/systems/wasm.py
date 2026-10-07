@@ -107,6 +107,9 @@ def instantiate(wasm: bytes, manifest: dict):
     import wasmtime
     config = wasmtime.Config()
     config.consume_fuel = True
+    # Independent appraisers fork after earlier native use. A compiler pool
+    # inherited without its threads can otherwise retain unreleasable locks.
+    config.parallel_compilation = False
     engine = wasmtime.Engine(config)
     module = wasmtime.Module(engine, wasm)
     if hashlib.sha256(wasm).hexdigest() != manifest["wasm_sha256"]:

@@ -106,7 +106,9 @@ class AuthorityOffice:
             if old_receipt is not None:
                 result = old_receipt.payload["result"]
                 positive = result.get("result_class") == "positive"
-                return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
+                return ActionOutcome("DONE" if positive else "UNCERTAIN",
+                                     ["retained legacy receipt; no redispatch" if positive else
+                                      "negative legacy paid receipt has no billing evidence; reconcile and reserve cap"],
                                      output=result.get("output"), receipt_hash=old_receipt.hash,
                                      grant_id=old_receipt.payload.get("grant_id"),
                                      cost_usd=cost_usd if positive else 0.0, **old_base)

@@ -289,8 +289,8 @@ def test_paid_approval_cannot_bypass_reserved_budget_after_not_executed_reconcil
         assert len(calls) == 2 and body.engine.book.missions[spec["mission_id"]].spent_usd == 2.0
 
 
-@pytest.mark.parametrize("with_receipt", [True, False])
-def test_paid_scope_upgrade_recovers_legacy_dispatch_without_repeating_it(tmp_path, monkeypatch, with_receipt):
+@pytest.mark.parametrize("legacy_result", ["done", "claim", "negative"])
+def test_paid_scope_upgrade_recovers_legacy_dispatch_without_repeating_it(tmp_path, monkeypatch, legacy_result):
     home, key, bid, data = make_body(tmp_path)
     source = data / "source.txt"
     source.write_text("payload")
@@ -302,8 +302,11 @@ def test_paid_scope_upgrade_recovers_legacy_dispatch_without_repeating_it(tmp_pa
         manifest = body.registry.manifests["worker.commission"]
         def execute(params, ctx):
             calls.append(ctx.grant_id)
-            if not with_receipt:
+            if legacy_result == "claim":
                 raise RuntimeError("interrupted after the legacy dispatch claim")
+            if legacy_result == "negative":
+                from greg.capabilities import CapabilityError
+                raise CapabilityError("old worker failed without reporting billing")
             return {"status": "COMPLETED"}
         kwargs = dict(mission_id=state.mission_id, cone=state.cone, command_digest=state.command_digest,
                       manifest=manifest, adapter=execute, ctx=body.engine._context(state, manifest),
@@ -316,7 +319,7 @@ def test_paid_scope_upgrade_recovers_legacy_dispatch_without_repeating_it(tmp_pa
             original = body.office.act(**kwargs)
         recovered = body.office.act(**kwargs)
         assert len(calls) == 1 and recovered.proposal_id == original.proposal_id
-        assert recovered.status == ("DONE" if with_receipt else "UNCERTAIN")
+        assert recovered.status == ("DONE" if legacy_result == "done" else "UNCERTAIN")
         assert recovered.receipt_hash == original.receipt_hash
 
 

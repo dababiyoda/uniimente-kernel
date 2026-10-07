@@ -176,6 +176,35 @@ def bound_value(edge: dict, output):
     return value
 
 
+# Capabilities whose own adapter measures provider spend (not a worker's self-claim):
+# capability -> field of the adapter output holding the provider-reported USD.
+METERED_SPEND = {"worker.commission": "worker.cost_usd"}
+
+
+def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
+    """What a DONE action books against the mission budget.
+
+    The signed cap stays the authorization ceiling. Where GREG's adapter measured the
+    provider's spend, that measurement is booked; an absent, malformed, negative or
+    over-cap report books the cap (conservative), and the basis says which happened."""
+    cap = float(cap_usd)
+    field_path = METERED_SPEND.get(capability_id)
+    reported = None
+    if field_path is not None and isinstance(output, dict):
+        try:
+            reported = _field(output, field_path)
+        except KeyError:
+            reported = None
+    if isinstance(reported, bool) or not isinstance(reported, (int, float)) or reported != reported:
+        return {"cost_usd": cap, "cost_cap_usd": cap, "spend_basis": "signed_cap" if field_path is None
+                else "signed_cap: provider spend not reported", "provider_reported_usd": None}
+    if reported < 0 or reported > cap + 1e-9:
+        return {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": float(reported),
+                "spend_basis": "signed_cap: provider report outside [0, cap]"}
+    return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
+            "spend_basis": "provider_reported"}
+
+
 def _field(output, path: str):
     value = output
     for part in path.split(".") if path else []:
@@ -999,6 +1028,8 @@ class MissionEngine:
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+        if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
+            record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
         if bindings:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):

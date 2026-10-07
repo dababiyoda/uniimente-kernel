@@ -27,7 +27,7 @@ Alfonso's repeated correction is that experiments, simulations, architecture doc
 
 Treat the entire historical repository as mechanism substrate. Extract what works, preserve negative evidence, recombine complementary mechanisms, retire duplicate active paths, acquire commodity capabilities before rebuilding them, and attach the residual capability to the canonical GREG path.
 
-**Required end-of-session proof:** state the concrete new thing the actual GREG can do now that it could not do before. If there is no product delta, explain the external blocker; do not substitute another cathedral of plans.
+**Required proof at every handoff:** state the concrete new thing the actual GREG can do now that it could not do before. If there is no product delta, explain the external blocker; do not substitute another cathedral of plans. Since 2026-10-02 this proof is a handoff record, not a stopping condition: after it, continue with the next unblocked requirement of the full machine.
 
 
 Read and obey, in this order:

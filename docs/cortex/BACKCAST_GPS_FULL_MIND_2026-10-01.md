@@ -5,6 +5,21 @@
 Status: a plan for founder review. It changes no node order on `greg/path.json` and grants nothing.
 Node N1 (VEPMC) stays the one operationally primary project node.
 
+## Correction, 2026-10-02 (full-machine completion)
+
+`INTENT-20261002-FULL-MACHINE-CONTINUATION` supersedes three lines of this backcast. They gated building on
+founder use, which is the local optimization the founder named:
+
+| Superseded line | Why it narrowed the machine | Now |
+| --- | --- | --- |
+| "Add new families only when a real mission asks" (selected route) | turned "not yet demanded" into "not built" | demand orders the queue; certified families are built now (path node P5, `BUILDABLE_NOW`) |
+| Threshold D: "escalate if the first ten real missions use no certified geometry" | made founder use a precondition for the Mind's breadth | kept as a measurement of real use; it reorders work, never stops it |
+| Falsification: "certified geometries never appear in real missions" makes G irrational | same | the destination is the whole Body + Organs + Mind; real use refines priorities |
+
+"Counting families is not progress" stays true of families no certificate checks. A family GREG proves on every
+answer is part of the Mind boundary. Each `greg/path.json` cortex node now carries a completion class, and only
+`FOUNDER_ONLY`, `EXTERNAL_DEPENDENCY` and `TECHNOLOGY_LIMIT` name a wait.
+
 ## Reasoning summary
 
 **Current reality.** In the tested container, GREG solves inside signed missions through one entry

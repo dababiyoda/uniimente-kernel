@@ -163,8 +163,39 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
                      "by_feasibility": {f: sorted(h["id"] for h in horizons if h["feasibility"] == f)
                                         for f in FEASIBILITY if any(h["feasibility"] == f for h in horizons)}},
         "destination": data["destination"],
+        "full_machine": full_machine(data),
         "rule": "a correction reroutes; it does not delete. Not now is not never.",
     }
+
+
+WAITS = ("FOUNDER_ONLY", "EXTERNAL_DEPENDENCY", "TECHNOLOGY_LIMIT")
+
+
+def full_machine(data: dict) -> dict:
+    """Every workstream node by completion class (founder correction 2026-10-02): what is agent work now,
+    what follows it, and exactly what each waiting node waits on. The active node above is the founder's
+    device proof; it is never the whole machine's stopping condition."""
+    build_now, sequenced, waits, claim_gates = [], [], [], []
+    for ws in data.get("workstreams", []):
+        nodes = {n["id"]: n for n in ws.get("nodes", [])}
+        for n in ws.get("nodes", []):
+            c = n.get("completion")
+            if not c:
+                continue
+            row = {"workstream": ws["id"], "node": n["id"], "title": n["title"]}
+            if c["class"] == "BUILDABLE_NOW":
+                build_now.append({**row, "build_now": c["build_now"]})
+            elif c["class"] == "SEQUENCED":
+                after = [a for a in c["after"] if nodes[a]["completion"]["class"] != "DONE_IN_TESTED_ENVIRONMENT"]
+                (sequenced if after else build_now).append({**row, "after": after} if after else
+                                                          {**row, "build_now": "its predecessors are done"})
+            elif c["class"] in WAITS:
+                waits.append({**row, "class": c["class"], "wait": c["wait"]})
+            if c.get("claim_gate"):
+                claim_gates.append({**row, "claim_gate": c["claim_gate"]})
+    return {"build_now": build_now, "sequenced": sequenced, "waits": waits, "claim_gates": claim_gates,
+            "rule": "Body + Organs + Mind is the completion boundary. Build every node listed under build_now; "
+                    "only the nodes under waits name a wait. A claim gate waits on evidence, never on building."}
 
 
 # -- developmental inheritance: rules for placing lineages on the path ---------------------

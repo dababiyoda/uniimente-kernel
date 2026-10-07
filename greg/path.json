@@ -1062,7 +1062,7 @@
         "INTENT-20261001-open-source-mechanism-harvest"
       ],
       "subordinate_to": "N1",
-      "rule": "One project-wide active node (N1, VEPMC). VEPMC stays the required real-device proof and the one operationally primary node; per the founder's 2026-10-01 correction (#143 comment, draft #144) it is not a stopping condition for development: every safe, reversible, buildable P-node continues until a real external dependency, missing authority, resource or evidence blocks it. Later P-nodes are horizons with gates, never activated by appearing here.",
+      "rule": "One project-wide active node (N1, VEPMC). VEPMC stays the required real-device proof and the one operationally primary node; per the founder's 2026-10-01 correction (#143 comment, draft #144) it is not a stopping condition for development: every safe, reversible, buildable P-node continues until a real external dependency, missing authority, resource or evidence blocks it. Later P-nodes are horizons with gates, never activated by appearing here. Full-machine correction 2026-10-02 (INTENT-20261002-FULL-MACHINE-CONTINUATION): every node carries a completion class. BUILDABLE_NOW and SEQUENCED nodes are agent work now; only FOUNDER_ONLY, EXTERNAL_DEPENDENCY and TECHNOLOGY_LIMIT name a wait, and each names exactly what is waited on. A claim gate (real-use evidence, a founder-gated evaluation) waits on its own; it never stops building the machinery.",
       "metric": "Verified Cross-Geometry Routing Gain",
       "reconciles": {
         "C1": [
@@ -1101,7 +1101,8 @@
       "operating_card": [
         "Select one smallest missing contract or behavior and declare its proof and budget",
         "Implement and run the smallest integrated falsification test",
-        "Record the result, update the bottleneck, and repeat, refine, reroute, or retire the mechanism"
+        "Record the result, update the bottleneck, and repeat, refine, reroute, or retire the mechanism",
+        "Immediately resume the parent objective: take the next BUILDABLE_NOW or newly unblocked SEQUENCED node; never stop at a passed experiment"
       ],
       "nodes": [
         {
@@ -1119,7 +1120,10 @@
           "evidence_refs": [
             "docs/PROJECT_COGNITION_CONTINUITY.md",
             "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
-          ]
+          ],
+          "completion": {
+            "class": "DONE_IN_TESTED_ENVIRONMENT"
+          }
         },
         {
           "id": "P1",
@@ -1136,7 +1140,10 @@
           "evidence_refs": [
             "contracts/cortex-receipt.schema.json",
             "tests/evidence/cortex-mutants-2026-10-01/run2-after-fixes.log"
-          ]
+          ],
+          "completion": {
+            "class": "DONE_IN_TESTED_ENVIRONMENT"
+          }
         },
         {
           "id": "P2",
@@ -1153,7 +1160,11 @@
           "evidence_refs": [
             "tests/evidence/greg-crossgeo-v0.2/results.json",
             "cortex/evaluation/freeze-crossgeo-v0.2.json"
-          ]
+          ],
+          "completion": {
+            "class": "DONE_IN_TESTED_ENVIRONMENT",
+            "claim_gate": "model arms of the frozen comparison are NOT_RUN until Alfonso selects a local model (FOUNDER_ONLY); no superiority over a model is claimed"
+          }
         },
         {
           "id": "P3",
@@ -1169,7 +1180,10 @@
           "exit": "idempotent settlement, corrections and provenance across restart",
           "evidence_refs": [
             "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
-          ]
+          ],
+          "completion": {
+            "class": "DONE_IN_TESTED_ENVIRONMENT"
+          }
         },
         {
           "id": "P4",
@@ -1177,13 +1191,18 @@
           "maps_to": "N4",
           "status": "HORIZON",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
-          "dependency": "P3 plus settled outcomes from real missions",
+          "dependency": "P3 plus settled outcomes from real missions (real-mission outcomes gate the claim; the machinery is buildable now)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "20 settled real-mission outcomes in one geometry",
           "falsification": "learned routing does not beat the frozen static router",
           "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "BUILDABLE_NOW",
+            "build_now": "routing that learns from settled competence, evaluated on a new frozen suite; the dependency on real-mission outcomes gates the claim, not the machinery",
+            "claim_gate": "'beats the static baseline on real missions' needs settled founder missions (FOUNDER_USE); a crossgeo v0.4 held-out spend needs founder approval (#151)"
+          }
         },
         {
           "id": "P5",
@@ -1191,7 +1210,7 @@
           "maps_to": "N2",
           "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
-          "dependency": "a mission that needs a family the seed lacks",
+          "dependency": "a mission that needs a family the seed lacks (orders the queue; since 2026-10-02 it does not gate building)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "a CapabilityDeficit naming a reserved family",
           "falsification": "an enabled family adds no measured mission value",
@@ -1201,7 +1220,11 @@
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
             "tests/unit/test_greg_linear_genesis.py"
-          ]
+          ],
+          "completion": {
+            "class": "BUILDABLE_NOW",
+            "build_now": "further certified families from installed open-source engines (assignment, min-cost flow, spanning tree, integer programs); a mission's demand orders the queue, it does not gate building"
+          }
         },
         {
           "id": "P6",
@@ -1215,7 +1238,12 @@
           "falsification": "no composition beats its strongest constituent, a simple pipeline and a committee after overhead",
           "smallest_next_experiment": "compare the schedule composition against extraction-free formal input on the same requests",
           "exit": "one composition with measured net lift after overhead and correlated-failure analysis",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "BUILDABLE_NOW",
+            "build_now": "bounded n-part composition exists on the stacked lineage (#153, cortex 0.4.0) and is reconciled into #148 by #154; not on this branch",
+            "claim_gate": "measured net lift after overhead on a frozen suite"
+          }
         },
         {
           "id": "P7",
@@ -1234,7 +1262,11 @@
             "tests/unit/test_greg_open_source_genesis.py",
             "greg/genesis.py",
             "greg/mechanisms.py"
-          ]
+          ],
+          "completion": {
+            "class": "DONE_IN_TESTED_ENVIRONMENT",
+            "claim_gate": "the builder route (a second route) needs a founder-attached builder; #148 carries real worker delegation (FOUNDER_ONLY: attach)"
+          }
         },
         {
           "id": "P8",
@@ -1248,7 +1280,11 @@
           "falsification": "gains vanish on held-out data or the evaluator is gamed",
           "smallest_next_experiment": "mutate one router policy parameter under a protected held-out evaluator",
           "exit": "repeated held-out gains without evaluator gaming or unauthorized mutation",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "BUILDABLE_NOW",
+            "build_now": "bounded selection among parameterized method variants on the frozen protected oracles; code self-modification stays with founder ratification"
+          }
         },
         {
           "id": "P9",
@@ -1262,7 +1298,14 @@
           "falsification": "nothing beats the baseline or nothing replicates",
           "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
           "exit": "a previously unlisted organization beats the baseline and survives independent replication",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "SEQUENCED",
+            "after": [
+              "P6",
+              "P8"
+            ]
+          }
         },
         {
           "id": "P10",
@@ -1278,7 +1321,12 @@
           "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
           "evidence_refs": [
             "tests/unit/test_greg_open_source_genesis.py"
-          ]
+          ],
+          "completion": {
+            "class": "BUILDABLE_NOW",
+            "build_now": "recovery with no pre-listed candidate: search every installed distribution for one that serves the lost function, qualify it, ask to attach",
+            "wait": "acquiring a package not already installed is a download (FOUNDER_ONLY approval)"
+          }
         },
         {
           "id": "P11",
@@ -1292,7 +1340,14 @@
           "falsification": "evaluator capture, runaway resource use or authority drift",
           "smallest_next_experiment": "track method diversity and rare-method preservation over two workload shifts",
           "exit": "sustained net benefit across changing workloads without capture or authority drift",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "SEQUENCED",
+            "after": [
+              "P6",
+              "P8"
+            ]
+          }
         },
         {
           "id": "P12",
@@ -1306,7 +1361,11 @@
           "falsification": "a contract behaves differently on a second substrate",
           "smallest_next_experiment": "run the frozen suite on a second approved body and diff receipts",
           "exit": "equivalent behavioral contracts on materially different approved substrates",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "FOUNDER_ONLY",
+            "wait": "a second approved body (N8); the behavioral contract suite itself is buildable now and runs on any body"
+          }
         },
         {
           "id": "P13",
@@ -1320,7 +1379,11 @@
           "falsification": "an embodiment escapes scope or shutdown",
           "smallest_next_experiment": "none now: Chromebook and phone first (N1)",
           "exit": "the same governed identity across scoped bodies with legitimate shutdown preserved",
-          "evidence_refs": []
+          "evidence_refs": [],
+          "completion": {
+            "class": "FOUNDER_ONLY",
+            "wait": "P12 plus N9 (scoped multiple bodies); founder hardware and authority"
+          }
         }
       ]
     }

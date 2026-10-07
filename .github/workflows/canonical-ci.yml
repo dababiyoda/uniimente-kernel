@@ -70,6 +70,8 @@ jobs:
         run: python scripts/ci/check_native_cognition_mutants.py
       - name: Enclosing cognition budget and verification reserve mutations
         run: python scripts/ci/check_cognition_budget_mutants.py
+      - name: Fork-safe commodity WASM compiler lifecycle mutation
+        run: python scripts/ci/check_wasm_lifecycle_mutant.py
 
   owned_oci:
     name: "7 · Owned OCI capability rebuild and execution"

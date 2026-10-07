@@ -30,6 +30,7 @@ Python 3.12 in a dedicated local environment, rather than hosted CI's Python 3.1
 | Budget safeguard mutations | 3 caught: mandatory reserve, caller compute ceiling, grant horizon |
 | Whole suite after initial budget integration | 2,152 passed; one stale 50 ms startup/proof expectation failed; 17 skipped |
 | Tight enclosing timeout, Cortex proof and budget regression checks after repair | 154 passed; subsequent Cortex/timeout checks 122 passed |
+| Foundry WASM lifecycle repair and owner regression checks | 48 passed; removal of serial compilation caught by a process-level mutant |
 | Earlier whole suite before final replay, worker-scope and native-reconciliation deltas | 2,058 passed; 17 skipped; 3 fork deprecation warnings |
 | New sealed-evaluation guards and final pipeline validation | 6 passed (four guard cases plus two pipeline cases) |
 | Final worker scope, pipeline and seal guard tests | 20 passed; includes rejection of edits to handoff/isolation enforcement |
@@ -61,6 +62,8 @@ All five review roles were performed by one agent. Each of the four material dec
 The ten attached founder/project sources were read in full. Inspection also covered the relevant current kernel lineages, contracts, tests and completion contract. It did not exhaustively audit every issue, historical branch or organ repository. The newest full-machine directive controls conflicts with older instructions to rebuild commodity infrastructure, literalize biological metaphors or claim invulnerability. Horizons remain intended; those superseded construction prescriptions do not become active code orders.
 
 ## Completion boundary
+
+An additional owner defect was reproduced during regression: a Wasmtime engine warmed before fork could leave its child waiting on the inherited native parallel compiler pool. The same child completed with parallel compilation disabled. `foundry/systems/wasm.py` now selects serial compilation using the maintained dependency's configuration; fuel, import restrictions, empty WASI context and byte-digest checks remain. A fresh interpreter warms the engine, forks, and requires bounded completion. This is a scoped lifecycle repair, not autonomous recovery or broad antifragility. The whole-suite run that stalled near this check remains UNKNOWN; a new bounded whole-suite run with stack diagnostics is in progress.
 
 Public staging excludes the chat-supplied verbatim founder quotations and detailed held-out evaluation JSON after automatic approval review rejected their disclosure. Both are retained unchanged in the local workspace and earlier local commits. They are not included through an alternate upload path. The earlier raw failed-suite traceback remains local for the same reason. The developmental path is composed entirely of unchanged values from already-public #143/#147 files; no chat-only content was added to that file.
 

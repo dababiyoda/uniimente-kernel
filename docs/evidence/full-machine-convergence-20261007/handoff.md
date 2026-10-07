@@ -31,6 +31,7 @@ Python 3.12 in a dedicated local environment, rather than hosted CI's Python 3.1
 | Whole suite after initial budget integration | 2,152 passed; one stale 50 ms startup/proof expectation failed; 17 skipped |
 | Tight enclosing timeout, Cortex proof and budget regression checks after repair | 154 passed; subsequent Cortex/timeout checks 122 passed |
 | Foundry WASM lifecycle repair and owner regression checks | 48 passed; removal of serial compilation caught by a process-level mutant |
+| Final repaired whole suite | 2,155 passed; 17 skipped; 3 fork deprecation warnings; 409.93 seconds |
 | Earlier whole suite before final replay, worker-scope and native-reconciliation deltas | 2,058 passed; 17 skipped; 3 fork deprecation warnings |
 | New sealed-evaluation guards and final pipeline validation | 6 passed (four guard cases plus two pipeline cases) |
 | Final worker scope, pipeline and seal guard tests | 20 passed; includes rejection of edits to handoff/isolation enforcement |
@@ -62,6 +63,8 @@ All five review roles were performed by one agent. Each of the four material dec
 The ten attached founder/project sources were read in full. Inspection also covered the relevant current kernel lineages, contracts, tests and completion contract. It did not exhaustively audit every issue, historical branch or organ repository. The newest full-machine directive controls conflicts with older instructions to rebuild commodity infrastructure, literalize biological metaphors or claim invulnerability. Horizons remain intended; those superseded construction prescriptions do not become active code orders.
 
 ## Completion boundary
+
+Draft PR #156 is published at https://github.com/dababiyoda/uniimente-kernel/pull/156. The tested code head is `091c969469bec4f6835151e3033f8d1ab07edcb0`, with tree `ba03e9c36bcf1f50ac622b76d28d808a69bbe1ef`; the local equivalent is `41f65281d6a27dd731a9d88f687cbb84572ce658`. Their trees match exactly. The final bounded whole suite completed successfully: 2,155 passed, 17 skipped and 3 warnings in 409.93 seconds. Later evidence-only commits do not change this executable candidate. Latest hosted CI remains queued behind the earlier run; earlier passing jobs/steps do not certify the newer head.
 
 An additional owner defect was reproduced during regression: a Wasmtime engine warmed before fork could leave its child waiting on the inherited native parallel compiler pool. The same child completed with parallel compilation disabled. `foundry/systems/wasm.py` now selects serial compilation using the maintained dependency's configuration; fuel, import restrictions, empty WASI context and byte-digest checks remain. A fresh interpreter warms the engine, forks, and requires bounded completion. This is a scoped lifecycle repair, not autonomous recovery or broad antifragility. The whole-suite run that stalled near this check remains UNKNOWN; a new bounded whole-suite run with stack diagnostics is in progress.
 

@@ -1,0 +1,37 @@
+{
+  "schema": "greg-convergence-validation/1",
+  "tested_remote_commit": "091c969469bec4f6835151e3033f8d1ab07edcb0",
+  "tested_local_commit": "41f65281d6a27dd731a9d88f687cbb84572ce658",
+  "tested_tree": "ba03e9c36bcf1f50ac622b76d28d808a69bbe1ef",
+  "command": "timeout 720 python -m pytest -q -o faulthandler_timeout=60",
+  "environment": {
+    "python": "3.12.14",
+    "scope": "local execution environment; not founder device",
+    "hosted_ci_python": "3.11; latest run pending"
+  },
+  "whole_suite": {
+    "exit_code": 0,
+    "passed": 2155,
+    "skipped": 17,
+    "warnings": 3,
+    "duration_seconds": 409.93
+  },
+  "mutations": {
+    "budget": 3,
+    "native_appraisal": 4,
+    "wasm_lifecycle": 1,
+    "pipeline": 3,
+    "legacy_seed": 6,
+    "cortex": 59
+  },
+  "classification": "VERIFIED_IN_TESTED_ENVIRONMENT",
+  "authority_changed": false,
+  "production_authorized": false,
+  "limitations": [
+    "17 local skips do not qualify unavailable isolation facilities.",
+    "Fixture, signed test-key local mission and external outcome tiers remain distinct.",
+    "General natural-language Cortex-to-WorkOrder selection remains unproven.",
+    "No whole-machine completion or exhaustive safe-work exhaustion claim."
+  ],
+  "next_executable_action": "Connect existing planner code-work route to Cortex capability selection and bounded worker return; preserve current mission/Gate/ledger owners."
+}

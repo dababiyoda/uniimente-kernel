@@ -31,18 +31,60 @@ ENGINE_USES = {
 }
 
 
+# What a worker imports. Workers run ``python -I``, which ignores user site-packages, so an engine the
+# metadata calls installed can still be unusable to them (seen in a container whose pandas found
+# ``dateutil`` only in ~/.local). The probe imports exactly these modules the same way.
+ENGINE_MODULES = {
+    "z3-solver": ("z3",),
+    "ortools": ("ortools.sat.python.cp_model", "ortools.linear_solver.pywraplp"),
+    "scipy": ("scipy.optimize", "scipy.sparse.csgraph"),
+    "networkx": ("networkx",),
+    "sympy": ("sympy",),
+}
+IMPORT_PROBE = ("import importlib, json, sys\n"
+                "out = {}\n"
+                "for name in json.loads(sys.argv[1]):\n"
+                "    try:\n"
+                "        importlib.import_module(name)\n"
+                "        out[name] = None\n"
+                "    except Exception as exc:\n"
+                "        out[name] = (type(exc).__name__ + ': ' + str(exc))[:200]\n"
+                "print(json.dumps(out))\n")
+
+
+def importable(modules) -> dict:
+    """Import each module in an isolated interpreter, as workers do; None means it imported."""
+    import json
+    modules = list(modules)
+    try:
+        proc = subprocess.run([sys.executable, "-I", "-c", IMPORT_PROBE, json.dumps(modules)],
+                              capture_output=True, text=True, timeout=180)
+        found = json.loads(proc.stdout.strip().splitlines()[-1])
+        return {m: found.get(m, "not reported by the probe") for m in modules}
+    except Exception as exc:  # the report must not crash the doctor
+        return {m: f"probe failed: {type(exc).__name__}" for m in modules}
+
+
 def engines() -> dict:
-    """Which open-source reasoning engines this interpreter carries, read from installed metadata only."""
+    """Which open-source reasoning engines this body carries and its isolated workers can import."""
     from greg import mechanisms
+    dists = {name: mechanisms.installed(name) for name in ENGINE_USES}
+    probed = importable(m for name, dist in dists.items() if dist for m in ENGINE_MODULES[name])
     rows = []
     for name, uses in ENGINE_USES.items():
-        dist = mechanisms.installed(name)
+        dist = dists[name]
+        errors = [f"{m}: {probed[m]}" for m in ENGINE_MODULES[name] if dist and probed.get(m)]
         rows.append({"distribution": name, "installed": dist is not None, "version": dist.version if dist else None,
-                     "license": mechanisms.license_of(dist) if dist else None, "serves": uses})
+                     "license": mechanisms.license_of(dist) if dist else None, "serves": uses,
+                     "importable": dist is not None and not errors, "import_error": errors[0] if errors else None})
     missing = [r["distribution"] for r in rows if not r["installed"]]
-    return {"present": len(rows) - len(missing), "total": len(rows), "missing": missing, "engines": rows,
+    unusable = [r["distribution"] for r in rows if r["installed"] and not r["importable"]]
+    return {"present": sum(r["importable"] for r in rows), "total": len(rows), "missing": missing,
+            "unusable": unusable, "engines": rows,
             "note": "not prerequisites: a missing engine makes its functions abstain and GREG asks; GREG never "
-                    "installs one (the founder-run installer does, unless --no-engines)"}
+                    "installs one (the founder-run installer does, unless --no-engines). Present means the "
+                    "isolated interpreter GREG's workers use imports it; installed but unusable is reported "
+                    "with the import error."}
 
 
 def chromebook() -> dict:

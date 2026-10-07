@@ -72,6 +72,30 @@ def verify(family, data, answer, proof_class):
                                                                             rel_tol=1e-9, abs_tol=1e-12)
         else:
             checks["unreachable_confirmed"] = data["goal"] not in best
+    elif family == "game" and output:
+        # Minimax certificate: the row strategy guarantees at least the value against every column and
+        # the column strategy concedes at most the value against every row. Exact fractions; a relative
+        # 1e-9 allows the solver's floating point. A missing column strategy is a failed check.
+        a = [[Fraction(str(x)) for x in row] for row in data["payoffs"]]
+        p, q = ([Fraction(x) for x in output.get(k, [])] for k in ("mixed_strategy", "column_strategy"))
+        v, tol = Fraction(output["value"]), Fraction(1, 10**9) * (1 + max(abs(x) for row in a for x in row))
+        checks["strategies_are_distributions"] = (len(p) == len(a) and len(q) == len(a[0])
+                                                  and all(x >= -tol for x in p + q)
+                                                  and abs(sum(p) - 1) <= tol and abs(sum(q) - 1) <= tol)
+        checks["row_guarantee"] = checks["strategies_are_distributions"] and min(
+            sum(pi * a[i][j] for i, pi in enumerate(p)) for j in range(len(a[0]))) >= v - tol
+        checks["column_guarantee"] = checks["strategies_are_distributions"] and max(
+            sum(a[i][j] * qj for j, qj in enumerate(q)) for i in range(len(a))) <= v + tol
+    elif family == "probabilistic":
+        # Beta-Bernoulli conjugacy, recomputed independently in exact fractions.
+        a = Fraction(str(data["alpha"])) + int(data["successes"])
+        b = Fraction(str(data["beta"])) + int(data["failures"])
+        checks["posterior_conjugate"] = (math.isclose(output["alpha"], float(a), rel_tol=1e-12)
+                                         and math.isclose(output["beta"], float(b), rel_tol=1e-12))
+        checks["posterior_mean"] = math.isclose(output["mean"], float(a / (a + b)), rel_tol=1e-12)
+        checks["posterior_variance"] = math.isclose(output["variance"], float(a * b / ((a + b) ** 2 * (a + b + 1))),
+                                                    rel_tol=1e-12)
+        dissent.append("Conjugacy is exact; exchangeability and observation quality are assumptions.")
     elif family == "estimation":
         checks["ordered_range"] = output["low"] <= output["central"] <= output["high"]
         dissent.append("Bounds are assumptions; no calibrated probability or external market proof follows.")

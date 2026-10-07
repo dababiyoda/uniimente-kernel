@@ -141,6 +141,35 @@ def test_independent_verifier_refutes_a_longer_route_and_a_false_no_route():
     assert verify("graph", data, hidden, proof_class)["checks"]["unreachable_confirmed"] is False
 
 
+def test_a_game_value_is_proved_from_both_sides_and_a_wrong_value_is_refuted():
+    data = {"payoffs": [[3, -1], [-2, 4]]}                         # value 1, row (0.6, 0.4), column (0.5, 0.5)
+    r = reason(request("minimax", data), registry=registry_view())
+    assert r["abstention_state"] == "NONE" and abs(r["output"]["value"] - 1.0) < 1e-9
+    assert [round(x, 9) for x in r["output"]["column_strategy"]] == [0.5, 0.5]
+    proof = r["proof_artifact"]
+    def verdict(output):
+        return verify("game", data, {"output": output, "proof": proof}, "game_model")
+    good = verdict(r["output"])
+    assert good["verdict"] == "STRUCTURALLY_VERIFIED" and good["checks"]["column_guarantee"] is True
+    assert verdict({**r["output"], "value": 1.5})["checks"]["row_guarantee"] is False         # overstated value
+    assert verdict({**r["output"], "value": 0.5})["checks"]["column_guarantee"] is False      # understated value
+    assert verdict({**r["output"], "column_strategy": [1.0, 0.0]})["verdict"] == "REFUTED"   # a non-equilibrium
+    unchecked = {k: v for k, v in r["output"].items() if k != "column_strategy"}
+    assert verdict(unchecked)["verdict"] == "REFUTED"                                        # no certificate
+
+
+def test_a_posterior_is_recomputed_by_conjugacy_and_a_wrong_one_is_refuted():
+    data = {"alpha": 1, "beta": 1, "successes": 7, "failures": 3}
+    r = reason(request("beta_update", data), registry=registry_view())
+    proof = r["proof_artifact"]
+    ok = verify("probabilistic", data, {"output": r["output"], "proof": proof}, "posterior")
+    assert ok["verdict"] == "STRUCTURALLY_VERIFIED" and ok["checks"]["posterior_mean"] is True
+    wrong = verify("probabilistic", data, {"output": {**r["output"], "mean": 0.8}, "proof": proof}, "posterior")
+    assert wrong["verdict"] == "REFUTED"
+    spread = verify("probabilistic", data, {"output": {**r["output"], "variance": 0.5}, "proof": proof}, "posterior")
+    assert spread["checks"]["posterior_variance"] is False
+
+
 def test_a_cheaper_parallel_edge_is_never_overwritten_by_a_later_one():
     data = {"edges": [["a", "b", 2], ["a", "b", 5], ["b", "c", 1]], "start": "a", "goal": "c"}
     r = reason(request("shortest_path", data), registry=registry_view())

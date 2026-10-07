@@ -301,8 +301,12 @@ def game(data, geometry):
                  bounds=[(0, 1)] * count + [(None, None)], method="highs")
     if not lp.success:
         return result({}, {"payoffs": matrix, "strategies": [], "value": None, "constraints": "zero-sum simplex"}, status="UNKNOWN")
-    out = {"mixed_strategy": lp.x[:count].tolist(), "value": float(lp.x[-1])}
+    # The LP's multipliers on the column constraints are the column player's equilibrium strategy;
+    # with both strategies the value is checkable from both sides (verification.py).
+    column = [max(0.0, -float(y)) for y in lp.ineqlin.marginals]
+    out = {"mixed_strategy": lp.x[:count].tolist(), "value": float(lp.x[-1]), "column_strategy": column}
     return result(out, {"payoffs": matrix, "strategies": out["mixed_strategy"], "value": out["value"],
+                        "column_strategy": column,
                         "constraints": "two-player finite zero-sum game; payoff validity unverified"})
 
 

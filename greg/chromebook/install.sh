@@ -149,7 +149,7 @@ if [ -n "$MISSING" ]; then
   fail "Missing prerequisites: $MISSING" 13
 fi
 echo "Ready."
-printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("engines",{}); print("Reasoning engines present: %s of %s%s" % (e.get("present"), e.get("total"), (" (missing: " + ", ".join(e.get("missing", [])) + ")") if e.get("missing") else ""))' || true
+printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("engines",{}); m=e.get("missing",[]); u=e.get("unusable",[]); print("Reasoning engines present: %s of %s%s%s" % (e.get("present"), e.get("total"), (" (missing: " + ", ".join(m) + ")") if m else "", (" (installed but not importable: " + ", ".join(u) + "; see greg doctor --chromebook)") if u else ""))' || true
 
 step "6/8 Body"
 mkdir -p "$READ_ROOT" "$DELIVER_ROOT"

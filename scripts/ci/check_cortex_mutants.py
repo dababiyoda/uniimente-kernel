@@ -128,7 +128,7 @@ GREG_MUTANTS = [
 ]
 # Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
 OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
-             "tests/unit/test_greg_cognition.py"]
+             "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_chromebook_doctor.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -166,6 +166,19 @@ OSS_MUTANTS = [
     ("an engine's 'no plan exists' closes without the elastic proof", "greg/genesis.py",
      '            if answer.get("follow_up") and spec.get("follow_up"):\n                # The engine',
      '            if False:\n                # The engine'),
+    ("#140 game verifier skips the row guarantee", "greg/cognition/verification.py",
+     'checks["row_guarantee"] = checks["strategies_are_distributions"] and min(', 'checks["row_guarantee"] = True or min('),
+    ("#140 game verifier skips the column guarantee", "greg/cognition/verification.py",
+     'checks["column_guarantee"] = checks["strategies_are_distributions"] and max(',
+     'checks["column_guarantee"] = True or max('),
+    ("#140 game verifier passes an answer with no column strategy", "greg/cognition/verification.py",
+     'elif family == "game" and output:', 'elif family == "game" and "column_strategy" in output:'),
+    ("#140 posterior verifier skips the mean", "greg/cognition/verification.py",
+     'checks["posterior_mean"] = math.isclose(', 'checks["posterior_mean"] = True or math.isclose('),
+    ("#140 posterior verifier skips the variance", "greg/cognition/verification.py",
+     'checks["posterior_variance"] = math.isclose(', 'checks["posterior_variance"] = True or math.isclose('),
+    ("doctor counts an engine the isolated worker cannot import", "greg/doctor.py",
+     '"importable": dist is not None and not errors,', '"importable": dist is not None,'),
     ("console attaches a capability no ask names", "greg/console.py",
      "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))}:",
      "if False:"),

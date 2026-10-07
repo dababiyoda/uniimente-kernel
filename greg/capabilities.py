@@ -79,6 +79,7 @@ class CapabilityManifest:
     detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
     rollback: str = "detach; retained history is never rewritten"
     cognitive_profiles: tuple = ()
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -117,7 +118,8 @@ class CapabilityManifest:
                                         requires_human=self.consequence_class in ("financial", "irreversible")),
             acceptance_tests=list(self.tests) or ["declared-by-builder"],
             failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
-            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles))
+            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles),
+            cognitive_profile=self.cognitive_profile)
 
     def digest(self) -> str:
         return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
@@ -131,6 +133,8 @@ class CapabilityManifest:
             value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
         if not value['cognitive_profiles']:
             value.pop('cognitive_profiles')  # preserve historical manifest digests
+        if not value["cognitive_profile"]:
+            value.pop("cognitive_profile")  # additive profile: legacy manifest digests are preserved
         return value
 
     @classmethod
@@ -229,6 +233,8 @@ class InvocationContext:
     grant_id: str = ""
     policy_version: str = ""
     stop_check: object | None = None
+    capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
+    cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -796,6 +802,11 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                            _lazy("greg.daleobanks_bridge", "publish_status")),
 }
 
+# Cognitive families are the SAME capability manifests/genomes, lazily executed.
+# No second intelligence registry, event store, runtime, policy or model router.
+from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
+BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
+
 
 class CapabilityRegistry:
     """In-memory projection of capability events retained on the canonical spine."""
@@ -857,13 +868,16 @@ def installed_binary(name: str) -> str | None:
     found = shutil.which(name, path="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
     return str(Path(found).resolve()) if found else None
 
-# Cortex capabilities use the same broker and GenomeRegistry. These are trusted
-# builtins; being catalogued here never replaces a signed mission light cone.
+# Seed-path cognition (#142 lineage): the static smallest-sufficient router over cortex.seed methods.
+# Converged 2026-10-02: the canonical ``cognition.solve`` is the cortex 0.2.1 bridge registered by
+# greg.cognition.catalog (#143/#140 lineage); this solver stays registered as the governed
+# alternative ``cognition.seed.solve`` (benchmark twin and fallback), never as a second authority.
+# ``cognition.status`` / ``cognition.settle`` keep their ids: they read and settle seed-path receipts.
 from dataclasses import asdict as _profile_dict
 from cortex.seed.contracts import CognitiveCapabilityProfile, METHODS, PROOFS
 
 for _cid, _handler, _consequence, _inputs in (
-    ('cognition.solve', 'solve', 'read_only', {'problem': 'cognition/1'}),
+    ('cognition.seed.solve', 'solve', 'read_only', {'problem': 'cognition/1'}),
     ('cognition.status', 'status', 'read_only', {'problem_id': 'str'}),
     ('cognition.settle', 'settle', 'internal_write', {'outcome_id': 'str', 'receipt_id': 'str',
         'tier': 'str', 'score': 'number|null', 'evidence_refs': 'list', 'supersedes': 'str|null', 'conditions': 'dict'}),
@@ -872,11 +886,11 @@ for _cid, _handler, _consequence, _inputs in (
     BUILTINS[_cid] = (_builtin(_cid, _cid, 'Bounded typed cognition with canonical authority and evidence',
         'internal', _consequence, 'cognition:', _inputs, {'receipt': 'dict'},
         strengthens=('eligibility', 'routing', 'proof', 'settlement'),
-        tests=('tests/unit/test_greg_cognition.py',),
+        tests=('tests/unit/test_greg_cognition_seed_path.py',),
         network='egress-allowlist' if _handler == 'solve' else 'none',
         egress_allowlist=('127.0.0.1',) if _handler == 'solve' else (),
         cognitive_profiles=tuple(_profile_dict(CognitiveCapabilityProfile(
             METHODS[k], k, PROOFS[k], 'bounded seed; availability checked per request'))
             for k in METHODS) if _handler == 'solve' else (),
-        provenance={'source': 'greg/cognition.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
-        _lazy('greg.cognition', _handler))
+        provenance={'source': 'greg/cognition/seed_path.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
+        _lazy('greg.cognition.seed_path', _handler))

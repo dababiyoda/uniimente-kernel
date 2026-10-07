@@ -17,13 +17,13 @@ import subprocess
 import sys
 import time
 
-from greg.cognition import evaluate_problem
+from greg.cognition.seed_path import evaluate_problem
 
 HERE = Path(__file__).parent
 ROOT = HERE.parents[2]
 FILES = ['cortex/evaluation/seed_genome/build.py', 'cortex/evaluation/seed_genome/run.py',
          'cortex/evaluation/seed_genome/suite.json', 'cortex/seed/contracts.py', 'cortex/seed/methods.py',
-         'cortex/seed/verify.py', 'greg/cognition.py', 'greg/cognitive_worker.py', 'greg/models.py',
+         'cortex/seed/verify.py', 'greg/cognition/seed_path.py', 'greg/cognitive_worker.py', 'greg/models.py',
          'requirements-cognition.txt', 'requirements-cortex.txt', 'cortex/seed/projections.py', 'cortex/contracts.py']
 SPEC = {'version': 'seed-genome-loss/3', 'weights': {'error': .50, 'false_claim': .25,
         'unjustified_abstention': .10, 'uncalibrated_certainty': .05, 'token_fee_budget_violation': .05, 'latency': .05},
@@ -112,7 +112,7 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    manifest = HERE / 'freeze-v3.json'
+    manifest = HERE / 'freeze-v4.json'  # v4 = converged GREG 2026-10-02 (seed path in greg/cognition/, one ortools pin); v1-v3 kept
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

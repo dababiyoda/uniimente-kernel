@@ -1,0 +1,43 @@
+CAUGHT  [cortex] receipt claims authority: 1 failed, 68 passed in 2.91s
+CAUGHT  [cortex] rank ignores failed gates: 1 failed in 0.24s
+CAUGHT  [cortex] prediction settles competence: 1 failed, 94 passed in 3.82s
+CAUGHT  [cortex] financial recommended: 1 failed, 73 passed in 2.87s
+CAUGHT  [cortex] model-generated DAG identifies: 1 failed, 55 passed in 2.09s
+CAUGHT  [cortex] witness check skipped: 1 failed, 25 passed in 0.46s
+CAUGHT  [cortex] undecided witness counts as agreement: 1 failed, 28 passed in 0.72s
+CAUGHT  [cortex] exhausted timeout reported as inconclusive: 1 failed, 27 passed in 0.74s
+CAUGHT  [cortex] exit ignores geometry: 1 failed, 109 passed in 4.99s
+CAUGHT  [cortex] exit ignores cost and latency: 1 failed, 109 passed in 3.96s
+CAUGHT  [cortex] optimality certificate skipped: 1 failed, 37 passed in 0.67s
+CAUGHT  [cortex] protection gaps ignored: 1 failed, 83 passed in 3.32s
+CAUGHT  [cortex] unknown harm treated as safe: 1 failed, 83 passed in 3.40s
+CAUGHT  [cortex] receipt hides the strongest counterargument: 1 failed, 87 passed in 3.47s
+CAUGHT  [cortex] coercive intervention accepted: 1 failed, 62 passed in 2.21s
+CAUGHT  [cortex] hard-harm intervention accepted: 1 failed, 64 passed in 2.55s
+CAUGHT  [cortex] severity mislabelled as certainty: 1 failed, 63 passed in 2.26s
+CAUGHT  [cortex] external deterrence not handed off: 1 failed, 113 passed, 2 skipped in 4.22s
+CAUGHT  [cortex] quote check skipped: 1 failed, 57 passed in 2.35s
+CAUGHT  [cortex] disabled family eligible: 1 failed, 15 passed in 0.24s
+CAUGHT  [cortex] non-permission record grants: 1 failed, 1 passed in 0.20s
+CAUGHT  [cortex] stale evidence accepted: 1 failed, 48 passed in 1.94s
+CAUGHT  [cortex] protection not handed off: 1 failed, 78 passed in 3.19s
+CAUGHT  [cortex] verifier ignores protection: 1 failed, 86 passed in 3.47s
+CAUGHT  [cortex] preserved evidence open access: 1 failed, 80 passed in 3.43s
+CAUGHT  [cortex] receipt drops protection: 1 failed, 78 passed in 3.28s
+CAUGHT  [greg path] permission check removed: signed target scope: 1 failed, 4 passed in 2.71s
+CAUGHT  [greg path] permission check removed: founder detach not projected: 1 failed, 2 passed in 0.93s
+CAUGHT  [greg path] constraint dropped: extracted deadline: 1 failed, 141 passed in 7.99s
+CAUGHT  [greg path] constraint dropped: CP-SAT encoding: 1 failed, 20 passed in 6.46s
+CAUGHT  [greg path] UNKNOWN relabelled: unknown harm as none: 1 failed, 8 passed in 2.30s
+CAUGHT  [greg path] UNKNOWN relabelled: FEASIBLE as OPTIMAL: 1 failed, 29 passed in 7.13s
+CAUGHT  [greg path] UNKNOWN relabelled: exhausted latency budget ignored: 1 failed, 112 passed in 12.43s
+CAUGHT  [greg path] evidence replaced: receipt content address unchecked: 1 failed, 9 passed in 3.05s
+CAUGHT  [greg path] evidence replaced: verifier re-check of returned assignments removed: 1 failed, 30 passed in 7.48s
+CAUGHT  [greg path] authority claim accepted from the worker: 1 failed, 11 passed in 4.94s
+CAUGHT  [greg path] duplicate settlement: 1 failed, 158 passed in 11.21s
+CAUGHT  [greg path] paid fallback enabled: purchased inference accepted: 1 failed, 11 passed in 4.35s
+CAUGHT  [greg path] paid fallback enabled: non-founder provider order selects a model: 1 failed, 13 passed in 5.49s
+CAUGHT  [greg path] misclassified consequence: declared harm cannot raise the class: 1 failed, 114 passed in 8.88s
+CAUGHT  [greg path] zero solver budget still solves: 1 failed, 41 passed in 7.25s
+41 mutants, 0 survived or stale
+exit 0

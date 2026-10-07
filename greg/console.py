@@ -83,6 +83,8 @@ class Console:
                          "next_observe_at": m.next_observe_at, "actions_done": m.actions_done,
                          "intended_effect": m.spec["intended_effect"], "closure": m.spec["closure"]["kind"]}
                         for mid, m in sorted(book.missions.items())]
+            from greg.presentation import cognitive_summaries
+            cognitive = cognitive_summaries(journal)
             vepmc = metrics.vepmc(journal)
             recent = [{"type": e.type[len("greg."):], "at": e.occurred_at,
                        "mission_id": e.payload.get("mission_id"), "summary": _summary(e)}
@@ -92,7 +94,7 @@ class Console:
         if folder.is_dir():
             deliveries = [p.name for p in sorted(folder.glob("*.md"), key=lambda p: p.stat().st_mtime,
                                                    reverse=True)[:10]]
-        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries}
+        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries, "cognitive": cognitive}
 
     def deliver_root(self) -> Path:
         config = json.loads(self.layout.config.read_text())
@@ -144,6 +146,13 @@ class Console:
                 self.proposals.pop(old)
         return pid
 
+    def attach(self, request_id: str, capability_id: str) -> Path:
+        """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
+        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+            raise ValueError("that capability is not a verified candidate of an open capability ask")
+        return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
+
     def sign_proposal(self, pid: str) -> Path:
         self._refresh_transport()
         with self.lock:
@@ -189,10 +198,25 @@ def _ask_details(r: dict) -> str:
                                          for o in r["options"]) + "</table>")
     if r.get("uncertainty"):
         parts.append("<span class=muted>Uncertainty: " + _e(r["uncertainty"]) + "</span>")
+    for c in _attachable(r):
+        mech = c.get("mechanism") or {}
+        q = mech.get("qualification") or {}
+        source = (mech.get("upstream") or {}).get("source") or "upstream not declared"
+        parts.append(f"<br><b>Verified candidate {_e(c['capability_id'])}</b>"
+                     + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))}, "
+                        f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
+                        f"failures; {_e(mech.get('competence'))}" if mech else ""))
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
     return "".join(parts)
+
+
+def _attachable(r: dict) -> list[dict]:
+    """Verified candidates a capability ask names; only these can be attached from this page."""
+    if r.get("kind") != "CAPABILITY_ATTACH":
+        return []
+    return [c for c in ((r.get("evidence") or {}).get("registered") or []) if c.get("state") == "VERIFIED"]
 
 
 def _form(console: Console, action: str, fields: dict, label: str, *, cls: str = "", disabled=False,
@@ -317,6 +341,11 @@ def render_home(console: Console) -> bytes:
                              "It happened", disabled=not can) + " " +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_not_executed"},
                              "It did not happen", cls="secondary", disabled=not can))
+            actions += "".join(" " + _form(console, "/attach", {"request_id": r["request_id"],
+                                                                "capability_id": c["capability_id"]},
+                                           f"Attach {c['capability_id']}", disabled=not can,
+                                           confirm=f"Sign CAPABILITY_ATTACH for {c['capability_id']}?")
+                               for c in _attachable(r))
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
@@ -331,7 +360,7 @@ def render_home(console: Console) -> bytes:
                         f"</td><td>{accept}</td></tr>")
         out.append("<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
                    "<p class=muted>A closure counts only when every condition holds, including your acceptance "
-                   "and a Mac body.</p></section>")
+                   "and a run on the body you designated as your first body.</p></section>")
     if snap["missions"]:
         rows = "".join(
             f"<tr><td>{_e(m['mission_id'])}<br><span class=muted>{_e(m['intended_effect'])}</span></td>"
@@ -353,6 +382,17 @@ def render_home(console: Console) -> bytes:
                         f"<p>{_e(r['cost_limits'])}; {_e(r['elapsed_ms'])} ms</p></details></td></tr>")
         out.append('<section><h2>Checked reasoning</h2><p>These results check computation and source binding. '
                    'Real-world assumptions and consequential decisions still need review.</p><table>' + ''.join(rows) + '</table></section>')
+    if snap.get("cognitive"):
+        cards = []
+        for answer in snap["cognitive"]:
+            cards.append("<section><h2>" + _e(answer["problem_id"]) + "</h2><p>Method: " + _e(answer["method"]) +
+                         " · Result: " + _e(answer["outcome_state"]) + "</p><p>" + _e(answer["selection_rationale"]) +
+                         "</p><pre>" + _e(json.dumps(answer["output"], ensure_ascii=False)) + "</pre><p>Evidence: " +
+                         _e(answer["proof_class"]) + " · Receipt: " + _e(answer["receipt_id"]) + "</p><p>Uncertainty: " +
+                         _e(answer["uncertainty"]) + "</p><p>Time: " + _e(answer["latency"]) + " seconds · Cost: $" +
+                         _e(answer["money_cost"]) + "</p><p>Next permitted step: " +
+                         _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p></section>")
+        out.extend(cards)
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
         out.append(f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")
@@ -508,6 +548,9 @@ def make_handler(console: Console):
                     target = console.sign("DECISION", {"request_id": form["request_id"], "answer": form["answer"],
                                                        "reason": "decided in the GREG console"})
                     console.flash.append(f"Decision signed: {target.name}")
+                elif path == "/attach":
+                    target = console.attach(form.get("request_id", ""), form.get("capability_id", ""))
+                    console.flash.append(f"Attach signed: {target.name}")
                 elif path == "/accept":
                     console.sign("CRITIQUE", {"target_event_id": form["event_id"], "verdict": "accept",
                                               "evidence_type": "founder_judgment",

@@ -1378,6 +1378,93 @@
         "developmental"
       ],
       "activation_evidence": "Research lineage under INTENT-0030; gates recorded OPEN/CLOSED as negative and positive evidence"
+    },
+    {
+      "id": "pr140_greg_cognition_operations",
+      "lineage": [
+        "#140",
+        "greg/cognition/cortex.py",
+        "greg/cognition/solvers.py"
+      ],
+      "intended_effect": "GREG recruits bounded, typed, independently checked computation inside signed missions",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism"
+      ],
+      "surviving_mechanisms": [
+        "greg/cognition/cortex.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/settlement.py",
+        "greg/cognition/worker.py"
+      ],
+      "adaptation": "Converged 2026-10-01: its one entry (cognition.solve), registry, CognitiveReceipt and settlement now carry the cortex as well; its operation contract is unchanged and serves as the existing_greg baseline in the frozen comparison",
+      "activation_evidence": "tests/integration/test_greg_cortex_mission.py and tests/unit/test_greg_cortex_bridge.py",
+      "evidence_refs": [
+        "tests/integration/test_greg_cortex_mission.py",
+        "tests/evidence/greg-crossgeo-v0.2/selection-results.json"
+      ]
+    },
+    {
+      "id": "pr141_polyintelligence_cortex",
+      "lineage": [
+        "#141",
+        "cortex/",
+        "docs/cortex/"
+      ],
+      "intended_effect": "A Competency Compiler: geometry, hard eligibility before ranking, typed proof, independent verification, truthful abstention, outcome-settled competence",
+      "intended_effect_status": "active",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism",
+        "interface"
+      ],
+      "surviving_mechanisms": [
+        "cortex/routing.py",
+        "cortex/genome.py",
+        "cortex/organs/adversarial.py",
+        "cortex/evaluation/run.py"
+      ],
+      "adaptation": "Converged 2026-10-01 onto GREG's registry and mission path through greg/cognition/bridge.py; v0.2.0 adds a fault-diverse CP-SAT engine, the outcome taxonomy and the schedule-extraction composition; v0.1.x freezes and results stay as evidence",
+      "activation_evidence": "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+      "evidence_refs": [
+        "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+        "cortex/evaluation/freeze-crossgeo-v0.2.json"
+      ]
+    },
+    {
+      "id": "pr139_egregore_cognition_seed",
+      "lineage": [
+        "#139",
+        "branch egregore/cognition (organs, runtime, benchmark, genomes)"
+      ],
+      "intended_effect": "Governed heterogeneous cognition with geometry, epistemic typing, truthful abstention, receipts and a reproducible comparison",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N1",
+      "changed_axes": [
+        "implementation_mechanism",
+        "sequence"
+      ],
+      "surviving_mechanisms": [
+        "cortex/routing.py",
+        "greg/cognition/bridge.py",
+        "cortex/evaluation/crossgeo.py"
+      ],
+      "adaptation": "Not merged into the converged branch: a second cognition package beside greg/cognition would be a competing registry and learning plane (directive invariant 2). Its effect is carried by the cortex on GREG's path; its branch and recorded results stay as evidence",
+      "inheritance_test": {
+        "q1_original_capability": "A governed polyintelligence seed with typed proof evaluation (egregore/cognition)",
+        "q2_still_in_destination": "Yes: the Competency Compiler is the 2026-10-01 directive's engineering result",
+        "q3_assumption_that_became_false": "That cognition could live in a package parallel to greg/cognition; the directive requires one registry, one entry and one learning plane",
+        "q4_replace_without_discarding": "Yes: the cortex plus greg/cognition/bridge.py carry geometry, eligibility, typed receipts, abstention and the comparison",
+        "q5_portable_parts": "Its gates-before-ranking correction and incomparable-tradeoff rule are already in cortex/gates.py",
+        "q6_later_node_parts": "Its reserved collective and developmental layers map to workstream nodes P6 and P10",
+        "q7_extract_into_current_path": "Its service-unavailable benchmark run is negative evidence for the model-dependent arms; nothing else needs extraction",
+        "q8_incompatible_with_corrected_destination": "Only its separate registry and runtime location",
+        "q9_cheapest_distinguishing_test": "Run its seed suite through cognition.solve; any case it answers that the cortex cannot names a capability to port"
+      }
     }
   ]
 }

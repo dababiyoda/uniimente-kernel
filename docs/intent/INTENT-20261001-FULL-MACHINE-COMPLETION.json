@@ -18,7 +18,7 @@
     "docs/CANONICAL_EXECUTION_ORDER.md",
     "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
     "greg/path.json",
-    "greg/cognition.py",
+    "greg/cognition/seed_path.py",
     "greg/appraisal.py",
     "greg/foundry_bridge.py"
   ],

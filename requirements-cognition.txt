@@ -1,3 +1,9 @@
-# Optional bounded cognition solvers; shared Z3 pin with the inherited cortex.
+# Optional local cognition engines. No paid provider or new background service.
+# Tested versions are retained in tests/evidence/cognition-2026-09-30/verification.json.
+# Shared Z3 pin with the inherited cortex (exact pins there win where both name a package).
 -r requirements-cortex.txt
-ortools==9.14.6206
+sympy>=1.13,<2
+networkx>=3.4,<4
+scipy>=1.14,<2
+# From #145: patched protobuf compatible with OR-Tools 9.15 (9.14 restricted protobuf below its security fix).
+protobuf==6.33.5

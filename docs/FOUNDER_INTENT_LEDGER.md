@@ -2,6 +2,21 @@
 
 # Founder Intent Ledger
 
+## Controlling founder completion correction — 2026-10-02
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.**
+The complete currently achievable autonomous machine must be implemented and integrated before Alfonso's sustained use, critique and refinement phase.
+
+Reconstruct that whole boundary; identify the highest-priority unfinished dependency; build the smallest rigorous increment needed to advance it; prove it; integrate it; automatically resume the parent objective and the next unblocked requirement. Repeat until all currently achievable requirements are executable and integrated. A seed, experiment, sandbox, benchmark, registry, PR, smallest falsifiable build or VEPMC milestone is a sequencing or evidence unit, never the project stopping condition. A narrow PR does not narrow the machine.
+
+Never convert not implemented into not intended, future family into permanent omission, sandboxed into complete, registered into implemented, seed into final architecture, a tested component into a complete system, or any milestone into the total product definition. Do not replace feasible executable machinery with placeholders or architecture prose.
+
+An item may wait only for an inherently founder-only action, genuine external dependency, or demonstrated technology limit. Preserve the destination and build the strongest defensible approximation/backcast for a technology limit. Finish every unrelated buildable item while that item waits. Founder-use evidence may remain pending without stopping software completion. Stage gates apply to the affected integration, activation or claim; they do not globally prohibit reversible implementation.
+
+Preserve failures, dissent and useful historical mechanisms. Keep one canonical runtime and authority path. Implementation creates no merge, deployment, activation, expenditure, publishing or contact authority; existing signed gates, consent, budgets, pause, revocation and shutdown remain effective.
+
+Controlling source: `docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md`; trace and source-access limits: `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Apply `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`. A successful experiment must automatically return to the parent founder objective.
+
 ## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
 
 `INTENT-20261001-greg-seed-genome` ([record](intent/INTENT-20261001-greg-seed-genome.json), [verbatim source](intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md), [requirement map](collaboration/requirements-greg-seed-genome-20261001.json), [intents SG-001 to SG-012](collaboration/intents-greg-seed-genome-20261001.json), [deliberation](collaboration/deliberation-greg-seed-genome-20261001.json), [ADR](decisions/ADR-20261001-greg-seed-genome.md)): GREG recognizes a problem's geometry, recruits the smallest competent method, produces typed evidence, respects authority and settles competence from outcomes. The founder's goal-set words are kept verbatim: "meniscus" is translated as the frontier of the verified envelope, "impermeable shield" as layered prevention and verification, "systemic dominance" as superior lawful capability (SG-002). Control over people, resistance to shutdown and promises of perfection are prohibited (SG-003). State: active. The seed is implemented and integrated through `cognition.solve`, and survives `kill -9` with one settlement. The frozen comparison failed once (v0.2 GAIN_ABSENT, one hard failure, fixed in 0.2.1) and passed on fresh samples (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES against the static router; the gain is concentrated in one family; model arms NOT_RUN). Open founder decisions: merge, and whether high privacy harm is a hard gate (SG-012). Authority delta: none. VEPMC: 0.

@@ -1,12 +1,24 @@
-> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+---
+name: Agent implementation dependency
+about: Advance an unfinished dependency of the complete UNIIMENTE machine
+title: ''
+labels: ''
+assignees: ''
+---
 
----
-name: Agent implementation task
-about: Product-first task with founder-intent and source reconstruction
-title: ""
-labels: ""
-assignees: ""
----
+BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.
+
+- Controlling founder-intent source:
+- Full-machine dependency advanced:
+- Current executable state and evidence:
+- Smallest rigorous next increment, acceptance condition and falsifier:
+- Integration path through the canonical runtime and authority:
+- Item-specific founder/external/technology blockers:
+- Next unblocked requirement after proof and integration:
+
+An experiment, PR or milestone sequences work and never closes the parent objective. Continue independent buildable machinery while blocked items wait.
+
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
 
 ## Desired product effect
 
@@ -53,7 +65,7 @@ Which control node(s) improve?
 
 ## VEPMC impact
 
-How does this advance VEPMC or the current verified bottleneck?
+How does this advance VEPMC? VEPMC is an item gate on the founder's device, never a project stop.
 
 ## Strongest alternative
 

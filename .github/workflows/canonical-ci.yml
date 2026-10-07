@@ -53,6 +53,15 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
       - name: Full unit and integration suite
         run: python -m pytest -q
+      - name: Frozen cognition assessment
+        run: |
+          python -m greg.cognition.benchmark > cognition-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bounded-cognition-report
+          path: cognition-report.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
 
@@ -103,21 +112,22 @@ jobs:
           retention-days: 90
 
   cortex_seed:
-    name: "6 · Cortex seed experiment (Z3, frozen evaluation)"
+    name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
-      - name: Cortex tests with the solver present (no skips for Z3)
-        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
+      # requirements-cognition adds NetworkX and SciPy: the open-source engines genesis qualifies.
+      - run: pip install -r requirements-dev.txt -r requirements-cortex.txt -r requirements-cognition.txt
+      - name: Cortex tests with the solvers and open-source engines present (no skips)
+        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_formal_engines.py tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py tests/unit/test_greg_cortex_bridge.py tests/integration/test_greg_cortex_mission.py tests/unit/test_greg_open_source_genesis.py
       - name: Mutation check (every safeguard-removing mutant must be caught)
         run: python scripts/ci/check_cortex_mutants.py
-      - name: Canonical GREG cognition, signed authority and process recovery
-        run: python -m pytest -q tests/unit/test_greg_cognition.py tests/integration/test_greg_cognition_process.py
+      - name: Canonical GREG seed-path cognition, signed authority and process recovery
+        run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/integration/test_greg_cognition_process.py
       - name: GREG cognition boundary mutation check
         run: python scripts/ci/check_greg_cognition_mutants.py
       - name: Seed Genome 120-case frozen engineering comparison

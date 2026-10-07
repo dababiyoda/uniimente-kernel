@@ -1,0 +1,67 @@
+{
+  "schema": "seed-freeze/3",
+  "suite_digest": "sha256:4333f114bcea9953038ff7879a7f66ba2a6ae99b1587d127848dd61f75a8b8d5",
+  "code_digests": {
+    "greg/authority.py": "sha256:5048fb8120ada83aa93175879f2bd2dc714af39cf928d27e2490c9f2e87be0fd",
+    "greg/body.py": "sha256:5ce5939f4cd306334c872d92e9ccf030af8eb784f81774ebcef0527902508571",
+    "greg/capabilities.py": "sha256:1b5180332283480cbed882d2b86666eb2a8d5ea8f801ce6f1c6166669f081e90",
+    "greg/cognition/__init__.py": "sha256:da27b2e1aeb822fe1c70f8d5d756687ea2a83322d09b090696de766cdaabadac",
+    "greg/cognition/benchmark.py": "sha256:c82dc8086906eb90ee205fabdd9605a02632d2676d8518e33ad5b2ac7c4f943d",
+    "greg/cognition/budget.py": "sha256:eb6c4dee09bdc53424282b3c23cd23e68e2e24c5749a27053fe669520db309cd",
+    "greg/cognition/catalog.py": "sha256:4a383648ea1e95d5c0eee90adc4b1976ba66e9fa9376df6144575f7a9cea2bcb",
+    "greg/cognition/cells.py": "sha256:bf7dc655cf131272aae31398403701a6a53515a8f55613eff853bc54fb23556a",
+    "greg/cognition/contracts.py": "sha256:74adc843c694f307d24e59b3b108c2af80ce22e20760ff1df5ed653e00615581",
+    "greg/cognition/cortex.py": "sha256:f9c1d4b317c4426113df4714940a0c7658967a592059dd8c459be67ea0415196",
+    "greg/cognition/evidence.py": "sha256:6caafa37a3f8640e5762f9e8c5ce97a98d239c7077ae2c683e60858e3b916657",
+    "greg/cognition/protection.py": "sha256:a8ea5890f24643603483ffde2cc35565454bb3cb464436b5ea842b6a6fb2e759",
+    "greg/cognition/seed_evaluation.py": "sha256:a6bd063ab1f95a99a647643e8bcb73493554522eee440fc0a3cb290920ed022d",
+    "greg/cognition/semantic.py": "sha256:fc6cc287e0ab78e3fec86bc51983c86e17618097c125119a4bddf0948ae17083",
+    "greg/cognition/settlement.py": "sha256:54e74a507ccc5e61de03a9e1e459bc924e9446c08b13ae456ffc8067acad06ec",
+    "greg/cognition/solvers.py": "sha256:a221902c16f4583141c3ad3b7842d649f0ac279b7d56bb39df5c22b03cd1cdd9",
+    "greg/cognition/verification.py": "sha256:60601b4ef0433f09fe9d8dda16a4bd280ef003a1d0e1c0a2d4e52296e37b5df3",
+    "greg/cognition/worker.py": "sha256:11612a76cc47275e7f2c7ab8b5df717f2553c347ae975c9eef405b1bc3020f08",
+    "greg/models.py": "sha256:14f6bc6ff1405f9dbf285cb5db09cde58b14bd2274b073a7cd0744e698b6d9ed"
+  },
+  "scoring": {
+    "error_weight": 0.55,
+    "false_claim_weight": 0.2,
+    "unjustified_abstention_weight": 0.1,
+    "uncertainty_weight": 0.05,
+    "cost_weight": 0.05,
+    "latency_weight": 0.05,
+    "error": "binary exact/status failure",
+    "false_claim": "model or solver output asserted despite refutation or incompatible epistemic proof",
+    "uncertainty": "binary absence of conditional limits; not a calibrated probabilistic error",
+    "cost": "local model calls normalized to one; CPU/RAM separately reported, energy unmeasured",
+    "latency": "seconds/declared limit, clipped at one"
+  },
+  "target": {
+    "relative_loss_reduction": 0.1,
+    "ci95_lower_bound_above": 0,
+    "critical_regression": "none permitted"
+  },
+  "sample_size": {
+    "paired_bounded_loss_hoeffding_for_0.10_absolute_effect": 185,
+    "effective_independent_groups": 64,
+    "status": "coverage floor only; correlated groups insufficient for specified superiority without further sampling"
+  },
+  "budget": {
+    "model_calls_per_case": 1,
+    "local_token_limit": 512,
+    "numeric_seconds": 5,
+    "semantic_seconds": 30,
+    "global_seconds": 1800,
+    "spend_usd": 0
+  },
+  "exclusions": "none; missing engines and global budget exhaustion retained as failures/blocked cases",
+  "required_baselines": [
+    "existing_greg_without_cortex",
+    "always_local_llm",
+    "tool_enabled_workflow",
+    "static_specialist_router",
+    "proposed_router"
+  ],
+  "stop": "all cases or 1800 seconds; no human intervention or weight adjustment",
+  "parent_freeze_digest": "sha256:2c65f9eaf1312a5256675330ca44cafece712bca09ef12d5bc581b1fa9c6bd4b",
+  "correction": "SEED-20261001-D4: reject fractional assignments and conflicting/relabelled proofs; distinguish signed claims in settlement. Identical held-out inputs/scoring/target/budget; new code digest only."
+}

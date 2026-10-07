@@ -28,7 +28,7 @@ The sample combines interval estimation and CP-SAT allocation. A successful resu
 | `greg/missions.py`, `greg/authority.py` | Existing scheduler, worker identity, grants and Consequence Gate; no second authority service |
 | `capabilities/genome.py`, `greg/capabilities.py` | Compatible optional cognitive profiles in the existing GenomeRegistry; empty legacy profiles preserve manifest digests |
 | `cortex/seed/` | Pure bounded contracts, native method variants, independent arithmetic/constraint/binding checks and rich geometry projections |
-| `greg/cognition.py`, `greg/cognitive_worker.py` | Bounded process invocation, original-input checking and canonical journal events |
+| `greg/cognition/seed_path.py`, `greg/cognitive_worker.py` | Bounded process invocation, original-input checking and canonical journal events |
 | `greg/routing.py` | Read-only conditional outcome projection; no autonomous weight or permission update |
 | `greg/path.json` | One project path; P0–P13 and C1–C8 are a subordinate workstream, not another primary node |
 

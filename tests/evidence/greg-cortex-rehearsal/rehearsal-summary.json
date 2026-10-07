@@ -1,0 +1,279 @@
+{
+ "what": "seed composition on the supervised body: kill -9 while waiting, restart, approve, settle once; founder detach; kill -9; revocation survives restart; founder stop",
+ "founder_key": "per-test Ed25519 key; NOT Alfonso",
+ "host": "Linux container, supervisord in place of the systemd user unit; not a Chromebook or founder run",
+ "boots": [
+  {
+   "boot_id": "boot-ff93941fe5abe27b",
+   "pid": 8037,
+   "at": "2026-10-01T14:20:57.832231Z",
+   "version": "greg-body/0.1.0",
+   "body_id": "body-14a1d8a724587983",
+   "boot_number": 1,
+   "platform": "Linux",
+   "ledger_head_at_boot": "sha256:b721548f34583e84625e4cd263ce7e29b3e37b01c52784a71b74339abf3441f5"
+  },
+  {
+   "boot_id": "boot-fd30ee2e8357f9b6",
+   "pid": 8063,
+   "at": "2026-10-01T14:21:00.500453Z",
+   "version": "greg-body/0.1.0",
+   "body_id": "body-14a1d8a724587983",
+   "boot_number": 2,
+   "platform": "Linux",
+   "ledger_head_at_boot": "sha256:402d36c1df184abaf851ac97e6c0bc36b8b2a9bebeb0028a4b980e4859e87175",
+   "previous_heartbeat": {
+    "boot_id": "boot-ff93941fe5abe27b",
+    "at": "2026-10-01T14:20:59.181016Z",
+    "state": "RUNNING",
+    "source": "heartbeat file (unsigned, written by the previous process)"
+   }
+  },
+  {
+   "boot_id": "boot-f1f2f0a4d1dd2718",
+   "pid": 8132,
+   "at": "2026-10-01T14:21:07.258776Z",
+   "version": "greg-body/0.1.0",
+   "body_id": "body-14a1d8a724587983",
+   "boot_number": 3,
+   "platform": "Linux",
+   "ledger_head_at_boot": "sha256:ebde4fa202c1352424902597bd4c4e9d7be8b2da947899ade70b89d0df554798",
+   "previous_heartbeat": {
+    "boot_id": "boot-fd30ee2e8357f9b6",
+    "at": "2026-10-01T14:21:05.652649Z",
+    "state": "RUNNING",
+    "source": "heartbeat file (unsigned, written by the previous process)"
+   }
+  }
+ ],
+ "recovered": [
+  {
+   "boot_id": "boot-fd30ee2e8357f9b6",
+   "previous_unfinished_boots": [
+    "boot-ff93941fe5abe27b"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  },
+  {
+   "boot_id": "boot-f1f2f0a4d1dd2718",
+   "previous_unfinished_boots": [
+    "boot-ff93941fe5abe27b",
+    "boot-fd30ee2e8357f9b6"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  }
+ ],
+ "decision_requests": [
+  {
+   "request_id": "req-bd659c4b0d69a8ad9aac9d8a",
+   "mission_id": "m:cortex-rehearsal",
+   "kind": "APPROVAL",
+   "action_id": "record",
+   "scope_digest": "sha256:1ce4d0ae56ca5e2f74ef49633f5c9653aafa53d38867e0aca8f1ec74c1160272",
+   "why_now": "capability 'fs.write' outside scope; internal_write exceeds scope ceiling read_only",
+   "recommendation": "approve record (fs.write on workspace:plan.txt) at $0.0: record the agreed plan (a write: needs founder approval)",
+   "alternatives": [
+    "solve",
+    "reject: the mission will try alternatives or ask again"
+   ],
+   "authority_requested": {
+    "capability": "fs.write",
+    "target": "workspace:plan.txt",
+    "consequence_class": "internal_write",
+    "cost_usd": 0.0
+   },
+   "consequence_of_no_response": "the mission waits; no action is taken",
+   "created_at": "2026-10-01T14:20:58.350880Z",
+   "reality_status": "RECORDED_LOCAL_MESSAGE"
+  }
+ ],
+ "actions": [
+  {
+   "mission_id": "m:cortex-rehearsal",
+   "action_id": "record",
+   "attempt": 0,
+   "status": "DONE",
+   "reasons": [],
+   "receipt": "sha256:451d6e579be15cd39a22803877296020b14dea3c0c37a8f489060ee8e77e360e",
+   "capability": "fs.write",
+   "route": "api",
+   "cost_usd": 0.0,
+   "scope_digest": "sha256:1ce4d0ae56ca5e2f74ef49633f5c9653aafa53d38867e0aca8f1ec74c1160272",
+   "routing": {
+    "chosen": "record",
+    "expected_value": 0.5,
+    "reliability": 0.5,
+    "alternatives": []
+   },
+   "at": "2026-10-01T14:21:02.488729Z"
+  }
+ ],
+ "achieved": [
+  {
+   "mission_id": "m:cortex-rehearsal",
+   "evidence": [
+    "sha256:f8e6ff2cc9ee2aa588fab2be297fc40c92c58053271c7a4e172e6f4683eec252",
+    "sha256:75adae7c0ea9765396c897ab73a5eb674972f442c86a01224a10168ff0620eeb"
+   ],
+   "actions_done": 1,
+   "closure_rule": "every success check re-observed passing through the Gate",
+   "founder_authenticated_mission": true,
+   "at": "2026-10-01T14:21:03.758762Z"
+  },
+  {
+   "mission_id": "m:after-detach",
+   "evidence": [
+    "sha256:b48f591f5a0efddd0e1f3354b7cc843fdd96cc9afe5331898839049d4007853d"
+   ],
+   "actions_done": 0,
+   "closure_rule": "every success check re-observed passing through the Gate",
+   "founder_authenticated_mission": true,
+   "at": "2026-10-01T14:21:07.951778Z"
+  }
+ ],
+ "appraised": [
+  {
+   "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+   "checks": {
+    "achieved_claimed": true,
+    "approval_boundaries_honored": true,
+    "approval_boundary_encountered": true,
+    "arrived_via_inbox": true,
+    "chain_intact": true,
+    "checks_rederived_from_receipts": true,
+    "deliveries_bound_to_evidence": true,
+    "exactly_once": true,
+    "founder_signature_verified": true,
+    "preconditions_honored": true,
+    "registered_once": true,
+    "world_reobserved": true
+   },
+   "findings": [],
+   "head": "sha256:51d9672ccef3a11c17e06161038dea67e39b1c81cc3ebce4bdd7b5a69d88837b",
+   "limits": "shares reviewed Kernel code; not an independent implementation",
+   "mission_id": "m:cortex-rehearsal",
+   "verdict": "VERIFIED"
+  },
+  {
+   "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+   "checks": {
+    "achieved_claimed": true,
+    "approval_boundaries_honored": true,
+    "approval_boundary_encountered": false,
+    "arrived_via_inbox": true,
+    "chain_intact": true,
+    "checks_rederived_from_receipts": true,
+    "deliveries_bound_to_evidence": true,
+    "exactly_once": true,
+    "founder_signature_verified": true,
+    "preconditions_honored": true,
+    "registered_once": true,
+    "world_reobserved": true
+   },
+   "findings": [],
+   "head": "sha256:bcef424f4d4ca78fce8afdbce82d35e83a63af41d5edd926243e573519322952",
+   "limits": "shares reviewed Kernel code; not an independent implementation",
+   "mission_id": "m:after-detach",
+   "verdict": "VERIFIED"
+  }
+ ],
+ "settled": [
+  {
+   "mission_id": "m:cortex-rehearsal",
+   "receipt": "sha256:f8e6ff2cc9ee2aa588fab2be297fc40c92c58053271c7a4e172e6f4683eec252",
+   "cognitive_receipt": "sha256:a6e27ce3204684492474ac7647db1a1ee8d9b394f9f0db46699f51af27f14461",
+   "method": "cognition.cortex",
+   "method_version": "0.2.0",
+   "geometry_key": "sha256:c02ece575590182992b9814e06a4a72b35bcd2194b958bda86a045297d81f7ef",
+   "correct": true,
+   "observation_event": "71b7f7ad-8a3c-571d-bddd-a63cecb5b0a8",
+   "appraisal_event": "ec67aa33-83ff-5784-b66a-75c6c1630788",
+   "cost_usd": 0.0,
+   "latency": 0.5254272689999198,
+   "causal_credit": [
+    {
+     "method": "cognition.cortex.extraction.schedule",
+     "role": "solver"
+    },
+    {
+     "method": "cognition.cortex.optimization.cpsat",
+     "role": "solver"
+    },
+    {
+     "method": "cortex.verifier.adversarial@0.1.0",
+     "role": "falsifier"
+    }
+   ],
+   "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+   "authority_created": false
+  },
+  {
+   "mission_id": "m:after-detach",
+   "receipt": "sha256:b48f591f5a0efddd0e1f3354b7cc843fdd96cc9afe5331898839049d4007853d",
+   "cognitive_receipt": "sha256:1ad5c6bffd32fb5cd12d64f2670be19f2c46b150fe4ff505afe77d0638e73562",
+   "method": "cognition.cortex.formal.z3",
+   "method_version": "0.2.0",
+   "geometry_key": "sha256:3ef49e596a93730027231834afab54a730d4eb777d25c4f3234ada1973a3ec1d",
+   "correct": true,
+   "observation_event": "43b985a9-5299-5d57-bcbb-20cbfa39f969",
+   "appraisal_event": "93817c6f-df98-5623-ad13-dc57066e720d",
+   "cost_usd": 0.0,
+   "latency": 0.25322664699979214,
+   "causal_credit": [
+    {
+     "method": "cognition.cortex.formal.z3",
+     "role": "solver"
+    },
+    {
+     "method": "cortex.verifier.adversarial@0.1.0",
+     "role": "falsifier"
+    }
+   ],
+   "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+   "authority_created": false
+  }
+ ],
+ "cortex_receipts": [
+  {
+   "problem_id": "cortex:words",
+   "method": "cognition.cortex",
+   "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+   },
+   "receipt_id": "sha256:63298ce6db34d7c175a3ef6a5ca7b41fdd0799420fe70ccb1d3a457050117226"
+  },
+  {
+   "problem_id": "cortex:words",
+   "method": "cognition.cortex",
+   "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+   },
+   "receipt_id": "sha256:477f3166f1bc95596ffc88af6825f3c470602008396c80858c885667aa3b6b12"
+  },
+  {
+   "problem_id": "cortex:words",
+   "method": "cognition.cortex",
+   "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+   },
+   "receipt_id": "sha256:a6e27ce3204684492474ac7647db1a1ee8d9b394f9f0db46699f51af27f14461"
+  },
+  {
+   "problem_id": "cortex:after-detach",
+   "method": "cognition.cortex.formal.z3",
+   "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+   },
+   "receipt_id": "sha256:1ad5c6bffd32fb5cd12d64f2670be19f2c46b150fe4ff505afe77d0638e73562"
+  }
+ ],
+ "supervisor_status": "greg-body                        EXITED    Oct 01 02:21 PM"
+}

@@ -190,3 +190,34 @@ def test_a_worker_dies_with_its_body(tmp_path):
         time.sleep(0.05)
     os.kill(child, signal.SIGKILL)
     pytest.fail("worker outlived its body")
+
+
+def test_the_mission_books_the_provider_reported_spend_under_the_signed_cap(tmp_path, monkeypatch):
+    home, *_ = run_mission(tmp_path, monkeypatch, GOOD)
+    with Body(home) as body:
+        action = next(e.payload for e in body.journal.replay("mission.action")
+                      if e.payload["capability"] == "worker.commission" and e.payload["status"] == "DONE")
+        mission = body.engine.book.missions["m:work-add-sub"]
+    assert action["cost_usd"] == 0.01 and action["cost_cap_usd"] == 1.0
+    assert action["spend_basis"] == "provider_reported" and action["provider_reported_usd"] == 0.01
+    assert mission.spent_usd == pytest.approx(0.01)
+
+
+@pytest.mark.parametrize("output, booked, basis", [
+    ({"worker": {"cost_usd": 0.3}}, 0.3, "provider_reported"),
+    ({"worker": {"cost_usd": None}}, 2.0, "signed_cap: provider spend not reported"),
+    ({"worker": {}}, 2.0, "signed_cap: provider spend not reported"),
+    ({"worker": {"cost_usd": 9.0}}, 2.0, "signed_cap: provider report outside [0, cap]"),
+    ({"worker": {"cost_usd": -1}}, 2.0, "signed_cap: provider report outside [0, cap]"),
+    ({"worker": {"cost_usd": True}}, 2.0, "signed_cap: provider spend not reported"),
+    (None, 2.0, "signed_cap: provider spend not reported"),
+])
+def test_metered_spend_never_books_less_than_a_trustworthy_report(output, booked, basis):
+    from greg.missions import metered_spend
+    out = metered_spend("worker.commission", output, 2.0)
+    assert out["cost_usd"] == booked and out["spend_basis"] == basis and out["cost_cap_usd"] == 2.0
+
+
+def test_capabilities_without_a_meter_book_the_signed_cap():
+    from greg.missions import metered_spend
+    assert metered_spend("browser.session", {"worker": {"cost_usd": 0.0}}, 1.5)["cost_usd"] == 1.5

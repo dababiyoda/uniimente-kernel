@@ -1,0 +1,7 @@
+diff --git a/post.txt b/post.txt
+new file mode 100644
+index 0000000..48706d9
+--- /dev/null
++++ b/post.txt
+@@ -0,0 +1 @@
++Latest z3-solver release on PyPI: 5.1.0.0. Previous releases: 5.0.0.0, 4.16.0.0, 4.15.8.0, 4.15.7.0.

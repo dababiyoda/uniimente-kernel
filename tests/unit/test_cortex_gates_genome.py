@@ -162,8 +162,14 @@ class TestIntelligenceGenomeProjection:
         rows = {e.key: e for e in reg.eligibility(geometry, role="reserved")}
         assert rows and all(not e.eligible and any("disabled" in r for r in e.reasons) for e in rows.values())
         for key in reg.keys():
-            if key.split("@")[0] in RESERVED_FAMILIES:
+            if key.split("@")[0] in RESERVED_FAMILIES and key.endswith("@0.1.0"):
                 assert reg.get(key).profile.enabled is False
+        # cortex 0.2.0: a reserved family that gained an implementation keeps its reserved
+        # profile as SUPERSEDED lineage; the implementation is a separate, newer version.
+        superseded = reg.get("cortex.optimization.cpsat@0.1.0").profile
+        assert superseded.lifecycle == "SUPERSEDED" and superseded.enabled is False and superseded.role == "reserved"
+        implemented = reg.get("cortex.optimization.cpsat@0.2.0").profile
+        assert implemented.enabled is True and implemented.role == "solver"
 
     def test_biological_concepts_must_compile_to_mechanisms(self):
         for name, (_, _, _, _, bio) in RESERVED_FAMILIES.items():

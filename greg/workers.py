@@ -133,7 +133,8 @@ class WorkOrder:
         else:
             if not acceptance.get("output"):
                 raise WorkerError("a document work order names its acceptance.output file")
-        inputs = tuple(str(_inside(Path(p), ctx.read_roots)) for p in params.get("inputs", []))
+        # Inputs: founder read roots, or what this same mission already wrote to its own workspace.
+        inputs = tuple(str(_inside(Path(p), ctx.read_roots + (ctx.workspace,))) for p in params.get("inputs", []))
         provider = str(params.get("provider", "claude-code"))
         if provider not in PROVIDERS:
             raise WorkerError(f"unknown worker provider {provider!r}; known: {sorted(PROVIDERS)}")

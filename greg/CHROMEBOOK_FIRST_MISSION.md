@@ -47,6 +47,11 @@ enrolls it, enables `greg-body.service`, and asks you to sign the designation of
 this machine as your first body. Re-running it changes nothing that is already
 done. Then skip to step 2. The manual steps below do the same thing by hand.
 
+It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
+SymPy; about 550 MB, binary wheels only) and prints how many are present. If your
+Chromebook has no wheel for one, the install still finishes and that engine is listed as
+missing; add `--no-engines` to skip the step. N1 needs none of them.
+
 **Manual install (equivalent):**
 
 ```bash
@@ -55,6 +60,7 @@ git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
 git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
+~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
 alias greg='~/.uniimente/venv/bin/python -m greg'
 greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG
@@ -145,6 +151,12 @@ using it, and verifies the file. Filing the verification record stops for your a
 happens only if the digest matches. Interrupt it once with `kill -9` while it waits, approve,
 accept the result, then run `greg path` again. A second closure on an unrelated function, e.g.
 **"Confirm ~/src/<draft> is at most 1500 words"**, shows the acquisition is not a one-off.
+
+The same route with an open-source engine, if the engines installed: ask
+**"Maximize 40 chairs + 30 tables. 2 chairs + 3 tables <= 120. 4 chairs + 2 tables at most 160."**
+GREG finds the installed LP engine, shows its version and license, and waits for your Attach.
+It then returns the plan with the price of each limit, accepted only on its own duality
+certificate.
 
 ## 3. What "persistent" means on this Chromebook
 

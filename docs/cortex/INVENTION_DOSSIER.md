@@ -194,3 +194,31 @@ Each level inherits the gates, receipts and outcome-only settlement of the one b
 - **Evidence required:** both declared baselines `RUN` against the committed freeze.
 - **Stage gate:** Node 1 of the backcast.
 - **Termination condition:** the kill test above.
+
+## Addendum, cortex 0.2.1 on GREG's path (2026-10-01 directive, section 19)
+
+Four mechanism cards for the converged seed. Each records what was taken, how it was mutated, what it
+now does and what it newly risks. Routing itself is not novel (SATzilla-style portfolios are direct
+precedent); the project-specific part is the governed composition across epistemic classes with
+outcome-settled competence. No novelty or patentability is claimed.
+
+| Mechanism | Source primitive | State and transition | Mutation | New behavior | New vulnerability |
+| --- | --- | --- | --- | --- | --- |
+| Algorithm selection | per-instance solver portfolio | geometry -> eligibility -> engine plan -> fallback | per-claim epistemic eligibility replaces a speed objective; permission checks run before ranking; competence settles from appraised outcomes, not self-reported bids | a Z3 outage is answered by CP-SAT on the same encoded question (H-F06); detach reroutes under the same signature | shared parser between engines and verifier (disclosed); worker start-up latency |
+| Proof-carrying receipts | proof-carrying code, typed certificates | content-addressed receipt, re-checked by the body before retention | proof bound to claim type; evidence separated from permission; the receipt names the Gate instead of acting | a forged, re-addressed or authority-claiming receipt is refused (mutation-tested layers) | two receipt layers to keep consistent |
+| Bounded allocation | markets and ecologies allocating resources | budget controller decides optional steps | allocates bounded computation, never tokens or power; rewards abstention where gold withholds | takes a certificate only when it can change the decision; zero solver budget refused before spending | a refused optional step can leave an optimum uncertified |
+| Homeostasis | control loops on observed state | one latency deadline drawn down by every solve | diagnostics capped at half; later engines get only what remains | a 50 ms budget stays near 50 ms; no worker is killed for CPU (selection finding) | fewer diagnostics under tight budgets |
+
+**Emergent behavior, tested.** The combination solves a mixed problem (schedule in words: extraction, then
+CP-SAT, then a Z3 certificate, then the verifier). It rejects a category error: legal questions and
+misclassified high-consequence problems are handed off. It keeps a justified abstention (out-of-grammar
+text, an unidentified causal claim). It settles competence once across restart. It has not yet improved
+future selection over the static router: that is P4.
+
+**Ablation.** The static router is the cortex minus eligibility routing, engine plan and fallback,
+certificates, the verifier, the budget controller and composition planning, with the same organs. On
+1,200 fresh held-out items only the disposition rule for incomparable trade-offs changed the loss.
+The other mechanisms showed their value on the adversarial suite, fault injection and mutation tests,
+which the held-out families do not reach. A per-mechanism ablation on fault-bearing families is the
+next experiment.
+

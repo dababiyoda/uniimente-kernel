@@ -983,13 +983,358 @@
       "founder_sources": [
         "INTENT-0030"
       ]
+    },
+    {
+      "id": "competency_compiler",
+      "covers": [
+        "Competency Compiler",
+        "polyintelligence cortex",
+        "heterogeneous cognition"
+      ],
+      "intended_effect": "GREG recognizes a problem, recruits the smallest competent method or composition, produces typed evidence, respects authority, and improves future selection from outcomes",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED seed (cognition.solve, bounded worker, signed missions, kill -9 rehearsal); frozen routing-gain verdict GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT); model arms not run",
+      "nearest_precursor": [
+        "cortex/routing.py",
+        "greg/cognition/bridge.py",
+        "cortex/evaluation/crossgeo.py"
+      ],
+      "activation_evidence": "P2 exit in the cognition_cortex workstream",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome"
+      ]
+    },
+    {
+      "id": "learned_cognitive_routing",
+      "covers": [
+        "learned routing",
+        "cognitive settlement",
+        "outcome-earned defaults"
+      ],
+      "intended_effect": "Settled outcomes earn conditional routing defaults without new authority",
+      "node": "N4",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "prerequisite": "settled real-mission outcomes and the frozen static router as baseline",
+      "current_reality": "IMPLEMENTED hooks (routing memory reorders eligible routes only); not shown to beat static routing",
+      "nearest_precursor": [
+        "cortex/memory.py",
+        "greg/cognition/settlement.py"
+      ],
+      "activation_evidence": "P4 exit",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome"
+      ]
+    },
+    {
+      "id": "cognitive_ecology",
+      "covers": [
+        "collective cognition",
+        "open cognitive ecology",
+        "evolutionary cognition",
+        "constraint-release discovery",
+        "unscripted functional recovery",
+        "substrate-plural execution"
+      ],
+      "intended_effect": "Compositions, collective mechanisms and evolved methods earn their place against simple baselines; functions recover unscripted; the same contracts run on different substrates",
+      "node": "N5",
+      "feasibility": "REQUIRES_RESEARCH",
+      "prerequisite": "P4 learned routing and protected evaluators",
+      "current_reality": "#140 quorum and evolve_vector exist on the operation path; cortex families reserved and disabled",
+      "nearest_precursor": [
+        "greg/cognition/solvers.py",
+        "cortex/genome.py",
+        "developmental/"
+      ],
+      "activation_evidence": "P6, P8, P9, P10, P11 and P12 exits",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome",
+        "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ]
+    }
+  ],
+  "workstreams": [
+    {
+      "id": "cognition_cortex",
+      "intent": [
+        "INTENT-20261001-greg-seed-genome",
+        "INTENT-20260930-polyintelligence-cortex",
+        "INTENT-20261001-open-source-mechanism-harvest"
+      ],
+      "subordinate_to": "N1",
+      "rule": "One project-wide active node (N1, VEPMC). VEPMC stays the required real-device proof and the one operationally primary node; per the founder's 2026-10-01 correction (#143 comment, draft #144) it is not a stopping condition for development: every safe, reversible, buildable P-node continues until a real external dependency, missing authority, resource or evidence blocks it. Later P-nodes are horizons with gates, never activated by appearing here.",
+      "metric": "Verified Cross-Geometry Routing Gain",
+      "reconciles": {
+        "C1": [
+          "P1",
+          "P2",
+          "P3"
+        ],
+        "C2": [
+          "P5"
+        ],
+        "C3": [
+          "P4",
+          "budget controller"
+        ],
+        "C4": [
+          "P6",
+          "P11"
+        ],
+        "C5": [
+          "P7",
+          "P8"
+        ],
+        "C6": [
+          "P9",
+          "P10"
+        ],
+        "C7": [
+          "P12",
+          "P13"
+        ],
+        "C8": [
+          "P11",
+          "P13"
+        ]
+      },
+      "operating_card": [
+        "Select one smallest missing contract or behavior and declare its proof and budget",
+        "Implement and run the smallest integrated falsification test",
+        "Record the result, update the bottleneck, and repeat, refine, reroute, or retire the mechanism"
+      ],
+      "nodes": [
+        {
+          "id": "P0",
+          "title": "Inspect and anchor",
+          "maps_to": "N1",
+          "status": "ACHIEVED_ON_REVIEW_BRANCH",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "none",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a moving reference (main, an open PR) changes",
+          "falsification": "a claimed implementation is absent when the tree is read",
+          "smallest_next_experiment": "re-read main and the open cognition PRs before the next change",
+          "exit": "reproducible context checksum and owner map",
+          "evidence_refs": [
+            "docs/PROJECT_COGNITION_CONTINUITY.md",
+            "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
+          ]
+        },
+        {
+          "id": "P1",
+          "title": "Cognitive contracts",
+          "maps_to": "N1",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P0",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a new proof class, outcome or geometry field",
+          "falsification": "an artifact crosses an epistemic boundary silently, or unknown harm reads as zero",
+          "smallest_next_experiment": "classify the held-out items' geometry without the payload key table and measure misrouting",
+          "exit": "frozen mixed-suite results and no authority expansion",
+          "evidence_refs": [
+            "contracts/cortex-receipt.schema.json",
+            "tests/evidence/cortex-mutants-2026-10-01/run2-after-fixes.log"
+          ]
+        },
+        {
+          "id": "P2",
+          "title": "Seed proof",
+          "maps_to": "N1",
+          "status": "IMPLEMENTED; advantage GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P1",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a founder-selected local model on Body 1, or a new frozen comparison",
+          "falsification": "the routed system loses to the strongest run baseline beyond the predeclared margin, or any hard failure",
+          "smallest_next_experiment": "run the frozen suite's always_llm and tool_llm arms once a founder-selected local model answers",
+          "exit": "implementation evidence plus the predeclared performance test; otherwise remain an experiment",
+          "evidence_refs": [
+            "tests/evidence/greg-crossgeo-v0.2/results.json",
+            "cortex/evaluation/freeze-crossgeo-v0.2.json"
+          ]
+        },
+        {
+          "id": "P3",
+          "title": "Proof/outcome ledger",
+          "maps_to": "N1",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P2",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "the founder's Chromebook run (N1)",
+          "falsification": "a duplicate settlement or a lost receipt after kill -9",
+          "smallest_next_experiment": "the same rehearsal on the founder's Chromebook with his key",
+          "exit": "idempotent settlement, corrections and provenance across restart",
+          "evidence_refs": [
+            "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
+          ]
+        },
+        {
+          "id": "P4",
+          "title": "Cognitive settlement and learned routing",
+          "maps_to": "N4",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P3 plus settled outcomes from real missions",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "20 settled real-mission outcomes in one geometry",
+          "falsification": "learned routing does not beat the frozen static router",
+          "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
+          "exit": "learned routing beats the static baseline on held-out tasks without new authority",
+          "evidence_refs": []
+        },
+        {
+          "id": "P5",
+          "title": "Demand-led repertoire expansion",
+          "maps_to": "N2",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "a mission that needs a family the seed lacks",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a CapabilityDeficit naming a reserved family",
+          "falsification": "an enabled family adds no measured mission value",
+          "smallest_next_experiment": "the next reserved family a real mission asks for, sourced first from a qualified open-source engine (#144 source map) behind a GREG certificate",
+          "exit": "per family: real adapter, native benchmark, declared limits, integrated mission value",
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "tests/unit/test_greg_linear_genesis.py"
+          ]
+        },
+        {
+          "id": "P6",
+          "title": "Heterogeneous compositions and collective mechanisms",
+          "maps_to": "N5",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P4",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a composition candidate with a measurable constituent baseline",
+          "falsification": "no composition beats its strongest constituent, a simple pipeline and a committee after overhead",
+          "smallest_next_experiment": "compare the schedule composition against extraction-free formal input on the same requests",
+          "exit": "one composition with measured net lift after overhead and correlated-failure analysis",
+          "evidence_refs": []
+        },
+        {
+          "id": "P7",
+          "title": "Cognitive Capability Genesis",
+          "maps_to": "N2",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P5 and GREG genesis (N2)",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a cognition deficit during a real mission",
+          "falsification": "a capability absent at mission start is never acquired, or registration grants execution",
+          "smallest_next_experiment": "a cognition deficit with no installed engine, closed through the builder route against a founder-frozen contract and the same certificate",
+          "exit": "a bounded problem solved with a verified capability absent at mission start",
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "greg/genesis.py",
+            "greg/mechanisms.py"
+          ]
+        },
+        {
+          "id": "P8",
+          "title": "Evolutionary cognition",
+          "maps_to": "N4",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P7 and protected evaluators",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a machine-evaluable objective with a protected evaluator",
+          "falsification": "gains vanish on held-out data or the evaluator is gamed",
+          "smallest_next_experiment": "mutate one router policy parameter under a protected held-out evaluator",
+          "exit": "repeated held-out gains without evaluator gaming or unauthorized mutation",
+          "evidence_refs": []
+        },
+        {
+          "id": "P9",
+          "title": "Constraint-release discovery",
+          "maps_to": "N10",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P6 and P8",
+          "budget_ceiling": "research budget set by Alfonso",
+          "review_trigger": "a new allowed topology to test",
+          "falsification": "nothing beats the baseline or nothing replicates",
+          "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
+          "exit": "a previously unlisted organization beats the baseline and survives independent replication",
+          "evidence_refs": []
+        },
+        {
+          "id": "P10",
+          "title": "Functional morphogenesis",
+          "maps_to": "N2",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P7, P9 and developmental research (Track B)",
+          "budget_ceiling": "research budget set by Alfonso",
+          "review_trigger": "an unseen-loss experiment design",
+          "falsification": "recovery is scripted, or a strong centralized adaptive baseline does as well",
+          "smallest_next_experiment": "inject an unseen organ loss in a sandbox and measure Unscripted Functional Recovery Rate",
+          "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
+          "evidence_refs": [
+            "tests/unit/test_greg_open_source_genesis.py"
+          ]
+        },
+        {
+          "id": "P11",
+          "title": "Open cognitive ecology",
+          "maps_to": "N5",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P6 and P8",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "distribution shift in real mission workloads",
+          "falsification": "evaluator capture, runaway resource use or authority drift",
+          "smallest_next_experiment": "track method diversity and rare-method preservation over two workload shifts",
+          "exit": "sustained net benefit across changing workloads without capture or authority drift",
+          "evidence_refs": []
+        },
+        {
+          "id": "P12",
+          "title": "Substrate-plural execution",
+          "maps_to": "N8",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "N8 multiple bodies",
+          "budget_ceiling": "hardware chosen by Alfonso",
+          "review_trigger": "a second approved body",
+          "falsification": "a contract behaves differently on a second substrate",
+          "smallest_next_experiment": "run the frozen suite on a second approved body and diff receipts",
+          "exit": "equivalent behavioral contracts on materially different approved substrates",
+          "evidence_refs": []
+        },
+        {
+          "id": "P13",
+          "title": "Poly-embodied developmental institution",
+          "maps_to": "N10",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P12 and N9",
+          "budget_ceiling": "set by Alfonso per body",
+          "review_trigger": "a new body or institution joins",
+          "falsification": "an embodiment escapes scope or shutdown",
+          "smallest_next_experiment": "none now: Chromebook and phone first (N1)",
+          "exit": "the same governed identity across scoped bodies with legitimate shutdown preserved",
+          "evidence_refs": []
+        }
+      ]
     }
   ],
   "subordinate_workstreams": {
     "polyintelligence_cortex": {
       "authority": "No scheduling, promotion or permission effect; N1/VEPMC remains primary",
-      "metric": "Verified Cross-Geometry Routing Gain",
-      "current": "INCONCLUSIVE; timing-independent gain 0 versus static rules",
+      "metric": {
+        "name": "Verified Polyintelligence Lift (VPL)",
+        "definition": "number/proportion of held-out problem families where problem-geometry routing or composition produces a verified improvement over the strongest single available intelligence, net of cost/latency, without increasing false answers or unauthorized effects",
+        "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
+        "previous": "Verified Cross-Geometry Routing Gain"
+      },
+      "current": "VPL = 1 of 2 measured families (P6, 2026-10-07). P4 conditional memory: INCONCLUSIVE (57 vs 56 of 66; learned bin packing -> CP-SAT, knapsack -> Z3). Seed Genome v5: INCONCLUSIVE, gain 0.0.",
       "nodes": [
         {
           "id": "P0",
@@ -1063,7 +1408,7 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "requirement": "Use eligibility, routing, proof, and outcomes to earn conditional defaults. Exit: learned routing beats the static baseline on held-out tasks without new authority.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P3 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1073,14 +1418,27 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565"
+          "smallest_next_experiment": "repeat each held-out run 3x and score the majority (timing noise), raise held-out n so >= 6 discordant items are possible, and learn latency as well as decided/correct",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
+          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2: INCONCLUSIVE (57 vs 56 of 66, p=0.5); learned per-sub-region orders, margin within timing noise; exit not met",
+          "exit_met": false,
+          "implementation_refs": [
+            "cortex/evaluation/learned_routing/run.py",
+            "cortex/evaluation/learned_routing/run_v2.py",
+            "greg/cognition/bridge.py",
+            "greg/cognition/conditional_competence.py",
+            "greg/cognition/learned_routing.py",
+            "greg/cognition/worker.py",
+            "tests/integration/test_greg_conditional_competence.py",
+            "tests/integration/test_greg_learned_routing.py"
+          ],
+          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE (order = static); v2 conditional INCONCLUSIVE (57 vs 56, bin packing 9 vs 7, knapsack kept 9/9)"
         },
         {
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "requirement": "Add graph, exact symbolic, Bayesian, broader causal, OR, control, simulation, information, game/mechanism, and human routing as evidence justifies each dependency. Exit per family: real adapter, native benchmark, declared limits, integrated mission value.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P4 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1091,13 +1449,15 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568",
+          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand",
+          "evidence": "tests/evidence/greg-open-source-genesis-2026-10-01/README.md"
         },
         {
           "id": "P6",
           "title": "Heterogeneous compositions",
           "requirement": "Test useful pipelines, structured human input, quorum, stigmergy, ecological allocation, and other candidates against constituents, simple pipelines, and committees. Exit: at least one composition has measured net lift after overhead and correlated-failure analysis.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P5 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1107,14 +1467,26 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571"
+          "smallest_next_experiment": "F2 with more held-out items or larger samples; add families (Bayesian -> value of information, graph cut -> allocation, counterexample -> verifier -> repair); correlated-failure analysis across stages",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571",
+          "reality": "typed receipt-to-param edges (missions) and geometry-routed cognitive composition (cognition.solve `chain`) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift: F1 lift, F2 not lift (p=0.0625)",
+          "exit_met": "partial: one family with measured net lift on constructed complementary families",
+          "implementation_refs": [
+            "contracts/greg-mission.schema.json",
+            "cortex/evaluation/composition_lift/run.py",
+            "greg/cognition/composition.py",
+            "greg/missions.py",
+            "greg/templates.py",
+            "tests/integration/test_greg_cognitive_composition.py",
+            "tests/unit/test_greg_bindings.py"
+          ],
+          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0; docs/evidence/greg-composition-lift/2026-10-07/README.md: VPL = 1 of 2"
         },
         {
           "id": "P7",
           "title": "Capability genesis",
           "requirement": "Detect deficit; search existing capabilities; reconfigure; compose; inspect compatible open source/services; generate only where needed; independently test; register under existing controls; retry the original sandbox mission. Exit: solve a bounded problem with a verified capability absent at mission start. Distinguish acquiring an existing tool, composing existing tools, and inventing a new algorithm. Registration grants no execution authority.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P6 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1125,7 +1497,10 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574",
+          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach",
+          "exit_met": "test_tier_only",
+          "evidence": "tests/unit/test_greg_open_source_genesis.py; tests/unit/test_greg_genesis_builder.py"
         },
         {
           "id": "P8",
@@ -1210,7 +1585,8 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:590"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:590",
+          "blocker": "a second approved substrate (founder Chromebook or Mac) is not available to this session"
         },
         {
           "id": "P13",
@@ -1227,7 +1603,8 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:593"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:593",
+          "blocker": "founder devices and founder use; founder-only"
         }
       ],
       "c_to_p": {
@@ -1269,6 +1646,16 @@
         "Chromebook/phone immediate; Mac separate horizon",
         "future approved computer tools and mission-specific teams",
         "frontier/science-fiction destination remains a gated aspiration"
+      ],
+      "lineage": [
+        "2026-10-02 convergence: PR #145 carried a parallel 'cognition_workstream' P0-P13 copy; one backcast is kept here (INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE). #145's per-node smallest_next_experiment texts remain in git at origin/codex/cortex-seed-delivery-20261001:greg/path.json."
+      ],
+      "sequence_20261007": [
+        "P6 cognitive composition lift (first VPL measurement)",
+        "P4 conditional competence memory with hierarchical fallback",
+        "P8 protected evolutionary cognition",
+        "IntelligenceGenome library expansion in batches",
+        "Layers 1, 2 and 4 as Cortex capabilities when they beat simpler baselines on native geometry"
       ]
     }
   },
@@ -1277,6 +1664,14 @@
     "product": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
     "increment_role": "sequencing unit; automatically resume parent objective",
     "founder_use_gate": "item-specific authentic evidence; never a gate on unrelated achievable implementation",
-    "state": "active_not_complete"
+    "state": "active_not_complete",
+    "intent_ref": "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "rule": "After every proved integrated increment automatically resume the parent machine objective and highest-priority unblocked dependency. No seed, PR or VEPMC milestone closes it.",
+    "allowed_blockers": [
+      "inherently founder-only action",
+      "genuine external dependency",
+      "demonstrated current technology limit with strongest defensible approximation/backcast"
+    ],
+    "authority_changed": false
   }
 }

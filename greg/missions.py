@@ -71,6 +71,8 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError(f"strategy {strategy['action_id']} requires unknown checks {sorted(requires - checks)}")
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
+        _validate_bindings(strategy, set(actions))
+    _acyclic_bindings(spec["strategies"])
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -84,6 +86,94 @@ def validate_mission(spec: dict) -> dict:
         raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
+
+
+BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
+              "object": (dict,), "array": (list,)}
+DEFAULT_BIND_BYTES = 16 * 1024
+
+
+class Unbound(Exception):
+    """A bound input is not available yet (or no longer matches its declared type)."""
+
+
+def _validate_bindings(strategy: dict, actions: set):
+    seen = set()
+    for edge in strategy.get("bind", []):
+        source = edge["from"]["action_id"]
+        if source not in actions or source == strategy["action_id"]:
+            raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if edge["param"] in seen:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
+        seen.add(edge["param"])
+        try:
+            _path(strategy.get("params", {}), edge["param"])
+        except KeyError:
+            pass
+        else:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']}, which is also signed "
+                               "statically; one source per param")
+        template = edge.get("template")
+        if template is not None and template.count("{value}") != 1:
+            raise MissionError("a binding template needs exactly one {value} placeholder")
+        if template is not None and edge["type"] != "string" and edge.get("render") != "json":
+            raise MissionError("a templated binding renders text: declare type string or render json")
+
+
+def _acyclic_bindings(strategies: list):
+    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    state = {}
+
+    def visit(node):
+        if state.get(node) == 1:
+            raise MissionError(f"binding cycle through {node}")
+        if state.get(node) == 2:
+            return
+        state[node] = 1
+        for parent in edges.get(node, ()):
+            visit(parent)
+        state[node] = 2
+
+    for node in edges:
+        visit(node)
+
+
+def _path(params: dict, path: str):
+    node = params
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            raise KeyError(path)
+        node = node[part]
+    return node
+
+
+def _set_path(params: dict, path: str, value):
+    parts = path.split(".")
+    node = params
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+        if not isinstance(node, dict):
+            raise Unbound(f"param {path} crosses a non-object")
+    node[parts[-1]] = value
+
+
+def bound_value(edge: dict, output):
+    """The typed, size-bounded value one edge carries from a receipt's output."""
+    try:
+        value = _field(output, edge["from"]["field"])
+    except KeyError:
+        raise Unbound(f"{edge['from']['action_id']} output has no {edge['from']['field']}") from None
+    kinds = BIND_TYPES[edge["type"]]
+    if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
+        raise Unbound(f"{edge['from']['action_id']}.{edge['from']['field']} is not {edge['type']}")
+    if edge.get("render") == "json":
+        value = json.dumps(value, sort_keys=True, indent=1, ensure_ascii=False)
+    if edge.get("template") is not None:
+        value = edge["template"].replace("{value}", value if isinstance(value, str) else json.dumps(value))
+    size = len(json.dumps(value, ensure_ascii=False).encode())
+    if size > edge.get("max_bytes", DEFAULT_BIND_BYTES):
+        raise Unbound(f"bound value of {size} bytes exceeds {edge.get('max_bytes', DEFAULT_BIND_BYTES)}")
+    return value
 
 
 def _field(output, path: str):
@@ -497,6 +587,34 @@ class MissionEngine:
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
 
+    def _bind(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
+        """Resolve a strategy's typed input edges from retained Gate receipts of this mission.
+
+        The source is the latest DONE action of the named strategy; its output is read from
+        the canonical ledger, never from a cache or the adapter's memory. Only param values
+        change: capability, target, cost and consequence class stay exactly as signed."""
+        latest = {}
+        for event in self.journal.replay("mission.action"):
+            data = event.payload
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
+                latest[data["action_id"]] = data["receipt"]
+        params = json.loads(json.dumps(s.get("params", {})))
+        bindings, sources = [], []
+        for edge in s["bind"]:
+            source = edge["from"]["action_id"]
+            receipt = latest.get(source)
+            if receipt is None:
+                raise Unbound(f"{source} has no completed action yet")
+            record = self.office.ledger.find(receipt)
+            if record is None or record.record_type != "receipt":
+                raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
+            value = bound_value(edge, record.payload.get("result", {}).get("output"))
+            _set_path(params, edge["param"], value)
+            bindings.append({"param": edge["param"], "from_action": source, "from_receipt": receipt,
+                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
+            sources.append(receipt)
+        return params, bindings, sources
+
     def _self_repair(self, m: MissionState, now: datetime):
         """A formed capability that faults twice in a row on the same check is re-formed, not escalated."""
         for check_id, (manifest, detail, params) in sorted(self.capability_faults.items()):
@@ -815,6 +933,7 @@ class MissionEngine:
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
         held = {}                            # strategies waiting on a precondition observation says fails
+        bound = {}                           # action_id -> (params, binding provenance, source receipts)
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
@@ -822,6 +941,12 @@ class MissionEngine:
             if set(s.get("requires", [])) & failing:
                 held[s["action_id"]] = sorted(set(s["requires"]) & failing)
                 continue
+            if s.get("bind"):
+                try:
+                    bound[s["action_id"]] = self._bind(m, s)
+                except Unbound as why:
+                    held[s["action_id"]] = [f"input: {why}"]
+                    continue
             manifest = self.registry.manifests.get(s.get("capability"))
             if manifest is None and s.get("function") and self.genesis is not None:
                 manifest = self.genesis.find_attached(s["function"])
@@ -861,17 +986,21 @@ class MissionEngine:
                 return {"state": "BLOCKED", "blocker": m.blocker}
         aid = s["action_id"]
         attempt = m.attempts.get(aid, 0)
+        params, bindings, sources = bound.get(aid, (s.get("params", {}), [], []))
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=s.get("params", {}), target=s["target"],
+            adapter=adapter, ctx=self._context(m, manifest), params=params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
-            evidence_refs=evidence, attempt=attempt, spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
+            evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
+            spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+        if bindings:
+            record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"

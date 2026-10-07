@@ -1403,7 +1403,7 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "requirement": "Use eligibility, routing, proof, and outcomes to earn conditional defaults. Exit: learned routing beats the static baseline on held-out tasks without new authority.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P3 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1413,14 +1413,24 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565"
+          "smallest_next_experiment": "add conditions (query kind, size class) to a new ledger version and re-freeze; settle from founder-used missions once they exist",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
+          "reality": "IMPLEMENTED, INTEGRATED, TESTED; exit not met",
+          "exit_met": false,
+          "implementation_refs": [
+            "greg/cognition/learned_routing.py",
+            "greg/cognition/bridge.py",
+            "greg/cognition/worker.py",
+            "tests/integration/test_greg_learned_routing.py",
+            "cortex/evaluation/learned_routing/run.py"
+          ],
+          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: frozen held-out INCONCLUSIVE; learned order equals the static policy (no gain, no regression, no authority change)"
         },
         {
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "requirement": "Add graph, exact symbolic, Bayesian, broader causal, OR, control, simulation, information, game/mechanism, and human routing as evidence justifies each dependency. Exit per family: real adapter, native benchmark, declared limits, integrated mission value.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P4 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1431,13 +1441,15 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568",
+          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand",
+          "evidence": "tests/evidence/greg-open-source-genesis-2026-10-01/README.md"
         },
         {
           "id": "P6",
           "title": "Heterogeneous compositions",
           "requirement": "Test useful pipelines, structured human input, quorum, stigmergy, ecological allocation, and other candidates against constituents, simple pipelines, and committees. Exit: at least one composition has measured net lift after overhead and correlated-failure analysis.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P5 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1447,14 +1459,23 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571"
+          "smallest_next_experiment": "freeze a composition (cortex receipt -> worker) against its constituents and a simple pipeline with correlated-failure analysis",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571",
+          "reality": "typed output->input edges between strategies IMPLEMENTED and live-run; cognitive composition lift unmeasured; exit not met",
+          "exit_met": false,
+          "implementation_refs": [
+            "greg/missions.py",
+            "contracts/greg-mission.schema.json",
+            "greg/templates.py",
+            "tests/unit/test_greg_bindings.py"
+          ],
+          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0"
         },
         {
           "id": "P7",
           "title": "Capability genesis",
           "requirement": "Detect deficit; search existing capabilities; reconfigure; compose; inspect compatible open source/services; generate only where needed; independently test; register under existing controls; retry the original sandbox mission. Exit: solve a bounded problem with a verified capability absent at mission start. Distinguish acquiring an existing tool, composing existing tools, and inventing a new algorithm. Registration grants no execution authority.",
-          "status": "deferred",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P6 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1465,7 +1486,10 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574",
+          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach",
+          "exit_met": "test_tier_only",
+          "evidence": "tests/unit/test_greg_open_source_genesis.py; tests/unit/test_greg_genesis_builder.py"
         },
         {
           "id": "P8",
@@ -1550,7 +1574,8 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:590"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:590",
+          "blocker": "a second approved substrate (founder Chromebook or Mac) is not available to this session"
         },
         {
           "id": "P13",
@@ -1567,7 +1592,8 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:593"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:593",
+          "blocker": "founder devices and founder use; founder-only"
         }
       ],
       "c_to_p": {

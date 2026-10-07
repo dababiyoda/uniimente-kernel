@@ -295,7 +295,7 @@ MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
-                 extra_env: dict | None = None) -> subprocess.CompletedProcess:
+                 extra_env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
     Linux: the Kernel's seccomp filter (tools/offline_test.py). macOS: the system
@@ -310,8 +310,9 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
             argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
         else:
             preexec = _no_network_preexec
+    stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
     proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
-                          stdin=subprocess.DEVNULL, preexec_fn=preexec)
+                          preexec_fn=preexec, **stdin)
     if isolate_network and preexec is not None and proc.returncode == 97:
         raise CapabilityError("network isolation unavailable; command refused")
     return proc

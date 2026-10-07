@@ -478,6 +478,55 @@ def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str
     }
 
 
+def research_post(*, url: str, steps: list[dict], session: str, expect: dict, daleobanks_root: str, brief: str,
+                  order: str, workspace_root: Path, budget_usd: float = 2.0, max_chars: int = 280,
+                  horizon_days: float = 2, founder_expression: str | None = None, on_challenge: str = "stop") -> dict:
+    """One signed mission: browser -> recorded facts -> content worker -> DALEOBANKS -> publish request.
+
+    The browser's extracted values reach the worker through a typed edge (``bind``): the
+    ``record-facts`` action writes the latest ``operate-browser`` receipt's ``extracted``
+    object into this mission's workspace, so nobody relays facts by hand. The worker reads
+    that file as untrusted data, DALEOBANKS binds every figure in the draft to it, and the
+    publish request is external contact: outside the cone, so it stops for a founder decision
+    and then meets DALEOBANKS's own LIVE gate.
+    """
+    from urllib.parse import urlsplit
+    host = urlsplit(url).hostname or ""
+    mission_id = f"m:research-{_slug(order)}"
+    facts = str(Path(workspace_root).resolve() / mission_id.replace(":", "_") / "facts.json")
+    browse = browser_task(url=url, steps=steps, session=session, expect=expect, on_challenge=on_challenge)
+    post = daleobanks_post(daleobanks_root=daleobanks_root, source=facts, brief=brief, order=order,
+                           budget_usd=budget_usd, max_chars=max_chars)
+    draft = next(x for x in post["strategies"] if x["action_id"] == "draft-post")
+    draft = {**draft, "requires": ["facts_recorded"],
+             "params": {**draft["params"], "inputs": [facts]}}
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or f"Research {host} and draft a DALEOBANKS post: {brief}",
+        "intended_effect": "facts retrieved by operating the site become a source-bound post that DALEOBANKS "
+                           "verifies and submits to its publishing gate, in one mission with no manual hand-off",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": browse["success_checks"] + [
+            {"check_id": "facts_recorded", "description": "the browser's extracted facts are recorded for binding",
+             "sensor": {"capability": "fs.read", "params": {"path": facts}, "target": "fs:facts.json"},
+             "predicate": {"op": "contains", "field": "text", "value": "{"}}] + post["success_checks"],
+        "strategies": browse["strategies"] + [
+            {"action_id": "record-facts", "capability": "fs.write", "target": "workspace:facts.json",
+             "params": {"relative_path": "facts.json"},
+             "bind": [{"param": "content", "from": {"action_id": "operate-browser", "field": "extracted"},
+                       "type": "object", "render": "json", "max_bytes": 32768}],
+             "requires": ["retrieved"], "advances": ["facts_recorded"],
+             "rationale": "typed edge: the browser receipt's extracted values become the worker's source"},
+            draft, next(x for x in post["strategies"] if x["action_id"] == "request-publish")],
+        "light_cone": {"capabilities": sorted(set(browse["light_cone"]["capabilities"]) |
+                                              set(post["light_cone"]["capabilities"]) | {"fs.write", "fs.read"}),
+                       "targets": browse["light_cone"]["targets"] + ["workspace:facts.json", "fs:facts.json"]
+                       + post["light_cone"]["targets"],
+                       "max_consequence_class": "internal_write", "budget_usd": budget_usd,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
 AVAILABILITY = re.compile(r"(?:^|(?<=[.!?\n]))\s*((?:the\s+)?machine\s+is\s+(?:free|available)\s+(?:all|the\s+whole)\s+"
                           r"shift[^.!?\n]*[.!?]?)", re.I)
 

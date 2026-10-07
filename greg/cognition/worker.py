@@ -38,7 +38,12 @@ def cortex_main(request):
                                                    max_tokens=model["max_tokens"]))
     else:
         client = _NoSelectedModel()
-    cortex = Cortex(registry, clock=lambda: request["created_at"])
+    memory = None
+    if request.get("learned_memory"):
+        # Signed learned mode: content-addressed records on stdin; any mismatch refuses the run.
+        from greg.cognition.learned_routing import ledger_from_records
+        memory = ledger_from_records(json.loads(sys.stdin.read(64 * 1024 * 1024)))
+    cortex = Cortex(registry, clock=lambda: request["created_at"], memory=memory)
     cortex.organs["cortex.semantic@0.1.0"] = SemanticOrgan(client)
     # The extractor reads free text only through a founder-selected model; otherwise the
     # controlled grammar alone, and out-of-grammar text abstains (DEPENDENCY_UNAVAILABLE).

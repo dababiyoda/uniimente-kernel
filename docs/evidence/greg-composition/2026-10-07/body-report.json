@@ -1,0 +1,895 @@
+{
+  "home": "/tmp/greg-p6/body",
+  "ledger_chain_intact": true,
+  "events": [
+    {
+      "type": "greg.mission.registered",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "spec": {
+          "mission_id": "m:research-z3-composed-note",
+          "founder_expression": "Find the latest z3-solver release on PyPI and draft a DALEOBANKS post about it.",
+          "intended_effect": "facts retrieved by operating the site become a source-bound post that DALEOBANKS verifies and submits to its publishing gate, in one mission with no manual hand-off",
+          "priority": 50,
+          "closure": {
+            "kind": "bounded"
+          },
+          "success_checks": [
+            {
+              "check_id": "retrieved",
+              "description": "the session's retained trace holds the requested result",
+              "sensor": {
+                "capability": "browser.trace",
+                "params": {
+                  "session": "z3-composed"
+                },
+                "target": "web:pypi.org"
+              },
+              "predicate": {
+                "op": "count_gte",
+                "field": "extracted.recent_versions",
+                "value": 1
+              }
+            },
+            {
+              "check_id": "facts_recorded",
+              "description": "the browser's extracted facts are recorded for binding",
+              "sensor": {
+                "capability": "fs.read",
+                "params": {
+                  "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/facts.json"
+                },
+                "target": "fs:facts.json"
+              },
+              "predicate": {
+                "op": "contains",
+                "field": "text",
+                "value": "{"
+              }
+            },
+            {
+              "check_id": "draft_verified",
+              "description": "DALEOBANKS checks and source binding pass",
+              "sensor": {
+                "capability": "daleobanks.verify",
+                "params": {
+                  "daleobanks_root": "/home/user/DALEOBANKS",
+                  "source": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/facts.json",
+                  "max_chars": 280,
+                  "draft": "work-orders/z3-composed-note/work/post.txt"
+                },
+                "target": "daleobanks:verify"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "verdict",
+                "value": "VERIFIED"
+              }
+            },
+            {
+              "check_id": "publish_outcome_known",
+              "description": "DALEOBANKS's ledger holds the request's outcome",
+              "sensor": {
+                "capability": "daleobanks.outcome",
+                "params": {},
+                "target": "daleobanks:outcome"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "requested",
+                "value": true
+              }
+            }
+          ],
+          "strategies": [
+            {
+              "action_id": "operate-browser",
+              "capability": "browser.session",
+              "target": "web:pypi.org",
+              "params": {
+                "url": "https://pypi.org/project/z3-solver/",
+                "steps": [
+                  {
+                    "op": "extract",
+                    "selector": "h1",
+                    "as": "package_header"
+                  },
+                  {
+                    "op": "click",
+                    "selector": "a[href='#history']"
+                  },
+                  {
+                    "op": "extract_all",
+                    "selector": ".release__version",
+                    "as": "recent_versions",
+                    "limit": 5
+                  }
+                ],
+                "session": "z3-composed",
+                "on_challenge": "stop"
+              },
+              "advances": [
+                "retrieved"
+              ],
+              "rationale": "structured DOM control in a disposable real browser"
+            },
+            {
+              "action_id": "record-facts",
+              "capability": "fs.write",
+              "target": "workspace:facts.json",
+              "params": {
+                "relative_path": "facts.json"
+              },
+              "bind": [
+                {
+                  "param": "content",
+                  "from": {
+                    "action_id": "operate-browser",
+                    "field": "extracted"
+                  },
+                  "type": "object",
+                  "render": "json",
+                  "max_bytes": 32768
+                }
+              ],
+              "requires": [
+                "retrieved"
+              ],
+              "advances": [
+                "facts_recorded"
+              ],
+              "rationale": "typed edge: the browser receipt's extracted values become the worker's source"
+            },
+            {
+              "action_id": "draft-post",
+              "capability": "worker.commission",
+              "target": "work:z3-composed-note",
+              "params": {
+                "order": "z3-composed-note",
+                "mode": "document",
+                "inputs": [
+                  "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/facts.json"
+                ],
+                "objective": "Write a short factual DALEOBANKS post noting the latest z3-solver release on PyPI. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+                "acceptance": {
+                  "output": "post.txt",
+                  "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)"
+                },
+                "allowed_paths": [
+                  "post.txt"
+                ],
+                "max_budget_usd": 2.0,
+                "timeout_seconds": 600
+              },
+              "cost_usd": 2.0,
+              "advances": [
+                "draft_verified"
+              ],
+              "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it",
+              "requires": [
+                "facts_recorded"
+              ]
+            },
+            {
+              "action_id": "request-publish",
+              "capability": "daleobanks.publish",
+              "target": "daleobanks:publish",
+              "params": {
+                "daleobanks_root": "/home/user/DALEOBANKS",
+                "draft": "work-orders/z3-composed-note/work/post.txt"
+              },
+              "advances": [
+                "publish_outcome_known"
+              ],
+              "requires": [
+                "draft_verified"
+              ],
+              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"
+            }
+          ],
+          "light_cone": {
+            "capabilities": [
+              "browser.session",
+              "browser.trace",
+              "daleobanks.outcome",
+              "daleobanks.verify",
+              "fs.read",
+              "fs.write",
+              "worker.commission"
+            ],
+            "targets": [
+              "web:pypi.org",
+              "workspace:facts.json",
+              "fs:facts.json",
+              "work:z3-composed-note",
+              "daleobanks:*"
+            ],
+            "max_consequence_class": "internal_write",
+            "budget_usd": 2.0,
+            "horizon": "2026-10-09T12:16:38.532832Z"
+          }
+        },
+        "command_digest": "sha256:2da25d5f8f89be770c7851c50da7ef20d2f3477e307a2102124821109efd0e38"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": false,
+        "detail": "field 'extracted.recent_versions' absent",
+        "receipt": "sha256:58dfb55a6119ca31a61280315ae08c5d87f7675c46bee127b3475d5d4ebdd5ea",
+        "rung": 0,
+        "at": "2026-10-07T12:16:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:4682df4b41424ce19045dedf5589f642b67d80d511e6460a70030e6f91d5edd7",
+        "rung": 0,
+        "at": "2026-10-07T12:16:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": false,
+        "detail": "'ABSENT' == 'VERIFIED'",
+        "receipt": "sha256:a5549797a0cec9f24566e02a8a7db48c3bcf05d61ccfdba13121dfeee938de72",
+        "rung": 0,
+        "at": "2026-10-07T12:16:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:cca43fa6a91a32f57787180a0573a78c3c79182cad88858aab44745f4100efb7",
+        "rung": 0,
+        "at": "2026-10-07T12:16:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "action_id": "operate-browser",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:ec69016bb0ffe38d2c2b35f873aea3102ae7efbbd42fc0faa2c8288080a8e26f",
+        "capability": "browser.session",
+        "route": "browser",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:87fadf6afb003a26509d7ea4f50054eaa15adfb4b213a3bc48c56f84fd16afb4",
+        "routing": {
+          "chosen": "operate-browser",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-07T12:16:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:663940b9841339031fd06c870a6c394db1e9d235c5d414cc01157db80f044073",
+        "rung": 0,
+        "at": "2026-10-07T12:17:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:13b2cd6b4232e03692b5d3935c57b67176fd2e74231f206e17f6ebd07905b6e5",
+        "rung": 0,
+        "at": "2026-10-07T12:17:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": false,
+        "detail": "'ABSENT' == 'VERIFIED'",
+        "receipt": "sha256:ebe82dbf1fec5fe54868410061e7f56852a5bb1c2faa3da69de813d74afaab56",
+        "rung": 0,
+        "at": "2026-10-07T12:17:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:455af68f618d6b6a2361ddfd70aa1c67c672ca6a27a66bd0498d9c3e781dbfd9",
+        "rung": 0,
+        "at": "2026-10-07T12:17:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "action_id": "record-facts",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:ab8606d5ca2bfc6841a1f57d9a69cf0f5eb0832b31decbfaca9591417bbd882f",
+        "capability": "fs.write",
+        "route": "api",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:8bfd4d0afdd609d9ad3adaa63619dc3def81dbcddf0d72f19275e3514a55951b",
+        "routing": {
+          "chosen": "record-facts",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-07T12:17:43.024580Z",
+        "bindings": [
+          {
+            "param": "content",
+            "from_action": "operate-browser",
+            "from_receipt": "sha256:ec69016bb0ffe38d2c2b35f873aea3102ae7efbbd42fc0faa2c8288080a8e26f",
+            "field": "extracted",
+            "value_sha256": "sha256:b77d2b6c895630f179bdc44245405e4037964618dcaf4cf0ccca43ca6913307b"
+          }
+        ]
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:068d643a9c169852a452b92c2c2776cafa70f46c264a54fa29cf45f87851538f",
+        "rung": 0,
+        "at": "2026-10-07T12:18:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": true,
+        "detail": "contains '{'",
+        "receipt": "sha256:6bcf7aa2f15a68b57066c4eb662f6945aec5a1e68b8de2f4c7989ac720b32370",
+        "rung": 0,
+        "at": "2026-10-07T12:18:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": false,
+        "detail": "'ABSENT' == 'VERIFIED'",
+        "receipt": "sha256:0d0eb9fd2afe372dc064924062c04a553316d5a1fed7d0b433f3bd858ff62da0",
+        "rung": 0,
+        "at": "2026-10-07T12:18:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:50222f8d8c88dc8758a7936b168c493d41fffcd8635cfe5dcd1a1ffdf6ede846",
+        "rung": 0,
+        "at": "2026-10-07T12:18:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "action_id": "draft-post",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:9b4dce67be52ded682ff0421f3e3c086479df05a4c398186b7ea27bb92117be6",
+        "capability": "worker.commission",
+        "route": "cli",
+        "cost_usd": 2.0,
+        "scope_digest": "sha256:54c52d70a5b11caef62f7bf920a2679c89abe3bea5141614db898220aec97112",
+        "routing": {
+          "chosen": "draft-post",
+          "expected_value": -1.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-07T12:18:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:32c755d54db2aec6ca52b9962c4dfca673075fb538322fe8b4fb084ef105fb9f",
+        "rung": 0,
+        "at": "2026-10-07T12:19:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": true,
+        "detail": "contains '{'",
+        "receipt": "sha256:13a1099943df5bf6f16e2a7cf4407a8b9ec9fbcc9ba068cd7c54d1a1a9ef754e",
+        "rung": 0,
+        "at": "2026-10-07T12:19:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:c79562d3ff82410e87f8f525cb7fdb32c7e0e8f8dd14c8155dda200637ff112e",
+        "rung": 0,
+        "at": "2026-10-07T12:19:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:b9669750f81894800b65406db55607ad1693af14d5e58289d38cd0b7e50318af",
+        "rung": 0,
+        "at": "2026-10-07T12:19:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.decision.requested",
+      "payload": {
+        "request_id": "req-fb736cd2ad81645bce0af64a",
+        "mission_id": "m:research-z3-composed-note",
+        "kind": "APPROVAL",
+        "action_id": "request-publish",
+        "scope_digest": "sha256:d239050988152dc5c0174dc7e10f13533e0fdac29f8f7b7ddce63288078cb226",
+        "why_now": "capability 'daleobanks.publish' outside scope; external_contact exceeds scope ceiling internal_write",
+        "recommendation": "approve request-publish (daleobanks.publish on daleobanks:publish) at $0.0: publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate",
+        "alternatives": [
+          "operate-browser",
+          "record-facts",
+          "draft-post",
+          "reject: the mission will try alternatives or ask again"
+        ],
+        "authority_requested": {
+          "capability": "daleobanks.publish",
+          "target": "daleobanks:publish",
+          "consequence_class": "external_contact",
+          "cost_usd": 0.0
+        },
+        "consequence_of_no_response": "the mission waits; no action is taken",
+        "created_at": "2026-10-07T12:19:43.024580Z",
+        "reality_status": "RECORDED_LOCAL_MESSAGE"
+      }
+    },
+    {
+      "type": "greg.mission.blocked",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "blocker": {
+          "type": "decision",
+          "request_id": "req-fb736cd2ad81645bce0af64a",
+          "action_id": "request-publish",
+          "why": [
+            "capability 'daleobanks.publish' outside scope",
+            "external_contact exceeds scope ceiling internal_write"
+          ],
+          "reconsider": "founder approves or rejects this exact scope"
+        }
+      }
+    },
+    {
+      "type": "greg.decision.answered",
+      "payload": {
+        "request_id": "req-fb736cd2ad81645bce0af64a",
+        "mission_id": "m:research-z3-composed-note",
+        "answer": "approve",
+        "reason": "operator test approval (not Alfonso): exercise DALEOBANKS's own LIVE gate",
+        "command_digest": "sha256:3d2d2e0a45d0ce0de47187246c00f3e870eb4d2674186f8fa240130cecc00092"
+      }
+    },
+    {
+      "type": "greg.mission.unblocked",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "resolved": {
+          "type": "decision",
+          "request_id": "req-fb736cd2ad81645bce0af64a",
+          "action_id": "request-publish",
+          "why": [
+            "capability 'daleobanks.publish' outside scope",
+            "external_contact exceeds scope ceiling internal_write"
+          ],
+          "reconsider": "founder approves or rejects this exact scope"
+        },
+        "why": "founder answered approve"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:f4a92a189bae4c3111185b9af7ec1e6b42089dbb27b2679f353b1f071c8a248f",
+        "rung": 0,
+        "at": "2026-10-07T12:20:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": true,
+        "detail": "contains '{'",
+        "receipt": "sha256:98a09ef5eeb95984fc782e16ef4a7ece177255b79b0fa1a79b53241fc2aa5936",
+        "rung": 0,
+        "at": "2026-10-07T12:20:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:a08845dea79e303a0c4ec8c8ea5f06b3a86b2a8f0d82b6992d01f971235a7e63",
+        "rung": 0,
+        "at": "2026-10-07T12:20:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:5bdc0aab4f8227bf873010f138161a27aaa0ac0c0ede06e4126c2c7f3b83a267",
+        "rung": 0,
+        "at": "2026-10-07T12:20:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "action_id": "request-publish",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:04b8b19801cc92bb8ff16afa3111d80d306fbd8eddfe7bf4402e947591c564c6",
+        "capability": "daleobanks.publish",
+        "route": "cli",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:d239050988152dc5c0174dc7e10f13533e0fdac29f8f7b7ddce63288078cb226",
+        "routing": {
+          "chosen": "request-publish",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-07T12:20:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:75bea75fa0f3e701203b4af30ca3db16d32b47bc85e945c4dcd71ce239f32c2e",
+        "rung": 0,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "facts_recorded",
+        "passed": true,
+        "detail": "contains '{'",
+        "receipt": "sha256:53bfca059376cb2dedbf884b68f322f1fa8e1b5d6097bccc8e6f5db7977991d2",
+        "rung": 0,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:118379c0f5092dda60986de23fba941683dcac3a3ae709c63968abd8305c2af8",
+        "rung": 0,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "check_id": "publish_outcome_known",
+        "passed": true,
+        "detail": "True == True",
+        "receipt": "sha256:fea4ab3c661b96af489b49b4184166b6da0db19dc350f38686dc318e7eec0be0",
+        "rung": 0,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.achieved",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "evidence": [
+          "sha256:75bea75fa0f3e701203b4af30ca3db16d32b47bc85e945c4dcd71ce239f32c2e",
+          "sha256:53bfca059376cb2dedbf884b68f322f1fa8e1b5d6097bccc8e6f5db7977991d2",
+          "sha256:118379c0f5092dda60986de23fba941683dcac3a3ae709c63968abd8305c2af8",
+          "sha256:fea4ab3c661b96af489b49b4184166b6da0db19dc350f38686dc318e7eec0be0"
+        ],
+        "actions_done": 4,
+        "closure_rule": "every success check re-observed passing through the Gate",
+        "founder_authenticated_mission": true,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.closure_context",
+      "payload": {
+        "mission_id": "m:research-z3-composed-note",
+        "boot_id": null,
+        "pid": 15784,
+        "platform": "Linux",
+        "body_id": "body-55ec9a12b827f911",
+        "hosted": false,
+        "at": "2026-10-07T12:21:43.024580Z"
+      }
+    },
+    {
+      "type": "greg.mission.appraised",
+      "payload": {
+        "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+        "checks": {
+          "achieved_claimed": true,
+          "approval_boundaries_honored": true,
+          "approval_boundary_encountered": true,
+          "arrived_via_inbox": true,
+          "chain_intact": true,
+          "checks_rederived_from_receipts": true,
+          "deliveries_bound_to_evidence": true,
+          "exactly_once": true,
+          "founder_signature_verified": true,
+          "preconditions_honored": true,
+          "registered_once": true,
+          "world_reobserved": true
+        },
+        "findings": [],
+        "head": "sha256:cc4e12fee585312b478b839c972d6d9e27db221dfaf842ac18eaed4ebf00dc30",
+        "limits": "shares reviewed Kernel code; not an independent implementation",
+        "mission_id": "m:research-z3-composed-note",
+        "verdict": "VERIFIED"
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "seq": 12,
+      "hash": "sha256:58dfb55a6119ca31a61280315ae08c5d87f7675c46bee127b3475d5d4ebdd5ea",
+      "grant_id": "72921897-fe16-4ba9-adea-3f45df1f84ee",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 24,
+      "hash": "sha256:4682df4b41424ce19045dedf5589f642b67d80d511e6460a70030e6f91d5edd7",
+      "grant_id": "2b01037a-76ac-451d-95c4-a143c48ad2d9",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 36,
+      "hash": "sha256:a5549797a0cec9f24566e02a8a7db48c3bcf05d61ccfdba13121dfeee938de72",
+      "grant_id": "4db55454-9715-41a9-8f93-dbd65d8d32b1",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 48,
+      "hash": "sha256:cca43fa6a91a32f57787180a0573a78c3c79182cad88858aab44745f4100efb7",
+      "grant_id": "5bd892d9-7dea-4d8d-b1e2-cb51fe96afcf",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 60,
+      "hash": "sha256:ec69016bb0ffe38d2c2b35f873aea3102ae7efbbd42fc0faa2c8288080a8e26f",
+      "grant_id": "5c53d89b-a7c7-4fef-a9d7-73d034610703",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 72,
+      "hash": "sha256:663940b9841339031fd06c870a6c394db1e9d235c5d414cc01157db80f044073",
+      "grant_id": "fb2d3be1-d04e-47be-bcaf-3b88c9f4f730",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 84,
+      "hash": "sha256:13b2cd6b4232e03692b5d3935c57b67176fd2e74231f206e17f6ebd07905b6e5",
+      "grant_id": "83e7d794-abb5-424f-8cc7-5f4c25ea6c89",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 96,
+      "hash": "sha256:ebe82dbf1fec5fe54868410061e7f56852a5bb1c2faa3da69de813d74afaab56",
+      "grant_id": "0a17158d-911f-4ec4-9ac2-74eda28220ee",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 108,
+      "hash": "sha256:455af68f618d6b6a2361ddfd70aa1c67c672ca6a27a66bd0498d9c3e781dbfd9",
+      "grant_id": "3b016f3b-fe45-49ba-af50-cb8c6de92e63",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 120,
+      "hash": "sha256:ab8606d5ca2bfc6841a1f57d9a69cf0f5eb0832b31decbfaca9591417bbd882f",
+      "grant_id": "57119fb9-0b6a-47bf-8405-1b84f28a66c5",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 132,
+      "hash": "sha256:068d643a9c169852a452b92c2c2776cafa70f46c264a54fa29cf45f87851538f",
+      "grant_id": "9d743cb7-39d2-4fc0-bf9b-819cc91654e5",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 144,
+      "hash": "sha256:6bcf7aa2f15a68b57066c4eb662f6945aec5a1e68b8de2f4c7989ac720b32370",
+      "grant_id": "4ca85efc-e1be-481a-9428-d3b9df00100c",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 156,
+      "hash": "sha256:0d0eb9fd2afe372dc064924062c04a553316d5a1fed7d0b433f3bd858ff62da0",
+      "grant_id": "684de385-8283-4d81-85f5-92cb53452468",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 168,
+      "hash": "sha256:50222f8d8c88dc8758a7936b168c493d41fffcd8635cfe5dcd1a1ffdf6ede846",
+      "grant_id": "81cc32f4-3fe5-4951-9d49-303d63ef2972",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 180,
+      "hash": "sha256:9b4dce67be52ded682ff0421f3e3c086479df05a4c398186b7ea27bb92117be6",
+      "grant_id": "15ff80e5-fcc0-4384-ae50-47911e12ad3d",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 192,
+      "hash": "sha256:32c755d54db2aec6ca52b9962c4dfca673075fb538322fe8b4fb084ef105fb9f",
+      "grant_id": "657146b2-df9b-42b2-937f-796000e52266",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 204,
+      "hash": "sha256:13a1099943df5bf6f16e2a7cf4407a8b9ec9fbcc9ba068cd7c54d1a1a9ef754e",
+      "grant_id": "9ef931c2-0422-4e69-8037-31effce64032",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 216,
+      "hash": "sha256:c79562d3ff82410e87f8f525cb7fdb32c7e0e8f8dd14c8155dda200637ff112e",
+      "grant_id": "b9894a07-e4a9-4aca-a462-ab23b4a880cd",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 228,
+      "hash": "sha256:b9669750f81894800b65406db55607ad1693af14d5e58289d38cd0b7e50318af",
+      "grant_id": "2af1cc66-902e-4c63-b813-474a4fd10d42",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 245,
+      "hash": "sha256:f4a92a189bae4c3111185b9af7ec1e6b42089dbb27b2679f353b1f071c8a248f",
+      "grant_id": "e7cd6c6c-99af-4018-bfe8-d5cdad005299",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 257,
+      "hash": "sha256:98a09ef5eeb95984fc782e16ef4a7ece177255b79b0fa1a79b53241fc2aa5936",
+      "grant_id": "cd99d52b-6ed4-4a4d-a155-5272d3b10e56",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 269,
+      "hash": "sha256:a08845dea79e303a0c4ec8c8ea5f06b3a86b2a8f0d82b6992d01f971235a7e63",
+      "grant_id": "6869ee30-5f75-4ae3-8f6e-390f138c326f",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 281,
+      "hash": "sha256:5bdc0aab4f8227bf873010f138161a27aaa0ac0c0ede06e4126c2c7f3b83a267",
+      "grant_id": "cddcdc8e-fbb6-4f3f-83c0-cfdfffa0ce90",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 293,
+      "hash": "sha256:04b8b19801cc92bb8ff16afa3111d80d306fbd8eddfe7bf4402e947591c564c6",
+      "grant_id": "2cd418fe-9da4-488a-9542-2a0019a31b10",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 305,
+      "hash": "sha256:75bea75fa0f3e701203b4af30ca3db16d32b47bc85e945c4dcd71ce239f32c2e",
+      "grant_id": "d73ce413-1166-438e-9883-bae3ac7bae5b",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 317,
+      "hash": "sha256:53bfca059376cb2dedbf884b68f322f1fa8e1b5d6097bccc8e6f5db7977991d2",
+      "grant_id": "7187f7ab-d132-45c4-ab21-bb5ed67dc5ab",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 329,
+      "hash": "sha256:118379c0f5092dda60986de23fba941683dcac3a3ae709c63968abd8305c2af8",
+      "grant_id": "f9e36350-d422-4f49-b77c-e83eb3b37cc2",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 341,
+      "hash": "sha256:fea4ab3c661b96af489b49b4184166b6da0db19dc350f38686dc318e7eec0be0",
+      "grant_id": "f1692069-4690-4109-ae6f-19cae3968838",
+      "observed": "observation captured"
+    }
+  ],
+  "founder_key": "operator test key generated by scripts/greg_hands_proof.py; not Alfonso's key"
+}

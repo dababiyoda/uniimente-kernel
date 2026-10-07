@@ -92,8 +92,11 @@ _FORMAL = {"valid_given_encoding": "VALID_CONDITIONAL_ON_MODEL", "not_establishe
 
 
 def _validate(params) -> tuple[str, dict, list]:
-    if not isinstance(params, dict) or set(params) - {"problem_id", "problem", "records"}:
-        raise CognitionError("cortex request takes problem_id, problem and optional records")
+    if not isinstance(params, dict) or set(params) - {"problem_id", "problem", "records", "routing"}:
+        raise CognitionError("cortex request takes problem_id, problem, optional records and routing")
+    from .learned_routing import MODES
+    if params.get("routing", "shadow") not in MODES:
+        raise CognitionError(f"routing must be one of {', '.join(MODES)}")
     strict_data(params)
     if len(canonical(params).encode()) > MAX_REQUEST_BYTES:
         raise CognitionError("cortex request exceeds 64 KiB")
@@ -138,16 +141,20 @@ def _semantic_model(model_config, problem) -> dict | None:
 
 
 def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_model: dict | None,
-               cpu_seconds: float, created_at: str) -> dict:
+               cpu_seconds: float, created_at: str, memory_records: list | None = None) -> dict:
+    """``memory_records`` (signed learned mode only) travel on stdin: content-addressed
+    routing-memory records the worker rebuilds and checks before the router may use them."""
     from greg.capabilities import CapabilityError, run_isolated
     request = {"problem": problem, "records": records, "withheld": withheld_organs,
-               "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at}
+               "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at,
+               "learned_memory": memory_records is not None}
     try:
         proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "__cortex__",
                              canonical(request)], cwd=ROOT, isolate_network=semantic_model is None,
                             timeout=int(cpu_seconds) + 20,
                             extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
-                                       "MKL_NUM_THREADS": "1"})
+                                       "MKL_NUM_THREADS": "1"},
+                            input_bytes=None if memory_records is None else canonical(memory_records).encode())
     except CapabilityError as exc:
         raise CognitionError(f"worker isolation refused: {exc}") from exc
     if proc.returncode:
@@ -222,7 +229,7 @@ def _abstention(receipt: dict) -> str:
             "CONTESTED": "HUMAN_REVIEW_REQUIRED"}.get(state, "ABSTAIN")
 
 
-def to_cognitive_receipt(params: dict, receipt: dict, started: float) -> dict:
+def to_cognitive_receipt(params: dict, receipt: dict, started: float, routing: dict | None = None) -> dict:
     executed = [r["organ_id"] for r in receipt["output"]["per_route"]]
     method = CAPABILITY_OF.get(executed[0], ROUTER) if len(executed) == 1 else ROUTER
     from .catalog import CORTEX_VERSIONS
@@ -258,7 +265,7 @@ def to_cognitive_receipt(params: dict, receipt: dict, started: float) -> dict:
         formal_validity=_FORMAL.get(receipt["truth"]["formal_validity"], "UNKNOWN"),
         causal_credit=[{"method": CAPABILITY_OF.get(k, k), "role": "solver"} for k in executed]
         + [{"method": VERIFIER, "role": "falsifier"}],
-        outcome=receipt["outcome"])
+        outcome=receipt["outcome"], routing=routing)
     return out.to_dict()
 
 
@@ -289,14 +296,19 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         return _failure(params, f"{ROUTER} unavailable: {why}", started, state="CAPABILITY_DEFICIT")
     limits = (problem["payload"].get("resources") or {})
     cpu = min(60.0, max(5.0, float(limits.get("max_latency_s", 30.0)) + 5.0))
+    from . import learned_routing
+    mode = params.get("routing", learned_routing.DEFAULT_MODE)
     try:
+        # Competence is recomputed from GREG's own settled claims for every request.
+        memory = learned_routing.ledger(journal) if mode != "static" else learned_routing.CompetenceLedger()
         receipt = run_worker(problem, records, withheld_organs=withheld(registry, forced=forced),
                              semantic_model=_semantic_model(model_config, problem), cpu_seconds=cpu,
-                             created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+                             created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                             memory_records=[r.to_dict() for r in memory.records()] if mode == "learned" else None)
         check_receipt(receipt)
         if receipt["versions"]["cortex"] != CORTEX_VERSION:
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")
-        out = to_cognitive_receipt(params, receipt, started)
+        out = to_cognitive_receipt(params, receipt, started, learned_routing.summary(mode, memory, receipt))
         retained_data(out)
         return out
     except (CognitionError, ValueError, TypeError, KeyError, OSError) as exc:

@@ -1,0 +1,35 @@
+{
+  "frozen_at": "2026-10-07T16:31:32.488989+00:00",
+  "inputs": {
+    "suite": "sha256:f78fb2cfd508e8daa045a349cbaa957f11fcf603adb31081cbae90f6264bc6df",
+    "code": {
+      "cortex/evaluation/learned_routing/run.py": "sha256:8cb404557495605d9c5af4bdd6ef5aa119541a1c5d998b7dce129668cae28ae4",
+      "greg/cognition/learned_routing.py": "sha256:88c2d8363a7794cd59a57ca7d6788c30758a81b3db38c2ae57390069e825395d",
+      "cortex/memory.py": "sha256:1c54751b7ec9058b83ba52768a9b54dc59bb947fd5d5c396b2c3c2f187d06a93",
+      "cortex/routing.py": "sha256:68538e463bba2c3f34c6d812ebea94e2d5aab65ff3281924ab6e31dfd1c00271",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/formal_eval.py": "sha256:cc6efca87090aa0d6e7af1460b789b8b483ee9f63e77c6d5e6c3e0cf04bc9131",
+      "cortex/organs/adversarial.py": "sha256:2f24abb4e155f640adea05bfb3be0a88d9cd64af2b6447d923de05fa54d1450f",
+      "requirements-cortex.txt": "sha256:5558445ce171be8d2247c2e7e1ab1d68c4c3c96e8a0908af279a7427516c0961"
+    },
+    "budget_s": 3.0,
+    "arms": [
+      "static",
+      "learned",
+      "z3_first",
+      "cpsat_first"
+    ],
+    "dev_seeds": [
+      1,
+      2,
+      3
+    ],
+    "heldout_seeds": [
+      4,
+      5,
+      6
+    ],
+    "verdict_rule": "REGRESSION if learned adds a wrong answer or decides fewer correctly; GAIN if more correct and one-sided exact sign test p < 0.05; NO_GAIN if equal; else INCONCLUSIVE"
+  }
+}

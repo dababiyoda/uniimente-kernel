@@ -404,6 +404,8 @@ class CognitiveReceipt:
     formalization_coverage: dict = field(default_factory=dict)
     authority_refs: dict = field(default_factory=lambda: {"scope": "enclosing canonical Kernel witness/grant/receipt", "new_authority": False})
     contribution_attribution: list = field(default_factory=list)
+    # Additive (P4): fixed order, memory's order and the executed order of the formal engines.
+    routing: dict | None = None
 
     def __post_init__(self):
         EpistemicClass(self.epistemic_class)
@@ -418,6 +420,8 @@ class CognitiveReceipt:
             raise CognitionError("a cognitive receipt cannot create authority")
         if self.empirical_validity != "WORLD_UNVERIFIED":
             raise CognitionError("these bounded solvers cannot certify world validity")
+        from .learned_routing import check_summary
+        check_summary(self.routing)
         cortex_method = isinstance(self.method, str) and (self.method == "cognition.cortex"
                                                           or self.method.startswith("cognition.cortex."))
         if self.proof_type == "cortex_receipt" or (cortex_method and self.proof_type is not None):

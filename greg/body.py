@@ -253,7 +253,8 @@ class Body:
         kind, body = env["kind"], env["body"]
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
-        self.engine.book.rebuild()
+        if kind != "BODY_STOP":
+            self.engine.book.rebuild()
         result = self._dispatch(kind, body, digest)
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
@@ -358,6 +359,11 @@ class Body:
         raise MissionError(f"unsupported command kind {kind}")
 
     def _stop_now(self) -> bool:
+        if not self.stop_requested and not self.layout.stop_file.exists() and self.ledger is not None:
+            # A paid worker can run for minutes. Authenticate only pending STOP
+            # commands while supervising it; other commands wait for the normal
+            # tick and cannot mutate in-flight strategy/approval state.
+            self.ingest_inbox(only_kind="BODY_STOP")
         return self.stop_requested or self.layout.stop_file.exists()
 
     def paused(self) -> bool:
@@ -366,11 +372,13 @@ class Body:
         state = [e.type for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         return bool(state) and state[-1] == "greg.body.paused"
 
-    def ingest_inbox(self) -> list[dict]:
+    def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
         results = []
         for path in sorted(self.layout.inbox.glob("*.json")):
             try:
                 envelope = json.loads(path.read_text())
+                if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
+                    continue
                 outcome = self.apply(envelope, channel="inbox")
                 shutil.move(str(path), self.layout.processed / path.name)
             except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
@@ -420,6 +428,8 @@ class Body:
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
         summary = self.engine.tick(now, should_stop=self._stop_now)
+        if self._stop_now():
+            return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)

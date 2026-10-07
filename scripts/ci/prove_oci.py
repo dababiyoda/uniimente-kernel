@@ -6,6 +6,8 @@ socket, credentials or provider execution authority. No image is pushed.
 from __future__ import annotations
 
 import hashlib
+import csv
+import io
 import json
 import os
 from pathlib import Path
@@ -36,6 +38,35 @@ def pinned(tag):
     if len(addresses) != 1 or "@sha256:" not in addresses[0]:
         raise RuntimeError("image did not resolve to one immutable digest")
     return addresses[0]
+
+
+def builder_network(config_dir):
+    """Give the disposable BuildKit daemon the same approved proxy/CA as Docker.
+
+    Buildx's container driver does not inherit Docker client proxy defaults.
+    Without explicit driver environment, managed executors try a direct registry
+    connection. Trust material configures only the temporary builder, never an
+    owned artifact layer; TLS verification remains enabled.
+    """
+    client_config = Path(os.environ.get("DOCKER_CONFIG", str(Path.home() / ".docker"))) / "config.json"
+    proxies = {}
+    if client_config.is_file():
+        proxies = json.loads(client_config.read_text()).get("proxies", {}).get("default", {})
+    flags = []
+    for key, variable in (("httpProxy", "HTTP_PROXY"), ("httpsProxy", "HTTPS_PROXY"), ("noProxy", "NO_PROXY")):
+        value = proxies.get(key) or os.environ.get(variable) or os.environ.get(variable.lower())
+        if value:
+            # Buildx parses each driver option as CSV; NO_PROXY contains commas.
+            encoded = io.StringIO()
+            csv.writer(encoded, lineterminator="").writerow([f"env.{variable}={value}"])
+            flags += ["--driver-opt", encoded.getvalue()]
+    ca_path = os.environ.get("CODEX_PROXY_CERT")
+    if ca_path:
+        ca = Path(ca_path).resolve(strict=True)
+        config = Path(config_dir) / "buildkitd.toml"
+        config.write_text('[registry."docker.io"]\n  ca = [' + json.dumps(str(ca)) + ']\n')
+        flags += ["--buildkitd-config", str(config)]
+    return flags
 
 
 def layout(archive):
@@ -70,8 +101,9 @@ def main():
     report = {"base": base, "builder": builder, "docker": docker("version", "--format", "{{json .}}"),
               "buildx": docker("buildx", "version"), "source_date_epoch": oci.SOURCE_DATE_EPOCH,
               "authority_created": False, "pushed": False}
-    docker("buildx", "create", "--name", "greg-oci-proof", "--driver", "docker-container",
-           "--driver-opt", "image=" + builder, "--use")
+    with tempfile.TemporaryDirectory(prefix="greg-buildkit-network-") as network_config:
+        docker("buildx", "create", "--name", "greg-oci-proof", "--driver", "docker-container",
+               "--driver-opt", "image=" + builder, *builder_network(network_config), "--use")
     try:
         docker("buildx", "inspect", "--bootstrap")
         with tempfile.TemporaryDirectory() as temporary:

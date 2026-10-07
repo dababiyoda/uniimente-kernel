@@ -74,6 +74,17 @@ def test_every_founder_named_capability_stays_on_the_path():
     assert not missing, f"founder horizons dropped from greg/path.json: {missing}"
 
 
+def test_pending_founder_use_keeps_buildable_horizons_in_the_runtime_projection():
+    data = devpath.load()
+    result = devpath.position(None, data)
+    assert result["active"]["id"] == "N1"
+    expected = {h["id"] for h in data["horizons"] if h["feasibility"] == "CURRENTLY_BUILDABLE"}
+    projected = result["currently_buildable_horizons"]
+    assert expected and {h["id"] for h in projected} == expected
+    assert any(h["node"] != "N1" for h in projected)
+    assert result["achieved"] == ["N0"]  # no founder-use evidence was manufactured
+
+
 def test_every_open_kernel_pr_is_placed_on_the_path():
     placed = {int(m) for p in placements()["placements"] for item in p["lineage"]
               for m in re.findall(r"^#(\d+)", item)}

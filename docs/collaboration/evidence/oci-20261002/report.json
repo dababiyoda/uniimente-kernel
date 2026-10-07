@@ -1,0 +1,151 @@
+{
+  "authority_created": false,
+  "base": "python@sha256:2333bd330d12de02514770b3585cad313644316047cdee24a7acfdece6de6efb",
+  "builder": "moby/buildkit@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea",
+  "buildx": "github.com/docker/buildx v0.31.0 44945d71ff077ce7fc142fbdee6acec8d9acb630",
+  "cases": [
+    {
+      "container": {
+        "value": 28
+      },
+      "host": {
+        "value": 28
+      },
+      "request": {
+        "inputs": {
+          "base_price": 7,
+          "cost_per_unit": 3,
+          "units": 4
+        },
+        "language": "pricing",
+        "source": "max(base_price*units, cost_per_unit*units*1.2)"
+      }
+    },
+    {
+      "container": {
+        "value": 70
+      },
+      "host": {
+        "value": 70
+      },
+      "request": {
+        "inputs": {
+          "remaining": 80,
+          "requested": 90,
+          "reserve": 10
+        },
+        "language": "budget",
+        "source": "min(requested, remaining-reserve)"
+      }
+    },
+    {
+      "container": {
+        "value": 70.0
+      },
+      "host": {
+        "value": 70.0
+      },
+      "request": {
+        "inputs": {
+          "obligations": 20,
+          "reserve_pct": 0.1,
+          "surplus": 100
+        },
+        "language": "capital",
+        "source": "max(0,surplus-obligations-surplus*reserve_pct)"
+      }
+    },
+    {
+      "container": {
+        "error": "only ['max', 'min', 'round'] may be called (col 0)"
+      },
+      "host": {
+        "error": "only ['max', 'min', 'round'] may be called (col 0)"
+      },
+      "request": {
+        "inputs": {},
+        "language": "pricing",
+        "source": "__import__('os').system('id')"
+      }
+    },
+    {
+      "container": {
+        "error": "budget result 120 exceeds remaining=90"
+      },
+      "host": {
+        "error": "budget result 120 exceeds remaining=90"
+      },
+      "request": {
+        "inputs": {
+          "remaining": 90,
+          "requested": 60
+        },
+        "language": "budget",
+        "source": "requested*2"
+      }
+    },
+    {
+      "container": {
+        "error": "Attribute is not part of the pricing language (col 0)"
+      },
+      "host": {
+        "error": "Attribute is not part of the pricing language (col 0)"
+      },
+      "request": {
+        "inputs": {
+          "base_price": 5
+        },
+        "language": "pricing",
+        "source": "base_price.real"
+      }
+    }
+  ],
+  "context": {
+    "context_sha256": "a6a99032098719753ed496ef9164eee497393221c9e11f7adf07191acdb51e25",
+    "intact": true,
+    "manifest": {
+      "authority_created": false,
+      "base": "docker.io/library/python@sha256:2333bd330d12de02514770b3585cad313644316047cdee24a7acfdece6de6efb",
+      "capability": "restricted-dsl",
+      "files": {
+        "Dockerfile": "cb71d533232dc888e2891df8ef4b37983eeb311f9de22e1bafcce0ab818581a4",
+        "owned/dsl.py": "9024e5b4f06ee3d0d1260c35bb3704d2041c2df8c8175108750ae6b5ef517539",
+        "owned/entry.py": "7775200feae57c9c7c9ec588a59bc71598244a8d3e925a45879d3d476f31fc7e"
+      },
+      "image_built": false,
+      "platform": "linux/amd64",
+      "source_date_epoch": 1788000000,
+      "version": "greg-oci/1"
+    }
+  },
+  "docker": "{\"Client\":{\"Version\":\"28.4.0\",\"ApiVersion\":\"1.51\",\"DefaultAPIVersion\":\"1.51\",\"GitCommit\":\"d8eb465\",\"GoVersion\":\"go1.24.7\",\"Os\":\"linux\",\"Arch\":\"amd64\",\"BuildTime\":\"Wed Sep  3 20:56:28 2025\",\"Context\":\"default\"},\"Server\":{\"Platform\":{\"Name\":\"Docker Engine - Community\"},\"Components\":[{\"Name\":\"Engine\",\"Version\":\"28.4.0\",\"Details\":{\"ApiVersion\":\"1.51\",\"Arch\":\"amd64\",\"BuildTime\":\"Wed Sep  3 20:58:50 2025\",\"Experimental\":\"false\",\"GitCommit\":\"249d679\",\"GoVersion\":\"go1.24.7\",\"KernelVersion\":\"6.18.44\",\"MinAPIVersion\":\"1.24\",\"Os\":\"linux\"}},{\"Name\":\"containerd\",\"Version\":\"v1.7.28\",\"Details\":{\"GitCommit\":\"b98a3aace656320842a23f4a392a33f46af97866\"}},{\"Name\":\"runc\",\"Version\":\"1.3.0\",\"Details\":{\"GitCommit\":\"v1.3.0-0-g4ca628d\"}},{\"Name\":\"docker-init\",\"Version\":\"0.19.0\",\"Details\":{\"GitCommit\":\"de40ad0\"}}],\"Version\":\"28.4.0\",\"ApiVersion\":\"1.51\",\"MinAPIVersion\":\"1.24\",\"GitCommit\":\"249d679\",\"GoVersion\":\"go1.24.7\",\"Os\":\"linux\",\"Arch\":\"amd64\",\"KernelVersion\":\"6.18.44\",\"BuildTime\":\"2025-09-03T20:58:50.000000000+00:00\"}}",
+  "identical_second_environment": true,
+  "image": "sha256:38f2af776887a6c3ac3dac52d24d0a8869ae7f306145c55c236aeafb72d086f8",
+  "pushed": false,
+  "rebuilds": [
+    {
+      "config_digest": "sha256:38f2af776887a6c3ac3dac52d24d0a8869ae7f306145c55c236aeafb72d086f8",
+      "layers": [
+        "sha256:774043ccc8ccd0d0833a9ee0792142ab7ad93df971e59dd248fbf82db16d0150",
+        "sha256:10a883e63048b703b4840f0d2b04129475f576df95fc9b94473f24a7c1d4b07d",
+        "sha256:163a3f25e7bd110c86a026a3e8bb07e2fd014076db1b45eb4a784fc5a15a74ed",
+        "sha256:a1b2023426baeaed37a8e70dd3c4fb5b8cf09acad7a5a8e444f9bf20a459676b",
+        "sha256:311aa0668c053fac1aa8c2b1cac17d76009ab79d8fcc97d629b850987b97e3fc"
+      ],
+      "manifest_digest": "sha256:7dbeb633cf61078de6d7b57a9e128b8e964813433ffa5ce77a9b719f2c43fee4"
+    },
+    {
+      "config_digest": "sha256:38f2af776887a6c3ac3dac52d24d0a8869ae7f306145c55c236aeafb72d086f8",
+      "layers": [
+        "sha256:774043ccc8ccd0d0833a9ee0792142ab7ad93df971e59dd248fbf82db16d0150",
+        "sha256:10a883e63048b703b4840f0d2b04129475f576df95fc9b94473f24a7c1d4b07d",
+        "sha256:163a3f25e7bd110c86a026a3e8bb07e2fd014076db1b45eb4a784fc5a15a74ed",
+        "sha256:a1b2023426baeaed37a8e70dd3c4fb5b8cf09acad7a5a8e444f9bf20a459676b",
+        "sha256:311aa0668c053fac1aa8c2b1cac17d76009ab79d8fcc97d629b850987b97e3fc"
+      ],
+      "manifest_digest": "sha256:7dbeb633cf61078de6d7b57a9e128b8e964813433ffa5ce77a9b719f2c43fee4"
+    }
+  ],
+  "reproduced": true,
+  "source_date_epoch": 1788000000
+}

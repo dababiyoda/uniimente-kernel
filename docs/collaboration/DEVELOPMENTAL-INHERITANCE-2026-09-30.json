@@ -1379,5 +1379,10 @@
       ],
       "activation_evidence": "Research lineage under INTENT-0030; gates recorded OPEN/CLOSED as negative and positive evidence"
     }
-  ]
+  ],
+  "controlling_correction_20261002": {
+    "source": "docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json",
+    "boundary": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+    "historical_gate_scope": "Preserve original placements and evidence; after-VEPMC/N1 activation statements gate their dependent live use or founder action only. Continue all other currently buildable machinery automatically after each verified integration."
+  }
 }

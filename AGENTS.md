@@ -2,6 +2,8 @@
 
 # UNIIMENTE Agent Entry Contract
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 **Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
 
 ## Controlling founder correction — complete machine, 2026-10-01

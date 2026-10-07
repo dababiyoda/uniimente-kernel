@@ -10,8 +10,10 @@ working under its supervisor. The console is not the body and not a second Kerne
 * its only write is a founder-signed command file dropped into the body inbox;
 * the founder key is decrypted once at start and held in this process's memory only;
   without a key the console is read-only;
-* it binds to 127.0.0.1, refuses any other Host header (DNS rebinding), requires a
-  per-process CSRF token and same-origin POSTs, and caps request sizes.
+* it binds to 127.0.0.1 and refuses any other Host header (DNS rebinding);
+* private reads and every POST require the owner's private bootstrap/session,
+  in addition to per-process CSRF and same-origin checks. Loopback reachability
+  alone never authorizes use of the unlocked founder key.
 
 Mechanism lineage: #112 egregore/local_console.py (loopback page, Host check, CSRF,
 head-bound review), now driving the canonical #113 body with real Ed25519 signatures
@@ -21,9 +23,11 @@ instead of synthetic development authority. That module left the active tree on 
 from __future__ import annotations
 
 import html
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import secrets
 import threading
 import time
@@ -33,6 +37,7 @@ from greg import metrics, planner
 from greg.body import Layout, morning_projection, observe, send_signed, status
 
 MAX_BODY = 16 * 1024
+OWNER_COOKIE = "greg_console_owner"
 STYLE = """
 :root{--bg:#f5f6f4;--fg:#18242b;--muted:#5d6b73;--card:#fff;--line:#d5dcd9;--accent:#1f5f8b;--warn:#9a3b12;--ok:#2f6b3a}
 @media (prefers-color-scheme:dark){:root{--bg:#121719;--fg:#e4e9eb;--muted:#9aa7ad;--card:#1b2226;--line:#2d383d;
@@ -68,10 +73,27 @@ class Console:
         self.transport_factory = transport_factory
         self._route_revision = None
         self.csrf = secrets.token_urlsafe(32)
+        # Interface authentication only: commands still use the existing
+        # founder Ed25519 signature and body/Gate. None of these values is
+        # placed in argv/env, body events or unauthenticated page content.
+        self._bootstrap = secrets.token_urlsafe(32)
+        self._session = secrets.token_urlsafe(32)
+        self.owner_path = "/owner/" + secrets.token_urlsafe(24) + "/"
         self.proposals: dict[str, dict] = {}
         self.lock = threading.Lock()
         self.planner_context = planner_context
         self.flash: list[str] = []
+
+    def owner_url(self, port: int) -> str:
+        """Private, single-use link for the local owner who launched this console."""
+        return f"http://127.0.0.1:{port}{self.owner_path}?access={self._bootstrap}"
+
+    def bootstrap(self, token: str) -> bool:
+        with self.lock:
+            if self._bootstrap is None or not secrets.compare_digest(token.encode(), self._bootstrap.encode()):
+                return False
+            self._bootstrap = None
+            return True
 
     # -- reading ----------------------------------------------------------------------
     def snapshot(self) -> dict:
@@ -492,16 +514,43 @@ def make_handler(console: Console):
             port = self.server.server_address[1]
             return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
 
-        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None):
+        def _owner_authenticated(self) -> bool:
+            try:
+                cookies = SimpleCookie(self.headers.get("Cookie", ""))
+            except CookieError:
+                return False
+            value = cookies.get(OWNER_COOKIE)
+            return value is not None and secrets.compare_digest(value.value.encode(), console._session.encode())
+
+        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None,
+                  *, owner=False, public_content=False, establish_session=False):
+            if owner and ctype.startswith("text/html"):
+                # Cookies have no port scope. Keep private UI requests under
+                # a random narrow path so unrelated local services do not get
+                # the owner cookie on ordinary requests to their root/assets.
+                text = data.decode("utf-8")
+                text = re.sub(r"\b(href|action)=(['\"]?)/(?!/)",
+                              lambda match: match.group(1) + "=" + match.group(2) + console.owner_path, text)
+                data = text.encode("utf-8")
+            if owner and location and location.startswith("/"):
+                location = console.owner_path + location.lstrip("/")
             self.send_response(code)
             if location:
                 self.send_header("Location", location)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; "
-                             "script-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'")
+            policy = ("sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+                      "script-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'"
+                      if public_content else
+                      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+                      "form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+            self.send_header("Content-Security-Policy", policy)
             self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if establish_session:
+                self.send_header("Set-Cookie", f"{OWNER_COOKIE}={console._session}; "
+                                 f"Path={console.owner_path}; HttpOnly; SameSite=Strict")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -509,17 +558,31 @@ def make_handler(console: Console):
         def do_GET(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
-            path = urlsplit(self.path).path
+            parsed = urlsplit(self.path)
+            path = parsed.path
+            owner = path.startswith(console.owner_path)
+            if owner:
+                path = "/" + path[len(console.owner_path):]
+                supplied = parse_qs(parsed.query).get("access", [])
+                if path == "/" and len(supplied) == 1:
+                    if console.bootstrap(supplied[0]):
+                        return self._send(303, b"", location=console.owner_path, establish_session=True)
+                    if self._owner_authenticated():
+                        return self._send(303, b"", location=console.owner_path)
+                if not self._owner_authenticated():
+                    return self._send(403, b"private owner session required; open the link printed by greg console")
+            elif path != "/owned" and not path.startswith(("/owned/", "/community/", "/community-export/")):
+                return self._send(403, b"private owner session required; open the link printed by greg console")
             try:
                 if path == "/":
-                    return self._send(200, render_home(console))
+                    return self._send(200, render_home(console), owner=True)
                 if path.startswith("/proposal/"):
-                    return self._send(200, render_proposal(console, path.split("/", 2)[2]))
+                    return self._send(200, render_proposal(console, path.split("/", 2)[2]), owner=True)
                 if path.startswith("/delivery/"):
                     from urllib.parse import unquote
-                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
+                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])), owner=True)
                 if path == "/owned":
-                    return self._send(200, render_owned_index(console))
+                    return self._send(200, render_owned_index(console), owner=owner, public_content=True)
                 if path.startswith(("/community/", "/community-export/")):
                     from urllib.parse import unquote
                     parts = path.split("/")
@@ -535,8 +598,8 @@ def make_handler(console: Console):
                     mid, name = unquote(parts[2]), unquote(parts[3])
                     if parts[1] == "community-export":
                         data = read_owned_community(console, mid, name, offset, export=True)
-                        return self._send(200, json.dumps(data).encode(), "application/json")
-                    return self._send(200, render_community(console, mid, name, offset))
+                        return self._send(200, json.dumps(data).encode(), "application/json", public_content=True)
+                    return self._send(200, render_community(console, mid, name, offset), owner=owner, public_content=True)
                 if path.startswith("/owned/"):
                     from urllib.parse import unquote
                     parts = path.split("/")
@@ -547,9 +610,10 @@ def make_handler(console: Console):
                         version = int(query["version"][0]) if "version" in query else None
                     except ValueError:
                         return self._send(400, b"invalid page version")
-                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version))
+                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version),
+                                      owner=owner, public_content=True)
                 if path == "/morning":
-                    return self._send(200, render_morning(console))
+                    return self._send(200, render_morning(console), owner=True)
                 if path == "/api/state":
                     return self._send(200, json.dumps(console.snapshot(), default=str).encode(), "application/json")
             except FileNotFoundError:
@@ -559,6 +623,9 @@ def make_handler(console: Console):
         def do_POST(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
+            parsed = urlsplit(self.path)
+            if not parsed.path.startswith(console.owner_path) or not self._owner_authenticated():
+                return self._send(403, b"private owner session required")
             origin = self.headers.get("Origin")
             port = self.server.server_address[1]
             if origin not in (None, "null", f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
@@ -570,10 +637,10 @@ def make_handler(console: Console):
                                                  keep_blank_values=True).items()}
             if not secrets.compare_digest(form.get("csrf", ""), console.csrf):
                 return self._send(403, b"invalid form token; reload the page")
-            path = urlsplit(self.path).path
+            path = "/" + parsed.path[len(console.owner_path):]
             try:
                 if path == "/ask":
-                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]), owner=True)
                 if path == "/sign":
                     target = console.sign_proposal(form.get("proposal", ""))
                     console.flash.append(f"Signed and sent: {target.name}. You can close this window.")
@@ -601,7 +668,7 @@ def make_handler(console: Console):
                 return self._send(403, str(exc).encode())
             except (KeyError, ValueError) as exc:
                 return self._send(400, f"{type(exc).__name__}: {exc}".encode()[:500])
-            return self._send(303, b"", location="/")
+            return self._send(303, b"", location="/", owner=True)
     return Handler
 
 

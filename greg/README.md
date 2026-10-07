@@ -56,6 +56,16 @@ Plain words: `Improve GREG: <objective>` routes to `templates.code_change` (plan
 `templates.browser_task` and `templates.daleobanks_post` build the other missions. End-to-end runner and real
 evidence: `scripts/greg_hands_proof.py`, `docs/evidence/greg-hands/2026-10-02/`.
 
+`greg mission new browser-worker-document --workflow workflow.json --print-only`
+prepares the joined browser-to-document mission for review. The JSON supplies
+`url`, browser `steps`, `session`, `extracted_field`, worker `objective` and `order`,
+with optional `output`, `provider` and `budget_usd`. Complete extracted text enters
+the worker's context through a signed binding; changed content requires fresh
+scope approval. Independent appraisal requires the document to quote that context
+by default. Remove `--print-only` and provide the founder key to sign the mission.
+The retained quote proves source transfer; it does not establish arbitrary semantic
+quality. The workflow produces a private draft under the existing authority path.
+
 ## Spider-Web compounding (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING)
 
 The optimization target is one transaction: *Alfonso's authorized intention → verified real-world
@@ -199,7 +209,7 @@ The older Mac option remains in [`FIRST_MISSION.md`](FIRST_MISSION.md).
 
 ```bash
 python -m greg --home ~/.uniimente/greg init --read-root ~/Projects --deliver-root ~/GREG
-python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface (127.0.0.1:8766)
+python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # open the private owner link printed at startup
 python -m greg --home ~/.uniimente/greg mission new engineering-brief --local kernel=~/src/uniimente-kernel \
        --github dababiyoda/uniimente-kernel [--daily] --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg run --builder models          # Genesis builds/repairs via any reachable model

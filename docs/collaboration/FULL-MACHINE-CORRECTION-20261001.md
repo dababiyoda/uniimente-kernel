@@ -1,6 +1,6 @@
 # Full-machine completion correction
 
-Controlling source: `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json`, verbatim source alongside it. Root human authority and effect gates are unchanged. The prior PR145 worker reported the named skill unavailable. In this workspace the complete skill and mandatory references are available and applied; its five perspectives and exactly two strengthening passes govern material decisions.
+Controlling source: `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json`, verbatim source alongside it. Root human authority and effect gates are unchanged. Historical October 1 agent report: the prior PR145 worker reported the named skill unavailable, and that agent reported the complete skill and mandatory references available and applied in its workspace. That report does not establish current skill availability. See `FULL-MACHINE-CORRECTION-20261002.md` for the current inspected repository protocol, five perspectives and exactly two strengthening passes.
 
 ## Inspection and correction
 

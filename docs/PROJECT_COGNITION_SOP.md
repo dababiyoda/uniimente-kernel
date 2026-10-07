@@ -177,9 +177,13 @@ Reject decorative complexity.
 
 ## 8. Product-first implementation rule
 
-Current bottleneck until verified otherwise:
+The fixed completion boundary is **BODY + ORGANS + MIND = GREG / UNIIMENTE**. Apply the October 2 reaffirmation in `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json` before choosing work.
 
-**VEPMC 0 -> 1.**
+Reconstruct all intended requirements from the latest sources and executable evidence. Identify the highest-priority unfinished dependency, implement a rigorous increment, prove it, integrate it, and immediately continue the next unblocked requirement. A smallest falsifiable build is a sequencing unit, not the objective. Completing an experiment, component, benchmark or PR automatically resumes the parent machine objective.
+
+VEPMC measures authentic embodied founder use. Its pending evidence blocks only claims or actions that require that use; it never blocks unrelated reversible implementation of the remaining machine. The current engineering bottleneck must be selected from the complete boundary, rather than inherited permanently from a milestone.
+
+Never convert not implemented into not intended, future family into permanent omission, sandboxed into complete, registered into implemented, seed into final architecture, tested component into complete system, or VEPMC into the whole product definition. Build feasible executable machinery before the sustained founder-use phase; documentation and catalogs cannot substitute for it.
 
 A substantial coding session is not complete merely because it created:
 
@@ -246,7 +250,10 @@ Before ending a substantial session, leave a handoff containing:
 - unresolved contradictions;
 - external blockers;
 - current VEPMC status;
-- next executable bottleneck;
+- parent Body + Organs + Mind requirement advanced and integration evidence;
+- next unblocked requirement resumed automatically;
+- item-specific founder-only action, external dependency or technology limit, with evidence;
+- other achievable work continued while that item is blocked;
 - which Project sources materially influenced the work;
 - which agents/workstreams should consume the result.
 
@@ -267,7 +274,8 @@ Every material PR must include:
 - Rollback.
 - Cross-repo effects.
 - VEPMC impact.
-- Next executable step.
+- Parent machine requirement, integration evidence and the next unblocked requirement resumed automatically.
+- Any item-specific blocker and other achievable work continued while it is pending.
 
 For constitutional/canonical ownership changes, apply the Recursive Founder-Intent Collaboration Protocol's deliberation requirements.
 
@@ -373,11 +381,11 @@ A strong session leaves:
 
 1. more accurate institutional truth;
 2. less duplicate active architecture;
-3. at least one stronger real product capability or a proven blocker removal;
+3. integrated executable progress through every available next dependency, rather than stopping after one product delta;
 4. preserved negative evidence;
 5. a clean handoff;
 6. no unauthorized consequence;
-7. a clearer next bottleneck.
+7. an evidenced completion boundary or exact item-specific blockers after all remaining achievable work has been continued.
 
 A weak session leaves another impressive document, another isolated experiment, another unintegrated framework, or another interpretation future agents must rediscover.
 
@@ -395,8 +403,8 @@ These quotes are preserved more fully in `docs/intent/sources/REAL-PRODUCT-METAB
 
 ## 22. Exit question
 
-Before an agent stops, it must be able to answer:
+An increment is successful when its effect is proven and integrated. It is not a stopping condition. Resume the parent founder objective automatically.
 
-**What did I make more real?**
+Before concluding implementation, answer **which currently achievable Body + Organs + Mind requirements remain, and why can none advance now?** Continue unless the achievable machine is integrated and executable, the remaining requirement needs an inherently founder-only action, a genuine external dependency prevents further work, or current technology cannot attain the demanded level. For a technology limit, preserve the destination and implement the strongest defensible approximation and backcast path. A blocker affects only its requirement; continue unrelated achievable work.
 
-If the answer is unclear, the work is not yet adequately connected to the Opus Maximus.
+Report the actual integrated product delta, evidence and unfinished destination honestly. Founder-use evidence may remain pending; it does not excuse unfinished buildable machinery.

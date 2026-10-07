@@ -29,7 +29,7 @@ from greg import service
 from greg import path as devpath
 from tests.integration.test_greg_body_supervised import (SUPERVISORD, events, heartbeat, history,
                                                          supervisor_endpoint, wait_for)
-from tests.integration.test_greg_product_path import free_port, http
+from tests.integration.test_greg_product_path import authenticate_console, free_port, http
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL = ROOT / "greg/chromebook/install.sh"
@@ -77,15 +77,8 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         proc = subprocess.Popen([str(bin_dir / "greg"), "console", "--key", str(key), "--no-passphrase", "--no-model",
                                  "--port", str(port)], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True)
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            try:
-                http(port, "/")
-                return proc
-            except OSError:
-                assert proc.poll() is None, proc.stdout.read()
-                time.sleep(0.2)
-        raise AssertionError("console did not start")
+        authenticate_console(proc, port)
+        return proc
 
     def close(proc):
         proc.terminate()

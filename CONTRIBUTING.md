@@ -18,4 +18,6 @@ Use the PR template. Preserve founder intent, dissent, negative evidence and pro
 
 A substantial session must identify the actual product delta: **what can GREG do now that it could not do before?**
 
+That delta is a continuation checkpoint. **BODY + ORGANS + MIND = GREG / UNIIMENTE** remains the fixed completion boundary. Prove and integrate each rigorous increment, then automatically resume the parent objective and next unblocked requirement. Seeds, experiments, narrow PRs and VEPMC never justify stopping feasible implementation. Read `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`; preserve item-specific founder/external/technology gates and continue unrelated achievable work.
+
 No contributor or agent may infer merge, deployment, spending, publishing, credential, financial, or other external-consequence authority from this file.

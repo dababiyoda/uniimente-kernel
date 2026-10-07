@@ -164,7 +164,7 @@
   tests:
   - tests/unit/test_greg_oci.py
   limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG and organ dependency images and stronger general-code execution remain unfinished.
-  gap: Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution obligations.
+  gap: Actual restricted-capability OCI twin rebuild and six-case host/container execution passed on October 2 (docs/collaboration/evidence/oci-20261002/report.json). Full GREG/organ dependency images and general-code isolation remain unfinished; hosted CI reproduction remains required for the proposed commit.
   state: PARTIAL
 10:
   acceptance:
@@ -866,8 +866,7 @@
   - .github/pull_request_template.md
   - .github/workflows/canonical-ci.yml
   - tests/unit/test_founder_effect_doctrine.py
-  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
-    frozen contracts.
+  gap: Internal worker.commission now executes frozen WorkOrders and worker.appraise independently reconstructs and checks outputs; signed browser evidence composes into those orders. Actual Bubblewrap provider/acceptance confinement, collector metadata attacks, cancellation and bounded-output regressions pass locally. Current-commit hosted CI, real paid-provider execution and broader agent organizations remain unverified; provider egress policy and aggregate resource quotas remain unfinished.
   state: PARTIAL
 52:
   acceptance:

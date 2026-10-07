@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import glob
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -39,8 +40,6 @@ import sys
 import tempfile
 import time
 import urllib.parse
-
-from greg.capabilities import CapabilityError, InvocationContext, _inside
 
 OPS = ("goto", "fill", "type", "press", "click", "select", "check", "scroll", "wait_for", "expect_text",
        "extract", "extract_all", "screenshot", "download", "mouse")
@@ -59,11 +58,67 @@ class BoundaryStop(Exception):
 
 
 def chromium() -> str:
-    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))
-    for path in candidates[::-1] + ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
-        if os.access(path, os.X_OK):
-            return path
+    from greg.capabilities import CapabilityError
+    configured = os.environ.get("GREG_CHROMIUM")
+    if configured:
+        if Path(configured).is_absolute() and Path(configured).is_file() and os.access(configured, os.X_OK):
+            return configured
+        raise CapabilityError("GREG_CHROMIUM must name an installed executable browser by absolute path")
+    cache = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "ms-playwright"
+    roots = [Path("/opt/pw-browsers"), cache]
+    playwright_root = os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
+    if playwright_root == "0":
+        spec = importlib.util.find_spec("playwright")
+        if spec is not None and spec.submodule_search_locations:
+            roots.insert(0, Path(next(iter(spec.submodule_search_locations))) / "driver/package/.local-browsers")
+    elif playwright_root:
+        roots.insert(0, Path(playwright_root))
+    candidates = []
+    for root in roots:
+        for layout in ("chromium-*/chrome-linux64/chrome", "chromium-*/chrome-linux/chrome",
+                       "chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+                       "chromium-*/chrome-mac-arm64/Chromium.app/Contents/MacOS/Chromium"):
+            candidates.extend(sorted(glob.glob(str(root / layout)), reverse=True))
+    candidates.extend(["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome",
+                       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                       "/Applications/Chromium.app/Contents/MacOS/Chromium"])
+    for path in candidates:
+        if Path(path).is_file() and os.access(path, os.X_OK):
+            return str(path)
     raise CapabilityError("no Chromium installed on this body")
+
+
+# The capability registry uses this discovery function during its own initialization.
+# Keep discovery defined before importing that registry's types to avoid a cycle.
+from greg.capabilities import CapabilityError, InvocationContext, _inside
+
+
+def computer_use_ready() -> dict:
+    """Probe browser prerequisites without launching a browser or running subprocesses.
+
+    certutil is required only when the body explicitly configures a trust bundle, matching
+    the session's trust-profile path. Installed prerequisites do not prove a real mission.
+    """
+    try:
+        playwright = importlib.util.find_spec("playwright") is not None
+    except (ImportError, ValueError):
+        playwright = False
+    try:
+        chromium_path = chromium()
+    except CapabilityError:
+        chromium_path = None
+    certutil = os.access("/usr/bin/certutil", os.X_OK)
+    bundle = os.environ.get(TRUST_BUNDLE_ENV)
+    trust_configured = bool(bundle)
+    bundle_exists = not trust_configured or Path(bundle).is_file()
+    missing = (["playwright"] if not playwright else []) + (["chromium"] if chromium_path is None else [])
+    if trust_configured:
+        if not bundle_exists:
+            missing.append("trust_bundle")
+        if not certutil:
+            missing.append("certutil")
+    return {"ready": not missing, "playwright": playwright, "chromium": chromium_path, "certutil": certutil,
+            "certutil_required": trust_configured, "trust_bundle_available": bundle_exists, "missing": missing}
 
 
 def _trust_profile(home: Path) -> int:
@@ -74,8 +129,10 @@ def _trust_profile(home: Path) -> int:
     the operating system already has. Returns the number of anchors imported.
     """
     bundle = os.environ.get(TRUST_BUNDLE_ENV)
-    if not bundle or not Path(bundle).is_file():
+    if not bundle:
         return 0
+    if not Path(bundle).is_file():
+        raise CapabilityError(f"{TRUST_BUNDLE_ENV} names a missing trust bundle")
     certutil = "/usr/bin/certutil"
     if not os.access(certutil, os.X_OK):
         raise CapabilityError(f"{TRUST_BUNDLE_ENV} is set but certutil (libnss3-tools) is not installed")
@@ -83,6 +140,8 @@ def _trust_profile(home: Path) -> int:
     db.mkdir(parents=True)
     subprocess.run([certutil, "-N", "-d", f"sql:{db}", "--empty-password"], check=True, capture_output=True)
     pems = re.findall(r"-----BEGIN CERTIFICATE-----.+?-----END CERTIFICATE-----", Path(bundle).read_text(), re.S)
+    if not pems:
+        raise CapabilityError(f"{TRUST_BUNDLE_ENV} contains no PEM certificate anchors")
     for index, pem in enumerate(pems):
         subprocess.run([certutil, "-A", "-d", f"sql:{db}", "-n", f"anchor-{index}", "-t", "C,,"],
                        input=pem.encode(), check=True, capture_output=True)

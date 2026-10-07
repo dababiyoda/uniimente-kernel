@@ -1,6 +1,6 @@
 # Polyintelligence Cortex — Seed Experiment
 
-Current bounded product integration: [Seed Genome on the canonical GREG path](GREG_SEED_GENOME.md). The older sandbox experiment and its frozen results remain historical evidence.
+Current bounded product integration: [Seed Genome on the canonical GREG path](GREG_SEED_GENOME.md). The older sandbox experiment and its frozen results remain historical evidence. The seed is an intermediate sequencing unit within **BODY + ORGANS + MIND = GREG / UNIIMENTE**, never the final architecture. Continue every achievable family and integration under the [October 2 correction](../intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json); the historical comparison and promotion gates below do not globally block reversible engineering.
 
 The `cortex` package is the seed of GREG's Polyintelligence Cortex: a router that classifies a problem's
 geometry, checks which cognitive organs are eligible for it, runs the eligible ones under a budget, attacks

@@ -1,0 +1,141 @@
+{
+  "record_id": "FULL-MACHINE-CONTINUATION-EVIDENCE-20261002",
+  "founder_source_id": "01a0f6ab-f59b-76a8-b6a2-bb6408f710fa",
+  "recorded_at": "2026-10-02T22:28:28.150230+00:00",
+  "status": "AUDIT_AND_PROPAGATION_VERIFIED_RUNTIME_PENDING",
+  "completion_boundary": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+  "controlling_source": "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md",
+  "active_intent": "docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json",
+  "canonical_instruction_draft": {
+    "repository": "dababiyoda/uniimente-kernel",
+    "number": 152,
+    "url": "https://github.com/dababiyoda/uniimente-kernel/pull/152",
+    "head_sha": "3378082a792d6fd1b89305226aeb9105f7a4df96",
+    "default_branch_adoption": "PENDING",
+    "publication_verification": "Git Data API local/remote tree equality; read-only PR152 API head verified on resumed October7 work",
+    "initial_head_sha": "44547060fc85a41acfa78698c3863c43e3255c78",
+    "tree": "9746eb2ddf6760811e23fedfbcfdbbc4d7aa5398",
+    "latest_correction": "Scope failed-mechanism gates to affected execution; continue independent buildable machinery"
+  },
+  "organ_instruction_drafts": [
+    {
+      "base": "main",
+      "draft": true,
+      "head": "codex/full-machine-entry-correction-20261002",
+      "head_sha": "187e7153d865e154760c10b5f3877b0dba370159",
+      "number": 85,
+      "state": "open",
+      "url": "https://github.com/dababiyoda/DALEOBANKS/pull/85",
+      "repository": "dababiyoda/DALEOBANKS",
+      "publication_verification": "Read-only GitHub API confirms draft head and main base; root separately reported byte-exact publication.",
+      "default_branch_adoption": "PENDING"
+    },
+    {
+      "base": "main",
+      "draft": true,
+      "head": "codex/full-machine-entry-correction-20261002",
+      "head_sha": "32b75caab324c1246f614cea0d821afde23c7457",
+      "number": 42,
+      "state": "open",
+      "url": "https://github.com/dababiyoda/WealthMachineIntelligence/pull/42",
+      "repository": "dababiyoda/WealthMachineIntelligence",
+      "publication_verification": "Read-only GitHub API confirms draft head and main base; root separately reported byte-exact publication.",
+      "default_branch_adoption": "PENDING"
+    }
+  ],
+  "pr_guidance_audit": {
+    "kernel_original_open_prs": 95,
+    "kernel_guidance_updated_and_verified": 95,
+    "open_kernel_count_after_snapshot": 96,
+    "new_prs_since_snapshot": [
+      152
+    ],
+    "daleobanks_original_open_prs": 23,
+    "wmi_original_open_prs": 20,
+    "comments_reviews_pagination_complete": true,
+    "successful_metadata_requests": 98,
+    "failed_rest_attempts_recovered": 4,
+    "initial_outdated_cli_failures": 54,
+    "comments_reviews_merges_written": 0,
+    "head_changes_by_metadata": 0,
+    "title_correction": {
+      "repository": "dababiyoda/uniimente-kernel",
+      "number": 124,
+      "url": "https://github.com/dababiyoda/uniimente-kernel/pull/124",
+      "current_title": "GREG venture watch: preserved evidence and mechanisms carried into #128"
+    },
+    "audit_report": "docs/collaboration/evidence/full-machine-pr-audit-20261002/audit-report.json",
+    "verification": "docs/collaboration/evidence/full-machine-pr-audit-20261002/verification.json"
+  },
+  "raw_session_artifact_digests": [
+    {
+      "kind": "kernel-pr-inventory",
+      "session_artifact_name": "pr-audit-full.json",
+      "sha256": "115e32bb4cd3afad286746482fec5b8be9a6ed0c797fb2efa6f3849eeac3b7f8",
+      "bytes": 961060,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "daleobanks-pr-inventory",
+      "session_artifact_name": "pr-audit-daleobanks-full.json",
+      "sha256": "b329c9e97c8da0d4060a833568aade5d1120a8fd0b604edb619d8b91f841af99",
+      "bytes": 163451,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "wmi-pr-inventory",
+      "session_artifact_name": "pr-audit-wmi-full.json",
+      "sha256": "47b8083da7e7b3ee11da82e11188b3ca6964f73374c34b2131ce4b17797d38c6",
+      "bytes": 132552,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "kernel-after-inventory",
+      "session_artifact_name": "pr-audit-kernel-after.json",
+      "sha256": "a094f7ccee3895209b278fcf7d45d866da9f9f3ea159f82a95e7a3dbca250bef",
+      "bytes": 765736,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "initial-cli-failure-receipts",
+      "session_artifact_name": "pr-guidance-20261002/receipts.jsonl",
+      "sha256": "3100484e4c3e953a332358f4f0cc1de84b0fcf6c0b8a988d87a0c0369098d81c",
+      "bytes": 52462,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "rest-mutation-attempt-receipts",
+      "session_artifact_name": "pr-guidance-20261002/receipts-rest.jsonl",
+      "sha256": "003062681b1e71b6014e0b59376091adcc00290136c5901dc6a7dbcc96fe337a",
+      "bytes": 92125,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    },
+    {
+      "kind": "rest-mutation-attempt-receipts-json",
+      "session_artifact_name": "pr-guidance-20261002/receipts-rest.json",
+      "sha256": "3f26335404f23e909866161d11edb6ecf0f183939a19b3d8f0191db7a05dcad2",
+      "bytes": 100245,
+      "included_in_repository": false,
+      "retention": "Original session artifact retained separately; digest preserves its identity without copying raw inventories or PR bodies."
+    }
+  ],
+  "runtime_verification": {
+    "status": "PENDING",
+    "runs": [],
+    "full_machine_completion": "NOT_ESTABLISHED",
+    "founder_device_use": "NOT_ESTABLISHED",
+    "note": "Root implementation is under development. No test result, integration completion or full-machine completion is inferred from instruction publication or PR metadata success."
+  },
+  "authority": {
+    "expanded_authority": false,
+    "founder_identifier_is_authentication": false,
+    "merge_deploy_live_activation_external_contact_spend_authorized_by_this_record": false
+  },
+  "continuation": "Prove and integrate each achievable increment, then automatically resume the highest-priority unblocked parent requirement. Pending real-use, benchmark or live-authority evidence is scoped to its own requirement."
+}

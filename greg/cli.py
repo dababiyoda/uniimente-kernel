@@ -136,6 +136,7 @@ def main(argv=None) -> int:
                            help="human-work: file name the person's deliverable is saved as in the mission folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
             q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
+            q.add_argument("--workflow", help="browser-worker-document: JSON parameters for the joined workflow")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
@@ -265,6 +266,17 @@ def main(argv=None) -> int:
                     if not args.problem:
                         raise BodyError('cognition needs --problem')
                     spec = templates.cognitive_problem(json.loads(Path(args.problem).read_text()))
+                elif args.target == "browser-worker-document":
+                    from greg.workflow_templates import browser_worker_document
+                    if not args.workflow:
+                        raise BodyError("browser-worker-document needs --workflow")
+                    parameters = json.loads(Path(args.workflow).read_text())
+                    if not isinstance(parameters, dict):
+                        raise BodyError("workflow parameters must be a JSON object")
+                    try:
+                        spec = browser_worker_document(**parameters)
+                    except (TypeError, ValueError) as exc:
+                        raise BodyError(f"invalid browser-worker-document parameters: {exc}") from exc
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")
@@ -285,7 +297,8 @@ def main(argv=None) -> int:
                                                         standing=args.standing,
                                                         cadence_seconds=args.cadence_seconds or 3600)
                 else:
-                    raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
+                    raise BodyError(f"unknown template {args.target}; known: "
+                                    f"{sorted(set(templates.TEMPLATES) | {'browser-worker-document'})}")
             from greg.missions import validate_mission
             validate_mission(spec)
             if getattr(args, "print_only", False):
@@ -410,8 +423,9 @@ def main(argv=None) -> int:
                                                                             config=models_config)
             replacement = (None if args.no_model else
                            lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
-            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
-            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+            console = Console(home, key=key, transport=transport, transport_factory=replacement)
+            server = serve(console, port=args.port)
+            print(f"GREG console owner link: {console.owner_url(server.server_address[1])}  (model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
                   "Ctrl-C closes the console; the body keeps running.", flush=True)
             try:

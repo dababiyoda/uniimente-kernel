@@ -25,6 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import json
+import math
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -32,9 +33,11 @@ from jsonschema import Draft202012Validator, FormatChecker
 from greg.authority import AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
+from greg.dataflow import BindingError, resolve_bindings, validate_bindings
 from greg import asks, improvement, routing
 from greg.journal import Journal, iso
 from greg.lightcone import LightCone
+from greg.workers import worker_spend
 from provenance.ledger import sha256_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,6 +49,13 @@ DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_ex
 
 class MissionError(ValueError):
     """Malformed or conflicting mission input. Retained as data, never executed."""
+
+
+def _finite_amount(value) -> bool:
+    try:
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0
+    except OverflowError:
+        return False
 
 
 def validate_mission(spec: dict) -> dict:
@@ -71,6 +81,10 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError(f"strategy {strategy['action_id']} requires unknown checks {sorted(requires - checks)}")
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
+        try:
+            validate_bindings(strategy, checks)
+        except BindingError as exc:
+            raise MissionError(f"strategy {strategy['action_id']}: {exc}") from exc
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -210,6 +224,8 @@ class MissionBook:
             elif kind == "mission.action":
                 aid = data["action_id"]
                 m.attempts[aid] = data["attempt"] + 1
+                if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
+                    m.spent_usd += data.get("cost_usd", 0.0)
                 if data["status"] == "DONE":
                     m.actions_done += 1
                     m.spent_usd += data.get("cost_usd", 0.0)
@@ -217,6 +233,8 @@ class MissionBook:
                     strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
                     if strategy:
                         m.pending_effect[aid] = set(strategy["advances"])
+                    if data.get("worker_result") in ("FAILED", "SPEND_INVALID", "BUDGET_EXCEEDED"):
+                        m.failed[aid] = "worker result: " + data["worker_result"]
                 elif data["status"] in ("REFUSED", "UNAVAILABLE"):
                     m.failed[aid] = "; ".join(data["reasons"])[:300]
             elif kind == "mission.blocked":
@@ -232,6 +250,8 @@ class MissionBook:
                 m.next_observe_at = data["next_observe_at"]
             elif kind == "mission.strategy_excluded":
                 m.excluded[data["action_id"]] = data["reason"]
+            elif kind == "mission.strategy_retry":
+                m.failed.pop(data["action_id"], None)
             elif kind == "decision.requested":
                 self.requests[data["request_id"]] = data
             elif kind == "decision.withdrawn":
@@ -334,9 +354,10 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
+                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "worker.appraise") or
                                  manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
-                                 artifact_root=self.artifact_root, stop_check=self._stop_check)
+                                 artifact_root=self.artifact_root, stop_check=self._stop_check,
+                                 registry=self.registry)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -395,6 +416,8 @@ class MissionEngine:
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
+        if b["type"] == "dataflow":
+            return True, "re-observe incomplete data bindings at cadence"
         if b["type"] == "human_work":            # an answer is not the work; only observing the deliverable is
             return False, f"awaiting the deliverable for {b['function']}; GREG does not perform or fake it"
         return False, "unknown blocker"
@@ -459,6 +482,9 @@ class MissionEngine:
         self._record_routing_outcomes(m)
         if not failing:
             return self._setpoint_reached(m, now, evidence)
+        dependencies = self._cognition_dependencies(m, now, failing)
+        if dependencies is not None:
+            return dependencies
         repaired = self._self_repair(m, now)
         if repaired is not None:
             return repaired
@@ -485,6 +511,32 @@ class MissionEngine:
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
+
+    def _cognition_dependencies(self, m: MissionState, now: datetime, failing: set):
+        """A missing formed function is a Genesis detour, then the signed goal resumes."""
+        for check in m.current_checks():
+            observation = m.observations.get(check["check_id"], {})
+            if check["check_id"] not in failing or observation.get("sensor_capability") != "cognition.status":
+                continue
+            for function in observation.get("dependency_deficits", []):
+                if self.genesis is None:
+                    self._escalate_capability(m, function, None, f"cognition dependency for {check['check_id']}", now)
+                    return {"state": "BLOCKED", "blocker": m.blocker}
+                capability = self.genesis.resolve(mission=m, function=function,
+                                                  purpose=f"cognition dependency for {check['check_id']}", now=now)
+                if capability is None:
+                    self._escalate_capability(m, function, None, f"cognition dependency for {check['check_id']}", now)
+                    return {"state": "BLOCKED", "blocker": m.blocker}
+                for strategy in m.spec["strategies"]:
+                    if (strategy.get("capability") == "cognition.solve" or strategy.get("function") == "cognition.solve") \
+                            and check["check_id"] in strategy["advances"]:
+                        self.journal.record("mission.strategy_retry", {
+                            "mission_id": m.mission_id, "action_id": strategy["action_id"],
+                            "reason": "formed cognition dependency now attached", "function": function,
+                            "capability": capability.capability_id, "source_receipt": observation.get("receipt")},
+                            key=[m.mission_id, strategy["action_id"], function, observation.get("receipt")])
+                return {"state": "DEPENDENCY_READY", "function": function, "capability": capability.capability_id}
+        return None
 
     def _self_repair(self, m: MissionState, now: datetime):
         """A formed capability that faults twice in a row on the same check is re-formed, not escalated."""
@@ -551,7 +603,16 @@ class MissionEngine:
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
-                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
+                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
+                    "proposal_id": outcome.proposal_id, "scope_digest": outcome.scope_digest,
+                    "sensor_capability": manifest.capability_id}
+            if manifest.capability_id == "cognition.status" and outcome.status == "DONE":
+                output = outcome.output if isinstance(outcome.output, dict) else {}
+                deficits = output.get("dependency_deficits", [])
+                allowed = {"graph.shortest_path", "graph.max_flow", "lp.optimize"}
+                if (output.get("answered") is False and isinstance(deficits, list) and 0 < len(deficits) <= 3
+                        and all(isinstance(function, str) and function in allowed for function in deficits)):
+                    data["dependency_deficits"] = sorted(set(deficits))
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)
@@ -802,12 +863,20 @@ class MissionEngine:
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
         held = {}                            # strategies waiting on a precondition observation says fails
+        held_dataflow = {}
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
                 continue
-            if set(s.get("requires", [])) & failing:
-                held[s["action_id"]] = sorted(set(s["requires"]) & failing)
+            unmet = {cid for cid in s.get("requires", []) if not m.observations.get(cid, {}).get("passed")}
+            if unmet:
+                held[s["action_id"]] = sorted(unmet)
+                continue
+            try:
+                params, bindings = resolve_bindings(mission=m, strategy=s, journal=self.journal,
+                                                    observed_at=iso(now), evaluate_predicate=evaluate_predicate)
+            except BindingError as exc:
+                held_dataflow[s["action_id"]] = str(exc)
                 continue
             manifest = self.registry.manifests.get(s.get("capability"))
             if manifest is None and s.get("function") and self.genesis is not None:
@@ -816,8 +885,14 @@ class MissionEngine:
             estimate = routing.reliability(records.get(manifest.capability_id) if manifest else None)
             expected = routing.score(gain=gain, reliability_estimate=estimate,
                                      cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
-            candidates.append((-expected, route, index, s, estimate))
+            candidates.append((-expected, route, index, s, estimate, params, bindings))
         if not candidates:
+            if held_dataflow:
+                self._block(m, {"type": "dataflow", "why": "required sensor data is incomplete",
+                                "actions": held_dataflow,
+                                "reconsider": "a fresh complete source observation is available"})
+                self._schedule(m, now, 30)
+                return {"state": "DATAFLOW_WAIT", "blocker": m.blocker}
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
                                 why=("the remaining strategies wait on checks that observation says fail: "
@@ -848,17 +923,64 @@ class MissionEngine:
                 return {"state": "BLOCKED", "blocker": m.blocker}
         aid = s["action_id"]
         attempt = m.attempts.get(aid, 0)
+        params, bindings = candidates[0][5:7]
+        if manifest.capability_id == "worker.commission":
+            cap = params.get("max_budget_usd", 0)
+            signed_cap = float(s.get("cost_usd", 0.0))
+            if not _finite_amount(cap) or cap <= 0 or cap > signed_cap:
+                self.journal.record("mission.action", {
+                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                    "status": "REFUSED", "reasons": ["worker cap exceeds or is not covered by signed action cost"],
+                    "receipt": None, "capability": manifest.capability_id, "cost_usd": 0.0,
+                    "routing": routing_decision, "at": iso(now)}, key=[m.mission_id, aid, attempt])
+                return {"state": "REPLANNING", "action": aid, "status": "REFUSED"}
+        if bindings:
+            self.journal.record("mission.parameters_resolved", {
+                "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                "params_digest": sha256_json(params), "bindings": bindings, "at": iso(now)},
+                key=[m.mission_id, aid, attempt, bindings], causal_parent=bindings[0]["observation_event"])
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=s.get("params", {}), target=s["target"],
+            adapter=adapter, ctx=self._context(m, manifest), params=params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
             evidence_refs=evidence, attempt=attempt, spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # The Gate completed collection, but the cancellable worker may have
+            # stopped after partial effects/spend. Retain its receipt and route
+            # outcome uncertainty through the same no-blind-retry reconciliation.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+        if bindings:
+            record.update(params_digest=sha256_json(params), bindings=bindings)
+        if manifest.capability_id == "worker.commission":
+            if outcome.status == "UNCERTAIN":
+                record.update(cost_usd=float(s.get("cost_usd", 0.0)), cost_reserved=True,
+                              spend={"status": "uncertain_reserved", "charge_usd": float(s.get("cost_usd", 0.0)),
+                                     "reason": "worker outcome or spend is unknown; signed cap reserved"})
+            elif outcome.status == "DONE":
+                output = outcome.output if isinstance(outcome.output, dict) else {}
+                spend = output.get("spend", {})
+                charge = spend.get("charge_usd") if isinstance(spend, dict) else None
+                signed_cap = float(s.get("cost_usd", 0.0))
+                worker = output.get("worker") if isinstance(output.get("worker"), dict) else {}
+                normalized = worker_spend(worker.get("provider_cost_raw", worker.get("cost_usd")),
+                                          params["max_budget_usd"])
+                valid = (_finite_amount(charge)
+                         and spend.get("max_budget_usd") == params["max_budget_usd"]
+                         and spend == normalized)
+                if valid:
+                    record.update(cost_usd=charge, spend=spend, worker_result=output.get("status"))
+                else:
+                    record.update(cost_usd=signed_cap, worker_result="SPEND_INVALID",
+                                  spend={"status": "invalid", "charge_usd": signed_cap,
+                                         "reason": "receipt has no valid normalized worker spend"})
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"
@@ -874,6 +996,7 @@ class MissionEngine:
                                 requested={"capability": manifest.capability_id, "target": s["target"],
                                            "consequence_class": manifest.consequence_class,
                                            "cost_usd": s.get("cost_usd", 0.0),
+                                           **({"params": params, "bindings": bindings} if bindings else {}),
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)

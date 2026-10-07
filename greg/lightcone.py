@@ -26,6 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from fnmatch import fnmatchcase
+import math
 
 from capabilities.genome import CONSEQUENCE_CLASSES
 
@@ -58,8 +59,9 @@ class LightCone:
 
     def __post_init__(self):
         _rank(self.max_consequence_class)
-        if self.budget_usd < 0:
-            raise ScopeError("budget may not be negative")
+        if (isinstance(self.budget_usd, bool) or not isinstance(self.budget_usd, (int, float))
+                or not math.isfinite(self.budget_usd) or self.budget_usd < 0):
+            raise ScopeError("budget must be finite and nonnegative")
         if not self.targets:
             raise ScopeError("a scope must name at least one target pattern")
         if any(not isinstance(t, str) or not t or t.strip("*?") == "" for t in self.targets):
@@ -77,6 +79,8 @@ class LightCone:
         if set(value) - allowed or not {"capabilities", "targets", "max_consequence_class",
                                         "budget_usd", "horizon"} <= set(value):
             raise ScopeError("unknown or missing scope field")
+        if isinstance(value["budget_usd"], bool):
+            raise ScopeError("budget must be finite and nonnegative")
         return cls(capabilities=frozenset(value["capabilities"]), targets=tuple(value["targets"]),
                    max_consequence_class=value["max_consequence_class"],
                    budget_usd=float(value["budget_usd"]), horizon=value["horizon"],
@@ -106,7 +110,13 @@ class LightCone:
             reasons.append(f"target {target!r} outside scope")
         if _rank(consequence_class) > _rank(self.max_consequence_class):
             reasons.append(f"{consequence_class} exceeds scope ceiling {self.max_consequence_class}")
-        if cost_usd < 0 or spent_usd + cost_usd > self.budget_usd + 1e-9:
+        valid_money = all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                          and math.isfinite(v) and v >= 0 for v in (cost_usd, spent_usd))
+        # Observe a budget failure without concealing the actual overrun. The
+        # exception is only a zero-cost read; every write or additional spend
+        # still needs a fresh authorized budget. All other scope checks apply.
+        free_observation = consequence_class == "read_only" and cost_usd == 0
+        if not valid_money or (spent_usd + cost_usd > self.budget_usd + 1e-9 and not free_observation):
             reasons.append(f"cost {cost_usd} with {spent_usd} spent exceeds budget {self.budget_usd}")
         if at >= _instant(self.horizon):
             reasons.append("scope horizon has expired")

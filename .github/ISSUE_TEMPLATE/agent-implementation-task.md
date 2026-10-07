@@ -53,7 +53,17 @@ Which control node(s) improve?
 
 ## VEPMC impact
 
-How does this advance VEPMC or the current verified bottleneck?
+Record any authentic founder-use impact. A pending VEPMC result does not gate unrelated reversible implementation.
+
+## Parent machine continuation
+
+- Full-machine requirement advanced within BODY + ORGANS + MIND = GREG / UNIIMENTE:
+- Integration evidence beyond component proof:
+- Next unblocked requirement to resume automatically:
+- Item-specific founder/external/technology blocker, with evidence:
+- Other achievable work continued while that item is blocked:
+
+A narrow issue or PR sequences work; it never narrows the machine or closes the parent objective. Apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`.
 
 ## Strongest alternative
 

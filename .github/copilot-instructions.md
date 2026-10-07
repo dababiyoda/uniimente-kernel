@@ -8,6 +8,8 @@ Continue until the currently achievable machine is integrated and executable. A 
 
 # UNIIMENTE GitHub Agent Instructions
 
+> October 2 reaffirmation: apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Select unfinished work from the complete Body + Organs + Mind boundary, prove and integrate each increment, and automatically continue the next unblocked parent requirement. Pending VEPMC or seed evidence gates its own use/promotion claim; it does not gate unrelated reversible machinery.
+
 ## Current product priority
 
 Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` before proposing architecture.
@@ -16,7 +18,7 @@ Repository history is feedstock, not a mandate to preserve every executable desi
 
 Every material coding task must identify the product capability it creates and finish by answering: **What can actual GREG do after this change that it could not do before?** A test-only, simulation-only, benchmark-only or documentation-only result is subordinate evidence unless it removes a precise blocker to the next real product capability.
 
-Current bottleneck remains VEPMC 0 -> 1 until verified otherwise.
+Choose the active unfinished dependency from the complete Body + Organs + Mind boundary. Pending VEPMC founder-use evidence blocks only the affected use/claim; continue all other achievable implementation. Apply `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json` and automatically resume the parent objective after every proven and integrated increment.
 
 
 Read `AGENTS.md`, `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`, and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
@@ -36,9 +38,9 @@ For any ambitious request:
 5. search commodity/open-source/API/plugin/computer-use mechanisms;
 6. extract and recombine causal mechanisms when necessary;
 7. identify only the residual CapabilityDeficit;
-8. build the smallest missing capability;
+8. build the smallest rigorous increment needed to advance the highest-priority unfinished full-machine dependency;
 9. sandbox and verify the underlying effect;
-10. preserve authority boundaries and resume the original goal.
+10. integrate the capability, preserve authority boundaries, resume the original goal and immediately continue the next unblocked full-machine requirement.
 
 Canonical `morphogenesis` means functional capability formation/reconfiguration in response to a verified discrepancy. Digital cells, tissues, developmental fields, decentralized topologies, and organizational self-assembly are optional research mechanisms, not requirements.
 

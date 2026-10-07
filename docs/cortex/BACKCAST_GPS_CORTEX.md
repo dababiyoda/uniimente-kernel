@@ -5,6 +5,12 @@ Polyintelligent GREG, and frontier capability discovery. Each advancement requir
 Interpretation: `docs/FOUNDER_EFFECT_COMPILER.md` (preserve the effect, do not literalize the metaphor). Status of
 each stage is evidence-based; a stage named here is a destination, not a claim.
 
+## Controlling completion correction — 2026-10-02
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE** remains the completion boundary. Apply `../intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. The six nodes below separate evidence standards; their live-use, comparative-performance and promotion exits do not serially gate all reversible engineering. Build and integrate each currently achievable competency, composition, deficit-resolution and outcome-processing mechanism with truthful tests while authentic founder use and external outcomes remain pending. Then automatically continue the next unblocked parent requirement.
+
+The v0.1.5 measurements, model-access failure and estimates below describe the inherited seed experiment, not an audit of today's complete runtime. Preserve its frozen evidence. Missing strong-baseline evidence prevents its performance claim; missing founder use prevents a founder-use claim. Neither prevents implementation of unrelated full-machine requirements. A future-family registration retains a build obligation; it is never implementation proof.
+
 ## Reasoning Summary
 
 **Current reality (verified 2026-10-01).** Cortex 0.1.5 is a seed: six organs `SANDBOXED` (Formal with certified
@@ -14,10 +20,10 @@ section. On the frozen 42-item held-out suite the routed seed scored 0.964
 reachable here (the environment's network policy blocks model downloads). Exit: `INCONCLUSIVE`, unpromoted. GREG
 itself sits at VEPMC = 0 on PR #137; nothing has been used by the founder; no real outcome has been settled.
 
-**Control layer.** Proof — specifically *comparative* proof. Nothing downstream (promotion, shadow use, real
-outcomes, composition, capability genesis) is rational until the seed is measured against a strong single-model
-baseline on the frozen suite. Beneath that sits a second control layer the cortex does not own: real problem flow,
-which only exists once GREG runs on the founder's machine (VEPMC ≥ 1).
+**Control layer.** Comparative proof gates claims of advantage and applicable promotion. The inherited seed's
+strong single-model comparison remains pending; continue implementing and integrating the achievable
+composition, capability-genesis, intake and outcome-processing machinery under truthful bounded evidence.
+Authentic founder problem flow requires founder use (VEPMC ≥ 1); engineering does not.
 
 **Strongest counterexample.** A single strong LLM given the same facts, especially one allowed to call code, may
 match the routed seed on these structured problems at lower engineering cost. Router benchmarks such as RouterBench
@@ -29,12 +35,14 @@ not a transfer result.
 (low confidence); the founder will route real questions through GREG (unknown); verified outcomes will arrive fast
 enough to calibrate (low).
 
-**Incentive map.** Alfonso is beneficiary, sole authority and veto holder. VEPMC 0→1 (PR #137) is the operational
-priority and must not lose founder attention to this experiment. The environment's network policy (owned by
-Alfonso) gates the model access the active node needs.
+**Incentive map.** Alfonso is beneficiary, sole authority and veto holder. VEPMC 0→1 (PR #137) remains an authentic
+use milestone, while build selection follows the complete machine's highest-priority unfinished dependency.
+The inherited environment's network policy blocked that experiment's model access; inspect the current
+environment before repeating a blocker claim.
 
 **Selected route.** Resilient hybrid (below): run the cheap local baselines the moment a model is reachable, add a
-genuinely strong baseline only under founder authorization, and defer every real-use step until VEPMC ≥ 1.
+genuinely strong baseline within its applicable resource authority, and preserve authentic-use and promotion
+gates without deferring achievable reversible machinery. A completed experiment resumes the parent machine.
 
 ## GPS Lock
 
@@ -42,7 +50,8 @@ genuinely strong baseline only under founder authorization, and defer every real
   founder's real problems, with each competency's default earned by verified outcomes and every consequence still
   passing the Kernel (G below).
 - **Current position:** Seed experiment complete and frozen at cortex 0.1.5; exit `INCONCLUSIVE`; VEPMC 0.
-- **Active node:** N1 — Seed proven or refuted.
+- **Inherited experiment node:** N1 — Seed proven or refuted. Select today's engineering dependency from the full
+  machine; this unresolved comparison is not a global stopping condition.
 - **Active gate:** No comparative evidence: the declared baselines cannot run without a reachable model.
 - **Gate-crossing evidence:** a held-out results file, run against the committed freeze manifest, in which
   `always_llm` and `llm_committee` both have `status: RUN` and the exit verdict is `GAIN_VERIFIED` or `GAIN_ABSENT`.
@@ -62,7 +71,7 @@ genuinely strong baseline only under founder authorization, and defer every real
 | A1 | The routed seed beats a strong single LLM on the frozen suite | Exit condition; all promotion | Unknown | 0.964 vs 0.577 always-abstain; mechanisms (SMT, unit checks, gates) are exact where LLMs are not | Strong LLMs with code access often match routers; small local models are weak "strong" baselines | Run both declared baselines on the frozen suite | First run after a model is reachable | `GAIN_ABSENT`: stop the performance claim; keep gates/verifier only if they reduce critical errors |
 | A2 | Results transfer to natural-language problems | Real use arrives as text | Low | Geometry proposer hook exists and is validated | Held-out items arrive pre-structured; the author wrote both routes and items | Externally authored held-out with free-text intake | Before N2 exit | Build intake (proposer) before any shadow use |
 | A3 | A local 4B model is a fair "strong configured always-LLM baseline" | A weak baseline makes gain cheap | Low | It is what runs offline and on-device | Prompt says *strong*; frontier models are far stronger | Add a frontier baseline under founder authorization | N1 | Report the local result as a lower bar only; require the strong baseline for promotion |
-| A4 | The founder will route real questions through GREG | Without use there are no outcomes | Unknown | Founder directive to build it | VEPMC 0; attention is on Body 1 | After VEPMC ≥ 1, offer one mission type in shadow | N2 | Remain an offline evaluator |
+| A4 | The founder will route real questions through GREG | Without use there are no founder-use outcomes | Unknown | Founder directive to build it | VEPMC 0 in the inherited experiment | After authentic use, offer one mission type in authorized shadow | N2 | Preserve the destination and continue buildable machinery while use is pending |
 | A5 | Verified outcomes arrive often enough to calibrate (≥ 5 weighted per cell) | Item 10 learning only moves on evidence | Low | Ledger and Kernel adapter exist | Zero outcomes so far; delays and attribution noise | Count settled outcomes per cell after 30 days of shadow use | N2+30 days | Calibrate from external benchmarks; keep defaults fixed |
 | A6 | Gates and the verifier reduce critical errors versus baselines, independent of quality gain | Safety value even if A1 fails | Moderate | 0 critical errors; 26/26 mutants caught | Baselines may also make few critical errors on this suite | Compare critical errors in the baseline run | N1 | Gates remain constitutionally required anyway; the verifier must prove its marginal value |
 
@@ -88,8 +97,8 @@ Scores 1–10, higher is better (for downside exposure, dependency concentration
 **Selected: Resilient, with the Fast route's first step.** Run the local baselines as soon as any model is
 reachable (cheap, immediate signal), but do not promote on a 4B baseline. **Fast loses** because a weak baseline
 can manufacture a gain the prompt's "strong" baseline would erase. **Leverage loses** because it competes with
-VEPMC for founder attention, depends on a GREG body that does not run yet, and would route real problems through an
-unproven router.
+founder attention and would route real problems through an unproven router. This historical tournament does
+not prohibit reversible integration, which now belongs to the full-machine build boundary.
 
 ## G - Backcasted Success State
 
@@ -98,7 +107,7 @@ unproven router.
   when one is insufficient, and forms new competencies in response to verified capability deficits. Every route,
   composition and new competency carries a receipt; every default is set by verified outcomes; every consequence
   still passes the Kernel policy engine, capability grants and the Consequence Gate.
-- **Time horizon:** not promised. Rough ranges, each conditional on the previous node and on VEPMC: N1 days to
+- **Historical evidence horizon:** not promised. These ranges estimate live proof, not build start dates: N1 days to
   weeks after model access; N2 1–3 months after VEPMC ≥ 1; N3 3–6 months later; N4 6–12 months later; N5 12–24
   months from now; N6 open-ended.
 - **Completion conditions:** (1) gain over the strongest available single-model baseline on an *externally
@@ -107,7 +116,8 @@ unproven router.
   beat its simpler baseline before attachment; (4) declining founder intervention per accepted outcome; (5) zero
   receipts asserting authority, ever.
 - **Constraints and quality standard:** intelligence never creates authority; building ≠ installation ≠ activation
-  ≠ consequence authority; disabled families stay disabled until evidence and founder ratification; no metaphor is
+  ≠ consequence authority; live promotion and attachment retain their evidence and founder gates, while disabled
+  families retain achievable implementation obligations; no metaphor is
   implemented literally. A hollow version — more organs, more layers, no comparative or outcome evidence — is
   failure, not progress.
 - **Superiority logic:** compared with "one strong model for everything", G wins only where exact mechanisms
@@ -120,11 +130,13 @@ unproven router.
   it is cheap (SMT, units); truthful abstention credited, so the system cannot be pushed into confident error;
   competence earned only from reality, so it compounds without self-flattery.
 - **Warnings:** benchmark overfitting to self-authored items; promotion on a weak baseline; counting registered
-  families as capability; letting cortex work pull attention from VEPMC; a learning loop that settles on
+  families as capability; making VEPMC a build stopping gate; a learning loop that settles on
   predictions.
 - **Falsification test:** G is irrational if, against strong baselines on independent problems, routing shows no
   per-geometry gain *and* the gates/verifier show no critical-error reduction. Then the cortex survives only as the
-  constitutional gate-and-receipt layer, and the performance destination is retired with that evidence.
+  constitutional gate-and-receipt layer while this ineffective mechanism is rerouted or retired with its evidence.
+  Preserve the founder's intended capability and seek the strongest defensible alternative; a failed experiment
+  cannot retire the full-machine destination.
 
 ## P - Stage-Gated Plan
 
@@ -148,7 +160,7 @@ two would let one kind of evidence stand in for another.
 
 ### Sequence
 
-#### Node 1 - Seed (active)
+#### Node 1 - Seed (inherited experiment)
 - **Outcome:** the seed is either proven or refuted against the declared baselines on the frozen suite.
 - **Gate:** the baselines need a reachable model; none is reachable in this environment.
 - **SBM:** declared baselines RUN on the frozen held-out partition.
@@ -164,16 +176,20 @@ two would let one kind of evidence stand in for another.
   below applies.
 - **Thresholds:** continue while baselines run; modify if a baseline errors on > 10% of items (fix the arm, re-freeze
   as a new version); pivot to "gate-and-receipt layer only" on `GAIN_ABSENT` against a strong baseline with no
-  critical-error advantage; pause if model access is unavailable (no simulated baselines, ever); escalate the
+  critical-error advantage; pause only the affected comparison if model access is unavailable and continue
+  achievable machine dependencies (no simulated baselines, ever); escalate the
   frontier-baseline authorization to Alfonso; kill the performance claim if `GAIN_ABSENT` holds against both
   baselines on two frozen versions.
 
 #### Node 2 - Cortex
 - **Outcome:** gain transfers to problems the author did not write, arriving as text; the router runs in shadow on
   real GREG missions.
-- **Gate:** no independent suite; no natural-language intake; VEPMC 0.
+- **Evidence gate:** no independent suite, validated natural-language intake or authentic founder-use evidence
+  in the inherited experiment. Buildable intake and integration remain implementation obligations.
 - **SBM:** paired 95% lower bound, routed minus strongest baseline, on the external suite.
-- **Entry condition:** N1 `GAIN_VERIFIED` against the strong baseline; VEPMC ≥ 1 before any shadow step.
+- **Promotion/use condition:** N1 `GAIN_VERIFIED` against the strong baseline; authentic founder use and
+  applicable authorization before a live shadow claim. Reversible intake, receipt and mission integration can
+  be built before these evidence conditions clear.
 - **Exit evidence:** external-suite gain per geometry; model-backed geometry proposer validated; live Semantic organ
   answering with exact quotes; founder ratification of `SANDBOXED → SHADOW`; ≥ 50 shadow receipts on real missions
   with zero authority assertions.
@@ -190,7 +206,8 @@ two would let one kind of evidence stand in for another.
   single route where one route is insufficient.
 - **Gate:** only bounded two-part composition exists; no composition-specific evidence.
 - **SBM:** paired gain on composition-geometry items.
-- **Entry condition:** N2 exit.
+- **Evidence progression:** N2 exit qualifies the transfer claim. Implement and test composition once its
+  executable component dependencies are available; founder-use receipts are not a blanket build prerequisite.
 - **Exit evidence:** ≥ 30 frozen composition items with gain over the best single route, cost and latency counted.
 - **Entrenchment vectors:** reusable composition graphs registered as genomes.
 - **Duration:** 3–6 months after N2.
@@ -203,7 +220,9 @@ two would let one kind of evidence stand in for another.
   it beats the simpler baseline on its native geometry.
 - **Gate:** competencies are fixed by hand; reserved families have no executors.
 - **SBM:** deficits closed by a verified new competency.
-- **Entry condition:** N3 exit; recorded deficits with real frequency.
+- **Evidence progression:** N3 exit qualifies prior composition claims; real deficit frequency justifies durable
+  organ formation. Build and test the deficit-resolution and attachment machinery now where dependencies are
+  available; preserve the fresh authority requirement before attachment.
 - **Exit evidence:** ≥ 1 reserved family enabled through sandbox → baseline win → founder-authorized attach, with
   rollback tested.
 - **Entrenchment vectors:** the genesis pipeline itself (deficit → acquisition → proof → attachment).
@@ -215,7 +234,9 @@ two would let one kind of evidence stand in for another.
 - **Outcome:** GREG uses the cortex on the founder's real questions; defaults move only on settled outcomes.
 - **Gate:** no outcome-verified real use.
 - **SBM:** accepted, outcome-verified receipts per month.
-- **Entry condition:** N4 exit; GREG body running (VEPMC ≥ 1, N-nodes of PR #137 progressing).
+- **Live-evidence condition:** N4 exit; founder GREG body running (VEPMC ≥ 1, N-nodes of PR #137 progressing).
+  Durable outcome intake, attribution, calibration and rollback machinery should be implemented and integrated
+  beforehand, with synthetic evidence labeled and no fabricated settlement.
 - **Exit evidence:** ≥ 3 competency cells whose outcome-moved defaults hold out of sample; founder intervention per
   accepted outcome declining over 3 consecutive months.
 - **Duration:** 12–24 months from now, highly uncertain.
@@ -226,10 +247,13 @@ two would let one kind of evidence stand in for another.
   Mechanism Recombination Foundry) that beat the best prior method on external benchmarks.
 - **Gate:** no validated new mechanism.
 - **SBM:** externally validated new mechanisms.
-- **Entry condition:** N5 exit.
+- **Evidence progression:** N5 exit supports preceding real-use claims. Achievable mechanism search, generation
+  and independent-verification paths can be built and tested before that proof; frontier claims still require
+  the external benchmark below.
 - **Exit evidence:** a new mechanism beating the best published method on an external frozen benchmark, verified by
   someone other than its author.
-- **Status:** a pursued goal, not a scheduled deliverable. It stays on the horizon until its evidence exists.
+- **Status:** an active intended capability. Implement its achievable mechanisms, integrate them and preserve the
+  backcast for the demanded frontier level; pending evidence does not excuse leaving feasible machinery unbuilt.
 
 ## S - Three-Step Systems by Node
 
@@ -254,7 +278,8 @@ two would let one kind of evidence stand in for another.
 - **Record:** commit the results file; append the verdict to `SEED_EXPERIMENT_REPORT.md`.
 - **Update:** SBM to 2/2; exit verdict; per-geometry table.
 - **Decision:** repeat with the strong baseline; refine the arm on > 10% errors; reroute to "gate-and-receipt
-  layer" on `GAIN_ABSENT`; retire the performance claim on two consecutive `GAIN_ABSENT` versions.
+  layer" on `GAIN_ABSENT`; retire the performance claim on two consecutive `GAIN_ABSENT` versions. Integrate any
+  retained capability and immediately resume the next unblocked parent machine requirement.
 
 ### Operating Range
 - **Minimum bad-day version:** check whether a model is reachable; record the answer.
@@ -284,8 +309,9 @@ verification).
 - **Hardest to reverse:** promotion beyond `SANDBOXED`. Defense: founder ratification; rollback via lifecycle.
 - **Success creating failure:** a verified gain invites routing real consequences. Defense: receipts stay
   authority-free; consequences still pass the Kernel; financial and irreversible questions hand off by rule.
-- **Attention drain:** cortex work competing with VEPMC. Defense: no founder ask before VEPMC ≥ 1 except the single
-  model-route decision, which is optional.
+- **Attention drain:** unnecessary founder asks for reversible engineering. Defense: continue buildable work
+  autonomously, bundle precise inherently founder-only choices and retain their item-specific gates. Pending
+  VEPMC never becomes a blanket build prohibition.
 
 ## Probability Update
 
@@ -307,16 +333,21 @@ verification).
    strong-baseline verdict; gate weakened: A3.
 4. **Commission an externally authored, free-text held-out suite** — owner: next agent proposes, Alfonso
    approves the author; trigger: N1 `GAIN_VERIFIED`; evidence: frozen external suite; gate weakened: N2.
-5. **Keep VEPMC first** — owner Alfonso; trigger: now; evidence: PR #137 N1 run on the Chromebook; gate weakened: the
-   entry condition of N2 and every later node.
+5. **Continue the complete machine** — owner: next agent; trigger: after every integrated increment or blocked
+   comparison; evidence: next achievable Body + Organs + Mind dependency implemented, tested and integrated.
+   Alfonso's authentic body-use proof remains separately pending and blocks only its affected use claims.
 
 ## Immediate Execution Card
 
-- **Do today:** nothing that needs the founder; the seed is frozen and reproducible.
-- **Record:** this backcast, the report and the traceability matrix are committed.
-- **Stop doing:** adding organs or families before N1 has a verdict.
-- **Review trigger:** a model becomes reachable, or VEPMC moves.
-- **Evidence required to advance:** the N1 gate-crossing evidence.
+- **Do today:** reconstruct current executable Body + Organs + Mind, select the highest-priority unfinished
+  dependency and implement, verify and integrate it. Continue every unblocked requirement automatically.
+- **Record:** real integration evidence, retained frozen experiments, item-specific blockers and the parent
+  objective; no registry or document is a substitute for feasible executable machinery.
+- **Stop doing:** promoting unsupported claims, treating seeds as final architecture, or using N1/VEPMC as a
+  reason to leave unrelated buildable families and composition machinery unfinished.
+- **Review trigger:** each integrated increment, new dependency evidence, reachable model or authentic use.
+- **Evidence required for claims:** each node's own standard. Implementation advances through executable
+  dependencies; live claims and promotion retain their separate authority and reality requirements.
 
 ## Reconciliation with the review's backcasts
 

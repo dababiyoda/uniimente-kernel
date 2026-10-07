@@ -112,7 +112,9 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    manifest = HERE / 'freeze-v4.json'  # v4 = converged GREG 2026-10-02 (seed path in greg/cognition/, one ortools pin); v1-v3 kept
+    # v5 = the committed converged tree (v4 was written before the final greg/models.py merge and the
+    # protobuf pin in the same commit, so CI refused it); v1-v4 kept.
+    manifest = HERE / 'freeze-v5.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

@@ -100,6 +100,7 @@
     "cortex/evaluation/seed_genome/freeze-v2.json",
     "cortex/evaluation/seed_genome/freeze-v3.json",
     "cortex/evaluation/seed_genome/freeze-v4.json",
+    "cortex/evaluation/seed_genome/freeze-v5.json",
     "cortex/evaluation/seed_genome/freeze.json",
     "cortex/evaluation/seed_genome/run.py",
     "cortex/evaluation/seed_genome/suite.json",

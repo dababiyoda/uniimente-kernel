@@ -22,7 +22,9 @@ completed Mind." Authority delta: none.
 
 - Converged suite: 1,303 passed; remaining failures are the 3 + 1 base-stack environment failures that reproduce
   identically on `9389103` in this container (Landlock/DSL/packaging/MCP `librt.so.1`), green in #147 CI.
-- Seed Genome freeze-v4 (new version; v1–v3 kept): INCONCLUSIVE, timing-independent gain 0.0, 100/100 quality
+- Seed Genome freeze-v5 (2026-10-07, the committed tree; v4 was written before this commit's final
+  `greg/models.py` merge and protobuf pin, so CI refused it; v1–v4 kept): INCONCLUSIVE, timing-independent
+  gain 0.0, 100/100 matched, 0 hard failures (`docs/evidence/greg-one-mind/2026-10-07/`). Earlier v4 run: INCONCLUSIVE, timing-independent gain 0.0, 100/100 quality
   matched, 0 hard failures — the move preserved the seed path's behavior. `docs/evidence/greg-one-mind/2026-10-02/`.
 - Seed-path mutation check: 6 mutants, 0 survived.
 

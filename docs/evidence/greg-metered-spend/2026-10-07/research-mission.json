@@ -1,0 +1,203 @@
+{
+ "mission_id": "m:research-ortools-metered-note",
+ "founder_expression": "Find the latest OR-Tools release on PyPI and draft a DALEOBANKS post about it.",
+ "intended_effect": "facts retrieved by operating the site become a source-bound post that DALEOBANKS verifies and submits to its publishing gate, in one mission with no manual hand-off",
+ "priority": 50,
+ "closure": {
+  "kind": "bounded"
+ },
+ "success_checks": [
+  {
+   "check_id": "retrieved",
+   "description": "the session's retained trace holds the requested result",
+   "sensor": {
+    "capability": "browser.trace",
+    "params": {
+     "session": "ortools-metered"
+    },
+    "target": "web:pypi.org"
+   },
+   "predicate": {
+    "op": "count_gte",
+    "field": "extracted.recent_versions",
+    "value": 1
+   }
+  },
+  {
+   "check_id": "facts_recorded",
+   "description": "the browser's extracted facts are recorded for binding",
+   "sensor": {
+    "capability": "fs.read",
+    "params": {
+     "path": "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/facts.json"
+    },
+    "target": "fs:facts.json"
+   },
+   "predicate": {
+    "op": "contains",
+    "field": "text",
+    "value": "{"
+   }
+  },
+  {
+   "check_id": "draft_verified",
+   "description": "DALEOBANKS checks and source binding pass",
+   "sensor": {
+    "capability": "daleobanks.verify",
+    "params": {
+     "daleobanks_root": "/home/user/DALEOBANKS",
+     "source": "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/facts.json",
+     "max_chars": 280,
+     "draft": "work-orders/ortools-metered-note/work/post.txt"
+    },
+    "target": "daleobanks:verify"
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "verdict",
+    "value": "VERIFIED"
+   }
+  },
+  {
+   "check_id": "publish_outcome_known",
+   "description": "DALEOBANKS's ledger holds the request's outcome",
+   "sensor": {
+    "capability": "daleobanks.outcome",
+    "params": {},
+    "target": "daleobanks:outcome"
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "requested",
+    "value": true
+   }
+  }
+ ],
+ "strategies": [
+  {
+   "action_id": "operate-browser",
+   "capability": "browser.session",
+   "target": "web:pypi.org",
+   "params": {
+    "url": "https://pypi.org/project/ortools/",
+    "steps": [
+     {
+      "op": "extract",
+      "selector": "h1",
+      "as": "package_header"
+     },
+     {
+      "op": "click",
+      "selector": "a[href='#history']"
+     },
+     {
+      "op": "extract_all",
+      "selector": ".release__version",
+      "as": "recent_versions",
+      "limit": 5
+     }
+    ],
+    "session": "ortools-metered",
+    "on_challenge": "stop"
+   },
+   "advances": [
+    "retrieved"
+   ],
+   "rationale": "structured DOM control in a disposable real browser"
+  },
+  {
+   "action_id": "record-facts",
+   "capability": "fs.write",
+   "target": "workspace:facts.json",
+   "params": {
+    "relative_path": "facts.json"
+   },
+   "bind": [
+    {
+     "param": "content",
+     "from": {
+      "action_id": "operate-browser",
+      "field": "extracted"
+     },
+     "type": "object",
+     "render": "json",
+     "max_bytes": 32768
+    }
+   ],
+   "requires": [
+    "retrieved"
+   ],
+   "advances": [
+    "facts_recorded"
+   ],
+   "rationale": "typed edge: the browser receipt's extracted values become the worker's source"
+  },
+  {
+   "action_id": "draft-post",
+   "capability": "worker.commission",
+   "target": "work:ortools-metered-note",
+   "params": {
+    "order": "ortools-metered-note",
+    "mode": "document",
+    "inputs": [
+     "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/facts.json"
+    ],
+    "objective": "Write a short factual DALEOBANKS post noting the latest OR-Tools release on PyPI. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+    "acceptance": {
+     "output": "post.txt",
+     "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)"
+    },
+    "allowed_paths": [
+     "post.txt"
+    ],
+    "max_budget_usd": 2.0,
+    "timeout_seconds": 600
+   },
+   "cost_usd": 2.0,
+   "advances": [
+    "draft_verified"
+   ],
+   "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it",
+   "requires": [
+    "facts_recorded"
+   ]
+  },
+  {
+   "action_id": "request-publish",
+   "capability": "daleobanks.publish",
+   "target": "daleobanks:publish",
+   "params": {
+    "daleobanks_root": "/home/user/DALEOBANKS",
+    "draft": "work-orders/ortools-metered-note/work/post.txt"
+   },
+   "advances": [
+    "publish_outcome_known"
+   ],
+   "requires": [
+    "draft_verified"
+   ],
+   "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"
+  }
+ ],
+ "light_cone": {
+  "capabilities": [
+   "browser.session",
+   "browser.trace",
+   "daleobanks.outcome",
+   "daleobanks.verify",
+   "fs.read",
+   "fs.write",
+   "worker.commission"
+  ],
+  "targets": [
+   "web:pypi.org",
+   "workspace:facts.json",
+   "fs:facts.json",
+   "work:ortools-metered-note",
+   "daleobanks:*"
+  ],
+  "max_consequence_class": "internal_write",
+  "budget_usd": 2.0,
+  "horizon": "2026-10-09T17:09:54.669150Z"
+ }
+}

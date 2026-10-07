@@ -1328,8 +1328,13 @@
   "subordinate_workstreams": {
     "polyintelligence_cortex": {
       "authority": "No scheduling, promotion or permission effect; N1/VEPMC remains primary",
-      "metric": "Verified Cross-Geometry Routing Gain",
-      "current": "INCONCLUSIVE; timing-independent gain 0 versus static rules",
+      "metric": {
+        "name": "Verified Polyintelligence Lift (VPL)",
+        "definition": "number/proportion of held-out problem families where problem-geometry routing or composition produces a verified improvement over the strongest single available intelligence, net of cost/latency, without increasing false answers or unauthorized effects",
+        "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
+        "previous": "Verified Cross-Geometry Routing Gain"
+      },
+      "current": "VPL = 0 measured families with verified lift. P4 learned routing: INCONCLUSIVE, order equals static policy (2026-10-07). P6: orchestration lift only; cognitive lift unmeasured. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
       "nodes": [
         {
           "id": "P0",
@@ -1638,6 +1643,13 @@
       ],
       "lineage": [
         "2026-10-02 convergence: PR #145 carried a parallel 'cognition_workstream' P0-P13 copy; one backcast is kept here (INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE). #145's per-node smallest_next_experiment texts remain in git at origin/codex/cortex-seed-delivery-20261001:greg/path.json."
+      ],
+      "sequence_20261007": [
+        "P6 cognitive composition lift (first VPL measurement)",
+        "P4 conditional competence memory with hierarchical fallback",
+        "P8 protected evolutionary cognition",
+        "IntelligenceGenome library expansion in batches",
+        "Layers 1, 2 and 4 as Cortex capabilities when they beat simpler baselines on native geometry"
       ]
     }
   },

@@ -308,7 +308,8 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         check_receipt(receipt)
         if receipt["versions"]["cortex"] != CORTEX_VERSION:
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")
-        out = to_cognitive_receipt(params, receipt, started, learned_routing.summary(mode, memory, receipt))
+        out = to_cognitive_receipt(params, receipt, started,
+                                   learned_routing.summary(mode, memory, receipt, problem["payload"]))
         retained_data(out)
         return out
     except (CognitionError, ValueError, TypeError, KeyError, OSError) as exc:

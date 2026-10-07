@@ -38,11 +38,12 @@ from types import SimpleNamespace
 from cortex.contracts import digest as cortex_digest
 from cortex.memory import CompetenceLedger, RoutingMemoryRecord
 
+from .conditional_competence import ConditionalCompetence, conditions, features
 from .contracts import CognitionError
 
 MODES = ("static", "shadow", "learned")
 DEFAULT_MODE = "shadow"
-POLICY = "greg-learned-routing/0.1"
+POLICY = "greg-learned-routing/0.2 (conditional competence, hierarchical fallback)"
 FAILING_STATES = ("TIMEOUT", "INCONCLUSIVE")
 MAX_RECORDS = 20000
 PROVENANCE = {"kind": "internal_observation", "validation_status": "internally_observed"}
@@ -101,7 +102,8 @@ def _claim(journal, registrations, observation, receipt):
     capability = check["sensor"].get("capability", "")
     if capability != "cognition.solve" and not capability.startswith("cognition.cortex"):
         return None
-    return digest(_claim_fields(registration, check, receipt))
+    payload = ((check["sensor"].get("params") or {}).get("problem") or {}).get("payload") or {}
+    return digest(_claim_fields(registration, check, receipt)), conditions(features(payload))
 
 
 def settled_claims(journal) -> list[dict]:
@@ -119,9 +121,10 @@ def settled_claims(journal) -> list[dict]:
         if artifact is None:
             continue
         lead = _lead(artifact)
-        identity = _claim(journal, registrations, data, receipt) if lead else None
-        if identity is None:
+        claim = _claim(journal, registrations, data, receipt) if lead else None
+        if claim is None:
             continue
+        identity, conds = claim
         outcome = verified.get(event.event_id)
         if outcome is not None and artifact["output"]["per_route"] and \
                 artifact["output"]["per_route"][0].get("organ_id") == lead and not _lead_failed(artifact, lead):
@@ -145,7 +148,7 @@ def settled_claims(journal) -> list[dict]:
                                                                 "observation_event": event.event_id,
                                                                 "appraisal_event": appraisal,
                                                                 "gate_receipt": data["receipt"]},
-                            "attribution": attribution}
+                            "attribution": attribution, "conditions": conds}
     return sorted(claims.values(), key=lambda c: c["position"])
 
 
@@ -156,7 +159,7 @@ def ledger(journal) -> CompetenceLedger:
         method, _, version = claim["lead"].partition("@")
         out.settle(receipt=claim["receipt"], method=method, method_version=version,
                    outcome_status=claim["status"], provenance=claim["provenance"],
-                   attribution=claim["attribution"])
+                   attribution=claim["attribution"], conditions=claim["conditions"])
     return out
 
 
@@ -177,7 +180,12 @@ def ledger_from_records(values) -> CompetenceLedger:
     return CompetenceLedger([record_from_dict(v) for v in values])
 
 
-def summary(mode: str, memory: CompetenceLedger, artifact: dict | None) -> dict:
+def conditional(memory: CompetenceLedger, payload: dict | None) -> ConditionalCompetence:
+    """The routing memory the router consults: settled records, bound to this problem's conditions."""
+    return ConditionalCompetence(memory.records()).bind(features(payload or {}))
+
+
+def summary(mode: str, memory: CompetenceLedger, artifact: dict | None, payload: dict | None = None) -> dict:
     """What the receipt states about routing: the fixed order, memory's order, the executed order."""
     base = {"mode": mode, "policy": POLICY, "ledger_head": memory.head, "settled_records": len(memory.records()),
             "authority_created": False,
@@ -190,12 +198,12 @@ def summary(mode: str, memory: CompetenceLedger, artifact: dict | None) -> dict:
     executed = list(plan["order"])
     static = [k for k in plan["policy_order"] if k in executed] + [k for k in executed if k not in plan["policy_order"]]
     geometry = SimpleNamespace(epistemic_class=(artifact.get("geometry") or {}).get("epistemic_class"))
-    memory_order = memory.reorder(list(static), geometry)
-    estimates = [memory.estimate(k.split("@")[0], k.split("@")[1], geometry.epistemic_class or "unresolved")
-                 for k in static]
+    bound = conditional(memory, payload)
+    memory_order = bound.reorder(list(static), geometry)
     return {**base, "applies": True, "static_order": static, "memory_order": memory_order,
             "executed_order": executed, "changed_execution": executed != static,
-            "would_change": memory_order != static, "estimates": estimates}
+            "would_change": memory_order != static,
+            "competence": bound.explain(static, geometry.epistemic_class or "unresolved")}
 
 
 def check_summary(routing) -> None:

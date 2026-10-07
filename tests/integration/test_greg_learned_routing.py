@@ -104,6 +104,10 @@ class TestProjectionFromSignedMissions:
             assert [r.outcome_status for r in ledger.records()] == [c["status"] for c in claims]
             assert {r.competence_update["weight"] for r in ledger.records()} == {0.6}
             assert all(r.outcome_provenance["kind"] == "internal_observation" for r in ledger.records())
+            # Conditions come from the signed check's own problem (P4 conditional competence).
+            conds = {r.method: dict(c.split("=", 1) for c in r.conditions) for r in ledger.records()}
+            assert conds["cortex.optimization.cpsat"]["kind"] == "optimize"
+            assert conds["cortex.formal.z3"]["ops"] == "!=" and conds["cortex.formal.z3"]["budget"] == "<=1s"
             # A later independent refutation withdraws the success on recomputation; history stays.
             body.journal.record("mission.appraised", {"mission_id": "m:answered", "verdict": "REFUTED",
                                                       "checks": {}}, key="later-refutation")
@@ -169,7 +173,7 @@ class TestLearnedRoutingInTheWorker:
         assert CPSAT in detached["route"]["formal_plan"]["excluded"]
 
     def test_without_enough_evidence_memory_keeps_the_fixed_policy(self):
-        memory = trained_ledger("observed_failure", "verified_success", n=8)    # 8 x 0.6 < 5 outcomes
+        memory = trained_ledger("observed_failure", "verified_success", n=4)    # 4 x 0.6 < 3 weighted outcomes
         receipt = run_learned({**pigeonhole(5, 5.0, "thin"), "routing": "learned"}, memory)
         assert receipt["route"]["formal_plan"]["order"] == [FORMAL, CPSAT]
 

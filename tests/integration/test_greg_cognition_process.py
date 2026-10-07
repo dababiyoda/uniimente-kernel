@@ -13,7 +13,7 @@ import importlib.util
 
 from greg.body import Body, observe, status
 from tests.greg_fixtures import make_body
-from tests.unit.test_greg_cognition import problem, estimation, allocation
+from tests.unit.test_greg_seed_compat import problem, estimation, allocation
 
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.skipif(any(importlib.util.find_spec(m) is None for m in ('z3', 'ortools')),

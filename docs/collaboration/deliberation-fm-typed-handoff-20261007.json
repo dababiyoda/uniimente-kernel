@@ -1,0 +1,350 @@
+{
+  "decision_id": "FM-TYPED-HANDOFF-20261007",
+  "title": "Retained action data reaches the next mission stage without operator copying",
+  "problem": "Signed strategies cannot currently consume successful prior-action output automatically.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "Founder full-machine directive supplied in this 2026-10-07 session"
+  ],
+  "baseline": "Existing mission actions and receipts are durable, but strategy parameters remain static.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Resolve bounded typed $from_action data against successful same-mission receipts before the existing Gate. Record receipt, event and value digest. Keep capability, target and scope literal. Expose pipeline.inspect through the existing registry and appraisal owner.",
+      "advantages": [
+        "Uses existing mission, registry, Kernel and ledger owners."
+      ],
+      "disadvantages": [
+        "Compatibility adds maintenance cost."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Integrate latest #145 changes immediately as a second broad merge.",
+      "advantages": [
+        "Retains its additional budget, routing and native repertoire mechanisms."
+      ],
+      "disadvantages": [
+        "Unreviewed overlapping contracts would obscure attribution and introduce another conflict set."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Keep the convergence on a draft branch and challenge it through signed local missions.",
+      "advantages": [
+        "Preserves main and founder deployment decisions."
+      ],
+      "disadvantages": [
+        "Test identities and local outcomes do not prove live founder use."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Mind and Hands remain disconnected; operators still transfer results.",
+    "advantages": [
+      "No implementation risk."
+    ],
+    "disadvantages": [
+      "Misses a buildable founder requirement."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Remove human data transfer while preserving the founder-signed mission boundary. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Pipeline syntax is currently developer-authored, not general natural-language planning."
+      ],
+      "evidence_refs": [
+        "greg/pipeline.py",
+        "tests/integration/test_greg_pipeline.py",
+        "scripts/ci/check_pipeline_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Use the canonical mission ledger; no new workflow engine or authority store. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Additional workflow engines would fork mission ownership."
+      ],
+      "evidence_refs": [
+        "greg/pipeline.py",
+        "tests/integration/test_greg_pipeline.py",
+        "scripts/ci/check_pipeline_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Reject cross-mission, wrong-type, failed-receipt and protected-scope substitutions. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Artifact data could become instructions or authority if recursively interpreted."
+      ],
+      "evidence_refs": [
+        "greg/pipeline.py",
+        "tests/integration/test_greg_pipeline.py",
+        "scripts/ci/check_pipeline_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Persist provenance and test restart between producer and consumer; consume retained bytes. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "A changed source after restart could silently alter the intended input."
+      ],
+      "evidence_refs": [
+        "greg/pipeline.py",
+        "tests/integration/test_greg_pipeline.py",
+        "scripts/ci/check_pipeline_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Receipt integrity does not establish real-world truth; independently reobserve file outcome. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Local filesystem work does not prove a browser/semantic/publishing chain."
+      ],
+      "evidence_refs": [
+        "greg/pipeline.py",
+        "tests/integration/test_greg_pipeline.py",
+        "scripts/ci/check_pipeline_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Executable local integration",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/full-machine-convergence-20261007/",
+      "finding": "Signed test-key missions and separate-process appraisal; no production or economic claim."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Full machine complete",
+      "tier": "other",
+      "reference": "docs/evidence/full-machine-convergence-20261007/handoff.md",
+      "finding": "False: latest #145, generic CLI confinement, actual browser/provider chains, founder-device and external economic/human proofs remain open."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Signed strategies cannot currently consume successful prior-action output automatically.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Remove human data transfer while preserving the founder-signed mission boundary.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A2",
+        "statement": "Use the canonical mission ledger; no new workflow engine or authority store.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A3",
+        "statement": "Reject cross-mission, wrong-type, failed-receipt and protected-scope substitutions.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A4",
+        "statement": "Persist provenance and test restart between producer and consumer; consume retained bytes.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A5",
+        "statement": "Receipt integrity does not establish real-world truth; independently reobserve file outcome.",
+        "amplified_value": "Useful work through one governed GREG."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Pipeline syntax is currently developer-authored, not general natural-language planning.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Remove human data transfer while preserving the founder-signed mission boundary."
+      },
+      {
+        "id": "D2",
+        "statement": "Additional workflow engines would fork mission ownership.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Use the canonical mission ledger; no new workflow engine or authority store."
+      },
+      {
+        "id": "D3",
+        "statement": "Artifact data could become instructions or authority if recursively interpreted.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Reject cross-mission, wrong-type, failed-receipt and protected-scope substitutions."
+      },
+      {
+        "id": "D4",
+        "statement": "A changed source after restart could silently alter the intended input.",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Persist provenance and test restart between producer and consumer; consume retained bytes."
+      },
+      {
+        "id": "D5",
+        "statement": "Local filesystem work does not prove a browser/semantic/publishing chain.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Receipt integrity does not establish real-world truth; independently reobserve file outcome."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Existing mission actions and receipts are durable, but strategy parameters remain static.",
+      "do_nothing": "Mind and Hands remain disconnected; operators still transfer results.",
+      "simplest_viable_alternative": "Resolve bounded typed $from_action data against successful same-mission receipts before the existing Gate. Record receipt, event and value digest. Keep capability, target and scope literal. Expose pipeline.inspect through the existing registry and appraisal owner.",
+      "strongest_competing_architecture": "Integrate latest #145 changes immediately as a second broad merge.",
+      "reversible_experiment": "Keep the convergence on a draft branch and challenge it through signed local missions."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Unreviewed overlapping contracts would obscure attribution and introduce another conflict set. Deferred reconciliation remains an active obligation.",
+        "revival_evidence": "Reviewed #145 delta after this merge has a tested checkpoint."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack authority drift, false proof, provider dependence, complexity, stale source inventory, cross-mission leakage and hidden labor.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "centralization",
+        "statement": "A new pipeline runner would duplicate mission scheduling.",
+        "strengthening_response": "Implement resolution inside existing observe/pursue and appraisal contexts."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Receipt existence alone might admit another mission output.",
+        "strengthening_response": "Require matching successful mission action and positive receipt; mutation removes this check and must fail."
+      },
+      {
+        "id": "N3",
+        "category": "fragility",
+        "statement": "Malformed type objects and non-JSON output could cause uncontrolled exceptions.",
+        "strengthening_response": "Validate string type tags and translate JSON failures to bounded binding errors."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Remove human data transfer while preserving the founder-signed mission boundary.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Use the canonical mission ledger; no new workflow engine or authority store.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Reject cross-mission, wrong-type, failed-receipt and protected-scope substitutions.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Persist provenance and test restart between producer and consumer; consume retained bytes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Receipt integrity does not establish real-world truth; independently reobserve file outcome.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      }
+    ],
+    "final_design": "Resolve bounded typed $from_action data against successful same-mission receipts before the existing Gate. Record receipt, event and value digest. Keep capability, target and scope literal. Expose pipeline.inspect through the existing registry and appraisal owner.",
+    "residual_risks": [
+      {
+        "risk": "Pipeline syntax is currently developer-authored, not general natural-language planning.",
+        "mitigation": "Remove human data transfer while preserving the founder-signed mission boundary.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "Additional workflow engines would fork mission ownership.",
+        "mitigation": "Use the canonical mission ledger; no new workflow engine or authority store.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "Artifact data could become instructions or authority if recursively interpreted.",
+        "mitigation": "Reject cross-mission, wrong-type, failed-receipt and protected-scope substitutions.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "A changed source after restart could silently alter the intended input.",
+        "mitigation": "Persist provenance and test restart between producer and consumer; consume retained bytes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "Local filesystem work does not prove a browser/semantic/publishing chain.",
+        "mitigation": "Receipt integrity does not establish real-world truth; independently reobserve file outcome.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Retain unfinished obligations explicitly.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A tested convergence checkpoint is not full-machine exhaustion.",
+        "rationale": "Latest #145 and safe buildable dependencies still need work.",
+        "evidence_threshold": "Executable reconciliation and required outcome tiers.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any full-machine completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Resolve bounded typed $from_action data against successful same-mission receipts before the existing Gate. Record receipt, event and value digest. Keep capability, target and scope literal. Expose pipeline.inspect through the existing registry and appraisal owner. Preserve historical parents and compatibility tests; no main merge.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert branch delta; retain original branches, ledgers and negative test evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Authority expanded by data or compatibility dispatch.",
+    "Cross-mission input accepted.",
+    "Constitution, shutdown or production permission bypassed.",
+    "Local test outcomes represented as economic or founder-device evidence."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for reversible development; real Alfonso for reserved actions",
+  "review_trigger": "Hosted CI and next executable #145 reconciliation."
+}

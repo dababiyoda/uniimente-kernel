@@ -11,6 +11,12 @@
 # uses sudo, and grants GREG no capability or permission. Designation names this
 # machine as your first body; it is accepted by the running body, not by this script.
 #
+# It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
+# SymPy; about 550 MB, binary wheels only). That step is best-effort: if this machine has
+# no wheel for an engine, Body 1 is still created, `greg doctor --chromebook` lists what is
+# missing, and GREG asks before any function needs it. Skip it with --no-engines. GREG
+# itself never installs or downloads anything; this script runs only when you run it.
+#
 # Ported mechanisms (INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE): Python 3.11+
 # selection and a durable greg command come from the Mac runbook repairs in PR #122
 # (commit ea95ebb); the command is a wrapper on PATH instead of a shell alias.
@@ -28,6 +34,7 @@ SERVICE="yes"
 SKIP_DEPS=0
 NO_PASSPHRASE=0
 ALLOW_OTHER_LINUX=0
+ENGINES=1
 
 usage() {
   cat <<'EOF'
@@ -41,6 +48,7 @@ Usage: bash greg/chromebook/install.sh [options]
   --python PATH         a specific Python 3.11+ interpreter
   --no-service          do not install/enable the systemd user service (development only)
   --skip-deps           use the chosen interpreter as is, no venv or pip (development only)
+  --no-engines          skip the open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX, SymPy)
   --no-passphrase       UNPROTECTED founder key (tests only; never for Alfonso's key)
   --allow-other-linux   run outside ChromeOS Linux (the body will not be your Chromebook)
 EOF
@@ -57,6 +65,7 @@ while [ $# -gt 0 ]; do
     --python) PYTHON_CHOICE="$2"; shift 2 ;;
     --no-service) SERVICE="no"; shift ;;
     --skip-deps) SKIP_DEPS=1; shift ;;
+    --no-engines) ENGINES=0; shift ;;
     --no-passphrase) NO_PASSPHRASE=1; shift ;;
     --allow-other-linux) ALLOW_OTHER_LINUX=1; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -100,6 +109,17 @@ else
   "$VENV/bin/python" -m pip install --quiet --upgrade pip
   "$VENV/bin/python" -m pip install --quiet -r "$REPO/requirements-dev.txt"
   GREG_PY="$VENV/bin/python"
+  if [ "$ENGINES" = 1 ]; then
+    # Binary wheels only: never compile an engine on the Chromebook. A failure never stops Body 1.
+    if "$VENV/bin/python" -m pip install --quiet --only-binary=:all: -r "$REPO/requirements-cognition.txt"; then
+      echo "Open-source reasoning engines installed (Z3, OR-Tools, SciPy, NetworkX, SymPy)."
+    else
+      echo "WARNING: some reasoning engines did not install (no binary wheel for this machine?)."
+      echo "Body 1 continues; 'greg doctor --chromebook' lists what is missing, and GREG asks before a function needs it."
+    fi
+  else
+    echo "Skipping the open-source reasoning engines (--no-engines)."
+  fi
 fi
 
 step "4/8 The greg command"
@@ -129,6 +149,7 @@ if [ -n "$MISSING" ]; then
   fail "Missing prerequisites: $MISSING" 13
 fi
 echo "Ready."
+printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("engines",{}); print("Reasoning engines present: %s of %s%s" % (e.get("present"), e.get("total"), (" (missing: " + ", ".join(e.get("missing", [])) + ")") if e.get("missing") else ""))' || true
 
 step "6/8 Body"
 mkdir -p "$READ_ROOT" "$DELIVER_ROOT"

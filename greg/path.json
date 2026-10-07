@@ -983,6 +983,346 @@
       "founder_sources": [
         "INTENT-0030"
       ]
+    },
+    {
+      "id": "competency_compiler",
+      "covers": [
+        "Competency Compiler",
+        "polyintelligence cortex",
+        "heterogeneous cognition"
+      ],
+      "intended_effect": "GREG recognizes a problem, recruits the smallest competent method or composition, produces typed evidence, respects authority, and improves future selection from outcomes",
+      "node": "N1",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "INTEGRATION-TESTED seed (cognition.solve, bounded worker, signed missions, kill -9 rehearsal); frozen routing-gain verdict GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT); model arms not run",
+      "nearest_precursor": [
+        "cortex/routing.py",
+        "greg/cognition/bridge.py",
+        "cortex/evaluation/crossgeo.py"
+      ],
+      "activation_evidence": "P2 exit in the cognition_cortex workstream",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome"
+      ]
+    },
+    {
+      "id": "learned_cognitive_routing",
+      "covers": [
+        "learned routing",
+        "cognitive settlement",
+        "outcome-earned defaults"
+      ],
+      "intended_effect": "Settled outcomes earn conditional routing defaults without new authority",
+      "node": "N4",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "prerequisite": "settled real-mission outcomes and the frozen static router as baseline",
+      "current_reality": "IMPLEMENTED hooks (routing memory reorders eligible routes only); not shown to beat static routing",
+      "nearest_precursor": [
+        "cortex/memory.py",
+        "greg/cognition/settlement.py"
+      ],
+      "activation_evidence": "P4 exit",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome"
+      ]
+    },
+    {
+      "id": "cognitive_ecology",
+      "covers": [
+        "collective cognition",
+        "open cognitive ecology",
+        "evolutionary cognition",
+        "constraint-release discovery",
+        "unscripted functional recovery",
+        "substrate-plural execution"
+      ],
+      "intended_effect": "Compositions, collective mechanisms and evolved methods earn their place against simple baselines; functions recover unscripted; the same contracts run on different substrates",
+      "node": "N5",
+      "feasibility": "REQUIRES_RESEARCH",
+      "prerequisite": "P4 learned routing and protected evaluators",
+      "current_reality": "#140 quorum and evolve_vector exist on the operation path; cortex families reserved and disabled",
+      "nearest_precursor": [
+        "greg/cognition/solvers.py",
+        "cortex/genome.py",
+        "developmental/"
+      ],
+      "activation_evidence": "P6, P8, P9, P10, P11 and P12 exits",
+      "founder_sources": [
+        "INTENT-20261001-greg-seed-genome",
+        "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ]
+    }
+  ],
+  "workstreams": [
+    {
+      "id": "cognition_cortex",
+      "intent": [
+        "INTENT-20261001-greg-seed-genome",
+        "INTENT-20260930-polyintelligence-cortex",
+        "INTENT-20261001-open-source-mechanism-harvest"
+      ],
+      "subordinate_to": "N1",
+      "rule": "One project-wide active node (N1, VEPMC). VEPMC stays the required real-device proof and the one operationally primary node; per the founder's 2026-10-01 correction (#143 comment, draft #144) it is not a stopping condition for development: every safe, reversible, buildable P-node continues until a real external dependency, missing authority, resource or evidence blocks it. Later P-nodes are horizons with gates, never activated by appearing here.",
+      "metric": "Verified Cross-Geometry Routing Gain",
+      "reconciles": {
+        "C1": [
+          "P1",
+          "P2",
+          "P3"
+        ],
+        "C2": [
+          "P5"
+        ],
+        "C3": [
+          "P4",
+          "budget controller"
+        ],
+        "C4": [
+          "P6",
+          "P11"
+        ],
+        "C5": [
+          "P7",
+          "P8"
+        ],
+        "C6": [
+          "P9",
+          "P10"
+        ],
+        "C7": [
+          "P12",
+          "P13"
+        ],
+        "C8": [
+          "P11",
+          "P13"
+        ]
+      },
+      "operating_card": [
+        "Select one smallest missing contract or behavior and declare its proof and budget",
+        "Implement and run the smallest integrated falsification test",
+        "Record the result, update the bottleneck, and repeat, refine, reroute, or retire the mechanism"
+      ],
+      "nodes": [
+        {
+          "id": "P0",
+          "title": "Inspect and anchor",
+          "maps_to": "N1",
+          "status": "ACHIEVED_ON_REVIEW_BRANCH",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "none",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a moving reference (main, an open PR) changes",
+          "falsification": "a claimed implementation is absent when the tree is read",
+          "smallest_next_experiment": "re-read main and the open cognition PRs before the next change",
+          "exit": "reproducible context checksum and owner map",
+          "evidence_refs": [
+            "docs/PROJECT_COGNITION_CONTINUITY.md",
+            "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
+          ]
+        },
+        {
+          "id": "P1",
+          "title": "Cognitive contracts",
+          "maps_to": "N1",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P0",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a new proof class, outcome or geometry field",
+          "falsification": "an artifact crosses an epistemic boundary silently, or unknown harm reads as zero",
+          "smallest_next_experiment": "classify the held-out items' geometry without the payload key table and measure misrouting",
+          "exit": "frozen mixed-suite results and no authority expansion",
+          "evidence_refs": [
+            "contracts/cortex-receipt.schema.json",
+            "tests/evidence/cortex-mutants-2026-10-01/run2-after-fixes.log"
+          ]
+        },
+        {
+          "id": "P2",
+          "title": "Seed proof",
+          "maps_to": "N1",
+          "status": "IMPLEMENTED; advantage GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P1",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a founder-selected local model on Body 1, or a new frozen comparison",
+          "falsification": "the routed system loses to the strongest run baseline beyond the predeclared margin, or any hard failure",
+          "smallest_next_experiment": "run the frozen suite's always_llm and tool_llm arms once a founder-selected local model answers",
+          "exit": "implementation evidence plus the predeclared performance test; otherwise remain an experiment",
+          "evidence_refs": [
+            "tests/evidence/greg-crossgeo-v0.2/results.json",
+            "cortex/evaluation/freeze-crossgeo-v0.2.json"
+          ]
+        },
+        {
+          "id": "P3",
+          "title": "Proof/outcome ledger",
+          "maps_to": "N1",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P2",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "the founder's Chromebook run (N1)",
+          "falsification": "a duplicate settlement or a lost receipt after kill -9",
+          "smallest_next_experiment": "the same rehearsal on the founder's Chromebook with his key",
+          "exit": "idempotent settlement, corrections and provenance across restart",
+          "evidence_refs": [
+            "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
+          ]
+        },
+        {
+          "id": "P4",
+          "title": "Cognitive settlement and learned routing",
+          "maps_to": "N4",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P3 plus settled outcomes from real missions",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "20 settled real-mission outcomes in one geometry",
+          "falsification": "learned routing does not beat the frozen static router",
+          "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
+          "exit": "learned routing beats the static baseline on held-out tasks without new authority",
+          "evidence_refs": []
+        },
+        {
+          "id": "P5",
+          "title": "Demand-led repertoire expansion",
+          "maps_to": "N2",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "a mission that needs a family the seed lacks",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a CapabilityDeficit naming a reserved family",
+          "falsification": "an enabled family adds no measured mission value",
+          "smallest_next_experiment": "the next reserved family a real mission asks for, sourced first from a qualified open-source engine (#144 source map) behind a GREG certificate",
+          "exit": "per family: real adapter, native benchmark, declared limits, integrated mission value",
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "tests/unit/test_greg_linear_genesis.py"
+          ]
+        },
+        {
+          "id": "P6",
+          "title": "Heterogeneous compositions and collective mechanisms",
+          "maps_to": "N5",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P4",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a composition candidate with a measurable constituent baseline",
+          "falsification": "no composition beats its strongest constituent, a simple pipeline and a committee after overhead",
+          "smallest_next_experiment": "compare the schedule composition against extraction-free formal input on the same requests",
+          "exit": "one composition with measured net lift after overhead and correlated-failure analysis",
+          "evidence_refs": []
+        },
+        {
+          "id": "P7",
+          "title": "Cognitive Capability Genesis",
+          "maps_to": "N2",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P5 and GREG genesis (N2)",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a cognition deficit during a real mission",
+          "falsification": "a capability absent at mission start is never acquired, or registration grants execution",
+          "smallest_next_experiment": "a cognition deficit with no installed engine, closed through the builder route against a founder-frozen contract and the same certificate",
+          "exit": "a bounded problem solved with a verified capability absent at mission start",
+          "evidence_refs": [
+            "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
+            "tests/unit/test_greg_open_source_genesis.py",
+            "greg/genesis.py",
+            "greg/mechanisms.py"
+          ]
+        },
+        {
+          "id": "P8",
+          "title": "Evolutionary cognition",
+          "maps_to": "N4",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P7 and protected evaluators",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "a machine-evaluable objective with a protected evaluator",
+          "falsification": "gains vanish on held-out data or the evaluator is gamed",
+          "smallest_next_experiment": "mutate one router policy parameter under a protected held-out evaluator",
+          "exit": "repeated held-out gains without evaluator gaming or unauthorized mutation",
+          "evidence_refs": []
+        },
+        {
+          "id": "P9",
+          "title": "Constraint-release discovery",
+          "maps_to": "N10",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P6 and P8",
+          "budget_ceiling": "research budget set by Alfonso",
+          "review_trigger": "a new allowed topology to test",
+          "falsification": "nothing beats the baseline or nothing replicates",
+          "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
+          "exit": "a previously unlisted organization beats the baseline and survives independent replication",
+          "evidence_refs": []
+        },
+        {
+          "id": "P10",
+          "title": "Functional morphogenesis",
+          "maps_to": "N2",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery)",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P7, P9 and developmental research (Track B)",
+          "budget_ceiling": "research budget set by Alfonso",
+          "review_trigger": "an unseen-loss experiment design",
+          "falsification": "recovery is scripted, or a strong centralized adaptive baseline does as well",
+          "smallest_next_experiment": "inject an unseen organ loss in a sandbox and measure Unscripted Functional Recovery Rate",
+          "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
+          "evidence_refs": [
+            "tests/unit/test_greg_open_source_genesis.py"
+          ]
+        },
+        {
+          "id": "P11",
+          "title": "Open cognitive ecology",
+          "maps_to": "N5",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P6 and P8",
+          "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
+          "review_trigger": "distribution shift in real mission workloads",
+          "falsification": "evaluator capture, runaway resource use or authority drift",
+          "smallest_next_experiment": "track method diversity and rare-method preservation over two workload shifts",
+          "exit": "sustained net benefit across changing workloads without capture or authority drift",
+          "evidence_refs": []
+        },
+        {
+          "id": "P12",
+          "title": "Substrate-plural execution",
+          "maps_to": "N8",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "N8 multiple bodies",
+          "budget_ceiling": "hardware chosen by Alfonso",
+          "review_trigger": "a second approved body",
+          "falsification": "a contract behaves differently on a second substrate",
+          "smallest_next_experiment": "run the frozen suite on a second approved body and diff receipts",
+          "exit": "equivalent behavioral contracts on materially different approved substrates",
+          "evidence_refs": []
+        },
+        {
+          "id": "P13",
+          "title": "Poly-embodied developmental institution",
+          "maps_to": "N10",
+          "status": "HORIZON",
+          "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
+          "dependency": "P12 and N9",
+          "budget_ceiling": "set by Alfonso per body",
+          "review_trigger": "a new body or institution joins",
+          "falsification": "an embodiment escapes scope or shutdown",
+          "smallest_next_experiment": "none now: Chromebook and phone first (N1)",
+          "exit": "the same governed identity across scoped bodies with legitimate shutdown preserved",
+          "evidence_refs": []
+        }
+      ]
     }
   ],
   "subordinate_workstreams": {

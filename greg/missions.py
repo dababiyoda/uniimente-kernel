@@ -250,6 +250,15 @@ class MissionBook:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
 
 
+def _mechanism_summary(provenance: dict) -> dict:
+    """What the founder needs to decide whether GREG may depend on an open-source package."""
+    qualification = provenance.get("qualification") or {}
+    return {k: provenance.get(k) for k in ("distribution", "version", "license", "upstream", "package_digest",
+                                           "primitive", "competence", "common_mode", "acquisition", "limits")} | {
+        "qualification": {"cases": qualification.get("cases"), "failures": len(qualification.get("failures", [])),
+                          "oracle": qualification.get("oracle"), "scale_probe": qualification.get("scale_probe")}}
+
+
 class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
@@ -335,8 +344,10 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
-                                 artifact_root=self.artifact_root, stop_check=self._stop_check)
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.")) else None,
+                                 artifact_root=self.artifact_root, stop_check=self._stop_check,
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 cognition_model=getattr(self, "cognition_model", None))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -528,9 +539,17 @@ class MissionEngine:
             attempt = sum(1 for e in self.journal.replay("mission.observed")
                           if e.payload.get("mission_id") == m.mission_id
                           and e.payload.get("check_id") == check["check_id"])
+            from greg.pipeline import resolve, PendingInput, BindingError
+            try:
+                bound_params, input_bindings = resolve(sensor.get("params", {}), self.journal, m.mission_id)
+            except (PendingInput, BindingError) as exc:
+                failing.add(check["check_id"])
+                self.journal.record("mission.input_wait", {"mission_id": m.mission_id,
+                    "check_id": check["check_id"], "why": str(exc)}, key=[m.mission_id, check["check_id"], str(exc)])
+                continue
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-                adapter=adapter, ctx=self._context(m, manifest), params=sensor.get("params", {}),
+                adapter=adapter, ctx=self._context(m, manifest), params=bound_params,
                 target=sensor["target"], cost_usd=0.0, expected_outcome="observation captured",
                 evidence_refs=[], attempt=f"{attempt}@{iso(now)}", spent_usd=m.spent_usd,
                 approved_scopes=m.approved_scopes)
@@ -723,7 +742,9 @@ class MissionEngine:
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
-                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id]}
+                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
+                                    **({"mechanism": _mechanism_summary(c.provenance)}
+                                       if c.provider.startswith("installed:python:") else {})}
                                    for c in self.registry.by_function(function)]}
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
@@ -846,11 +867,17 @@ class MissionEngine:
             manifest, adapter, _ = self._resolve(s)
             if manifest is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
+        from greg.pipeline import resolve, BindingError
+        try:
+            bound_params, input_bindings = resolve(s.get("params", {}), self.journal, m.mission_id)
+        except BindingError as exc:
+            self._block(m, {"type": "no_strategy", "why": "pipeline input unavailable: " + str(exc)})
+            return {"state": "BLOCKED", "blocker": m.blocker}
         aid = s["action_id"]
         attempt = m.attempts.get(aid, 0)
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=s.get("params", {}), target=s["target"],
+            adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
             evidence_refs=evidence, attempt=attempt, spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
@@ -858,7 +885,8 @@ class MissionEngine:
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
-                  "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+                  "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now),
+                  "input_bindings": input_bindings}
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"

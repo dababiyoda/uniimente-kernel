@@ -1,0 +1,223 @@
+{
+  "allowed_hosts": [
+    "pypi.org"
+  ],
+  "blocked_requests": {
+    "2p66nmmycsj3.statuspage.io": 3,
+    "analytics.python.org": 3,
+    "api.github.com": 2,
+    "cdn.jsdelivr.net": 1,
+    "media.ethicalads.io": 3,
+    "pypi-camo.freetls.fastly.net": 44
+  },
+  "boundary": "step 11 needs credential 'pypi_username': credential 'pypi_username' not declared by this capability",
+  "browser": "chromium via Playwright",
+  "extracted": {
+    "package_header": "z3-solver 5.1.0.0",
+    "recent_versions": [
+      "5.1.0.0",
+      "5.0.0.0",
+      "4.16.0.0",
+      "4.15.8.0",
+      "4.15.7.0"
+    ]
+  },
+  "final_url": "https://pypi.org/account/login/?next=https%3A%2F%2Fpypi.org%2Fproject%2Fz3-solver%2F",
+  "os_sandboxed": false,
+  "session": "pypi-z3-release",
+  "start_url": "https://pypi.org/",
+  "status": "AUTHORITY_BOUNDARY",
+  "steps": [
+    {
+      "at": "2026-10-02T00:12:16Z",
+      "op": "open",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-00.png",
+        "sha256": "sha256:66f80f86cac69a609d28a55e5ac6f14f2431cd90ff931c843e269f49af72bb6b"
+      },
+      "selector": null,
+      "step": 0,
+      "text_sha256": "sha256:ba1b9683c5366706c6f0d5b1f1b363fd2018e83dcf3851e638646e4d37eea3d1",
+      "title": "PyPI \u00b7 The Python Package Index",
+      "url": "https://pypi.org/"
+    },
+    {
+      "at": "2026-10-02T00:12:17Z",
+      "op": "fill",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-01.png",
+        "sha256": "sha256:7138bd36d5ab2cfc62c676bbf92a1597602ef065f96a118b46668f34a1f358eb"
+      },
+      "selector": "input[name=q] >> nth=0",
+      "step": 1,
+      "text_sha256": "sha256:ba1b9683c5366706c6f0d5b1f1b363fd2018e83dcf3851e638646e4d37eea3d1",
+      "title": "PyPI \u00b7 The Python Package Index",
+      "url": "https://pypi.org/",
+      "value": {
+        "chars": 9,
+        "secret": false
+      }
+    },
+    {
+      "at": "2026-10-02T00:12:17Z",
+      "op": "press",
+      "result": "challenge_detected",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-02.png",
+        "sha256": "sha256:17c4fbd26452eb87b9cdb080aa5340c4924b8c9d1e30c11a9739b087087da8ec"
+      },
+      "selector": "input[name=q] >> nth=0",
+      "step": 2,
+      "text_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "title": "Client Challenge",
+      "url": "https://pypi.org/search/?q=z3-solver",
+      "value": "https://pypi.org/search/?q=z3-solver"
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "goto",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-03.png",
+        "sha256": "sha256:1657ebcf797095eeb1158a07234cc56ab8a7ab0a07fd4e773286e9bf835315e0"
+      },
+      "selector": null,
+      "step": 3,
+      "text_sha256": "sha256:7c82fbc35e9011658ea38f930c5f4503dcc6d923723d26bd6cbd35e46281d332",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/",
+      "value": "https://pypi.org/project/z3-solver/"
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "extract",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-04.png",
+        "sha256": "sha256:1657ebcf797095eeb1158a07234cc56ab8a7ab0a07fd4e773286e9bf835315e0"
+      },
+      "selector": "h1",
+      "step": 4,
+      "text_sha256": "sha256:7c82fbc35e9011658ea38f930c5f4503dcc6d923723d26bd6cbd35e46281d332",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/",
+      "value": "z3-solver 5.1.0.0"
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "click",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-05.png",
+        "sha256": "sha256:69b55016f5f2a5b984498a7cd24ab8dbac7f232b0ce6283c604284d7e6a2ae82"
+      },
+      "selector": "a[href='#history']",
+      "step": 5,
+      "text_sha256": "sha256:569b563e7ab8fafddad836d795c9fd9934c469944603befbf3922900fa642be7",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#history",
+      "value": "https://pypi.org/project/z3-solver/#history"
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "extract_all",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-06.png",
+        "sha256": "sha256:69b55016f5f2a5b984498a7cd24ab8dbac7f232b0ce6283c604284d7e6a2ae82"
+      },
+      "selector": ".release__version",
+      "step": 6,
+      "text_sha256": "sha256:569b563e7ab8fafddad836d795c9fd9934c469944603befbf3922900fa642be7",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#history",
+      "value": [
+        "5.1.0.0",
+        "5.0.0.0",
+        "4.16.0.0",
+        "4.15.8.0",
+        "4.15.7.0"
+      ]
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "click",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-07.png",
+        "sha256": "sha256:8756cd047fdb9e037218ce7542afabd2d924d32aaf415671a54100681e88c025"
+      },
+      "selector": "a[href='#files']",
+      "step": 7,
+      "text_sha256": "sha256:fb4bfcf9ae5bf255fe886005fc083fee0f41c46f07cc704924093eafe87e93bc",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#files",
+      "value": "https://pypi.org/project/z3-solver/#files"
+    },
+    {
+      "at": "2026-10-02T00:12:18Z",
+      "op": "scroll",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-08.png",
+        "sha256": "sha256:aaf7483c82c0f88ce4cd851383f8564bd64ffbafb26608c0169d0291da443934"
+      },
+      "selector": null,
+      "step": 8,
+      "text_sha256": "sha256:fb4bfcf9ae5bf255fe886005fc083fee0f41c46f07cc704924093eafe87e93bc",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#files",
+      "value": 600
+    },
+    {
+      "at": "2026-10-02T00:12:19Z",
+      "op": "click",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-09.png",
+        "sha256": "sha256:af3119f3a78f744bf7effb0e84927169b3d12bec439c65ae5a8826b8a39f37b3"
+      },
+      "selector": "a[href^='/account/login/'] >> nth=0",
+      "step": 9,
+      "text_sha256": "sha256:cbf357654c3b8d2de71df340dff872dedc8e409deec31ddd9addbe46b69cd9bb",
+      "title": "Log in \u00b7 PyPI",
+      "url": "https://pypi.org/account/login/?next=https%3A%2F%2Fpypi.org%2Fproject%2Fz3-solver%2F",
+      "value": "https://pypi.org/account/login/?next=https%3A%2F%2Fpypi.org%2Fproject%2Fz3-solver%2F"
+    },
+    {
+      "at": "2026-10-02T00:12:19Z",
+      "op": "expect_text",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-10.png",
+        "sha256": "sha256:d3b94543dcea296ff2d2e945e87694abc52a549b8a2f891e56c5a78385d292ee"
+      },
+      "selector": null,
+      "step": 10,
+      "text_sha256": "sha256:cbf357654c3b8d2de71df340dff872dedc8e409deec31ddd9addbe46b69cd9bb",
+      "title": "Log in \u00b7 PyPI",
+      "url": "https://pypi.org/account/login/?next=https%3A%2F%2Fpypi.org%2Fproject%2Fz3-solver%2F",
+      "value": true
+    },
+    {
+      "at": "2026-10-02T00:12:19Z",
+      "note": "step 11 needs credential 'pypi_username': credential 'pypi_username' not declared by this capability",
+      "op": "boundary",
+      "result": "AUTHORITY_BOUNDARY",
+      "screenshot": {
+        "path": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release/step-11.png",
+        "sha256": "sha256:d3b94543dcea296ff2d2e945e87694abc52a549b8a2f891e56c5a78385d292ee"
+      },
+      "selector": null,
+      "step": 11,
+      "text_sha256": "sha256:cbf357654c3b8d2de71df340dff872dedc8e409deec31ddd9addbe46b69cd9bb",
+      "title": "Log in \u00b7 PyPI",
+      "url": "https://pypi.org/account/login/?next=https%3A%2F%2Fpypi.org%2Fproject%2Fz3-solver%2F"
+    }
+  ],
+  "trace_dir": "/tmp/greg-hands/body/workspace/m_browse-pypi-z3-release/browser/pypi-z3-release",
+  "trust": "page content is untrusted external data",
+  "trust_anchors_imported": 130
+}

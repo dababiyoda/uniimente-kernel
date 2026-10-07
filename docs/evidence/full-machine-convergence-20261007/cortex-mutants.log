@@ -1,0 +1,60 @@
+CAUGHT  [cortex] receipt claims authority: 1 failed, 68 passed in 2.20s
+CAUGHT  [cortex] rank ignores failed gates: 1 failed in 0.24s
+CAUGHT  [cortex] prediction settles competence: 1 failed, 94 passed in 2.57s
+CAUGHT  [cortex] financial recommended: 1 failed, 73 passed in 1.94s
+CAUGHT  [cortex] model-generated DAG identifies: 1 failed, 55 passed in 1.41s
+CAUGHT  [cortex] witness check skipped: 1 failed, 25 passed in 0.30s
+CAUGHT  [cortex] undecided witness counts as agreement: 1 failed, 28 passed in 0.58s
+CAUGHT  [cortex] exhausted timeout reported as inconclusive: 1 failed, 27 passed in 0.42s
+CAUGHT  [cortex] exit ignores geometry: 1 failed, 109 passed in 2.89s
+CAUGHT  [cortex] exit ignores cost and latency: 1 failed, 109 passed in 2.65s
+CAUGHT  [cortex] optimality certificate skipped: 1 failed, 37 passed in 0.57s
+CAUGHT  [cortex] protection gaps ignored: 1 failed, 83 passed in 2.40s
+CAUGHT  [cortex] unknown harm treated as safe: 1 failed, 83 passed in 2.86s
+CAUGHT  [cortex] receipt hides the strongest counterargument: 1 failed, 87 passed in 2.99s
+CAUGHT  [cortex] coercive intervention accepted: 1 failed, 62 passed in 1.92s
+CAUGHT  [cortex] hard-harm intervention accepted: 1 failed, 64 passed in 1.89s
+CAUGHT  [cortex] severity mislabelled as certainty: 1 failed, 63 passed in 1.80s
+CAUGHT  [cortex] external deterrence not handed off: 1 failed, 112 passed in 2.83s
+CAUGHT  [cortex] quote check skipped: 1 failed, 57 passed in 1.57s
+CAUGHT  [cortex] disabled family eligible: 1 failed, 15 passed in 0.22s
+CAUGHT  [cortex] non-permission record grants: 1 failed, 1 passed in 0.20s
+CAUGHT  [cortex] stale evidence accepted: 1 failed, 48 passed in 1.45s
+CAUGHT  [cortex] protection not handed off: 1 failed, 78 passed in 2.60s
+CAUGHT  [cortex] verifier ignores protection: 1 failed, 86 passed in 2.36s
+CAUGHT  [cortex] preserved evidence open access: 1 failed, 80 passed in 2.19s
+CAUGHT  [cortex] receipt drops protection: 1 failed, 78 passed in 2.54s
+CAUGHT  [greg path] permission check removed: signed target scope: 1 failed, 4 passed in 0.99s
+CAUGHT  [greg path] permission check removed: founder detach not projected: 1 failed, 2 passed in 0.70s
+CAUGHT  [greg path] constraint dropped: extracted deadline: 1 failed, 141 passed in 6.11s
+CAUGHT  [greg path] constraint dropped: CP-SAT encoding: 1 failed, 20 passed in 4.78s
+CAUGHT  [greg path] UNKNOWN relabelled: unknown harm as none: 1 failed, 8 passed in 1.70s
+CAUGHT  [greg path] UNKNOWN relabelled: FEASIBLE as OPTIMAL: 1 failed, 29 passed in 5.24s
+CAUGHT  [greg path] UNKNOWN relabelled: exhausted latency budget ignored: 1 failed, 112 passed in 10.28s
+CAUGHT  [greg path] evidence replaced: receipt content address unchecked: 1 failed, 9 passed in 2.65s
+CAUGHT  [greg path] evidence replaced: verifier re-check of returned assignments removed: 1 failed, 30 passed in 5.80s
+CAUGHT  [greg path] authority claim accepted from the worker: 1 failed, 11 passed in 3.47s
+CAUGHT  [greg path] duplicate settlement: 1 failed, 158 passed in 8.17s
+CAUGHT  [greg path] paid fallback enabled: purchased inference accepted: 1 failed, 11 passed in 3.19s
+CAUGHT  [greg path] paid fallback enabled: non-founder provider order selects a model: 1 failed, 13 passed in 3.66s
+CAUGHT  [greg path] misclassified consequence: declared harm cannot raise the class: 1 failed, 114 passed in 5.43s
+CAUGHT  [greg path] zero solver budget still solves: 1 failed, 41 passed in 5.77s
+CAUGHT  [open-source genesis] certificate skips edge feasibility: 1 failed, 2 passed in 1.11s
+CAUGHT  [open-source genesis] certificate trusts claimed unreachability: 1 failed, 2 passed in 1.00s
+CAUGHT  [open-source genesis] flow certificate skips the residual graph: 1 failed, 3 passed in 1.34s
+CAUGHT  [open-source genesis] negative weights reach the engine: 1 failed, 29 passed in 1.59s
+CAUGHT  [open-source genesis] changed package files survive restart: 1 failed, 43 passed in 8.77s
+CAUGHT  [open-source genesis] repair re-admits the package that failed in service: 1 failed, 41 passed in 6.15s
+CAUGHT  [open-source genesis] engine imported from an unqualified location: 1 failed, 1 passed in 0.59s
+CAUGHT  [open-source genesis] #140 graph verifier accepts a longer route: 1 failed, 116 passed in 42.51s
+CAUGHT  [open-source genesis] #140 graph verifier accepts a false no-route: 1 failed, 116 passed in 41.92s
+CAUGHT  [open-source genesis] LP certificate skips the duality gap: 1 failed, 52 passed in 11.42s
+CAUGHT  [open-source genesis] LP certificate ignores multiplier signs: 1 failed, 52 passed in 11.87s
+CAUGHT  [open-source genesis] LP certificate skips inequality feasibility: 1 failed, 52 passed in 11.25s
+CAUGHT  [open-source genesis] an unproved engine status closes a mission: 1 failed, 52 passed in 10.84s
+CAUGHT  [open-source genesis] a plan that meets every limit is reported as no plan: 1 failed, 46 passed in 9.11s
+CAUGHT  [open-source genesis] a bounded objective is reported as having no limit: 1 failed, 76 passed in 27.67s
+CAUGHT  [open-source genesis] a direction may break a limit: 1 failed, 80 passed in 32.16s
+CAUGHT  [open-source genesis] an engine's 'no plan exists' closes without the elastic proof: 1 failed, 75 passed in 28.11s
+CAUGHT  [open-source genesis] console attaches a capability no ask names: 1 failed, 45 passed in 7.44s
+59 mutants, 0 survived or stale

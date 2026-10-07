@@ -1,0 +1,325 @@
+{
+  "decision_id": "FM-BUDGET-RECONCILIATION-20261007",
+  "title": "Reconcile existing bounded cognition with canonical dispatch and Hands context",
+  "problem": "Cognition serving and mandatory verification lack a shared enclosing horizon/grant projection across the three retained contracts.",
+  "founder_intent_refs": [
+    "Full-machine directive sections 9,15,42,43,60,61,77,79",
+    "FM-NATIVE-RECOMBINATION-20261007"
+  ],
+  "baseline": "Native-qualified Cortex/Hands/Body convergence at ec1ab65; #145 budget implementation exists on a separate lineage.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse #145 ThinkingBudget; add an immutable window to existing InvocationContext while preserving Hands fields; narrow serving only.",
+      "advantages": [
+        "No third Cortex or authority store.",
+        "Qualified versions separate competence history."
+      ],
+      "disadvantages": [
+        "Selective reuse requires contract parity tests."
+      ],
+      "revival_evidence": "Selected after both strengthening passes."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Replace all wrappers and InvocationContext from #145.",
+      "advantages": [
+        "Includes its budget, routing and recovery mechanisms."
+      ],
+      "disadvantages": [
+        "Drops Hands mission/authority/grant fields and Cortex/legacy receipt compatibility."
+      ],
+      "revival_evidence": "Reconciled contracts and passing cross-lineage tests."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Keep extracted numeric replacements on the dedicated draft convergence branch.",
+      "advantages": [
+        "No deployment or main merge; original branches preserved."
+      ],
+      "disadvantages": [
+        "Local tests cannot prove actual founder or external outcomes."
+      ],
+      "revival_evidence": "Current experiment; production remains founder reserved."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Separate child invocations can each receive a fresh ceiling and cognition does not expose current grant deadline pointers.",
+    "advantages": [
+      "No migration work."
+    ],
+    "disadvantages": [
+      "Fails independent-appraisal intent."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve full-machine destination; this is an enabling control, not full autonomous goal closure. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "No global stopping at budget milestone."
+      ],
+      "evidence_refs": [
+        "greg/cognition/budget.py",
+        "greg/authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/integration/test_cognition_budget_authority.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Keep one AuthorityOffice, immutable limit projection and existing context fields across all three request paths. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "A projection must never be treated as a grant."
+      ],
+      "evidence_refs": [
+        "greg/cognition/budget.py",
+        "greg/authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/integration/test_cognition_budget_authority.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Attack caller overrides, deadline exhaustion, model retries, optional authority and forged receipts. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Typed refusal must survive timeout."
+      ],
+      "evidence_refs": [
+        "greg/cognition/budget.py",
+        "greg/authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/integration/test_cognition_budget_authority.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Preserve signed inputs and historical receipts; shared child ceilings never replenish. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not break old frozen evidence."
+      ],
+      "evidence_refs": [
+        "greg/cognition/budget.py",
+        "greg/authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/integration/test_cognition_budget_authority.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Distinguish declared compute ceilings, local model attempts and unmeasured actual compute; optional advice never executes. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Unknown actual resource use is not zero."
+      ],
+      "evidence_refs": [
+        "greg/cognition/budget.py",
+        "greg/authority.py",
+        "tests/unit/test_cognition_runtime_budget.py",
+        "tests/integration/test_cognition_budget_authority.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Budget reserve, invocation pointers and Cortex compatibility",
+      "tier": "unit_test",
+      "reference": "53 focused checks passed before additional integrity and legacy regression checks",
+      "finding": "Local fixture and signed test-key evidence; no real founder device or provider outcome."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Wholesale #145 replacement is safe",
+      "tier": "other",
+      "reference": "#145 680a0d438e94a004ab596ab3287e28878bfb747d",
+      "finding": "Its context replacement would discard Hands mission/grant fields; source extraction alone also left the strict receipt field set rejecting additive metadata."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Cognition spends only its enclosing immutable window, preserves a verification reserve and never authorizes optional work.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Reuse existing budget mechanism rather than a new scheduler.",
+        "amplified_value": "Same Kernel dispatch, receipt and learning plane; no authority growth."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Wrapper replacement discards existing Hands context.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Add cognition_budget without removing mission_id, authority_ref, grant_id, policy_version or stop_check."
+      },
+      {
+        "id": "D2",
+        "statement": "Serving limits could rewrite signed problem identity.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Keep original input digest/geometry; disclose only narrowed serving ceilings."
+      },
+      {
+        "id": "D3",
+        "statement": "Additive metadata could invalidate retained receipts or permit arbitrary fields.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Permit exactly known optional dataclass fields; preserve digest and authority checks."
+      },
+      {
+        "id": "D4",
+        "statement": "Child compositions replenish ceilings or optional estimates become permission.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Shared monotonic deadline and allocated compute ceiling; advisory execute=false with no supported edge."
+      },
+      {
+        "id": "D5",
+        "statement": "Migration could regress sealed legacy evaluation or turn unmeasured cost into zero.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Keep frozen evaluate_problem unchanged; disclose unknown actual compute and worker-reported model attempts."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Separate mechanism exists but not reconciled with Hands.",
+      "do_nothing": "Enclosing deadline and shared child limits remain missing.",
+      "simplest_viable_alternative": "Reuse #145 ThinkingBudget; add an immutable window to existing InvocationContext while preserving Hands fields; narrow serving only.",
+      "strongest_competing_architecture": "Replace all wrappers and InvocationContext from #145.",
+      "reversible_experiment": "Dedicated development branch and signed test-key missions; no deployment."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Loses retained request/receipt contracts and execution context.",
+        "revival_evidence": "Contract reconciliation with all current tests passing."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack authority drift, provider dependence, retries, false measurement, hidden founder attention, timeout/refusal relabeling, complexity and receipt compatibility.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "A policy refusal at deadline can become a timeout and invite rerouting.",
+        "strengthening_response": "Typed Refusal remains POLICY_REFUSAL; no retry and optional recommendations stop."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "A fresh-process verifier may exceed remaining wall time.",
+        "strengthening_response": "Separate bounded verifier receives remaining deadline; output is unknown/refused if deadline is exhausted."
+      },
+      {
+        "id": "N3",
+        "category": "overfit",
+        "statement": "Declared operation ceilings are not observed actual resource spend.",
+        "strengthening_response": "Actual compute remains unknown; optional allocations are conservative quota reservations, not measured charges."
+      },
+      {
+        "id": "N4",
+        "category": "comprehensibility",
+        "statement": "Three contracts could grow three policy or learning systems.",
+        "strengthening_response": "One budget helper and office projection, existing contract adapters and canonical receipt/settlement owners."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Add cognition_budget without removing mission_id, authority_ref, grant_id, policy_version or stop_check.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Keep original input digest/geometry; disclose only narrowed serving ceilings.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Permit exactly known optional dataclass fields; preserve digest and authority checks.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Shared monotonic deadline and allocated compute ceiling; advisory execute=false with no supported edge.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Keep frozen evaluate_problem unchanged; disclose unknown actual compute and worker-reported model attempts.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      }
+    ],
+    "final_design": "Extract eleven bounded solvers and source checks from #145 into greg.cognition; preserve #143 Cortex contracts, seed compatibility, capability state and authority. Version the replacements and source-check evaluator, protect evidence standards from generated-worker edits, and challenge them before draft promotion.",
+    "residual_risks": [
+      {
+        "risk": "Compute and model-call observations remain incomplete.",
+        "mitigation": "Ceilings, reported attempts and unknown actual work are separately disclosed.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any real-world or economic claim."
+      },
+      {
+        "risk": "No independent human approval or broad competence evaluation.",
+        "mitigation": "Draft only; preserve local evidence tiers and frozen comparisons.",
+        "owner": "Real Alfonso / authorized reviewers",
+        "review_trigger": "Merge or deployment request."
+      }
+    ],
+    "recommendation": "RETAIN",
+    "strengthened_proposal": "Retain existing limits and request contracts, reuse upstream budget helper, protect enforcement, independently verify numeric work, preserve historical receipts and actual dispatch pointers."
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve limitations and unfinished obligations, not artificial consensus.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "Budget integration does not provide arbitrary natural-language Mind-to-Hands planning.",
+        "rationale": "Dynamic WorkOrder selection, business closure and founder-device proof remain.",
+        "evidence_threshold": "End-to-end canonical integration and evidence at each required tier.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Selective upstream reuse; one context and optional additive receipt fields; preserve signed inputs, frozen seed evaluator and existing registry states.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert budget reconciliation commit; preserve upstream lineages and historical receipts."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Cortex or seed contract regresses.",
+    "Generated authority or real-world validity inferred from mathematical results.",
+    "Mandatory verification optimized away.",
+    "A new rival registry or authority path appears."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for reversible development; Alfonso for reserved promotion",
+  "review_trigger": "Whole-suite evidence, CI confinement and subsequent dynamic WorkOrder planning."
+}

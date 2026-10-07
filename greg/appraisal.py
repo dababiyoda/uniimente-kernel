@@ -32,7 +32,9 @@ from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query"}
+                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect"}
+REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
+                    cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
 
 
@@ -119,14 +121,15 @@ def appraise(request: dict) -> dict:
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "cognition.status") else None,
                                         mission_id=mid,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect") or cap.startswith(("cognition.", "pipeline.")) else None,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
                                         target=check["sensor"].get("target", ""))
                 try:
-                    now_ok, now_detail = evaluate_predicate(check["predicate"],
-                                                            adapter(check["sensor"].get("params", {}), ctx))
+                    from greg.pipeline import resolve
+                    bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
+                    now_ok, now_detail = evaluate_predicate(check["predicate"], adapter(bound_params, ctx))
                 except Exception as exc:  # the world could not be re-read: not verified
                     now_ok, now_detail = False, type(exc).__name__
                 if not now_ok:

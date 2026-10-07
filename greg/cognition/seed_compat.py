@@ -22,7 +22,7 @@ from cortex.seed.contracts import (CognitiveCapabilityProfile, EXPOSURES, METHOD
 from cortex.seed.methods import artifact
 from provenance.ledger import sha256_json
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 POLICY = 'static-smallest-sufficient/1'
 
 
@@ -156,7 +156,27 @@ def solve(params, ctx):
             if r['input_digest'] != sha256_json(p):
                 raise CapabilityError('problem ID already bound; use a new version')
             return r
-    r = evaluate_problem(p, stop_check=ctx.stop_check)
+    serving = p
+    budget = None
+    if ctx.cognition_budget is not None:
+        from .budget import ThinkingBudget
+        from .contracts import ProblemGeometry
+        if p['budget_ms'] < 50:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline cannot support verification')
+        budget = ThinkingBudget(ProblemGeometry(latency_limit=min(30, p['budget_ms'] / 1000)),
+                                family="seed_compat", started=time.monotonic(), caller_window=ctx.cognition_budget)
+        milliseconds = min(p['budget_ms'], int(budget.remaining() * 1000))
+        if milliseconds < 50:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline cannot support verification')
+        serving = {**p, 'budget_ms': milliseconds}
+    r = evaluate_problem(serving, stop_check=ctx.stop_check)
+    if budget is not None:
+        if budget.remaining() <= 0:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline exceeded')
+        r['input_digest'] = sha256_json(p)
+        r['serving_budget_ms'] = serving['budget_ms']
+        r['budget_projection'] = {'grant_id': budget.window.grant_id, 'new_authority': False,
+                                  'limits': 'deadline narrowed; existing seed independently verifies within this ceiling'}
     from cortex.seed.projections import enrich
     enrich(p, r)
     r.update({'receipt_id': sha256_json({'mission': ctx.mission_id, 'problem': p}),

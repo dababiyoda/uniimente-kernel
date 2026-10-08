@@ -1,0 +1,85 @@
+{
+ "genomes": {},
+ "missing_sources": [
+  "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
+  "docs/evidence/greg-genome-admission/*/results.json (no frozen held-out admission run yet)"
+ ],
+ "recipes": {
+  "bayes_then_voi": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F4",
+   "family": "F4",
+   "lift": true,
+   "losses": 0,
+   "p_one_sided": 0.000244,
+   "prefer": null,
+   "status": "VPL_LIFT",
+   "wins": 12
+  },
+  "estimate_then_optimize": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-07/results.json#summary.F1",
+   "family": "F1",
+   "lift": true,
+   "losses": 0,
+   "p_one_sided": 0.000122,
+   "prefer": null,
+   "status": "VPL_LIFT",
+   "wins": 13
+  },
+  "forecast_then_allocate": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F5",
+   "family": "F5",
+   "lift": false,
+   "losses": 13,
+   "p_one_sided": 0.292332,
+   "prefer": "optimize_alone",
+   "status": "NO_LIFT",
+   "wins": 17
+  },
+  "graph_then_allocate": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F3",
+   "family": "F3",
+   "lift": true,
+   "losses": 0,
+   "p_one_sided": 0.000488,
+   "prefer": null,
+   "status": "VPL_LIFT",
+   "wins": 11
+  },
+  "identify_then_optimize": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
+   "family": "F2R",
+   "lift": true,
+   "losses": 4,
+   "p_one_sided": 0.024521,
+   "prefer": null,
+   "status": "VPL_LIFT",
+   "wins": 13
+  }
+ },
+ "routing": {
+  "conditional_competence": {
+   "consequence": null,
+   "evidence": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json#summary.conditional_vs_static",
+   "verdict": "INCONCLUSIVE"
+  }
+ },
+ "rule": "frozen held-out verdicts only; a later frozen run for the same recipe or family replaces an earlier one, and both stay in git",
+ "schema": "greg-mind-evidence-index/0.1",
+ "sources": [
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-07/results.json",
+   "sha256": "sha256:d9d3b2aae64dbaad7f7ebfc875962b14c91ef8f30e6a1593156a4706e55f48e3",
+   "source_commit": "1521bd173c9c6692a6ceae69c6f9e2f6f3dda0d8"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+   "sha256": "sha256:7121586860ebf8b208238624df50df15aa081c1546b6561f83ab00250b9c0a80",
+   "source_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
+   "sha256": "sha256:e8cced6452c1418a6e4051a40c068e7d24ee517a5b812a304086fd043f5f4608",
+   "source_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8"
+  }
+ ]
+}

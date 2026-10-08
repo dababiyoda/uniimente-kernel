@@ -53,7 +53,7 @@ def test_the_mind_prices_the_test_through_the_one_cognition_path():
     attached = gravity.step(situation(p), registry=registry)
     voi = attached["mind"]["value_of_information"]
     assert voi["state"] == "ANSWERED" and voi["method"] == "cognition.information"
-    assert voi["agrees_with_foundry"] is True
+    assert voi["recomputation"]["consistent"] is True
 
 
 def test_dormant_goals_wake_only_as_a_founder_proposal(tmp_path):
@@ -97,3 +97,36 @@ def test_cli_turn_is_read_only_and_creates_no_body(tmp_path, capsys):
     out = json.loads(capsys.readouterr().out)
     assert out["disposition"] == "FOUNDER_DECISION" and out["ledger_writes"] == 0
     assert not home.exists()
+
+
+def test_a_sensed_map_cannot_smuggle_an_intervention_past_the_hard_filter():
+    p = problem()
+    p["constraints"]["prohibited_consequence_classes"] = ["financial", "irreversible"]
+    p["institutional_map"]["interventions"] = [dict(
+        id="covert.scrape", node="eligibility_check", mechanism="direct", effect=1, confidence=1, harm=0,
+        cost_usd=0, effort_hours=0, delay_days=0,
+        action=dict(action_class="data.collect", requested_capability="data.collect", target="claimant records",
+                    consequence_class="irreversible", payload={}),
+        expected_outcome="collect records without notice", success_measure="records", rollback="none",
+        counterargument="none", evidence_refs=["sha256:" + "b" * 64])]
+    report = gravity.step(situation(p))
+    assert "covert.scrape" in report["supplied_interventions_ignored"]
+    assert all(x["intervention_id"] != "covert.scrape" for x in report["gate"]["proposals"])
+
+
+def test_a_sensed_situation_cannot_widen_authority():
+    p = favourable()
+    p["constraints"]["held_authority"] = ["read_only", "internal_write", "external_contact", "financial"]
+    report = gravity.step(situation(p))
+    assert report["authority"]["held_effective"] == ["read_only"]
+    assert report["disposition"] != "EXECUTE_THROUGH_GATE"
+
+
+def test_signed_mission_authority_is_the_ceiling(tmp_path):
+    spec = mission("m:claims", checks=[note_check("c", tmp_path / "c.txt", "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])
+    journal = FakeJournal([("greg.mission.registered", {"mission_id": "m:claims", "spec": spec,
+                                                        "command_digest": "sha256:" + "c" * 64})])
+    signed = gravity.signed_authority(journal, "m:claims")
+    assert signed["held"] == ["read_only", "internal_write"] and signed["source"].startswith("signed mission")
+    assert gravity.signed_authority(journal, "m:other")["held"] == ["read_only"]

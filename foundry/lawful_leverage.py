@@ -27,6 +27,8 @@ import json
 import math
 from pathlib import Path
 import random
+import re
+import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -56,6 +58,7 @@ COMPLEMENTS = (("proof", "eligibility"), ("proof", "settlement"), ("proof", "rep
                ("routing", "information"), ("coordination", "standards"), ("dependency", "capability"),
                ("permission", "eligibility"), ("capital", "settlement"))
 MAX_CANDIDATES = 64           # the institutional-leverage contract's intervention ceiling
+NON_HUMAN_OPERATORS = ("uniimente", "greg", "egregore")   # the institution never is its own legal operator
 PROBABLE = 0.8                # "defensible" and "dominates" both mean at least 80% of joint samples
 
 
@@ -99,6 +102,7 @@ class Mechanism:
     components: tuple = ()
     trigger_probability: float = 1.0
     consented: bool = False
+    effect_multiplier: float = 1.0   # reduced scope (staged pilot, consenting parties only) scales the sampled effect
 
     def harm_vector(self) -> dict:
         base = dict.fromkeys(HARM, 0.0)
@@ -224,8 +228,10 @@ def validate(problem: dict) -> dict:
                     key=lambda e: list(e.path))
     if errors:
         raise LeverageRefused(f"lawful-leverage problem: {errors[0].message} at {list(errors[0].path)}")
-    if str(problem["constraints"].get("legal_operator", "alfonso_lopez")).upper() == "UNIIMENTE":
-        raise LeverageRefused("UNIIMENTE is never the legal operator")
+    operator = unicodedata.normalize("NFKC", str(problem["constraints"].get("legal_operator", "alfonso_lopez")))
+    operator = re.sub(r"[^a-z0-9]", "", operator.lower())
+    if not operator or any(name in operator for name in NON_HUMAN_OPERATORS):
+        raise LeverageRefused("the legal operator must be a human principal; UNIIMENTE, GREG or the egregore never is")
     model = ranker._validate("map", problem["institutional_map"])
     nodes = {n["id"]: n for n in model["nodes"]}
     if problem["outcome_node"] not in nodes:
@@ -268,9 +274,11 @@ def _instantiate(problem: dict) -> list[tuple[Mechanism, dict]]:
 def _mutate(base: list[tuple[Mechanism, dict]], trigger_p: float) -> list[tuple[Mechanism, dict]]:
     out = []
     for m, s in base:
-        out.append((replace(m, mechanism_id=m.mechanism_id + ":staged", effect_prior=m.effect_prior * 0.5,
+        # A pilot is smaller, not different: the sampled effect is halved (evidence about the mechanism still
+        # applies in full) and it keeps the base reversibility (a small publication is still a publication).
+        out.append((replace(m, mechanism_id=m.mechanism_id + ":staged", effect_multiplier=m.effect_multiplier * 0.5,
                             cost_usd=m.cost_usd * 0.3, effort_hours=m.effort_hours * 0.4,
-                            delay_days=m.delay_days * 0.5, reversibility="reversible",
+                            delay_days=m.delay_days * 0.5,
                             harm=tuple((k, v * 0.5) for k, v in m.harm), assets=tuple(sorted({*m.assets, "evidence"})),
                             option_value=min(1.0, m.option_value + 0.2), lineage=m.lineage + ("mutate:staged_pilot",)),
                     s))
@@ -279,8 +287,9 @@ def _mutate(base: list[tuple[Mechanism, dict]], trigger_p: float) -> list[tuple[
                                 deferred_consequence_class=m.consequence_class, trigger_probability=trigger_p,
                                 option_value=min(1.0, m.option_value + 0.3),
                                 lineage=m.lineage + ("mutate:defer_to_trigger",)), s))
-        if m.third_parties_affected and not m.consented:
-            out.append((replace(m, mechanism_id=m.mechanism_id + ":consented", effect_prior=m.effect_prior * 0.7,
+        # Restricting scope to the parties the surface's consent record covers; never self-asserted consent.
+        if (m.third_parties_affected or s.get("third_parties")) and s.get("consent") and not m.consented:
+            out.append((replace(m, mechanism_id=m.mechanism_id + ":consented", effect_multiplier=m.effect_multiplier * 0.7,
                                 harm=tuple((k, 0.0 if k == "third_party" else v) for k, v in m.harm), consented=True,
                                 lineage=m.lineage + ("mutate:consented_scope",)), s))
     return out
@@ -292,18 +301,45 @@ def _recombine(base: list[tuple[Mechanism, dict]]) -> list[tuple[Mechanism, dict
 
 
 # ------------------------------------------------------------------ hard filter (eligibility before optimisation)
+def ceilings(problem: dict) -> dict:
+    """Harm ceilings can be tightened by a problem, never loosened past the reviewed defaults."""
+    declared = problem["constraints"].get("harm_ceiling", {})
+    return {d: min(DEFAULT_CEILING[d], declared.get(d, DEFAULT_CEILING[d])) for d in HARM}
+
+
+def consent_reasons(m: Mechanism, surface: dict | None) -> list[str]:
+    """A surface that declares third parties, or a mechanism that affects them, needs a consent record that
+    covers every declared party. Text alone never satisfies the gate: the record names who and the evidence."""
+    surface = surface or {}
+    parties = set(surface.get("third_parties", []))
+    if not (m.third_parties_affected or parties):
+        return []
+    consent = surface.get("consent")
+    if not consent:
+        return ["REJECTED_NO_CONSENT_PATH"]
+    uncovered = sorted(parties - set(consent["covers"]))
+    return [f"REJECTED_CONSENT_DOES_NOT_COVER:{','.join(uncovered)}"] if uncovered else []
+
+
 def eligibility(m: Mechanism, surface: dict | None, problem: dict, reach: dict) -> list[str]:
     c = problem["constraints"]
-    ceiling = {**DEFAULT_CEILING, **c.get("harm_ceiling", {})}
-    reasons = [f"REJECTED_PROHIBITED_MECHANISM:{f}" for f in m.flags if f in PROHIBITED]
-    unknown = [f for f in m.flags if f not in PROHIBITED]
-    reasons += [f"REJECTED_UNREVIEWED_FLAG:{f}" for f in unknown]
+    reasons = []
+    if m.components:
+        # Every component passes every gate on its own surface; the merged record cannot launder a component.
+        for comp in m.components:
+            sub_reasons = eligibility(comp["mechanism"], comp["surface"], problem, reach)
+            reasons += [f"{comp['mechanism'].mechanism_id}:{r}" for r in sub_reasons]
+    else:
+        reasons += consent_reasons(m, surface)
+    flags = set(m.flags) | {f for comp in m.components for f in comp["mechanism"].flags}
+    reasons += [f"REJECTED_PROHIBITED_MECHANISM:{f}" for f in sorted(flags) if f in PROHIBITED]
+    reasons += [f"REJECTED_UNREVIEWED_FLAG:{f}" for f in sorted(flags) if f not in PROHIBITED]
     banned = set(c.get("prohibited_consequence_classes", []))
-    for cls in {m.consequence_class, m.deferred_consequence_class} - {None}:
-        if cls in banned:
-            reasons.append(f"REJECTED_CONSEQUENCE_CLASS:{cls}")
-    if m.third_parties_affected and not m.consented and not (surface or {}).get("consent_mechanism"):
-        reasons.append("REJECTED_NO_CONSENT_PATH")
+    classes = {m.consequence_class, m.deferred_consequence_class} - {None}
+    for comp in m.components:
+        classes |= {comp["mechanism"].consequence_class, comp["mechanism"].deferred_consequence_class} - {None}
+    reasons += [f"REJECTED_CONSEQUENCE_CLASS:{cls}" for cls in sorted(classes & banned)]
+    ceiling = ceilings(problem)
     for dim, value in m.harm_vector().items():
         if value > ceiling[dim]:
             reasons.append(f"REJECTED_HARM:{dim}")
@@ -314,7 +350,7 @@ def eligibility(m: Mechanism, surface: dict | None, problem: dict, reach: dict) 
     nodes = [comp["node"] for comp in m.components] or [(surface or {}).get("node")]
     if any(n not in reach for n in nodes):
         reasons.append("INELIGIBLE_NO_EVIDENCED_PATH_TO_BOTTLENECK")
-    return reasons
+    return list(dict.fromkeys(reasons))
 
 
 # ------------------------------------------------------------------ estimate and falsify
@@ -352,6 +388,11 @@ class _World:
     def support(self, path) -> float:
         return sum(all(r[lid] for lid in path) for r in self.real) / len(self.real)
 
+    def support_any(self, outcome_path, channels) -> float:
+        """P(the outcome path is real and at least one channel's path is real): closure needs only one channel."""
+        return sum(all(r[lid] for lid in outcome_path) and any(all(r[lid] for lid in p) for p in channels)
+                   for r in self.real) / len(self.real)
+
 
 def _quantile(xs: list, q: float) -> float:
     ys = sorted(xs)
@@ -361,13 +402,15 @@ def _quantile(xs: list, q: float) -> float:
 def _simulate(m: Mechanism, problem: dict, world: _World, ctx: dict, effect_scale: float = 1.0) -> list[float]:
     """Cumulative outcome-level gap closure over the horizon, one value per joint sample."""
     n, horizon = ctx["samples"], ctx["horizon"]
-    rng = random.Random(f"{ctx['seed']}:{m.mechanism_id}:{effect_scale}")
+    # One stream per candidate, shared by the nominal and the halved-effect runs (paired comparison).
+    rng = random.Random(f"{ctx['seed']}:{m.mechanism_id}")
     parts = m.components or ({"node": ctx["surface_node"][m.mechanism_id], "mechanism": m},)
     posts = []
     for comp in parts:
         mech = comp["mechanism"]
-        a, b, _ = _posterior(replace(mech, effect_prior=mech.effect_prior * effect_scale), problem)
-        posts.append((a, b, ctx["reach"][comp["node"]][1]))
+        a, b, _ = _posterior(mech, problem)
+        posts.append((a, b, ctx["reach"][comp["node"]][1], mech.effect_multiplier * m.effect_multiplier * effect_scale
+                      if mech is not m else m.effect_multiplier * effect_scale))
     delay = int(math.ceil(m.delay_days / ctx["cycle_days"]))
     if m.kind == "direct_labor":
         factor = float(horizon)                   # paid every cycle; no persistence after it stops
@@ -377,8 +420,8 @@ def _simulate(m: Mechanism, problem: dict, world: _World, ctx: dict, effect_scal
     for s in range(n):
         severity = ctx["gap"] * world.weight(s, ctx["outcome_path"])
         miss = 1.0
-        for a, b, path in posts:
-            miss *= 1.0 - rng.betavariate(a, b) * world.weight(s, path)
+        for a, b, path, scale in posts:
+            miss *= 1.0 - min(1.0, rng.betavariate(a, b) * scale) * world.weight(s, path)
         realised = 1.0 if rng.random() < m.trigger_probability else 0.0
         out.append((1.0 - miss) * severity * factor * realised)
     return out
@@ -431,8 +474,28 @@ def frontier(rows: list[dict]) -> list[str]:
     return [r["candidate_id"] for r in rows if not any(dominates(o, r) for o in rows if o is not r)]
 
 
-def _p_greater(xs: list[float], ys: list[float]) -> float:
-    return sum(x >= y for x, y in zip(xs, ys)) / len(xs)
+def _p_better(xs: list[float], ys: list[float]) -> tuple[float, int]:
+    """P(x beats y) over informative joint samples (not both zero), ties counted one half."""
+    informative = [(x, y) for x, y in zip(xs, ys) if x or y]
+    if not informative:
+        return 0.0, 0
+    score = sum(1.0 if x > y else 0.5 if x == y else 0.0 for x, y in informative)
+    return score / len(informative), len(informative)
+
+
+def _harm_union(vectors: list[dict]) -> dict:
+    """Independent channels, consistent with the benefit side: 1 - prod(1 - h); burdens on the same
+    participants add (capped at 1)."""
+    out = {}
+    for d in HARM:
+        if d == "participant_burden":
+            out[d] = min(1.0, sum(v[d] for v in vectors))
+        else:
+            keep = 1.0
+            for v in vectors:
+                keep *= 1.0 - v[d]
+            out[d] = 1.0 - keep
+    return out
 
 
 # ------------------------------------------------------------------ compile
@@ -460,7 +523,7 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     mutated = _mutate(base, p.get("trigger_probability", 0.5))
     combos: list[tuple[Mechanism, dict]] = []
     for m1, s1, m2, s2 in _recombine(base):
-        merged_harm = {d: max(m1.harm_vector()[d], m2.harm_vector()[d]) for d in HARM}
+        merged_harm = _harm_union([m1.harm_vector(), m2.harm_vector()])
         worst = max((m1, m2), key=lambda m: REVERSIBILITY[m.reversibility])
         combo = replace(
             m1, mechanism_id=f"{m1.mechanism_id}+{m2.mechanism_id}", surface=f"{m1.surface}+{m2.surface}",
@@ -482,16 +545,16 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
             kind="recombined",
             components=({"node": s1["node"], "mechanism": m1, "surface": s1}, {"node": s2["node"], "mechanism": m2,
                                                                               "surface": s2}))
-        ok = all(s.get("consent_mechanism") for m, s in ((m1, s1), (m2, s2))
-                 if m.third_parties_affected and not m.consented)
-        combos.append((combo, {"consent_mechanism": "each affected component's consent path" if ok else None}))
+        combos.append((combo, None))            # consent is gated per component on its own surface
     direct = None
     if "direct_labor" in p:
         d = p["direct_labor"]
         direct = Mechanism("direct_labor", "direct", "direct", d["description"], "work.perform",
                            d.get("consequence_class", "internal_write"),
                            d["effect"], 2 + 18 * d["confidence"], 0.0, d["cost_usd_per_cycle"] * horizon,
-                           d["effort_hours_per_cycle"] * horizon, 0.0, 0.0, 0.0, "reversible", (), False,
+                           d["effort_hours_per_cycle"] * horizon, 0.0, 0.0, 0.0,
+                           d.get("reversibility", "irreversible" if d.get("consequence_class") == "irreversible"
+                                 else "reversible"), (), False,
                            ("knowledge",), 0.1, 0.1, 0.0, 0.0, 0.2,
                            "per-cycle gap at the bottleneck falls while the labour is paid",
                            "stop the labour; the gap returns", "repeated labour does not compound",
@@ -521,32 +584,27 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
             sims[m.mechanism_id] = xs
             stats = _summary(xs)
             paths = [reach[c["node"]][1] for c in m.components] or [reach[node][1]]
-            support = world.support(tuple(sorted({lid for path in paths for lid in path} | set(outcome_path))))
-            evidence_trials = sum(_posterior(c["mechanism"], p)[2] for c in m.components) if m.components \
-                else _posterior(m, p)[2]
+            support = world.support_any(outcome_path, paths)
+            mechs = [c["mechanism"] for c in m.components] or [m]
+            trials = [_posterior(x, p)[2] for x in mechs]
+            evidence_trials = min(trials)          # a combination is only as evidenced as its weakest channel
             threshold = 0.05 * severity_expected * horizon
             pess = _simulate(m, p, world, ctx, effect_scale=0.5)
             pessimistic = {**_summary(pess), "p_meaningful": sum(x >= threshold for x in pess) / len(pess)}
-            if m.components:
-                miss = 1.0
-                for c in m.components:
-                    a, b, _ = _posterior(c["mechanism"], p)
-                    miss *= 1.0 - a / (a + b) * reach[c["node"]][0]
-                at_node = min(1.0, (1.0 - miss) / max(1e-9, reach[node][0]))
-            else:
-                a, b, _ = _posterior(m, p)
-                at_node = a / (a + b)
-            k = _posterior(m.components[0]["mechanism"] if m.components else m, p)
-            evidence_weight = (k[0] + k[1]) / (k[0] + k[1] + 10.0)
+            # Emitted to the ranker: an effect whose ranker benefit equals this route's mean per-cycle closure,
+            # and a confidence from observed outcomes only (declared confidence cannot outrank observation).
+            at_node = min(1.0, stats["mean"] / max(1e-9, reach[node][0] * severity_expected * horizon))
+            evidence_weight = (evidence_trials + 1.0) / (evidence_trials + 11.0)
             row.update(
                 estimate={**stats, "p_meaningful": sum(x >= threshold for x in xs) / len(xs),
                           "meaningful_threshold": threshold, "path_support": support,
                           "evidence_trials": evidence_trials,
+                          "evidence_trials_by_channel": dict(zip((x.mechanism_id for x in mechs), trials)),
                           "evidence_basis": ("OBSERVED_OUTCOMES" if evidence_trials else
                                              "DECLARED_ESTIMATE" if m.kind == "direct_labor" else "PRIOR_ONLY"),
                           "pessimistic_mean": pessimistic["mean"],
                           "pessimistic_p_meaningful": pessimistic["p_meaningful"],
-                          "effect_at_node": at_node * m.trigger_probability, "evidence_weight": evidence_weight},
+                          "effect_at_node": at_node, "evidence_weight": evidence_weight},
                 benefit={"p_meaningful": sum(x >= threshold for x in xs) / len(xs), "mean_closure": stats["mean"],
                          **{k: getattr(m, k) for k in BENEFIT_KEYS[2:]}},
                 cost={**_costs(m, horizon), "authority_burden": row["authority"]["authority_burden"],
@@ -571,6 +629,14 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     sims["do_nothing"] = [0.0] * samples
     # 4. falsification flags, the control-point rule and the Pareto frontier
     estimated = [r for r in rows if r["eligibility"] == "ELIGIBLE"]
+    value = p["constraints"].get("value_per_unit_gap_usd")
+    hour_rate = p["constraints"].get("value_per_effort_hour_usd")
+
+    def spend(r):                      # capital plus effort at the declared rate, when one is declared
+        return r["cost"]["capital_usd"] + (r["cost"]["effort_hours"] * hour_rate if hour_rate is not None else 0.0)
+
+    for r in estimated:
+        r["monetised_mean_usd"] = (r["estimate"]["mean"] * value - spend(r)) if value is not None else None
     dsims = sims.get("direct_labor")
     drow = next((r for r in estimated if r["candidate_id"] == "direct_labor"), None)
     for r in estimated:
@@ -582,21 +648,29 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
             flags.append("PRIOR_ONLY_ESTIMATE")
         if r["kind"] != "baseline" and e["pessimistic_p_meaningful"] < PROBABLE <= e["p_meaningful"]:
             flags.append("ASSUMPTION_SENSITIVE")
+        if r.get("monetised_mean_usd") is not None and r["monetised_mean_usd"] < 0 and r["kind"] != "baseline":
+            flags.append("NEGATIVE_MONETISED_VALUE")
         r["falsification_flags"] = flags
         r["defensible"] = (r["kind"] != "baseline" and e["p_meaningful"] >= PROBABLE and e["path_support"] >= 0.5
-                           and bool(r["falsifier"]) and bool(r["rollback"]))
+                           and bool(r["falsifier"]) and bool(r["rollback"])
+                           and "NEGATIVE_MONETISED_VALUE" not in flags)
         if r["kind"] in ("baseline", "direct_labor"):
             r["vs_direct_labor"] = None
         elif dsims is None:
             r["vs_direct_labor"] = {"verdict": "NO_DIRECT_LABOR_BASELINE_DECLARED"}
         else:
-            p_better = _p_greater(sims[r["candidate_id"]], dsims)
-            cheaper = (r["cost"]["capital_usd"] <= drow["cost"]["capital_usd"]
-                       and r["cost"]["effort_hours"] <= drow["cost"]["effort_hours"]) if drow else False
-            verdict = ("DOMINATES" if p_better >= PROBABLE and cheaper
+            p_better, informative = _p_better(sims[r["candidate_id"]], dsims)
+            if hour_rate is not None:
+                cheaper = spend(r) <= spend(drow)
+            else:
+                cheaper = (r["cost"]["capital_usd"] <= drow["cost"]["capital_usd"]
+                           and r["cost"]["effort_hours"] <= drow["cost"]["effort_hours"])
+            verdict = ("DOMINATES" if (p_better >= PROBABLE and cheaper) or dominates(r, drow)
                        else "BEATS_ON_OUTCOME_ONLY" if p_better >= PROBABLE
                        else "NOT_DEMONSTRATED")
-            r["vs_direct_labor"] = {"verdict": verdict, "p_outcome_at_least_direct": p_better, "cheaper": cheaper}
+            r["vs_direct_labor"] = {"verdict": verdict, "p_better_informative": p_better,
+                                    "informative_samples": informative, "cheaper": cheaper,
+                                    "pareto_dominates": dominates(r, drow)}
     front = set(frontier(estimated))
     for r in rows:
         r["pareto_frontier"] = r["candidate_id"] in front
@@ -610,15 +684,21 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
         return r["estimate"]["mean"] / burden
 
     pool_ok = [r for r in estimated if r["defensible"] and r["pareto_frontier"]]
-    control = [r for r in pool_ok if r["kind"] != "direct_labor"
-               and (r["vs_direct_labor"] or {}).get("verdict") in ("DOMINATES", "NO_DIRECT_LABOR_BASELINE_DECLARED")]
-    order = sorted(control, key=lambda r: (-efficiency(r), r["candidate_id"]))
-    if order:
-        chosen, rule = order[0], ("control point dominates repeated direct labour on joint samples"
-                                  if dsims is not None else "no direct-labour baseline declared; defensible "
-                                  "control point over doing nothing")
-    elif drow is not None and drow.get("defensible"):
-        chosen, rule = drow, "no control point demonstrated dominance over repeated direct labour"
+    bar = drow if drow is not None and drow["defensible"] else None
+    best = lambda rs: sorted(rs, key=lambda r: (-efficiency(r), r["candidate_id"]))  # noqa: E731
+    controls = [r for r in pool_ok if r["kind"] != "direct_labor"]
+    if bar is not None:
+        dominating = best([r for r in controls if r["vs_direct_labor"]["verdict"] == "DOMINATES"])
+        if dominating:
+            chosen, rule = dominating[0], "control point dominates repeated direct labour on joint samples"
+        elif bar["pareto_frontier"]:
+            chosen, rule = bar, "no control point demonstrated dominance over repeated direct labour"
+        else:
+            chosen, rule = best(controls)[0], "direct labour is Pareto-dominated; best defensible frontier route"
+    elif controls:
+        why = ("no direct-labour baseline declared" if drow is None and "direct_labor" not in p
+               else "the declared direct-labour baseline is not defensible")
+        chosen, rule = best(controls)[0], f"{why}; defensible control point over doing nothing"
     else:
         chosen, rule = next(r for r in rows if r["candidate_id"] == "do_nothing"), \
             "no defensible route: retain the current state"
@@ -627,10 +707,11 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     tradeoffs = sorted((r for r in pool_ok if r is not chosen and not dominates(chosen, r)
                         and r["candidate_id"] != "direct_labor"),
                        key=lambda r: (-r["estimate"]["mean"], r["candidate_id"]))
+
     def family(cid):                     # a route and its staged / deferred / consented variants are one family
         return cid.split(":")[0]
 
-    rivals = sorted((r for r in pool_ok + ([drow] if drow is not None and drow.get("defensible") else [])
+    rivals = sorted((r for r in pool_ok + ([bar] if bar is not None and bar not in pool_ok else [])
                      if family(r["candidate_id"]) != family(chosen["candidate_id"])),
                     key=lambda r: (-efficiency(r), r["candidate_id"]))
     runner = rivals[0] if rivals else None
@@ -650,9 +731,11 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
         "runner_up": runner["candidate_id"] if runner else None,
         "value_tradeoffs_for_founder": [r["candidate_id"] for r in tradeoffs],
         "value_of_information": voi,
-        "control_point_rule": "a control point is preferred only where at least 80% of joint samples show it closes "
-                              "at least as much gap as repeated direct labour at no greater capital or effort; "
-                              "otherwise direct labour (or doing nothing) stays the recommendation",
+        "control_point_rule": "while a defensible direct-labour baseline exists, a control point is preferred only "
+                              "where, over informative joint samples (ties half), it beats that labour with "
+                              "probability at least 0.8 at no greater capital and effort (or no greater spend at a "
+                              "declared hourly rate), or Pareto-dominates it; otherwise direct labour stays the "
+                              "recommendation; routes with negative monetised value are never defensible",
         "estimate_status": "input_estimates_not_verified_outcomes",
         "authority_created": False, "executes": False,
     }
@@ -665,43 +748,48 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
 
 
 def _voi(chosen: dict, runner: dict | None, sims: dict, p: dict, rows: list[dict]) -> dict:
+    """Exact sample EVPI over {chosen, rival, do nothing}: an upper bound on what any test can be worth."""
     if runner is None or chosen["candidate_id"] == "do_nothing":
         return {"state": "NO_RIVAL", "evpi_closure": 0.0}
     value = p["constraints"].get("value_per_unit_gap_usd")
+    rate = p["constraints"].get("value_per_effort_hour_usd")
     xa, xb = sims[chosen["candidate_id"]], sims[runner["candidate_id"]]
+    n = len(xa)
     if value is None:
-        evpi = sum(max(a, b) for a, b in zip(xa, xb)) / len(xa) - max(sum(xa), sum(xb)) / len(xa)
+        evpi = sum(max(a, b) for a, b in zip(xa, xb)) / n - max(sum(xa), sum(xb)) / n
         return {"state": "NOT_MONETISED", "evpi_closure": evpi, "rival": runner["candidate_id"],
                 "note": "no value_per_unit_gap_usd declared; information value is in gap units only"}
-    na = [a * value - chosen["cost"]["capital_usd"] for a in xa]
-    nb = [b * value - runner["cost"]["capital_usd"] for b in xb]
-    pairs = sorted(zip(na, nb), key=lambda t: t[0] - t[1])
-    buckets = 20
-    size = len(pairs) // buckets
-    scenarios = []
-    for i in range(buckets):
-        chunk = pairs[i * size:(i + 1) * size] if i < buckets - 1 else pairs[i * size:]
-        scenarios.append({"probability": len(chunk) / len(pairs),
-                          "best_value": max(sum(a for a, _ in chunk) / len(chunk), sum(b for _, b in chunk) / len(chunk))})
-    prior = max(sum(na) / len(na), sum(nb) / len(nb))
+
+    def spend(r):
+        return r["cost"]["capital_usd"] + (r["cost"]["effort_hours"] * rate if rate is not None else 0.0)
+
+    na = [a * value - spend(chosen) for a in xa]
+    nb = [b * value - spend(runner) for b in xb]
+    prior = max(sum(na) / n, sum(nb) / n, 0.0)
+    evpi = sum(max(a, b, 0.0) for a, b in zip(na, nb)) / n - prior
+    best = max(((sum(na) / n, chosen["candidate_id"]), (sum(nb) / n, runner["candidate_id"]), (0.0, "do_nothing")))[1]
+    common = {"rival": runner["candidate_id"], "evpi_usd": evpi, "monetised_prior_best": best,
+              "monetised_means_usd": {chosen["candidate_id"]: sum(na) / n, runner["candidate_id"]: sum(nb) / n,
+                                      "do_nothing": 0.0}}
     staged = next((r for r in rows if r["candidate_id"] == chosen["candidate_id"] + ":staged"
                    and r["eligibility"] == "ELIGIBLE"), None)
-    gross = sum(s["probability"] * s["best_value"] for s in scenarios) - prior
-    best = chosen["candidate_id"] if sum(na) >= sum(nb) else runner["candidate_id"]
-    common = {"rival": runner["candidate_id"], "evpi_usd_banded": gross, "monetised_prior_best": best,
-              "monetised_means_usd": {chosen["candidate_id"]: sum(na) / len(na),
-                                      runner["candidate_id"]: sum(nb) / len(nb)}}
     if staged is None:
         why = ("the selected route is itself a staged pilot: acting is the test" if chosen["candidate_id"]
                .endswith(":staged") else "no eligible staged pilot exists for the selected route")
         return {"state": "MONETISED_NO_TEST", **common, "test": None, "test_may_pay": False, "note": why}
-    test_cost = staged["cost"]["capital_usd"]
+    test_cost = spend(staged)
+    stride = max(1, n // 400)
+    sub_a, sub_b = na[::stride][:400], nb[::stride][:400]
+    k = len(sub_a)
+    scenarios = [{"probability": 1.0 / k, "best_value": max(a, b, 0.0)} for a, b in zip(sub_a, sub_b)]
     return {"state": "MONETISED", **common, "test": staged["candidate_id"], "test_cost_usd": test_cost,
-            "test_may_pay": gross > test_cost,
-            "cognition_request": {"posterior_scenarios": scenarios, "prior_best_value": prior, "cost": test_cost},
-            "note": "upper bound: the value of learning which of 20 equal-probability outcome bands holds. Below the "
-                    "test cost it rules the staged pilot out; above it the pilot may pay, never must. The canonical "
-                    "cognition value_of_information family re-derives the same quantity independently"}
+            "test_may_pay": evpi > test_cost,
+            "cognition_request": {"posterior_scenarios": scenarios,
+                                  "prior_best_value": max(sum(sub_a) / k, sum(sub_b) / k, 0.0), "cost": test_cost},
+            "note": "exact sample EVPI with doing nothing as an action: an upper bound on any test's value. Below the "
+                    "test cost it rules the pilot out; above it the pilot may pay, never must. The cognition request "
+                    "re-computes the same formula on a stride subsample through the canonical path (an arithmetic "
+                    "recomputation with an independent verifier, not an independent model)"}
 
 
 # ------------------------------------------------------------------ outputs
@@ -713,24 +801,34 @@ def interventions(report: dict, p: dict) -> list[dict]:
     for r in report["candidates"]:
         if r["candidate_id"] == "do_nothing" or r["eligibility"] != "ELIGIBLE" or not r["pareto_frontier"]:
             continue
-        base_id = r["candidate_id"].split("+")[0].split(":")[0]
-        m = BY_ID.get(base_id)
+        parts = [x.split(":")[0] for x in r["candidate_id"].split("+")]
+        base_id = parts[0]
         refs = set()
         for part in str(r["surface"]).split("+"):
             refs |= set(surfaces.get(part, {}).get("evidence_refs", []))
+            refs |= set((surfaces.get(part, {}).get("consent") or {}).get("evidence_refs", []))
         if r["kind"] == "direct_labor":
             refs |= set(p["direct_labor"]["evidence_refs"])
             action = {"action_class": "work.perform", "requested_capability": "work.perform",
                       "target": f"bottleneck:{report['bottleneck']['node']}",
                       "consequence_class": r["authority"]["consequence_class"]}
-            mech = "direct"
+            mech, components = "direct", []
         else:
-            target = overrides.get(base_id, {}).get("target", f"proposal:{r['surface']}:{r['node']}")
-            action = {"action_class": m.action_class, "requested_capability": m.action_class, "target": target,
-                      "consequence_class": r["authority"]["consequence_class"]}
-            mech = "coordination" if r["kind"] == "recombined" else m.leverage_mechanism
+            components = [{"mechanism_id": pid, "requested_capability": BY_ID[pid].action_class,
+                           "target": overrides.get(pid, {}).get("target", f"proposal:{BY_ID[pid].surface}:{r['node']}"),
+                           "consequence_class": BY_ID[pid].consequence_class} for pid in parts]
+            if len(components) == 1:
+                action = {"action_class": components[0]["requested_capability"],
+                          "requested_capability": components[0]["requested_capability"],
+                          "target": components[0]["target"], "consequence_class": r["authority"]["consequence_class"]}
+            else:   # a combination needs every component's capability and target, visible to the Gate
+                action = {"action_class": "composite.prepare",
+                          "requested_capability": "composite:" + "+".join(c["requested_capability"] for c in components),
+                          "target": " + ".join(c["target"] for c in components),
+                          "consequence_class": r["authority"]["consequence_class"]}
+            mech = "coordination" if r["kind"] == "recombined" else BY_ID[base_id].leverage_mechanism
         for key, ev in p.get("evidence", {}).items():
-            if key in (base_id, r["surface"]):
+            if key in parts or key in str(r["surface"]).split("+") or (key == "direct_labor" and r["kind"] == "direct_labor"):
                 refs |= set(ev["refs"])
         record = {
             "id": r["candidate_id"], "node": r["node"], "mechanism": mech,
@@ -741,8 +839,12 @@ def interventions(report: dict, p: dict) -> list[dict]:
             "delay_days": r["cost"]["delay_days"],
             "action": {**action, "payload": {"lawful_leverage": {
                 "problem_id": report["problem_id"], "harm_vector": r["harm_vector"], "assets": r["assets"],
-                "authority_state": r["authority"]["state"], "estimate": {k: r["estimate"][k] for k in
-                                                                       ("mean", "p05", "p95", "p_meaningful")},
+                "authority_state": r["authority"]["state"],
+                "deferred_consequence_class": r["authority"]["deferred_consequence_class"],
+                "components": components, "reversibility": r["reversibility"],
+                "consent": [(surfaces.get(part, {}).get("consent") or None) for part in str(r["surface"]).split("+")],
+                "estimate": {k: r["estimate"][k] for k in ("mean", "p05", "p95", "p_meaningful")},
+                "effect_semantics": "ranker benefit = this route's mean per-cycle closure over the horizon",
                 "falsification_flags": r.get("falsification_flags", [])}}},
             "expected_outcome": r["title"], "success_measure": r["falsifier"], "rollback": r["rollback"],
             "counterargument": r["counterargument"], "evidence_refs": sorted(refs)[:32],
@@ -772,10 +874,19 @@ def preparable(report: dict) -> list[dict]:
     return steps
 
 
+def _label(r: dict) -> str:
+    """GREG-authored wording for a route: library titles are reviewed text; problem text stays in evidence."""
+    if r["kind"] == "direct_labor":
+        return "the declared direct-labour baseline (its description is in the evidence)"
+    return r["title"]
+
+
 def decision_brief(report: dict) -> dict | None:
     """The minimum founder decision as the keyword arguments of ``greg.asks.resource_request``.
 
-    Facts, costed options (one costs nothing), uncertainty and the authority asked for; no pressure.
+    Facts, costed options (one costs nothing), each option's own consequence class, authority and spend,
+    uncertainty, and no pressure. Input-derived strings (node ids, descriptions, the objective) appear only in
+    ``evidence``, which the ask screen also reads; GREG's prose fields carry only GREG's own words.
     The Foundry never records an ask: GREG's side validates, screens and (on the body) records it.
     """
     chosen = next(r for r in report["candidates"] if r["candidate_id"] == report["selected"])
@@ -788,40 +899,60 @@ def decision_brief(report: dict) -> dict | None:
     options = []
     for cid in dict.fromkeys(alts):
         r = by_id[cid]
-        options.append({"option": f"{cid}: {r['title']}",
+        a = r["authority"]
+        options.append({"option": f"{cid}: {_label(r)}",
                         "cost": f"${r['cost']['capital_usd']:.0f} capital, {r['cost']['effort_hours']:.0f} effort hours,"
-                                f" {r['cost']['founder_attention_hours']:.1f} founder hours",
+                                f" {r['cost']['founder_attention_hours']:.1f} founder hours; consequence class "
+                                f"{a['consequence_class']}"
+                                + (f" now and {a['deferred_consequence_class']} at the trigger"
+                                   if a["deferred_consequence_class"] else "")
+                                + f"; authority {a['state']}",
                         "expected_effect": f"cumulative gap closure {r['estimate']['p05']:.3f} to "
                                            f"{r['estimate']['p95']:.3f} (p05 to p95), mean {r['estimate']['mean']:.3f}, "
-                                           f"probability of a meaningful closure {r['estimate']['p_meaningful']:.2f}"})
+                                           f"probability of a meaningful closure {r['estimate']['p_meaningful']:.2f}",
+                        "consequence_class": a["consequence_class"],
+                        "deferred_consequence_class": a["deferred_consequence_class"], "authority_state": a["state"],
+                        "spend_usd": r["cost"]["capital_usd"]})
     options.append({"option": "do_nothing: retain the current state",
-                    "cost": f"none; the bottleneck {report['bottleneck']['node']} stays at gap "
-                            f"{report['bottleneck']['gap']:.2f}",
-                    "expected_effect": "no change at the bottleneck"})
+                    "cost": f"none; the bottleneck stays at gap {report['bottleneck']['gap']:.2f}",
+                    "expected_effect": "no change at the bottleneck", "consequence_class": "read_only",
+                    "authority_state": "NO_AUTHORITY_NEEDED", "spend_usd": 0.0})
     e = chosen["estimate"]
+    a = chosen["authority"]
+    if not held:
+        missing = a["deferred_consequence_class"] if a["state"] == "PREPARABLE_NOW_FOUNDER_DECISION_AT_TRIGGER" \
+            else a["consequence_class"]
+        why = (f"the bottleneck named in the evidence is the largest evidenced gap reaching the outcome; the "
+               f"selected route needs consequence class {missing}"
+               + (" when its trigger occurs" if a["state"] == "PREPARABLE_NOW_FOUNDER_DECISION_AT_TRIGGER" else "")
+               + ", which this objective does not hold")
+    else:
+        why = (f"the bottleneck named in the evidence is the largest evidenced gap reaching the outcome; no route "
+               f"dominates the others, so choosing among {len(report['value_tradeoffs_for_founder'])} trade-offs is "
+               f"a value judgment")
     return dict(
         request_id=f"leverage-{report['problem_id']}"[:96], kind="leverage_route", resource="mandate",
-        why_now=(f"{report['bottleneck']['node']} is the largest evidenced gap reaching the outcome; " +
-                 (f"the selected route needs consequence class {chosen['authority']['consequence_class']}, which "
-                  f"this objective does not hold" if not held else
-                  f"no route dominates the others, so choosing among {len(report['value_tradeoffs_for_founder'])} "
-                  f"trade-offs is a value judgment")),
-        recommendation=f"{chosen['candidate_id']}: {chosen['title']} ({report['selection_rule']})",
-        evidence={"bottleneck": report["bottleneck"], "estimate": e, "harm_vector": chosen["harm_vector"],
-                  "vs_direct_labor": chosen.get("vs_direct_labor"), "falsification_flags":
-                  chosen.get("falsification_flags", []), "value_of_information": {
+        why_now=why,
+        recommendation=f"{chosen['candidate_id']}: {_label(chosen)} ({report['selection_rule']})",
+        evidence={"objective": report["objective"], "bottleneck": report["bottleneck"], "estimate": e,
+                  "selected_title": chosen["title"], "harm_vector": chosen["harm_vector"],
+                  "vs_direct_labor": chosen.get("vs_direct_labor"),
+                  "monetised_mean_usd": chosen.get("monetised_mean_usd"),
+                  "falsification_flags": chosen.get("falsification_flags", []), "value_of_information": {
                       k: v for k, v in report["value_of_information"].items() if k != "cognition_request"}},
         options=options,
         expected_effect=f"mean cumulative gap closure {e['mean']:.3f} over {report['horizon_cycles']} cycles; "
                         f"probability of a meaningful closure {e['p_meaningful']:.2f}",
-        uncertainty=f"estimates rest on {e['evidence_trials']} observed trials "
+        uncertainty=f"estimates rest on {e['evidence_trials']} observed trials in the weakest channel "
                     f"({e['evidence_basis']}); path support {e['path_support']:.2f}; with effects halved the "
                     f"probability of a meaningful closure is {e['pessimistic_p_meaningful']:.2f}",
-        authority_requested={"consequence_class": chosen["authority"]["consequence_class"],
-                             "deferred_consequence_class": chosen["authority"]["deferred_consequence_class"],
-                             "spend": (f"up to ${chosen['cost']['capital_usd']:.0f} for this route only"
+        authority_requested={"consequence_class": a["consequence_class"],
+                             "deferred_consequence_class": a["deferred_consequence_class"],
+                             "spend": (f"up to ${chosen['cost']['capital_usd']:.0f} for the recommended route only"
                                        if chosen["cost"]["capital_usd"] else "none"),
-                             "scope": f"objective {report['objective']}; through the existing Gate only"},
+                             "other_options": "each option states its own consequence class, authority and spend; "
+                                              "choosing it asks for that, not for this",
+                             "scope": "the objective in the evidence; through the existing Gate only"},
         consequence_of_no_response="nothing executes; preparable steps stay prepared and unsent; the question "
                                    "returns only if the bottleneck or the evidence changes",
         created_at=report["as_of"], falsifier=chosen["falsifier"], rollback=chosen["rollback"])

@@ -90,9 +90,38 @@ def _goals(journal, mission_id: str | None) -> dict:
     return {"source": "greg.missions.MissionBook projection", **rows, "wake": wake}
 
 
+CLASS_ORDER = lawful_leverage.CONSEQUENCE
+UNSIGNED_HELD = ("read_only",)   # without a founder-signed mission, a sensed situation holds no more than reading
+
+
+def signed_authority(journal, mission_id: str | None) -> dict:
+    """The authority a founder signed for this goal: the named mission's light cone, or read-only."""
+    if journal is not None and mission_id:
+        from greg.missions import MissionBook
+        m = MissionBook(journal).missions.get(mission_id)
+        if m is not None and m.status == "ACTIVE":
+            cone = m.spec["light_cone"]
+            ceiling = CLASS_ORDER.index(cone["max_consequence_class"])
+            return {"source": f"signed mission {mission_id} light cone",
+                    "held": [c for c in CLASS_ORDER[:ceiling + 1] if c != "irreversible"],
+                    "budget_usd": float(cone.get("budget_usd", 0.0))}
+    return {"source": "no signed mission: read-only", "held": list(UNSIGNED_HELD), "budget_usd": None}
+
+
+def _clamped(problem: dict, signed: dict) -> dict:
+    """A sensed situation may narrow authority, never widen it: held = declared AND signed; budget capped."""
+    c = dict(problem["constraints"])
+    c["held_authority"] = [x for x in c["held_authority"] if x in signed["held"]]
+    if signed["budget_usd"] is not None:
+        c["budget_usd"] = min(c["budget_usd"], signed["budget_usd"])
+    return {**problem, "constraints": c}
+
+
 def _signal(situation: dict, report: dict) -> SignalEnvelope:
+    # Only Foundry-filtered interventions reach the ranker: a sensed map's own interventions never bypass
+    # the hard eligibility gates.
     model = situation["leverage_problem"]["institutional_map"]
-    interventions = list(model.get("interventions", [])) + report["interventions"]
+    interventions = report["interventions"]
     refs = set()
     for kind in ("nodes", "links"):
         for record in model.get(kind, []):
@@ -136,9 +165,11 @@ def _voi(report: dict, registry, journal) -> dict:
     from greg.cognition.compiler import run
     from greg.cognition.cortex import registry_view
     registry = registry if registry is not None else registry_view(journal)
+    test = next(r for r in report["candidates"] if r["candidate_id"] == voi["test"])
     receipt = run({"problem_id": f"{report['problem_id']}-voi"[:96], "compile": {
         "geometry": {"geometry": "strategic", "decision_type": "act_or_test", "uncertainty_structure": "posterior",
-                     "consequence_class": "financial" if voi.get("test_cost_usd") else "internal_write",
+                     "consequence_class": test["authority"]["consequence_class"],
+                     "reversibility": test["reversibility"],
                      "objective": "value of the staged pilot before committing the route"},
         "data": voi["cognition_request"], "evidence_refs": [report["receipt_id"]]}},
         registry=registry, journal=journal)
@@ -146,8 +177,10 @@ def _voi(report: dict, registry, journal) -> dict:
            "receipt_id": receipt["receipt_id"], "result": receipt["result"],
            "requirements": receipt["requirements"], "abstentions": receipt["abstentions"]}
     if receipt["state"] == "ANSWERED":
-        agree = bool(receipt["result"]["acquire"]) == bool(voi["test_may_pay"])
-        out["agrees_with_foundry"] = agree
+        out["recomputation"] = {
+            "consistent": bool(receipt["result"]["acquire"]) == bool(voi["test_may_pay"]),
+            "nature": "the same EVPI arithmetic re-computed on a stride subsample through the canonical cognition "
+                      "path with an independent verifier; it checks the arithmetic, not the model"}
     elif receipt["state"] == "CAPABILITY_DEFICIT":
         out["meaning"] = ("the value-of-information intelligence is registered but not attached on this body; "
                           "attaching it is the founder's decision; the Foundry's banded estimate stands "
@@ -159,8 +192,10 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
     """One Goal Gravity turn. Read-only: returns a report and, where needed, one prepared founder ask."""
     situation = validate(situation)
     position = backcast.position(journal, path_data)
-    report = lawful_leverage.compile(situation["leverage_problem"])
-    ranked = _rank(situation, report)
+    signed = signed_authority(journal, situation["goal"].get("mission_id"))
+    problem = _clamped(situation["leverage_problem"], signed)
+    report = lawful_leverage.compile(problem)
+    ranked = _rank({**situation, "leverage_problem": problem}, report)
     voi = _voi(report, registry, journal)
     chosen = next(r for r in report["candidates"] if r["candidate_id"] == report["selected"])
     authority = chosen["authority"]["state"]
@@ -195,6 +230,11 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
         "goals": _goals(journal, situation["goal"].get("mission_id")),
         "sensing": {"source": situation["source"], "observed_at": situation["observed_at"],
                     "trust": "untrusted input evidence; validated, never authority"},
+        "authority": {"source": signed["source"], "held_effective": problem["constraints"]["held_authority"],
+                      "held_declared_by_situation": situation["leverage_problem"]["constraints"]["held_authority"],
+                      "rule": "a sensed situation may narrow authority, never widen it"},
+        "supplied_interventions_ignored": [i.get("id") for i in
+                                           situation["leverage_problem"]["institutional_map"].get("interventions", [])],
         "leverage": {"receipt_id": report["receipt_id"], "bottleneck": report["bottleneck"],
                      "selected": report["selected"], "selection_rule": report["selection_rule"],
                      "runner_up": report["runner_up"], "value_tradeoffs": report["value_tradeoffs_for_founder"],

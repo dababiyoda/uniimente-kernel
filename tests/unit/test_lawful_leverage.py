@@ -25,6 +25,10 @@ def link(i, s, t, strength=0.9, confidence=0.9):
                 evidence_refs=[H])
 
 
+def consent(mechanism, *parties):
+    return dict(mechanism=mechanism, covers=list(parties), evidence_refs=[H])
+
+
 def problem(**changes):
     p = dict(
         problem_id="claims-1", objective="cut time-to-settlement for verified repair claims",
@@ -40,9 +44,10 @@ def problem(**changes):
             interventions=[]),
         surfaces=[
             dict(surface="proof", node="proof_gap", state="receipts are PDFs re-checked by hand", evidence_refs=[H],
-                 third_parties=["payers"], consent_mechanism="payer opt-in pilot agreement"),
+                 third_parties=["payers"], consent=consent("payer opt-in pilot agreement", "payers")),
             dict(surface="eligibility", node="eligibility_check", state="each claim checked case by case",
-                 evidence_refs=[H], third_parties=["claimants"], consent_mechanism="published appeal path"),
+                 evidence_refs=[H], third_parties=["claimants"],
+                 consent=consent("published standard with an appeal path", "claimants")),
             dict(surface="workflow", node="eligibility_check", state="no checklist", evidence_refs=[H]),
             dict(surface="capability", node="eligibility_check", state="manual data entry", evidence_refs=[H]),
             dict(surface="settlement", node="handoff", state="net-60 invoices", evidence_refs=[H],
@@ -105,7 +110,7 @@ def test_consent_harm_vector_consequence_and_path_are_gates_before_estimation():
     r = rows(L.compile(p))
     # consent: payers are affected by escrow with no consent path; the consented variant is not rejected for it
     assert "REJECTED_NO_CONSENT_PATH" in r["settlement.milestone_escrow"]["reasons"]
-    assert "REJECTED_NO_CONSENT_PATH" not in r["settlement.milestone_escrow:consented"]["reasons"]
+    assert "settlement.milestone_escrow:consented" not in r      # consent is never self-asserted by a variant
     # harm stays a vector: the named dimension is reported, the others are not collapsed into it
     assert "REJECTED_HARM:participant_burden" in r["eligibility.published_standard"]["reasons"]
     assert r["eligibility.published_standard"]["harm_vector"]["third_party"] == pytest.approx(0.05)
@@ -119,7 +124,9 @@ def test_consent_harm_vector_consequence_and_path_are_gates_before_estimation():
 
 
 def test_control_points_are_not_assumed_to_beat_direct_labour():
-    report = L.compile(problem())
+    p = problem()
+    p["constraints"].pop("value_per_unit_gap_usd")
+    report = L.compile(p)
     assert report["selected"] == "direct_labor"
     assert report["selection_rule"] == "no control point demonstrated dominance over repeated direct labour"
     verdicts = {r["vs_direct_labor"]["verdict"] for r in report["candidates"]
@@ -129,11 +136,19 @@ def test_control_points_are_not_assumed_to_beat_direct_labour():
     assert report["value_tradeoffs_for_founder"]
 
 
+def dominating():
+    """Strong evidence and a declared hourly rate: total spend makes capital and effort commensurable."""
+    p = favourable()
+    p["constraints"].pop("value_per_unit_gap_usd")
+    p["constraints"]["value_per_effort_hour_usd"] = 50
+    return p
+
+
 def test_a_control_point_wins_only_where_joint_samples_show_dominance():
-    report = L.compile(favourable())
+    report = L.compile(dominating())
     chosen = rows(report)[report["selected"]]
     assert chosen["kind"] != "direct_labor" and chosen["vs_direct_labor"]["verdict"] == "DOMINATES"
-    assert chosen["vs_direct_labor"]["p_outcome_at_least_direct"] >= L.PROBABLE and chosen["defensible"]
+    assert chosen["vs_direct_labor"]["p_better_informative"] >= L.PROBABLE and chosen["defensible"]
     assert report["selection_rule"] == "control point dominates repeated direct labour on joint samples"
 
 
@@ -170,7 +185,10 @@ def test_recombination_assumes_no_synergy():
     a, b = report["proof.verifiable_receipts"], report["eligibility.published_standard"]
     assert combo["lineage"][-1] == "recombine:proof+eligibility"
     assert combo["estimate"]["mean"] <= a["estimate"]["mean"] + b["estimate"]["mean"] + 1e-9
-    assert combo["harm_vector"]["privacy"] == max(a["harm_vector"]["privacy"], b["harm_vector"]["privacy"])
+    pa, pb = a["harm_vector"], b["harm_vector"]
+    assert combo["harm_vector"]["privacy"] == pytest.approx(1 - (1 - pa["privacy"]) * (1 - pb["privacy"]))
+    assert combo["harm_vector"]["participant_burden"] == pytest.approx(
+        pa["participant_burden"] + pb["participant_burden"])
 
 
 def test_deterministic_for_a_seed_and_sensitive_to_it():
@@ -219,6 +237,7 @@ def test_brief_is_absent_when_the_route_is_inside_held_authority_and_undisputed(
 def test_value_of_information_is_only_routed_when_a_separate_test_exists():
     report = L.compile(favourable())
     voi = report["value_of_information"]
+    assert voi.get("evpi_usd", 0) >= -1e-9
     if report["selected"].endswith(":staged"):
         assert voi["state"] == "MONETISED_NO_TEST" and "cognition_request" not in voi
     else:
@@ -232,7 +251,7 @@ def test_over_the_contract_ceiling_nothing_is_dropped_silently():
     nodes = {"proof": "proof_gap", "eligibility": "eligibility_check", "workflow": "eligibility_check",
              "capability": "eligibility_check", "information": "payer_rules"}
     p["surfaces"] = [dict(surface=s, node=nodes.get(s, "eligibility_check"), state="declared", evidence_refs=[H],
-                          consent_mechanism="opt-in agreement") for s in L.SURFACES]
+                          consent=consent("opt-in agreement", "participants")) for s in L.SURFACES]
     report = L.compile(p)
     total = report["generated"]["library"] + report["generated"]["mutated"] + report["generated"]["recombined"] + 1
     assert total > L.MAX_CANDIDATES
@@ -260,3 +279,117 @@ def test_no_authority_is_created_and_nothing_executes():
     assert report["authority_created"] is False and report["executes"] is False
     assert report["estimate_status"] == "input_estimates_not_verified_outcomes"
     assert all(step["consequence_class"] in ("read_only", "internal_write") for step in report["preparable"])
+
+
+# ---------------------------------------------------------------- regressions from the 2026-10-08 adversarial review
+def test_a_surface_that_names_third_parties_needs_consent_covering_every_one():
+    p = problem()
+    p["surfaces"][5]["third_parties"] = ["claimants whose public posts are read"]      # information surface
+    r = rows(L.compile(p))
+    assert "REJECTED_NO_CONSENT_PATH" in r["information.public_signal_monitor"]["reasons"]
+    p["surfaces"][5]["consent"] = consent("posting terms", "someone else")
+    r = rows(L.compile(p))
+    assert any(x.startswith("REJECTED_CONSENT_DOES_NOT_COVER") for x in r["information.public_signal_monitor"]["reasons"])
+
+
+def test_a_combination_cannot_launder_a_component_gate():
+    p = favourable()
+    p["constraints"]["prohibited_consequence_classes"] = ["external_contact"]
+    r = rows(L.compile(p))
+    combo = r["proof.verifiable_receipts+eligibility.published_standard"]
+    assert combo["eligibility"] == "REJECTED"
+    assert "proof.verifiable_receipts:REJECTED_CONSEQUENCE_CLASS:external_contact" in combo["reasons"]
+
+
+def test_scope_variants_scale_the_sampled_effect_even_with_strong_evidence():
+    r = rows(L.compile(favourable()))
+    full, staged = r["proof.verifiable_receipts"]["estimate"], r["proof.verifiable_receipts:staged"]["estimate"]
+    assert 0.35 < staged["mean"] / full["mean"] < 0.65                 # halved, not erased by evidence
+    assert 0.35 < full["pessimistic_mean"] / full["mean"] < 0.65      # the halved-effect check is live
+
+
+def test_dominance_ignores_samples_where_nothing_could_close():
+    r = rows(L.compile(favourable()))
+    v = r["proof.verifiable_receipts"]["vs_direct_labor"]
+    assert 0 < v["informative_samples"] < 1500                        # outcome-path failures are excluded
+
+
+def test_an_indefensible_baseline_never_flips_the_choice_to_doing_nothing():
+    p = favourable()
+    p["constraints"].pop("value_per_unit_gap_usd")
+    p["direct_labor"].update(effect=0.02, effort_hours_per_cycle=1)
+    report = L.compile(p)
+    assert report["selected"] != "do_nothing"
+    assert report["selection_rule"].startswith("the declared direct-labour baseline is not defensible")
+
+
+def test_a_pareto_dominated_baseline_is_never_selected():
+    p = problem()
+    p["constraints"].pop("value_per_unit_gap_usd")
+    p["surfaces"] = [dict(surface="routing", node="eligibility_check", state="manual triage", evidence_refs=[H])]
+    p["mechanism_overrides"] = {"routing.evidence_triage": {"effort_hours": 0, "maintenance_hours_per_cycle": 0,
+                                                            "founder_attention_hours": 0, "delay_days": 0}}
+    p["evidence"] = {"routing.evidence_triage": dict(successes=60, trials=100, refs=[H])}
+    report = L.compile(p)
+    r = rows(report)
+    if L.dominates(r["routing.evidence_triage"], r["direct_labor"]):
+        assert report["selected"] != "direct_labor"
+    assert r[report["selected"]]["pareto_frontier"]
+
+
+def test_negative_monetised_value_is_never_defensible():
+    r = rows(L.compile(problem()))                                     # $2000 per unit of gap declared
+    d = r["direct_labor"]
+    assert d["monetised_mean_usd"] < 0 and "NEGATIVE_MONETISED_VALUE" in d["falsification_flags"]
+    assert not d["defensible"]
+
+
+def test_harm_ceilings_can_be_tightened_never_loosened():
+    p = problem()
+    p["constraints"]["harm_ceiling"] = {"privacy": 0.9, "tail": 0.05}
+    c = L.ceilings(L.validate(p))
+    assert c["privacy"] == L.DEFAULT_CEILING["privacy"] and c["tail"] == 0.05
+
+
+@pytest.mark.parametrize("name", [" UNIIMENTE", "UNIIMENTE LLC", "uniimente\u200b", "GREG", "the egregore", ""])
+def test_the_institution_is_never_its_own_legal_operator(name):
+    p = problem()
+    p["constraints"]["legal_operator"] = name
+    with pytest.raises(L.LeverageRefused):
+        L.compile(p)
+
+
+def test_combinations_show_every_component_capability_to_the_gate():
+    report = L.compile(favourable())
+    combo = next(i for i in report["interventions"] if "+" in i["id"])
+    parts = combo["action"]["payload"]["lawful_leverage"]["components"]
+    assert len(parts) == 2 and combo["action"]["requested_capability"] == \
+        "composite:" + "+".join(c["requested_capability"] for c in parts)
+
+
+def test_deferred_routes_name_the_missing_class_and_carry_it_to_the_gate():
+    report = L.compile(favourable())
+    trigger = next(r for r in report["candidates"] if r["candidate_id"].endswith(":on_trigger")
+                   and r["eligibility"] == "ELIGIBLE")
+    brief = L.decision_brief({**report, "selected": trigger["candidate_id"], "value_tradeoffs_for_founder": []})
+    assert trigger["authority"]["deferred_consequence_class"] in brief["why_now"]
+    record = next((i for i in report["interventions"] if i["id"] == trigger["candidate_id"]), None)
+    if record is not None:
+        assert record["action"]["payload"]["lawful_leverage"]["deferred_consequence_class"] == \
+            trigger["authority"]["deferred_consequence_class"]
+
+
+def test_irreversible_direct_labour_is_labelled_irreversible():
+    p = problem()
+    p["direct_labor"]["consequence_class"] = "irreversible"
+    assert rows(L.compile(p))["direct_labor"]["reversibility"] == "irreversible"
+
+
+def test_problem_text_never_enters_gregs_own_prose():
+    p = problem()
+    p["direct_labor"]["description"] = "reviewer clears the queue before the payer deadline, urgently"
+    brief = L.compile(p)["decision_brief"]
+    packet = asks.resource_request(**brief)
+    assert asks.screen(packet) == []
+    for field in ("why_now", "recommendation", "expected_effect", "uncertainty"):
+        assert "deadline" not in packet[field] and "eligibility_check" not in packet[field]

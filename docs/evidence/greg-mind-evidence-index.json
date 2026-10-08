@@ -1,7 +1,6 @@
 {
  "genomes": {},
  "missing_sources": [
-  "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
   "docs/evidence/greg-genome-admission/*/results.json (no frozen held-out admission run yet)"
  ],
  "recipes": {
@@ -58,9 +57,10 @@
  },
  "routing": {
   "conditional_competence": {
-   "consequence": null,
-   "evidence": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json#summary.conditional_vs_static",
-   "verdict": "INCONCLUSIVE"
+   "consequence": "REGRESSION: conditional formal-engine routing is demoted. The `shadow` default stays; conditional solver learning is not currently worth its complexity for this two-engine repertoire. The memory is retained (observed in shadow, never applied by default) as evidence and as a substrate for wider repertoires.",
+   "default": "shadow (observed, never applied)",
+   "evidence": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json#summary.primary_conditional_vs_static",
+   "verdict": "REGRESSION"
   }
  },
  "rule": "frozen held-out verdicts only; a later frozen run for the same recipe or family replaces an earlier one, and both stay in git",
@@ -80,6 +80,11 @@
    "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
    "sha256": "sha256:e8cced6452c1418a6e4051a40c068e7d24ee517a5b812a304086fd043f5f4608",
    "source_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
+   "sha256": "sha256:245faa9f3c3306aa15bf9c4ba725886bd1af53ef1ce369ad7d3524321c3fed26",
+   "source_commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580"
   }
  ]
 }

@@ -475,6 +475,11 @@ def _sha(path: Path) -> str:
 
 
 def inputs() -> dict:
+    """JSON-normalised so the comparison with the stored freeze is exact (tuples become lists)."""
+    return json.loads(json.dumps(_inputs()))
+
+
+def _inputs() -> dict:
     return {"suite": _sha(SUITE), "code": {p: _sha(ROOT / p) for p in FROZEN_CODE}, "verdict_rule": VERDICT_RULE,
             "chain_budget_s": CHAIN_BUDGET_S, "seeds": {k: [list(a), list(b)] for k, (a, b) in SEEDS.items()},
             "constituents": CONSTITUENTS, "ablations": ABLATIONS, "evaluation_attach": list(EVAL_ATTACH)}

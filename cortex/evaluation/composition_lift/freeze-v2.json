@@ -1,9 +1,9 @@
 {
-  "frozen_at": "2026-10-08T01:02:31.142525+00:00",
+  "frozen_at": "2026-10-08T01:03:45.495619+00:00",
   "inputs": {
     "suite": "sha256:c8a292a803bd4d2baba54328f673f1c3ca657e350209321dde92b77ce835be00",
     "code": {
-      "cortex/evaluation/composition_lift/run_v2.py": "sha256:e4f6fabc971199678b9c9b2688aa18149af735291cbd0acbb1a60cc0ed0a2d6c",
+      "cortex/evaluation/composition_lift/run_v2.py": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
       "cortex/evaluation/composition_lift/run.py": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633",
       "greg/cognition/composition.py": "sha256:90994b2d3bf010a5353a776951393be4a7bb9842b612da1a4260477b56425f12",
       "greg/cognition/cortex.py": "sha256:18f3451c146b3a27ceb1f2f24aa2a0676f785be3290a28add4d60792e8558a36",

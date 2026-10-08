@@ -29,6 +29,17 @@ FAMILIES = {
     "evolutionary": (4, ("evolve_vector",), ("optimization",), "collective_trace", "scipy"),
 }
 
+# The executable IntelligenceGenome library (greg/cognition/genomes/) projects onto this same catalog:
+# each admitted-or-candidate intelligence is one more family on the one cognition path, starting
+# registered and withheld (VERIFIED) like every non-seed family until a founder attach.
+from .genomes.library import catalog_families as _genome_families  # noqa: E402
+
+_EXISTING_OPERATIONS = {op for _, ops, *_ in FAMILIES.values() for op in ops}
+for _family, _spec in _genome_families().items():
+    if _family in FAMILIES or set(_spec[1]) & _EXISTING_OPERATIONS:
+        raise ValueError(f"genome {_family} collides with an existing cognition family or operation")
+    FAMILIES[_family] = _spec
+
 # Existing alternative implementations retain their code and lineage. Cataloguing
 # never silently activates the P5+ repertoire on a new body.
 SEED_FAMILIES = frozenset(("micro", "exact", "estimation", "formal", "optimization", "causal", "evidence", "semantic"))

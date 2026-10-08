@@ -446,3 +446,14 @@ SOLVERS = {"evidence": __import__("greg.cognition.evidence", fromlist=["assess"]
 SOLVERS.update({"collective": quorum, "evolutionary": evolutionary})
 from .protection import assess as protection
 SOLVERS["protection"] = protection
+
+
+def _genome_solver(family):
+    def solve(data, geometry):
+        from .genomes import library
+        return library.run(family, data, geometry)
+    return solve
+
+
+from .genomes.library import catalog_families as _genome_families  # noqa: E402
+SOLVERS.update({family: _genome_solver(family) for family in _genome_families()})

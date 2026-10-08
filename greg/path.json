@@ -1357,7 +1357,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 1 of 2 measured families (P6, 2026-10-07). P4 conditional memory: INCONCLUSIVE (57 vs 56 of 66; learned bin packing -> CP-SAT, knapsack -> Z3). Seed Genome v5: INCONCLUSIVE, gain 0.0.",
+      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); across v1 and v2 four constructed geometries lift. P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycle 1: REJECT (overfit caught). Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated and unit-tested; genome library admission pending. N1/VEPMC remains primary.",
       "nodes": [
         {
           "id": "P0",
@@ -1441,9 +1441,9 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "repeat each held-out run 3x and score the majority (timing noise), raise held-out n so >= 6 discordant items are possible, and learn latency as well as decided/correct",
+          "smallest_next_experiment": "only after the repertoire is wider than two engines: development data large enough to separate engines inside one class, deadlines away from the solve-time edge",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
-          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2: INCONCLUSIVE (57 vs 56 of 66, p=0.5); learned per-sub-region orders, margin within timing noise; exit not met",
+          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2 INCONCLUSIVE (57 vs 56 of 66); decisive v3 (2026-10-08, 191 held-out items, 3 repeats): REGRESSION 160 vs 162 (6-8, p=0.79), all 14 discordant items used identical orders (timing noise); beats each fixed order (GAIN vs Z3-first and CP-SAT-first); predeclared consequence applied: conditional formal-engine routing DEMOTED, shadow default stays, memory retained",
           "exit_met": false,
           "implementation_refs": [
             "cortex/evaluation/learned_routing/run.py",
@@ -1453,7 +1453,9 @@
             "greg/cognition/learned_routing.py",
             "greg/cognition/worker.py",
             "tests/integration/test_greg_conditional_competence.py",
-            "tests/integration/test_greg_learned_routing.py"
+            "tests/integration/test_greg_learned_routing.py",
+            "cortex/evaluation/learned_routing/run_v3.py",
+            "docs/evidence/greg-learned-routing/2026-10-08/README.md"
           ],
           "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE (order = static); v2 conditional INCONCLUSIVE (57 vs 56, bin packing 9 vs 7, knapsack kept 9/9)"
         },

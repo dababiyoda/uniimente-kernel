@@ -1,11 +1,11 @@
 """P8 candidate sandbox: run one candidate configuration on problem INPUTS only, then exit.
 
 The parent (``greg/cognition/evolution.py``) builds every request itself; a candidate is a validated
-configuration (data), never code. This process imports the reviewed method, then irreversibly confines
-itself with Landlock before reading the request's problems, so nothing it runs can open repository files
-- in particular the evaluator's real outcomes, which never enter this process. Output: forecasts per
-problem id. Exit status 0 with {"confined": ...} recorded so the parent can refuse unconfined runs where
-confinement is required.
+configuration (data), never code. This process parses the request, imports the one reviewed method its
+target names from the TARGETS allow-list, then irreversibly confines itself with Landlock before it runs
+anything on the problems, so nothing it runs can open repository files - in particular the evaluator's real
+outcomes, which never enter this process at all. Output: outputs per problem id, with {"confined": ...}
+recorded so the parent can refuse unconfined runs where confinement is required.
 """
 from __future__ import annotations
 
@@ -18,15 +18,21 @@ import tempfile
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from greg.cognition.genomes import forecasting  # noqa: E402  imported BEFORE confinement
+import importlib  # noqa: E402
 from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg import isolation  # noqa: E402
 
-METHODS = {"forecast_quantile": forecasting.solve_with}
+# The only code a cycle can run: reviewed modules and functions, named by the trusted parent's target.
+TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with")}
 
 
 def main():
     request = json.loads(sys.stdin.read(64 * 1024 * 1024))
+    if request.get("target") not in TARGETS:
+        print(json.dumps({"confined": None, "error": "UNKNOWN_TARGET"}))
+        return
+    module, function = TARGETS[request["target"]]
+    method = getattr(importlib.import_module(module), function)      # imported BEFORE confinement
     resource.setrlimit(resource.RLIMIT_CPU, (120, 121))
     scratch = tempfile.mkdtemp(prefix="greg-p8-")
     confined = None
@@ -45,7 +51,6 @@ def main():
             probe_result = "READ"
         except OSError as exc:
             probe_result = f"DENIED:{type(exc).__name__}"
-    method = METHODS[request["target"]]
     outputs = {}
     for problem in request["problems"]:
         try:

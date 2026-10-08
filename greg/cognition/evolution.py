@@ -31,7 +31,7 @@ classes, credentials, budgets, shutdown, targets, frozen evidence, its own accep
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
 import inspect
@@ -95,6 +95,41 @@ class Target:
 def forecasting_target() -> Target:
     from .genomes import forecasting
     return Target("forecast_quantile", forecasting.CONFIG_SPACE, dict(forecasting.DEFAULT_CONFIG))
+
+
+@dataclass(frozen=True)
+class TargetSpec:
+    """Everything a cycle needs about one evolvable cognition target. The sandbox imports only the target
+    modules allow-listed in evolution_sandbox.TARGETS; nothing here is chosen by a candidate."""
+    name: str
+    target: object                      # () -> Target
+    split: object                       # () -> (train_items, heldout_items, excluded_ids)
+    score: object                       # (data, truth, output) -> {"quality", "category"}
+    baseline: object                    # data -> output (the simple method the trigger compares against)
+    verify: object                      # (data, output, certificate) -> {check: bool}
+    stress: object                      # items -> derived adversarial items
+    buckets: object                     # item -> [(dimension, value)] for the residual geometry
+    failure_metric: str
+    proposal: dict = field(default_factory=dict)
+
+
+def _forecasting_spec() -> TargetSpec:
+    from .genomes import forecasting
+
+    def bucket(item):
+        n = len(item["data"]["history"])
+        length = "short<=300" if n <= 300 else "medium<=1000" if n <= 1000 else "long>1000"
+        return [("category", item["category"]), ("history_length", length)]
+    return TargetSpec(
+        name="forecast_quantile", target=forecasting_target, split=lambda: forecasting_split(),
+        score=forecasting.score, baseline=forecasting.naive_gaussian, verify=forecasting.verify, stress=_stress,
+        buckets=bucket, failure_metric="scaled pinball loss vs naive Gaussian baseline",
+        proposal={"module": "greg/cognition/genomes/forecasting.py", "constant": "DEFAULT_CONFIG",
+                  "canary": "run the forecasting admission and P6 F5 with the proposed configuration before "
+                            "adoption; keep comparing with the incumbent after adoption"})
+
+
+TARGET_SPECS = {"forecast_quantile": _forecasting_spec}
 
 
 def config_id(config: dict) -> str:
@@ -205,18 +240,20 @@ def _stress(items: dict) -> dict:
 
 
 def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, out: Path | None = None,
-          require_confinement: bool = True) -> dict:
-    from .genomes import forecasting
-    target = forecasting_target()
-    train_items, heldout_items, excluded = forecasting_split()
-    train = SealedEvaluator(train_items, forecasting.score)
-    heldout = SealedEvaluator(heldout_items, forecasting.score)
+          require_confinement: bool = True, target_name: str = "forecast_quantile") -> dict:
+    if target_name not in TARGET_SPECS:
+        raise EvolutionError(f"unknown evolution target {target_name!r}")
+    spec = TARGET_SPECS[target_name]()
+    target = spec.target()
+    train_items, heldout_items, excluded = spec.split()
+    train = SealedEvaluator(train_items, spec.score)
+    heldout = SealedEvaluator(heldout_items, spec.score)
     record = {"schema": "greg-protected-evolution/1", "target": target.name, "rule": RULE,
               "started_at": datetime.now(timezone.utc).isoformat(),
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
               "evaluator_seals": {"train": train.seal, "heldout": heldout.seal},
               "split": {"train": len(train_items), "heldout": len(heldout_items),
-                        "excluded_admission_series": len(excluded)},
+                        "excluded_admission_items": len(excluded)},
               "incumbent": {"config": target.incumbent, "id": config_id(target.incumbent)}}
     rng = random.Random(seed)
 
@@ -227,23 +264,19 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     # 1. detect a recurring failure (incumbent vs the simple baseline on the train split)
     incumbent_train, run0 = evaluate(target.incumbent, train)
     record["confinement"] = run0.get("confined")
-    baseline_train = train.losses({k: {"output": forecasting.naive_gaussian(v["data"])}
-                                   for k, v in train_items.items()})
+    baseline_train = train.losses({k: {"output": spec.baseline(v["data"])} for k, v in train_items.items()})
     failing = [k for k in train_items if incumbent_train[k] > baseline_train[k]]
     rate = len(failing) / len(train_items)
-    record["failure"] = {"metric": "scaled pinball loss vs naive Gaussian baseline", "rate": round(rate, 4),
+    record["failure"] = {"metric": spec.failure_metric, "rate": round(rate, 4),
                          "trigger": FAILURE_RATE_TRIGGER, "incumbent_mean_train_loss":
                          round(statistics.fmean(incumbent_train.values()), 6)}
     if rate < FAILURE_RATE_TRIGGER:
         record["decision"] = "NO_RECURRING_FAILURE"
         return _finish(record, out)
     # 2. residual geometry
-    def bucket(item):
-        n = len(item["data"]["history"])
-        return "short<=300" if n <= 300 else "medium<=1000" if n <= 1000 else "long>1000"
     geometry = {}
     for key, item in train_items.items():
-        for dim, value in (("category", item["category"]), ("history_length", bucket(item))):
+        for dim, value in spec.buckets(item):
             g = geometry.setdefault(dim, {}).setdefault(value, {"n": 0, "failing": 0})
             g["n"] += 1
             g["failing"] += int(key in failing)
@@ -281,13 +314,13 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
         record["reason"] = f"no candidate beat the incumbent's train loss by more than {TRAIN_GAIN_MIN:.0%}"
         return _finish(record, out)
     # 5. adversarial evaluation (derived stress sets + independent verification of every output)
-    stress = SealedEvaluator(_stress(train_items), forecasting.score)
+    stress = SealedEvaluator(spec.stress(train_items), spec.score)
     inc_s, _ = evaluate(target.incumbent, stress)
     cand_s, cand_run = evaluate(best, stress)
-    verified = all(all(forecasting.verify(stress._items[k]["data"], v["output"], v["certificate"]).values())
+    verified = all(all(spec.verify(stress._items[k]["data"], v["output"], v["certificate"]).values())
                    for k, v in cand_run["outputs"].items() if "output" in v)
     adversarial = {}
-    for kind in ("short", "shift"):
+    for kind in sorted({k.split(":")[0] for k in stress._items}):
         ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
         kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
         adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
@@ -313,12 +346,11 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                          "relative_improvement": round(1 - mean_cand / mean_inc, 4)}
     retain = p < ALPHA and mean_cand < mean_inc
     record["decision"] = "RETAIN" if retain else "REJECT"
-    record["proposal"] = {"state": "PROPOSED_NOT_APPLIED", "change": {"module": "greg/cognition/genomes/forecasting.py",
-                          "constant": "DEFAULT_CONFIG", "from": target.incumbent, "to": best},
+    record["proposal"] = {"state": "PROPOSED_NOT_APPLIED", "change": {"module": spec.proposal["module"],
+                          "constant": spec.proposal["constant"], "from": target.incumbent, "to": best},
                           "activation": "a reviewed change adopting the configuration; founder decision",
                           "rollback": {"to": record["incumbent"]["id"], "config": target.incumbent},
-                          "canary": "run the forecasting admission and P6 F5 with the proposed configuration before "
-                                    "adoption; keep comparing with the incumbent after adoption"} if retain else None
+                          "canary": spec.proposal["canary"]} if retain else None
     return _finish(record, out)
 
 
@@ -337,7 +369,8 @@ if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--target", default="forecast_quantile", choices=sorted(TARGET_SPECS))
     args = ap.parse_args()
-    result = cycle(out=args.out)
+    result = cycle(out=args.out, target_name=args.target)
     print(json.dumps({k: result.get(k) for k in ("failure", "candidate", "adversarial", "heldout", "decision",
                                                  "reason")}, indent=1))

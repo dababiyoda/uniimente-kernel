@@ -204,6 +204,9 @@ def main(argv=None) -> int:
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    gv = sub.add_parser("gravity", help="one read-only Goal Gravity turn: Backcast GPS, Lawful Leverage Foundry, "
+                                         "Gate proposals and at most one prepared founder ask")
+    gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -379,6 +382,15 @@ def main(argv=None) -> int:
                     data = devpath.position(journal)
             else:
                 data = devpath.position(None)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "gravity":
+            from greg import gravity
+            situation = json.loads(Path(args.situation).read_text())
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = gravity.step(situation, journal=journal)
+            else:
+                data = gravity.step(situation)
             print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
             from greg import presence

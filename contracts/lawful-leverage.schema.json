@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lawful Leverage Foundry problem (founder directive 2026-10-07, sections 17-20)",
+  "description": "Input to foundry.lawful_leverage.compile. The institutional map uses the institutional-leverage contract unchanged; surfaces name evidenced control points on that map. Estimates are inputs, never verified outcomes. Nothing in a problem grants authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["problem_id", "objective", "as_of", "outcome_node", "institutional_map", "surfaces", "constraints"],
+  "properties": {
+    "problem_id": {"$ref": "#/$defs/id"},
+    "objective": {"$ref": "#/$defs/text"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "outcome_node": {"$ref": "#/$defs/id"},
+    "institutional_map": {"type": "object"},
+    "surfaces": {
+      "type": "array", "minItems": 1, "maxItems": 16,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["surface", "node", "state", "evidence_refs"],
+        "properties": {
+          "surface": {"enum": ["proof", "eligibility", "permission", "incentives", "routing", "defaults",
+                               "coordination", "standards", "reputation", "dependency", "settlement", "capital",
+                               "information", "timing", "capability", "workflow"]},
+          "node": {"$ref": "#/$defs/id"},
+          "state": {"$ref": "#/$defs/text"},
+          "evidence_refs": {"$ref": "#/$defs/refs"},
+          "third_parties": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/text"}},
+          "consent_mechanism": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "direct_labor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["description", "effect", "confidence", "cost_usd_per_cycle", "effort_hours_per_cycle", "evidence_refs"],
+      "properties": {
+        "description": {"$ref": "#/$defs/text"},
+        "effect": {"$ref": "#/$defs/unit"},
+        "confidence": {"$ref": "#/$defs/unit"},
+        "cost_usd_per_cycle": {"$ref": "#/$defs/amount"},
+        "effort_hours_per_cycle": {"$ref": "#/$defs/amount"},
+        "consequence_class": {"enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]},
+        "evidence_refs": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "evidence": {
+      "type": "object", "maxProperties": 64,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false, "required": ["successes", "trials", "refs"],
+        "properties": {
+          "successes": {"type": "integer", "minimum": 0, "maximum": 100000},
+          "trials": {"type": "integer", "minimum": 0, "maximum": 100000},
+          "refs": {"$ref": "#/$defs/refs"}
+        }
+      }
+    },
+    "constraints": {
+      "type": "object", "additionalProperties": false,
+      "required": ["budget_usd", "founder_attention_hours", "held_authority"],
+      "properties": {
+        "budget_usd": {"$ref": "#/$defs/amount"},
+        "founder_attention_hours": {"$ref": "#/$defs/amount"},
+        "held_authority": {"type": "array", "maxItems": 5, "uniqueItems": true,
+                           "items": {"enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]}},
+        "prohibited_consequence_classes": {"type": "array", "maxItems": 5, "uniqueItems": true,
+                                           "items": {"enum": ["read_only", "internal_write", "external_contact", "financial", "irreversible"]}},
+        "harm_ceiling": {"type": "object", "additionalProperties": false,
+                         "properties": {"third_party": {"$ref": "#/$defs/unit"}, "privacy": {"$ref": "#/$defs/unit"},
+                                        "dependency_capture": {"$ref": "#/$defs/unit"}, "tail": {"$ref": "#/$defs/unit"},
+                                        "participant_burden": {"$ref": "#/$defs/unit"}}},
+        "value_per_unit_gap_usd": {"$ref": "#/$defs/amount"},
+        "legal_operator": {"$ref": "#/$defs/text"}
+      }
+    },
+    "mechanism_overrides": {
+      "type": "object", "maxProperties": 64,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false, "minProperties": 1,
+        "properties": {
+          "cost_usd": {"$ref": "#/$defs/amount"},
+          "effort_hours": {"$ref": "#/$defs/amount"},
+          "maintenance_hours_per_cycle": {"$ref": "#/$defs/amount"},
+          "delay_days": {"$ref": "#/$defs/amount"},
+          "founder_attention_hours": {"$ref": "#/$defs/amount"},
+          "target": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "trigger_probability": {"$ref": "#/$defs/unit"},
+    "cycle_days": {"type": "number", "minimum": 1, "maximum": 365},
+    "horizon_cycles": {"type": "integer", "minimum": 1, "maximum": 52},
+    "samples": {"type": "integer", "minimum": 200, "maximum": 20000},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 96, "pattern": "^[A-Za-z0-9_.:-]+$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S"},
+    "unit": {"type": "number", "minimum": 0, "maximum": 1},
+    "amount": {"type": "number", "minimum": 0, "maximum": 1000000000},
+    "refs": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+  }
+}

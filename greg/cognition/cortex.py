@@ -151,6 +151,11 @@ def independent_verify(family, data, answer, proof_class, geometry):
 
 
 def reason(params, *, registry, journal=None, model_config=None, forced_family=None):
+    if isinstance(params, dict) and "compile" in params:
+        # Layer 5 Competency Compiler: geometry -> smallest competent method or composition, run back
+        # through this same entry; constitutional pre-filter and human route before any optimisation.
+        from .compiler import run as run_compiler
+        return run_compiler(params, registry=registry, journal=journal, model_config=model_config)
     if isinstance(params, dict) and "chain" in params:
         # Composite problem (P6): geometry-routed chain of cortex stages with typed translation.
         from .composition import run as run_composition

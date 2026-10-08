@@ -66,10 +66,12 @@ def build() -> dict:
         data = json.loads(path.read_text())
         index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
         summary = data.get("summary", {})
-        verdict = (summary.get("conditional_vs_static") or {}).get("verdict")
+        key = "primary_conditional_vs_static" if "primary_conditional_vs_static" in summary else "conditional_vs_static"
+        verdict = (summary.get(key) or {}).get("verdict")
         index["routing"]["conditional_competence"] = {
-            "verdict": verdict, "consequence": summary.get("consequence") or data.get("consequence"),
-            "evidence": f"{rel}#summary.conditional_vs_static"}
+            "verdict": verdict, "consequence": data.get("consequence") or summary.get("consequence"),
+            "default": "shadow (observed, never applied)" if verdict != "GAIN" else "conditional",
+            "evidence": f"{rel}#summary.{key}"}
     base = ROOT / ADMISSION
     for path in sorted(base.glob("*/results.json")) if base.exists() else []:
         data = json.loads(path.read_text())

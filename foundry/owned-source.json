@@ -370,6 +370,7 @@
     "greg/presence.py",
     "greg/presentation.py",
     "greg/remote.py",
+    "greg/resilience.py",
     "greg/routing.py",
     "greg/service.py",
     "greg/sop.py",

@@ -188,6 +188,14 @@ def _voi(report: dict, registry, journal) -> dict:
     return out
 
 
+def _immune(journal) -> dict:
+    """Section 22 signals the turn should see: decoupling, common causes, fragile capabilities."""
+    if journal is None:
+        return {"source": "no body ledger here", "warnings": []}
+    from greg import resilience
+    return {"source": "greg.resilience over the canonical journal", "warnings": resilience.summary(journal)["warnings"]}
+
+
 def step(situation: dict, *, journal=None, registry=None, path_data: dict | None = None) -> dict:
     """One Goal Gravity turn. Read-only: returns a report and, where needed, one prepared founder ask."""
     situation = validate(situation)
@@ -241,6 +249,7 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
                      "generated": report["generated"],
                      "rejected": {r["candidate_id"]: r["reasons"] for r in report["candidates"] if r["reasons"]}},
         "mind": {"value_of_information": voi},
+        "immune_signals": _immune(journal),
         "gate": ranked, "disposition": disposition, "founder_ask": ask, "preparable": report["preparable"],
         "asset_line": report["asset_line"], "dissent": dissent,
         "authority_created": False, "ledger_writes": 0, "executes": False,

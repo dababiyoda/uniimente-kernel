@@ -29,8 +29,25 @@ from .contract import Executable, GenomeError, IntelligenceGenome, answer, bound
 DATA = Path(__file__).resolve().parents[3] / "cortex" / "evaluation" / "data" / "m4_weekly.json.gz"
 LINEAGE = ("INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION", "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT")
 LEVELS = (0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)
-GRID = [(a / 10, b, p) for a in range(1, 10) for b in (0.0, 0.05, 0.1, 0.2) for p in (0.8, 0.9, 0.98)]
-FIT_WINDOW, ORIGINS, MIN_HISTORY = 260, 104, 60
+MIN_HISTORY = 60
+# Non-constitutional method parameters: the closed space P8 protected evolution may search
+# (greg/cognition/evolution.py). The genome runs DEFAULT_CONFIG; a retained evolved config is a proposal
+# until a reviewed change adopts it.
+DEFAULT_CONFIG = {"fit_window": 260, "origins": 104, "beta_set": [0.0, 0.05, 0.1, 0.2],
+                  "phi_set": [0.8, 0.9, 0.98], "error_model": "log_ratio", "interval_scale": 1.0}
+CONFIG_SPACE = {"fit_window": ("choice", [104, 156, 260, 520]), "origins": ("choice", [52, 104, 156, 208]),
+                "beta_set": ("choice", [[0.0], [0.0, 0.02, 0.05], [0.0, 0.05, 0.1, 0.2]]),
+                "phi_set": ("choice", [[0.8, 0.9, 0.98], [0.9, 0.98, 1.0], [0.98, 1.0]]),
+                "error_model": ("choice", ["log_ratio", "additive_scaled"]),
+                "interval_scale": ("float", [0.7, 1.4])}
+FIT_WINDOW, ORIGINS = DEFAULT_CONFIG["fit_window"], DEFAULT_CONFIG["origins"]
+
+
+def _grid(config):
+    return [(a / 10, b, p) for a in range(1, 10) for b in config["beta_set"] for p in config["phi_set"]]
+
+
+GRID = _grid(DEFAULT_CONFIG)
 RESERVED = ("Micro", "Industry")      # P6 natural family series; never used for forecasting admission
 
 
@@ -68,20 +85,20 @@ def _path(level, trend, phi, horizon):
     return out
 
 
-def fit(y):
-    window = y[-FIT_WINDOW:]
-    best = min(GRID, key=lambda p: (_smooth(window, *p)[2], p))
+def fit(y, config=DEFAULT_CONFIG):
+    window = y[-config["fit_window"]:]
+    best = min(_grid(config), key=lambda p: (_smooth(window, *p)[2], p))
     return best
 
 
-def _holt_point(y, params, horizon):
-    level, trend, _ = _smooth(y[-FIT_WINDOW:], *params)
+def _holt_point(y, params, horizon, config=DEFAULT_CONFIG):
+    level, trend, _ = _smooth(y[-config["fit_window"]:], *params)
     return [max(v, 1e-9) for v in _path(level, trend, params[2], horizon)]
 
 
-def _theta_point(y, params_unused, horizon):
+def _theta_point(y, params_unused, horizon, config=DEFAULT_CONFIG):
     """Theta method: SES on the series plus half the OLS slope as drift (Assimakopoulos & Nikolopoulos)."""
-    window = y[-FIT_WINDOW:]
+    window = y[-config["fit_window"]:]
     n = len(window)
     tbar = (n - 1) / 2
     ybar = sum(window) / n
@@ -104,43 +121,66 @@ def _empirical_quantile(sorted_values, q):
     return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (k - lo)
 
 
-def _error_quantiles(y, point_fn, params, horizon, levels):
-    """Rolling-origin log-ratio errors of the same point method, per horizon."""
+def _error_quantiles(y, point_fn, params, horizon, levels, config=DEFAULT_CONFIG):
+    """Rolling-origin errors of the same point method, per horizon (log-ratio, or additive scaled by the
+    level at the origin), widened or narrowed around the median by ``interval_scale``."""
     n = len(y)
-    origins = range(max(MIN_HISTORY - 20, n - ORIGINS - horizon), n - horizon + 1)
+    origins = range(max(MIN_HISTORY - 20, n - config["origins"] - horizon), n - horizon + 1)
     errors = [[] for _ in range(horizon)]
     for o in origins:
-        path = point_fn(y[:o], params, horizon)
+        path = point_fn(y[:o], params, horizon, config)
         for h in range(horizon):
-            errors[h].append(math.log(y[o + h] / path[h]))
+            if config["error_model"] == "log_ratio":
+                errors[h].append(math.log(y[o + h] / path[h]))
+            else:
+                errors[h].append((y[o + h] - path[h]) / max(y[o - 1], 1e-9))
     if min(len(e) for e in errors) < 8:
         raise GenomeError("too few rolling origins for an empirical error distribution")
-    return [[_empirical_quantile(sorted(e), q) for q in levels] for e in errors], len(errors[0])
+    scale = config["interval_scale"]
+    out = []
+    for e in errors:
+        raw = [_empirical_quantile(sorted(e), q) for q in levels]
+        mid = _empirical_quantile(sorted(e), 0.5)
+        out.append([mid + (v - mid) * scale for v in raw] if scale != 1.0 else raw)
+    return out, len(errors[0])
 
 
-def _distribution(data, point_name):
+def distribution(data, config=DEFAULT_CONFIG, point_name="holt"):
     y, horizon, levels = _series(data)
-    params = fit(y) if point_name == "holt" else None
-    point_fn = (lambda s, p, h: _holt_point(s, fit(s) if p is None else p, h)) if point_name == "holt" else _theta_point
-    point = point_fn(y, params, horizon)
-    eq, origins = _error_quantiles(y, point_fn, params, horizon, levels)
-    quantiles = {f"{q:g}": [round(point[h] * math.exp(eq[h][i]), 6) for h in range(horizon)]
-                 for i, q in enumerate(levels)}
+    params = fit(y, config) if point_name == "holt" else None
+    point_fn = _holt_point if point_name == "holt" else _theta_point
+    point = point_fn(y, params, horizon, config)
+    eq, origins = _error_quantiles(y, point_fn, params, horizon, levels, config)
+    if config["error_model"] == "log_ratio":
+        quantiles = {f"{q:g}": [round(point[h] * math.exp(eq[h][i]), 6) for h in range(horizon)]
+                     for i, q in enumerate(levels)}
+    else:
+        quantiles = {f"{q:g}": [round(max(point[h] + eq[h][i] * y[-1], 1e-9), 6) for h in range(horizon)]
+                     for i, q in enumerate(levels)}
     return {"point": [round(v, 6) for v in point], "levels": levels, "quantiles": quantiles}, params, origins
 
 
-def solve(data, budget):
-    out, params, origins = _distribution(data, "holt")
-    return answer(out, {"alpha": params[0], "beta": params[1], "phi": params[2], "fit_window": FIT_WINDOW,
-                        "rolling_origins": origins, "error_model": "empirical log-ratio quantiles per horizon",
+def _distribution(data, point_name):
+    return distribution(data, DEFAULT_CONFIG, point_name)
+
+
+def solve_with(config, data):
+    out, params, origins = distribution(data, config)
+    return answer(out, {"alpha": params[0], "beta": params[1], "phi": params[2], "fit_window": config["fit_window"],
+                        "rolling_origins": origins, "error_model": f"empirical {config['error_model']} quantiles "
+                        "per horizon", "interval_scale": config["interval_scale"],
                         "selection": "grid minimum of in-sample one-step squared error"})
+
+
+def solve(data, budget):
+    return solve_with(DEFAULT_CONFIG, data)
 
 
 def verify(data, output, certificate):
     y, horizon, levels = _series(data)
     p = (certificate["alpha"], certificate["beta"], certificate["phi"])
     # Independent recursion in error-correction form (algebraically equal to the smoother above).
-    window = y[-FIT_WINDOW:]
+    window = y[-int(certificate.get("fit_window", FIT_WINDOW)):]
     level, trend = window[0], window[1] - window[0]
     for v in window[1:]:
         e = v - (level + p[2] * trend)

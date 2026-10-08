@@ -120,6 +120,8 @@ class Operator:
     benchmark: str
     applies: object = field(compare=False, repr=False, default=None)
     apply: object = field(compare=False, repr=False, default=None)
+    # What the operator changes: representation, candidate_set, evidence_request, or evaluation.
+    effect_kind: str = "representation"
 
 
 def _requirements_raise(g, req, plan):
@@ -156,39 +158,184 @@ def _premortem(g, req, plan):
                            "false; adversarial actors may respond")
 
 
+def _prefer(*methods):
+    def apply(g, req, plan):
+        plan["prefer"].extend(m for m in methods if m not in plan["prefer"])
+    return apply
+
+
+def _require(text):
+    def apply(g, req, plan):
+        plan["requirements"].append(text)
+    return apply
+
+
+def _sensitivity(g, req, plan):
+    plan["evaluate"].append("sensitivity")
+    plan["notes"].append("sensitivity: the chosen method re-runs with each numeric input perturbed; an answer that "
+                         "moves is reported as fragile")
+
+
+def _inversion(g, req, plan):
+    plan["requirements"].append("inversion: state the observable conditions under which this answer would be wrong")
+    plan["dissent"].append("inversion: what would have to be true for the opposite conclusion?")
+
+
+def _reference_class(g, req, plan):
+    plan["requirements"].append("reference class: anchor on a base rate from comparable cases before case-specific "
+                                "adjustment")
+    plan["prefer"].extend(["cognition.probabilistic", "cognition.bayes_interval"])
+
+
+def _op(operator_id, signatures, transformation, inputs, outputs, assumptions, failures, counter, evidence, cost,
+        latency, benchmark, applies, apply, effect_kind):
+    return Operator(operator_id, signatures, transformation, inputs, outputs, assumptions, failures, counter, evidence,
+                    cost, latency, benchmark, applies, apply, effect_kind)
+
+
+def _high(g):
+    return g.consequence_class in HIGH_CONSEQUENCE
+
+
 OPERATORS = (
     Operator("consequence_raises_requirements", ("consequence_class in external_contact|financial|irreversible",),
              "adds independent-verification, fresh-evidence and Gate requirements; never changes the method family",
              ("consequence_class",), ("requirements",), ("consequence class is declared honestly",),
              ("under-declared consequence",), ("read-only questions",), "decision_analysis", "none", "none",
              "tests/unit/test_greg_competency_compiler.py (rule test; no effect benchmark)",
-             lambda g, r: g.consequence_class in HIGH_CONSEQUENCE, _requirements_raise),
+             lambda g, r: g.consequence_class in HIGH_CONSEQUENCE, _requirements_raise, "evidence_request"),
     Operator("reversibility", ("reversibility == irreversible",), "requires a founder decision or a reversible stage",
              ("reversibility",), ("requirements",), ("reversibility is declared",), ("misdeclared reversibility",),
              (), "decision_analysis", "none", "none", "rule test only",
-             lambda g, r: g.reversibility == "irreversible" or g.consequence_class == "irreversible", _reversibility),
+             lambda g, r: g.reversibility == "irreversible" or g.consequence_class == "irreversible", _reversibility,
+             "evidence_request"),
     Operator("anti_ruin", ("stochastic and consequence financial",), "adds a tail-bound requirement; prefers the "
              "robust estimate->optimise composition", ("deterministic_or_stochastic", "consequence_class"),
              ("requirements", "prefer"), ("ruin is the dominant loss",), ("over-conservatism",),
              ("deterministic problems",), "decision_analysis", "none", "none",
              "P6 F1 (robust composition vs point optimiser: 14 of 16 point plans claimed coverage they lacked)",
              lambda g, r: g.deterministic_or_stochastic == "stochastic" and g.consequence_class == "financial",
-             _anti_ruin),
+             _anti_ruin, "candidate_set"),
     Operator("bottleneck", ("graph_structure",), "routes to min-cut control-point analysis first",
              ("graph_structure",), ("prefer",), ("the graph is the system",), ("multi-commodity flows",), (),
              "optimality_certificate", "one max-flow", "milliseconds", "flow_maxflow admission",
-             lambda g, r: bool(g.graph_structure), _bottleneck),
+             lambda g, r: bool(g.graph_structure), _bottleneck, "candidate_set"),
     Operator("value_of_information", ("decision under uncertainty with a test option",),
              "prices the next test before acting", ("uncertainty_structure",), ("prefer",),
              ("a test can change the decision",), ("no actionable test",), (), "decision_analysis",
              "three stages", "sub-second", "P6 v2 F4",
              lambda g, r: g.uncertainty_structure in ("beta", "posterior") and g.decision_type == "act_or_test",
-             _value_of_information),
+             _value_of_information, "candidate_set"),
     Operator("premortem", ("any consequential decision",), "records the strongest failure story as dissent",
              (), ("dissent",), (), ("ritualised dissent",), ("trivial arithmetic",), "decision_analysis", "none",
              "none", "rule test only",
-             lambda g, r: g.consequence_class not in (None, "read_only"), _premortem),
+             lambda g, r: g.consequence_class not in (None, "read_only"), _premortem, "evaluation"),
+    _op("sensitivity_analysis", ("high consequence with stochastic or uncertain inputs",),
+        "re-runs the chosen method with each numeric input perturbed by 10% and reports whether the answer moves",
+        ("numeric inputs",), ("sensitivity",), ("10% is a material perturbation for the inputs",),
+        ("misses interactions between inputs", "perturbing an integer domain can make it infeasible"),
+        ("exact arithmetic", "read-only questions"), "sensitivity_trace", "up to four extra isolated runs",
+        "up to four method latencies", "tests/unit/test_greg_competency_compiler.py (executes; no effect benchmark)",
+        lambda g, r: _high(g) and (g.deterministic_or_stochastic == "stochastic" or g.uncertainty_structure is not None),
+        _sensitivity, "evaluation"),
+    _op("inversion", ("any consequential conclusion",), "asks what would make the conclusion false",
+        (), ("requirements", "dissent"), (), ("ritual inversion",), ("read-only arithmetic",), "decision_analysis",
+        "none", "none", "rule test only", lambda g, r: g.consequence_class not in (None, "read_only"),
+        _inversion, "evidence_request"),
+    _op("reference_class", ("small or low-quality case data",),
+        "anchors on a base rate before case-specific adjustment; prefers Bayesian families", ("data_volume or data_quality",),
+        ("requirements", "prefer"), ("a comparable reference class exists",), ("the wrong reference class",),
+        ("plentiful clean data",), "posterior", "none", "none", "rule test only",
+        lambda g, r: (g.data_volume is not None and g.data_volume < 30) or (g.data_quality is not None
+                                                                             and g.data_quality < 0.5),
+        _reference_class, "candidate_set"),
+    _op("game_theory", ("several actors with opposed interests",),
+        "routes strategic interaction to equilibrium methods before single-agent optimisation",
+        ("multi_actor", "adversarial_pressure"), ("prefer",), ("payoffs can be stated",),
+        ("misread incentives", "unmodelled actors"), ("cooperative single-owner problems",), "game_model",
+        "one LP", "sub-second", "game_minimax admission",
+        lambda g, r: bool(g.multi_actor) and (g.adversarial_pressure or 0) > 0,
+        _prefer("cognition.game", "cognition.game_minimax", "minimax"), "candidate_set"),
+    _op("mechanism_design", ("allocation among actors with private information",),
+        "prefers incentive-compatible allocation (truthful rules) over guessing reported values",
+        ("multi_actor", "objective_type"), ("prefer",), ("actors may misreport",), ("collusion outside the model",),
+        ("a single decision-maker",), "decision_analysis", "one auction", "sub-second", "mech_vcg admission",
+        lambda g, r: bool(g.multi_actor) and g.objective_type in ("allocation", "welfare"),
+        _prefer("cognition.mech_vcg", "cognition.collective_market"), "candidate_set"),
+    _op("feedback_loops", ("dynamic system with a target",),
+        "routes regulation problems to closed-loop control and estimation before open-loop plans",
+        ("static_or_dynamic",), ("prefer",), ("the dynamics are approximately stationary",),
+        ("model mismatch", "actuator limits"), ("one-shot decisions",), "control_trace", "one simulation",
+        "milliseconds", "basal_pid and control_mpc admission",
+        lambda g, r: g.static_or_dynamic == "dynamic",
+        _prefer("cognition.control", "cognition.basal_pid", "cognition.control_mpc", "cognition.basal_kalman"),
+        "candidate_set"),
+    _op("falsification", ("a claim that will inform action",),
+        "requires a stated falsifier and a verifier independent of the solver", (), ("requirements",),
+        ("a falsifier can be observed",), ("unfalsifiable framing",), (), "decision_analysis", "none", "none",
+        "every genome verify() refutes corrupted outputs (admission tests)",
+        lambda g, r: g.evidence_requirement in ("high", "external"),
+        _require("falsification: name the observation that would refute this answer; the verifier must not share "
+                 "the solver's code path"), "evidence_request"),
+    _op("second_order_effects", ("decisions touching other actors or rights",),
+        "requires the downstream effects on affected participants to be stated before acting",
+        ("multi_actor",), ("requirements",), ("affected participants can be named",), ("unknown unknowns",),
+        ("purely internal computation",), "decision_analysis", "none", "none", "rule test only",
+        lambda g, r: bool(g.multi_actor) and g.consequence_class not in (None, "read_only"),
+        _require("second-order effects and regenerative impact: state who else is affected, how, and whether "
+                 "participants are better off"), "evidence_request"),
+    _op("pareto_analysis", ("several objectives that cannot be traded at a declared rate",),
+        "keeps the non-dominated set instead of collapsing objectives into one scalar", ("objective_type",),
+        ("requirements",), ("objectives are independent",), ("too many objectives make everything non-dominated",),
+        ("one declared objective",), "decision_analysis", "none", "none",
+        "foundry.lawful_leverage frontier tests",
+        lambda g, r: g.objective_type == "multi",
+        _require("pareto analysis: return the non-dominated alternatives with each objective, not a single scalar"),
+        "evaluation"),
 )
+
+# Directive section 6, every listed model -> the operator that executes it, or the mechanism that carries it.
+DIRECTIVE_MODELS = {
+    "first principles": "first_principles", "inversion": "inversion", "reference classes": "reference_class",
+    "Bayesian updating": "bayesian_updating", "Fermi decomposition": "fermi_decomposition",
+    "sensitivity analysis": "sensitivity_analysis", "expected value": "expected_value",
+    "value of information": "value_of_information", "opportunity cost": "opportunity_cost",
+    "optionality": "optionality", "reversibility": "reversibility", "anti-ruin boundaries": "anti_ruin",
+    "premortem": "premortem", "counterfactuals": "counterfactuals", "steelmanning": "steelmanning",
+    "falsification": "falsification", "constraint analysis": "constraint_analysis",
+    "bottleneck analysis": "bottleneck", "systems thinking": "systems_thinking",
+    "second-order effects": "second_order_effects", "feedback loops": "feedback_loops",
+    "game theory": "game_theory", "mechanism design": "mechanism_design",
+    "control-point analysis": "control_point_analysis", "dependency analysis": "dependency_analysis",
+    "backcasting": "backcasting", "weakest-link reasoning": "weakest_link_reasoning",
+    "marginal analysis": "marginal_analysis", "Pareto analysis": "pareto_analysis",
+    "power-law reasoning": "power_law_reasoning", "portfolio/concentration reasoning": "portfolio_concentration",
+    "asymmetry analysis": "asymmetry_analysis", "regenerative-impact analysis": "regenerative_impact_analysis",
+}
+
+# Directive section 6 models already carried by a mechanism elsewhere on the one path (not duplicated here):
+OPERATOR_HOMES = {
+    "first_principles": "CompetencyGeometry: the problem is restated as typed fields before any method is chosen",
+    "bayesian_updating": "cognition.probabilistic (beta_update) and the forecasting/decision genomes",
+    "fermi_decomposition": "cognition.cortex.estimation.fermi",
+    "expected_value": "foundry.lawful_leverage Monte Carlo means and the information family",
+    "opportunity_cost": "foundry.lawful_leverage direct-labour and do-nothing baselines",
+    "optionality": "foundry.lawful_leverage defer-to-trigger and staged variants (option_value)",
+    "counterfactuals": "do-nothing and direct-labour arms in every Foundry comparison; ablation arms in P6",
+    "steelmanning": "every Foundry candidate and genome carries its strongest counterargument",
+    "constraint_analysis": "the constraints and optimization families; Foundry hard eligibility gates",
+    "control_point_analysis": "bottleneck operator (max_flow) and the Foundry control-point rule",
+    "dependency_analysis": "foundry dependency surface and the dependency_capture harm dimension",
+    "backcasting": "greg.path Backcast GPS and frontier_backcasts",
+    "weakest_link_reasoning": "Foundry path_support (every link must be real) and min-cut",
+    "marginal_analysis": "Foundry staged pilots and value of information",
+    "systems_thinking": "egregore.leverage strongest-path propagation over the institutional map",
+    "power_law_reasoning": "anti_ruin tail requirement; only where tails are measured",
+    "portfolio_concentration": "dependency_capture harm ceiling and multi-candidate Pareto frontier",
+    "asymmetry_analysis": "Foundry benefit and cost/harm vectors; control point only when it dominates",
+    "regenerative_impact_analysis": "second_order_effects operator; participant_benefit in the Foundry vector",
+}
+
 
 
 # ------------------------------------------------------------------ evidence-driven routing
@@ -306,7 +453,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     data = body["data"]
     consequence = body.get("consequence") or {}
     evidence = evidence_index()
-    plan = {"requirements": [], "prefer": [], "notes": [], "dissent": []}
+    plan = {"requirements": [], "prefer": [], "notes": [], "dissent": [], "evaluate": []}
     receipt = {"schema": SCHEMA, "problem_id": pid, "inputs_digest": digest(params), "geometry": g.known(),
                "subgeometry": g.subgeometry, "consequence_class": g.consequence_class or "read_only",
                "methods_considered": [], "methods_rejected": [], "methods_demoted": [],
@@ -342,7 +489,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         if op.applies(g, body):
             op.apply(g, body, plan)
             receipt["transformations"].append({"operator_id": op.operator_id, "transformation": op.transformation,
-                                               "evidence_type": op.evidence_type, "benchmark": op.benchmark})
+                                               "effect_kind": op.effect_kind, "evidence_type": op.evidence_type,
+                                               "benchmark": op.benchmark})
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
     rows = candidates(data, g, evidence)
     receipt["methods_considered"] = [r["method"] for r in rows]
@@ -400,4 +548,58 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if inner["abstention_state"] != "NONE":
         receipt["abstentions"].append(f"{inner['abstention_state']}: {inner['missing_information']}")
         return finish(inner["abstention_state"])
+    if "sensitivity" in plan["evaluate"]:
+        receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
+                                                   registry, journal, model_config, receipt)
     return finish("ANSWERED", inner["output"])
+
+
+def _numbers(value):
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, (int, float)):
+        return [float(value)]
+    if isinstance(value, dict):
+        return [x for k in sorted(value) for x in _numbers(value[k])]
+    if isinstance(value, list):
+        return [x for v in value for x in _numbers(v)]
+    return []
+
+
+def _scaled(value, factor):
+    if isinstance(value, bool) or not isinstance(value, (int, float, dict, list)):
+        return value
+    if isinstance(value, int):
+        return int(round(value * factor)) if abs(value) > 1 else value
+    if isinstance(value, float):
+        return value * factor
+    if isinstance(value, dict):
+        return {k: _scaled(v, factor) for k, v in value.items()}
+    return [_scaled(v, factor) for v in value]
+
+
+def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, model_config, receipt) -> dict:
+    """Perturb each numeric top-level input by +10% (at most four) and re-run the same method on the one path."""
+    from .cortex import reason
+    keys = [k for k in sorted(data) if _numbers(data[k])][:4]
+    base = _numbers(baseline)
+    rows = {}
+    for key in keys:
+        varied = {**data, key: _scaled(data[key], 1.1)}
+        out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
+                      "geometry": hint}, registry=registry, journal=journal, model_config=model_config)
+        receipt["intermediate_receipts"].append(out["receipt_id"])
+        if out["abstention_state"] != "NONE":
+            rows[key] = {"state": out["abstention_state"]}
+            continue
+        now = _numbers(out["output"])
+        moved = canonical(out["output"]) != canonical(baseline)
+        change = (max((abs(a - b) / max(1e-9, abs(b)) for a, b in zip(now, base)), default=0.0)
+                  if len(now) == len(base) else None)
+        rows[key] = {"state": "ANSWERED", "answer_changed": moved, "max_relative_change": change}
+    fragile = [k for k, v in rows.items() if v.get("answer_changed")]
+    if fragile:
+        receipt["dissent"].append(f"sensitivity: the answer moves when {', '.join(fragile)} change by 10%")
+    receipt["resource_use"]["stages"] += len(rows)
+    return {"perturbation": "+10% on each numeric top-level input (at most four)", "inputs": rows,
+            "fragile_inputs": fragile}

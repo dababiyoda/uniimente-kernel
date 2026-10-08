@@ -122,3 +122,33 @@ def test_unknown_geometry_fields_are_refused_and_unknowns_stay_unknown(registry)
         compile_(registry, {"geometry": "optimization", "omniscience": True}, {})
     g = compiler.CompetencyGeometry.parse({"geometry": "prediction"})
     assert g.known() == {"geometry": "prediction"} and g.forecast_horizon is None
+
+
+def test_every_directive_mental_model_is_an_operator_or_names_its_mechanism():
+    ids = {op.operator_id for op in compiler.OPERATORS}
+    assert len(compiler.DIRECTIVE_MODELS) == 33
+    for model, target in compiler.DIRECTIVE_MODELS.items():
+        assert target in ids or target in compiler.OPERATOR_HOMES, model
+    for op in compiler.OPERATORS:
+        assert op.effect_kind in ("representation", "candidate_set", "evidence_request", "evaluation")
+        assert all([op.operator_id, op.problem_signatures, op.transformation, op.evidence_type, op.cost,
+                    op.latency, op.benchmark]), op.operator_id
+
+
+def test_sensitivity_analysis_actually_reruns_the_method(registry):
+    r = compile_(registry, {"geometry": "optimization", "graph_structure": True, "consequence_class": "financial",
+                            "deterministic_or_stochastic": "stochastic"}, maxflow_instance(3)[0])
+    assert r["state"] == "ANSWERED"
+    sens = r["sensitivity"]
+    assert sens["inputs"] and len(r["intermediate_receipts"]) == 1 + len(sens["inputs"])
+    for v in sens["inputs"].values():
+        assert v["state"] != "ANSWERED" or isinstance(v["answer_changed"], bool)
+    assert any(t["operator_id"] == "sensitivity_analysis" and t["effect_kind"] == "evaluation"
+               for t in r["transformations"])
+
+
+def test_strategic_geometry_recruits_game_theory_and_records_it(registry):
+    r = compile_(registry, {"geometry": "optimization", "multi_actor": True, "adversarial_pressure": 0.5,
+                            "consequence_class": "internal_write"}, maxflow_instance(3)[0], execute=False)
+    ops = {t["operator_id"] for t in r["transformations"]}
+    assert {"game_theory", "inversion", "premortem"} <= ops

@@ -56,7 +56,7 @@
   "owner": "GREG cognition maintainers; Alfonso remains root human authority",
   "state": "active",
   "lifecycle_state": "active",
-  "implementation_state": "in_progress_not_complete",
+  "implementation_state": "in progress 2026-10-08: P6 v2 measured; P4 decisive retest measured and applied; P8 implemented with one cycle; Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated and unit-tested; genome library expansion and admission in progress",
   "binding_scope": "Reversible implementation, frozen evaluation, review and draft PRs. Destination continuity for the whole Mind.",
   "authority_scope": "No merge, deployment, publication, contact, spending beyond signed caps, credential change or authority expansion.",
   "constitutional_constraints": [
@@ -73,7 +73,11 @@
   ],
   "failure_evidence": [
     "P4 v1 and v2 INCONCLUSIVE (docs/evidence/greg-learned-routing/2026-10-07/)",
-    "P6 v1 VPL = 1 of 2 (docs/evidence/greg-composition-lift/2026-10-07/)"
+    "P6 v1 VPL = 1 of 2 (docs/evidence/greg-composition-lift/2026-10-07/)",
+    "P6 v2 natural family F5 NOT LIFT (8.5% cheaper, 17-13, p=0.29); F4 correct under its prior, worse in realised value",
+    "P4 v3 REGRESSION 160 vs 162 (timing noise; identical orders on all discordant items): conditional routing demoted",
+    "P8 cycle 1 REJECT (held out 42 wins / 59 losses)",
+    "The first Lawful Leverage Foundry commit (1828d33) had 25 review-confirmed defects including consent and authority bypasses; fixed in 8ed25ca with regression tests"
   ],
   "dependencies": [
     "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
@@ -94,7 +98,15 @@
     "greg/cognition/composition.py",
     "greg/cognition/learned_routing.py",
     "greg/cognition/conditional_competence.py",
-    "greg/path.json"
+    "greg/path.json",
+    "greg/cognition/compiler.py",
+    "greg/cognition/evolution.py",
+    "greg/cognition/evolution_sandbox.py",
+    "greg/cognition/genomes/",
+    "foundry/lawful_leverage.py",
+    "greg/gravity.py",
+    "scripts/build_mind_evidence_index.py",
+    "docs/evidence/greg-mind-evidence-index.json"
   ],
   "tests": [],
   "evidence_refs": [
@@ -104,5 +116,10 @@
   "failure_condition": "A mechanism, benchmark or passing suite is reported as the completed Mind; frozen evidence is retuned; a layer is left permanently unbuilt; or any cognition result expands authority.",
   "next_gate": "P6 v2 frozen composition-lift run (new families, one natural), then the P4 v3 decisive retest.",
   "review_trigger": "Every frozen VPL measurement, P4/P8 verdict, admission batch or founder correction",
-  "named_skill": "Recorded per docs/PROJECT_COGNITION_SOP.md section 5; source preserved verbatim."
+  "named_skill": "Recorded per docs/PROJECT_COGNITION_SOP.md section 5; source preserved verbatim.",
+  "success_evidence_observed": [
+    "P6 v2: lift on F2R, F3, F4 (docs/evidence/greg-composition-lift/2026-10-08/README.md)",
+    "P4 v3 decisive verdict reached and its predeclared consequence applied (docs/evidence/greg-learned-routing/2026-10-08/README.md)",
+    "P8 protected evolution caught an overfit candidate under a sealed evaluator (docs/evidence/greg-protected-evolution/2026-10-08/README.md)"
+  ]
 }

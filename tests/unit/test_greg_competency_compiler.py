@@ -86,13 +86,27 @@ def test_frozen_negative_evidence_changes_routing(registry, no_index):
     assert {"method": "cognition.flow_maxflow", "why": "frozen admission status REJECTED"} in r["methods_rejected"]
 
 
-def test_a_composition_without_verified_lift_yields_to_its_cheaper_constituent(registry, no_index):
+def test_a_composition_without_verified_lift_yields_to_any_other_fit(registry, no_index):
     no_index.write_text(json.dumps({"genomes": {}, "routing": {},
                                     "recipes": {"graph_then_allocate": {"lift": False,
                                                                         "prefer": "flow_reinforce_greedy"}}}))
-    r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}      # a recipe and an operation both fit
+    r = compile_(registry, {"geometry": "optimization", "graph_structure": True}, both, execute=False)
     assert any(x["method"] == "composition:graph_then_allocate" and "no lift" in x["why"]
-               for x in r["methods_rejected"])
+               for x in r["methods_demoted"])
+    assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
+    assert alone["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only fit stays
+
+
+def test_a_demoted_composition_stays_the_route_when_nothing_else_fits(registry, no_index):
+    no_index.write_text(json.dumps({"genomes": {}, "routing": {},
+                                    "recipes": {"forecast_then_allocate": {"lift": False, "prefer": "optimize_alone",
+                                                                           "evidence": "results-v2.json#F5"}}}))
+    r = compile_(registry, {"geometry": "optimization"}, R.f5(0)["payload"], execute=False)
+    assert r["method_or_composition_selected"] == "composition:forecast_then_allocate"
+    assert r["selection_level"] == "only_fit_despite_no_lift"
+    assert any("no lift over optimize_alone" in d for d in r["dissent"])
 
 
 def test_plan_only_records_operator_transformations(registry):

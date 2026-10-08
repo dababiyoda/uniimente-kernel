@@ -33,7 +33,7 @@ HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
 HUMAN_CLASSES = ("normative", "legal", "institutional_acceptance")
 HUMAN_ROLES = ("founder", "operator", "domain_expert", "affected_participant", "auditor", "customer",
                "professional", "regulator")
-STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "EXPERIMENTAL": 3,
+STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "EXPERIMENTAL": 3, "NO_LIFT": 8,
                "COMPOSITION_ONLY": 9, "SUPERSEDED": 9, "REJECTED": 9, "FRONTIER_HORIZON": 9}
 EXCLUDED = ("SUPERSEDED", "REJECTED", "FRONTIER_HORIZON", "COMPOSITION_ONLY")
 # Inputs that identify an existing (pre-genome) family's native geometry.
@@ -230,12 +230,17 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     recipe = route(data)
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
-        reason = None
-        if verdict.get("lift") is False and verdict.get("prefer"):
-            reason = f"frozen VPL verdict: no lift over {verdict['prefer']}; the cheaper constituent is preferred"
-        rows.append({"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
-                     "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
-                     "stages": list(RECIPES[recipe]["stages"]), "rejected": reason})
+        row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
+               "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
+               "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
+        if verdict.get("lift") is False:
+            # Demoted, not deleted: a recipe without verified lift ranks after every other method that fits,
+            # because the simpler constituent wins ties; it stays the route when nothing else fits (P6 F5:
+            # 8.5% cheaper, not significant, and its comparison arm is not an invocable method).
+            row["status"] = "NO_LIFT"
+            row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
+                              f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
+        rows.append(row)
     return rows
 
 
@@ -243,7 +248,9 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
     settled = -competence.get(row["method"], 0.5)
-    return (preferred, status, settled, 0 if row["kind"] == "operation" else 1, row["method"])
+    # Frozen negative evidence outranks an operator's preference: evidence over heuristics.
+    return (1 if row.get("demoted") else 0, preferred, status, settled, 0 if row["kind"] == "operation" else 1,
+            row["method"])
 
 
 def _settled_competence(journal, geometry_class) -> dict:
@@ -302,7 +309,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     plan = {"requirements": [], "prefer": [], "notes": [], "dissent": []}
     receipt = {"schema": SCHEMA, "problem_id": pid, "inputs_digest": digest(params), "geometry": g.known(),
                "subgeometry": g.subgeometry, "consequence_class": g.consequence_class or "read_only",
-               "methods_considered": [], "methods_rejected": [], "method_or_composition_selected": None,
+               "methods_considered": [], "methods_rejected": [], "methods_demoted": [],
+               "method_or_composition_selected": None,
                "selection_level": None, "conditional_competence_basis": None,
                "assumptions": list(body.get("assumptions", [])) + ["the declared geometry is honest"],
                "evidence_refs": list(body.get("evidence_refs", [])), "transformations": [],
@@ -339,6 +347,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     rows = candidates(data, g, evidence)
     receipt["methods_considered"] = [r["method"] for r in rows]
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
+    receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible = [r for r in rows if not r["rejected"]]
     if not eligible:
         receipt["capability_deficit"] = {
@@ -355,8 +364,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
     chosen = eligible[0]
     receipt["method_or_composition_selected"] = chosen["method"]
-    receipt["selection_level"] = ("preferred_by_operator" if chosen["operation"] in plan["prefer"]
+    receipt["selection_level"] = ("only_fit_despite_no_lift" if chosen.get("demoted")
+                                  else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
+    if chosen.get("demoted"):
+        receipt["dissent"].append(chosen["demoted"])
     receipt["conditional_competence_basis"] = {m: round(v, 4) for m, v in competence.items()} or \
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:

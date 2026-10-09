@@ -1,0 +1,259 @@
+"""Layer 1 basal IntelligenceGenomes: contract shape, independent verification, abstention and scoring.
+
+Development seeds only (0-9); the held-out admission seeds (>= 1000) are never generated here.
+"""
+from __future__ import annotations
+
+import copy
+import json
+import math
+
+import pytest
+
+from greg.cognition.genomes import basal, library
+from greg.cognition.genomes.contract import GenomeError, IntelligenceGenome
+
+FAMILIES = ("basal_pid", "basal_kalman", "basal_hysteresis", "basal_bandit", "basal_breaker")
+OPS = {"basal_pid": "pid_track", "basal_kalman": "kalman_track", "basal_hysteresis": "hysteresis_switch",
+       "basal_bandit": "bandit_allocate", "basal_breaker": "circuit_break"}
+_CACHE: dict = {}
+
+
+def item(family):
+    return {x.genome.family: x for x in basal.INTELLIGENCES}[family]
+
+
+def dev(family, seed=1):
+    key = (family, seed)
+    if key not in _CACHE:
+        _CACHE[key] = item(family).instance(seed)
+    data, truth = _CACHE[key]
+    return copy.deepcopy(data), truth
+
+
+def solved(family, seed=1):
+    data, truth = dev(family, seed)
+    out = item(family).solve(data, {"latency_s": 5.0, "compute": 100000})
+    return data, truth, out
+
+
+def _json_clean(value):
+    if isinstance(value, float):
+        assert math.isfinite(value)
+    elif isinstance(value, dict):
+        assert all(isinstance(k, str) for k in value)
+        for v in value.values():
+            _json_clean(v)
+    elif isinstance(value, list):
+        assert len(value) <= 1000
+        for v in value:
+            _json_clean(v)
+    else:
+        assert value is None or isinstance(value, (str, int, bool))
+
+
+# ------------------------------------------------------------------ genome contract
+def test_genomes_validate_and_are_layer_one():
+    assert sorted(x.genome.family for x in basal.INTELLIGENCES) == sorted(FAMILIES)
+    for x in basal.INTELLIGENCES:
+        g = x.genome
+        assert isinstance(g, IntelligenceGenome)
+        assert g.validate() is g
+        assert g.layer == 1 and g.buildability == "BUILDABLE_NOW" and g.dependency is None
+        assert g.operation == OPS[g.family]
+        assert "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION" in g.lineage
+        assert g.authority_ceiling == "read_only" and g.standalone_decision
+    assert {g.genome.epistemic_class for g in basal.INTELLIGENCES if g.genome.family in
+            ("basal_pid", "basal_kalman", "basal_hysteresis")} == {"physical"}
+    assert {g.genome.epistemic_class for g in basal.INTELLIGENCES if g.genome.family in
+            ("basal_bandit", "basal_breaker")} == {"strategic"}
+
+
+def test_library_registers_basal_families_without_collisions():
+    families = library.executables()
+    for family in FAMILIES:
+        assert families[family].genome.operation == OPS[family]
+        assert library.catalog_families()[family][0] == 1
+
+
+# ------------------------------------------------------------------ solve / verify
+@pytest.mark.parametrize("family", FAMILIES)
+def test_solve_returns_a_compact_json_answer_that_verifies(family):
+    data, truth, out = solved(family)
+    assert set(out) == {"output", "certificate", "status", "missing"}
+    assert out["status"] == "ANSWER" and out["missing"] == []
+    _json_clean(out["output"])
+    _json_clean(out["certificate"])
+    assert len(json.dumps(out)) < 64 * 1024
+    checks = item(family).verify(data, out["output"], out["certificate"])
+    assert checks and all(checks.values()), checks
+    score = item(family).score(data, truth, out["output"])
+    assert score["category"] == "correct" and math.isfinite(score["quality"])
+
+
+def _corrupt(family, output, certificate):
+    out, cert = copy.deepcopy(output), copy.deepcopy(certificate)
+    if family == "basal_pid":
+        out["kc"] *= 1.5
+    elif family == "basal_kalman":
+        out["positions"][len(out["positions"]) // 2] += 1.0
+    elif family == "basal_hysteresis":
+        k = len(out["states"]) // 3
+        out["states"] = out["states"][:k] + ("1" if out["states"][k] == "0" else "0") + out["states"][k + 1:]
+    elif family == "basal_bandit":
+        seq = out["sequence"]
+        i = next(i for i in range(1, len(seq)) if seq[i] != seq[0])
+        seq[0], seq[i] = seq[i], seq[0]
+    elif family == "basal_breaker":
+        k = out["decisions"].index("0")
+        out["decisions"] = out["decisions"][:k] + "1" + out["decisions"][k + 1:]
+    return out, cert
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_verify_refutes_a_corrupted_output(family):
+    data, _, out = solved(family)
+    bad, cert = _corrupt(family, out["output"], out["certificate"])
+    checks = item(family).verify(data, bad, cert)
+    assert not all(checks.values()), checks
+
+
+def test_pid_verify_refutes_a_false_performance_claim():
+    data, _, out = solved("basal_pid")
+    cert = dict(out["certificate"], iae=out["certificate"]["iae"] * 0.5)
+    assert not item("basal_pid").verify(data, out["output"], cert)["iae_recomputed"]
+
+
+def test_pid_stability_is_checked_two_independent_ways():
+    data, _, out = solved("basal_pid")
+    p = basal._pid_inputs(data)
+    ctrl = basal._pid_controller(out["output"])
+    assert abs(basal._pid_spectral_radius_poly(p, ctrl) - basal._pid_eig_radius(p, ctrl)) < 1e-6
+    hot = dict(ctrl, kc=ctrl["kc"] * 40)
+    assert basal._pid_spectral_radius_poly(p, hot) >= 1.0 and basal._pid_eig_radius(p, hot) >= 1.0
+
+
+def test_bandit_verify_replays_the_declared_sampler():
+    data, _, out = solved("basal_bandit")
+    cert = dict(out["certificate"], seed=out["certificate"]["seed"] + 1)
+    assert not item("basal_bandit").verify(data, out["output"], cert)["sampler_replayed"]
+
+
+def test_breaker_verify_rejects_undeclared_thresholds():
+    data, _, out = solved("basal_breaker")
+    bad = copy.deepcopy(out["output"])
+    bad["params"]["cooldown"] += 1
+    assert not item("basal_breaker").verify(data, bad, out["certificate"])["declared_thresholds"]
+
+
+# ------------------------------------------------------------------ invalid input
+INVALID = {
+    "basal_pid": [lambda d: d.update(gain=0.0), lambda d: d.update(u_min=5.0), lambda d: d.update(steps=20_000),
+                  lambda d: d.update(setpoints=[[1.0, 2.0]]), lambda d: d.update(noise_sd=float("nan"))],
+    "basal_kalman": [lambda d: d.update(measurements=[1.0, 2.0]), lambda d: d.update(dt=-1.0),
+                     lambda d: d["measurements"].__setitem__(0, "x"), lambda d: d.update(r=float("inf"))],
+    "basal_hysteresis": [lambda d: d.update(levels=[1.0, 0.0]), lambda d: d.update(signal=[0.0] * 5),
+                         lambda d: d.update(initial_state=2), lambda d: d.update(threshold=1e6)],
+    "basal_bandit": [lambda d: d.update(horizon=5000), lambda d: d["outcomes"][0].pop(),
+                     lambda d: d.update(outcomes=[[0, 1]]), lambda d: d["outcomes"][0].__setitem__(0, 2)],
+    "basal_breaker": [lambda d: d.update(outcomes="0120"), lambda d: d.update(background_failure=1.5),
+                      lambda d: d.update(costs=[1, 2]), lambda d: d.update(seed=-1)],
+}
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_invalid_input_raises_genome_error(family):
+    for mutate in INVALID[family]:
+        data, _ = dev(family)
+        mutate(data)
+        with pytest.raises(GenomeError):
+            item(family).solve(data, {})
+    with pytest.raises(GenomeError):
+        item(family).solve("not a dict", {})
+
+
+# ------------------------------------------------------------------ abstention (counterindications)
+def _abstains(family, data):
+    out = item(family).solve(data, {})
+    assert out["status"] == "ABSTAIN" and out["output"] is None and out["missing"], out
+    _json_clean(out["certificate"])
+    return out
+
+
+def test_pid_abstains_outside_its_competence():
+    data, _ = dev("basal_pid")
+    _abstains("basal_pid", dict(data, theta=11.0 * data["tau"]))                       # dead-time dominated
+    _abstains("basal_pid", dict(data, u_max=1.2))                                       # unreachable setpoint
+    _abstains("basal_pid", dict(data, theta=0.0))                                       # no tau_c for zero delay
+    assert item("basal_pid").solve(dict(data, theta=0.0, tau_c=data["tau"] / 4), {})["status"] == "ANSWER"
+
+
+def test_kalman_abstains_without_or_against_its_noise_model():
+    data, _ = dev("basal_kalman")
+    _abstains("basal_kalman", {k: v for k, v in data.items() if k != "r"})
+    out = _abstains("basal_kalman", dict(data, r=data["r"] / 100.0))                    # NIS test rejects
+    assert "innovation" in out["missing"][0]
+
+
+def test_hysteresis_abstains_without_noise_or_when_noise_swamps_the_levels():
+    data, _ = dev("basal_hysteresis")
+    _abstains("basal_hysteresis", {k: v for k, v in data.items() if k != "noise_sd"})
+    sep = data["levels"][1] - data["levels"][0]
+    _abstains("basal_hysteresis", dict(data, noise_sd=5.0 * sep))
+
+
+def test_bandit_abstains_on_non_bernoulli_or_non_stationary_arms():
+    data, _ = dev("basal_bandit")
+    _abstains("basal_bandit", dict(data, stationary=False))
+    data["outcomes"][0][0] = 0.5
+    _abstains("basal_bandit", data)
+
+
+def test_breaker_abstains_without_a_profile_or_on_a_mostly_failing_dependency():
+    data, _ = dev("basal_breaker")
+    _abstains("basal_breaker", dict(data, background_failure=0.6))
+    _abstains("basal_breaker", {k: v for k, v in data.items() if k != "mean_outage"})
+
+
+# ------------------------------------------------------------------ scoring
+def _false_answer(family, data, truth):
+    if family == "basal_pid":
+        return {"law": "pid", "kc": 40 * basal.simc_pi(basal._pid_inputs(data))[0]["kc"], "ti": 1.0}
+    if family == "basal_kalman":
+        return {"positions": [x + 10.0 * math.sqrt(data["r"]) for x in truth["positions"]]}
+    if family == "basal_hysteresis":
+        return {"states": ("01" * len(data["signal"]))[:len(data["signal"])]}
+    if family == "basal_bandit":
+        worst = truth["means"].index(min(truth["means"]))
+        assert max(truth["means"]) - min(truth["means"]) >= basal.BANDIT_WRONG_GAP
+        return {"sequence": [worst] * data["horizon"]}
+    return {"decisions": "0" * len(data["outcomes"])}
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_score_categories(family):
+    data, truth, out = solved(family)
+    x = item(family)
+    abstain = x.score(data, truth, None)
+    correct = x.score(data, truth, out["output"])
+    wrong = x.score(data, truth, _false_answer(family, data, truth))
+    malformed = x.score(data, truth, {"nothing": True})
+    assert abstain["category"] == "abstain" and correct["category"] == "correct"
+    assert wrong["category"] == "wrong" and malformed["category"] == "wrong"
+    assert wrong["quality"] <= abstain["quality"] - 1.0 and malformed["quality"] <= abstain["quality"] - 1.0
+    assert correct["quality"] > wrong["quality"]
+    for arm in (x.baseline(data), x.competitor(data)):
+        s = x.score(data, truth, arm)
+        assert s["category"] in ("correct", "wrong", "abstain") and math.isfinite(s["quality"])
+
+
+def test_candidates_beat_their_baselines_on_a_dev_instance():
+    for family in ("basal_pid", "basal_kalman", "basal_breaker"):
+        data, truth, out = solved(family)
+        x = item(family)
+        assert x.score(data, truth, out["output"])["quality"] > x.score(data, truth, x.baseline(data))["quality"]
+
+
+def test_solves_are_deterministic():
+    for family in FAMILIES:
+        assert solved(family, 2)[2] == solved(family, 2)[2]

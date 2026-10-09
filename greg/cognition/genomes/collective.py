@@ -88,8 +88,8 @@ def _quorum_inputs(data):
         rows.append((oid, group, finite(o.get("accuracy"), low=0.01, high=0.99, name="accuracy"), vote))
         seen.add(oid)
     groups = data.get("groups", {})
-    if not isinstance(groups, dict):
-        raise GenomeError("groups maps group -> {shared_noise}")
+    if not isinstance(groups, dict) or len(groups) > 200:
+        raise GenomeError("groups maps at most 200 groups -> {shared_noise}")
     rho = {}
     for g, spec in groups.items():
         if not isinstance(spec, dict):
@@ -210,17 +210,22 @@ def quorum_verify(data, output, certificate):
     top = max(logpost.values())
     norm = math.fsum(math.exp(v - top) for v in logpost.values())
     post = {a: math.exp(logpost[a] - top) / norm for a in alts}
-    choice = output.get("choice") if isinstance(output, dict) else None
+    output = output if isinstance(output, dict) else {}
+    choice = output.get("choice")
     choice = choice if isinstance(choice, str) else None
-    reported = output.get("posterior") if isinstance(output, dict) else None
+    reported = output.get("posterior")
     reported = reported if isinstance(reported, dict) else {}
-    cert_groups = {g: sorted(v) for g, v in (certificate.get("groups") or {}).items()}
+    raw_groups = certificate.get("groups") if isinstance(certificate, dict) else None
+    cert_groups = ({g: sorted(v) for g, v in raw_groups.items()}
+                   if isinstance(raw_groups, dict) and all(isinstance(v, list) and all(isinstance(o, str) for o in v)
+                                                           for v in raw_groups.values()) else None)
     return {"observers_partitioned_once": cert_groups == {g: sorted(o for o, *_ in ms) for g, ms in members.items()},
             "correlation_declared": declared,
             "enough_independent_groups": len(members) >= minimum,
+            "independent_groups_reported": output.get("independent_groups") == len(members),
             "choice_is_posterior_leader": choice in post and post[choice] >= max(post.values()) - 1e-9,
             "quorum_reached": choice in post and post[choice] >= quorum - 1e-9,
-            "posterior_recomputed": all(isinstance(reported.get(a), (int, float))
+            "posterior_recomputed": all(type(reported.get(a)) in (int, float)
                                         and abs(reported[a] - post[a]) < 1e-6 for a in alts)}
 
 
@@ -239,10 +244,34 @@ def quorum_majority(data):
     return {"choice": _unique_max(counts)}
 
 
+def quorum_group_majority(data):
+    """Competitor: one vote per declared independence group. Each group votes for its accuracy-weighted
+    majority (a tie inside the group casts no vote) with the Nitzan-Paroush log-odds weight of the group's mean
+    accuracy; the weighted majority over groups wins, exact ties abstain. It uses the declared grouping (as the
+    candidate does) but no likelihood model and no quorum. Chosen as the strongest of four group-blind and
+    group-aware alternatives on development seeds 0-9 (mean score 1.0 vs design-effect-weighted 0.8,
+    accuracy-weighted 0.6, best single observer 0.4)."""
+    alts, rows, *_ = _quorum_inputs(data)
+    k = len(alts)
+    groups = {}
+    for _, g, acc, vote in rows:
+        groups.setdefault(g, []).append((acc, vote))
+    scores = {a: 0.0 for a in alts}
+    for members in groups.values():
+        inner = {}
+        for acc, vote in members:
+            inner[vote] = inner.get(vote, 0.0) + math.log(acc * (k - 1) / (1 - acc))
+        lead = _unique_max(inner)
+        if lead is None:
+            continue
+        q = statistics.fmean(acc for acc, _ in members)
+        scores[lead] += math.log(q * (k - 1) / (1 - q))
+    return {"choice": _unique_max(scores)}
+
+
 def quorum_weighted_majority(data):
-    """Competitor: accuracy-weighted majority (Nitzan-Paroush log-odds weights, optimal for INDEPENDENT
-    voters with symmetric errors) over all observers. Chosen over best-single-observer as the stronger
-    competitor on development seeds (mean score 0.6 vs 0.4 on seeds 0-9)."""
+    """Alternative competitor (group-blind): accuracy-weighted majority (Nitzan-Paroush log-odds weights,
+    optimal for INDEPENDENT voters with symmetric errors) over all observers (mean score 0.6 on dev seeds 0-9)."""
     alts, rows, *_ = _quorum_inputs(data)
     k = len(alts)
     scores = {a: 0.0 for a in alts}
@@ -439,13 +468,15 @@ def aco_solve(data, budget):
             last_gain = it
             restarts += 1
         if it % max(1, iterations // 50) == 0 or it == iterations - 1:
-            history.append([it, round(best_len, 6)])
+            history.append([it, round(best_len, 9)])
     best = [int(c) for c in best]
+    # bounded trace that always keeps the final entry (it must end at the reported length)
+    trace = history if len(history) <= 60 else history[:59] + history[-1:]
     return answer({"tour": best, "length": round(best_len, 9)},
                   {"seed": seed, "iterations": iterations, "ants": ants, "restarts": restarts,
                    "parameters": {"alpha": alpha, "beta": beta, "evaporation": rho, "p_best": p_best,
                                   "local_search": "2-opt on the iteration-best ant" if local_search else "none"},
-                   "best_length_by_iteration": history[:60],
+                   "best_length_by_iteration": trace,
                    "evidence": "heuristic colony trace; no optimality claim"})
 
 
@@ -1770,11 +1801,15 @@ INTELLIGENCES = [
             benchmark_suite="seeded panels: 4-9 groups (half singletons, factions of 2-9 with shared noise "
                             "0.3-0.95), accuracies estimated from 40-trial histories; dev 0-9 / held-out 1000-1029",
             baseline="simple majority of all observers (each counted as independent; ties abstain)",
-            competitor="accuracy-weighted majority with log-odds weights over all observers (stronger than "
-                       "best-single-observer on dev seeds); it uses the same accuracies but ignores grouping")),
+            competitor="one vote per declared independence group (the group's accuracy-weighted majority, "
+                       "weighted by the log-odds of its mean accuracy); uses the same grouping and accuracies, "
+                       "no likelihood model")),
         solve=quorum_solve, verify=quorum_verify, instance=quorum_instance, score=quorum_score,
-        baseline=quorum_majority, competitor=quorum_weighted_majority, subregion=quorum_subregion, tolerance=1e-9,
-        notes={"alternative_competitor": "quorum_best_single (follow the most accurate observer)",
+        baseline=quorum_majority, competitor=quorum_group_majority, subregion=quorum_subregion, tolerance=1e-9,
+        notes={"alternative_competitors": "quorum_weighted_majority (group-blind log-odds weights; the competitor "
+                                          "before the 2026-10-09 review, mean 0.6 on dev), quorum_best_single (0.4); a "
+                                          "design-effect-weighted vote scored 0.8; the group-majority competitor 1.0 "
+                                          "(ties the candidate on every dev seed)",
                "score": "+1 correct, -1 wrong, 0 abstain; a single decision per seed"}),
     Executable(
         genome=IntelligenceGenome(**_common(

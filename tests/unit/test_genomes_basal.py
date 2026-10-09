@@ -149,7 +149,8 @@ def test_breaker_verify_rejects_undeclared_thresholds():
 # ------------------------------------------------------------------ invalid input
 INVALID = {
     "basal_pid": [lambda d: d.update(gain=0.0), lambda d: d.update(u_min=5.0), lambda d: d.update(steps=20_000),
-                  lambda d: d.update(setpoints=[[1.0, 2.0]]), lambda d: d.update(noise_sd=float("nan"))],
+                  lambda d: d.update(setpoints=[[1.0, 2.0]]), lambda d: d.update(noise_sd=float("nan")),
+                  lambda d: d.update(theta=(basal.PID_MAX_DELAY + 1) * d["dt"])],
     "basal_kalman": [lambda d: d.update(measurements=[1.0, 2.0]), lambda d: d.update(dt=-1.0),
                      lambda d: d["measurements"].__setitem__(0, "x"), lambda d: d.update(r=float("inf"))],
     "basal_hysteresis": [lambda d: d.update(levels=[1.0, 0.0]), lambda d: d.update(signal=[0.0] * 5),
@@ -257,3 +258,130 @@ def test_candidates_beat_their_baselines_on_a_dev_instance():
 def test_solves_are_deterministic():
     for family in FAMILIES:
         assert solved(family, 2)[2] == solved(family, 2)[2]
+
+
+# ------------------------------------------------------------------ adversarial review 2026-10-09
+def verify(family, data, output, certificate):
+    return item(family).verify(data, output, certificate)
+
+
+def test_declared_competitors_are_the_reviewed_strongest_alternatives():
+    assert item("basal_pid").competitor is basal.pid_sim_optimised
+    assert item("basal_kalman").competitor is basal.kalman_alpha_beta
+    assert item("basal_hysteresis").competitor is basal.hysteresis_hmm
+    assert item("basal_bandit").competitor is basal.bandit_klucb_plus
+    assert item("basal_breaker").competitor is basal.breaker_consecutive
+    for family in FAMILIES:
+        assert item(family).notes.get("alternative_competitor")
+
+
+def test_reviewed_competitors_answer_in_contract_and_deterministically():
+    for family in FAMILIES:
+        data, truth = dev(family, 3)
+        x = item(family)
+        comp = x.competitor(data)
+        _json_clean(comp)
+        assert x.score(data, truth, comp)["category"] == "correct"
+        assert x.competitor(copy.deepcopy(data)) == comp
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_verify_fails_closed_on_an_empty_certificate(family):
+    data, _, out = solved(family)
+    checks = verify(family, data, out["output"], {})
+    assert checks and not all(checks.values()), checks
+
+
+def test_pid_verify_refutes_a_self_consistent_unstable_controller():
+    data, _, out = solved("basal_pid")
+    p = basal._pid_inputs(data)
+    hot = dict(out["output"], kc=out["output"]["kc"] * 40)
+    ctrl = basal._pid_controller(hot)
+    sim = basal._pid_judge(p, ctrl)
+    cert = dict(out["certificate"], iae=sim["iae"], effort_tv=sim["effort_tv"], cost=sim["cost"],
+                max_abs_error=sim["max_abs_error"], longest_limit_run=sim["longest_limit_run"],
+                closed_loop_spectral_radius=basal._pid_eig_radius(p, ctrl))
+    checks = verify("basal_pid", data, hot, cert)
+    assert checks["iae_recomputed"] and checks["cost_recomputed"]       # the performance numbers are honest
+    assert not checks["linear_loop_stable"] and not checks["declared_rule"]
+
+
+def test_pid_verify_recomputes_settling_and_limit_runs():
+    data, _, out = solved("basal_pid")
+    cert = out["certificate"]
+    settle = list(cert["settling_time"])
+    i = next(i for i, v in enumerate(settle) if v is not None)
+    settle[i] += 10 * data["dt"]
+    assert not verify("basal_pid", data, out["output"], dict(cert, settling_time=settle))["steps_recomputed"]
+    bumped = dict(cert, longest_limit_run=cert["longest_limit_run"] + 1)
+    assert not verify("basal_pid", data, out["output"], bumped)["limit_run_recomputed"]
+
+
+def test_pid_abstains_instead_of_emitting_gains_its_verifier_refutes():
+    slow = {"gain": 1.0, "tau": 1000.0, "theta": 0.5, "dt": 0.1, "steps": 500,
+            "setpoints": [[0.0, 1.0], [5.0, 2.0]], "noise_sd": 0.001, "u_min": -0.5, "u_max": 3.5, "u0": 1.0,
+            "seed": 3}
+    out = _abstains("basal_pid", slow)                                  # the actuator saturates all horizon
+    assert "saturation" in out["missing"][0]
+    data, _ = dev("basal_pid")
+    out = _abstains("basal_pid", dict(data, theta=0.0, tau_c=1e-9, tau=1000.0))
+    assert "controller contract" in out["missing"][0]
+
+
+def test_pid_worst_case_dead_time_stays_bounded():
+    import time
+    data = {"gain": 1.0, "tau": 1000.0, "theta": basal.PID_MAX_DELAY * 0.1, "dt": 0.1, "steps": 2000,
+            "setpoints": [[0.0, 1.0], [20.0, 1.1]], "noise_sd": 0.001, "u_min": -0.5, "u_max": 3.5, "u0": 1.0,
+            "seed": 3}
+    started = time.perf_counter()
+    out = item("basal_pid").solve(data, {})
+    assert time.perf_counter() - started < 2.0
+    assert out["status"] in ("ANSWER", "ABSTAIN")
+    _json_clean(out["certificate"])
+
+
+def test_kalman_verify_refutes_a_wrong_velocity_and_a_filter_for_another_model():
+    data, _, out = solved("basal_kalman")
+    cert = out["certificate"]
+    bad = dict(out["output"], final_velocity=out["output"]["final_velocity"] + 1.0)
+    assert not verify("basal_kalman", data, bad, cert)["final_velocity_recomputed"]
+    dt, zs, q, r, prior = basal._kf_inputs(data)
+    est, v, p11, nis, updates, _ = basal._kf_scalar(dt, zs, 100.0 * q, r, prior)
+    other = {"positions": est, "final_velocity": v, "final_position_variance": p11}
+    checks = verify("basal_kalman", data, other, dict(cert, nis_sum=nis))
+    assert not checks["estimates_recomputed"] and not checks["nis_recomputed"]
+
+
+def test_hysteresis_verify_refutes_a_valid_trace_with_an_undeclared_design():
+    data, _, out = solved("basal_hysteresis")
+    thr = data["threshold"]
+    states, switches = basal._schmitt_run(data["signal"], thr, thr, 1, data["initial_state"])
+    cert = dict(out["certificate"], upper=thr, lower=thr, hysteresis=0.0, confirm=1)
+    checks = verify("basal_hysteresis", data, {"states": states, "switch_count": len(switches)}, cert)
+    assert checks["switches_justified"] and checks["band_centered"]     # a genuine single-threshold trace
+    assert not checks["declared_design_optimal"]                        # but not the declared optimal design
+    inflated = dict(out["certificate"], expected_cost_per_change=out["certificate"]["expected_cost_per_change"] * 2)
+    assert not verify("basal_hysteresis", data, out["output"], inflated)["declared_design_optimal"]
+
+
+def test_hysteresis_design_check_agrees_with_the_solver_closed_form():
+    data, _, out = solved("basal_hysteresis")
+    sig, lo, hi, thr, sigma, dwell, s0 = basal._hy_inputs(data)
+    cert = out["certificate"]
+    independent = basal._hy_design_cost_check(lo, hi, thr, sigma, dwell, cert["hysteresis"], cert["confirm"])
+    assert math.isclose(independent, cert["expected_cost_per_change"], rel_tol=1e-9)
+
+
+def test_bandit_verify_recomputes_posterior_and_digest():
+    data, _, out = solved("basal_bandit")
+    cert = out["certificate"]
+    post = copy.deepcopy(cert["posterior"])
+    post[0][0] += 1
+    assert not verify("basal_bandit", data, out["output"], dict(cert, posterior=post))["posterior_recomputed"]
+    assert not verify("basal_bandit", data, out["output"], dict(cert, trace_digest="0" * 64))["trace_digest_bound"]
+
+
+def test_breaker_verify_recomputes_observed_successes():
+    data, _, out = solved("basal_breaker")
+    cert = dict(out["certificate"], successes_observed=out["certificate"]["successes_observed"] + 1)
+    assert not verify("basal_breaker", data, out["output"], cert)["successes_recomputed"]

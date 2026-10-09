@@ -20,6 +20,12 @@ read-only computations over the data handed to them.
     count is a binomial-tail test of the declared background failure rate and whose cooldown balances the
     declared outage-call and unavailability costs.
 
+Competitors (strengthened by the 2026-10-09 adversarial review; the earlier choices stay in the module as
+alternatives): simulation-optimised PI on the declared model (was AMIGO), alpha-beta filter (unchanged), HMM
+forward filter (was a moving median), KL-UCB+ (was KL-UCB), a standard consecutive-failure breaker (was
+exponential backoff). Each was the strongest of the alternatives run on dev seeds 0-9; none was tuned on
+held-out seeds.
+
 Scoring convention shared by all five: ``score(data, truth, None)`` (abstention) is the quality of the
 system's safe fallback when the method declines (manual hold, raw sensor, never switch, round-robin,
 always call). A "wrong" answer is never scored above one unit below that fallback, so a false answer can
@@ -53,11 +59,22 @@ def _q(x):
     return 0.5 * math.erfc(x / math.sqrt(2.0))
 
 
+def _num(x):
+    """A certificate number for comparison: finite int/float, else NaN (which compares unequal)."""
+    return float(x) if type(x) in (int, float) and math.isfinite(x) else math.nan
+
+
+def _close(a, b, *, rel=1e-6, tol=1e-9):
+    return math.isclose(_num(a), _num(b), rel_tol=rel, abs_tol=tol)
+
+
 # ======================================================================== basal_pid
 PID_EFFORT_WEIGHT = 0.05   # cost = IAE + weight * |K| * dt * total variation of u   (both in y*time units)
 PID_SAT_FRACTION = 0.2     # one contiguous run at the same actuator limit longer than this = persistent saturation
 PID_DIVERGE = 10.0         # |r - y| above this multiple of the scenario span = divergence
 PID_SETTLE_BAND = 0.05     # settling band, fraction of the setpoint step
+PID_MAX_DELAY = 500        # dead-time samples; the stability check is an O((delay + 4)^3) eigenproblem
+PID_KC_LIMIT, PID_TI_RANGE = 1e9, (1e-9, 1e12)   # controller output contract (shared by every arm)
 
 
 def _pid_inputs(data):
@@ -70,8 +87,8 @@ def _pid_inputs(data):
     dt = finite(data.get("dt"), low=1e-6, high=1e6, name="dt")
     steps = bounded_int(data.get("steps"), low=10, high=10_000, name="steps")
     delay = int(round(theta / dt))
-    if delay > 2000:
-        raise GenomeError("dead time above 2000 samples")
+    if delay > PID_MAX_DELAY:
+        raise GenomeError(f"dead time above {PID_MAX_DELAY} samples: resample with a larger dt")
     raw = data.get("setpoints")
     if not isinstance(raw, list) or not 1 <= len(raw) <= 50:
         raise GenomeError("setpoints: 1-50 [time, value] pairs required")
@@ -111,8 +128,8 @@ def _pid_controller(out):
         raise GenomeError("controller law is pid or on_off")
     if out["law"] == "on_off":
         return {"law": "on_off", "band": finite(out.get("band"), low=0.0, high=1e12, name="band")}
-    kc = finite(out.get("kc"), low=-1e9, high=1e9, name="kc")
-    ti = finite(out.get("ti"), low=1e-9, high=1e12, name="ti")
+    kc = finite(out.get("kc"), low=-PID_KC_LIMIT, high=PID_KC_LIMIT, name="kc")
+    ti = finite(out.get("ti"), low=PID_TI_RANGE[0], high=PID_TI_RANGE[1], name="ti")
     td = finite(out.get("td", 0.0), low=0.0, high=1e12, name="td")
     tf = finite(out.get("tf", 0.0), low=0.0, high=1e12, name="tf")
     b = finite(out.get("b", 1.0), low=0.0, high=1.0, name="b")
@@ -272,11 +289,25 @@ def pid_solve(data, budget):
         return answer(None, {"required_inputs": [round(u, 6) for u in needed]}, status="ABSTAIN",
                       missing=["a setpoint is unreachable within the actuator limits"])
     ctrl, tc = simc_pi(p)
+    if not (abs(ctrl["kc"]) <= PID_KC_LIMIT and PID_TI_RANGE[0] <= ctrl["ti"] <= PID_TI_RANGE[1]):
+        return answer(None, {"kc": ctrl["kc"], "ti": ctrl["ti"]}, status="ABSTAIN",
+                      missing=["SIMC gains fall outside the controller contract: declare a larger tau_c"])
     ys, us, rs = _pid_loop(p, ctrl)
     m = _pid_metrics(p, ys, us, rs)
     overshoot, settling = _pid_steps_summary(p, ys)
     rho = _pid_spectral_radius_poly(p, ctrl)
-    out = {k: (round(v, 12) if isinstance(v, float) else v) for k, v in ctrl.items()}
+    # Never emit gains that its own simulation already shows to be unstable, divergent or saturated for
+    # more than the allowed share of the horizon (the scenario, not the tuning, is then the problem).
+    failed = [name for name, bad in (("linearly unstable", rho >= 1.0),
+                                     ("diverges", m["max_abs_error"] > PID_DIVERGE * _pid_span(p)),
+                                     ("persistent actuator saturation",
+                                      m["longest_limit_run"] > PID_SAT_FRACTION * p["steps"])) if bad]
+    if failed:
+        return answer(None, {"closed_loop_spectral_radius": rho, "longest_limit_run": m["longest_limit_run"],
+                             "max_abs_error": m["max_abs_error"]}, status="ABSTAIN",
+                      missing=[f"SIMC loop {', '.join(failed)} on the declared scenario: lengthen the horizon, "
+                               "soften the setpoint steps or declare a larger tau_c"])
+    out = dict(ctrl)        # unrounded: the certificate was computed with exactly these gains
     out["rule"] = "SIMC PI, tau_c = theta" if p["tau_c"] is None else "SIMC PI, declared tau_c"
     cert = {"seed": p["seed"], "iae": m["iae"], "effort_tv": m["effort_tv"], "cost": m["cost"],
             "effort_weight": PID_EFFORT_WEIGHT, "overshoot": overshoot, "settling_time": settling,
@@ -380,24 +411,34 @@ def _pid_eig_radius(p, ctrl):
 
 
 def pid_verify(data, output, certificate):
+    """Independent replay (deque dead time) + state-space eigenvalues + the declared tuning rule."""
     p = _pid_inputs(data)
     ctrl = _pid_controller(output)
     sim = _pid_judge(p, ctrl)
-    checks = {"iae_recomputed": math.isclose(sim["iae"], certificate.get("iae", math.nan), rel_tol=1e-6, abs_tol=1e-9),
-              "effort_recomputed": math.isclose(sim["effort_tv"], certificate.get("effort_tv", math.nan),
-                                                rel_tol=1e-6, abs_tol=1e-9),
-              "cost_recomputed": math.isclose(sim["cost"], certificate.get("cost", math.nan), rel_tol=1e-6, abs_tol=1e-9),
-              "seed_bound": certificate.get("seed") == p["seed"],
+    cert = certificate if isinstance(certificate, dict) else {}
+    checks = {"iae_recomputed": _close(sim["iae"], cert.get("iae")),
+              "effort_recomputed": _close(sim["effort_tv"], cert.get("effort_tv")),
+              "cost_recomputed": _close(sim["cost"], cert.get("cost")),
+              "max_error_recomputed": _close(sim["max_abs_error"], cert.get("max_abs_error")),
+              "limit_run_recomputed": cert.get("longest_limit_run") == sim["longest_limit_run"],
+              "seed_bound": cert.get("seed") == p["seed"],
               "no_divergence": sim["max_abs_error"] <= PID_DIVERGE * _pid_span(p),
               "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"]}
     if ctrl["law"] == "pid":
         rho = _pid_eig_radius(p, ctrl)
         checks["linear_loop_stable"] = rho < 1.0
-        checks["spectral_radius_recomputed"] = abs(rho - certificate.get("closed_loop_spectral_radius", math.nan)) <= 1e-5
-    # overshoot of every step, recomputed from the replayed trace
+        checks["spectral_radius_recomputed"] = abs(rho - _num(cert.get("closed_loop_spectral_radius"))) <= 1e-5
+        # the gains are the declared SIMC rule at the declared closed-loop time constant
+        tc = p["tau_c"] if p["tau_c"] is not None else p["theta"]
+        lam = tc + p["theta"]
+        checks["declared_rule"] = (_close(_num(cert.get("tau_c")), tc)
+                                   and _close(ctrl["kc"] * p["gain"] * lam, p["tau"], rel=1e-9)
+                                   and _close(ctrl["ti"], p["tau"] if p["tau"] <= 4.0 * lam else 4.0 * lam, rel=1e-9)
+                                   and ctrl["td"] == 0.0 and ctrl["b"] == 1.0)
+    # overshoot and settling time of every step, recomputed from the replayed trace
     sched, dt, n, ys = p["schedule"], p["dt"], p["steps"], sim["y"]
-    claimed = certificate.get("overshoot", [])
-    ok = len(claimed) == len(sched) - 1
+    over, settle = cert.get("overshoot"), cert.get("settling_time")
+    ok = (isinstance(over, list) and isinstance(settle, list) and len(over) == len(settle) == len(sched) - 1)
     for i, ((_, r0), (t1, r1)) in enumerate(zip(sched, sched[1:])):
         if not ok:
             break
@@ -405,11 +446,18 @@ def pid_verify(data, output, certificate):
         stops = [t for t, _ in sched[i + 2:]] + ([p["load_time"]] if p["load"] != 0 and p["load_time"] > t1 else [])
         k2 = min([n] + [math.ceil(t / dt - 1e-12) for t in stops])
         if k1 >= n or k2 <= k1 or r1 == r0:
-            ok = claimed[i] is None
+            ok = over[i] is None and settle[i] is None
             continue
-        worst = max((y - r1) * (1 if r1 > r0 else -1) for y in ys[k1:k2])
-        ok = isinstance(claimed[i], (int, float)) and abs(max(0.0, worst) / abs(r1 - r0) - claimed[i]) <= 1e-5
-    checks["overshoot_recomputed"] = ok
+        seg = ys[k1:k2]
+        worst = max((y - r1) * (1 if r1 > r0 else -1) for y in seg)
+        ok = _close(_num(over[i]), max(0.0, worst) / abs(r1 - r0), rel=0.0, tol=1e-5)
+        inside = len(seg)                       # walk back over the samples that stay inside the band
+        while inside > 0 and abs(seg[inside - 1] - r1) <= PID_SETTLE_BAND * abs(r1 - r0):
+            inside -= 1
+        want = None if inside == len(seg) else inside * dt
+        ok = ok and ((want is None and settle[i] is None)
+                     or (want is not None and _close(_num(settle[i]), want, tol=1e-6)))
+    checks["steps_recomputed"] = ok
     return checks
 
 
@@ -478,7 +526,8 @@ def pid_on_off(data):
 
 
 def pid_amigo(data):
-    """Competitor: AMIGO PI (Astrom & Hagglund 2004), robust (Ms ~ 1.4) near-optimal load-rejection PI."""
+    """Alternative competitor (the builder's choice; also the optimiser's start): AMIGO PI (Astrom & Hagglund
+    2004), robust (Ms ~ 1.4) near-optimal load-rejection PI."""
     p = _pid_inputs(data)
     K, T, L = p["gain"], p["tau"], p["theta"]
     if L <= 0:
@@ -486,6 +535,67 @@ def pid_amigo(data):
     kc = (0.15 + (0.35 - L * T / (L + T) ** 2) * T / L) / K
     ti = 0.35 * L + 13.0 * L * T * T / (T * T + 12.0 * L * T + 7.0 * L * L)
     return {"law": "pid", "kc": kc, "ti": ti, "td": 0.0, "tf": 0.0, "b": 1.0}
+
+
+PID_OPT_ITERATIONS = 60    # Nelder-Mead iterations of the simulation-optimised competitor
+
+
+def _nelder_mead_2d(f, x0, step, iterations):
+    """Deterministic 2-D Nelder-Mead (reflection 1, expansion 2, contraction 0.5, shrink 0.5)."""
+    pts = [list(x0), [x0[0] + step, x0[1]], [x0[0], x0[1] + step]]
+    vals = [f(v) for v in pts]
+    for _ in range(iterations):
+        order = sorted(range(3), key=lambda i: vals[i])
+        pts, vals = [pts[i] for i in order], [vals[i] for i in order]
+        mid = [(pts[0][j] + pts[1][j]) / 2.0 for j in range(2)]
+        refl = [2.0 * mid[j] - pts[2][j] for j in range(2)]
+        f_r = f(refl)
+        if f_r < vals[0]:
+            expd = [3.0 * mid[j] - 2.0 * pts[2][j] for j in range(2)]
+            f_e = f(expd)
+            pts[2], vals[2] = (expd, f_e) if f_e < f_r else (refl, f_r)
+        elif f_r < vals[1]:
+            pts[2], vals[2] = refl, f_r
+        else:
+            con = [0.5 * (mid[j] + pts[2][j]) for j in range(2)]
+            f_c = f(con)
+            if f_c < vals[2]:
+                pts[2], vals[2] = con, f_c
+            else:
+                for i in (1, 2):
+                    pts[i] = [0.5 * (pts[0][j] + pts[i][j]) for j in range(2)]
+                    vals[i] = f(pts[i])
+    best = min(range(3), key=lambda i: vals[i])
+    return pts[best], vals[best]
+
+
+def pid_sim_optimised(data):
+    """Competitor: model-based numerical PI tuning. Nelder-Mead on (log |Kc|, log Ti) minimises the declared
+    closed-loop cost on the declared FOPDT model and scenario, simulated with an independent noise realisation
+    (it never sees the scored noise), started from AMIGO; unstable, divergent or persistently saturated gains
+    are rejected. This is what an engineer with the declared model and a simulator would do."""
+    p = _pid_inputs(data)
+    own = dict(p, seed=int(hashlib.sha256(f"pid-competitor-noise:{p['seed']}".encode()).hexdigest()[:7], 16))
+    sign = 1.0 if p["gain"] > 0 else -1.0
+    start = pid_amigo(data) or {"kc": p["tau"] / (p["gain"] * max(p["theta"], p["dt"])), "ti": p["tau"]}
+
+    def cost(z):
+        if max(abs(z[0]), abs(z[1])) > 60.0:
+            return math.inf
+        ctrl = {"law": "pid", "kc": sign * math.exp(z[0]), "ti": math.exp(z[1]), "td": 0.0, "tf": 0.0, "b": 1.0}
+        if not (abs(ctrl["kc"]) <= PID_KC_LIMIT and PID_TI_RANGE[0] <= ctrl["ti"] <= PID_TI_RANGE[1]):
+            return math.inf
+        if _pid_spectral_radius_poly(own, ctrl) >= 1.0:
+            return math.inf
+        m = _pid_metrics(own, *_pid_loop(own, ctrl))
+        if m["max_abs_error"] > PID_DIVERGE * _pid_span(own) or m["longest_limit_run"] > PID_SAT_FRACTION * own["steps"]:
+            return math.inf
+        return m["cost"]
+
+    z, value = _nelder_mead_2d(cost, [math.log(abs(start["kc"])), math.log(start["ti"])], 0.5, PID_OPT_ITERATIONS)
+    if not math.isfinite(value):
+        return pid_amigo(data)
+    return {"law": "pid", "kc": sign * math.exp(z[0]), "ti": math.exp(z[1]), "td": 0.0, "tf": 0.0, "b": 1.0}
 
 
 def pid_ziegler_nichols(data):
@@ -621,16 +731,20 @@ def kalman_verify(data, output, certificate):
             nis += nu * nu / S
             m += 1
         est.append(float(x[0, 0]))
-    got = output.get("positions") if isinstance(output, dict) else None
+    out = output if isinstance(output, dict) else {}
+    cert = certificate if isinstance(certificate, dict) else {}
+    got = out.get("positions")
     scale = 1.0 + max(abs(e) for e in est)
+    vscale = 1.0 + abs(float(x[1, 0])) + scale / dt
     lo, hi = _nis_bounds(m)
     same = isinstance(got, list) and len(got) == len(est) and all(
-        isinstance(g, (int, float)) and math.isfinite(g) and abs(g - e) <= 1e-6 * scale for g, e in zip(got, est))
+        type(g) in (int, float) and math.isfinite(g) and abs(g - e) <= 1e-6 * scale for g, e in zip(got, est))
     return {"estimates_recomputed": same,
-            "final_variance_recomputed": math.isclose(output.get("final_position_variance", math.nan), float(P[0, 0]),
-                                                      rel_tol=1e-6, abs_tol=1e-12),
+            "final_velocity_recomputed": abs(_num(out.get("final_velocity")) - float(x[1, 0])) <= 1e-6 * vscale,
+            "final_variance_recomputed": _close(out.get("final_position_variance"), float(P[0, 0]), tol=1e-12),
+            "update_count": cert.get("updates") == m,
             "innovation_consistent": lo <= nis <= hi,
-            "nis_recomputed": math.isclose(certificate.get("nis_sum", math.nan), nis, rel_tol=1e-6, abs_tol=1e-9)}
+            "nis_recomputed": _close(cert.get("nis_sum"), nis)}
 
 
 def kalman_instance(seed):
@@ -834,14 +948,41 @@ def hysteresis_solve(data, budget):
                    "model": "i.i.d. Gaussian noise, geometric dwell; closed-form run-length design"})
 
 
+def _hy_design_cost_check(lo, hi, thr, sigma, dwell, h, m):
+    """Verifier-side expected cost per regime change at (h, m): Gaussian tails from statistics.NormalDist and
+    the run-length delay from the absorbing Markov chain E_j = 1 + p E_(j+1) + (1 - p) E_0 (not the solver's
+    closed form)."""
+    from statistics import NormalDist
+    tail = NormalDist()
+
+    def wait(p):                               # expected samples until m consecutive successes, minus one
+        a, c = 0.0, 1.0                        # E_j = a_j + (1 - c_j) E_0, backwards from E_m = 0
+        for _ in range(m):
+            a, c = 1.0 + p * a, p * c
+        if c <= 1e-300 or a / c > 1e300:
+            return math.inf
+        return a / c - 1.0
+
+    total = 0.0
+    for gap_from, gap_to in ((thr - lo, hi - thr), (hi - thr, thr - lo)):
+        hit = tail.cdf((h - gap_to) / sigma * -1.0)            # P(sample beyond the far band edge)
+        false = tail.cdf(-(gap_from + h) / sigma)               # P(noise alone crosses the band)
+        total += 0.5 * (min(wait(hit), HY_W_MISS) + HY_W_FALSE * 2.0 * dwell * (1.0 - false) * false ** m)
+    return total
+
+
 def hysteresis_verify(data, output, certificate):
     """Replay: every recorded switch must be justified by m consecutive samples beyond the band, and no
-    unrecorded switch may have been due."""
+    unrecorded switch may have been due. The declared design (h, m) is re-derived: its expected cost is
+    recomputed by an independent route and must be the minimum over the declared 41 x 12 design grid."""
     sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
-    states = output.get("states") if isinstance(output, dict) else None
-    up, down, m = certificate.get("upper"), certificate.get("lower"), certificate.get("confirm")
+    out = output if isinstance(output, dict) else {}
+    cert = certificate if isinstance(certificate, dict) else {}
+    states = out.get("states")
+    up, down, m, h = cert.get("upper"), cert.get("lower"), cert.get("confirm"), cert.get("hysteresis")
     shape = (isinstance(states, str) and len(states) == len(sig) and set(states) <= {"0", "1"}
-             and isinstance(m, int) and m >= 1 and isinstance(up, float) and isinstance(down, float))
+             and type(m) is int and 1 <= m <= HY_MAX_CONFIRM
+             and all(math.isfinite(_num(v)) for v in (up, down, h)))
     if not shape:
         return {"shape": False}
     justified, prev, streak = True, s0, 0
@@ -856,9 +997,21 @@ def hysteresis_verify(data, output, certificate):
         if should_switch:
             streak = 0
         prev = cur
-    return {"shape": True, "band_centered": abs((up + down) / 2 - thr) <= 1e-9 * (1 + abs(thr)) and up >= down,
+    design = False
+    if sigma is not None:
+        step = min(thr - lo, hi - thr) / 40.0 * 1.5
+        on_grid = abs(h / step - round(h / step)) <= 1e-9 and 0 <= round(h / step) <= 40
+        claimed = _hy_design_cost_check(lo, hi, thr, sigma, dwell, h, m)
+        best = min(_hy_design_cost_check(lo, hi, thr, sigma, dwell, i * step, j)
+                   for i in range(41) for j in range(1, HY_MAX_CONFIRM + 1))
+        design = (on_grid and claimed <= best + 1e-9 * (1.0 + best) and claimed < HY_W_MISS
+                  and _close(cert.get("expected_cost_per_change"), claimed))
+    return {"shape": True,
+            "band_centered": _close(up, thr + h, rel=1e-12, tol=1e-9 * (1 + abs(thr)))
+            and _close(down, thr - h, rel=1e-12, tol=1e-9 * (1 + abs(thr))) and h >= 0,
             "switches_justified": justified,
-            "switch_count": output.get("switch_count") == sum(1 for a, b in zip(str(s0) + states, states) if a != b)}
+            "declared_design_optimal": design,
+            "switch_count": out.get("switch_count") == sum(1 for a, b in zip(str(s0) + states, states) if a != b)}
 
 
 def _hy_signal(rnd, lo, hi, sigma, dwell, n, s0):
@@ -942,7 +1095,8 @@ def _median_states(sig, w, thr):
 
 
 def hysteresis_median(data):
-    """Competitor: causal moving median + single threshold, window tuned by simulation of the declared model."""
+    """Alternative competitor (the builder's choice): causal moving median + single threshold, window tuned by
+    simulation of the declared model."""
     sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
     if sigma is None:
         return {"states": _median_states(sig, 9, thr), "window": 9}
@@ -956,6 +1110,47 @@ def hysteresis_median(data):
         if best is None or c < best[0]:
             best = (c, w)
     return {"states": _median_states(sig, best[1], thr), "window": best[1]}
+
+
+def _hmm_states(sig, lo, hi, sigma, dwell, s0, margin):
+    """Causal two-state HMM forward filter (Wonham filter) in log-odds, switching prob 1 / mean dwell;
+    the decision switches when the posterior log-odds cross +/- margin."""
+    switch = min(1.0, 1.0 / dwell)
+    p1, state, out = (1.0 - 1e-12) if s0 == 1 else 1e-12, s0, []
+    for x in sig:
+        prior = min(1.0 - 1e-12, max(1e-12, p1 * (1.0 - switch) + (1.0 - p1) * switch))
+        odds = math.log(prior) - math.log1p(-prior) + ((x - lo) ** 2 - (x - hi) ** 2) / (2.0 * sigma * sigma)
+        p1 = 1.0 / (1.0 + math.exp(-odds)) if odds >= 0 else math.exp(odds) / (1.0 + math.exp(odds))
+        if state == 0 and odds > margin:
+            state = 1
+        elif state == 1 and odds < -margin:
+            state = 0
+        out.append("1" if state else "0")
+    return "".join(out)
+
+
+HY_HMM_MARGINS = tuple(i / 2.0 for i in range(17))     # posterior log-odds margins 0, 0.5, ..., 8
+HY_HMM_TUNING_RUNS = 4                                  # synthetic 1500-sample runs of the declared model
+
+
+def hysteresis_hmm(data):
+    """Competitor: the Bayes-optimal causal detector for this geometry - a two-state HMM forward filter with
+    the declared levels, noise sd and mean dwell; its posterior log-odds margin (0-8 in steps of 0.5) minimises
+    the per-change cost on four simulated 1500-sample runs of the declared model. Without a declared noise sd it estimates one from
+    the median absolute deviation to the nearest level."""
+    sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
+    if sigma is None:
+        dev = sorted(min(abs(x - lo), abs(x - hi)) for x in sig)
+        sigma = max(1.4826 * dev[len(dev) // 2], 1e-6 * (hi - lo))
+    rnd = random.Random(7919)
+    runs = []
+    for _ in range(HY_HMM_TUNING_RUNS):
+        syn, truth = _hy_signal(rnd, lo, hi, sigma, dwell, 1500, 0)
+        changes = [k for k in range(1, len(truth)) if truth[k] != truth[k - 1]]
+        runs.append((syn, "".join(map(str, truth)), changes))
+    best = min((sum(_hy_cost(_hmm_states(syn, lo, hi, sigma, dwell, 0, c), ts, ch, 0)[0] / max(1, len(ch))
+                    for syn, ts, ch in runs), c) for c in HY_HMM_MARGINS)
+    return {"states": _hmm_states(sig, lo, hi, sigma, dwell, s0, best[1]), "margin": best[1]}
 
 
 def hysteresis_subregion(data):
@@ -1034,7 +1229,8 @@ def bandit_verify(data, output, certificate):
         pulls[a] += 1
         succ[a] += x
         reward += x
-    rng = random.Random(certificate.get("seed", -1))
+    seed_claim = certificate.get("seed") if isinstance(certificate, dict) else None
+    rng = random.Random(seed_claim if type(seed_claim) is int else -1)
     alpha, beta = [1] * k, [1] * k
     replay = []
     for _ in range(horizon):
@@ -1046,10 +1242,14 @@ def bandit_verify(data, output, certificate):
         alpha[pick] += got
         beta[pick] += 1 - got
     post_mean = [(1 + succ[a]) / (2 + pulls[a]) for a in range(k)]
+    cert = certificate if isinstance(certificate, dict) else {}
     return {"sequence_shape": True, "counts_match": output.get("counts") == pulls,
             "reward_recomputed": output.get("total_reward") == reward,
-            "seed_bound": certificate.get("seed") == seed,
+            "seed_bound": cert.get("seed") == seed,
             "sampler_replayed": replay == seq,
+            "posterior_recomputed": cert.get("posterior") == [[1 + succ[a], 1 + pulls[a] - succ[a]] for a in range(k)],
+            "trace_digest_bound": cert.get("trace_digest") == hashlib.sha256(
+                ",".join(str(a) for a in seq).encode()).hexdigest(),
             "recommendation_is_posterior_argmax": output.get("recommended_arm") == post_mean.index(max(post_mean))}
 
 
@@ -1122,11 +1322,13 @@ def _bernoulli_kl(p, q):
     return p * math.log(p / q) + (1 - p) * math.log((1 - p) / (1 - q))
 
 
-def bandit_klucb(data):
-    """Competitor: KL-UCB (Garivier & Cappe 2011), exploration log(t), index by 25-step bisection."""
+def _klucb_policy(data, plus):
+    """KL-UCB index policy, index by 25-step bisection. plus=False: exploration log t (Garivier & Cappe 2011);
+    plus=True: KL-UCB+, exploration log(t / N_a) (Garivier & Cappe 2011, sec. 4; Garivier et al. 2018)."""
     def choose(t, pulls, total, rng):
-        bound, best, pick = math.log(t), -1.0, 0
+        best, pick = -1.0, 0
         for a in range(len(pulls)):
+            bound = math.log(max(1.0, t / pulls[a])) if plus else math.log(t)
             mu = total[a] / pulls[a]
             lo, hi = mu, 1.0
             for _ in range(25):
@@ -1139,6 +1341,16 @@ def bandit_klucb(data):
                 best, pick = lo, a
         return pick
     return _empirical_policy(data, choose)
+
+
+def bandit_klucb(data):
+    """Alternative competitor (the builder's choice): KL-UCB with exploration log t."""
+    return _klucb_policy(data, plus=False)
+
+
+def bandit_klucb_plus(data):
+    """Competitor: KL-UCB+ (exploration log(t / N_a)), the stronger practical KL-UCB variant on dev."""
+    return _klucb_policy(data, plus=True)
 
 
 def bandit_subregion(data):
@@ -1242,6 +1454,8 @@ def breaker_verify(data, output, certificate):
             or not isinstance(params, dict):
         return {"shape": False}
     trip, cool, win = params.get("trip_failures"), params.get("cooldown"), params.get("window")
+    if not all(type(v) is int for v in (trip, cool, win)):
+        return {"shape": False}
     # declared-threshold check, recomputed from the binomial pmf by recursion
     pmf = [(1 - p) ** CB_WINDOW]
     for i in range(CB_WINDOW):
@@ -1273,11 +1487,14 @@ def breaker_verify(data, output, certificate):
         if isinstance(trip, int) and sum(fails) >= trip:
             mode, opened_at, fails = "open", t, []
             log.append([t, "CLOSED", "OPEN"])
+    cert = certificate if isinstance(certificate, dict) else {}
     return {"shape": True, "declared_thresholds": trip == want_trip and cool == want_cool and win == CB_WINDOW,
             "decisions_follow_fsm": consistent,
-            "transitions_replayed": consistent and log[:1000] == certificate.get("transitions")
-            and len(log) == certificate.get("transition_count"),
-            "call_count": output.get("calls") == decisions.count("1")}
+            "transitions_replayed": consistent and log[:1000] == cert.get("transitions")
+            and len(log) == cert.get("transition_count"),
+            "call_count": output.get("calls") == decisions.count("1"),
+            "successes_recomputed": cert.get("successes_observed") == sum(
+                1 for t in range(len(outcomes)) if decisions[t] == "1" and outcomes[t] == "1")}
 
 
 def breaker_instance(seed):
@@ -1327,9 +1544,38 @@ def breaker_always_retry(data):
     return {"decisions": "1" * len(outcomes)}
 
 
+CB_STD_CONSECUTIVE = 3     # competitor: open after this many consecutive failures (Polly-style breaker)
+
+
+def breaker_consecutive(data):
+    """Competitor: a standard library circuit breaker (Polly-style: open after 3 consecutive failures,
+    one-probe half-open) given the same cost-balanced break duration as the candidate, so the comparison
+    isolates the binomial trip test. Chosen on dev as the strongest of nine standard breakers (failure-rate
+    50% over 10 or 20 calls with minimum 5 or 10, 3 or 5 consecutive failures; break = cost-balanced, 5, 10
+    or 20 ticks, or a quarter of the mean outage)."""
+    outcomes, p, mean_outage, c_out, c_un, seed = _cb_inputs(data)
+    wait = breaker_parameters(p if p is not None and p < 0.5 else 0.05, mean_outage or 30.0, c_out, c_un)[1]
+    state, run, reopen, out = "CLOSED", 0, 0, []
+    for t, res in enumerate(outcomes):
+        if state == "OPEN" and t >= reopen:
+            state = "HALF_OPEN"
+        if state == "OPEN":
+            out.append("0")
+            continue
+        out.append("1")
+        ok = res == "1"
+        if state == "HALF_OPEN":
+            state, run, reopen = ("CLOSED", 0, reopen) if ok else ("OPEN", 0, t + 1 + wait)
+            continue
+        run = 0 if ok else run + 1
+        if run >= CB_STD_CONSECUTIVE:
+            state, run, reopen = "OPEN", 0, t + 1 + wait
+    return {"decisions": "".join(out)}
+
+
 def breaker_backoff(data):
-    """Competitor: exponential backoff with full jitter (base 1 tick, cap = twice the cost-balanced probe
-    interval, so its saturated mean wait equals the breaker's cooldown)."""
+    """Alternative competitor (the builder's choice): exponential backoff with full jitter (base 1 tick, cap =
+    twice the cost-balanced probe interval, so its saturated mean wait equals the breaker's cooldown)."""
     outcomes, p, mean_outage, c_out, c_un, seed = _cb_inputs(data)
     cap = 2.0 * breaker_parameters(p if p is not None else 0.05, mean_outage or 30.0, c_out, c_un)[1]
     rng = random.Random(seed)
@@ -1362,7 +1608,8 @@ INTELLIGENCES = [
             intelligence_id="basal.control.simc_pi", family="basal_pid", operation="pid_track",
             epistemic_class="physical",
             subgeometry="setpoint tracking and load rejection of a declared first-order-plus-dead-time plant",
-            source_provenance="Skogestad (2003) SIMC rules; Astrom & Hagglund (2004) AMIGO; Ziegler & Nichols (1942)",
+            source_provenance="Skogestad (2003) SIMC rules; Astrom & Hagglund (2004) AMIGO; Ziegler & Nichols (1942); "
+                              "Nelder & Mead (1965) simplex search",
             native_representation="FOPDT model (K, tau, theta) + sample time + setpoint schedule + load step + "
                                   "noise sd + actuator limits + seed",
             required_inputs=("gain", "tau", "theta", "dt", "steps", "setpoints", "u_min", "u_max", "u0"),
@@ -1377,7 +1624,8 @@ INTELLIGENCES = [
             composition_inputs=("plant_model", "setpoints"), composition_outputs=("controller_gains",),
             evidence_type="control_trace",
             verification_method="independent deque-based closed-loop replay of the returned gains (IAE, effort, "
-                                "overshoot) and state-space eigenvalue stability check",
+                                "maximum error, longest limit run, overshoot and settling per step), state-space "
+                                "eigenvalue stability check and recomputation of the declared SIMC rule",
             confidence_semantics="performance is a simulation of the declared model and seed; real plants differ "
                                  "by model error",
             resource_profile="O(steps) pure Python per simulation; numpy roots for the stability margin",
@@ -1385,24 +1633,32 @@ INTELLIGENCES = [
             known_strengths=("one-parameter robust tuning", "smooth actuator use under measurement noise",
                              "closed-form, auditable gains"),
             known_failure_modes=("gains are only as good as the FOPDT model", "PI only: no derivative action",
-                                 "tau_c = theta trades some load-rejection speed for robustness"),
+                                 "tau_c = theta trades some load-rejection speed for robustness",
+                                 "direct simulation optimisation of the gains on the declared model beats it on "
+                                 "quality when the full model and scenario are declared"),
             counterindications=("integrating or unstable plants", "theta/tau > 10 (dead-time compensator needed)",
                                 "strongly nonlinear plants"),
             abstention_conditions=("dead time below one sample without a declared tau_c", "theta/tau > 10",
-                                   "a setpoint unreachable within the actuator limits"),
+                                   "a setpoint unreachable within the actuator limits",
+                                   "SIMC gains outside the controller contract",
+                                   "its own simulated loop is unstable, divergent or persistently saturated"),
             benchmark_suite="seeded FOPDT plants, theta/tau 0.05-2, two setpoint steps + input load step + noise; "
                             "score -(IAE + effort)/grid-optimal PI cost; dev seeds 0-9, held-out 1000-1029",
             baseline="on-off relay with a hysteresis band of twice the noise sd",
-            competitor="AMIGO PI (Astrom & Hagglund 2004); Ziegler-Nichols open-loop PI also run on dev"),
+            competitor="simulation-optimised PI: Nelder-Mead on (log Kc, log Ti) minimising the declared cost on "
+                       "the declared FOPDT model with an independent noise realisation, started from AMIGO"),
         solve=pid_solve, verify=pid_verify, instance=pid_instance, score=pid_score, baseline=pid_on_off,
-        competitor=pid_amigo, subregion=pid_subregion, tolerance=1e-9,
-        notes={"alternative_competitor": "pid_ziegler_nichols and Cohen-Coon PI were run on dev seeds: both go "
-                                         "wrong (persistent saturation / instability) on lag-dominant one-sample-"
-                                         "delay plants, so AMIGO is the declared strongest reasonable competitor"}),
+        competitor=pid_sim_optimised, subregion=pid_subregion, tolerance=1e-9,
+        notes={"alternative_competitor": "pid_amigo (AMIGO PI) was the builder's competitor; adversarial review "
+                                         "2026-10-09 replaced it with the simulation-optimised PI, which beat both "
+                                         "SIMC and AMIGO on all 10 dev seeds (a rule loses to direct optimisation "
+                                         "when the full model and scenario are declared; its edge is cost and "
+                                         "robustness to model mismatch, which this benchmark does not score). "
+                                         "pid_ziegler_nichols and Cohen-Coon PI go wrong on 2 of 10 dev plants"}),
     Executable(
         genome=_genome(
             intelligence_id="basal.estimate.kalman_cv", family="basal_kalman", operation="kalman_track",
-            epistemic_class="physical", subgeometry="1-D position tracking with known Gaussian noise",
+            epistemic_class="physical", subgeometry="causal (online) 1-D position tracking with known Gaussian noise",
             source_provenance="Kalman (1960); Bar-Shalom, Li & Kirubarajan (2001) DWNA model and NIS test; "
                               "Holt (1957) / alpha-beta filter",
             native_representation="regularly sampled noisy positions (null = dropout) + q + r (+ prior)",
@@ -1413,8 +1669,8 @@ INTELLIGENCES = [
             memory_model="two-state mean and 2x2 covariance", learning_rule="none (noise statistics are declared)",
             composition_inputs=("measurements", "noise_model"), composition_outputs=("positions", "velocity"),
             evidence_type="statistical_estimate",
-            verification_method="independent numpy Joseph-form matrix recursion and normalised innovation squared "
-                                "consistency bounds",
+            verification_method="independent numpy Joseph-form matrix recursion (positions, final velocity and "
+                                "variance, update count) and normalised innovation squared consistency bounds",
             confidence_semantics="minimum-mean-square-error under the declared linear-Gaussian model; the NIS test "
                                  "is the model check",
             resource_profile="O(n) scalar arithmetic", latency_profile="sub-millisecond to a few milliseconds",
@@ -1439,7 +1695,8 @@ INTELLIGENCES = [
         genome=_genome(
             intelligence_id="basal.switch.schmitt_confirm", family="basal_hysteresis", operation="hysteresis_switch",
             epistemic_class="physical", subgeometry="two-regime detection in a noisy scalar signal",
-            source_provenance="Schmitt (1938) trigger; run-length (debounce) confirmation; Gaussian tail design",
+            source_provenance="Schmitt (1938) trigger; run-length (debounce) confirmation; Gaussian tail design; "
+                              "Wonham (1964) / HMM forward filter (competitor)",
             native_representation="sampled signal + two declared levels + threshold + noise sd + mean dwell",
             required_inputs=("signal", "levels", "noise_sd"),
             output_contract={"states": "string of 0/1 per sample", "switch_count": "int"},
@@ -1450,23 +1707,34 @@ INTELLIGENCES = [
             composition_inputs=("signal",), composition_outputs=("regime_states",),
             evidence_type="heuristic_trace",
             verification_method="replay: every switch justified by m consecutive samples beyond the band and no "
-                                "due switch omitted",
+                                "due switch omitted; the declared (h, m) re-derived as the grid optimum of the "
+                                "expected cost by an independent route (NormalDist tails, Markov-chain run "
+                                "lengths)",
             confidence_semantics="design is optimal only for the declared Gaussian i.i.d. model; the trace is an "
                                  "audit, not a proof of correct regimes",
             resource_profile="O(n) comparisons; design grid of 41 x 12 closed forms",
             latency_profile="sub-millisecond",
             known_strengths=("near-zero delay at low noise", "inspectable two-number design", "O(1) memory"),
             known_failure_modes=("correlated or heavy-tailed noise breaks the design formulas",
-                                 "high noise: memoryless switching is dominated by filtering"),
+                                 "high noise: memoryless switching is dominated by filtering",
+                                 "a tuned HMM forward filter matches or beats it on mean quality at about 50x "
+                                 "the latency"),
             counterindications=("noise sd comparable to the level separation", "drifting levels"),
             abstention_conditions=("noise sd not declared", "expected cost per change >= the miss cost"),
             benchmark_suite="seeded two-level regime signals, noise/separation 0.05-0.6, dwell 60-200; score "
                             "-(capped delay + 5 x false switches + 50 x misses) per change; dev 0-9, held-out 1000-1029",
             baseline="single threshold at the midpoint",
-            competitor="causal moving median (window tuned by simulating the declared model) + single threshold"),
+            competitor="causal two-state HMM forward (Wonham) filter with the declared levels, noise and dwell; "
+                       "posterior log-odds margin tuned by simulating the declared model"),
         solve=hysteresis_solve, verify=hysteresis_verify, instance=hysteresis_instance, score=hysteresis_score,
-        baseline=hysteresis_single_threshold, competitor=hysteresis_median, subregion=hysteresis_subregion,
-        tolerance=1e-9),
+        baseline=hysteresis_single_threshold, competitor=hysteresis_hmm, subregion=hysteresis_subregion,
+        tolerance=1e-9,
+        notes={"alternative_competitor": "hysteresis_median (causal moving median, window tuned on the declared "
+                                         "model) was the builder's competitor; adversarial review 2026-10-09 "
+                                         "replaced it with the HMM forward filter, the Bayes-optimal causal "
+                                         "detector for a declared two-level Gaussian model (dev mean quality "
+                                         "-0.32 against -1.16 for the median; one synthetic tuning run instead "
+                                         "of four gave -0.48)"}),
     Executable(
         genome=_genome(
             intelligence_id="basal.allocate.thompson_bernoulli", family="basal_bandit", operation="bandit_allocate",
@@ -1481,8 +1749,8 @@ INTELLIGENCES = [
             learning_rule="conjugate Beta-Bernoulli update per pull",
             composition_inputs=("arms",), composition_outputs=("allocation", "posterior"),
             evidence_type="simulation",
-            verification_method="independent replay of the declared sampler and recomputation of counts, reward "
-                                "and the posterior-mean recommendation",
+            verification_method="independent replay of the declared sampler and recomputation of counts, reward, "
+                                "posterior, trace digest and the posterior-mean recommendation",
             confidence_semantics="randomised policy; regret is an outcome of one seeded run, not a bound",
             resource_profile="O(horizon x K) Beta draws", latency_profile="milliseconds",
             known_strengths=("asymptotically optimal regret for Bernoulli arms", "no tuning constant"),
@@ -1492,18 +1760,19 @@ INTELLIGENCES = [
             benchmark_suite="seeded Bernoulli bandits, K 2-10, horizon 400-1000, means U(0.05, 0.95); score "
                             "-pseudo-regret; dev 0-9, held-out 1000-1029",
             baseline="epsilon-greedy (epsilon 0.1) after one pull per arm",
-            competitor="KL-UCB (Garivier & Cappe 2011)"),
+            competitor="KL-UCB+ (Garivier & Cappe 2011; exploration log(t / N_a))"),
         solve=bandit_solve, verify=bandit_verify, instance=bandit_instance, score=bandit_score,
-        baseline=bandit_epsilon_greedy, competitor=bandit_klucb, subregion=bandit_subregion, tolerance=1e-9,
+        baseline=bandit_epsilon_greedy, competitor=bandit_klucb_plus, subregion=bandit_subregion, tolerance=1e-9,
         notes={"alternative_competitor": "bandit_ucb1: the assigned competitor; weaker than the epsilon-greedy "
-                                         "baseline on dev (over-explores at these horizons), so KL-UCB is the "
-                                         "declared strongest reasonable competitor"}),
+                                         "baseline on dev (over-explores at these horizons). bandit_klucb (log t "
+                                         "exploration) was the builder's competitor; adversarial review 2026-10-09 "
+                                         "replaced it with KL-UCB+ (dev mean -19.5 against -20.4; MOSS -25.9)"}),
     Executable(
         genome=_genome(
             intelligence_id="basal.protect.circuit_breaker", family="basal_breaker", operation="circuit_break",
             epistemic_class="strategic", subgeometry="protecting calls to a dependency with intermittent outages",
             source_provenance="Nygard (2007) circuit-breaker pattern; binomial tail trip test; AWS full-jitter "
-                              "backoff (Brooker 2015)",
+                              "backoff (Brooker 2015); Polly / resilience4j breaker defaults (competitors)",
             native_representation="per-request call-result tape + declared background failure + mean outage + costs",
             required_inputs=("outcomes", "background_failure", "mean_outage"),
             output_contract={"decisions": "string of 1 (call) / 0 (fail fast) per request", "calls": "int",
@@ -1516,14 +1785,16 @@ INTELLIGENCES = [
             composition_inputs=("call_results",), composition_outputs=("call_decisions",),
             evidence_type="heuristic_trace",
             verification_method="tick-by-tick FSM replay against the declared thresholds, using only results of "
-                                "called ticks (non-anticipation)",
+                                "called ticks (non-anticipation); transitions and observed successes recomputed",
             confidence_semantics="value is measured on the supplied tape; parameters are optimal only for the "
                                  "declared rates",
             resource_profile="O(requests)", latency_profile="sub-millisecond",
             known_strengths=("stops hammering a failing dependency within a few calls", "ignores isolated failures",
                              "auditable transitions"),
             known_failure_modes=("brownouts can close the breaker on a lucky probe",
-                                 "fixed cooldown is mis-sized when outage lengths differ from the declaration"),
+                                 "fixed cooldown is mis-sized when outage lengths differ from the declaration",
+                                 "the binomial trip test shows no edge over a 3-consecutive-failure trip given "
+                                 "the same break duration (dev 5-5)"),
             counterindications=("background failure >= 0.5", "dependencies whose failures are per-request, not "
                                 "per-period"),
             abstention_conditions=("background failure or mean outage not declared", "background failure >= 0.5"),
@@ -1531,7 +1802,15 @@ INTELLIGENCES = [
                             "failure 85-100%), 3000 requests; score (successes - 2 x outage calls - 0.5 x healthy "
                             "refusals) / healthy ticks; dev 0-9, held-out 1000-1029",
             baseline="always call immediately",
-            competitor="exponential backoff with full jitter (cap = twice the cost-balanced probe interval)"),
+            competitor="standard consecutive-failure circuit breaker (open after 3 consecutive failures, one-probe "
+                       "half-open) with the same cost-balanced break duration"),
         solve=breaker_solve, verify=breaker_verify, instance=breaker_instance, score=breaker_score,
-        baseline=breaker_always_retry, competitor=breaker_backoff, subregion=breaker_subregion, tolerance=1e-9),
+        baseline=breaker_always_retry, competitor=breaker_consecutive, subregion=breaker_subregion, tolerance=1e-9,
+        notes={"alternative_competitor": "breaker_backoff (exponential backoff, full jitter) was the builder's "
+                                         "competitor, chosen among backoff variants only; adversarial review "
+                                         "2026-10-09 found standard library breakers stronger (dev mean 0.860 "
+                                         "for 3 consecutive failures against 0.817 for backoff; a 50%-over-10-"
+                                         "calls breaker scored 0.854 and beat the candidate 7-3). Giving the "
+                                         "competitor the candidate's cooldown isolates the trip test; with a "
+                                         "fixed 10-tick break it scores 0.854 (candidate 4-6)"}),
 ]

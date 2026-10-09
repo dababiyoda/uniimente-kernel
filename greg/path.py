@@ -30,6 +30,11 @@ FEASIBILITY = ("CURRENTLY_BUILDABLE", "BUILDABLE_AFTER_PREREQUISITE", "REQUIRES_
                "FRONTIER", "CURRENTLY_SCIENCE_FICTION")
 EVIDENCE_STATUS = ("verified_by_execution", "verified_by_inspection", "asserted", "unresolved")
 EVIDENCE_SOURCES = ("repository", "ledger", "external")
+# Directive 2026-10-07 sections 25-26: every frontier capability keeps its backcast; none disappears.
+BUILDABILITY = ("BUILDABLE_NOW", "EXPERIMENTAL_NOW", "FRONTIER_RESEARCH", "SCIENCE_FICTION_DESCENDANT")
+BACKCAST_FIELDS = ("destination", "current_precursor", "missing_capabilities", "active_gate", "gate_crossing_evidence",
+                   "dependencies", "single_bottleneck_metric", "nearest_falsifiable_experiment", "buildability_status",
+                   "risk", "authority_implications", "activation_condition")
 
 
 class PathError(ValueError):
@@ -77,6 +82,15 @@ def validate(data: dict) -> None:
         if horizon["feasibility"] != "CURRENTLY_BUILDABLE" and not horizon.get("prerequisite") \
                 and horizon["feasibility"] not in ("FRONTIER",):
             raise PathError(f"horizon {horizon['id']}: a later capability names its prerequisite")
+    horizon_ids = {h["id"] for h in data.get("horizons") or []}
+    for item in data.get("frontier_backcasts") or []:
+        missing = [f for f in BACKCAST_FIELDS if not item.get(f)]
+        if missing:
+            raise PathError(f"frontier {item.get('id')}: missing {missing}")
+        if item["buildability_status"] not in BUILDABILITY:
+            raise PathError(f"frontier {item['id']}: unknown buildability {item['buildability_status']}")
+        if item.get("node") not in ids or item.get("horizon") not in horizon_ids:
+            raise PathError(f"frontier {item['id']}: unknown node or horizon")
 
 
 # -- ledger predicates: exit evidence the body itself holds --------------------------------

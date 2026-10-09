@@ -1069,6 +1069,16 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \
+            isinstance(outcome.output, dict) and outcome.output.get("state") == "CAPABILITY_DEFICIT" else None
+        if isinstance(deficit, dict) and deficit.get("function"):
+            # Directive 2026-10-07 section 24: no current intelligence fits the residual geometry, so the one
+            # Capability Genesis loop searches for it under this mission's authority, else asks the founder once.
+            # The deficit is the missing function, not the (attached) solver that reported it: only a capability
+            # attached for that function, or a founder answer, clears the blocker.
+            if self._deficit(m, {"function": deficit["function"]}, now,
+                             purpose=f"cognition for {deficit.get('purpose', 'a cognitive request')}"[:200]) is None:
+                return {"state": "BLOCKED", "blocker": m.blocker}
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

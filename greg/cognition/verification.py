@@ -154,6 +154,13 @@ def verify(family, data, answer, proof_class):
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
+    elif proof_class == "genome_certificate":
+        # IntelligenceGenome library: the genome's own independent check (never its solve path) plus
+        # identity, evidence-type and input bindings of the envelope.
+        from .genomes import library
+        checks.update(library.check(family, data, output, answer["proof"]))
+        dissent.append(f"Evidence type {answer['proof']['evidence_type']}: valid within the genome's native model; "
+                       "real-world applicability requires separate outcome evidence.")
     else:
         dissent.append("Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.")
     if family in ("formal", "optimization"):

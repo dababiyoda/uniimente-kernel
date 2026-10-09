@@ -1,0 +1,438 @@
+{"i": 0, "item": "pigeonhole-6-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 1, "item": "pigeonhole-6-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 2, "item": "pigeonhole-6-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 3, "item": "pigeonhole-6-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 4, "item": "pigeonhole-6-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 5, "item": "pigeonhole-6-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 6, "item": "pigeonhole-6-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 7, "item": "pigeonhole-6-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 8, "item": "pigeonhole-7-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 9, "item": "pigeonhole-7-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 10, "item": "pigeonhole-7-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 11, "item": "pigeonhole-7-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 12, "item": "pigeonhole-7-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 13, "item": "pigeonhole-7-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 14, "item": "pigeonhole-7-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 15, "item": "pigeonhole-7-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 16, "item": "pigeonhole-8-7", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 17, "item": "pigeonhole-8-8", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 18, "item": "pigeonhole-8-9", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 19, "item": "pigeonhole-8-10", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 20, "item": "pigeonhole-8-11", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 21, "item": "pigeonhole-8-12", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 22, "item": "pigeonhole-8-13", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 23, "item": "pigeonhole-8-14", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 24, "item": "schedule-8-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 25, "item": "schedule-8-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 26, "item": "schedule-8-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 27, "item": "schedule-8-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 28, "item": "schedule-8-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 29, "item": "schedule-8-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 30, "item": "schedule-8-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 31, "item": "schedule-8-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 32, "item": "schedule-12-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 33, "item": "schedule-12-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 34, "item": "schedule-12-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 35, "item": "schedule-12-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 36, "item": "schedule-12-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 37, "item": "schedule-12-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 38, "item": "schedule-12-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 39, "item": "schedule-12-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 40, "item": "schedule-16-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 41, "item": "schedule-16-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 42, "item": "schedule-16-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 43, "item": "schedule-16-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 44, "item": "schedule-16-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 45, "item": "schedule-16-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 46, "item": "schedule-16-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 47, "item": "schedule-16-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 48, "item": "equalities-4-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 49, "item": "equalities-4-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 50, "item": "equalities-4-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 51, "item": "equalities-4-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 52, "item": "equalities-4-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 53, "item": "equalities-4-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 54, "item": "equalities-4-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 55, "item": "equalities-4-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 56, "item": "equalities-6-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 57, "item": "equalities-6-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 58, "item": "equalities-6-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 59, "item": "equalities-6-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 60, "item": "equalities-6-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 61, "item": "equalities-6-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 62, "item": "equalities-6-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 63, "item": "equalities-6-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 64, "item": "equalities-8-7", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 65, "item": "equalities-8-8", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 66, "item": "equalities-8-9", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 67, "item": "equalities-8-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 68, "item": "equalities-8-11", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 69, "item": "equalities-8-12", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 70, "item": "equalities-8-13", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 71, "item": "equalities-8-14", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 72, "item": "knapsack_feasibility-20-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 73, "item": "knapsack_feasibility_1s-20-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 74, "item": "knapsack_feasibility-20-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 75, "item": "knapsack_feasibility_1s-20-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 76, "item": "knapsack_feasibility-20-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 77, "item": "knapsack_feasibility_1s-20-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 78, "item": "knapsack_feasibility-20-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 79, "item": "knapsack_feasibility_1s-20-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 80, "item": "knapsack_feasibility-20-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 81, "item": "knapsack_feasibility_1s-20-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 82, "item": "knapsack_feasibility-20-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 83, "item": "knapsack_feasibility_1s-20-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 84, "item": "knapsack_feasibility-20-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 85, "item": "knapsack_feasibility_1s-20-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 86, "item": "knapsack_feasibility-20-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 87, "item": "knapsack_feasibility_1s-20-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 88, "item": "knapsack_feasibility-30-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 89, "item": "knapsack_feasibility_1s-30-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 90, "item": "knapsack_feasibility-30-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 91, "item": "knapsack_feasibility_1s-30-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 92, "item": "knapsack_feasibility-30-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 93, "item": "knapsack_feasibility_1s-30-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 94, "item": "knapsack_feasibility-30-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 95, "item": "knapsack_feasibility_1s-30-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 96, "item": "knapsack_feasibility-30-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 97, "item": "knapsack_feasibility_1s-30-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 98, "item": "knapsack_feasibility-30-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 99, "item": "knapsack_feasibility_1s-30-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 100, "item": "knapsack_feasibility-30-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 101, "item": "knapsack_feasibility_1s-30-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 102, "item": "knapsack_feasibility-30-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 103, "item": "knapsack_feasibility_1s-30-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 104, "item": "knapsack_feasibility-40-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 105, "item": "knapsack_feasibility_1s-40-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 106, "item": "knapsack_feasibility-40-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 107, "item": "knapsack_feasibility_1s-40-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 108, "item": "knapsack_feasibility-40-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 109, "item": "knapsack_feasibility_1s-40-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 110, "item": "knapsack_feasibility-40-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 111, "item": "knapsack_feasibility_1s-40-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 112, "item": "knapsack_feasibility-40-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 113, "item": "knapsack_feasibility_1s-40-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 114, "item": "knapsack_feasibility-40-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 115, "item": "knapsack_feasibility_1s-40-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 116, "item": "knapsack_feasibility-40-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 117, "item": "knapsack_feasibility_1s-40-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 118, "item": "knapsack_feasibility-40-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 119, "item": "knapsack_feasibility_1s-40-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 120, "item": "knapsack_optimization-15-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 121, "item": "knapsack_optimization-15-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 122, "item": "knapsack_optimization-15-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 123, "item": "knapsack_optimization-15-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 124, "item": "knapsack_optimization-15-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 125, "item": "knapsack_optimization-15-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 126, "item": "knapsack_optimization-15-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 127, "item": "knapsack_optimization-15-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 128, "item": "knapsack_optimization-30-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 129, "item": "knapsack_optimization-30-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 130, "item": "knapsack_optimization-30-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 131, "item": "knapsack_optimization-30-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 132, "item": "knapsack_optimization-30-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 133, "item": "knapsack_optimization-30-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 134, "item": "knapsack_optimization-30-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 135, "item": "knapsack_optimization-30-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 136, "item": "knapsack_optimization-50-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 137, "item": "knapsack_optimization-50-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 138, "item": "knapsack_optimization-50-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 139, "item": "knapsack_optimization-50-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 140, "item": "knapsack_optimization-50-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 141, "item": "knapsack_optimization-50-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 142, "item": "knapsack_optimization-50-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 143, "item": "knapsack_optimization-50-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 144, "item": "binpack_tight_1s-24x6-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 145, "item": "binpack_tight_1s-24x6-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 146, "item": "binpack_tight_1s-24x6-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 147, "item": "binpack_tight_1s-24x6-10", "results": {"static": "correct", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 148, "item": "binpack_tight_1s-24x6-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 149, "item": "binpack_tight_1s-24x6-12", "results": {"static": "correct", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 150, "item": "binpack_tight_1s-24x6-13", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 151, "item": "binpack_tight_1s-24x6-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 152, "item": "binpack_tight_1s-24x6-15", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 153, "item": "binpack_tight_1s-24x6-16", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 154, "item": "binpack_tight_1s-24x6-17", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 155, "item": "binpack_tight_1s-24x6-18", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 156, "item": "binpack_tight_1s-36x6-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 157, "item": "binpack_tight_1s-36x6-8", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 158, "item": "binpack_tight_1s-36x6-9", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 159, "item": "binpack_tight_1s-36x6-10", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 160, "item": "binpack_tight_1s-36x6-11", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 161, "item": "binpack_tight_1s-36x6-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 162, "item": "binpack_tight_1s-36x6-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 163, "item": "binpack_tight_1s-36x6-14", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 164, "item": "binpack_tight_1s-36x6-15", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 165, "item": "binpack_tight_1s-36x6-16", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 166, "item": "binpack_tight_1s-36x6-17", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 167, "item": "binpack_tight_1s-36x6-18", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 168, "item": "binpack_tight_1s-48x8-7", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 169, "item": "binpack_tight_1s-48x8-8", "results": {"static": "correct", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 170, "item": "binpack_tight_1s-48x8-9", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 171, "item": "binpack_tight_1s-48x8-10", "results": {"static": "no_decision", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 172, "item": "binpack_tight_1s-48x8-11", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 173, "item": "binpack_tight_1s-48x8-12", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 174, "item": "binpack_tight_1s-48x8-13", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 175, "item": "binpack_tight_1s-48x8-14", "results": {"static": "correct", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "no_decision"}}
+{"i": 176, "item": "binpack_tight_1s-48x8-15", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 177, "item": "binpack_tight_1s-48x8-16", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 178, "item": "binpack_tight_1s-48x8-17", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 179, "item": "binpack_tight_1s-48x8-18", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 180, "item": "binpack_tight_1s-60x10-7", "results": {"static": "no_decision", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 181, "item": "binpack_tight_1s-60x10-8", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 182, "item": "binpack_tight_1s-60x10-9", "results": {"static": "no_decision", "class_learned": "correct", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 183, "item": "binpack_tight_1s-60x10-10", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 184, "item": "binpack_tight_1s-60x10-11", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 185, "item": "binpack_tight_1s-60x10-12", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 186, "item": "binpack_tight_1s-60x10-13", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "correct"}}
+{"i": 187, "item": "binpack_tight_1s-60x10-15", "results": {"static": "correct", "class_learned": "no_decision", "conditional_learned": "no_decision", "z3_first": "correct", "cpsat_first": "correct"}}
+{"i": 188, "item": "binpack_tight_1s-60x10-16", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 189, "item": "binpack_tight_1s-60x10-17", "results": {"static": "no_decision", "class_learned": "no_decision", "conditional_learned": "correct", "z3_first": "no_decision", "cpsat_first": "no_decision"}}
+{"i": 190, "item": "binpack_tight_1s-60x10-18", "results": {"static": "correct", "class_learned": "correct", "conditional_learned": "correct", "z3_first": "correct", "cpsat_first": "correct"}}
+{
+ "summary": {
+  "primary_conditional_vs_static": {
+   "verdict": "REGRESSION",
+   "correct": [
+    160,
+    162
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wrong_any_run": [
+    0,
+    0
+   ],
+   "wins": 6,
+   "losses": 8,
+   "discordant": 14,
+   "sign_test_p_one_sided": 0.788025
+  },
+  "conditional_vs_class": {
+   "verdict": "NO_GAIN",
+   "correct": [
+    160,
+    160
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wrong_any_run": [
+    0,
+    0
+   ],
+   "wins": 7,
+   "losses": 7,
+   "discordant": 14,
+   "sign_test_p_one_sided": 0.604736
+  },
+  "class_vs_static": {
+   "verdict": "REGRESSION",
+   "correct": [
+    160,
+    162
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wrong_any_run": [
+    0,
+    0
+   ],
+   "wins": 3,
+   "losses": 5,
+   "discordant": 8,
+   "sign_test_p_one_sided": 0.855469
+  },
+  "conditional_vs_z3_first": {
+   "verdict": "GAIN",
+   "correct": [
+    160,
+    136
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wrong_any_run": [
+    0,
+    0
+   ],
+   "wins": 30,
+   "losses": 6,
+   "discordant": 36,
+   "sign_test_p_one_sided": 3.5e-05
+  },
+  "conditional_vs_cpsat_first": {
+   "verdict": "GAIN",
+   "correct": [
+    160,
+    128
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wrong_any_run": [
+    0,
+    0
+   ],
+   "wins": 42,
+   "losses": 10,
+   "discordant": 52,
+   "sign_test_p_one_sided": 5e-06
+  },
+  "counts": {
+   "static": {
+    "correct": 162,
+    "wrong": 0,
+    "no_decision": 29,
+    "wrong_any_run": 0
+   },
+   "class_learned": {
+    "correct": 160,
+    "wrong": 0,
+    "no_decision": 31,
+    "wrong_any_run": 0
+   },
+   "conditional_learned": {
+    "correct": 160,
+    "wrong": 0,
+    "no_decision": 31,
+    "wrong_any_run": 0
+   },
+   "z3_first": {
+    "correct": 136,
+    "wrong": 0,
+    "no_decision": 55,
+    "wrong_any_run": 0
+   },
+   "cpsat_first": {
+    "correct": 128,
+    "wrong": 0,
+    "no_decision": 63,
+    "wrong_any_run": 0
+   }
+  },
+  "oracle_correct": 166,
+  "n": 191,
+  "per_family_correct": {
+   "binpack_tight_1s": {
+    "static": 33,
+    "class_learned": 31,
+    "conditional_learned": 31,
+    "z3_first": 24,
+    "cpsat_first": 36,
+    "n": 47,
+    "oracle": 38
+   },
+   "equalities": {
+    "static": 17,
+    "class_learned": 17,
+    "conditional_learned": 17,
+    "z3_first": 16,
+    "cpsat_first": 12,
+    "n": 24,
+    "oracle": 16
+   },
+   "knapsack_feasibility": {
+    "static": 24,
+    "class_learned": 24,
+    "conditional_learned": 24,
+    "z3_first": 24,
+    "cpsat_first": 8,
+    "n": 24,
+    "oracle": 24
+   },
+   "knapsack_feasibility_1s": {
+    "static": 24,
+    "class_learned": 24,
+    "conditional_learned": 24,
+    "z3_first": 24,
+    "cpsat_first": 8,
+    "n": 24,
+    "oracle": 24
+   },
+   "knapsack_optimization": {
+    "static": 24,
+    "class_learned": 24,
+    "conditional_learned": 24,
+    "z3_first": 8,
+    "cpsat_first": 24,
+    "n": 24,
+    "oracle": 24
+   },
+   "pigeonhole": {
+    "static": 16,
+    "class_learned": 16,
+    "conditional_learned": 16,
+    "z3_first": 16,
+    "cpsat_first": 16,
+    "n": 24,
+    "oracle": 16
+   },
+   "schedule": {
+    "static": 24,
+    "class_learned": 24,
+    "conditional_learned": 24,
+    "z3_first": 24,
+    "cpsat_first": 24,
+    "n": 24,
+    "oracle": 24
+   }
+  },
+  "latency_distribution_s": {
+   "static": {
+    "p10": 0.024,
+    "p50": 0.688,
+    "p90": 3.007,
+    "max": 3.028
+   },
+   "class_learned": {
+    "p10": 0.0222,
+    "p50": 0.687,
+    "p90": 3.008,
+    "max": 3.04
+   },
+   "conditional_learned": {
+    "p10": 0.022,
+    "p50": 0.696,
+    "p90": 3.009,
+    "max": 3.061
+   },
+   "z3_first": {
+    "p10": 0.026,
+    "p50": 0.719,
+    "p90": 3.007,
+    "max": 3.03
+   },
+   "cpsat_first": {
+    "p10": 0.042,
+    "p50": 1.003,
+    "p90": 3.005,
+    "max": 3.128
+   }
+  },
+  "latency_conditional_vs_static": {
+   "items_both_correct": 154,
+   "faster": 61,
+   "slower": 63,
+   "median_difference_s": 0.0,
+   "sign_test_p_faster_one_sided": 0.606127
+  },
+  "items_with_unstable_repeats": {
+   "static": 21,
+   "class_learned": 24,
+   "conditional_learned": 30,
+   "z3_first": 30,
+   "cpsat_first": 0
+  },
+  "rule": "majority of 3 runs per arm and item; REGRESSION if conditional adds a wrong answer (majority or any run) or decides fewer correctly; NO_GAIN if equal correct; INCONCLUSIVE_UNDERPOWERED if < 6 discordant items; GAIN if more correct and one-sided exact sign test p < 0.05; else INCONCLUSIVE. Anything but GAIN keeps the shadow default and demotes conditional formal-engine routing."
+ },
+ "consequence": "REGRESSION: conditional formal-engine routing is demoted. The `shadow` default stays; conditional solver learning is not currently worth its complexity for this two-engine repertoire. The memory is retained (observed in shadow, never applied by default) as evidence and as a substrate for wider repertoires."
+}
+exit=0

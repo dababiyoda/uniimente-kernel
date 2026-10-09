@@ -83,3 +83,30 @@ def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path)
     response=remote.handle(home,'GET','/api/status',headers,b'',now=now)
     data=json.loads(response[2])['data']
     assert data['cognitive'][0]['receipt_id']==snapshot['cognitive'][0]['receipt_id']
+
+
+def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once(tmp_path):
+    """Directive 2026-10-07 section 24: no fitting intelligence -> Genesis search -> one founder ask."""
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:residual", "compile": {"geometry": {"geometry": "optimization",
+                                                                      "subgeometry": "unseen_structure"},
+                                                         "data": {"mystery_field": 1}}}
+    spec = mission("m:residual", checks=[{
+        "check_id": "answered", "description": "a competent method answered",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:residual", "params": params},
+        "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:residual",
+                     "params": params, "advances": ["answered"], "rationale": "compile the residual geometry"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        for _ in range(3):
+            body.tick()
+        state = body.engine.book.missions["m:residual"]
+        asks = [e.payload for e in body.journal.replay("decision.requested") if e.payload["mission_id"] == "m:residual"]
+        assert state.blocker and state.blocker["type"] == "capability"
+        assert state.blocker["function"] == "cognition.optimization:unseen_structure"
+        assert [a["kind"] for a in asks] == ["CAPABILITY_ATTACH"]
+        done = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:residual"]
+        assert len(done) == 1 and done[0]["status"] == "DONE"

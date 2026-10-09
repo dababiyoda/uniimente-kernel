@@ -14,6 +14,7 @@ import platform
 import sys
 
 READ_FILE, READ_DIR = 1 << 2, 1 << 3
+GLIBC_RUNTIME = ("libc", "libm", "librt", "libdl", "libpthread", "libutil")
 WRITE_FILE, EXECUTE, TRUNCATE = 1 << 1, 1, 1 << 14
 ALL_FS = (1 << 15) - 1
 
@@ -95,6 +96,21 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
+            # Core glibc runtime libraries a later extension import may dlopen (librt.so.1 is the one
+            # MCP needed on GitHub runners): public loader-adjacent files, read-only, never directories.
+            for arch in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
+                for name in GLIBC_RUNTIME:
+                    for path in base.glob(f"{arch}{name}.so.*"):
+                        if path.is_file():
+                            grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
+    # The interpreter's own site-packages (Debian installs them outside sys.prefix/lib, e.g.
+    # /usr/local/lib/python3.X/dist-packages). Installed runtime code only: user-site and arbitrary
+    # sys.path entries stay excluded.
+    import site
+    for directory in getattr(site, "getsitepackages", lambda: [])():
+        directory = Path(directory)
+        if directory.is_dir():
+            grants[directory.resolve()] = grants.get(directory.resolve(), 0) | READ_FILE | READ_DIR
     attr = _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:

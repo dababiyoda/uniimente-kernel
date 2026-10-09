@@ -73,7 +73,8 @@ PID_EFFORT_WEIGHT = 0.05   # cost = IAE + weight * |K| * dt * total variation of
 PID_SAT_FRACTION = 0.2     # one contiguous run at the same actuator limit longer than this = persistent saturation
 PID_DIVERGE = 10.0         # |r - y| above this multiple of the scenario span = divergence
 PID_SETTLE_BAND = 0.05     # settling band, fraction of the setpoint step
-PID_MAX_DELAY = 500        # dead-time samples; the stability check is an O((delay + 4)^3) eigenproblem
+PID_MAX_DELAY = 200        # dead-time samples; the stability check is an O((delay + 4)^3) eigenproblem, and
+                           # threaded LAPACK made 300-500-sample delays take 0.8-5.6 s under load
 PID_KC_LIMIT, PID_TI_RANGE = 1e9, (1e-9, 1e12)   # controller output contract (shared by every arm)
 
 
@@ -421,7 +422,7 @@ def pid_verify(data, output, certificate):
               "cost_recomputed": _close(sim["cost"], cert.get("cost")),
               "max_error_recomputed": _close(sim["max_abs_error"], cert.get("max_abs_error")),
               "limit_run_recomputed": cert.get("longest_limit_run") == sim["longest_limit_run"],
-              "seed_bound": cert.get("seed") == p["seed"],
+              "seed_bound": cert.get("seed") == p["seed"] and cert.get("delay_samples") == p["delay"],
               "no_divergence": sim["max_abs_error"] <= PID_DIVERGE * _pid_span(p),
               "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"]}
     if ctrl["law"] == "pid":
@@ -588,7 +589,8 @@ def pid_sim_optimised(data):
         if _pid_spectral_radius_poly(own, ctrl) >= 1.0:
             return math.inf
         m = _pid_metrics(own, *_pid_loop(own, ctrl))
-        if m["max_abs_error"] > PID_DIVERGE * _pid_span(own) or m["longest_limit_run"] > PID_SAT_FRACTION * own["steps"]:
+        if (m["max_abs_error"] > PID_DIVERGE * _pid_span(own)
+                or m["longest_limit_run"] > PID_SAT_FRACTION * own["steps"]):
             return math.inf
         return m["cost"]
 
@@ -715,7 +717,7 @@ def kalman_verify(data, output, certificate):
         P = np.diag([r, KF_DIFFUSE_VEL_VAR])
         first = 1
         est = [float(x[0, 0])]
-    nis, m = 0.0, 0
+    nis, m, last_gain = 0.0, 0, [None, None]
     eye = np.eye(2)
     for k in range(first, len(zs)):
         if k > 0:
@@ -730,6 +732,7 @@ def kalman_verify(data, output, certificate):
             P = J @ P @ J.T + r * (Kg @ Kg.T)
             nis += nu * nu / S
             m += 1
+            last_gain = [float(Kg[0, 0]), float(Kg[1, 0])]
         est.append(float(x[0, 0]))
     out = output if isinstance(output, dict) else {}
     cert = certificate if isinstance(certificate, dict) else {}
@@ -743,6 +746,9 @@ def kalman_verify(data, output, certificate):
             "final_velocity_recomputed": abs(_num(out.get("final_velocity")) - float(x[1, 0])) <= 1e-6 * vscale,
             "final_variance_recomputed": _close(out.get("final_position_variance"), float(P[0, 0]), tol=1e-12),
             "update_count": cert.get("updates") == m,
+            "final_gain_recomputed": isinstance(cert.get("final_gain"), list) and len(cert["final_gain"]) == 2 and all(
+                (g is None and w is None) or (w is not None and _close(g, w)) for g, w in zip(cert["final_gain"],
+                                                                                         last_gain)),
             "innovation_consistent": lo <= nis <= hi,
             "nis_recomputed": _close(cert.get("nis_sum"), nis)}
 
@@ -1134,10 +1140,11 @@ HY_HMM_TUNING_RUNS = 4                                  # synthetic 1500-sample 
 
 
 def hysteresis_hmm(data):
-    """Competitor: the Bayes-optimal causal detector for this geometry - a two-state HMM forward filter with
-    the declared levels, noise sd and mean dwell; its posterior log-odds margin (0-8 in steps of 0.5) minimises
-    the per-change cost on four simulated 1500-sample runs of the declared model. Without a declared noise sd it estimates one from
-    the median absolute deviation to the nearest level."""
+    """Competitor: Bayesian causal regime filter - a two-state HMM forward filter (geometric dwell) with the
+    declared levels, noise sd and mean dwell. Its posterior log-odds margin (0-8 in steps of 0.5) minimises the
+    per-change cost on four simulated 1500-sample runs drawn with the benchmark's own dwell law (as the median
+    competitor's window tuning does, so the competitor knows slightly more than the declaration). Without a
+    declared noise sd it estimates one from the median absolute deviation to the nearest level."""
     sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
     if sigma is None:
         dev = sorted(min(abs(x - lo), abs(x - hi)) for x in sig)
@@ -1324,7 +1331,7 @@ def _bernoulli_kl(p, q):
 
 def _klucb_policy(data, plus):
     """KL-UCB index policy, index by 25-step bisection. plus=False: exploration log t (Garivier & Cappe 2011);
-    plus=True: KL-UCB+, exploration log(t / N_a) (Garivier & Cappe 2011, sec. 4; Garivier et al. 2018)."""
+    plus=True: KL-UCB+, exploration log(t / N_a) (analysed by Kaufmann 2018)."""
     def choose(t, pulls, total, rng):
         best, pick = -1.0, 0
         for a in range(len(pulls)):
@@ -1550,7 +1557,7 @@ CB_STD_CONSECUTIVE = 3     # competitor: open after this many consecutive failur
 def breaker_consecutive(data):
     """Competitor: a standard library circuit breaker (Polly-style: open after 3 consecutive failures,
     one-probe half-open) given the same cost-balanced break duration as the candidate, so the comparison
-    isolates the binomial trip test. Chosen on dev as the strongest of nine standard breakers (failure-rate
+    isolates the binomial trip test. Chosen on dev as the strongest of ten standard breakers (failure-rate
     50% over 10 or 20 calls with minimum 5 or 10, 3 or 5 consecutive failures; break = cost-balanced, 5, 10
     or 20 ticks, or a quarter of the mean outage)."""
     outcomes, p, mean_outage, c_out, c_un, seed = _cb_inputs(data)
@@ -1731,8 +1738,8 @@ INTELLIGENCES = [
         tolerance=1e-9,
         notes={"alternative_competitor": "hysteresis_median (causal moving median, window tuned on the declared "
                                          "model) was the builder's competitor; adversarial review 2026-10-09 "
-                                         "replaced it with the HMM forward filter, the Bayes-optimal causal "
-                                         "detector for a declared two-level Gaussian model (dev mean quality "
+                                         "replaced it with the HMM forward filter, the Bayesian causal "
+                                         "filter for a declared two-level Gaussian model (dev mean quality "
                                          "-0.32 against -1.16 for the median; one synthetic tuning run instead "
                                          "of four gave -0.48)"}),
     Executable(
@@ -1740,7 +1747,7 @@ INTELLIGENCES = [
             intelligence_id="basal.allocate.thompson_bernoulli", family="basal_bandit", operation="bandit_allocate",
             epistemic_class="strategic", subgeometry="stationary Bernoulli multi-armed bandit, finite horizon",
             source_provenance="Thompson (1933); Agrawal & Goyal (2012) regret analysis; Garivier & Cappe (2011) "
-                              "KL-UCB; Auer et al. (2002) UCB1",
+                              "KL-UCB; Kaufmann (2018) KL-UCB+; Auer et al. (2002) UCB1",
             native_representation="K per-arm reward tapes (i-th pull of arm a reveals tape[a][i]) + horizon + seed",
             required_inputs=("outcomes", "horizon", "seed"),
             output_contract={"sequence": "[arm]", "counts": "[int]", "total_reward": "int", "recommended_arm": "int"},
@@ -1760,7 +1767,7 @@ INTELLIGENCES = [
             benchmark_suite="seeded Bernoulli bandits, K 2-10, horizon 400-1000, means U(0.05, 0.95); score "
                             "-pseudo-regret; dev 0-9, held-out 1000-1029",
             baseline="epsilon-greedy (epsilon 0.1) after one pull per arm",
-            competitor="KL-UCB+ (Garivier & Cappe 2011; exploration log(t / N_a))"),
+            competitor="KL-UCB+ (KL-UCB index with exploration log(t / N_a); Kaufmann 2018)"),
         solve=bandit_solve, verify=bandit_verify, instance=bandit_instance, score=bandit_score,
         baseline=bandit_epsilon_greedy, competitor=bandit_klucb_plus, subregion=bandit_subregion, tolerance=1e-9,
         notes={"alternative_competitor": "bandit_ucb1: the assigned competitor; weaker than the epsilon-greedy "

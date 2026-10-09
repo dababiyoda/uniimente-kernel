@@ -31,12 +31,15 @@ equivalence, life, consciousness or general intelligence, and nothing carries au
   bounded 2-D kinematic simulation; contact and non-arrival are audited in continuous time, never hidden.
 
 Independent verification never reuses the solver's code path (recomputed lengths, union-find connectivity,
-probability-space posteriors, equilibrium inequalities, witness-detector geometry, re-simulation).
+probability-space posteriors, equilibrium inequalities, witness-detector geometry, continuous-time kinematic
+audit). Benchmark truth never runs a candidate's code (Held-Karp / a self-contained reference search, generator
+ground truth, dynamic programming, analytic makespan bounds).
 """
 from __future__ import annotations
 
 from bisect import bisect_left
 import heapq
+import json
 import math
 import random
 import statistics
@@ -210,7 +213,14 @@ def quorum_verify(data, output, certificate):
     top = max(logpost.values())
     norm = math.fsum(math.exp(v - top) for v in logpost.values())
     post = {a: math.exp(logpost[a] - top) / norm for a in alts}
+    odds = {}
+    for a in alts:                       # log posterior odds of a against the rest, from the log scale
+        rest = [logpost[b] for b in alts if b != a]
+        m = max(rest)
+        odds[a] = logpost[a] - (m + math.log(math.fsum(math.exp(v - m) for v in rest)))
     output = output if isinstance(output, dict) else {}
+    support = output.get("support_log_odds")
+    support = support if isinstance(support, dict) else {}
     choice = output.get("choice")
     choice = choice if isinstance(choice, str) else None
     reported = output.get("posterior")
@@ -226,7 +236,10 @@ def quorum_verify(data, output, certificate):
             "choice_is_posterior_leader": choice in post and post[choice] >= max(post.values()) - 1e-9,
             "quorum_reached": choice in post and post[choice] >= quorum - 1e-9,
             "posterior_recomputed": all(type(reported.get(a)) in (int, float)
-                                        and abs(reported[a] - post[a]) < 1e-6 for a in alts)}
+                                        and abs(reported[a] - post[a]) < 1e-6 for a in alts),
+            "support_log_odds_recomputed": set(support) == set(alts) and all(
+                type(support[a]) in (int, float) and math.isclose(support[a], odds[a], rel_tol=1e-7, abs_tol=1e-6)
+                for a in alts)}
 
 
 def _unique_max(scores):
@@ -492,13 +505,19 @@ def _verify_tour(data, output):
 def aco_verify(data, output, certificate):
     perm, length = _verify_tour(data, output)
     reported = output.get("length") if isinstance(output, dict) else None
-    history = [h[1] for h in (certificate.get("best_length_by_iteration") or [])]
+    reported = reported if type(reported) in (int, float) and math.isfinite(reported) else None
+    raw = certificate.get("best_length_by_iteration") if isinstance(certificate, dict) else None
+    trace_ok = isinstance(raw, list) and all(isinstance(h, list) and len(h) == 2 and type(h[1]) in (int, float)
+                                             and math.isfinite(h[1]) for h in raw)
+    history = [h[1] for h in raw] if trace_ok else []
     return {"tour_is_permutation": perm,
-            "length_recomputed": perm and isinstance(reported, (int, float))
+            "length_recomputed": perm and reported is not None
             and math.isclose(length, reported, rel_tol=1e-7, abs_tol=1e-6),
+            "trace_well_formed": trace_ok,
             "trace_monotone": all(b <= a + 1e-9 for a, b in zip(history, history[1:])),
-            "trace_ends_at_reported": not history or (isinstance(reported, (int, float))
-                                                      and math.isclose(history[-1], reported, rel_tol=1e-6))}
+            "trace_ends_at_reported": not history or (reported is not None
+                                                      and math.isclose(history[-1], reported, rel_tol=1e-7,
+                                                                       abs_tol=1e-6))}
 
 
 def _held_karp(dist):
@@ -542,7 +561,7 @@ def _or_opt(tour, dmat):
                     continue
                 gain = dmat[prev, s[0]] + dmat[s[-1], nxt] - dmat[prev, nxt]
                 rest = np.array(t[:i] + t[i + seg:])
-                r1 = np.roll(rest, -1)
+                r1 = np.concatenate((rest[1:], rest[:1]))
                 base = dmat[rest, r1]
                 fwd = dmat[rest, s[0]] + dmat[s[-1], r1] - base
                 rev = dmat[rest, s[-1]] + dmat[s[0], r1] - base
@@ -559,22 +578,62 @@ def _or_opt(tour, dmat):
     return t
 
 
+def _reference_two_opt(tour, dmat):
+    """First-improvement 2-opt written for the reference only (the candidate's best-improvement ``_two_opt``
+    is deliberately not reused, so benchmark truth does not run the candidate's code)."""
+    import numpy as np
+    arr = np.array(tour, dtype=int)
+    n = len(arr)
+    improved = True
+    while improved:
+        improved = False
+        for i in range(n - 2):
+            a, b = arr[i], arr[i + 1]
+            if i == 0:                     # edge (t[n-1], t[0]) is adjacent to (t[0], t[1]): j <= n - 2
+                c, d = arr[2:n - 1], arr[3:n]
+            else:                          # j = i + 2 .. n - 1, the successor of t[n-1] is t[0]
+                c, d = arr[i + 2:n], np.append(arr[i + 3:n], arr[0])
+            if not c.size:
+                continue
+            delta = dmat[a, c] + dmat[b, d] - dmat[a, b] - dmat[c, d]
+            hit = np.flatnonzero(delta < -1e-9)
+            if hit.size:
+                j = i + 2 + int(hit[0])
+                arr[i + 1:j + 1] = arr[i + 1:j + 1][::-1].copy()
+                improved = True
+    return arr.tolist()
+
+
 def _tsp_reference(pts, seed):
-    """Long multi-start local search (2-opt + Or-opt alternated to a joint local optimum) for n > 12."""
-    dmat = _distances(pts)
+    """Long multi-start local search for n > 12: nearest-neighbour starts from every city plus 40 random
+    permutations, each improved by first-improvement 2-opt and Or-opt alternated to a joint local optimum.
+    Self-contained: shares no construction or improvement code with the candidate or the competitor."""
+    import numpy as np
+    a = np.array(pts, dtype=float)
+    dmat = np.sqrt(((a[:, None, :] - a[None, :, :]) ** 2).sum(-1))
     n = len(pts)
+
+    def length_of(tour):
+        return math.fsum(float(dmat[tour[k], tour[(k + 1) % n]]) for k in range(n))
     r = random.Random(9_000_000 + seed)
-    starts = [_nearest_neighbour(dmat, s) for s in range(n)]
+    starts = []
+    for s in range(n):
+        tour, left = [s], set(range(n)) - {s}
+        while left:
+            nxt = min(left, key=lambda j: (dmat[tour[-1], j], j))
+            tour.append(nxt)
+            left.discard(nxt)
+        starts.append(tour)
     for _ in range(40):
         perm = list(range(n))
         r.shuffle(perm)
         starts.append(perm)
     best = math.inf
     for tour in starts:
-        length = _tour_len_np(tour, dmat)
+        length = length_of(tour)
         while True:
-            tour = _or_opt(_two_opt(tour, dmat), dmat)
-            new = _tour_len_np(tour, dmat)
+            tour = _or_opt(_reference_two_opt(tour, dmat), dmat)
+            new = length_of(tour)
             if new >= length - 1e-9:
                 break
             length = new
@@ -618,10 +677,46 @@ def aco_nearest_neighbour(data):
 
 
 def aco_nn_two_opt(data):
-    """Competitor: nearest-neighbour tour improved by best-improvement 2-opt to a local optimum."""
+    """Alternative competitor (the competitor before the 2026-10-09 review): nearest-neighbour tour improved by
+    best-improvement 2-opt to a local optimum (a single descent, ~0.4 ms)."""
     pts = _cities(data)
     dmat = _distances(pts)
     return {"tour": [int(c) for c in _two_opt(_nearest_neighbour(dmat), dmat)]}
+
+
+ACO_GLS_SOLUTIONS = 2000
+
+
+def aco_ortools_gls(data):
+    """Competitor: OR-Tools routing (the mature open-source solver) with path-cheapest-arc construction and
+    guided local search. Arc costs are distances scaled so the longest arc is ~1e9 (integer rounding below
+    ~1e-9 relative); the search is bounded by a solution count, not a wall-clock limit, so the result is
+    deterministic. On dev seeds 0-9 a 2000-solution limit reached the reference length on every instance
+    (1200 missed one), 0.7-2.5 s."""
+    from ortools.constraint_solver import pywrapcp, routing_enums_pb2
+    pts = _cities(data)
+    n = len(pts)
+    dist = [[math.hypot(a[0] - b[0], a[1] - b[1]) for b in pts] for a in pts]
+    top = max(max(row) for row in dist)
+    if top == 0.0:
+        return {"tour": list(range(n))}
+    scale = 1e9 / top
+    matrix = [[int(round(v * scale)) for v in row] for row in dist]
+    manager = pywrapcp.RoutingIndexManager(n, 1, 0)
+    routing = pywrapcp.RoutingModel(manager)
+    routing.SetArcCostEvaluatorOfAllVehicles(routing.RegisterTransitMatrix(matrix))
+    params = pywrapcp.DefaultRoutingSearchParameters()
+    params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+    params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    params.solution_limit = ACO_GLS_SOLUTIONS
+    solution = routing.SolveWithParameters(params)
+    if solution is None:
+        return None
+    index, tour = routing.Start(0), []
+    while not routing.IsEnd(index):
+        tour.append(int(manager.IndexToNode(index)))
+        index = solution.Value(routing.NextVar(index))
+    return {"tour": tour}
 
 
 def aco_subregion(data):
@@ -962,7 +1057,8 @@ def physarum_mst(data):
 
 
 def physarum_mst_augmented(data):
-    """Competitor: the KMB tree plus greedy bridge-removal augmentation optimising the SAME predeclared
+    """Alternative competitor (the competitor before the 2026-10-09 review; it inherits KMB's longer trees
+    in the low-fault regime): the KMB tree plus greedy bridge-removal augmentation optimising the SAME predeclared
     objective: each round, for every bridge, add the cheapest path that bypasses it (existing edges free) and
     keep the single augmentation that lowers the objective most; stop when none helps or the added length
     would exceed the budget (= the tree's own length)."""
@@ -994,6 +1090,72 @@ def physarum_mst_augmented(data):
         design |= new
         spent += added
     return _edges_out(pairs, design)
+
+
+def _tm_tree(n, pairs, lengths, terms, root):
+    """Takahashi-Matsuyama shortest-path heuristic: grow a tree from ``root`` by repeatedly attaching the
+    nearest remaining terminal along a shortest path."""
+    nodes, edges, left = {root}, set(), set(terms) - {root}
+    while left:
+        dist, via = _dijkstra(n, pairs, lengths, sorted(nodes))
+        target = min(left, key=lambda t: (dist[t], t))
+        if dist[target] == math.inf:
+            return None
+        path = _path_edges(via, target)
+        edges |= set(path)
+        for e in path:
+            nodes |= set(pairs[e])
+        left -= nodes
+    return _repair_and_prune(n, pairs, lengths, terms, edges)
+
+
+def _objective_local_search(n, pairs, lengths, terms, lam, design, rounds=100):
+    """Best-improvement local search on the declared objective. Moves: add the cheapest bypass path of a bridge
+    (existing design edges free), add one candidate edge, or drop one design edge (connectivity kept)."""
+    design = set(design)
+    value = _design_value(n, pairs, lengths, terms, lam, design)
+    for _ in range(rounds):
+        best = None
+        for e in value[3]:
+            u, v = pairs[e]
+            dist, via = _dijkstra(n, pairs, lengths, [u], free=frozenset(design), banned=frozenset([e]))
+            if dist[v] == math.inf:
+                continue
+            trial_set = design | set(_path_edges(via, v))
+            if trial_set == design:
+                continue
+            trial = _design_value(n, pairs, lengths, terms, lam, trial_set)
+            if trial[0] < value[0] - 1e-9 and (best is None or trial[0] < best[0][0] - 1e-12):
+                best = (trial, trial_set)
+        for e in range(len(pairs)):
+            trial_set = design ^ {e}
+            if not trial_set:
+                continue
+            trial = _design_value(n, pairs, lengths, terms, lam, trial_set)
+            if trial is not None and trial[0] < value[0] - 1e-9 and (best is None or trial[0] < best[0][0] - 1e-12):
+                best = (trial, trial_set)
+        if best is None:
+            break
+        value, design = best
+    return value[0], design
+
+
+def physarum_multistart_search(data):
+    """Competitor: classical Steiner heuristics + local search on the SAME predeclared objective. Start trees:
+    Kou-Markowsky-Berman and Takahashi-Matsuyama grown from each terminal (at most 10 roots); each start is
+    improved by best-improvement local search (bridge-bypass paths, single-edge additions and removals) and
+    the design with the lowest objective is returned."""
+    coords, pairs, lengths, terms, lam = _network_inputs(data)
+    n = len(coords)
+    starts = [_kmb_tree(n, pairs, lengths, terms)] + [_tm_tree(n, pairs, lengths, terms, r) for r in terms[:10]]
+    best = None
+    for tree in starts:
+        if not tree:
+            continue
+        value, design = _objective_local_search(n, pairs, lengths, terms, lam, tree)
+        if best is None or value < best[0] - 1e-12:
+            best = (value, design)
+    return None if best is None else _edges_out(pairs, best[1])
 
 
 def physarum_instance(seed):
@@ -1067,6 +1229,7 @@ UNIVERSE = 6.0          # the modelled universe is the box [-6, 6]^d in self-sta
 # the 9-decimal rounding of witness centres (<= 1.5e-9 in distance at d = 8) and numpy-vs-math.dist rounding
 # can never make the independent witness check refute a correct flag.
 IMMUNE_MARGIN = 1e-7
+IMMUNE_TARGET_FRACTION = 0.75   # calibrate to 0.75 x the declared false-alarm tolerance (a safety factor)
 
 
 def _immune_inputs(data):
@@ -1106,11 +1269,20 @@ def immune_solve(data, budget):
         return answer(None, {"test_points": len(x)}, status="ABSTAIN",
                       missing=[f"more than {IMMUNE_MAX_TEST} test points: split the batch (witness certificate "
                                "size bound)"])
+    target = IMMUNE_TARGET_FRACTION * tol
+    k = int(math.floor(target * (len(s) + 1))) - 1      # conformal: (k + 1) / (n + 1) <= target
+    if k < 0:
+        # even the largest held-back depth only bounds the false-alarm rate by 1 / (n + 1) > target
+        need = math.ceil(1.0 / target) - 1
+        return answer(None, {"self_samples": len(s), "target_rate": round(target, 9), "needed": need},
+                      status="ABSTAIN",
+                      missing=[f"{len(s)} self samples cannot calibrate a false-alarm target of {target:.6g}; "
+                               f"at least {need} are needed"])
     mean, sd = _standardiser(s)
     zs = (np.array(s) - mean) / sd
     zx = (np.array(x) - mean) / sd
     rng = np.random.default_rng(seed)
-    n_det = int(bounded_int(data.get("detectors", 3000), low=100, high=10_000, name="detectors"))
+    n_det = int(bounded_int(data.get("detectors", 3000), low=100, high=5000, name="detectors"))
     half = n_det // 2
     # candidate detectors never depend on individual self samples (keeps calibration exchangeable):
     # half uniform over the universe, half concentrated around the self region at several scales
@@ -1141,12 +1313,10 @@ def immune_solve(data, budget):
         reach_f = nearest(centres, zs[fold_of != f])
         cal_depth[fold_of == f] = depth(zs[fold_of == f], reach_f)[0]
     reach = nearest(centres, zs)               # final detectors censored on ALL self: depths only shrink
-    target = 0.75 * tol
-    k = int(math.floor(target * (len(zs) + 1))) - 1      # conformal: (k + 1) / (n + 1) <= target
     ranked = np.sort(cal_depth)[::-1]
-    r_self = max(0.0, float(ranked[max(k, 0)]))
+    r_self = max(0.0, float(ranked[k]))
     test_depth, which = depth(zx, reach)
-    outside = np.abs(zx).max(1) > UNIVERSE
+    outside = np.abs(zx).max(1) > UNIVERSE + 1e-9      # slack so the verifier's own z agrees at the edge
     flagged = sorted(int(i) for i in np.nonzero((test_depth > r_self + IMMUNE_MARGIN) | outside)[0])
     witnesses = {}
     for i in flagged:
@@ -1161,7 +1331,7 @@ def immune_solve(data, budget):
                    "censored_against": "every self sample", "witnesses": witnesses, "detectors_generated": n_det,
                    "detectors_self_tolerant": int((reach > r_self).sum()),
                    "calibration": {"method": "3-fold cross-fitted conformal quantile of self depth",
-                                   "target_rate": round(target, 6), "allowed_exceedances": max(k, 0),
+                                   "target_rate": round(target, 9), "allowed_exceedances": k,
                                    "held_back_self": len(zs),
                                    "held_back_flagged": int((cal_depth > r_self + IMMUNE_MARGIN).sum())},
                    "universe": f"[-{UNIVERSE}, {UNIVERSE}]^d standardised; outside it is non-self",
@@ -1172,38 +1342,64 @@ def immune_verify(data, output, certificate):
     """Witness geometry in pure Python: each flag is outside the universe or covered by a detector whose
     radius plus the self radius does not reach any self sample."""
     s, x, tol, dim = _immune_inputs(data)
-    mean, sd = _standardiser(s)
-    cert_std = certificate.get("standardisation") or {}
-    std_ok = (len(cert_std.get("mean", [])) == dim and len(cert_std.get("sd", [])) == dim
+    n = len(s)
+    # standardisation recomputed here (fsum-based), not through the solver's ``_standardiser``
+    mean = [math.fsum(p[k] for p in s) / n for k in range(dim)]
+    sd = [math.sqrt(math.fsum((p[k] - mean[k]) ** 2 for p in s) / n) for k in range(dim)]
+    sd = [v if v > 0 else 1.0 for v in sd]
+    certificate = certificate if isinstance(certificate, dict) else {}
+
+    def numbers(v, size):
+        return (isinstance(v, list) and len(v) == size
+                and all(type(a) in (int, float) and math.isfinite(a) for a in v))
+    cert_std = certificate.get("standardisation")
+    cert_std = cert_std if isinstance(cert_std, dict) else {}
+    std_ok = (numbers(cert_std.get("mean"), dim) and numbers(cert_std.get("sd"), dim)
               and all(math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9) for a, b in zip(cert_std["mean"], mean))
               and all(math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9) for a, b in zip(cert_std["sd"], sd)))
+    if std_ok:
+        mean, sd = cert_std["mean"], cert_std["sd"]      # agrees to 1e-9; use the solver's exact frame
+    # calibration arithmetic: the declared target, the conformal rank and the held-back count must be the
+    # ones the declared tolerance and sample size imply (the detector depths themselves are not recomputed)
+    cal = certificate.get("calibration")
+    cal = cal if isinstance(cal, dict) else {}
+    target = IMMUNE_TARGET_FRACTION * tol
+    k = cal.get("allowed_exceedances")
+    flagged_back = cal.get("held_back_flagged")
+    calibration_ok = (type(cal.get("target_rate")) in (int, float)
+                      and math.isclose(cal["target_rate"], target, rel_tol=1e-6)
+                      and type(k) is int and k >= 0 and (k + 1) / (n + 1) <= target + 1e-12
+                      and cal.get("held_back_self") == n
+                      and type(flagged_back) is int and 0 <= flagged_back <= k)
     r_self = certificate.get("self_radius")
     output = output if isinstance(output, dict) else {}
     flagged = output.get("flagged")
     idx_ok = (isinstance(flagged, list) and all(type(i) is int and 0 <= i < len(x) for i in flagged)
               and len(set(flagged)) == len(flagged))
-    radius_ok = (isinstance(r_self, (int, float)) and r_self >= 0
-                 and isinstance(output.get("self_radius"), (int, float))
+    radius_ok = (type(r_self) in (int, float) and math.isfinite(r_self) and r_self >= 0
+                 and type(output.get("self_radius")) in (int, float)
                  and math.isclose(output["self_radius"], r_self, rel_tol=1e-9, abs_tol=1e-12))
     witnessed = idx_ok and radius_ok
+    witnesses = certificate.get("witnesses")
+    witnesses = witnesses if isinstance(witnesses, dict) else {}
     if witnessed:
         selfz = [[(p[k] - mean[k]) / sd[k] for k in range(dim)] for p in s]
-        witnesses = certificate.get("witnesses") or {}
         for i in flagged:
             z = [(x[i][k] - mean[k]) / sd[k] for k in range(dim)]
             w = witnesses.get(str(i))
             if not isinstance(w, dict):
                 witnessed = False
-            elif w.get("outside_universe"):
+            elif w.get("outside_universe") is True:
                 witnessed = max(abs(v) for v in z) > UNIVERSE
             else:
                 c, rad = w.get("centre"), w.get("radius")
-                witnessed = (isinstance(c, list) and len(c) == dim and isinstance(rad, (int, float)) and rad > 0
+                witnessed = (numbers(c, dim) and type(rad) in (int, float) and math.isfinite(rad) and rad > 0
                              and math.dist(z, c) < rad                                   # the detector covers it
                              and min(math.dist(c, t) for t in selfz) >= rad + r_self)    # and tolerates self
             if not witnessed:
                 break
     return {"flag_indices_valid": idx_ok, "standardisation_recomputed": std_ok,
+            "calibration_arithmetic": calibration_ok,
             "self_radius_consistent": radius_ok, "every_flag_witnessed": witnessed}
 
 
@@ -1245,7 +1441,9 @@ def immune_zscore(data):
 
 
 def immune_mahalanobis(data):
-    """Competitor: Mahalanobis distance with the chi-square(d) 1 - tol quantile (sample mean/covariance)."""
+    """Alternative competitor (the competitor before the 2026-10-09 review): Mahalanobis distance with the
+    asymptotic chi-square(d) 1 - tol quantile. It ignores that the mean and covariance are estimated and targets
+    the full tolerance, so it overshoots the false-alarm limit (1 wrong answer on dev seeds 0-9)."""
     import numpy as np
     from scipy.stats import chi2
     s, x, tol, dim = _immune_inputs(data)
@@ -1256,6 +1454,25 @@ def immune_mahalanobis(data):
     diff = np.array(x) - mu
     d2 = np.einsum("ij,jk,ik->i", diff, inv, diff)
     return {"flagged": [int(i) for i in np.nonzero(d2 > chi2.ppf(1 - tol, dim))[0]]}
+
+
+def immune_prediction_region(data):
+    """Competitor: the exact Gaussian prediction ellipsoid for a new observation (Hotelling): flag x when
+    (x - mean)' S^-1 (x - mean) > d (n - 1)(n + 1) / (n (n - d)) F^-1_{d, n-d}(1 - target), with the sample mean
+    and covariance and the SAME false-alarm target as the candidate (0.75 x tolerance). scipy for the quantile."""
+    import numpy as np
+    from scipy.stats import f as f_dist
+    s, x, tol, dim = _immune_inputs(data)
+    n = len(s)
+    if n <= dim + 1:
+        return None
+    a = np.array(s)
+    mu = a.mean(0)
+    inv = np.linalg.pinv(np.atleast_2d(np.cov(a, rowvar=False)))
+    diff = np.array(x) - mu
+    d2 = np.einsum("ij,jk,ik->i", diff, inv, diff)
+    cut = dim * (n - 1) * (n + 1) / (n * (n - dim)) * f_dist.ppf(1 - IMMUNE_TARGET_FRACTION * tol, dim, n - dim)
+    return {"flagged": [int(i) for i in np.nonzero(d2 > cut)[0]]}
 
 
 def immune_instance(seed):
@@ -1512,6 +1729,7 @@ FLOCK_STEP = FLOCK_SPEED * FLOCK_DT
 FLOCK_MARGIN = 0.06       # endpoint clearance 2R + margin keeps continuous clearance >= 2R for steps <= 0.25
 FLOCK_SENSE = 3.0         # local rules see only neighbours inside this radius
 FLOCK_MAX_AGENTS, FLOCK_MAX_STEPS = 10, 300
+FLOCK_MAX_OUTPUT_BYTES = 60_000   # stays under the 64 KiB result contract with room for the envelope
 
 
 def _flock_inputs(data):
@@ -1591,7 +1809,14 @@ def flock_solve(data, budget):
         stuck = [i for i, d in enumerate(done) if not d]
         return answer(None, cert | {"unarrived": stuck}, status="ABSTAIN",
                       missing=[f"local rules left {len(stuck)} agent(s) short of their goals within {steps} steps"])
-    return answer(_flock_output(paths, "local_rules"), cert)
+    output = _flock_output(paths, "local_rules")
+    size = len(json.dumps(output))
+    if size > FLOCK_MAX_OUTPUT_BYTES:
+        # the verifier needs every position; long trips at large coordinates exceed the result-size contract
+        return answer(None, cert | {"output_bytes": size}, status="ABSTAIN",
+                      missing=[f"trajectories need {size} bytes > {FLOCK_MAX_OUTPUT_BYTES}: shorten the trip or "
+                               "translate coordinates toward the origin"])
+    return answer(output, cert)
 
 
 def _closest_approach(a0, a1, b0, b1):
@@ -1634,10 +1859,13 @@ def flock_verify(data, output, certificate):
     audit = flock_audit(data, output)
     if audit is None:
         return {"trajectories_well_formed": False}
+    arrivals = output.get("arrival_steps")
     return {"trajectories_well_formed": True, "starts_match": audit["starts"], "goals_reached": audit["goals"],
             "speed_limit_respected": audit["speed"], "within_step_budget": audit["within_budget"],
             "continuous_clearance": audit["clear"],
-            "makespan_reported": output.get("makespan") == audit["makespan"]}
+            "makespan_reported": type(output.get("makespan")) is int and output["makespan"] == audit["makespan"],
+            "arrival_steps_reported": isinstance(arrivals, list) and arrivals == [
+                len(flat) // 2 - 1 for flat in output["trajectories"]]}
 
 
 def flock_straight(data):
@@ -1766,7 +1994,7 @@ def _common(**kw):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.quorum.cross_inhibition", version="1.0.0", family="collective_quorum",
+            intelligence_id="collective.quorum.cross_inhibition", version="1.0.1", family="collective_quorum",
             layer=2, operation="quorum_cross_inhibition", epistemic_class="prediction",
             subgeometry="choose among 2-8 alternatives from correlated observers with declared independence groups",
             source_provenance="Condorcet/Nitzan-Paroush weighted voting; design-effect / shared-signal mixture for "
@@ -1813,7 +2041,7 @@ INTELLIGENCES = [
                "score": "+1 correct, -1 wrong, 0 abstain; a single decision per seed"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.ant_colony.tsp_mmas", version="1.0.0", family="collective_aco",
+            intelligence_id="collective.ant_colony.tsp_mmas", version="1.0.1", family="collective_aco",
             layer=2, operation="ant_colony_tour", epistemic_class="optimization",
             subgeometry="symmetric Euclidean TSP, 4-40 cities",
             source_provenance="Dorigo & Gambardella (1997) ACS; Stutzle & Hoos (2000) MAX-MIN Ant System with "
@@ -1830,7 +2058,9 @@ INTELLIGENCES = [
                                 "monotone and ending at the reported length",
             confidence_semantics="a feasible tour and its exact length; no optimality claim",
             resource_profile="numpy; O(iterations x ants x n^2)", latency_profile="0.1-1 s at n <= 40",
-            known_strengths=("finds near-reference tours where a single 2-opt descent stalls",),
+            known_strengths=("finds near-reference tours where a single 2-opt descent stalls",
+                             "matched OR-Tools guided local search (2000 solutions) on every dev seed at ~1/10 of "
+                             "its median latency"),
             known_failure_modes=("stochastic: quality varies with the seed", "slower than one local search",
                                  "no optimality certificate"),
             counterindications=("more than 40 cities (outside the bounded native size)",
@@ -1839,17 +2069,21 @@ INTELLIGENCES = [
             benchmark_suite="30% n=8-12 (Held-Karp exact truth), 70% n=20-40 (multi-start 2-opt + Or-opt reference); "
                             "uniform and clustered; dev 0-9 / held-out 1000-1029",
             baseline="nearest-neighbour tour from city 0",
-            competitor="nearest-neighbour + best-improvement 2-opt", dependency=None)),
+            competitor="OR-Tools routing: path-cheapest-arc + guided local search, 2000-solution limit "
+                       "(deterministic; ortools is a competitor-only dependency)", dependency=None)),
         solve=aco_solve, verify=aco_verify, instance=aco_instance, score=aco_score,
-        baseline=aco_nearest_neighbour, competitor=aco_nn_two_opt, subregion=aco_subregion, tolerance=1e-7,
-        notes={"score": "-(length - reference) / reference; reference is exact for n <= 12, a long multi-start "
-                        "local-search tour otherwise (can be beaten)",
+        baseline=aco_nearest_neighbour, competitor=aco_ortools_gls, subregion=aco_subregion, tolerance=1e-7,
+        notes={"score": "-(length - reference) / reference; reference is exact (Held-Karp) for n <= 12, a long "
+                        "self-contained multi-start 2-opt + Or-opt tour otherwise (can be beaten); arms are ranked by "
+                        "tour length either way",
+               "alternative_competitor": "aco_nn_two_opt (NN + one 2-opt descent), the competitor before the "
+                                         "2026-10-09 review; against it the colony won 7, lost 0, tied 3 on dev",
                "ablation_dev": "without 2-opt (local_search=false) the colony still averaged a 0.69% gap vs 1.66% "
                                "for NN + 2-opt on dev seeds 0-9 (5 wins, 2 losses, 3 ties); the hybrid had a 0.00% "
                                "gap (7 wins, 3 ties)"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.physarum.conductance_network", version="1.0.0",
+            intelligence_id="collective.physarum.conductance_network", version="1.0.1",
             family="collective_physarum", layer=2, operation="conductance_network_design",
             epistemic_class="optimization",
             subgeometry="connect terminals on a candidate graph trading length against single-failure robustness",
@@ -1869,7 +2103,8 @@ INTELLIGENCES = [
             verification_method="design edges are candidates; union-find connectivity of all terminals; length "
                                 "from coordinates; brute-force single-failure disconnections recomputed",
             confidence_semantics="exact objective of the returned design; no optimality claim",
-            resource_profile="numpy dense Laplacian solves (n <= 120)", latency_profile="~0.1-0.5 s",
+            resource_profile="numpy dense Laplacian solves (n <= 120)",
+            latency_profile="~40-100 ms on the 30-34-node benchmark graphs; ~1 s at 120 nodes with 1000 steps",
             known_strengths=("produces loops when the fault-tolerance weight is high, trees when it is low",),
             known_failure_modes=("conductance dynamics do not optimise the declared objective directly",
                                  "threshold extraction can keep redundant tubes"),
@@ -1879,15 +2114,19 @@ INTELLIGENCES = [
             benchmark_suite="5-9 terminals + 25 jittered junctions, k=4 nearest-neighbour candidate graph, lambda "
                             "log-uniform over tree-to-redundancy regimes; dev 0-9 / held-out 1000-1029",
             baseline="minimum spanning Steiner tree (KMB metric-closure MST, expanded and pruned)",
-            competitor="KMB tree + greedy bridge-bypass augmentation on the same objective, added length "
-                       "budget = tree length")),
+            competitor="multi-start Steiner heuristics (KMB + Takahashi-Matsuyama from each terminal) each improved "
+                       "by best-improvement local search on the same objective (bridge-bypass paths, single-edge "
+                       "additions and removals)")),
         solve=physarum_solve, verify=physarum_verify, instance=physarum_instance, score=physarum_score,
-        baseline=physarum_mst, competitor=physarum_mst_augmented, subregion=physarum_subregion, tolerance=1e-7,
+        baseline=physarum_mst, competitor=physarum_multistart_search, subregion=physarum_subregion, tolerance=1e-7,
         notes={"score": "-(length + lambda * E[disconnected terminal pairs | one uniformly random candidate edge "
-                        "fails]) / Euclidean terminal-MST length"}),
+                        "fails]) / Euclidean terminal-MST length",
+               "alternative_competitor": "physarum_mst_augmented (KMB + greedy bridge bypass), the competitor before "
+                                         "the 2026-10-09 review: dev 4 wins, 3 losses, 3 ties for the candidate; "
+                                         "its KMB trees lost to the candidate's in the low-fault regime"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.immune.negative_selection", version="1.0.0", family="collective_immune",
+            intelligence_id="collective.immune.negative_selection", version="1.0.1", family="collective_immune",
             layer=2, operation="negative_selection_detect", epistemic_class="prediction",
             subgeometry="flag non-self points given only self samples, under a false-alarm tolerance",
             source_provenance="Forrest et al. (1994) negative selection; Ji & Dasgupta (2004) V-detector",
@@ -1904,25 +2143,37 @@ INTELLIGENCES = [
             evidence_type="statistical_estimate",
             verification_method="pure-Python witness geometry: each flag lies inside a detector whose radius plus "
                                 "the self radius stays clear of every training self sample (or outside the "
-                                "universe); standardisation recomputed",
+                                "universe); standardisation recomputed; calibration arithmetic (target, conformal "
+                                "rank, held-back count) checked against the declared tolerance. The held-back "
+                                "detector depths that set the self radius are NOT recomputed, so an under-stated "
+                                "self radius is not refutable by the verifier, and an omitted flag (a subset of the "
+                                "flag set) is not detected",
             confidence_semantics="the false-alarm rate is a calibrated estimate on held-back self, not a guarantee",
-            resource_profile="numpy; O(detectors x (self + test) x d)", latency_profile="~0.1 s",
+            resource_profile="numpy; O(detectors x (self + test) x d)",
+            latency_profile="~0.2-0.3 s on the benchmark (300-500 self samples, 220-240 test points)",
             known_strengths=("needs no non-self examples", "every alarm has a geometric witness"),
             known_failure_modes=("its score is only a covered lower bound on distance to self: coverage holes miss "
                                  "anomalies near self", "weak in higher dimension",
-                                 "loses to a covariance model when self is Gaussian"),
+                                 "loses to a covariance model when self is Gaussian (lost every dev seed to the "
+                                 "exact Gaussian prediction region)"),
             counterindications=("dimension above 8", "fewer than 60 self samples", "self data known to be Gaussian"),
             abstention_conditions=("dimension above 8", "fewer than 60 self samples",
-                                   "more than 300 test points in one call (split the batch)"),
+                                   "more than 300 test points in one call (split the batch)",
+                                   "too few self samples for the tolerance: (n + 1) x 0.75 x tolerance < 1"),
             benchmark_suite="multivariate-normal self (d 2-6, random covariance), anomalies: correlation breaks, "
                             "shifts of 3-5 Mahalanobis units, inflated variance; tolerance 0.01-0.05; dev 0-9 / "
                             "held-out 1000-1029",
             baseline="per-feature z-score, Bonferroni threshold",
-            competitor="Mahalanobis distance with chi-square(d) threshold (scipy for the quantile)")),
+            competitor="exact Gaussian prediction ellipsoid (Hotelling: sample mean/covariance, F quantile) at the "
+                       "same 0.75 x tolerance target (scipy for the quantile)")),
         solve=immune_solve, verify=immune_verify, instance=immune_instance, score=immune_score,
-        baseline=immune_zscore, competitor=immune_mahalanobis, subregion=immune_subregion, tolerance=1e-9,
+        baseline=immune_zscore, competitor=immune_prediction_region, subregion=immune_subregion, tolerance=1e-9,
         notes={"score": "F1 on the non-self class; false alarms above the 95% binomial bound of the tolerance = "
-                        "wrong (-1); abstain 0"}),
+                        "wrong (-1); abstain 0",
+               "alternative_competitor": "immune_mahalanobis (asymptotic chi-square at the full tolerance), the "
+                                         "competitor before the 2026-10-09 review; it ignored estimation error and "
+                                         "the candidate's 0.75 safety factor and produced 1 wrong answer on dev, "
+                                         "which is why the candidate's mean once looked higher"}),
     Executable(
         genome=IntelligenceGenome(**_common(
             intelligence_id="collective.market.clock_auction", version="1.0.0", family="collective_market",
@@ -1964,7 +2215,7 @@ INTELLIGENCES = [
                "information_asymmetry": "the competitor reads private values; the market only queries demand"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.flock.local_rules", version="1.0.0", family="collective_flock",
+            intelligence_id="collective.flock.local_rules", version="1.0.1", family="collective_flock",
             layer=2, operation="flock_navigate", epistemic_class="physical",
             subgeometry="2-10 discs (radius 0.5, speed <= 1) move to goals in the open plane without contact",
             source_provenance="Reynolds (1987) boids (separation + goal seeking); social-force / sampled-velocity "
@@ -1992,7 +2243,8 @@ INTELLIGENCES = [
                                  "longer makespan than centralized planning"),
             counterindications=("obstacle-filled maps (no static obstacles modelled)", "more than 10 agents",
                                 "safety-critical physical deployment"),
-            abstention_conditions=("any agent short of its goal within the step budget",),
+            abstention_conditions=("any agent short of its goal within the step budget",
+                                   "trajectories larger than 60000 bytes (result-size contract)"),
             benchmark_suite="4-8 agents in perturbed antipodal swaps on a ring; dev 0-9 / held-out 1000-1029",
             baseline="straight-to-goal at full speed (ignores the others)",
             competitor="centralized prioritized planning: space-time A* per agent (longest trip first) around "

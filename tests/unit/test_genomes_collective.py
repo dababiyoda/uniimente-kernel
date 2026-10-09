@@ -151,9 +151,66 @@ def test_physarum_verify_refutes_a_false_robustness_claim():
     assert checks["candidate_edges_only_and_terminals_connected"] and not checks["robustness_recomputed"]
 
 
+def _targeted_corruptions(family, data, output, certificate):
+    """Second, claim-specific corruptions: each one falsifies exactly one claim the verifier must catch."""
+    out, cert = copy.deepcopy(output), copy.deepcopy(certificate)
+    if family == "collective_quorum":
+        lead = out["choice"]
+        yield "support_log_odds_recomputed", dict(out, support_log_odds=dict(
+            out["support_log_odds"], **{lead: out["support_log_odds"][lead] + 0.5})), cert
+        yield "posterior_recomputed", dict(out, posterior={a: 1.0 / len(out["posterior"])
+                                                          for a in out["posterior"]}), cert
+    elif family == "collective_aco":
+        yield "length_recomputed", dict(out, length=out["length"] * 0.99), cert   # claims a shorter tour
+        yield "trace_ends_at_reported", out, dict(cert, best_length_by_iteration=cert["best_length_by_iteration"][:-1]
+                                                  + [[150, out["length"] * 1.5]])
+    elif family == "collective_physarum":
+        yield "length_recomputed", dict(out, length=out["length"] - 1.0), cert
+    elif family == "collective_immune":
+        flagged = [i for i in out["flagged"] if not cert["witnesses"][str(i)].get("outside_universe")]
+        w = copy.deepcopy(cert["witnesses"])
+        w[str(flagged[0])]["radius"] += 10.0                    # the detector would now cover self samples
+        yield "every_flag_witnessed", out, dict(cert, witnesses=w)
+        loose = dict(cert["calibration"], allowed_exceedances=len(data["self_samples"]) // 2)
+        yield "calibration_arithmetic", out, dict(cert, calibration=loose)
+        yield "self_radius_consistent", dict(out, self_radius=out["self_radius"] * 0.5 + 1e-3), cert
+    elif family == "collective_market":
+        cheap = out["clearing_price"] * 0.5
+        yield "unallocated_units_not_worth_the_price", dict(
+            out, clearing_price=cheap, payments={t: cheap * x for t, x in out["allocation"].items()}), cert
+        yield "payments_are_price_times_units", dict(out, payments={t: 0.0 for t in out["payments"]}), cert
+    elif family == "collective_flock":
+        yield "makespan_reported", dict(out, makespan=out["makespan"] - 1), cert
+        yield "arrival_steps_reported", dict(out, arrival_steps=[a - 1 for a in out["arrival_steps"]]), cert
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_verify_refutes_each_false_claim(family):
+    item, data, truth, out = dev(family)
+    seen = 0
+    for check, bad, cert in _targeted_corruptions(family, data, out["output"], out["certificate"]):
+        checks = item.verify(data, bad, cert)
+        assert check in checks and not checks[check], (check, checks)
+        seen += 1
+    assert seen >= 1
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_verify_survives_malformed_certificates(family):
+    item, data, truth, out = dev(family)
+    for cert in (None, [], "x", {"groups": [1], "best_length_by_iteration": "t", "standardisation": [],
+                                 "calibration": [], "witnesses": [], "self_radius": "r"}):
+        checks = item.verify(data, copy.deepcopy(out["output"]), cert)
+        assert checks and all(type(v) is bool for v in checks.values())
+        if family in ("collective_quorum", "collective_aco", "collective_immune"):
+            assert not all(checks.values())          # these families' evidence lives in the certificate
+
+
 # ------------------------------------------------------------------ invalid input raises GenomeError
 INVALID = {
-    "collective_quorum": [{"alternatives": ["A"], "observers": []},
+    "collective_quorum": [{"alternatives": ["A", "B"], "groups": {f"g{i}": {"shared_noise": 0.1} for i in range(201)},
+                           "observers": [{"observer_id": "o", "group": "g", "accuracy": 0.7, "vote": "A"}]},
+                          {"alternatives": ["A"], "observers": []},
                           {"alternatives": ["A", "B"], "observers": [{"observer_id": "o", "group": "g",
                                                                       "accuracy": 1.5, "vote": "A"}]},
                           {"alternatives": ["A", "B"], "observers": [{"observer_id": "o", "group": "g",
@@ -165,7 +222,9 @@ INVALID = {
                             {"nodes": [[0, 0], [1, 0]], "edges": [[0, 1]], "terminals": [0, 5], "lambda": 1.0},
                             {"nodes": [[0, 0], [1, 0]], "edges": [[0, 1]], "terminals": [0, 1], "lambda": -1.0},
                             {"nodes": [[0, 0], [1, 0]], "edges": [[0, 1]], "terminals": [[0], [1]], "lambda": 1.0}],
-    "collective_immune": [{"self_samples": [[0.0, 1.0]] * 10, "test_points": [[0.0]], "max_false_alarm_rate": 0.05},
+    "collective_immune": [{"self_samples": [[0.0, 1.0]] * 80, "test_points": [[0.0, 0.0]], "max_false_alarm_rate": 0.05,
+                           "detectors": 5001},
+                          {"self_samples": [[0.0, 1.0]] * 10, "test_points": [[0.0]], "max_false_alarm_rate": 0.05},
                           {"self_samples": [[0.0]] * 10, "test_points": [[0.0]], "max_false_alarm_rate": 0.9}],
     "collective_market": [{"capacity": -1, "tasks": [{"task_id": "a", "marginal_values": [1.0]}]},
                           {"capacity": 3, "tasks": [{"task_id": "a", "marginal_values": [1.0]},
@@ -208,6 +267,7 @@ def test_quorum_discounts_a_correlated_faction():
     data = {"alternatives": ["A", "B"], "observers": obs, "groups": {"faction": {"shared_noise": 0.95}}}
     assert c.quorum_majority(data)["choice"] == "A"
     assert c.quorum_weighted_majority(data)["choice"] == "A"
+    assert c.quorum_group_majority(data)["choice"] == "B"                # the competitor also uses the grouping
     out = c.quorum_solve(data, BUDGET)
     assert out["status"] == "ANSWER" and out["output"]["choice"] == "B"
     assert all(c.quorum_verify(data, out["output"], out["certificate"]).values())
@@ -228,6 +288,31 @@ def test_aco_abstains_above_native_size_and_matches_exact_optimum():
     assert math.isclose(out["output"]["length"], brute, rel_tol=1e-9)
 
 
+def test_aco_certificate_trace_keeps_the_final_length():
+    """Regression: with 61-99 iterations the trace was cut at 60 entries before the final improvement, so the
+    independent verifier refuted the colony's own correct tour."""
+    r = random.Random(0)
+    pts = [[r.uniform(0, 100), r.uniform(0, 100)] for _ in range(40)]
+    out = c.aco_solve({"cities": pts, "seed": 0, "iterations": 95, "local_search": False}, BUDGET)
+    trace = out["certificate"]["best_length_by_iteration"]
+    assert len(trace) <= 60 and trace[-1] == [94, out["output"]["length"]]
+    assert all(c.aco_verify({"cities": pts}, out["output"], out["certificate"]).values())
+
+
+def test_aco_competitor_is_a_mature_solver_and_reference_is_independent():
+    r = random.Random(11)
+    pts = [[r.uniform(0, 100), r.uniform(0, 100)] for _ in range(9)]
+    dist = [[math.dist(a, b) for b in pts] for a in pts]
+    exact = c._held_karp(dist)
+    tour = c.aco_ortools_gls({"cities": pts})["tour"]
+    assert sorted(tour) == list(range(9))
+    assert math.isclose(sum(dist[a][b] for a, b in zip(tour, tour[1:] + tour[:1])), exact, rel_tol=1e-9)
+    assert c._tsp_reference([tuple(p) for p in pts], 0) >= exact - 1e-9          # a tour length, never below optimum
+    import inspect
+    source = inspect.getsource(c._tsp_reference) + inspect.getsource(c._reference_two_opt)
+    assert "_two_opt(" not in source.replace("_reference_two_opt(", "") and "_nearest_neighbour" not in source
+
+
 def test_physarum_objective_matches_brute_force_and_abstains_when_disconnected():
     data, _ = c.physarum_instance(2)
     coords, pairs, lengths, terms, lam = c._network_inputs(data)
@@ -245,6 +330,13 @@ def test_physarum_objective_matches_brute_force_and_abstains_when_disconnected()
     assert c.physarum_score(split, {"scale": 1.0}, {"edges": [[0, 1]]})["category"] == "wrong"
 
 
+def test_physarum_competitor_never_worse_than_its_tree_start():
+    item, data, truth, out = dev("collective_physarum")
+    tree = c.network_evaluate(data, c.physarum_mst(data))["objective"]
+    searched = c.network_evaluate(data, c.physarum_multistart_search(data))
+    assert searched is not None and searched["objective"] <= tree + 1e-9
+
+
 def test_immune_abstains_out_of_competence_and_scores_autoimmunity_as_wrong():
     r = random.Random(1)
     high = {"self_samples": [[r.gauss(0, 1) for _ in range(9)] for _ in range(80)],
@@ -259,6 +351,27 @@ def test_immune_abstains_out_of_competence_and_scores_autoimmunity_as_wrong():
     every = {"flagged": list(range(len(truth["labels"])))}           # flag everything: autoimmunity
     assert c.immune_score(data, truth, every)["category"] == "wrong"
     assert c.immune_score(data, truth, {"flagged": []}) == {"quality": 0.0, "category": "correct"}
+
+
+def test_immune_abstains_when_self_samples_cannot_calibrate_the_tolerance():
+    """Regression: 70 self samples cannot certify a 0.075% false-alarm target (the best conformal bound is
+    1/71); the detector used to answer anyway with a certificate claiming that target."""
+    r = random.Random(2)
+    self_s = [[r.gauss(0, 1), r.gauss(0, 1)] for _ in range(70)]
+    data = {"self_samples": self_s, "test_points": [[4.0, 4.0]], "max_false_alarm_rate": 0.001}
+    out = c.immune_solve(data, BUDGET)
+    assert out["status"] == "ABSTAIN" and "at least 1333" in out["missing"][0]
+    data["max_false_alarm_rate"] = 0.05                                  # 0.0375 x 71 >= 1: calibratable
+    out = c.immune_solve(data, BUDGET)
+    assert out["status"] == "ANSWER" and all(c.immune_verify(data, out["output"], out["certificate"]).values())
+
+
+def test_immune_competitor_is_the_exact_prediction_region():
+    """The old asymptotic chi-square competitor overshot the false-alarm limit on dev seed 2; the exact
+    Gaussian prediction region at the candidate's own 0.75 x tolerance target does not."""
+    data, truth = c.immune_instance(2)
+    assert c.immune_score(data, truth, c.immune_mahalanobis(data))["category"] == "wrong"
+    assert c.immune_score(data, truth, c.immune_prediction_region(data))["category"] == "correct"
 
 
 def test_market_equilibrium_abstention_and_capacity_violation():
@@ -287,6 +400,18 @@ def test_flock_baseline_collides_and_candidate_is_contact_free():
     assert 0 < c.flock_score(data, truth, out["output"])["quality"] <= 1.0
     jammed = {"starts": [[0, 0], [3, 0]], "goals": [[3, 0.01], [0, 0.01]], "steps": 10}
     assert c.flock_solve(jammed, BUDGET)["status"] == "ABSTAIN"       # cannot finish inside 10 steps
+
+
+def test_flock_abstains_rather_than_exceed_the_result_size_contract():
+    """Regression: ten long trips at large coordinates produced a 62 KB trajectory output."""
+    far = {"starts": [[999000.0 + 3.5 * i, 999000.0] for i in range(10)],
+           "goals": [[999000.0 + 3.5 * i, 999074.9] for i in range(10)]}
+    out = c.flock_solve(far, BUDGET)
+    assert out["status"] == "ABSTAIN" and out["certificate"]["output_bytes"] > c.FLOCK_MAX_OUTPUT_BYTES
+    near = {"starts": [[3.5 * i, 0.0] for i in range(10)], "goals": [[3.5 * i, 74.9] for i in range(10)]}
+    out = c.flock_solve(near, BUDGET)                                  # same trips near the origin fit
+    assert out["status"] == "ANSWER" and len(json.dumps(out["output"])) <= c.FLOCK_MAX_OUTPUT_BYTES
+    assert all(c.flock_verify(near, out["output"], out["certificate"]).values())
 
 
 # ------------------------------------------------------------------ score categories

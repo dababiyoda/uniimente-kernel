@@ -32,7 +32,6 @@ of any method here creates authority.
 """
 from __future__ import annotations
 
-from collections import deque
 import hashlib
 from itertools import product
 import math
@@ -868,16 +867,16 @@ def mc_random_walk(data):
     return {"verdict": "SAFE", "method": f"random testing: no violation in {MC_WALK_STEPS} steps"}
 
 
-def _mc_z3(expr, xs, index):
+def _mc_z3(expr, xs, index, ctx):
     import z3
     t = type(expr)
     if t is bool:
-        return z3.BoolVal(expr)
+        return z3.BoolVal(expr, ctx)
     if t is int:
-        return z3.IntVal(expr)
+        return z3.IntVal(expr, ctx)
     if t is str:
         return xs[index[expr]]
-    op, a = expr[0], [_mc_z3(e, xs, index) for e in expr[1:]]
+    op, a = expr[0], [_mc_z3(e, xs, index, ctx) for e in expr[1:]]
     if op == "+":
         return z3.Sum(a)
     if op == "-":
@@ -916,6 +915,7 @@ def mc_bmc_kinduction(data):
         return None
     names, index, lo, hi = sysm["names"], sysm["index"], sysm["lo"], sysm["hi"]
     n = len(names)
+    ctx = z3.Context()                                   # private context: reproducible models
     deadline = time.perf_counter() + MC_Z3_SECONDS
 
     def timed_check(solver):
@@ -926,7 +926,7 @@ def mc_bmc_kinduction(data):
         return solver.check()
 
     def state(tag, k):
-        return [z3.Int(f"{tag}{k}_{i}") for i in range(n)]
+        return [z3.Int(f"{tag}{k}_{i}", ctx) for i in range(n)]
 
     def ranges(xs):
         return z3.And([z3.And(x >= l, x <= h) for x, l, h in zip(xs, lo, hi)])
@@ -935,14 +935,15 @@ def mc_bmc_kinduction(data):
         options = []
         for _, guard, ups in sysm["commands"]:
             upd = dict(ups)
-            options.append(z3.And(_mc_z3(guard, xs, index),
-                                  *[ys[i] == (_mc_z3(upd[i], xs, index) if i in upd else xs[i]) for i in range(n)]))
+            options.append(z3.And(_mc_z3(guard, xs, index, ctx),
+                                  *[ys[i] == (_mc_z3(upd[i], xs, index, ctx) if i in upd else xs[i])
+                                    for i in range(n)]))
         return z3.And(z3.Or(options), ranges(ys))
 
     def inv(xs):
-        return _mc_z3(sysm["invariant"], xs, index)
+        return _mc_z3(sysm["invariant"], xs, index, ctx)
 
-    base, step = z3.Solver(), z3.Solver()
+    base, step = z3.Solver(ctx=ctx), z3.Solver(ctx=ctx)
     for s in (base, step):
         s.set("random_seed", 0)
     X, Y = [state("x", 0)], [state("y", 0)]
@@ -973,8 +974,10 @@ def mc_bmc_kinduction(data):
         step.add(inv(Y[k]), trans(Y[k], Y[k + 1]))
         step.push()
         step.add(z3.Not(inv(Y[k + 1])))
-        inductive = step.check()
+        inductive = timed_check(step)
         step.pop()
+        if inductive == z3.unknown:
+            return None                                 # out of budget: abstain
         if inductive == z3.unsat:
             return {"verdict": "SAFE", "method": f"{k + 1}-induction (base case by BMC to depth {k})"}
         if k < MC_BMC_DEPTH:
@@ -1343,7 +1346,7 @@ def mpc_lqr(data):
 
 # =================================================================== 4. CEGIS for bounded threshold rules
 SY_MAX_N, SY_NATIVE_N, SY_MAX_BOUND = 16, 13, 64
-SY_MAX_ITER, SY_SAMPLE, SY_Z3_MS = 400, 128, 20_000
+SY_MAX_ITER, SY_SAMPLE, SY_Z3_MS = 400, 128, 4_000   # SY_Z3_MS: per-arm cap for the baseline and competitor
 
 
 def _sy(data):
@@ -1385,12 +1388,15 @@ def _sy_constraint(z3, w, b, row, positive):
     return expr >= 1 if positive else expr <= -1
 
 
-def _sy_new_solver(z3, n, bound):
-    s = z3.Solver()
+def _sy_new_solver(z3, n, bound, timeout_ms=SY_Z3_MS):
+    # A fresh context per call: Z3's models depend on term ids, which depend on everything created earlier
+    # in a shared context, so only a private context makes the same data give the same parameters.
+    ctx = z3.Context()
+    s = z3.Solver(ctx=ctx)
     s.set("random_seed", 0)
-    s.set("timeout", SY_Z3_MS)
-    w = [z3.Int(f"w{j}") for j in range(n)]
-    b = z3.Int("b")
+    s.set("timeout", int(timeout_ms))
+    w = [z3.Int(f"w{j}", ctx) for j in range(n)]
+    b = z3.Int("b", ctx)
     s.add(*[z3.And(x >= -bound, x <= bound) for x in w], b >= -bound * n, b <= bound * n)
     return s, w, b
 
@@ -1412,6 +1418,10 @@ def cegis_solve(data, budget):
     deadline = time.perf_counter() + max(0.5, float((budget or {}).get("latency_s", 5.0)))
     examples = []
     for it in range(1, SY_MAX_ITER + 1):
+        left = deadline - time.perf_counter()
+        if left <= 0.01:
+            return _unknown("latency budget exhausted", iterations=it)
+        s.set("timeout", max(1, int(left * 1000)))          # every SMT call fits inside the solve budget
         verdict = s.check()
         if verdict == z3.unsat:
             return answer({"realizable": False},
@@ -1585,7 +1595,7 @@ def cegis_full_domain(data):
         terms = " ".join(f"w{j}" for j in range(n) if (i >> j) & 1)
         expr = f"(+ b {terms})" if terms else "b"
         lines.append(f"(assert (>= {expr} 1))" if (value >> i) & 1 else f"(assert (<= {expr} (- 1)))")
-    s = z3.Solver()
+    s = z3.Solver(ctx=z3.Context())                      # private context: reproducible models
     s.set("random_seed", 0)
     s.set("timeout", SY_Z3_MS)
     s.from_string("\n".join(lines))
@@ -1842,6 +1852,8 @@ def causal_verify(data, output, certificate):
         return {"estimate_well_formed": False}
     z = output.get("adjustment_set")
     declared = sorted(g["z"])
+    if any(v not in g["cols"] for v in declared):
+        return {"estimate_well_formed": True, "adjustment_columns_present": False}
     checks = {"estimate_well_formed": True, "adjustment_set_is_declared": z == declared,
               "backdoor_criterion_by_independent_bayes_ball": isinstance(z, list) and _ca_backdoor_ball(g, declared)}
     t, y, n = g["cols"][g["t"]], g["cols"][g["y"]], len(g["cols"][g["t"]])
@@ -1958,7 +1970,6 @@ def causal_instance(seed):
     if kind == "discrete":
         levels = r.randint(3, 4)
         pz = rng.dirichlet(np.full(levels, 4.0))
-        pz = 0.1 + 0.9 * pz / pz.sum() * (1 - 0.1 * levels) / 0.9 if False else pz
         e = rng.uniform(0.15, 0.85, size=levels)
         mu, tau = rng.uniform(-2, 2, size=levels), r.uniform(-1.5, 1.5) + rng.uniform(-0.5, 0.5, size=levels)
         zv = rng.choice(levels, size=n, p=pz)
@@ -2130,9 +2141,14 @@ def _ie_count(tree):
 def ie_solve(data, budget):
     import numpy as np
     prior, tables, length = _ie(data)
+    costs = data.get("test_costs")
+    if costs is not None:
+        if not isinstance(costs, list) or len(costs) != len(tables):
+            raise GenomeError("test_costs: one non-negative cost per test")
+        costs = [finite(c, low=0.0, high=1e12, name="test cost") for c in costs]
     if _ie_worst_nodes(tables, length) > IE_MAX_NODES:
         return _abstain(f"an adaptive policy tree could exceed {IE_MAX_NODES} nodes; use an open-loop design")
-    if data.get("test_costs") is not None and len(set(data["test_costs"])) > 1:
+    if costs is not None and len(set(costs)) > 1:
         return _abstain("unequal test costs: greedy information gain ignores cost (needs a cost-aware design)")
 
     def greedy(post, P, depth):
@@ -2241,7 +2257,7 @@ def ie_instance(seed):
             acc, cls = r.uniform(0.6, 0.97), [r.randrange(width) for _ in range(m)]
             for h in range(m):
                 rows.append([acc if o == cls[h] else (1 - acc) / (width - 1) for o in range(width)])
-        elif kind < 0.85:                                  # a near-uniform trap: high outcome entropy, little information
+        elif kind < 0.85:                                  # near-uniform trap: high entropy, little information
             traps += 1
             for _ in range(m):
                 row = [1.0 / width + r.uniform(-0.03, 0.03) for _ in range(width)]
@@ -2418,7 +2434,8 @@ INTELLIGENCES = [
                             "non-inductive parity counters, wide resource pools; truth by an independent DFS or "
                             "construction; seeds 0-9 dev / 1000-1029 held out",
             baseline="random-walk testing, 10,000 steps in walks of 250; no violation seen is reported SAFE",
-            competitor="Z3 bounded model checking interleaved with k-induction, both to depth 15",
+            competitor="Z3 bounded model checking interleaved with k-induction, both to depth 15, one 4 s total "
+                       "budget",
             **_common()),
         solve=mc_solve, verify=mc_verify, instance=mc_instance, score=mc_score, baseline=mc_random_walk,
         competitor=mc_bmc_kinduction, subregion=mc_subregion, tolerance=1e-9),

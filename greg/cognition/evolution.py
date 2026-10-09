@@ -256,7 +256,12 @@ class SealedEvaluator:
 
 
 def relative_gain(incumbent: float, candidate: float) -> float:
-    """Fractional loss reduction, correct for losses of either sign (pinball loss > 0; -F1 <= 0)."""
+    """Fractional loss reduction, correct for losses of either sign (pinball loss > 0; -F1 <= 0).
+
+    An infinite mean loss means at least one wrong answer: fewer wrong answers is an unbounded gain, equal
+    infinities are no evidence of gain, and never NaN (NaN compares False and would slip through a gate)."""
+    if math.isinf(incumbent) or math.isinf(candidate):
+        return 0.0 if incumbent == candidate else (math.inf if candidate < incumbent else -math.inf)
     if incumbent == 0:
         return math.inf if candidate < 0 else 0.0
     return (incumbent - candidate) / abs(incumbent)
@@ -265,6 +270,13 @@ def relative_gain(incumbent: float, candidate: float) -> float:
 def worsened(incumbent: float, candidate: float, tolerance: float = STRESS_TOLERANCE) -> bool:
     """True when the candidate's loss is worse than the incumbent's by more than ``tolerance`` of its size."""
     return candidate > incumbent + tolerance * abs(incumbent)
+
+
+def outputs_verified(verify, items: dict, outputs: dict) -> bool:
+    """Every ANSWER verifies independently. An abstention (output None) is not an answer and is not verified;
+    the sealed score already rates it below a correct answer."""
+    return all(all(verify(items[k]["data"], v["output"], v["certificate"]).values())
+               for k, v in outputs.items() if v.get("output") is not None)
 
 
 def sign_test(wins: int, losses: int) -> float:
@@ -377,8 +389,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     stress = SealedEvaluator(spec.stress(train_items), spec.score)
     inc_s, _ = evaluate(target.incumbent, stress)
     cand_s, cand_run = evaluate(best, stress)
-    verified = all(all(spec.verify(stress._items[k]["data"], v["output"], v["certificate"]).values())
-                   for k, v in cand_run["outputs"].items() if "output" in v)
+    verified = outputs_verified(spec.verify, stress._items, cand_run["outputs"])
     adversarial = {}
     for kind in sorted({k.split(":")[0] for k in stress._items}):
         ki = [inc_s[k] for k in inc_s if k.startswith(kind)]

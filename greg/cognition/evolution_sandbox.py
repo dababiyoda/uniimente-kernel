@@ -22,9 +22,12 @@ import importlib  # noqa: E402
 from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg import isolation  # noqa: E402
 
-# The only code a cycle can run: reviewed modules and functions, named by the trusted parent's target.
-TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with"),
-           "immune_detect": ("greg.cognition.genomes.collective", "immune_solve_with")}
+# The only code a cycle can run: reviewed modules and functions, named by the trusted parent's target, with
+# the runtime modules each imports lazily. Those are imported BEFORE confinement so the shared libraries they
+# map (numpy's libstdc++ on hosts whose Python lives outside /usr) are granted as already-loaded files.
+TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with", ()),
+           "immune_detect": ("greg.cognition.genomes.collective", "immune_solve_with",
+                             ("numpy", "numpy.linalg", "numpy.random"))}
 
 
 def main():
@@ -32,8 +35,10 @@ def main():
     if request.get("target") not in TARGETS:
         print(json.dumps({"confined": None, "error": "UNKNOWN_TARGET"}))
         return
-    module, function = TARGETS[request["target"]]
+    module, function, runtime = TARGETS[request["target"]]
     method = getattr(importlib.import_module(module), function)      # imported BEFORE confinement
+    for name in runtime:
+        importlib.import_module(name)                                 # lazily used, so preloaded here too
     resource.setrlimit(resource.RLIMIT_CPU, (120, 121))
     scratch = tempfile.mkdtemp(prefix="greg-p8-")
     confined = None

@@ -135,3 +135,37 @@ def test_an_immune_candidate_runs_confined_from_the_allow_list():
 def test_gain_and_stress_tolerance_are_correct_for_losses_of_either_sign(incumbent, candidate, gain, worse):
     assert E.relative_gain(incumbent, candidate) == pytest.approx(gain)
     assert E.worsened(incumbent, candidate) is worse
+
+
+def test_an_infinite_mean_loss_never_yields_a_nan_gain():
+    inf = float("inf")
+    assert E.relative_gain(inf, -0.5) == inf          # the candidate removed a wrong answer
+    assert E.relative_gain(inf, inf) == 0.0            # both wrong somewhere: no evidence of gain
+    assert E.relative_gain(-0.5, inf) == -inf          # the candidate added a wrong answer
+    assert not E.relative_gain(inf, inf) > E.TRAIN_GAIN_MIN
+
+
+def test_abstentions_are_not_counted_as_failed_verification():
+    from greg.cognition.genomes import collective
+    data, _ = collective.immune_instance(2)
+    good = collective.immune_solve(data, {})
+    items = {"a": {"data": data}, "b": {"data": data}}
+    abstained = {"output": None, "certificate": {"self_samples": 3}}
+    assert E.outputs_verified(collective.immune_verify, items, {"a": good, "b": abstained})
+    forged = {"output": {"flagged": [0], "self_radius": 0.0}, "certificate": {}}
+    assert not E.outputs_verified(collective.immune_verify, items, {"a": good, "b": forged})
+
+
+def test_lazily_imported_runtime_is_loaded_before_confinement():
+    """CI regression (ed4ee29): numpy imported after Landlock could not open libstdc++ on a runner whose
+    Python lives outside /usr. Every allow-listed target that uses numpy declares it for preloading."""
+    import importlib
+    import inspect
+    from greg.cognition import evolution_sandbox as S
+    for name, (module, function, runtime) in S.TARGETS.items():
+        source = inspect.getsource(getattr(importlib.import_module(module), function))
+        if "import numpy" in source:
+            assert "numpy" in runtime, f"{name} imports numpy lazily but does not preload it"
+    assert {"numpy", "numpy.linalg"} <= set(S.TARGETS["immune_detect"][2])
+    main = inspect.getsource(S.main)
+    assert main.index("for name in runtime") < main.index("isolation.confine(")

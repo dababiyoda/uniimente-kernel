@@ -1,11 +1,20 @@
 # CANONICAL EXECUTION ORDER
 
+## Coherent Full Mind execution — October 3/7 founder refinement
+
+Apply `docs/intent/INTENT-20261007-COHERENT-FULL-MIND-COMPLETION.json`. **BODY + ORGANS + MIND = GREG / UNIIMENTE** remains the fixed boundary. Select and complete the **largest coherent currently buildable portion** that evidence, dependencies, permissions and technology allow; rigorous internal increments sequence that build. Prove and integrate them, then immediately continue the next unfinished coherent portion. A smallest provable slice, green suite, milestone or PR never ends the parent objective. Continue independently achievable portions when another item is blocked.
+
+Mind priority: **P6 verified cognitive composition lift → P4 conditional competence memory → P8 protected evolutionary cognition → executable IntelligenceGenome family expansion**. This prioritizes dependent work without globally gating independent buildable portions. VPL measures the number/proportion of held-out problem families where geometry routing or composition improves over the strongest single available intelligence, net of cost/latency, without more false answers or unauthorized effects. Orchestration alone, coarse routing memory and inconclusive evaluations are not cognitive lift; VPL gates claims, not unrelated implementation.
+
+All five functional Mind layers remain simultaneous obligations: **primitive/basal; distributed/collective; solver/macro-cognitive; developmental/morphogenetic; meta-intelligence/institutional collective cognition**. They are not sequential phases or optional future labels. Preserve the October 3 organizational Levels (including bounded competency cells) alongside this October 7 functional projection. Installations, registries and prose cannot replace callable, typed, governed, routed, verified and integrated capabilities. Source attribution does not authenticate a founder or create runtime authority; existing Kernel, consent, grants, budgets, refusal, pause/revocation and shutdown controls remain effective.
+
+
 ## Controlling founder completion correction — 2026-10-02
 
 **BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.**
 The complete currently achievable autonomous machine must be implemented and integrated before Alfonso's sustained use, critique and refinement phase.
 
-Reconstruct that whole boundary; identify the highest-priority unfinished dependency; build the smallest rigorous increment needed to advance it; prove it; integrate it; automatically resume the parent objective and the next unblocked requirement. Repeat until all currently achievable requirements are executable and integrated. A seed, experiment, sandbox, benchmark, registry, PR, smallest falsifiable build or VEPMC milestone is a sequencing or evidence unit, never the project stopping condition. A narrow PR does not narrow the machine.
+Reconstruct that whole boundary; identify the highest-priority unfinished dependency; complete the largest coherent currently buildable portion, using rigorous internal increments only for implementation sequencing; prove it; integrate it; automatically resume the parent objective and the next unblocked requirement. Repeat until all currently achievable requirements are executable and integrated. A seed, experiment, sandbox, benchmark, registry, PR, smallest falsifiable build or VEPMC milestone is a sequencing or evidence unit, never the project stopping condition. A narrow PR does not narrow the machine.
 
 Never convert not implemented into not intended, future family into permanent omission, sandboxed into complete, registered into implemented, seed into final architecture, a tested component into a complete system, or any milestone into the total product definition. Do not replace feasible executable machinery with placeholders or architecture prose.
 
@@ -80,6 +89,9 @@ Every material capability-formation claim should preserve:
 - outcome evidence.
 
 ## Order of work (dependency order)
+
+Latest Mind work priority is P6 comparative cognitive composition lift, P4 conditional competence memory, P8 protected evolutionary cognition, then coherent executable IntelligenceGenome family expansion. P6 must compare the best constituent alone, static composition and geometry-routed composition with translation errors, cost and latency. P4 learns method/version × geometry/subgeometry × problem size/density × objective × data quality/uncertainty × resource/evidence/consequence context, falling back from exact condition through neighbors and geometry to the global prior. It may reorder only already eligible methods, never authority or budgets. P8 mutates nonconstitutional configurations against a frozen evaluator it cannot edit, with independent adversarial and held-out evaluation, retain/reject decisions and lineage. Every native family must earn admission against its simpler native-geometry baseline. This priority does not block independently achievable work elsewhere in the five-layer Mind or Body + Organs boundary.
+
 
 1. Founder-effect compilation for the active mission.
 2. Phase Zero — institutional connection and capability preservation (see Final Build Order §13).

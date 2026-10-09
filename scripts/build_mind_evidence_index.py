@@ -77,9 +77,10 @@ def build() -> dict:
         data = json.loads(path.read_text())
         rel = str(path.relative_to(ROOT))
         index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
-        for family, row in (data.get("families") or {}).items():
+        # The admission harness (greg/cognition/genomes/admission.py) writes one entry per family under "genomes".
+        for family, row in (data.get("genomes") or {}).items():
             if row.get("status"):
-                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#families.{family}"}
+                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}"}
     if not base.exists() or not index["genomes"]:
         index["missing_sources"].append(f"{ADMISSION}/*/results.json (no frozen held-out admission run yet)")
     return index

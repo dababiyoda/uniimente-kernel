@@ -19,7 +19,7 @@ OPS = {"dp_knapsack": "knapsack_01_select", "search_astar": "grid_astar_route",
        "bayes_interval": "jeffreys_credible_interval", "game_minimax": "zero_sum_lp_equilibrium"}
 CLASSES = {"dp_knapsack": "optimization", "search_astar": "optimization", "mc_importance": "estimate",
            "queue_erlang": "prediction", "bayes_interval": "estimate", "game_minimax": "strategic"}
-EVIDENCE = {"dp_knapsack": "optimality_certificate", "search_astar": "optimality_certificate",
+EVIDENCE = {"dp_knapsack": "exact_calculation", "search_astar": "exact_calculation",
             "mc_importance": "statistical_estimate", "queue_erlang": "exact_calculation",
             "bayes_interval": "posterior", "game_minimax": "optimality_certificate"}
 BUDGET = {"latency_s": 5.0, "compute": 100000}
@@ -66,6 +66,7 @@ def test_genomes_validate_and_are_layer_three():
         g = x.genome
         assert isinstance(g, IntelligenceGenome) and g.validate() is g
         assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision
+        assert g.version == "1.0.1"
         assert g.operation == OPS[g.family] and g.epistemic_class == CLASSES[g.family]
         assert g.evidence_type == EVIDENCE[g.family]
         assert "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION" in g.lineage
@@ -313,3 +314,161 @@ def test_solves_are_deterministic():
     for family in FAMILIES:
         data, _, first = solved(family, 2)
         assert item(family).solve(copy.deepcopy(data), BUDGET) == first
+
+
+# ------------------------------------------------------------------ adversarial review (1.0.1)
+def _forge(family, data, out, how):
+    """Further corruptions per family; each must be refuted by the independent verifier."""
+    o, c = copy.deepcopy(out["output"]), copy.deepcopy(out["certificate"])
+    if family == "dp_knapsack" and how == "overweight":
+        o["selected"] = list(range(len(data["values"])))
+        o["value"], o["weight"] = sum(data["values"]), sum(data["weights"])
+        c["dp_optimum"] = o["value"]
+    elif family == "dp_knapsack" and how == "bound_below_optimum":
+        c["lp_upper_bound"] = o["value"] - 0.5
+    elif family == "search_astar" and how == "false_unreachable":
+        o = {"reachable": False, "moves": None, "cost": None}
+    elif family == "search_astar" and how == "understated_cost":
+        o["cost"] -= 1
+    elif family == "mc_importance" and how == "understated_se":
+        o["std_error"] = o["std_error"] / 10.0
+        o["ci95"] = [o["probability"] - 1.959964 * o["std_error"], o["probability"] + 1.959964 * o["std_error"]]
+    elif family == "mc_importance" and how == "inflated_se_and_estimate":
+        o["probability"] *= 10.0
+        o["std_error"] = o["probability"] * 100.0
+        o["ci95"] = [0.0, 1.0]
+        c["estimate"] = o["probability"]
+    elif family == "queue_erlang" and how == "understaffed":
+        o["agents"] -= 1
+    elif family == "queue_erlang" and how == "false_probability":
+        o["p_wait_exceeds_target"] = o["p_wait_exceeds_target"] / 2.0
+    elif family == "bayes_interval" and how == "narrowed":
+        mid = 0.5 * (o["lower"] + o["upper"])
+        o["lower"], o["upper"] = (o["lower"] + mid) / 2.0, (o["upper"] + mid) / 2.0
+    elif family == "bayes_interval" and how == "wrong_level":
+        o["level"] = 0.99
+    elif family == "game_minimax" and how == "value_outside_bounds":
+        o["value"] = c["upper_bound"] + 1.0
+    elif family == "game_minimax" and how == "column_pure":
+        o["column_strategy"] = [1.0] + [0.0] * (len(o["column_strategy"]) - 1)
+    else:
+        raise AssertionError((family, how))
+    return o, c
+
+
+FORGERIES = [("dp_knapsack", "overweight"), ("dp_knapsack", "bound_below_optimum"),
+             ("search_astar", "false_unreachable"), ("search_astar", "understated_cost"),
+             ("mc_importance", "understated_se"), ("mc_importance", "inflated_se_and_estimate"),
+             ("queue_erlang", "understaffed"), ("queue_erlang", "false_probability"),
+             ("bayes_interval", "narrowed"), ("bayes_interval", "wrong_level"),
+             ("game_minimax", "value_outside_bounds"), ("game_minimax", "column_pure")]
+
+
+@pytest.mark.parametrize("family,how", FORGERIES)
+def test_verify_refutes_further_forgeries(family, how):
+    data, _, out = solved(family, 1)
+    o, c = _forge(family, data, out, how)
+    checks = item(family).verify(data, o, c)
+    assert not all(checks.values()), (how, checks)
+
+
+def test_mc_inflated_standard_error_cannot_buy_agreement():
+    """1.0.0 widened the agreement tolerance by the output's own SE, so a tenfold-wrong estimate with an inflated
+    SE passed every check. The tolerance now caps the claimed SE at 2x the independent replication's."""
+    data, _, out = solved("mc_importance", 1)
+    o, c = _forge("mc_importance", data, out, "inflated_se_and_estimate")
+    checks = solvers_b.mc_verify(data, o, c)
+    assert not checks["independent_replication_agrees"]
+    assert not checks["std_error_consistent_with_replication"]
+
+
+def test_mc_far_tail_is_json_clean_with_a_positive_standard_error():
+    """1.0.0 squared raw likelihood ratios: below ~1e-154 the ESS was NaN (invalid JSON) and the SE a false 0."""
+    from scipy.stats import gamma
+    data = {"component": "exponential", "terms": 400, "rate": 1.0, "threshold": 1250.0, "samples": 4000, "seed": 11}
+    out = solvers_b.mc_solve(data, BUDGET)
+    assert out["status"] == "ANSWER"
+    json.dumps(out, allow_nan=False)
+    p, se = out["output"]["probability"], out["output"]["std_error"]
+    assert 0 < se < p < 1e-150 and out["certificate"]["effective_sample_size"] >= solvers_b.MC_MIN_ESS
+    assert abs(p - float(gamma.sf(1250.0, 400))) <= 4 * se
+
+
+def test_mc_degenerate_weights_and_underflow_are_unknown_not_answers():
+    degenerate = {"component": "exponential", "terms": 1, "rate": 1.0, "threshold": 400.0, "samples": 4000, "seed": 3}
+    out = solvers_b.mc_solve(degenerate, BUDGET)
+    assert out["status"] == "UNKNOWN" and out["output"] is None and "effective sample size" in out["missing"][0]
+    json.dumps(out, allow_nan=False)
+    below_range = {"component": "exponential", "terms": 1, "rate": 1.0, "threshold": 700.0, "samples": 4000, "seed": 3}
+    out = solvers_b.mc_solve(below_range, BUDGET)
+    assert out["status"] == "UNKNOWN" and "double-precision" in out["missing"][0]
+    json.dumps(out, allow_nan=False)
+
+
+@pytest.mark.parametrize("scale", (1e-9, 1e8))
+def test_game_solve_verifies_at_any_payoff_magnitude(scale):
+    """1.0.0 shifted the matrix but did not rescale it: payoffs of order 1e-9 refuted the solver's own answer."""
+    payoffs = [[((3 * i + 5 * j) % 7 - 3) * scale for j in range(6)] for i in range(5)]
+    out = solvers_b.game_solve({"payoffs": payoffs}, BUDGET)
+    assert out["status"] == "ANSWER"
+    assert all(solvers_b.game_verify({"payoffs": payoffs}, out["output"], out["certificate"]).values())
+
+
+def test_knapsack_verify_refuses_unbounded_work():
+    import time
+    data = {"values": [10_000] * 500, "weights": [1] * 500, "capacity": 3}
+    started = time.perf_counter()
+    checks = solvers_b.knapsack_verify(data, {"selected": [0, 1, 2], "value": 30_000, "weight": 3}, {})
+    assert time.perf_counter() - started < 1.0 and not all(checks.values())
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_non_object_data_is_invalid_input(family):
+    x = item(family)
+    for bad in ([], "payload", None, 3):
+        with pytest.raises(GenomeError):
+            x.solve(bad, BUDGET)
+        with pytest.raises(GenomeError):
+            x.verify(bad, {}, {})
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_verify_does_not_crash_on_a_non_object_certificate(family):
+    data, _, out = solved(family, 1)
+    checks = item(family).verify(data, out["output"], ["not", "a", "certificate"])
+    assert isinstance(checks, dict)
+
+
+def test_astar_verify_requires_a_boolean_reachable():
+    data = {"grid": [[1, 0, 1]], "start": [0, 0], "goal": [0, 2]}
+    assert solvers_b.astar_verify(data, {"reachable": 0}, {}) == {"output_shape": False}
+
+
+def test_erlang_and_jeffreys_verifiers_check_model_preconditions():
+    data, _, out = solved("queue_erlang", 1)
+    impatient = dict(data, abandonment_rate=0.01)
+    assert not solvers_b.erlang_verify(impatient, out["output"], out["certificate"])["model_preconditions_hold"]
+    data, _, out = solved("bayes_interval", 1)
+    clustered = dict(data, independent_trials=False)
+    assert not solvers_b.jeffreys_verify(clustered, out["output"], out["certificate"])["binomial_model_applies"]
+
+
+@pytest.mark.parametrize("seed", (0, 1, 2))
+def test_strengthened_competitors_are_exact_and_retained_alternatives_agree_with_truth(seed):
+    data, truth = dev("dp_knapsack", seed)
+    for arm in (solvers_b.knapsack_ortools, solvers_b.knapsack_cpsat):
+        assert solvers_b.knapsack_score(data, truth, arm(data))["category"] == "correct"
+    data, truth = dev("search_astar", seed)
+    for arm in (solvers_b.astar_csgraph, solvers_b.astar_networkx):
+        assert solvers_b.astar_score(data, truth, arm(data))["category"] == "correct"
+    data, truth = dev("game_minimax", seed)
+    result = solvers_b.game_dual_lp(data)
+    assert solvers_b.game_score(data, truth, result)["category"] == "correct"
+    assert abs(result["value"] - truth["value"]) <= 1e-6
+
+
+def test_game_security_baseline_is_exact_only_on_saddle_games():
+    for seed in range(3):
+        data, truth = dev("game_minimax", seed)
+        category = solvers_b.game_score(data, truth, solvers_b.game_security(data))["category"]
+        assert category == ("correct" if solvers_b.game_subregion(data) == "pure_saddle" else "wrong")

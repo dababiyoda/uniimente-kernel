@@ -204,10 +204,11 @@ def vcg_verify(data, output, certificate):
     opt = _np_welfare(values, k)
     tol = 1e-6 * max(1.0, opt)
     welfare = math.fsum(own)
-    claimed = output.get("welfare")
+    claimed, revenue = output.get("welfare"), output.get("revenue")
     ext = [_np_welfare(values, k, skip=i) - (opt - own[i]) for i in range(len(values))]
     return {"allocation_and_payments_well_formed": True,
             "welfare_recomputed": _is_num(claimed) and abs(claimed - welfare) <= tol,
+            "revenue_recomputed": revenue is None or (_is_num(revenue) and abs(revenue - math.fsum(pay)) <= tol),
             "allocatively_optimal_by_independent_dp": welfare >= opt - tol,
             "payments_equal_clarke_externalities": all(abs(p - e) <= tol for p, e in zip(pay, ext)),
             "individually_rational": all(p <= o + tol for p, o in zip(pay, own)),
@@ -265,6 +266,77 @@ def _pab_shading(prior, counts, k, seed):
     return shade
 
 
+def _upa_shading(prior, counts, k, seed):
+    """Class-symmetric demand reduction in a uniform-price auction: damped iterated best response, simulated.
+
+    The k highest bids win and every unit is paid at the highest rejected bid. Each bidder bids its value on
+    its first unit (that bid cannot lower its own price) and x times its value on later units; each class
+    best-responds (grid 0.30..1.00, step 0.025) to everyone else's current reduction on 300 seeded draws of the
+    whole profile; 12 damped rounds. A model of strategic bidders, not observed people.
+    """
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    reps, width = 300, max(prior[c]["max_units"] for c in VCG_CLASSES)
+    draws = {}
+    for c in VCG_CLASSES:
+        nc, spec = counts[c], prior[c]
+        if nc == 0:
+            continue
+        m = rng.integers(1, spec["max_units"] + 1, size=(reps, nc))
+        v = np.zeros((reps, nc, width))
+        v[:, :, 0] = rng.uniform(0.0, spec["high"], size=(reps, nc))
+        for j in range(1, width):
+            v[:, :, j] = v[:, :, j - 1] * rng.uniform(*spec["decay"], size=(reps, nc))
+        draws[c] = v * (np.arange(width)[None, None, :] < m[:, :, None])
+    later = np.arange(width) >= 1
+    grid = np.round(np.arange(0.30, 1.0 + 1e-9, 0.025), 4)
+    shade = {c: 0.8 for c in draws}
+    for _ in range(12):
+        new = {}
+        for c in draws:
+            others = np.concatenate([(np.where(later, shade[c2], 1.0)
+                                      * (draws[c2][:, 1:, :] if c2 == c else draws[c2])).reshape(reps, -1)
+                                     for c2 in draws], axis=1)
+            dv = draws[c][:, 0, :]
+            utility = []
+            for x in grid:
+                own = dv * np.where(later, x, 1.0)                # non-increasing: the won units are a prefix
+                bids = np.concatenate([own, others, np.zeros((reps, k + 1))], axis=1)
+                ranked = -np.sort(-bids, axis=1)
+                win = (own >= ranked[:, k - 1:k]) & (own > 0)
+                price = ranked[:, k:k + 1]                        # the highest rejected bid
+                utility.append(float(((dv - price) * win).sum(axis=1).mean()))
+            new[c] = float(grid[int(np.argmax(utility))])
+        shade = {c: round(0.5 * shade[c] + 0.5 * new[c], 4) for c in draws}
+    return shade
+
+
+def _vcg_truth(values, k):
+    """Independent optimum for the benchmark truth: HiGHS MILP over unit-take indicators (exact gap 0).
+
+    x[i, j] = 1 takes bidder i's j-th marginal; at most k units; x[i, j] <= x[i, j - 1] (a bidder's value for q
+    units is the sum of its first q marginals). Welfare is the exactly rounded sum of the chosen marginals.
+    """
+    import numpy as np
+    from scipy.optimize import Bounds, LinearConstraint, milp
+    idx = [(i, j) for i, v in enumerate(values) for j in range(len(v))]
+    pos = {ij: a for a, ij in enumerate(idx)}
+    rows, lb, ub = [np.ones(len(idx))], [0.0], [float(k)]
+    for (i, j), a in pos.items():
+        if j:
+            row = np.zeros(len(idx))
+            row[a], row[pos[(i, j - 1)]] = 1.0, -1.0
+            rows.append(row)
+            lb.append(-np.inf)
+            ub.append(0.0)
+    res = milp(c=-np.array([values[i][j] for i, j in idx]), constraints=LinearConstraint(np.array(rows), lb, ub),
+               integrality=np.ones(len(idx)), bounds=Bounds(0.0, 1.0),
+               options={"mip_rel_gap": 0.0, "time_limit": 60.0})
+    if res.status != 0:
+        raise GenomeError("independent welfare MILP did not reach optimality")
+    return math.fsum(values[i][j] for (i, j), x in zip(idx, res.x) if x > 0.5)
+
+
 def vcg_instance(seed):
     r = random.Random(1_700_000 + seed)
     prior = {"strong": {"high": 100.0, "decay": [0.55, 0.95], "max_units": 3},
@@ -275,16 +347,20 @@ def vcg_instance(seed):
     demand = sum(len(b["values"]) for b in bidders)
     k = max(1, round(demand * r.uniform(0.35, 0.65)))
     shading = _pab_shading(prior, counts, k, 900_000 + seed)
+    reduction = _upa_shading(prior, counts, k, 910_000 + seed)
     data = {"units": k, "bidders": bidders, "value_model": "private",
             "prior": {**prior, "counts": counts},
             "behavior": {"pay_as_bid_shading": shading,
                          "pay_as_bid_model": "class-symmetric linear shading, simulated damped iterated best "
                                              "response (300 draws, grid 0.025, 12 rounds)",
-                         "vcg_model": "truthful (dominant strategy)",
-                         "posted_price_model": "each bidder buys its utility-maximising quantity at the price"},
+                         "uniform_price_reduction": reduction,
+                         "uniform_price_model": "first unit bid at value; later units at a class-symmetric "
+                                                "fraction of value (demand reduction), simulated damped iterated "
+                                                "best response (300 draws, grid 0.025, 12 rounds)",
+                         "vcg_model": "truthful (dominant strategy)"},
             "seed": 17_000 + seed}
     values = [b["values"] for b in bidders]
-    return data, {"optimal_welfare": _vcg_dp(values, k)[0]}
+    return data, {"optimal_welfare": _vcg_truth(values, k), "basis": "independent HiGHS MILP, gap 0"}
 
 
 def vcg_subregion(data):
@@ -325,28 +401,21 @@ def vcg_pay_as_bid(data):
     return {"mechanism": "pay_as_bid", "allocation": q, "payments": pay}
 
 
-def vcg_posted_price(data):
-    """Competitor: posted price at the median of the seeded value prior; random-arrival rationing."""
+def vcg_uniform_price(data):
+    """Competitor: uniform-price auction (k highest bids win, each unit paid at the highest rejected bid) with
+    the simulated class-symmetric demand reduction of ``_upa_shading`` (first unit at value)."""
     k, values = _vcg(data)
-    prior = data.get("prior")
-    if not isinstance(prior, dict) or not isinstance(prior.get("counts"), dict):
-        raise GenomeError("value prior missing")
-    r = random.Random(bounded_int(data.get("seed"), low=0, high=10**9, name="seed"))
-    sample = []
-    while len(sample) < 4000:
-        for c in VCG_CLASSES:
-            for _ in range(prior["counts"].get(c, 0)):
-                sample.extend(x for x in _vcg_draw(r, prior[c]) if x > 0)
-    price = statistics.median(sample)
-    order = list(range(len(values)))
-    r.shuffle(order)
-    left, q = k, [0] * len(values)
-    for i in order:
-        cum = _cum(values[i])
-        want = max(range(len(cum)), key=lambda m: (cum[m] - m * price, -m))
-        q[i] = min(want, left)
-        left -= q[i]
-    return {"mechanism": "posted_price", "price": price, "allocation": q, "payments": [x * price for x in q]}
+    shade = (data.get("behavior") or {}).get("uniform_price_reduction")
+    classes = [b.get("class") for b in data["bidders"]]
+    if not isinstance(shade, dict) or any(not _is_num(shade.get(c)) or not 0 < shade[c] <= 1 for c in classes):
+        raise GenomeError("uniform-price behaviour model missing")
+    bids = sorted((-(x if j == 0 else shade[classes[i]] * x), i, j)
+                  for i, v in enumerate(values) for j, x in enumerate(v) if x > 0)
+    price = -bids[k][0] if len(bids) > k else 0.0
+    q = [0] * len(values)
+    for _, i, _ in bids[:k]:
+        q[i] += 1
+    return {"mechanism": "uniform_price", "price": price, "allocation": q, "payments": [x * price for x in q]}
 
 
 # =================================================================== 2. explicit-state safety model checking
@@ -2387,21 +2456,22 @@ INTELLIGENCES = [
                              "never on revenue extracted from people"),
             known_failure_modes=("revenue can be low or zero: not revenue-optimal",
                                  "vulnerable to collusion and shill (false-name) bids",
-                                 "the pay-as-bid shading benchmark is a simulated behavioural model, not "
-                                 "observed people"),
+                                 "the pay-as-bid shading and uniform-price demand-reduction benchmarks are "
+                                 "simulated behavioural models, not observed people"),
             counterindications=("budget-constrained participants", "interdependent or common values",
                                 "heterogeneous combinatorial goods (needs full winner determination)"),
             abstention_conditions=("budgets declared", "value_model other than private",
                                    "non-diminishing valuations beyond the bounded DP"),
             benchmark_suite="asymmetric strong/weak bidder classes with 1-3 unit diminishing demand and scarce "
-                            "supply; efficiency against the optimum from an independent DP; seeds 0-9 dev / "
-                            "1000-1029 held out",
+                            "supply; efficiency against the optimum from an independent HiGHS MILP; seeds 0-9 "
+                            "dev / 1000-1029 held out",
             baseline="pay-as-bid auction; bidders shade by a class-symmetric factor from a simulated iterated "
                      "best response",
-            competitor="posted price at the median of the seeded value prior with random-arrival rationing",
+            competitor="uniform-price auction (highest rejected bid); bidders reduce demand on later units by a "
+                       "class-symmetric factor from a simulated iterated best response",
             **_common()),
         solve=vcg_solve, verify=vcg_verify, instance=vcg_instance, score=vcg_score, baseline=vcg_pay_as_bid,
-        competitor=vcg_posted_price, subregion=vcg_subregion, tolerance=1e-9,
+        competitor=vcg_uniform_price, subregion=vcg_subregion, tolerance=1e-9,
         notes={"purpose": "welfare-compatible truthful allocation rules; the score is allocative efficiency"}),
     Executable(
         genome=IntelligenceGenome(

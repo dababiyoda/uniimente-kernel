@@ -45,12 +45,26 @@ def _abstain(reason, **certificate):
     return answer(None, {"reason": reason, **certificate}, status="ABSTAIN", missing=[reason])
 
 
+def _mapping(data):
+    """Every input is a JSON object; anything else is invalid input, never an AttributeError."""
+    if not isinstance(data, dict):
+        raise GenomeError("data must be a JSON object")
+    return data
+
+
+def _cert(certificate):
+    """A verifier reads the certificate defensively: a non-object certificate binds nothing."""
+    return certificate if isinstance(certificate, dict) else {}
+
+
 # =================================================================== 1. 0/1 knapsack by dynamic programming
 KS_NATIVE_ITEMS, KS_NATIVE_CAPACITY = 60, 2000           # native DP size (n x (C + 1) cells)
 KS_MAX_ITEMS, KS_MAX_CAPACITY, KS_MAX_VALUE = 500, 1_000_000, 10_000
+KS_VERIFY_MAX_TOTAL = KS_NATIVE_ITEMS * KS_MAX_VALUE      # the profit DP is O(n x total value): bound it
 
 
 def _knapsack(data):
+    _mapping(data)
     values, weights = data.get("values"), data.get("weights")
     if (not isinstance(values, list) or not isinstance(weights, list) or len(values) != len(weights)
             or not 1 <= len(values) <= KS_MAX_ITEMS):
@@ -120,17 +134,23 @@ def _profit_dp_optimum(v, w, cap):
 
 def knapsack_verify(data, output, certificate):
     v, w, cap = _knapsack(data)
+    certificate = _cert(certificate)
     sel = output.get("selected") if isinstance(output, dict) else None
     valid = (isinstance(sel, list) and all(type(i) is int and 0 <= i < len(v) for i in sel)
              and len(set(sel)) == len(sel))
     if not valid:
         return {"indices_valid_and_distinct": False}
+    if sum(v) > KS_VERIFY_MAX_TOTAL:
+        # The solver answers only native instances; an answer outside the bound cannot be checked cheaply,
+        # so it is not verified (a refusal, never a pass).
+        return {"indices_valid_and_distinct": True, "independent_check_within_bounds": False}
     value, weight = sum(v[i] for i in sel), sum(w[i] for i in sel)
     optimum = _profit_dp_optimum(v, w, cap)
+    bound = certificate.get("lp_upper_bound")
     return {"indices_valid_and_distinct": True, "within_capacity": weight <= cap,
             "value_recomputed": value == output.get("value") and weight == output.get("weight"),
             "certificate_matches": certificate.get("dp_optimum") == value
-            and certificate.get("lp_upper_bound", -1) >= value - 1e-6,
+            and type(bound) in (int, float) and bound >= optimum - 1e-6,     # a valid bound covers the optimum
             "optimal_by_independent_profit_dp": value == optimum}
 
 
@@ -188,8 +208,24 @@ def knapsack_greedy(data):
     return {"selected": chosen, "value": sum(v[i] for i in chosen), "weight": cap - room}
 
 
+def knapsack_ortools(data):
+    """Competitor: OR-Tools' dedicated 0/1 knapsack solver (compiled branch and bound, the solver of the OR-Tools
+    knapsack guide). Exact unless its time limit stops it; then its best solution is returned and scored."""
+    from ortools.algorithms.python import knapsack_solver
+    v, w, cap = _knapsack(data)
+    solver = knapsack_solver.KnapsackSolver(
+        knapsack_solver.SolverType.KNAPSACK_MULTIDIMENSION_BRANCH_AND_BOUND_SOLVER, "greg_knapsack")
+    solver.set_time_limit(10.0)
+    solver.init(v, [w], [cap])
+    solver.solve()
+    chosen = [i for i in range(len(v)) if solver.best_solution_contains(i)]
+    return {"selected": chosen, "value": sum(v[i] for i in chosen), "weight": sum(w[i] for i in chosen)}
+
+
 def knapsack_cpsat(data):
-    """Competitor: OR-Tools CP-SAT, one worker, fixed seed, exact (proves optimality)."""
+    """Former competitor (1.0.0 builder run), retained as an exact cross-check: OR-Tools CP-SAT, one worker,
+    fixed seed. A general CP model whose construction dominates its latency on this geometry; the dedicated
+    knapsack solver above is the stronger reasonable alternative."""
     from ortools.sat.python import cp_model
     v, w, cap = _knapsack(data)
     model = cp_model.CpModel()
@@ -221,7 +257,7 @@ def _cell(value, rows, cols, name):
 
 
 def _grid(data):
-    grid = data.get("grid")
+    grid = _mapping(data).get("grid")
     if not isinstance(grid, list) or not 1 <= len(grid) <= GRID_MAX or not isinstance(grid[0], list):
         raise GenomeError(f"grid: 1-{GRID_MAX} rows of cell costs (0 = blocked)")
     cols = len(grid[0])
@@ -342,7 +378,7 @@ def _dijkstra_cost(cells, rows, cols, s, t):
 
 def astar_verify(data, output, certificate):
     cells, rows, cols, s, t = _grid(data)
-    if not isinstance(output, dict) or "reachable" not in output:
+    if not isinstance(output, dict) or type(output.get("reachable")) is not bool:
         return {"output_shape": False}
     optimum = _dijkstra_cost(cells, rows, cols, s, t)
     if not output["reachable"]:
@@ -452,8 +488,35 @@ def astar_greedy(data):
     return {"reachable": True, "moves": moves, "cost": _walk(cells, rows, cols, s, t, moves)}
 
 
+def astar_csgraph(data):
+    """Competitor: SciPy's compiled Dijkstra (scipy.sparse.csgraph) on the equivalent directed graph, edge weight =
+    cost of entering the head cell; the graph is built with vectorised NumPy (no Python-level edge loop)."""
+    import numpy as np
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import dijkstra
+    cells, rows, cols, s, t = _grid(data)
+    cost = np.asarray(cells, dtype=np.float64)
+    index = np.arange(rows * cols).reshape(rows, cols)
+    pairs = ((index[:, :-1], index[:, 1:]), (index[:-1, :], index[1:, :]))
+    tail = np.concatenate([x.ravel() for a, b in pairs for x in (a, b)])
+    head = np.concatenate([x.ravel() for a, b in pairs for x in (b, a)])
+    keep = (cost[tail] > 0) & (cost[head] > 0)
+    tail, head = tail[keep], head[keep]
+    graph = csr_matrix((cost[head], (tail, head)), shape=(rows * cols, rows * cols))
+    dist, pred = dijkstra(graph, directed=True, indices=s, return_predecessors=True)
+    if not np.isfinite(dist[t]):
+        return {"reachable": False, "moves": None, "cost": None}
+    parent, u = {}, t
+    while u != s:
+        parent[u] = int(pred[u])
+        u = parent[u]
+    return {"reachable": True, "moves": _moves(parent, s, t, cols), "cost": int(round(float(dist[t])))}
+
+
 def astar_networkx(data):
-    """Competitor: NetworkX Dijkstra on the equivalent directed graph (edge weight = cost of entering)."""
+    """Former competitor (1.0.0 builder run), retained as a cross-check: NetworkX Dijkstra on the equivalent
+    directed graph. Pure Python, and its dict-of-dicts graph construction dominates its latency; SciPy's compiled
+    Dijkstra above is the stronger reasonable alternative (GREG's existing ``graph`` family uses NetworkX)."""
     import networkx as nx
     cells, rows, cols, s, t = _grid(data)
     g = nx.DiGraph()
@@ -472,10 +535,13 @@ def astar_networkx(data):
 # =================================================================== 3. rare-event probability by tilted IS
 MC_MAX_DRAWS = 2_000_000
 MC_COMPONENTS = ("exponential", "lognormal", "pareto")
+MC_LOG_FLOOR = math.log(1e-290)            # below this an estimate is UNKNOWN (outside the float contract)
+MC_SE_RATIO = 2.0                          # claimed vs replicated relative SE agree within 2x (0.73-1.26 observed)
+MC_MIN_ESS = 50.0                          # below this the CLT standard error is not trustworthy: UNKNOWN
 
 
 def _tail(data):
-    component = data.get("component")
+    component = _mapping(data).get("component")
     if component not in MC_COMPONENTS:
         raise GenomeError(f"component is one of {MC_COMPONENTS}")
     n = bounded_int(data.get("terms"), low=1, high=500, name="terms")
@@ -505,15 +571,30 @@ def mc_solve(data, budget):
     rng = np.random.default_rng(seed)
     total = rng.exponential(1.0 / tilt, size=(samples, n)).sum(axis=1)
     hit = total > thr
-    log_lr = n * math.log(rate / tilt) - (rate - tilt) * total
-    y = np.where(hit, np.exp(np.where(hit, log_lr, 0.0)), 0.0)
-    est = float(y.mean())
     hits = int(hit.sum())
-    if hits < 2 or not est > 0:
+    if hits < 2:
         return answer(None, {"seed": seed, "samples": samples, "hits": hits}, status="UNKNOWN",
                       missing=["too few tilted samples reached the event for an estimate"])
-    se = float(y.std(ddof=1) / math.sqrt(samples))
-    ess = float(y.sum() ** 2 / (y ** 2).sum())
+    # Likelihood ratios in log space, scaled by the largest one: the mean, variance and ESS stay finite and
+    # nonzero for probabilities far below the square root of the smallest double (no false zero SE, no NaN).
+    log_w = n * math.log(rate / tilt) - (rate - tilt) * total[hit]
+    top = float(log_w.max())
+    scaled = np.exp(log_w - top)                       # in (0, 1]; zero weights for misses are implicit
+    s1, s2 = float(scaled.sum()), float((scaled * scaled).sum())
+    log_est = top + math.log(s1 / samples)
+    if log_est < MC_LOG_FLOOR:
+        return answer(None, {"seed": seed, "samples": samples, "hits": hits,
+                             "log10_estimate": log_est / math.log(10)}, status="UNKNOWN",
+                      missing=["the probability is below the double-precision range this output contract carries"])
+    est = math.exp(log_est)
+    se = math.exp(top) * math.sqrt(max(0.0, s2 - s1 * s1 / samples) / (samples - 1)) / math.sqrt(samples)
+    ess = s1 * s1 / s2
+    if ess < MC_MIN_ESS:
+        # A few likelihood ratios dominate: the estimate and its CLT standard error are both unreliable (off the
+        # benchmark, errors of several decades were observed with a claimed relative SE near 1).
+        return answer(None, {"seed": seed, "samples": samples, "hits": hits, "effective_sample_size": round(ess, 3)},
+                      status="UNKNOWN", missing=[f"degenerate importance weights: effective sample size {ess:.1f} < "
+                                                 f"{MC_MIN_ESS:.0f}; more samples or a better proposal are needed"])
     return answer({"probability": est, "std_error": se,
                    "ci95": [max(0.0, est - 1.959964 * se), min(1.0, est + 1.959964 * se)]},
                   {"estimator": "exponentially tilted importance sampling (likelihood-ratio weighted indicator)",
@@ -525,40 +606,57 @@ def mc_solve(data, budget):
 
 
 def _python_replication(n, rate, thr, samples, seed):
-    """Independent re-estimate: pure-Python sampler, different stream, same tilted-IS identity."""
+    """Independent re-estimate: pure-Python sampler, different stream, same tilted-IS identity, log-space weights.
+    Returns (log estimate, relative standard error), or None when fewer than two samples hit the event."""
     rng = random.Random(seed ^ 0x5BD1E995)
     tilt = n / thr
     const = n * math.log(rate / tilt)
-    acc = acc2 = 0.0
+    logs = []
     for _ in range(samples):
         total = 0.0
         for _ in range(n):
             total += rng.expovariate(tilt)
         if total > thr:
-            y = math.exp(const - (rate - tilt) * total)
-            acc += y
-            acc2 += y * y
-    est = acc / samples
-    var = max(0.0, (acc2 / samples - est * est) * samples / (samples - 1))
-    return est, math.sqrt(var / samples)
+            logs.append(const - (rate - tilt) * total)
+    if len(logs) < 2:
+        return None
+    top = max(logs)
+    s1 = s2 = 0.0
+    for x in logs:
+        y = math.exp(x - top)
+        s1 += y
+        s2 += y * y
+    rel_se = math.sqrt(max(0.0, s2 - s1 * s1 / samples) / (samples - 1)) / math.sqrt(samples) / (s1 / samples)
+    return top + math.log(s1 / samples), rel_se
 
 
 def mc_verify(data, output, certificate):
     component, n, rate, thr, samples, seed = _tail(data)
+    certificate = _cert(certificate)
     p = output.get("probability") if isinstance(output, dict) else None
     if component != "exponential" or type(p) is not float or not 0.0 < p <= 1.0 or not math.isfinite(p):
         return {"probability_in_unit_interval": False}
-    rep, rep_se = _python_replication(n, rate, thr, samples, seed)
+    replication = _python_replication(n, rate, thr, samples, seed)
+    if replication is None:
+        return {"probability_in_unit_interval": True, "independent_replication_agrees": False}
+    log_rep, rep_rel = replication
     se = output.get("std_error")
-    se_ok = type(se) is float and math.isfinite(se) and se >= 0
-    tolerance = 6.0 * math.hypot(se / p if se_ok else 1.0, rep_se / rep if rep > 0 else 1.0) + 0.02
-    ci = output.get("ci95")
+    se_ok = type(se) is float and math.isfinite(se) and se > 0
+    # Both runs use the same estimator and sample size. The claimed SE may widen the agreement tolerance only up
+    # to 2x the independently replicated SE, so an inflated self-reported SE cannot buy agreement.
+    claimed_rel = se / p if se_ok else math.inf
+    tolerance = 6.0 * math.hypot(min(claimed_rel, MC_SE_RATIO * rep_rel), rep_rel) + 0.02
+    ci, z = output.get("ci95"), 1.959964
+    ci_ok = (se_ok and isinstance(ci, list) and len(ci) == 2 and all(type(x) is float for x in ci)
+             and abs(ci[0] - max(0.0, p - z * se)) <= 1e-9 * p and abs(ci[1] - min(1.0, p + z * se)) <= 1e-9 * p)
     return {"probability_in_unit_interval": True, "std_error_valid": se_ok,
+            "std_error_consistent_with_replication": se_ok and rep_rel > 0
+            and 1.0 / MC_SE_RATIO <= claimed_rel / rep_rel <= MC_SE_RATIO,
             "below_chernoff_bound": math.log(p) <= _log_chernoff(n, rate, thr) + 1e-9,
-            "ci_contains_estimate": isinstance(ci, list) and len(ci) == 2 and ci[0] <= p <= ci[1],
+            "ci95_matches_std_error": ci_ok,
             "certificate_bound": certificate.get("seed") == seed and certificate.get("samples") == samples
             and certificate.get("estimate") == p,
-            "independent_replication_agrees": rep > 0 and abs(math.log(p / rep)) <= tolerance}
+            "independent_replication_agrees": abs(math.log(p) - log_rep) <= tolerance}
 
 
 def mc_instance(seed):
@@ -623,7 +721,7 @@ Q_MAX_LOAD, Q_MAX_AGENTS = 20_000.0, 40_000
 
 
 def _queue(data):
-    lam = finite(data.get("arrival_rate"), low=1e-9, high=1e6, name="arrival_rate")
+    lam = finite(_mapping(data).get("arrival_rate"), low=1e-9, high=1e6, name="arrival_rate")
     aht = finite(data.get("mean_service_time"), low=1e-9, high=1e7, name="mean_service_time")
     target = finite(data.get("target_wait"), low=0.0, high=1e7, name="target_wait")
     alpha = finite(data.get("max_wait_probability"), low=1e-6, high=0.999, name="max_wait_probability")
@@ -678,7 +776,7 @@ def _erlang_c_logsum(agents, load):
 
 
 def erlang_verify(data, output, certificate):
-    lam, aht, target, alpha, load, *_ = _queue(data)
+    lam, aht, target, alpha, load, abandonment, cv = _queue(data)
     c = output.get("agents") if isinstance(output, dict) else None
     if type(c) is not int or not load < c <= Q_MAX_AGENTS:
         return {"stable_staffing": False}
@@ -687,7 +785,9 @@ def erlang_verify(data, output, certificate):
     minimal = below <= load or _p_exceed(_erlang_c_logsum(below, load), below, lam, aht, target) > alpha
     claimed = output.get("p_wait_exceeds_target")
     return {"stable_staffing": True, "meets_target": p <= alpha * (1 + 1e-9), "minimal": minimal,
-            "probability_recomputed": type(claimed) is float and abs(claimed - p) <= 1e-9 + 1e-6 * p}
+            "probability_recomputed": type(claimed) is float and abs(claimed - p) <= 1e-9 + 1e-6 * p,
+            # an M/M/c answer to a question the model does not cover is not verified (the solver abstains there)
+            "model_preconditions_hold": abandonment == 0.0 and abs(cv - 1.0) <= 0.25}
 
 
 def _erlang_c_poisson(agents, load):
@@ -763,7 +863,7 @@ def erlang_halfin_whitt(data):
 
 # =================================================================== 5. Jeffreys credible interval
 def _binomial(data):
-    k = bounded_int(data.get("successes"), low=0, high=10_000_000, name="successes")
+    k = bounded_int(_mapping(data).get("successes"), low=0, high=10_000_000, name="successes")
     n = bounded_int(data.get("trials"), low=1, high=10_000_000, name="trials")
     if k > n:
         raise GenomeError("successes cannot exceed trials")
@@ -793,7 +893,8 @@ def jeffreys_solve(data, budget):
 
 def jeffreys_verify(data, output, certificate):
     from scipy.special import betainc                   # forward CDF: independent of the solver's inverse
-    k, n, level, _ = _binomial(data)
+    k, n, level, independent = _binomial(data)
+    certificate = _cert(certificate)
     lo = output.get("lower") if isinstance(output, dict) else None
     hi = output.get("upper") if isinstance(output, dict) else None
     if type(lo) is not float or type(hi) is not float or not 0.0 <= lo <= hi <= 1.0:
@@ -804,7 +905,9 @@ def jeffreys_verify(data, output, certificate):
             "lower_is_posterior_quantile": lo == 0.0 if k == 0 else abs(cdf_lo - tail) <= 1e-7,
             "upper_is_posterior_quantile": hi == 1.0 if k == n else abs(cdf_hi - (1.0 - tail)) <= 1e-7,
             "posterior_mass_at_least_level": cdf_hi - cdf_lo >= level - 1e-7,
-            "posterior_parameters": certificate.get("posterior") == [a, b]}
+            "posterior_parameters": certificate.get("posterior") == [a, b],
+            "level_as_requested": output.get("level") == level,
+            "binomial_model_applies": independent}
 
 
 def bayes_instance(seed):
@@ -866,7 +969,7 @@ GAME_NATIVE, GAME_MAX = 40, 100
 
 
 def _game(data):
-    rows = data.get("payoffs")
+    rows = _mapping(data).get("payoffs")
     if not isinstance(rows, list) or not 1 <= len(rows) <= GAME_MAX or not isinstance(rows[0], list):
         raise GenomeError(f"payoffs: 1-{GAME_MAX} rows")
     n = len(rows[0])
@@ -899,8 +1002,10 @@ def game_solve(data, budget):
     if m > GAME_NATIVE or n > GAME_NATIVE:
         return _abstain(f"game exceeds the {GAME_NATIVE}x{GAME_NATIVE} bounded size", rows=m, cols=n)
     A = np.array(a, dtype=float)
-    shift = 1.0 - float(A.min())                        # B = A + shift > 0, so the game value is positive
-    B = A + shift
+    # B = 1 + (A - min A) / range lies in [1, 2]: positive (so the game value is positive) and scale-free, so
+    # payoffs of any magnitude reach the LP with the same conditioning. Strategies are invariant to this map.
+    spread = float(A.max() - A.min())
+    B = 1.0 + (A - float(A.min())) / (spread if spread > 0 else 1.0)
     row = linprog(np.ones(m), A_ub=-B.T, b_ub=-np.ones(n), bounds=[(0, None)] * m, method="highs")
     col = linprog(-np.ones(n), A_ub=B, b_ub=np.ones(m), bounds=[(0, None)] * n, method="highs")
     if not (row.success and col.success):
@@ -910,7 +1015,7 @@ def game_solve(data, budget):
     lower = float(min(np.array(x) @ A))
     upper = float(max(A @ np.array(y)))
     return answer({"row_strategy": x, "column_strategy": y, "value": 0.5 * (lower + upper)},
-                  {"method": "row and column linear programs (SciPy HiGHS) on the shifted positive game",
+                  {"method": "row and column linear programs (SciPy HiGHS) on the game rescaled to payoffs in [1, 2]",
                    "lower_bound": lower, "upper_bound": upper, "duality_gap": upper - lower,
                    "row_support": [i for i, p in enumerate(x) if p > 1e-12],
                    "column_support": [j for j, q in enumerate(y) if q > 1e-12],
@@ -936,8 +1041,9 @@ def _payoff_range(a):
 
 
 def game_verify(data, output, certificate):
-    a, _ = _game(data)
-    if not isinstance(output, dict):
+    a, general = _game(data)
+    certificate = _cert(certificate)
+    if not isinstance(output, dict) or general:          # a zero-sum certificate says nothing about a general game
         return {"mixed_strategies": False}
     bounds = _exploitability(a, output.get("row_strategy"), output.get("column_strategy"))
     if bounds is None:
@@ -1003,8 +1109,45 @@ def game_score(data, truth, output):
     return {"quality": -gap, "category": "correct" if gap <= 1e-6 else "wrong"}
 
 
+def game_security(data):
+    """Baseline: pure security strategies, what one does without an LP - the row player's maximin row and the
+    column player's minimax column. Exact when the game has a pure saddle point; exploitable otherwise. The
+    claimed value is the payoff of that pure pair, which lies between maximin and minimax."""
+    a, _ = _game(data)
+    m, n = len(a), len(a[0])
+    i = max(range(m), key=lambda r: (min(a[r]), -r))
+    j = min(range(n), key=lambda c: (max(a[r][c] for r in range(m)), c))
+    x, y = [0.0] * m, [0.0] * n
+    x[i], y[j] = 1.0, 1.0
+    return {"row_strategy": x, "column_strategy": y, "value": float(a[i][j])}
+
+
+def game_dual_lp(data):
+    """Competitor: one HiGHS LP in the formulation of GREG's existing ``cognition.game`` (maximise v subject to
+    x A >= v, sum x = 1, x >= 0), with the column player's strategy read from that LP's dual marginals: both
+    equilibrium strategies from a single exact solve."""
+    import numpy as np
+    from scipy.optimize import linprog
+    a, general = _game(data)
+    if general:
+        return None
+    A = np.array(a, dtype=float)
+    m, n = A.shape
+    res = linprog(np.r_[np.zeros(m), -1.0], A_ub=np.column_stack((-A.T, np.ones(n))), b_ub=np.zeros(n),
+                  A_eq=np.r_[np.ones(m), 0.0][None, :], b_eq=[1.0], bounds=[(0, None)] * m + [(None, None)],
+                  method="highs")
+    if not res.success:
+        return None
+    x, dual = [max(0.0, float(p)) for p in res.x[:m]], [max(0.0, -float(q)) for q in res.ineqlin.marginals]
+    if sum(x) <= 0 or sum(dual) <= 0:
+        return None
+    return {"row_strategy": [p / sum(x) for p in x], "column_strategy": [q / sum(dual) for q in dual],
+            "value": float(res.x[-1])}
+
+
 def game_uniform(data):
-    """Baseline: both players mix uniformly."""
+    """Former baseline (1.0.0 builder run), retained: both players mix uniformly. Weaker than the pure security
+    strategies above, which are exact on every saddle-point game."""
     a, general = _game(data)
     m, n = len(a), len(a[0])
     x, y = [1.0 / m] * m, [1.0 / n] * n
@@ -1013,7 +1156,9 @@ def game_uniform(data):
 
 
 def game_fictitious_play(data, iterations=5000):
-    """Competitor: simultaneous fictitious play (Brown-Robinson), fixed iterations, empirical frequencies."""
+    """Former competitor (1.0.0 builder run), retained as a reference learning dynamic: simultaneous fictitious
+    play (Brown-Robinson), fixed iterations, empirical frequencies. It converges slowly and never reached the
+    1e-6 equilibrium tolerance on development seeds, so it was a weak stand-in for an exact method."""
     import numpy as np
     a, general = _game(data)
     if general:
@@ -1037,7 +1182,7 @@ def game_fictitious_play(data, iterations=5000):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.dp.knapsack_01", version="1.0.0", family="dp_knapsack", layer=3,
+            intelligence_id="solver.dp.knapsack_01", version="1.0.1", family="dp_knapsack", layer=3,
             operation="knapsack_01_select", epistemic_class="optimization", subgeometry="0/1 knapsack, integer weights",
             source_provenance="Bellman dynamic programming (textbook); NumPy vectorised rows",
             native_representation="item values, integer weights, integer capacity",
@@ -1046,27 +1191,35 @@ INTELLIGENCES = [
             algorithm_or_runtime="DP over capacities 0..C with a take-table for reconstruction",
             parameters={"native_items": KS_NATIVE_ITEMS, "native_capacity": KS_NATIVE_CAPACITY},
             composition_inputs=("candidate items", "budget"), composition_outputs=("selected", "value"),
-            evidence_type="optimality_certificate",
-            verification_method="index/capacity/value recomputation and an independent DP over profit "
-                                "(minimum weight per value) that must reach the same optimum",
+            # An exact calculation, not an optimality certificate: the LP (Dantzig) bound it carries is generally
+            # above the optimum, so nothing in the certificate alone proves optimality; the verifier recomputes.
+            evidence_type="exact_calculation",
+            verification_method="index/capacity/value recomputation, the certificate's LP bound must cover the "
+                                "optimum, and an independent DP over profit (minimum weight per value) that must "
+                                "reach the same optimum (refused above 600000 total value)",
             confidence_semantics="exact within the supplied values and weights",
             resource_profile="O(n C) time and n (C + 1) booleans; <= 60 x 2001 cells",
-            latency_profile="sub-millisecond to a few milliseconds at native size",
+            latency_profile="about 0.1-0.2 ms at native size (NumPy row operations)",
             known_strengths=("exact", "pseudo-polynomial: independent of value correlation structure",
-                             "deterministic and fast at small capacity"),
+                             "deterministic; no compiled solver dependency"),
             known_failure_modes=("time and memory grow with capacity, not just item count",
-                                 "values and weights supplied by the caller may be wrong"),
+                                 "values and weights supplied by the caller may be wrong",
+                                 "about 3-5x slower than OR-Tools' compiled knapsack solver at native size on "
+                                 "development seeds (same optimum)"),
             counterindications=("large or real-valued capacities", "multiple constraints (multi-dimensional knapsack)"),
             abstention_conditions=("more than 60 items or capacity above 2000",),
             benchmark_suite="uncorrelated / weakly / strongly correlated / subset-sum instances, 20-60 items, "
                             "capacity <= 2000; seeds 0-9 dev / 1000-1029 held out",
             baseline="greedy by value density (take every item that still fits)",
-            competitor="OR-Tools CP-SAT, one worker, fixed seed (exact)", **_common()),
+            competitor="OR-Tools KnapsackSolver, branch and bound (the library's dedicated 0/1 knapsack solver; "
+                       "replaced CP-SAT, a general CP model, in review)", **_common()),
         solve=knapsack_solve, verify=knapsack_verify, instance=knapsack_instance, score=knapsack_score,
-        baseline=knapsack_greedy, competitor=knapsack_cpsat, subregion=knapsack_subregion, tolerance=1e-9),
+        baseline=knapsack_greedy, competitor=knapsack_ortools, subregion=knapsack_subregion, tolerance=1e-9,
+        notes={"review": "1.0.1: competitor strengthened from CP-SAT to OR-Tools' dedicated knapsack solver; evidence "
+                         "relabelled exact_calculation; verifier bounded; LP bound checked against the optimum"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.search.astar_grid", version="1.0.0", family="search_astar", layer=3,
+            intelligence_id="solver.search.astar_grid", version="1.0.1", family="search_astar", layer=3,
             operation="grid_astar_route", epistemic_class="optimization",
             subgeometry="single-pair shortest path on a weighted 4-connected grid",
             source_provenance="Hart, Nilsson and Raphael (1968) A*; stdlib heapq",
@@ -1076,26 +1229,32 @@ INTELLIGENCES = [
             algorithm_or_runtime="A* with closed list; heuristic = min cell cost x Manhattan distance",
             parameters={"native_side": GRID_NATIVE, "tie_break": "larger g first"},
             composition_inputs=("terrain cost grid",), composition_outputs=("moves", "cost"),
-            evidence_type="optimality_certificate",
+            # Exact search, but the certificate is a summary (expanded count, heuristic), not a checkable proof of
+            # optimality; optimality is established by the verifier's independent Dijkstra.
+            evidence_type="exact_calculation",
             verification_method="move replay (bounds, blocked cells, cost) and an independent plain Dijkstra",
             confidence_semantics="exact shortest path within the supplied costs",
-            resource_profile="O(N log N) for N <= 3600 cells", latency_profile="milliseconds at native size",
+            resource_profile="O(N log N) for N <= 3600 cells", latency_profile="about 0.5-3 ms at native size",
             known_strengths=("exact", "heuristic prunes expansions when costs are near the minimum",
                              "proves unreachability by exhaustion"),
             known_failure_modes=("weak heuristic when cell costs vary widely (degrades towards Dijkstra)",
-                                 "pure-Python inner loop"),
+                                 "pure-Python inner loop: at the native size (<= 60 x 60) SciPy's compiled "
+                                 "Dijkstra, which settles every node, was faster on most development seeds"),
             counterindications=("diagonal or any-angle movement", "time-varying costs", "many queries on one grid "
                                 "(an all-pairs or landmark method amortises better)"),
             abstention_conditions=("grid larger than 60 x 60",),
             benchmark_suite="open weighted / uniform-cost obstacle / walls-and-mud grids 30-60 per side; "
                             "seeds 0-9 dev / 1000-1029 held out",
             baseline="greedy best-first search (Manhattan priority only)",
-            competitor="NetworkX dijkstra_path on the equivalent weighted digraph", **_common()),
+            competitor="SciPy csgraph Dijkstra (compiled) on the equivalent weighted digraph built with NumPy; "
+                       "replaced NetworkX dijkstra_path (pure Python) in review", **_common()),
         solve=astar_solve, verify=astar_verify, instance=astar_instance, score=astar_score,
-        baseline=astar_greedy, competitor=astar_networkx, subregion=astar_subregion, tolerance=1e-9),
+        baseline=astar_greedy, competitor=astar_csgraph, subregion=astar_subregion, tolerance=1e-9,
+        notes={"review": "1.0.1: competitor strengthened from NetworkX to SciPy's compiled Dijkstra; evidence "
+                         "relabelled exact_calculation; verifier requires a boolean 'reachable'"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.montecarlo.tilted_importance", version="1.0.0", family="mc_importance", layer=3,
+            intelligence_id="solver.montecarlo.tilted_importance", version="1.0.1", family="mc_importance", layer=3,
             operation="tilted_tail_probability", epistemic_class="estimate",
             subgeometry="rare upper-tail probability of a sum of iid light-tailed (exponential) components",
             source_provenance="Siegmund (1976) exponential tilting; Asmussen and Glynn, Stochastic Simulation (2007)",
@@ -1107,8 +1266,10 @@ INTELLIGENCES = [
             composition_inputs=("loss or demand model with a closed-form MGF",),
             composition_outputs=("probability", "std_error"),
             evidence_type="statistical_estimate",
-            verification_method="optimal Chernoff bound and an independent pure-Python replication on a different "
-                                "random stream (agreement within six combined standard errors)",
+            verification_method="optimal Chernoff bound; an independent pure-Python replication on a different "
+                                "random stream (agreement within six combined standard errors, the claimed SE "
+                                "capped at 2x the replication's); claimed relative SE within 2x of the "
+                                "replication's; ci95 recomputed from the claimed SE",
             confidence_semantics="unbiased estimate with a CLT standard error; seeded and reproducible",
             resource_profile="terms x samples exponential draws (<= 2e6)",
             latency_profile="milliseconds at 4000 samples",
@@ -1117,6 +1278,9 @@ INTELLIGENCES = [
                              "to events with no closed-form tail (path functionals); not implemented in 1.0.0"),
             known_failure_modes=("needs the component MGF; heavy tails break it",
                                  "standard error can be underestimated when the likelihood ratio is heavy-tailed",
+                                 "probabilities below 1e-290 are reported UNKNOWN (outside the float contract)",
+                                 "far tails with few terms (e.g. one term at 200x the mean) give degenerate weights; "
+                                 "reported UNKNOWN when the effective sample size is below 50",
                                  "loses to a closed-form saddle-point approximation when the CGF is known and the "
                                  "event is a plain sum"),
             counterindications=("heavy-tailed components (lognormal, Pareto)", "events that are not rare",
@@ -1130,10 +1294,14 @@ INTELLIGENCES = [
                        "approximation is the weaker analytic option and is not used)", **_common()),
         solve=mc_solve, verify=mc_verify, instance=mc_instance, score=mc_score,
         baseline=mc_crude, competitor=mc_saddlepoint, subregion=mc_subregion, tolerance=1e-3,
-        notes={"tolerance": "quality is -|log10 error|; differences below 0.001 decades (0.23%) are ties"}),
+        notes={"tolerance": "quality is -|log10 error|; differences below 0.001 decades (0.23%) are ties",
+               "review": "1.0.1: weights in log space (a NaN ESS and a false zero SE for probabilities below about "
+                         "1e-154 fixed); UNKNOWN when the effective sample size is below 50 (off-benchmark answers "
+                         "were several decades wrong); the verifier caps the claimed SE at 2x the replication's, so "
+                         "an inflated self-reported SE cannot widen its agreement tolerance"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.0", family="queue_erlang", layer=3,
+            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.1", family="queue_erlang", layer=3,
             operation="erlang_c_staffing", epistemic_class="prediction",
             subgeometry="M/M/c minimum staffing for a waiting-time service level",
             source_provenance="Erlang (1917) delay formula; Erlang-B recursion (textbook queueing theory)",
@@ -1147,7 +1315,7 @@ INTELLIGENCES = [
             composition_inputs=("demand forecast",), composition_outputs=("agents",),
             evidence_type="exact_calculation",
             verification_method="independent log-space Poisson-sum Erlang-C at c (meets target) and c - 1 "
-                                "(fails target or unstable)",
+                                "(fails target or unstable); the M/M/c preconditions must hold for the input",
             confidence_semantics="exact under M/M/c assumptions; a prediction of service level, not an observation",
             resource_profile="O(c) arithmetic", latency_profile="microseconds to a millisecond",
             known_strengths=("exact minimum under the model", "certifies minimality at c - 1"),
@@ -1162,10 +1330,12 @@ INTELLIGENCES = [
             competitor="square-root (Halfin-Whitt) staffing with the QED delay probability and wait-time tail",
             **_common()),
         solve=erlang_solve, verify=erlang_verify, instance=erlang_instance, score=erlang_score,
-        baseline=erlang_utilisation, competitor=erlang_halfin_whitt, subregion=erlang_subregion, tolerance=1e-9),
+        baseline=erlang_utilisation, competitor=erlang_halfin_whitt, subregion=erlang_subregion, tolerance=1e-9,
+        notes={"review": "1.0.1: verifier also requires the M/M/c preconditions (no abandonment, cv near 1); "
+                         "non-object input raises GenomeError"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.bayes.jeffreys_interval", version="1.0.0", family="bayes_interval", layer=3,
+            intelligence_id="solver.bayes.jeffreys_interval", version="1.0.1", family="bayes_interval", layer=3,
             operation="jeffreys_credible_interval", epistemic_class="estimate",
             subgeometry="binomial proportion, small samples, including counts at or near 0 or n",
             source_provenance="Jeffreys prior; Brown, Cai and DasGupta (2001) interval comparison",
@@ -1176,8 +1346,8 @@ INTELLIGENCES = [
             parameters={"default_level": 0.9, "boundary_rule": "Brown-Cai-DasGupta"},
             composition_inputs=("binary outcome counts",), composition_outputs=("lower", "upper"),
             evidence_type="posterior",
-            verification_method="forward regularised incomplete beta (scipy.special.betainc) at both endpoints "
-                                "and posterior mass >= level",
+            verification_method="forward regularised incomplete beta (scipy.special.betainc) at both endpoints, "
+                                "posterior mass >= level, the requested level and the independence precondition",
             confidence_semantics="posterior credibility under the Jeffreys prior; frequentist coverage close to "
                                  "nominal but not guaranteed",
             resource_profile="two beta quantiles", latency_profile="sub-millisecond",
@@ -1191,16 +1361,19 @@ INTELLIGENCES = [
                             "seeds 0-9 dev / 1000-1029 held out",
             baseline="Wald interval", competitor="Wilson score interval", dependency="scipy", **_common()),
         solve=jeffreys_solve, verify=jeffreys_verify, instance=bayes_instance, score=interval_score,
-        baseline=wald_interval, competitor=wilson_interval, subregion=bayes_subregion, tolerance=1e-9),
+        baseline=wald_interval, competitor=wilson_interval, subregion=bayes_subregion, tolerance=1e-9,
+        notes={"review": "1.0.1: verifier also checks the returned level and the independence precondition; "
+                         "non-object input raises GenomeError"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.game.zero_sum_lp", version="1.0.0", family="game_minimax", layer=3,
+            intelligence_id="solver.game.zero_sum_lp", version="1.0.1", family="game_minimax", layer=3,
             operation="zero_sum_lp_equilibrium", epistemic_class="strategic",
             subgeometry="two-player finite zero-sum matrix game",
             source_provenance="von Neumann minimax theorem; LP duality (Dantzig); SciPy HiGHS",
             native_representation="row player's payoff matrix", required_inputs=("payoffs",),
             output_contract={"row_strategy": "[float]", "column_strategy": "[float]", "value": "float"},
-            algorithm_or_runtime="primal and dual LPs on the positively shifted matrix (scipy.optimize.linprog HiGHS)",
+            algorithm_or_runtime="row-player and column-player LPs on the matrix rescaled to [1, 2] "
+                                 "(scipy.optimize.linprog HiGHS)",
             parameters={"native_side": GAME_NATIVE},
             composition_inputs=("payoff model",), composition_outputs=("row_strategy", "column_strategy", "value"),
             evidence_type="optimality_certificate",
@@ -1210,14 +1383,20 @@ INTELLIGENCES = [
             resource_profile="two LPs with <= 40 variables", latency_profile="milliseconds",
             known_strengths=("exact equilibrium with a duality-gap certificate", "both players' strategies"),
             known_failure_modes=("payoffs supplied by the caller may be wrong", "assumes a strictly adversarial "
-                                 "opponent; overly conservative against a non-adversary"),
+                                 "opponent; overly conservative against a non-adversary",
+                                 "solves two LPs where one LP and its dual marginals give both strategies: about "
+                                 "twice the latency of that single-LP route on development seeds"),
             counterindications=("general-sum games", "sequential games with private information (use a game tree "
                                 "method)"),
             abstention_conditions=("column_payoffs differ from the negated payoffs", "more than 40 actions per player"),
             benchmark_suite="random, cyclic (RPS-like) and planted-saddle integer games up to 15 x 15; "
                             "seeds 0-9 dev / 1000-1029 held out",
-            baseline="uniform mixed strategies for both players",
-            competitor="simultaneous fictitious play, 5000 iterations", dependency="scipy", **_common()),
+            baseline="pure security strategies (maximin row, minimax column); replaced uniform play in review",
+            competitor="one HiGHS LP in GREG's existing cognition.game formulation, column strategy from its dual "
+                       "marginals; replaced 5000-iteration fictitious play in review", dependency="scipy", **_common()),
         solve=game_solve, verify=game_verify, instance=game_instance, score=game_score,
-        baseline=game_uniform, competitor=game_fictitious_play, subregion=game_subregion, tolerance=1e-9),
+        baseline=game_security, competitor=game_dual_lp, subregion=game_subregion, tolerance=1e-9,
+        notes={"review": "1.0.1: LP rescaled to payoffs in [1, 2] (small-magnitude games no longer refute their own "
+                         "answer); baseline strengthened to pure security strategies and competitor to the exact "
+                         "single-LP-plus-duals route; fictitious play and uniform play retained as functions"}),
 ]

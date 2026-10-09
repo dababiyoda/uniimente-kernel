@@ -1230,6 +1230,29 @@ UNIVERSE = 6.0          # the modelled universe is the box [-6, 6]^d in self-sta
 # can never make the independent witness check refute a correct flag.
 IMMUNE_MARGIN = 1e-7
 IMMUNE_TARGET_FRACTION = 0.75   # calibrate to 0.75 x the declared false-alarm tolerance (a safety factor)
+# P8 evolvable configuration (greg/cognition/evolution.py, target "immune_detect"). The genome runs
+# IMMUNE_DEFAULT_CONFIG; a retained evolved configuration is only a proposal (building != activation).
+IMMUNE_DEFAULT_CONFIG = {"detectors": 3000, "uniform_share": 0.5, "scale_set": [1.0, 2.0, 3.0],
+                         "calibration_folds": 3, "alarm_fraction": IMMUNE_TARGET_FRACTION, "whitening": "diagonal"}
+IMMUNE_CONFIG_SPACE = {"detectors": ("choice", [1000, 2000, 3000, 4000, 5000]),
+                       "uniform_share": ("float", [0.1, 0.9]),
+                       "scale_set": ("choice", [[1.0], [1.0, 2.0], [1.0, 2.0, 3.0], [0.5, 1.0, 2.0],
+                                                [0.5, 1.0, 2.0, 3.0]]),
+                       "calibration_folds": ("choice", [3, 5]),
+                       "alarm_fraction": ("float", [0.4, 0.95]),
+                       "whitening": ("choice", ["diagonal", "full"])}
+
+
+def _immune_config(config):
+    if not isinstance(config, dict) or set(config) != set(IMMUNE_CONFIG_SPACE):
+        raise GenomeError(f"immune configuration must set exactly {sorted(IMMUNE_CONFIG_SPACE)}")
+    for key, (kind, values) in IMMUNE_CONFIG_SPACE.items():
+        value = config[key]
+        if kind == "choice" and value not in values:
+            raise GenomeError(f"{key}={value!r} is outside the declared space")
+        if kind == "float" and (type(value) not in (int, float) or not values[0] <= value <= values[1]):
+            raise GenomeError(f"{key}={value!r} is outside [{values[0]}, {values[1]}]")
+    return config
 
 
 def _immune_inputs(data):
@@ -1256,7 +1279,12 @@ def _standardiser(s):
 
 
 def immune_solve(data, budget):
+    return immune_solve_with(IMMUNE_DEFAULT_CONFIG, data)
+
+
+def immune_solve_with(config, data):
     import numpy as np
+    config = _immune_config(config)
     s, x, tol, dim = _immune_inputs(data)
     seed = _seed(data)
     if dim > IMMUNE_MAX_DIM:
@@ -1269,7 +1297,7 @@ def immune_solve(data, budget):
         return answer(None, {"test_points": len(x)}, status="ABSTAIN",
                       missing=[f"more than {IMMUNE_MAX_TEST} test points: split the batch (witness certificate "
                                "size bound)"])
-    target = IMMUNE_TARGET_FRACTION * tol
+    target = config["alarm_fraction"] * tol
     k = int(math.floor(target * (len(s) + 1))) - 1      # conformal: (k + 1) / (n + 1) <= target
     if k < 0:
         # even the largest held-back depth only bounds the false-alarm rate by 1 / (n + 1) > target
@@ -1278,15 +1306,29 @@ def immune_solve(data, budget):
                       status="ABSTAIN",
                       missing=[f"{len(s)} self samples cannot calibrate a false-alarm target of {target:.6g}; "
                                f"at least {need} are needed"])
-    mean, sd = _standardiser(s)
-    zs = (np.array(s) - mean) / sd
-    zx = (np.array(x) - mean) / sd
+    if config["whitening"] == "full":
+        # full whitening by the self covariance (numpy Cholesky); the verifier recomputes it independently
+        a = np.array(s)
+        mean = [float(v) for v in a.mean(0)]
+        try:
+            low = np.linalg.cholesky(np.atleast_2d(np.cov(a, rowvar=False, bias=True)))
+        except np.linalg.LinAlgError:
+            return answer(None, {"whitening": "full"}, status="ABSTAIN",
+                          missing=["self covariance is not positive definite: full whitening is undefined"])
+        zs = np.linalg.solve(low, (a - mean).T).T
+        zx = np.linalg.solve(low, (np.array(x) - mean).T).T
+        standardisation = {"kind": "full", "mean": mean, "cholesky": [[float(v) for v in r] for r in low]}
+    else:
+        mean, sd = _standardiser(s)
+        zs = (np.array(s) - mean) / sd
+        zx = (np.array(x) - mean) / sd
+        standardisation = {"mean": mean, "sd": sd}
     rng = np.random.default_rng(seed)
-    n_det = int(bounded_int(data.get("detectors", 3000), low=100, high=5000, name="detectors"))
-    half = n_det // 2
+    n_det = int(bounded_int(data.get("detectors", config["detectors"]), low=100, high=5000, name="detectors"))
+    half = int(n_det * config["uniform_share"])
     # candidate detectors never depend on individual self samples (keeps calibration exchangeable):
-    # half uniform over the universe, half concentrated around the self region at several scales
-    around = rng.normal(size=(n_det - half, dim)) * rng.choice([1.0, 2.0, 3.0], size=(n_det - half, 1))
+    # a share uniform over the universe, the rest concentrated around the self region at several scales
+    around = rng.normal(size=(n_det - half, dim)) * rng.choice(config["scale_set"], size=(n_det - half, 1))
     centres = np.clip(np.vstack([rng.uniform(-UNIVERSE, UNIVERSE, size=(half, dim)), around]), -UNIVERSE, UNIVERSE)
 
     def rows_per_chunk(width):                 # keep each pairwise block near 2e6 floats (~16 MB)
@@ -1306,7 +1348,7 @@ def immune_solve(data, budget):
             arg[i:i + step] = v.argmax(1)
             out[i:i + step] = v.max(1)
         return out, arg
-    folds = 3                                  # cross-fitted calibration: every self sample is held back once
+    folds = config["calibration_folds"]        # cross-fitted calibration: every self sample is held back once
     fold_of = rng.permutation(len(zs)) % folds
     cal_depth = np.empty(len(zs))
     for f in range(folds):
@@ -1327,11 +1369,13 @@ def immune_solve(data, budget):
             witnesses[str(i)] = {"centre": [round(float(c), 9) for c in centres[j]],
                                  "radius": float(reach[j] - r_self) - IMMUNE_MARGIN / 2}
     return answer({"flagged": flagged, "self_radius": round(r_self, 12)},
-                  {"seed": seed, "standardisation": {"mean": mean, "sd": sd}, "self_radius": r_self,
+                  {"seed": seed, "standardisation": standardisation, "self_radius": r_self,
                    "censored_against": "every self sample", "witnesses": witnesses, "detectors_generated": n_det,
                    "detectors_self_tolerant": int((reach > r_self).sum()),
-                   "calibration": {"method": "3-fold cross-fitted conformal quantile of self depth",
+                   "calibration": {"method": f"{folds}-fold cross-fitted conformal quantile of self depth",
                                    "target_rate": round(target, 9), "allowed_exceedances": k,
+                                   **({} if config["alarm_fraction"] == IMMUNE_TARGET_FRACTION
+                                      else {"alarm_fraction": config["alarm_fraction"]}),
                                    "held_back_self": len(zs),
                                    "held_back_flagged": int((cal_depth > r_self + IMMUNE_MARGIN).sum())},
                    "universe": f"[-{UNIVERSE}, {UNIVERSE}]^d standardised; outside it is non-self",
@@ -1354,19 +1398,47 @@ def immune_verify(data, output, certificate):
                 and all(type(a) in (int, float) and math.isfinite(a) for a in v))
     cert_std = certificate.get("standardisation")
     cert_std = cert_std if isinstance(cert_std, dict) else {}
-    std_ok = (numbers(cert_std.get("mean"), dim) and numbers(cert_std.get("sd"), dim)
-              and all(math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9) for a, b in zip(cert_std["mean"], mean))
-              and all(math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9) for a, b in zip(cert_std["sd"], sd)))
-    if std_ok:
-        mean, sd = cert_std["mean"], cert_std["sd"]      # agrees to 1e-9; use the solver's exact frame
+    close = lambda a, b: math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9)   # noqa: E731
+    if cert_std.get("kind") == "full":
+        # covariance (fsum) and a pure-Python Cholesky here, independent of the solver's numpy factor
+        cov = [[math.fsum((p[i] - mean[i]) * (p[j] - mean[j]) for p in s) / n for j in range(dim)]
+               for i in range(dim)]
+        low = _verify_cholesky(cov)
+        claimed = cert_std.get("cholesky")
+        std_ok = (low is not None and numbers(cert_std.get("mean"), dim) and isinstance(claimed, list)
+                  and len(claimed) == dim and all(numbers(r, dim) for r in claimed)
+                  and all(close(a, b) for a, b in zip(cert_std["mean"], mean))
+                  and all(close(a, b) for r, q in zip(claimed, low) for a, b in zip(r, q)))
+        if std_ok:
+            mean, low = cert_std["mean"], claimed            # agrees to 1e-9; use the solver's exact frame
+
+        def frame(p):                                        # forward substitution: z = L^-1 (p - mean)
+            if low is None:
+                return None
+            z = []
+            for i in range(dim):
+                z.append(((p[i] - mean[i]) - math.fsum(low[i][j] * z[j] for j in range(i))) / low[i][i])
+            return z
+    else:
+        std_ok = (numbers(cert_std.get("mean"), dim) and numbers(cert_std.get("sd"), dim)
+                  and all(close(a, b) for a, b in zip(cert_std["mean"], mean))
+                  and all(close(a, b) for a, b in zip(cert_std["sd"], sd)))
+        if std_ok:
+            mean, sd = cert_std["mean"], cert_std["sd"]      # agrees to 1e-9; use the solver's exact frame
+
+        def frame(p):
+            return [(p[k] - mean[k]) / sd[k] for k in range(dim)]
     # calibration arithmetic: the declared target, the conformal rank and the held-back count must be the
     # ones the declared tolerance and sample size imply (the detector depths themselves are not recomputed)
     cal = certificate.get("calibration")
     cal = cal if isinstance(cal, dict) else {}
-    target = IMMUNE_TARGET_FRACTION * tol
+    fraction = cal.get("alarm_fraction", IMMUNE_TARGET_FRACTION)
+    low_f, high_f = IMMUNE_CONFIG_SPACE["alarm_fraction"][1]
+    fraction_ok = type(fraction) in (int, float) and low_f <= fraction <= high_f
+    target = (fraction if fraction_ok else IMMUNE_TARGET_FRACTION) * tol
     k = cal.get("allowed_exceedances")
     flagged_back = cal.get("held_back_flagged")
-    calibration_ok = (type(cal.get("target_rate")) in (int, float)
+    calibration_ok = (fraction_ok and type(cal.get("target_rate")) in (int, float)
                       and math.isclose(cal["target_rate"], target, rel_tol=1e-6)
                       and type(k) is int and k >= 0 and (k + 1) / (n + 1) <= target + 1e-12
                       and cal.get("held_back_self") == n
@@ -1379,13 +1451,13 @@ def immune_verify(data, output, certificate):
     radius_ok = (type(r_self) in (int, float) and math.isfinite(r_self) and r_self >= 0
                  and type(output.get("self_radius")) in (int, float)
                  and math.isclose(output["self_radius"], r_self, rel_tol=1e-9, abs_tol=1e-12))
-    witnessed = idx_ok and radius_ok
+    witnessed = idx_ok and radius_ok and frame(s[0]) is not None
     witnesses = certificate.get("witnesses")
     witnesses = witnesses if isinstance(witnesses, dict) else {}
     if witnessed:
-        selfz = [[(p[k] - mean[k]) / sd[k] for k in range(dim)] for p in s]
+        selfz = [frame(p) for p in s]
         for i in flagged:
-            z = [(x[i][k] - mean[k]) / sd[k] for k in range(dim)]
+            z = frame(x[i])
             w = witnesses.get(str(i))
             if not isinstance(w, dict):
                 witnessed = False
@@ -1401,6 +1473,22 @@ def immune_verify(data, output, certificate):
     return {"flag_indices_valid": idx_ok, "standardisation_recomputed": std_ok,
             "calibration_arithmetic": calibration_ok,
             "self_radius_consistent": radius_ok, "every_flag_witnessed": witnessed}
+
+
+def _verify_cholesky(a):
+    """Verifier-only pure-Python Cholesky factor; None when the matrix is not positive definite."""
+    dim = len(a)
+    low = [[0.0] * dim for _ in range(dim)]
+    for i in range(dim):
+        for j in range(i + 1):
+            acc = a[i][j] - math.fsum(low[i][m] * low[j][m] for m in range(j))
+            if i == j:
+                if acc <= 1e-12 * max(1.0, abs(a[i][i])):
+                    return None
+                low[i][i] = math.sqrt(acc)
+            else:
+                low[i][j] = acc / low[j][j]
+    return low
 
 
 def _binom_upper(n, p, level=0.95):

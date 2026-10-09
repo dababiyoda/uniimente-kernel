@@ -129,7 +129,55 @@ def _forecasting_spec() -> TargetSpec:
                             "adoption; keep comparing with the incumbent after adoption"})
 
 
-TARGET_SPECS = {"forecast_quantile": _forecasting_spec}
+IMMUNE_TRAIN_SEEDS = tuple(range(7000, 7040))      # fresh for P8: admission uses 0-9 (dev) and 1000-1029
+IMMUNE_HELDOUT_SEEDS = tuple(range(8000, 8060))
+
+
+def immune_target() -> Target:
+    from .genomes import collective
+    return Target("immune_detect", collective.IMMUNE_CONFIG_SPACE, dict(collective.IMMUNE_DEFAULT_CONFIG))
+
+
+def immune_split() -> tuple[dict, dict, list[str]]:
+    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed."""
+    from .genomes import admission, collective
+    reserved = set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
+    if reserved & (set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)):
+        raise EvolutionError("P8 immune seeds overlap the admission seeds")
+
+    def item(seed):
+        data, truth = collective.immune_instance(seed)
+        return f"s{seed}", {"data": data, "truth": truth, "category": collective.immune_subregion(data)}
+    return (dict(item(s) for s in IMMUNE_TRAIN_SEEDS), dict(item(s) for s in IMMUNE_HELDOUT_SEEDS),
+            sorted(f"s{s}" for s in reserved))
+
+
+def _immune_stress(items: dict) -> dict:
+    """Adversarial derivations of train items: scarce self samples; a five-fold tighter false-alarm budget."""
+    out = {}
+    for key, item in items.items():
+        d = item["data"]
+        out[f"scarce:{key}"] = {"data": {**d, "self_samples": d["self_samples"][:80]}, "truth": item["truth"]}
+        out[f"strict:{key}"] = {"data": {**d, "max_false_alarm_rate": round(d["max_false_alarm_rate"] / 5, 6)},
+                                "truth": item["truth"]}
+    return out
+
+
+def _immune_spec() -> TargetSpec:
+    from .genomes import collective
+
+    def bucket(item):
+        return [("dimension", item["category"]), ("false_alarm_budget", str(item["data"]["max_false_alarm_rate"]))]
+    return TargetSpec(
+        name="immune_detect", target=immune_target, split=immune_split, score=collective.immune_score,
+        baseline=collective.immune_zscore, verify=collective.immune_verify, stress=_immune_stress, buckets=bucket,
+        failure_metric="F1 under the false-alarm tolerance vs the per-feature z-score baseline",
+        proposal={"module": "greg/cognition/genomes/collective.py", "constant": "IMMUNE_DEFAULT_CONFIG",
+                  "canary": "run the collective_immune admission with the proposed configuration before adoption; "
+                            "keep comparing with the incumbent after adoption"})
+
+
+TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec}
 
 
 def config_id(config: dict) -> str:
@@ -205,6 +253,18 @@ class SealedEvaluator:
             s = self._score(item["data"], item["truth"], produced.get("output"))
             out[key] = -s["quality"] if s["category"] != "wrong" else math.inf
         return out
+
+
+def relative_gain(incumbent: float, candidate: float) -> float:
+    """Fractional loss reduction, correct for losses of either sign (pinball loss > 0; -F1 <= 0)."""
+    if incumbent == 0:
+        return math.inf if candidate < 0 else 0.0
+    return (incumbent - candidate) / abs(incumbent)
+
+
+def worsened(incumbent: float, candidate: float, tolerance: float = STRESS_TOLERANCE) -> bool:
+    """True when the candidate's loss is worse than the incumbent's by more than ``tolerance`` of its size."""
+    return candidate > incumbent + tolerance * abs(incumbent)
 
 
 def sign_test(wins: int, losses: int) -> float:
@@ -308,7 +368,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     best_loss, best = min(scored.values(), key=lambda v: (v[0], config_id(v[1])))
     best_id = config_id(best)
     record["candidate"] = {"id": best_id, "config": best, "train_mean_loss": round(best_loss, 6)}
-    gain = 1 - best_loss / record["failure"]["incumbent_mean_train_loss"]
+    gain = relative_gain(record["failure"]["incumbent_mean_train_loss"], best_loss)
     if best_id == record["incumbent"]["id"] or gain <= TRAIN_GAIN_MIN:
         record["decision"] = "REJECT"
         record["reason"] = f"no candidate beat the incumbent's train loss by more than {TRAIN_GAIN_MIN:.0%}"
@@ -326,7 +386,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
         adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
     adversarial["all_outputs_verified"] = verified
     record["adversarial"] = adversarial
-    if not verified or any(v["candidate"] > v["incumbent"] * (1 + STRESS_TOLERANCE)
+    if not verified or any(worsened(v["incumbent"], v["candidate"])
                            for k, v in adversarial.items() if isinstance(v, dict)):
         record["decision"] = "REJECT"
         record["reason"] = "adversarial evaluation failed"
@@ -343,7 +403,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     record["heldout"] = {"n": len(inc_h), "candidate_wins": wins, "candidate_losses": losses,
                          "sign_test_p_one_sided": round(p, 6), "incumbent_mean_loss": round(mean_inc, 6),
                          "candidate_mean_loss": round(mean_cand, 6),
-                         "relative_improvement": round(1 - mean_cand / mean_inc, 4)}
+                         "relative_improvement": round(relative_gain(mean_inc, mean_cand), 4)}
     retain = p < ALPHA and mean_cand < mean_inc
     record["decision"] = "RETAIN" if retain else "REJECT"
     record["proposal"] = {"state": "PROPOSED_NOT_APPLIED", "change": {"module": spec.proposal["module"],

@@ -80,3 +80,58 @@ def test_a_cycle_without_a_recurring_failure_changes_nothing(monkeypatch, tmp_pa
     assert "proposal" not in record
     with pytest.raises(E.EvolutionError, match="overwrite"):
         E._finish(record, tmp_path / "c.json")
+
+
+# ------------------------------------------------------------------ cycle 2 target: negative selection
+def test_the_immune_target_is_the_shipped_configuration_inside_a_closed_space():
+    from greg.cognition.genomes import collective
+    target = E.immune_target()
+    assert target.incumbent == collective.IMMUNE_DEFAULT_CONFIG
+    with pytest.raises(E.EvolutionError, match="constitutional or evaluation state"):
+        target.validate({**target.incumbent, "alarm_threshold": 0.9})
+    with pytest.raises(E.EvolutionError):
+        target.validate({**target.incumbent, "detectors": 7})
+    with pytest.raises(collective.GenomeError):
+        collective.immune_solve_with({**target.incumbent, "whitening": "learned"}, collective.immune_instance(0)[0])
+
+
+def test_immune_split_is_fresh_and_disjoint_from_admission():
+    from greg.cognition.genomes import admission
+    train, held, excluded = E.immune_split()
+    assert len(train) == 40 and len(held) == 60 and not set(train) & set(held)
+    used = {int(k[1:]) for k in (*train, *held)}
+    assert not used & (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS))
+    assert all("labels" not in json.dumps(v["data"]) for v in (*train.values(), *held.values()))
+
+
+def test_full_whitening_is_independently_verified_and_a_forged_factor_is_refuted():
+    from greg.cognition.genomes import collective
+    data, _ = collective.immune_instance(3)
+    out = collective.immune_solve_with({**collective.IMMUNE_DEFAULT_CONFIG, "whitening": "full"}, data)
+    assert all(collective.immune_verify(data, out["output"], out["certificate"]).values())
+    forged = json.loads(json.dumps(out["certificate"]))
+    forged["standardisation"]["cholesky"][0][0] *= 1.5
+    assert not all(collective.immune_verify(data, out["output"], forged).values())
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable on this host")
+def test_an_immune_candidate_runs_confined_from_the_allow_list():
+    target = E.immune_target()
+    train, _, _ = E.immune_split()
+    problems = [{"id": k, "data": v["data"]} for k, v in list(train.items())[:2]]
+    run = E.run_candidate(target, {**target.incumbent, "whitening": "full"}, problems,
+                          probe_read=str(E.ROOT / "greg/cognition/evolution.py"))
+    assert run["confined"]["filesystem"] == "landlock" and run["probe"].startswith("DENIED")
+    assert all("output" in v for v in run["outputs"].values())
+
+
+@pytest.mark.parametrize("incumbent,candidate,gain,worse", [
+    (2.0, 1.8, 0.1, False),        # positive losses (pinball): identical to 1 - c/i
+    (2.0, 2.2, -0.1, True),
+    (-0.5, -0.6, 0.2, False),      # negative losses (-F1): a better candidate has a POSITIVE gain
+    (-0.5, -0.4, -0.2, True),      # ... and a 20% worse candidate is worsened
+    (-0.5, -0.49, -0.02, False),   # within the 5% stress tolerance
+])
+def test_gain_and_stress_tolerance_are_correct_for_losses_of_either_sign(incumbent, candidate, gain, worse):
+    assert E.relative_gain(incumbent, candidate) == pytest.approx(gain)
+    assert E.worsened(incumbent, candidate) is worse

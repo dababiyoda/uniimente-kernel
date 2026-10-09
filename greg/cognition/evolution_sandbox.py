@@ -23,7 +23,8 @@ from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg import isolation  # noqa: E402
 
 # The only code a cycle can run: reviewed modules and functions, named by the trusted parent's target.
-TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with")}
+TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with"),
+           "immune_detect": ("greg.cognition.genomes.collective", "immune_solve_with")}
 
 
 def main():

@@ -1244,7 +1244,7 @@
           "id": "P7",
           "title": "Cognitive Capability Genesis",
           "maps_to": "N2",
-          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate)",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate). Since 2026-10-09 a compile receipt with CAPABILITY_DEFICIT (no intelligence fits the residual geometry) opens the same Genesis loop for the missing function inside the mission engine, else one founder ask; only an attachment for that function clears the blocker",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P5 and GREG genesis (N2)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1256,7 +1256,9 @@
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
             "greg/genesis.py",
-            "greg/mechanisms.py"
+            "greg/mechanisms.py",
+            "greg/missions.py",
+            "tests/integration/test_greg_cognition_mission.py"
           ]
         },
         {
@@ -1525,7 +1527,7 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574",
-          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach",
+          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach; a cognition compile CAPABILITY_DEFICIT now enters the same loop for the residual function (integration-tested, not founder-used)",
           "exit_met": "test_tier_only",
           "evidence": "tests/unit/test_greg_open_source_genesis.py; tests/unit/test_greg_genesis_builder.py"
         },

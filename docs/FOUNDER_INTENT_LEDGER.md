@@ -24,8 +24,10 @@ Progress 2026-10-13 (measured, frozen, negative results kept):
 - **Genome admission** ([evidence](evidence/greg-genome-admission/2026-10-13-v1/README.md)): 31 executable genomes across L1-L4 on held-out seeds, pre-registered at `496c85b`:
   - 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED;
   - none attached; attaching any is the founder's decision.
-- **Verifiers hardened before the freeze:** a mutation audit found over 1,000 accepted or crashing corruptions of valid answers; all were closed.
-- **Second Foundry/Gravity/resilience review:** 8 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Admitted:** 20 of the 31 (DEFAULT or NICHE): L1 5, L2 2, L3 11, L4 2. SUPERSEDED genomes are excluded from routing, not kept as fallbacks; `collective_market` is SUPERSEDED only against an oracle competitor, which leaves the market geometry unroutable (see the evidence erratum).
+- **Verifiers hardened before the freeze:** a mutation audit (an uncommitted five-seed sweep) found over 1,000 accepted or crashing corruptions of valid answers. After the fix no non-equivalent mutant survives on dev seeds 0-9; equivalent ones (raised non-binding bounds) are accepted by design.
+- **Second Foundry/Gravity/resilience review, by the building agent:** 9 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Independent review (2026-10-13):** five lenses by separate agents found verifier, Gravity, Foundry, resilience, community-evidence and cortex defects, each reproduced and fixed with a regression test that fails on the old code (`4d99fb0`, `ed0f00b`, `9a799ed`). The evidence lens confirmed the admission evidence and corrected its prose (erratum in the admission README).
 - **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07

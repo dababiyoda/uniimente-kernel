@@ -89,6 +89,12 @@ capabilities:
     consumes: [organ-manifest]
     produces: []
     lifecycle: TESTED
+  - capability_id: kernel.goal_gravity
+    description: Persistent authorized goals as attractors; wake/sleep, Backcast GPS adapter, intervention classification, experience integration, favorable intersections, asymmetry retention, founder attention routing; Gate-only execution
+    implementation_path: egregore/gravity.py
+    consumes: [event, evidence, capability-grant]
+    produces: [event]
+    lifecycle: TESTED
   - capability_id: kernel.bridge_adapters
     description: Wire v1.1 <-> canonical contract adapters with explicit field mappings
     implementation_path: adapters/

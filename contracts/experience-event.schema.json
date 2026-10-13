@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/experience-event.schema.json",
+  "title": "Experience Event",
+  "description": "A signal that has been attributed, interpreted into typed observations, related to goals, and integrated into the world model (egregore/experience.py). Raw telemetry is not an experience; this record is. It carries no authority and is not a claim of subjective experience.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["experience_id", "signal_id", "source", "observed_at", "integrated_at", "observations", "goal_relevance", "changes", "context"],
+  "properties": {
+    "experience_id": {"$ref": "#/$defs/hash"},
+    "signal_id": {"$ref": "#/$defs/hash"},
+    "source": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "integrated_at": {"type": "string", "format": "date-time"},
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "attribute", "value", "confidence", "source", "observed_at", "evidence_refs", "trust_level"],
+        "properties": {
+          "subject": {"type": "string", "minLength": 1},
+          "attribute": {"type": "string", "minLength": 1},
+          "value": {"type": ["number", "string", "boolean", "null"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "source": {"type": "string", "minLength": 1},
+          "observed_at": {"type": "string", "format": "date-time"},
+          "evidence_refs": {"type": "array", "items": {"type": "string"}},
+          "trust_level": {"enum": ["untrusted", "attributed", "verified"]}
+        }
+      }
+    },
+    "goal_relevance": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "previous", "current", "updated", "contradiction", "disposition"],
+        "properties": {
+          "key": {"type": "string"},
+          "previous": {},
+          "current": {},
+          "updated": {"type": "boolean"},
+          "contradiction": {"type": "boolean"},
+          "disposition": {"enum": ["new_belief", "refreshed", "corroborated", "contradiction_retained"]}
+        }
+      }
+    },
+    "context": {"type": "object"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

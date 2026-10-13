@@ -532,16 +532,22 @@
   acceptance:
   - UNIIMENTE serves canonical owned pages/portals from its own server
   - Content is versioned and provenance-linked
-  adopt:
-  - static site on a CDN
-  - FastAPI
-  existing:
-  - DALEOBANKS:app.py
-  - DALEOBANKS:server/index.ts
-  - WealthMachineIntelligence:src/api/main.py
-  gap: Organs run application servers; there is no owned canonical site, customer portal or knowledge hub, and the
-    kernel serves nothing.
-  state: PARTIAL
+  evidence: foundry/evidence/system-31.json
+  implementation:
+  - foundry/systems/webserver.py
+  - foundry/systems/cas.py
+  - foundry/systems/versions.py
+  - provenance/proof.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query site_root|provenance|render; foundry.apply publish|issue_portal_token (system 31)
+  limitations: Stdlib ThreadingHTTPServer on loopback; no TLS termination, CDN or public DNS. Binding a public interface
+    is publication and is refused without a recorded Consequence Gate decision.
+  recovery: Pages are content-addressed and versioned; a page whose bytes no longer match their address is refused
+    (500) instead of served; any prior version can be restored from its record.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 32:
   acceptance:
   - Owned community with member identity, posts and interaction history exportable by UNIIMENTE

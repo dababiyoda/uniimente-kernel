@@ -649,3 +649,25 @@ def test_owned_build_is_reproducible_and_runs_from_the_bundle(tmp_path):
     assert result["identical_across_processes"] and result["verify"] and result["one_byte_changes_hash"]
     assert result["smoke"]["ran_from_bundle"], result["smoke"]
     assert result["toolchain_pins"] == ["PyYAML", "cryptography", "jsonschema", "pytest"]
+
+
+# -- increment 6: owned web --------------------------------------------------------------
+
+from foundry.systems import webserver
+
+
+def test_owned_site_serves_provable_pages_and_guards_portals(tmp_path):
+    result = webserver.exercise(tmp_path)
+    assert result["served"] == 200 and result["version"] == "2" and result["etag_is_content_hash"]
+    assert all(result["third_party_verification"].values()), "a stranger with the public key can verify the page"
+    assert result["forged_body_verification"]["body_matches_leaf"] is False
+    assert result["history"] == ["add outcome", "launch"]
+    assert result["not_modified"] == 304 and result["traversal"] == 400 and result["tampered_page"] == 500
+    assert result["portal"] == {"own": 200, "other_customer": 403, "no_token": 401, "expired": 403, "forged": 403}
+    assert result["public_bind_refused"]
+    site = webserver.Site(tmp_path / "s2", key_seed=bytes(32 * [5]))
+    with pytest.raises(webserver.SiteError, match="reason and evidence"):
+        site.publish("/x.html", "x", reason="", evidence=[])
+    rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert rendered["result"]["status"] == 404

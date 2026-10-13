@@ -1,0 +1,12 @@
+# tests/unit/test_greg_cognition_convergence.py + tests/integration/test_greg_cognition_rehearsal.py
+# on ac12200 plus the work committed with this log (venv: Python 3.11, OR-Tools 9.15.6755, Z3 5.1.0.0), 2026-10-13
+run 1 (first after idle): 2 failed, 46 passed in 47.02s
+  FAILED test_cp_sat_optimality_is_attacked_by_a_second_engine
+  FAILED test_identified_synthetic_effect_recovers_known_ground_truth
+  (both pass when run alone, 1.55s)
+run 2: 48 passed in 29.86s
+run 3: 48 passed in 30.69s
+run 4: 48 passed in 31.91s
+# Not root-caused. The failing run was the slow, cold one; that is consistent with the solver cold-start
+# TIMEOUT recorded on 2026-10-01 (first optimize call within a 5 s budget), but it is not proven. This branch
+# is preserved as evidence and is not proposed for merge; the ported verifier on #161 carries a hard budget.

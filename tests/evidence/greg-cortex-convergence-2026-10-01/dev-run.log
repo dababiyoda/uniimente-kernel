@@ -1,0 +1,77 @@
+{
+ "partition": "dev",
+ "arms": {
+  "always_llm": [
+   "NOT_RUN",
+   null,
+   null
+  ],
+  "tool_llm": [
+   "NOT_RUN",
+   null,
+   null
+  ],
+  "routed": [
+   "RUN",
+   0.0486,
+   {
+    "correct": 20,
+    "unjustified_abstention": 2
+   }
+  ],
+  "static_router": [
+   "RUN",
+   0.2305,
+   {
+    "correct": 16,
+    "false_claim": 4,
+    "unjustified_abstention": 2
+   }
+  ],
+  "greg_without_cortex": [
+   "RUN",
+   0.4182,
+   {
+    "unjustified_abstention": 18,
+    "correct": 2,
+    "wrong_abstention_reason": 2
+   }
+  ]
+ },
+ "verdict": {
+  "against_run_baselines": "GAIN",
+  "superiority_claim": "INCONCLUSIVE: the always-LLM and tool-enabled model baselines did not run",
+  "release_blocked_by_hard_failures": false,
+  "promotion": "none; an evaluation result grants nothing"
+ },
+ "comparison": {
+  "greg_without_cortex": {
+   "n_measured": 20,
+   "baseline_loss": 0.41,
+   "routed_loss": 0.0034,
+   "gain": 0.4066,
+   "relative_reduction": 0.9917,
+   "ci95": [
+    0.3234,
+    0.4759
+   ],
+   "stratum_regressions": [],
+   "n_required_for_predeclared_effect": 78,
+   "verdict": "GAIN"
+  },
+  "static_router": {
+   "n_measured": 20,
+   "baseline_loss": 0.2035,
+   "routed_loss": 0.0034,
+   "gain": 0.2002,
+   "relative_reduction": 0.9833,
+   "ci95": [
+    0.05,
+    0.4003
+   ],
+   "stratum_regressions": [],
+   "n_required_for_predeclared_effect": 1565,
+   "verdict": "GAIN"
+  }
+ }
+}

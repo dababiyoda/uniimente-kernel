@@ -11,6 +11,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
+import json
 import random
 
 import pytest
@@ -485,3 +486,68 @@ def test_the_build_directive_is_preserved_byte_exact():
     text = (root / "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-DIRECTIVE-SEED-GENOME-2026-10-01.md").read_text("utf-8")
     body = text.split("=== BEGIN VERBATIM TEXT ===\n", 1)[1].rsplit("\n=== END VERBATIM TEXT ===", 1)[0]
     assert hashlib.sha256(body.encode()).hexdigest() == "3a18620e43e3e38496ad916a5426591e56ce78d6c915f71cc73b4a793cc8d342"
+
+
+# ------------------------------------------------------------------ safeguards the mutation harness attacks
+def test_a_forged_unknown_is_never_success(registry, monkeypatch):
+    from greg.cognition import cortex
+    real = cortex._numeric
+
+    def unknown(family, data, geometry):
+        answer = real(family, data, geometry)
+        return {**answer, "status": "UNKNOWN"}
+    monkeypatch.setattr(cortex, "_numeric", unknown)
+    r = reason(req("constraints", {"variables": {"x": [0, 10]}, "constraints": [
+        {"coefficients": {"x": 1}, "op": ">=", "rhs": 3}]}), registry=registry)
+    assert r["abstention_state"] == "UNKNOWN" and r["outcome"] == "ABSTAIN" and r["reasons"] == ["SOLVER_UNKNOWN"]
+
+
+def test_a_paid_route_never_serves_semantic_cognition(registry):
+    for config in ({"order": ["anthropic"], "anthropic_model": "any"}, {"order": ["openai", "ollama"]}):
+        r = reason(req("interpret", {"text": "x"}), registry=registry, model_config=config)
+        assert r["abstention_state"] == "ABSTAIN" and r["reasons"] == ["CAPABILITY_UNAVAILABLE"]
+        assert r["model_calls"] if False else r["compute_cost"]["model_calls"] == 0
+
+
+def test_duplicate_outcome_delivery_settles_once(tmp_path):
+    from greg.body import Body
+    from greg.cognition.settlement import competence, reconcile
+    from tests.greg_fixtures import drop, make_body, mission, signed
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "dup:numeric", "operation": "calculate", "data": {"expression": "1/4"}}
+    spec = mission("m:duplicate-delivery", checks=[{
+        "check_id": "exact", "description": "exact arithmetic",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:arithmetic", "params": params},
+        "predicate": {"op": "equals", "field": "output.exact", "value": "1/4"}}],
+        strategies=[], capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        observed = [e for e in body.journal.replay("mission.observed") if e.payload["mission_id"] == "m:duplicate-delivery"]
+        assert observed
+        body.journal.record("mission.observed", dict(observed[-1].payload), key="duplicate-delivery")
+        reconcile(body.journal)
+        reconcile(body.journal)
+        rows = competence(body.journal)
+        assert [v["count"] for v in rows.values()] == [1]
+        assert len([e for e in body.journal.replay("cognition.settled")]) == 1
+
+
+# ------------------------------------------------------------------ evaluation harness
+def test_the_evaluation_refuses_changed_inputs_and_contaminated_splits(tmp_path, monkeypatch):
+    from greg.cognition import evaluation as E
+    assert E.score({"item_id": "x", "stratum": "s", "family": "f",
+                    "expected": {"answer": False, "outcomes": ["ESCALATE"], "check": None, "hard_if_answered": True}},
+                   {"outcome": "ANSWERED_WITHIN_SCOPE", "output": {}, "authority_created": False}, 0)["hard_failure"]
+    row = E.score({"item_id": "x", "stratum": "s", "family": "f",
+                   "expected": {"answer": True, "outcomes": ["CONDITIONAL_RESULT"],
+                                "check": {"field": "v", "value": 1, "tol": None, "kind": "equals"}}},
+                  {"outcome": "ANSWERED_WITHIN_SCOPE", "output": {"v": 1}, "authority_created": False}, 0)
+    assert row["label"] == "scope_overclaim"
+    monkeypatch.setattr(E, "FREEZE", tmp_path / "freeze.json")
+    with pytest.raises(SystemExit, match="no freeze manifest"):
+        E.run("heldout")
+    (tmp_path / "freeze.json").write_text(json.dumps({"inputs": {**E.freeze_inputs(), "loss": {"correct": 1}}}))
+    with pytest.raises(SystemExit, match="frozen inputs changed"):
+        E.run("heldout")

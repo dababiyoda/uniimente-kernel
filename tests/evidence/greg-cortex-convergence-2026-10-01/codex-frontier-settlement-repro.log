@@ -1,0 +1,13 @@
+# One logical cognition outcome observed twice (a second mission.observed for the same mission, input, method, version),
+# then reconcile() run three times. Test: tests/unit/test_zz_repro_duplicate_settlement.py (scratch, not committed to either branch).
+
+== codex frontier #159 e125168be81890b12937a7894123f11efcd358ee
+REPRO settled_before=1 settled_after=2 competence_counts=[1]
+LINKS (event, supersedes, outcome_id) [('fe7db091-cb5', '-', '-'), ('92480e45-ac8', '-', '-')]
+AFTER_THIRD_RECONCILE 2
+
+== claude frontier #158 base 0f4bc52cc156c7b630715fc01b6ebb32136db6f0
+REPRO settled_before=1 settled_after=2 competence_counts=[1]
+LINKS (event, supersedes, outcome_id) [('c3b4e797-274', '-', 'sha256:de12876a7d332'), ('48c8c07d-d42', 'c3b4e797-274', 'sha256:de12876a7d332')]
+AFTER_THIRD_RECONCILE 2
+

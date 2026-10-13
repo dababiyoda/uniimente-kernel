@@ -1,0 +1,812 @@
+{
+ "arms": {
+  "always_llm": {
+   "reason": "no founder-selected local model is available and paid inference is disabled (AGENTS.md)",
+   "status": "NOT_RUN"
+  },
+  "greg_without_cortex": {
+   "hard_failures": 0,
+   "items": [
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0017,
+     "loss": 0.500017,
+     "outcome": "ABSTAIN",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-03",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-04",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0014,
+     "loss": 0.500014,
+     "outcome": "ABSTAIN",
+     "stratum": "estimation"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0014,
+     "loss": 0.500014,
+     "outcome": "ABSTAIN",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.001,
+     "loss": 0.50001,
+     "outcome": "ABSTAIN",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-03",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0013,
+     "loss": 0.500013,
+     "outcome": "ABSTAIN",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-04",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "formal"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0011,
+     "loss": 0.500011,
+     "outcome": "ABSTAIN",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.001,
+     "loss": 0.50001,
+     "outcome": "ABSTAIN",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-03",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0011,
+     "loss": 0.500011,
+     "outcome": "ABSTAIN",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-04",
+     "label": "unjustified_abstention",
+     "latency_s": 0.001,
+     "loss": 0.50001,
+     "outcome": "ABSTAIN",
+     "stratum": "optimization"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-03",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0011,
+     "loss": 0.500011,
+     "outcome": "ABSTAIN",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-04",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0013,
+     "loss": 0.500013,
+     "outcome": "ABSTAIN",
+     "stratum": "causal"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-01",
+     "label": "correct",
+     "latency_s": 0.0014,
+     "loss": 1.4e-05,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-02",
+     "label": "correct",
+     "latency_s": 0.0011,
+     "loss": 1.1e-05,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-03",
+     "label": "wrong_abstention_reason",
+     "latency_s": 0.0017,
+     "loss": 0.100017,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-04",
+     "label": "wrong_abstention_reason",
+     "latency_s": 0.0017,
+     "loss": 0.100017,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0014,
+     "loss": 0.500014,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.001,
+     "loss": 0.50001,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    }
+   ],
+   "labels": {
+    "correct": 2,
+    "unjustified_abstention": 18,
+    "wrong_abstention_reason": 2
+   },
+   "mean_loss": 0.4182,
+   "status": "RUN"
+  },
+  "routed": {
+   "hard_failures": 0,
+   "items": [
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-01",
+     "label": "correct",
+     "latency_s": 0.1102,
+     "loss": 0.001102,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-02",
+     "label": "correct",
+     "latency_s": 0.1245,
+     "loss": 0.001245,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-03",
+     "label": "correct",
+     "latency_s": 0.1263,
+     "loss": 0.001263,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-04",
+     "label": "correct",
+     "latency_s": 0.1047,
+     "loss": 0.001047,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-01",
+     "label": "correct",
+     "latency_s": 0.1454,
+     "loss": 0.001454,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-02",
+     "label": "correct",
+     "latency_s": 0.1478,
+     "loss": 0.001478,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-03",
+     "label": "correct",
+     "latency_s": 0.1707,
+     "loss": 0.001707,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-04",
+     "label": "correct",
+     "latency_s": 0.1663,
+     "loss": 0.001663,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-01",
+     "label": "correct",
+     "latency_s": 0.5613,
+     "loss": 0.005613,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-02",
+     "label": "correct",
+     "latency_s": 0.4927,
+     "loss": 0.004927,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-03",
+     "label": "correct",
+     "latency_s": 0.4509,
+     "loss": 0.004509,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-04",
+     "label": "correct",
+     "latency_s": 0.4517,
+     "loss": 0.004517,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-01",
+     "label": "correct",
+     "latency_s": 0.8661,
+     "loss": 0.008661,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-02",
+     "label": "correct",
+     "latency_s": 1.0282,
+     "loss": 0.010282,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-03",
+     "label": "correct",
+     "latency_s": 0.9144,
+     "loss": 0.009144,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-04",
+     "label": "correct",
+     "latency_s": 0.9145,
+     "loss": 0.009145,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-01",
+     "label": "correct",
+     "latency_s": 0.0018,
+     "loss": 1.8e-05,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-02",
+     "label": "correct",
+     "latency_s": 0.0012,
+     "loss": 1.2e-05,
+     "outcome": "ABSTAIN",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-03",
+     "label": "correct",
+     "latency_s": 0.0015,
+     "loss": 1.5e-05,
+     "outcome": "REQUEST_EVIDENCE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-04",
+     "label": "correct",
+     "latency_s": 0.0011,
+     "loss": 1.1e-05,
+     "outcome": "REQUEST_EVIDENCE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0654,
+     "loss": 0.500654,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0012,
+     "loss": 0.500012,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    }
+   ],
+   "labels": {
+    "correct": 20,
+    "unjustified_abstention": 2
+   },
+   "mean_loss": 0.0486,
+   "status": "RUN"
+  },
+  "static_router": {
+   "hard_failures": 0,
+   "items": [
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-01",
+     "label": "correct",
+     "latency_s": 0.1119,
+     "loss": 0.001119,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-02",
+     "label": "correct",
+     "latency_s": 0.0946,
+     "loss": 0.000946,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-03",
+     "label": "correct",
+     "latency_s": 0.0972,
+     "loss": 0.000972,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "E1",
+     "hard_failure": false,
+     "item_id": "D-EST-E1-04",
+     "label": "correct",
+     "latency_s": 0.0922,
+     "loss": 0.000922,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "estimation"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-01",
+     "label": "correct",
+     "latency_s": 0.1388,
+     "loss": 0.001388,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-02",
+     "label": "correct",
+     "latency_s": 0.1442,
+     "loss": 0.001442,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-03",
+     "label": "correct",
+     "latency_s": 0.1438,
+     "loss": 0.001438,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "F1",
+     "hard_failure": false,
+     "item_id": "D-FOR-F1-04",
+     "label": "correct",
+     "latency_s": 0.1661,
+     "loss": 0.001661,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "formal"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-01",
+     "label": "correct",
+     "latency_s": 0.4759,
+     "loss": 0.004759,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-02",
+     "label": "correct",
+     "latency_s": 0.4837,
+     "loss": 0.004837,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-03",
+     "label": "correct",
+     "latency_s": 0.4488,
+     "loss": 0.004488,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "O1",
+     "hard_failure": false,
+     "item_id": "D-OPT-O1-04",
+     "label": "correct",
+     "latency_s": 0.5515,
+     "loss": 0.005515,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "optimization"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-01",
+     "label": "correct",
+     "latency_s": 0.9332,
+     "loss": 0.009332,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-02",
+     "label": "correct",
+     "latency_s": 0.9358,
+     "loss": 0.009358,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-03",
+     "label": "correct",
+     "latency_s": 0.9837,
+     "loss": 0.009837,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "C1",
+     "hard_failure": false,
+     "item_id": "D-CAU-C1-04",
+     "label": "correct",
+     "latency_s": 0.9149,
+     "loss": 0.009149,
+     "outcome": "CONDITIONAL_RESULT",
+     "stratum": "causal"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-01",
+     "label": "false_claim",
+     "latency_s": 0.0923,
+     "loss": 1.000923,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M1",
+     "hard_failure": false,
+     "item_id": "D-MIX-M1-02",
+     "label": "false_claim",
+     "latency_s": 0.0946,
+     "loss": 1.000946,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-03",
+     "label": "false_claim",
+     "latency_s": 0.0998,
+     "loss": 1.000998,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "M4",
+     "hard_failure": false,
+     "item_id": "D-MIX-M4-04",
+     "label": "false_claim",
+     "latency_s": 0.089,
+     "loss": 1.00089,
+     "outcome": "ANSWERED_WITHIN_SCOPE",
+     "stratum": "mixed"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-01",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0,
+     "loss": 0.5,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    },
+    {
+     "family": "S1",
+     "hard_failure": false,
+     "item_id": "D-SEM-S1-02",
+     "label": "unjustified_abstention",
+     "latency_s": 0.0,
+     "loss": 0.5,
+     "outcome": "ABSTAIN",
+     "stratum": "semantic"
+    }
+   ],
+   "labels": {
+    "correct": 16,
+    "false_claim": 4,
+    "unjustified_abstention": 2
+   },
+   "mean_loss": 0.2305,
+   "status": "RUN"
+  },
+  "tool_llm": {
+   "reason": "no founder-selected local model is available and paid inference is disabled (AGENTS.md)",
+   "status": "NOT_RUN"
+  }
+ },
+ "comparison": {
+  "strongest_run_baseline": "static_router",
+  "vs": {
+   "greg_without_cortex": {
+    "baseline_loss": 0.41,
+    "ci95": [
+     0.3234,
+     0.4759
+    ],
+    "gain": 0.4066,
+    "n_measured": 20,
+    "n_required_for_predeclared_effect": 78,
+    "per_stratum": {
+     "causal": {
+      "baseline_loss": 0.5,
+      "n": 4,
+      "routed_loss": 0.0093
+     },
+     "estimation": {
+      "baseline_loss": 0.5,
+      "n": 4,
+      "routed_loss": 0.0012
+     },
+     "formal": {
+      "baseline_loss": 0.5,
+      "n": 4,
+      "routed_loss": 0.0016
+     },
+     "mixed": {
+      "baseline_loss": 0.05,
+      "n": 4,
+      "routed_loss": 0.0
+     },
+     "optimization": {
+      "baseline_loss": 0.5,
+      "n": 4,
+      "routed_loss": 0.0049
+     }
+    },
+    "relative_reduction": 0.9917,
+    "routed_loss": 0.0034,
+    "stratum_regressions": [],
+    "verdict": "GAIN"
+   },
+   "static_router": {
+    "baseline_loss": 0.2035,
+    "ci95": [
+     0.05,
+     0.4003
+    ],
+    "gain": 0.2002,
+    "n_measured": 20,
+    "n_required_for_predeclared_effect": 1565,
+    "per_stratum": {
+     "causal": {
+      "baseline_loss": 0.0094,
+      "n": 4,
+      "routed_loss": 0.0093
+     },
+     "estimation": {
+      "baseline_loss": 0.001,
+      "n": 4,
+      "routed_loss": 0.0012
+     },
+     "formal": {
+      "baseline_loss": 0.0015,
+      "n": 4,
+      "routed_loss": 0.0016
+     },
+     "mixed": {
+      "baseline_loss": 1.0009,
+      "n": 4,
+      "routed_loss": 0.0
+     },
+     "optimization": {
+      "baseline_loss": 0.0049,
+      "n": 4,
+      "routed_loss": 0.0049
+     }
+    },
+    "relative_reduction": 0.9833,
+    "routed_loss": 0.0034,
+    "stratum_regressions": [],
+    "verdict": "GAIN"
+   }
+  }
+ },
+ "environment": {
+  "platform": "linux",
+  "python": "3.11.15"
+ },
+ "exclusions": {
+  "semantic": "the resource envelope has no founder-selected local model; every arm must abstain, so the stratum cannot measure routing quality and is reported but excluded from the gain"
+ },
+ "freeze_sha256": null,
+ "item_count": 22,
+ "partition": "dev",
+ "run_at": "2026-10-13T18:45:30Z",
+ "schema": "greg-cognition-eval/1.0",
+ "verdict": {
+  "against_run_baselines": "GAIN",
+  "promotion": "none; an evaluation result grants nothing",
+  "release_blocked_by_hard_failures": false,
+  "superiority_claim": "INCONCLUSIVE: the always-LLM and tool-enabled model baselines did not run"
+ }
+}

@@ -519,11 +519,32 @@
   - Their results are verified before acceptance; no interior access
   adopt:
   - A2A protocol v1 with signed Agent Cards
-  existing:
+  evidence: foundry/evidence/system-29.json
+  implementation:
+  - foundry/systems/embassy_wire.py
   - embassy/gate.py
-  - tests/unit/test_embassy.py
-  gap: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.
-  state: PARTIAL
+  - foundry/systems/webserver.py
+  - foundry/systems/reputation.py
+  - foundry/systems/accounting.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: JSON-RPC 2.0 over loopback HTTP at /rpc (embassy/challenge, embassy/present, tasks/list, tasks/claim,
+    tasks/submit, tasks/get, embassy/standing) plus the embassy's Agent Card at /.well-known/agent.json; foundry.query
+    standing|tasks|receipts (system 29). Posting work and admitting agents are operator acts on a running embassy.
+  limitations: 'A2A-shaped (JSON-RPC methods, signed Agent Cards), not a conformance claim; the embassy binds loopback
+    only, so a foreign agent reaches it through the operator''s own perimeter, and no external agent has connected yet.
+    Three bounded work kinds (factor, sort, classify) with two acceptance methods: a deterministic invariant cheaper
+    than the work, or agreement of two independent scripted models (real independent models would be routed through
+    #25). Accepted work books a payable in #39; paying it out is an operator act on #38, not performed here. Negative
+    evidence from the substrate: PumpStation''s wallet connect verifies one fixed message (`ethers.verifyMessage(CONNECT_MESSAGE,
+    signature)`, server/index.js), a replayable credential; this protocol uses a single-use nonce bound to the key and
+    the audience, and signs every later request with a strictly increasing sequence.'
+  recovery: 'Nonces are single-use and expire; a guest''s suspension after a refuted result persists until an operator
+    clears it; every claim and submission is a Consequence Gate action in the Kernel ledger, so the embassy''s state
+    (embassy.json) can be reconciled against the ledger; a refuted task returns to the open pool with no price.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 30:
   acceptance:
   - Every external consequence crosses one gate with commit-time revalidation

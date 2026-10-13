@@ -843,3 +843,39 @@ def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_pa
     assert orders["result"]["orders"] == [], "a fresh workspace has sold nothing"
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 54, "op": "redeem", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the embassy on a wire -----------------------------------------------------
+
+from foundry.systems import embassy_wire
+
+
+def test_embassy_wire_admits_by_challenge_verifies_before_acceptance_and_exposes_no_interior(tmp_path):
+    result = embassy_wire.exercise(tmp_path)
+    assert result["card_served"] and all(result["card_proof"].values())
+    assert set(result["methods_exposed"]) == set(embassy_wire.METHODS) and len(result["methods_exposed"]) == 7
+    assert result["admitted_ceiling"] == "internal_write" and result["admitted_budget_usd"] == 0.0
+    assert result["negotiation"] == {"countered": "countered", "counter_cents": 500, "then": "accepted"}
+    assert result["accepted"] == {"status": "accepted", "verification": "VERIFIED", "method": "deterministic_invariant"}
+    assert result["receipt_verifies"] and result["sort_accepted"] == "accepted" and result["classify_accepted"] == "accepted"
+    assert result["undecidable"] == {"status": "claimed", "verdict": "UNDECIDABLE"} and result["undecidable_earned_no_verdict"]
+    assert result["rejected"]["status"] == "rejected" and result["rejected"]["suspended"] and result["refuted_task_reopened"]
+    assert result["standing"]["loki@embassy:factor"]["incidents"] == 1 and result["standing"]["atlas@embassy:factor"]["incidents"] == 0
+    assert result["ledger"]["admitted"] == 3 and result["ledger"]["routed_through_gate"] >= 8, "every claim and submission crossed the gate"
+    assert result["books"] == {"equation_holds": True, "payable_to_agents_cents": 950}
+    assert set(result["refusals"]) >= {"interior_path", "foundry_op_over_the_wire", "unsigned_before_admission", "card_not_signed_by_its_key",
+                                       "wrong_audience", "expired_nonce", "replayed_nonce", "replayed_sequence", "forged_request_signature",
+                                       "unknown_method_signed", "claim_already_claimed_task", "submit_unclaimed", "submit_twice",
+                                       "claim_while_suspended"}
+    assert all(result["refusals"].values())
+    # the acceptance checks are invariants, not trust: a plausible-looking wrong factorization is refuted
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [1, 221]})["verdict"] == "REFUTED"
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [17, 13]})["verdict"] == "REFUTED", "canonical order is part of the contract"
+    assert embassy_wire.verify_result("sort", {"items": [2, 1]}, {"sorted": [1, 2, 2]})["verdict"] == "REFUTED"
+    with pytest.raises(embassy_wire.RpcError):
+        embassy_wire.verify_result("mine", {}, {})
+    assert embassy_wire.Embassy.verify_receipt("00" * 32, {"task_id": "t", "signature": "00" * 64}) is False
+    tasks = foundry_bridge.query({"system": 29, "op": "tasks", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert tasks["result"]["tasks"] == [], "a fresh workspace has no embassy work posted"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 29, "op": "post_task", "args": {}}, _ctx(tmp_path, "foundry.apply"))

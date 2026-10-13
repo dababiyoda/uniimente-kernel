@@ -1,4 +1,4 @@
-"""Shared cognitive contracts for the Polyintelligence Cortex seed (v0.1).
+"""Shared cognitive contracts for the Seed Cortex (Polyintelligence Seed Genome v0.1).
 
 Doctrine (build prompt SEED-V0.1 items 2, 4, 8):
 

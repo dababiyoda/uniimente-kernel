@@ -21,7 +21,8 @@
     "One authority, many governed capabilities: competing lineages are registered and preserved, never deleted; merging any of them is a founder decision"
   ],
   "success_evidence": [
-    "tests/unit/test_cortex_defect_fixes.py (four 0.1.5 defects reproduced and fixed in 0.1.6)",
+    "tests/unit/test_cortex_defect_fixes.py (four 0.1.5 defects reproduced and fixed in 0.1.6, plus D5: a declared harm vector may raise the consequence class, ported from the #143 lineage)",
+    "tests/unit/test_cortex_finality_deficit.py (the named Epistemic Finality Rule cited by every receipt; abstention emits a typed CapabilityDeficit that authorizes nothing)",
     "tests/unit/test_cortex_proposer.py (cortex bound to StandingCognitionRuntime; receipts ledgered; abstain/handoff/recommend paths; no actuator import)",
     "tests/unit/test_cortex_replay.py (frozen arms from a transcript; missing replies are errors, not guesses; freeze untouched)",
     "tests/unit/test_seed_genome_founder_expression.py (the 2026-10-13 message rebuilds byte for byte)",

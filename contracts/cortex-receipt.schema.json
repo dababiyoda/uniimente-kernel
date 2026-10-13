@@ -32,7 +32,8 @@
     "outcome_link",
     "authority_created",
     "execution_authority",
-    "coverage"
+    "coverage",
+    "capability_deficit"
   ],
   "properties": {
     "receipt_id": {
@@ -102,6 +103,7 @@
       "required": [
         "composition",
         "dropped_by_cap",
+        "finality",
         "part_geometries",
         "policy",
         "rationale",
@@ -124,6 +126,16 @@
             "type": "string"
           },
           "description": "0.1.6: eligible routes not run because of MAX_COMPOSITION; disclosed, never described as not required"
+        },
+        "finality": {
+          "type": "object",
+          "required": [
+            "rule",
+            "decides",
+            "by_route",
+            "disagreement"
+          ],
+          "description": "0.1.6: the named Epistemic Finality Rule applied to this receipt"
         }
       }
     },
@@ -559,6 +571,38 @@
     "coverage": {
       "type": "string",
       "description": "0.1.6: whether every eligible route for the payload ran; names routes the composition cap dropped"
+    },
+    "capability_deficit": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "state",
+            "geometry",
+            "jurisdiction",
+            "registered_but_disabled",
+            "why",
+            "resolution_order",
+            "authority"
+          ],
+          "properties": {
+            "kind": {
+              "const": "CapabilityDeficit"
+            },
+            "state": {
+              "enum": [
+                "NO_ELIGIBLE_METHOD",
+                "UNSUPPORTED_GEOMETRY"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "0.1.6: typed request for capability formation when the repertoire cannot answer; never an authorization"
     }
   }
 }

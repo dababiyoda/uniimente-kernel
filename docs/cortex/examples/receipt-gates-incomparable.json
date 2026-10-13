@@ -44,6 +44,7 @@
   ],
   "assumptions": [],
   "authority_created": false,
+  "capability_deficit": null,
   "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
@@ -92,7 +93,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000289,
+    "seconds": 0.000319,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -299,10 +300,16 @@
     "status": "none_eligible",
     "tradeoffs": []
   },
-  "receipt_id": "sha256:39d116ddc9e433267ab8c339ada47e361a07844d8b000eaef2f1cae011967937",
+  "receipt_id": "sha256:89a85323b839db9e41c4871c7b8f1ca5fb8e60ce12473ded221217cfc8786a18",
   "route": {
     "composition": false,
     "dropped_by_cap": [],
+    "finality": {
+      "by_route": {},
+      "decides": "strategic",
+      "disagreement": "when composed parts disagree, the most cautious state across routes decides the disposition; no part's proof overrides another part's jurisdiction",
+      "rule": "epistemic-finality/0.1"
+    },
     "part_geometries": {},
     "policy": "cortex-route-policy/0.1",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",

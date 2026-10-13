@@ -54,7 +54,7 @@ capabilities:
     produces: [decision]
     lifecycle: ACTIVE
   - capability_id: kernel.cortex_seed
-    description: Polyintelligence Cortex seed 0.1.6 - geometry routing to typed-proof organs with an adversarial verifier; receipts create no authority; bound to standing cognition as a proposer
+    description: Seed Cortex 0.1.6 (Polyintelligence Seed Genome v0.1) - geometry routing to typed-proof organs with an adversarial verifier under a named epistemic finality rule; receipts create no authority and name capability deficits; bound to standing cognition as a proposer
     implementation_path: cortex/
     consumes: [evidence]
     produces: []

@@ -40,6 +40,7 @@
     "premise P_avail: the machine is available for the whole 10h shift (verified=True)"
   ],
   "authority_created": false,
+  "capability_deficit": null,
   "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
@@ -90,7 +91,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.020228,
+    "seconds": 0.025796,
     "solver_calls": 9,
     "usd": 0.0
   },
@@ -194,7 +195,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.01928,
+          "seconds": 0.024663,
           "solver_calls": 9,
           "usd": 0.0
         },
@@ -740,10 +741,18 @@
     "safe_contact_channel": "absent"
   },
   "ranking": null,
-  "receipt_id": "sha256:8ad4ed6e9213d7c4cd8564ab480fbc192f838209f73e8596fad448aa6519bc3b",
+  "receipt_id": "sha256:2e678bc6a45f2c4574d054642aabc9c071e2edc8c4fd74ed97d998d1d5e21bde",
   "route": {
     "composition": false,
     "dropped_by_cap": [],
+    "finality": {
+      "by_route": {
+        "cortex.formal.z3@0.2.0": "formal"
+      },
+      "decides": "formal",
+      "disagreement": "when composed parts disagree, the most cautious state across routes decides the disposition; no part's proof overrides another part's jurisdiction",
+      "rule": "epistemic-finality/0.1"
+    },
     "part_geometries": {
       "cortex.formal.z3@0.2.0": "constraint_feasibility"
     },

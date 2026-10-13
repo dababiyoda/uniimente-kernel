@@ -10,7 +10,12 @@ from cortex.memory import CompetenceLedger
 from cortex.routing import FERMI, FORMAL, MAX_COMPOSITION, SEMANTIC, Cortex
 from cortex.schemas import validate
 
-pytestmark = pytest.mark.skipif(pytest.importorskip("z3", reason="z3-solver not installed") is None, reason="z3")
+try:
+    import z3  # noqa: F401
+    HAVE_Z3 = True
+except ModuleNotFoundError:
+    HAVE_Z3 = False
+needs_z3 = pytest.mark.skipif(not HAVE_Z3, reason="z3-solver not installed (see requirements-cortex.txt)")
 
 DECL = {"consequence_class": "internal_write", "reversibility": "reversible"}
 FORMAL_MODEL = {"requirement": "x + y <= 4",
@@ -27,6 +32,7 @@ def cortex():
     return Cortex(clock=lambda: "2026-10-13T00:00:00Z")
 
 
+@needs_z3
 def test_d1_settlement_requires_the_exact_method_and_version_that_ran():
     receipt = cortex().run({"problem_id": "d1", "question": "q", "payload": {"formal_model": FORMAL_MODEL, "declared": DECL}})
     ledger = CompetenceLedger()
@@ -41,6 +47,7 @@ def test_d1_settlement_requires_the_exact_method_and_version_that_ran():
     assert rec.method_version == "0.2.0"
 
 
+@needs_z3
 def test_d2_composed_routes_settle_under_the_geometry_of_their_own_part():
     receipt = cortex().run({"problem_id": "d2", "question": "q", "payload": {
         "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}})
@@ -58,6 +65,7 @@ def test_d2_composed_routes_settle_under_the_geometry_of_their_own_part():
     validate(receipt, "cortex-receipt")
 
 
+@needs_z3
 def test_d3_a_route_dropped_by_the_composition_cap_is_disclosed_not_denied():
     receipt = cortex().run({"problem_id": "d3", "question": "q", "payload": {
         "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "sources": SOURCES, "declared": DECL}})
@@ -91,6 +99,7 @@ def test_d4_an_expiring_mandate_without_an_as_of_does_not_pass_founder_scope():
     assert ok.gates["founder_scope"].status == "PASS"
 
 
+@needs_z3
 def test_d5_declared_harm_raises_the_consequence_class_never_lowers_it():
     """Ported from the #143 lineage (its crossgeo v0.2 hard failure): a requester may not declare
     internal_write while declaring high physical harm and get a recommendation."""
@@ -107,6 +116,43 @@ def test_d5_declared_harm_raises_the_consequence_class_never_lowers_it():
         "formal_model": FORMAL_MODEL,
         "declared": {"consequence_class": "financial", "reversibility": "reversible", "harm": {"physical": "none"}}}})
     assert overstated["geometry"]["consequence_class"] == "financial"   # never lowered
+
+
+@needs_z3
+def test_d2_read_side_a_settled_composed_part_can_reorder():
+    """The reorder read side uses the same per-part cell that settle writes; before 0.1.6 the FERMI
+    evidence of a formal+fermi composition was invisible to routing."""
+    from cortex.memory import MIN_OUTCOME_EVIDENCE
+    receipt = cortex().run({"problem_id": "d2r", "question": "q", "payload": {
+        "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}})
+    ledger = CompetenceLedger()
+    ok = {"kind": "external_observation", "validation_status": "externally_verified"}
+    for _ in range(int(MIN_OUTCOME_EVIDENCE) + 1):
+        ledger.settle(receipt=receipt, method="cortex.estimation.fermi", method_version="0.1.0",
+                      outcome_status="verified_success", provenance=ok,
+                      attribution=[{"method": "cortex.estimation.fermi", "role": "final_answer", "uncertainty": "low"}])
+        ledger.settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
+                      outcome_status="observed_failure", provenance=ok,
+                      attribution=[{"method": "cortex.formal.z3", "role": "final_answer", "uncertainty": "low"}])
+    from cortex.routing import derive_geometry
+    from cortex.contracts import Problem
+    geometry = derive_geometry(Problem.from_dict({"problem_id": "d2r", "question": "q", "payload": {
+        "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}}))
+    parts = receipt["route"]["part_geometries"]
+    assert ledger.reorder([FORMAL, FERMI], geometry, part_geometries=parts) == [FERMI, FORMAL]
+    assert ledger.reorder([FORMAL, FERMI], geometry) == [FORMAL, FERMI]   # without part cells: no evidence, no change
+    learned = Cortex(clock=lambda: "2026-10-13T00:00:00Z", memory=ledger).run({"problem_id": "d2r2", "question": "q",
+        "payload": {"formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}})
+    assert learned["route"]["selected"] == [FERMI, FORMAL]
+    assert sorted(learned["route"]["selected"]) == sorted(receipt["route"]["selected"])   # reordered, never added
+
+
+@needs_z3
+def test_d3_coverage_reports_a_selected_route_that_was_refused_before_execution():
+    refused = cortex().run({"problem_id": "d3c", "question": "q", "payload": {
+        "sources": [{"id": "S1", "text": "t"}], "resources": {"max_model_calls": 0}, "declared": DECL}})
+    assert refused["output"]["state"] == "BUDGET_EXHAUSTED" and refused["output"]["per_route"] == []
+    assert refused["coverage"].startswith("none:") and SEMANTIC in refused["coverage"]
 
 
 def test_version_records_the_sixth_disclosed_change():

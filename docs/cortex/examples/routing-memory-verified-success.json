@@ -33,8 +33,8 @@
   "outcome_status": "verified_success",
   "policy_version": "cortex-route-policy/0.1",
   "problem_id": "H-F01",
-  "receipt_id": "sha256:91eed1fb195f23562030955c35c96e5d3ce161417b45c59b1b5d288e7c897a26",
+  "receipt_id": "sha256:75d8166fb0c7c139c6f043a29cd2f3140a04807241348926d6ec626102513acc",
   "recommendation": "recommend",
-  "record_id": "sha256:40e39ff712b4a6e0a63ce7c5a09c7ab295172656e2902887fbc540da20966c9f",
+  "record_id": "sha256:ff6afc447d296026e603a048b2d9c38278a950b4208fde8979bae99800cb8fbf",
   "rollback_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 }

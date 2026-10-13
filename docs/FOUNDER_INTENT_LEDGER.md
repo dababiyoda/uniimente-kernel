@@ -43,7 +43,7 @@ additional authority; chat text does not authenticate the founder.
 | state | active |
 | binding_scope | `cortex/` 0.1.6 and contracts, `egregore/cortex_proposer.py`, evaluation harness and evidence, cognition lineage registry; draft development only |
 | constitutional_constraints | cognition proposes and never authorizes; no Gate/adapter/actuator import; competence settles only on verified outcomes and only reorders; "meniscus/shield/dominance" read as the directive's own translation paragraphs; one authority, many governed capabilities |
-| success_evidence | `tests/unit/test_cortex_defect_fixes.py`, `test_cortex_proposer.py`, `test_cortex_replay.py`, `test_seed_genome_founder_expression.py`, `test_cognition_lineages.py`; `tests/evidence/cortex-seed-v0.1.6/`; 26/26 mutants; full suite and CI guards green on the branch |
+| success_evidence | `tests/unit/test_cortex_defect_fixes.py`, `test_cortex_finality_deficit.py`, `test_cortex_proposer.py`, `test_cortex_replay.py`, `test_seed_genome_founder_expression.py`, `test_cognition_lineages.py`; `tests/evidence/cortex-seed-v0.1.6/`; 26/26 mutants; full suite and CI guards green on the branch |
 | failure_evidence | no real outcome settled; self-authored structured suite only; semantic organ never ran against a live local model; baseline transcript from a sibling frontier model, audited post hoc; ten lineages blocked on #137; VEPMC 0 |
 | dependencies | `capabilities.genome`, `provenance.ledger`, `egregore.runtime`; z3-solver; a founder decision on #137; a founder-selected local model |
 | conflicts | VEPMC-as-bottleneck vs the 2026-10-02 completion correction (resolved as the correction states); thirteen overlapping draft lineages (registered, not duplicated) |

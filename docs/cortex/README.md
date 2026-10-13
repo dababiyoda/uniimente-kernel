@@ -1,4 +1,6 @@
-# Polyintelligence Cortex — Seed Experiment
+# Seed Cortex — GREG Polyintelligence Cortex: Seed Genome v0.1
+
+*Naming (review pass 2 §63): these organs are the **Seed Cortex**, not the full Polyintelligence Cortex. The founder's 2026-10-01 build prompt titles the experiment "Seed Experiment v0.1"; that title is kept wherever it is quoted.*
 
 The `cortex` package is the seed of GREG's Polyintelligence Cortex: a router that classifies a problem's
 geometry, checks which cognitive organs are eligible for it, runs the eligible ones under a budget, attacks
@@ -118,6 +120,14 @@ proposer = CortexProposer(Cortex(), ledger)                       # consequence-
 runtime = StandingCognitionRuntime(ledger=ledger, proposers={proposer.name: proposer}, evaluators=...)
 runtime.tick(trigger_id=..., signal_ids=..., resources=..., context={REQUEST_KEY: {"problem": problem_dict}})
 ```
+
+**Epistemic Finality Rule and CapabilityDeficit.** `cortex.routing.FINALITY_RULE` (`epistemic-finality/0.1`) gives
+every epistemic class exactly one deciding jurisdiction: formal, empirical, semantic, strategic or human authority.
+Each receipt records it in `route.finality`, per route for a composed question, so no part's proof is promoted to the
+whole. When the repertoire cannot answer (`UNSUPPORTED_GEOMETRY`, `NO_ELIGIBLE_METHOD`), the receipt carries a typed
+`capability_deficit`: the geometry, its jurisdiction, the registered-but-disabled families and the resolution order
+(existing capability first, new architecture last). It is the input a later capability-formation loop would consume;
+it requests formation and authorizes nothing. A handoff or a malformed input is not a deficit.
 
 **Replayed baseline arms.** When no model is reachable from the evaluation process, the declared arms can be run
 from a transcript of replies produced elsewhere, keyed by `sha256(system + NUL + user)`; a missing reply is an

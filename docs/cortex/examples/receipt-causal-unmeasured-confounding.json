@@ -43,6 +43,7 @@
   ],
   "assumptions": [],
   "authority_created": false,
+  "capability_deficit": null,
   "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
@@ -93,7 +94,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.00117,
+    "seconds": 0.001089,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -174,7 +175,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 3.2e-05,
+          "seconds": 3e-05,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -271,10 +272,18 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:1d8a6e2b741c7f1a7e7f0bafa1fac6b4031e0dd34e11e29b59f6656650b83125",
+  "receipt_id": "sha256:0a255481d57db898afcd100e11c67a853ded192184cead5f767a52805d9c0ecf",
   "route": {
     "composition": false,
     "dropped_by_cap": [],
+    "finality": {
+      "by_route": {
+        "cortex.evidence_causal@0.1.0": "empirical"
+      },
+      "decides": "empirical",
+      "disagreement": "when composed parts disagree, the most cautious state across routes decides the disposition; no part's proof overrides another part's jurisdiction",
+      "rule": "epistemic-finality/0.1"
+    },
     "part_geometries": {
       "cortex.evidence_causal@0.1.0": "causal"
     },

@@ -13,8 +13,15 @@ for human adjudication; cite the ledger record as evidence.
 
 What this binding does and does not do:
 
-* every call writes exactly one ``cortex.receipt`` record to the evidence
-  ledger, whatever the disposition (abstentions are traces too);
+* every call that reaches the cortex writes exactly one ``cortex.receipt``
+  record to the evidence ledger, whatever the disposition (abstentions are
+  traces too); a malformed request is refused before the cortex runs and the
+  runtime records that refusal as this proposer's failure;
+* authority records reach the cortex only through the constructor-time
+  ``records_provider``; a request carrying ``authority_records`` in tick
+  context is refused, because context is unauthenticated text;
+* the runtime requires ``candidate.proposed_by`` to equal the mapping key it was
+  registered under: register it as ``proposer.as_organ()``;
 * ``recommend`` becomes a ``draft.prepare`` candidate at ``internal_write`` whose
   only effect is a human review of the receipt;
 * ``handoff`` becomes a ``human.adjudicate`` candidate at ``internal_write``:
@@ -75,6 +82,10 @@ class CortexProposer:
     def execution_authority(self) -> str:
         return "none"
 
+    def as_organ(self) -> dict:
+        """The mapping to pass as ``StandingCognitionRuntime(proposers=...)``: the key must equal ``name``."""
+        return {self.name: self}
+
     # ------------------------------------------------------------------ proposer protocol
     def __call__(self, signals: Sequence[SignalEnvelope], context: Mapping[str, Any]):
         if not signals:
@@ -85,10 +96,12 @@ class CortexProposer:
         problem = request.get("problem")
         if not isinstance(problem, Mapping):
             raise ContractError("cognitive_request.problem must be a mapping")
+        if "authority_records" in request:
+            # Authority records travel only through the trusted constructor-time provider. A record that
+            # arrives in tick context is unauthenticated text and could flip a gate on the ledgered receipt.
+            raise ContractError("authority records are not accepted from tick context; supply a records_provider")
         problem = self._bounded_problem(problem)
-        records = list(request.get("authority_records") or [])
-        if self.records_provider is not None:
-            records.extend(self.records_provider(request))
+        records = list(self.records_provider(request)) if self.records_provider is not None else []
         receipt = self._checked(self.cortex.run(problem, records=records or None))
         record = self.ledger.append(RECEIPT_RECORD, {
             "proposer": self.name, "receipt": receipt, "execution_authority": "none",
@@ -150,8 +163,14 @@ class CortexProposer:
     def _bounded_problem(self, problem: Mapping[str, Any]) -> dict:
         """Clamp the semantic organ's model budget to what this proposer may spend."""
         problem = canonical_copy(dict(problem))
-        payload = dict(problem.get("payload") or {})
-        resources = dict(payload.get("resources") or {})
+        payload = problem.get("payload") or {}
+        if not isinstance(payload, Mapping):
+            raise ContractError("problem.payload must be a mapping")
+        payload = dict(payload)
+        resources = payload.get("resources") or {}
+        if not isinstance(resources, Mapping):
+            raise ContractError("payload.resources must be a mapping")
+        resources = dict(resources)
         requested = resources.get("max_model_calls", self.max_model_calls)
         if not isinstance(requested, int) or isinstance(requested, bool) or requested < 0:
             raise ContractError("resources.max_model_calls must be a non-negative integer")

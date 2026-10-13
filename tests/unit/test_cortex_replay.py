@@ -13,6 +13,7 @@ from cortex.evaluation import run as R
 
 PROV = {"model": "test-model", "invocation": "unit test", "tool_use": "none",
         "prompt_fidelity": "exact", "limitations": "canned replies"}
+SEM_PROV = {**PROV, "semantic_transcript": {"model": "test-model", "invocation": "unit test", "tool_use": "none"}}
 
 
 def _transcript(tmp_path: Path, partition: str, reply: str, *, drop_last: bool = False) -> Path:
@@ -37,8 +38,9 @@ def test_replayed_arms_run_through_the_frozen_harness(tmp_path):
     assert all(i["disposition"] == "abstain" for i in results["arms"]["always_llm"]["items"])
     prov = results["arm_provenance"]
     assert prov["replayed_arms"] == ["always_llm", "llm_committee"]
-    assert prov["prompts_missing"] == 0 and prov["prompts_served"] == 4 * results["item_count"]
-    assert prov["model"] == "test-model" and prov["transcript_sha256"].startswith("sha256:")
+    assert prov["prompts_missing"] == 0 and prov["prompts_served"] == prov["prompts_requested"] == 4 * results["item_count"]
+    assert prov["declared_by_operator"]["model"] == "test-model" and prov["transcript_sha256"].startswith("sha256:")
+    assert prov["semantic_route"]["served_by"] == "refusing_client"
     assert "REPLAYED" in results["resource_disclosure"]["always_llm"]
     assert "local model" not in results["resource_disclosure"]["llm_committee"]
 
@@ -49,7 +51,8 @@ def test_missing_reply_is_an_error_on_that_item_not_a_guess(tmp_path):
     results = RP.run_replay("smoke", ["always_llm", "llm_committee"], path, PROV)
     errors = [i for arm in ("always_llm", "llm_committee") for i in results["arms"][arm]["items"] if i["error"]]
     assert len(errors) == 1
-    assert results["arm_provenance"]["prompts_missing"] == 1
+    prov = results["arm_provenance"]
+    assert prov["prompts_missing"] == 1 and prov["prompts_served"] == prov["prompts_requested"] - 1
 
 
 def test_transcript_and_provenance_are_validated(tmp_path):
@@ -63,6 +66,16 @@ def test_transcript_and_provenance_are_validated(tmp_path):
         RP.TranscriptClient({"short": "x"})
     with pytest.raises(ValueError, match="missing"):
         RP.validate_provenance({"model": "m"})
+    with pytest.raises(ValueError, match="harness-computed"):
+        RP.validate_provenance({**PROV, "prompts_missing": 0})
+    with pytest.raises(ValueError, match="semantic transcript needs its own provenance"):
+        RP.validate_provenance(PROV, semantic=True)
+    with pytest.raises(ValueError, match="64-hex"):
+        RP.TranscriptClient({"g" * 64: "x"})
+    nore = tmp_path / "noreplies.json"
+    nore.write_text(json.dumps({"schema": RP.REPLAY_SCHEMA}), encoding="utf-8")
+    with pytest.raises(ValueError, match="no 'replies'"):
+        RP.TranscriptClient.from_file(nore)
     client = RP.TranscriptClient({"0" * 64: "{}"})
     assert client.complete(RP.PROBE_SYSTEM, RP.PROBE_USER) == "{\"ok\": true}"
     with pytest.raises(ValueError, match="no recorded reply"):
@@ -94,16 +107,39 @@ def test_semantic_organ_can_be_served_by_the_same_recorded_model(tmp_path):
     sem.write_text(json.dumps({"schema": RP.REPLAY_SCHEMA, "replies": {RP.prompt_key(SYSTEM_PROMPT, user): reply}}))
     arms = _transcript(tmp_path, "smoke", json.dumps({"disposition": "abstain", "answer": {}, "confidence": 0.5}))
     before = R.Cortex
-    results = RP.run_replay("smoke", ["routed_seed", "always_llm"], arms, PROV, semantic_replies_path=sem)
+    with pytest.raises(ValueError, match="semantic transcript needs its own provenance"):
+        RP.run_replay("smoke", ["routed_seed"], arms, PROV, semantic_replies_path=sem)
+    results = RP.run_replay("smoke", ["routed_seed", "always_llm"], arms, SEM_PROV, semantic_replies_path=sem)
     assert R.Cortex is before and R.Cortex is Cortex
     routed = next(i for i in results["arms"]["routed_seed"]["items"] if i["item_id"] == item["item_id"])
     assert routed["state"] == "OK" and routed["disposition"] == "recommend"
     sem_prov = results["arm_provenance"]["semantic_route"]
-    assert sem_prov["prompts_served"] == 1 and sem_prov["prompts_missing"] == 0
+    assert sem_prov["served_by"] == "transcript"
+    assert sem_prov["observed"]["prompts_served"] == 1 and sem_prov["observed"]["prompts_missing"] == 0
+    assert sem_prov["declared_by_operator"]["model"] == "test-model"
+    assert "recorded transcript" in results["resource_disclosure"]["routed_seed"]
     receipt = results["representative_receipts"].get(item["problem"]["problem_id"])
-    if receipt is not None:
-        assert receipt["versions"]["model"] == "test-model"
+    assert receipt is not None and receipt["versions"]["model"] == "test-model"
     plain = RP.run_replay("smoke", ["routed_seed"], arms, PROV)
     plain_item = next(i for i in plain["arms"]["routed_seed"]["items"] if i["item_id"] == item["item_id"])
     assert plain_item["state"] == "DEPENDENCY_UNAVAILABLE"
-    assert "no model" in plain["arm_provenance"]["semantic_route"]["served_by"]
+    assert plain["arm_provenance"]["semantic_route"]["served_by"] == "refusing_client"
+    assert plain["arm_provenance"]["semantic_route"]["observed"]["prompts_requested"] == 1
+    assert "NO model" in plain["resource_disclosure"]["routed_seed"]
+
+
+def test_a_reachable_local_model_is_never_consulted_silently_during_a_replay(monkeypatch, tmp_path):
+    import egregore.local_model as lm
+
+    class Reachable:
+        config = type("C", (), {"model": "qwen-local-fake"})()
+
+        def complete(self, system, user):
+            return json.dumps({"answer": "x", "claims": [], "assumptions": [], "contradictions": [], "uncertainty": "n"})
+
+    monkeypatch.setattr(lm, "LocalModelClient", Reachable)
+    arms = _transcript(tmp_path, "smoke", json.dumps({"disposition": "abstain", "answer": {}, "confidence": 0.5}))
+    plain = RP.run_replay("smoke", ["routed_seed"], arms, PROV)
+    sourced = next(i for i in plain["arms"]["routed_seed"]["items"]
+                   if next(x for x in R.load_items("smoke") if x["item_id"] == i["item_id"])["problem"]["payload"].get("sources"))
+    assert sourced["state"] == "DEPENDENCY_UNAVAILABLE"

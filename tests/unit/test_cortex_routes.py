@@ -1,7 +1,7 @@
 """Cortex seed v0.1 — the routes (build prompt items 5, 6, 7).
 
 Formal tests need z3-solver (requirements-cortex.txt); they skip without it and
-run in the Canonical CI "Cortex seed experiment" job.
+run in the Canonical CI "Seed Cortex experiment" job.
 """
 import pytest
 

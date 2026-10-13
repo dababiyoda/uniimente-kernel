@@ -186,12 +186,17 @@ class CompetenceLedger:
 
     # ------------------------------------------------------------ routing use
     def reorder(self, eligible_keys: list[str], geometry, *, conditions: tuple[str, ...] = (),
-                margin: float = DEFAULT_MARGIN) -> list[str]:
-        """Permute *eligible* routes only. Needs sufficient evidence and a margin to move a default."""
+                margin: float = DEFAULT_MARGIN, part_geometries: Mapping[str, str] | None = None) -> list[str]:
+        """Permute *eligible* routes only. Needs sufficient evidence and a margin to move a default.
+
+        0.1.6: a composed route is read under the geometry of the payload part it serves
+        (``part_geometries``), the same cell ``settle`` writes; otherwise the receipt's class."""
         scored = []
+        top = geometry.epistemic_class or "unresolved"
         for index, key in enumerate(eligible_keys):
             method, _, version = key.partition("@")
-            est = self.estimate(method, version, geometry.epistemic_class or "unresolved", conditions)
+            cell = (part_geometries or {}).get(key) or top
+            est = self.estimate(method, version, cell, conditions)
             scored.append((est, index, key))
         if any(e["basis"] != "cell" for e, _, _ in scored):
             return list(eligible_keys)  # insufficient outcome evidence: keep the policy default

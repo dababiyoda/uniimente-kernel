@@ -467,7 +467,7 @@
         "tests/unit/test_cortex_routes.py::TestFormal::test_omitted_constraint_is_caught_before_solving"
       ],
       "backcast": null,
-      "notes": "High consequence does not default to Formal; unverified premises yield WORLD_UNVERIFIED; incomplete formalization yields FORMALIZATION_INCOMPLETE.",
+      "notes": "High consequence does not default to Formal; unverified premises yield WORLD_UNVERIFIED; incomplete formalization yields FORMALIZATION_INCOMPLETE. Limitation: 'can the material decision conditions be formalized?' is answered structurally, by whether the caller supplies a formal model whose constraints cover its declared obligations; the cortex does not itself judge that the declared obligations are the material ones.",
       "items": null
     },
     {
@@ -1063,7 +1063,7 @@
         "docs/cortex/examples/receipt-gates-incomparable.json"
       ],
       "backcast": "N3",
-      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages.",
+      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages; abstaining receipts already emit the typed CapabilityDeficit that genesis would consume.",
       "items": null
     },
     {
@@ -1113,10 +1113,13 @@
       "evidence": [
         "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_high_consequence_does_not_select_formal_without_a_model",
         "tests/unit/test_cortex_pipeline.py::TestAuthorityBoundary::test_human_authority_questions_hand_off_without_deciding",
-        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_no_spec_means_bounded_experiment"
+        "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_no_spec_means_bounded_experiment",
+        "tests/unit/test_cortex_finality_deficit.py::test_every_epistemic_class_has_exactly_one_jurisdiction",
+        "tests/unit/test_cortex_finality_deficit.py::test_a_composed_receipt_is_decided_part_by_part_never_promoted_to_the_whole",
+        "tests/unit/test_cortex_finality_deficit.py::test_human_authority_classes_are_handed_off_whatever_the_routes"
       ],
       "backcast": null,
-      "notes": "Epistemic Finality Rule: formalizable -> formal decides the formal property; empirical -> evidence/causal; legitimate human judgment -> handoff; otherwise abstain.",
+      "notes": "Named and versioned as FINALITY_RULE (epistemic-finality/0.1) in cortex/routing.py, and cited by every receipt in route.finality: formal classes -> formal decides the formal property only; empirical -> evidence/causal or estimation; legal, normative and institutional-acceptance classes -> handoff; no class or no enabled route -> abstain with a typed CapabilityDeficit. A composed receipt is decided per route; no part's proof is promoted to the whole.",
       "items": null
     },
     {
@@ -1401,10 +1404,11 @@
       "disposition": "pursued_goal",
       "evidence": [
         "cortex/genome.py",
-        "docs/cortex/BACKCAST_GPS_CORTEX.md"
+        "docs/cortex/BACKCAST_GPS_CORTEX.md",
+        "tests/unit/test_cortex_finality_deficit.py::test_a_known_geometry_with_no_enabled_route_names_the_gap_and_the_disabled_families"
       ],
       "backcast": "N4",
-      "notes": "Deficit -> contract -> search -> compose -> generate -> test -> retain is Node 4 (Developmental Cortex).",
+      "notes": "Deficit -> contract -> search -> compose -> generate -> test -> retain is Node 4 (Developmental Cortex). Its input exists: an abstaining receipt carries a typed capability_deficit record (state, geometry, jurisdiction, disabled families, resolution order) that requests formation and authorizes nothing.",
       "items": null
     },
     {
@@ -2060,10 +2064,12 @@
         "cortex/memory.py",
         "tests/unit/test_cortex_gates_genome.py::TestHardGatesBeforeRanking::test_harm_is_a_vector_with_unknown_default",
         "tests/unit/test_cortex_pipeline.py::TestAccountability::test_strongest_counterargument_and_falsifiers",
-        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt"
+        "tests/unit/test_cortex_traceability.py::test_layers_match_the_prompt",
+        "cortex/__init__.py",
+        "docs/cortex/README.md"
       ],
       "backcast": null,
-      "notes": "All eight changes applied: Seed naming; empirical/causal route; Formal dominates only formalizable properties; translation chain with discrepancy check and counterexample search (comparison is structural via obligations and witnesses, not an LLM comparison); conditional competence; harm vector; proof-bearing accountability; five layers in contracts.",
+      "notes": "All eight changes applied: Seed naming (the package docstring, docs/cortex/README.md and CI job 6 call the three-plus organs the Seed Cortex, not the full Polyintelligence Cortex; quoted founder titles are kept as written); empirical/causal route; Formal dominates only formalizable properties; translation chain with discrepancy check and counterexample search (comparison is structural via obligations and witnesses, not an LLM comparison); conditional competence; harm vector; proof-bearing accountability; five layers in contracts.",
       "items": null
     },
     {

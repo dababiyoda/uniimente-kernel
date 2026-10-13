@@ -1,4 +1,9 @@
-"""UNIIMENTE Polyintelligence Cortex — Seed Experiment v0.1.
+"""UNIIMENTE Seed Cortex — GREG Polyintelligence Cortex: Seed Genome v0.1 (Seed Experiment).
+
+This is the Seed Cortex, not the full Polyintelligence Cortex (review pass 2 §63):
+five executing organs (semantic, Fermi, formal, evidence/causal, deterrence) and an
+adversarial verifier inside a genome that reserves 28 later cognition families as
+disabled registrations (tested in tests/unit/test_cortex_gates_genome.py).
 
 One governed GREG selecting among heterogeneous competencies, proving what each
 can legitimately prove, and learning from reality which works where.

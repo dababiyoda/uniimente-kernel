@@ -39,6 +39,64 @@ EVIDENCE = "cortex.evidence_causal@0.1.0"
 SEMANTIC = "cortex.semantic@0.1.0"
 DETERRENCE = "cortex.deterrence.accountability@0.1.0"
 
+# Epistemic Finality Rule (review pass 2 §2; pass 1 §32), named so it can be cited and tested: which kind of
+# organ may decide which kind of claim. High consequence never promotes a proof into empirical or human truth.
+FINALITY_RULE = {
+    "version": "epistemic-finality/0.1",
+    "jurisdictions": {
+        "human_authority": HUMAN_AUTHORITY_CLASSES,
+        "formal": ("constraint_feasibility", "deductive_logical", "optimization", "arithmetic"),
+        "empirical": ("causal", "prediction", "estimate", "physical_perceptual"),
+        "semantic": ("semantic",),
+        "strategic": ("strategic",),
+    },
+    "precedence": [
+        "human_authority classes: cognition may assist with sources; the decision belongs to legitimate human or "
+        "institutional authority (handoff), whatever any proof says",
+        "formal classes: the formal organ decides the formal property only; the receipt carries separate empirical "
+        "and authority truth dimensions, so a proof never settles a fact about the world",
+        "empirical classes: evidence/causal or estimation organs decide, under declared identification; a formal "
+        "proof is not evidence",
+        "semantic: grounded by exact-quote support; textual support is not truth",
+        "strategic: gates first, then a Pareto ranking the founder can override; incomparable options are handed off",
+        "no class or no enabled route: abstain and emit a typed CapabilityDeficit",
+    ],
+    "disagreement": "when composed parts disagree, the most cautious state across routes decides the disposition; "
+                    "no part's proof overrides another part's jurisdiction",
+}
+
+
+def _jurisdiction(epistemic_class) -> str:
+    for name, classes in FINALITY_RULE["jurisdictions"].items():
+        if epistemic_class in classes:
+            return name
+    return "none"
+
+
+def _finality(geometry, parts) -> dict:
+    by_route = {key: _jurisdiction(part_class) for key, part_class in parts}
+    whole = _jurisdiction(geometry.epistemic_class)
+    # a composed question is decided part by part; no part's jurisdiction is promoted to the whole
+    decides = "per_route" if len(set(by_route.values())) > 1 and whole != "human_authority" else whole
+    return {"rule": FINALITY_RULE["version"], "decides": decides, "by_route": by_route,
+            "disagreement": FINALITY_RULE["disagreement"]}
+
+
+def _capability_deficit(geometry, eligibility, state, reason) -> dict | None:
+    """The Competency Compiler's horizon hook: when the repertoire cannot answer, say so in a typed record
+    that capability genesis can consume. It is a request for formation, never an authorization."""
+    if state not in ("NO_ELIGIBLE_METHOD", "UNSUPPORTED_GEOMETRY"):
+        return None
+    disabled = sorted(e.key for e in eligibility if any("disabled" in r for r in e.reasons))
+    return {"kind": "CapabilityDeficit", "state": state, "geometry": geometry.epistemic_class,
+            "jurisdiction": _jurisdiction(geometry.epistemic_class),
+            "registered_but_disabled": disabled,
+            "why": reason,
+            "resolution_order": ["existing capability", "composition", "commodity infrastructure", "open source",
+                                 "API/plugin/service", "small bounded utility", "coding agent", "new architecture"],
+            "authority": "formation requests nothing; building != installation != activation != consequence authority"}
+
+
 # The deterministic route policy lives in _route_parts: formal_model -> Formal,
 # estimation_model -> Fermi, claim -> Evidence/Causal, sources -> Semantic.
 MAX_COMPOSITION = 2
@@ -210,6 +268,20 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
         unresolved_fields=tuple(dict.fromkeys(unresolved)), provenance=prov, rejected_proposals=tuple(rejected))
 
 
+def _coverage(selected, results, dropped_by_cap) -> str:
+    """What actually ran, from the receipt's own facts: never 'complete' when a selected route did not execute."""
+    ran = {r.organ_id for r in results}
+    not_run = [k for k in selected if k.split("@")[0] not in ran and k not in ran]
+    if selected and not results:
+        return f"none: {list(selected)} selected but not run (refused before execution)"
+    parts = []
+    if not_run:
+        parts.append(f"{not_run} selected but produced no result")
+    if dropped_by_cap:
+        parts.append(f"{list(dropped_by_cap)} eligible but not run (composition cap)")
+    return "complete" if not parts else "incomplete: " + "; ".join(parts)
+
+
 # ------------------------------------------------------------------ accountability
 # Review pass 2 (B34, B35): a receipt should narrow disputes. It names the strongest
 # counterargument, what observation would falsify each route's claim, and what is missing.
@@ -321,7 +393,7 @@ class Cortex:
         by_key.update(part_eligibility)
         eligibility = [by_key[k] for k in sorted(by_key)]
         if self.memory is not None and len(selected) > 1:
-            selected = self.memory.reorder(selected, geometry)
+            selected = self.memory.reorder(selected, geometry, part_geometries=part_geometries)
         alternatives = [{"route": e.key,
                          "why_not": ([f"eligible for this payload but not run: composition is capped at "
                                       f"{MAX_COMPOSITION} routes in cortex {CORTEX_VERSION}; its part of the "
@@ -401,7 +473,9 @@ class Cortex:
         spent = spent.plus(Expenditure(seconds=time.perf_counter() - started - spent.seconds))
         return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
                              gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
-                             part_geometries=part_geometries, dropped_by_cap=dropped_by_cap)
+                             part_geometries=part_geometries, dropped_by_cap=dropped_by_cap,
+                             finality=_finality(geometry, parts),
+                             deficit=_capability_deficit(geometry, eligibility, state, reason))
 
     # ------------------------------------------------------------------ disposition
     def _dispose(self, geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options):
@@ -490,7 +564,8 @@ class Cortex:
                 "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"}
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
-                 ranking, state, disposition, reason, next_step, spent, protection=None, *, part_geometries=None, dropped_by_cap=()) -> dict:
+                 ranking, state, disposition, reason, next_step, spent, protection=None, *, part_geometries=None,
+                 dropped_by_cap=(), finality=None, deficit=None) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -522,14 +597,14 @@ class Cortex:
                       "part_geometries": {k: (part_geometries or {}).get(k) or geometry.epistemic_class
                                           for k in selected},
                       "dropped_by_cap": list(dropped_by_cap),
+                      "finality": finality or _finality(geometry, []),
                       "rationale": "structured payload fields select routes by the fixed policy table; "
                                    "eligibility and budget filter first"},
             "alternatives": alternatives,
             "assumptions": [a for r in results for a in r.assumptions],
             "output": {"state": state, "answer": answer, "per_route": [r.to_dict() for r in results]},
             "uncertainty": "; ".join(r.uncertainty for r in results) or "no route executed",
-            "coverage": ("complete" if not dropped_by_cap else
-                         f"incomplete: {list(dropped_by_cap)} eligible but not run (composition cap)"),
+            "coverage": _coverage(selected, results, dropped_by_cap),
             "proof_artifacts": [dict(r.proof) for r in results],
             "verifier": verifier,
             "gates": {k: v.to_dict() for k, v in gate_reports.items()} or None,
@@ -543,6 +618,7 @@ class Cortex:
                 "evidence_handling": "receipt carries evidence identifiers and digests only, never content",
                 "human_led_actions": [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]},
             "accountability": _accountability(geometry, results, verifier, gate_reports, protection),
+            "capability_deficit": deficit,
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
                              "memory_keys": [f"{k}|{(part_geometries or {}).get(k) or geometry.epistemic_class}"
                                              for k in selected]},
@@ -563,10 +639,13 @@ class Cortex:
             "geometry": geometry.to_dict() if geometry else None,
             "eligibility": [], "route": {"policy": POLICY_VERSION, "selected": [], "composition": False,
                                          "part_geometries": {}, "dropped_by_cap": [],
+                                         "finality": {"rule": FINALITY_RULE["version"], "decides": "none",
+                                                      "by_route": {}, "disagreement": FINALITY_RULE["disagreement"]},
                                          "rationale": "input rejected before routing"},
             "alternatives": [], "assumptions": [],
             "output": {"state": "MALFORMED_INPUT", "answer": None, "per_route": []},
             "uncertainty": "no route executed", "coverage": "none: malformed input", "proof_artifacts": [],
+            "capability_deficit": None,
             "verifier": {"proof_class": "verifier_findings", "verifier": adversarial.VERIFIER_ID,
                          "findings": [{"severity": "major", "kind": "malformed_input", "detail": why,
                                        "target": None}], "blocking": False,

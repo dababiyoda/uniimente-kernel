@@ -754,3 +754,46 @@ def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = Fal
 
 
 TEMPLATES["plan-in-words"] = plan_in_words
+
+
+def constructed_question(*, function: str, params: dict, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A question for a function GREG has no engine for, answered by a capability it constructs.
+
+    Genesis reduces the question onto an engine it can already certify (maximum flow, linear
+    programming), acquiring that engine first if needed, qualifies the construction on the
+    function's own brute-force oracle through the real engine, and asks you to attach it unless
+    this signed mission pre-authorizes a read-only attach. Every answer carries a certificate in
+    your problem's own terms (for staffing: the orders and the only workers who could serve them).
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import REDUCTIONS, chain
+
+    found = chain(function, CATALOG)
+    if found is None:
+        raise ValueError(f"GREG has no reduction chain for {function!r}; known: {sorted(REDUCTIONS)}")
+    path, engine = found
+    REDUCTIONS[function].normalize(params)          # refuse a malformed question before it is signed
+    digest = hashlib.sha256(json.dumps([function, params], sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": function, "params": params, "target": f"cognition:{function}-{digest}"}
+    spec = {
+        "mission_id": f"m:constructed-{digest}",
+        "founder_expression": f"{function}: {json.dumps(params, sort_keys=True)[:3000]}",
+        "intended_effect": f"{REDUCTIONS[function].description}, with a certificate GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-answer", "description": "an answer whose optimality (or "
+                            "impossibility) GREG proves in the problem's own terms, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-answer"],
+                        "rationale": "construct the function by certified reduction (read-only): "
+                                     + " -> ".join([r.function for r in path] + [engine])}],
+        "light_cone": {"capabilities": [f"composed.{function}.*", f"acquired.{engine}.*"],
+                       "targets": ["cognition:*"], "max_consequence_class": "read_only", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["constructed-question"] = constructed_question

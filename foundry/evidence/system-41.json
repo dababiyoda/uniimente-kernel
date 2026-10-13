@@ -1,0 +1,19 @@
+{
+ "command": "python -m foundry.completion --run 41",
+ "name": "Reputation systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "ranking": [
+   "steady@delivery",
+   "recovered@delivery",
+   "lucky@delivery",
+   "incident@delivery"
+  ],
+  "recovery_beats_unrecovered": true,
+  "stale_is_insufficient": true,
+  "steady_beats_lucky": true,
+  "sybil_ignored": true
+ },
+ "result_sha256": "sha256:e32dd589248e9655b489bd4adfe4378852ef7f111a33ecef6b0b210cf42b336c",
+ "system": 41
+}

@@ -1,0 +1,18 @@
+{
+ "command": "python -m foundry.completion --run 7",
+ "name": "Public-key infrastructure",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "device_after_expiry": "refused: device delegation expired",
+  "device_after_revocation": "refused: founder key not enrolled or revoked",
+  "device_decision": "accepted",
+  "device_mission": "refused: device key may not sign MISSION",
+  "founder_mission": "accepted",
+  "long_lived_delegation_refused": true,
+  "other_body": "refused: command addressed to a different body",
+  "replayed_nonce": "refused: replayed command nonce",
+  "tampered_body": "refused: signature does not verify"
+ },
+ "result_sha256": "sha256:920eb42e0e0a194521226fd8f2ae113d249fe8d0c5bbf55c9b2a9dcd7eeb641e",
+ "system": 7
+}

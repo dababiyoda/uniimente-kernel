@@ -1,0 +1,26 @@
+{
+ "command": "python -m foundry.completion --run 28",
+ "name": "MCP integration",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "chain_ok": true,
+  "cross_checked_with": "uniimente-foundry",
+  "failed_over_from": [
+   "eco-a"
+  ],
+  "provider_calls_after": 1,
+  "provider_calls_before_grant": 0,
+  "provider_claims_send_is_read_only": true,
+  "quote": 270.0,
+  "quote_provider": "eco-b",
+  "refusals": {
+   "grant_replayed": "Consequence Gate refused: send_message was not executed",
+   "send_without_grant": "Consequence Gate refused: send_message was not executed",
+   "unknown_caller": "caller 'passport:nobody' has no valid Kernel passport: unknown_identity",
+   "unlisted_tool": "delete_everything is not in UNIIMENTE's tool policy (treated as irreversible)"
+  },
+  "sent_via": "eco-b"
+ },
+ "result_sha256": "sha256:74f3ff27d53891b8d382e66c53b1fcd605edd42d7ffd3b2653e198a22f1fbecf",
+ "system": 28
+}

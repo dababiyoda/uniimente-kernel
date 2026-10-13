@@ -145,6 +145,19 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
+    fds = fd.add_subparsers(dest="foundry_cmd", required=True)
+    fds.add_parser("status", help="N of 55 systems complete; every outstanding obligation")
+    fdr = fds.add_parser("run", help="run one system's reproducible exercise"); fdr.add_argument("system", type=int)
+    fdw = fds.add_parser("why", help="causal ancestry of a GREG event (knowledge graph over the ledger)")
+    fdw.add_argument("event_id")
+    fds.add_parser("reputation", help="capability reputation from appraised GREG closures")
+    fdt = fds.add_parser("trace", help="one correlated trace per mission: decisions, actions, costs, outcomes")
+    fdt.add_argument("--mission")
+    fdc = fds.add_parser("changed", help="why a GREG metric changed across a split time")
+    fdc.add_argument("metric"); fdc.add_argument("--split", required=True, help="ISO time dividing before/after")
+    fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
+    fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
@@ -211,6 +224,41 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "foundry":
+            from foundry import completion
+            if args.foundry_cmd == "status":
+                print(json.dumps(completion.status(), indent=1))
+            elif args.foundry_cmd == "run":
+                print(json.dumps(completion.run(args.system), indent=1, default=str))
+            elif args.foundry_cmd == "seed":
+                from foundry.systems import seed
+                out = Path(args.out).expanduser().resolve()
+                if Path(home).resolve() in (out, *out.parents):
+                    raise BodyError("the seed must live outside the body it backs up")
+                print(json.dumps(seed.make_seed(Path(home), out), indent=1))
+            else:
+                from foundry.systems import graph, reputation
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
+                               "at": e.payload.get("at") or e.occurred_at} for e in journal.replay("")]
+                if args.foundry_cmd in ("trace", "changed"):
+                    from foundry.systems import observability
+                    if args.foundry_cmd == "trace":
+                        data = observability.correlate(events, args.mission)
+                        data["metrics"] = observability.metrics(events)
+                    else:
+                        data = observability.why_changed(events, args.metric, split=args.split)
+                    print(json.dumps(data, indent=1, default=str))
+                elif args.foundry_cmd == "why":
+                    g = graph.from_greg(events)
+                    node = next((n for n in g.nodes if n.endswith(args.event_id)), None)
+                    if node is None:
+                        raise BodyError(f"no graph node for event {args.event_id}")
+                    print(json.dumps({"node": node, "causes": g.why(node), "effects": g.impact(node)}, indent=1))
+                else:
+                    from datetime import datetime, timezone
+                    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    print(json.dumps(reputation.score(reputation.from_greg(events), now=now), indent=1))
         elif args.cmd == "decide":
             print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
                                            "reason": args.reason}, args))

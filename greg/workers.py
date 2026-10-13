@@ -35,6 +35,7 @@ from dataclasses import dataclass, field, asdict
 from fnmatch import fnmatchcase
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -117,8 +118,9 @@ class WorkOrder:
         objective = str(params.get("objective", "")).strip()
         if not objective or len(objective) > 8000:
             raise WorkerError("objective must be 1..8000 characters")
-        budget = float(params.get("max_budget_usd", 0))
-        if not 0 < budget <= 25:
+        raw_budget = params.get("max_budget_usd", 0)
+        budget = float(raw_budget)
+        if isinstance(raw_budget, bool) or not math.isfinite(budget) or not 0 < budget <= 25:
             raise WorkerError("max_budget_usd must be in (0, 25]")
         timeout = int(params.get("timeout_seconds", 900))
         if not 30 <= timeout <= 3600:
@@ -168,6 +170,36 @@ class WorkerReport:
     summary: str = ""
     permission_denials: list = field(default_factory=list)
     error: str | None = None
+
+
+def worker_spend(raw, cap: float) -> dict:
+    """Normalize provider-reported spend; missing or invalid reporting reserves the entire cap.
+
+    The provider report is evidence of its claim, not an independent billing audit. Never
+    turn missing billing into zero expenditure, and retain invalid reports for appraisal.
+    """
+    cap = float(cap)
+    if not math.isfinite(cap) or cap <= 0:
+        raise WorkerError("worker spend cap must be finite and positive")
+    raw_evidence = raw if isinstance(raw, (type(None), str, bool, int)) else (
+        raw if isinstance(raw, float) and math.isfinite(raw) else repr(raw)[:300])
+    status, reason, reported = "unknown", "provider did not report spend; full signed cap reserved", None
+    if raw is not None:
+        try:
+            if isinstance(raw, bool) or not isinstance(raw, (int, float, str)):
+                raise ValueError("not a number")
+            reported = float(raw)
+            if not math.isfinite(reported) or reported < 0:
+                raise ValueError("not finite nonnegative spend")
+        except (TypeError, ValueError, OverflowError):
+            status, reason, reported = "invalid", "invalid provider spend; full signed cap reserved", None
+        else:
+            status, reason = "reported", "finite nonnegative provider-reported spend"
+            if reported > cap:
+                status, reason = "over_cap", f"worker spend {reported} exceeded the signed cap {cap}"
+    return {"status": status, "reported_usd": reported, "reserved_usd": cap if reported is None else 0.0,
+            "charge_usd": cap if reported is None else reported, "max_budget_usd": cap,
+            "raw_provider_value": raw_evidence, "reason": reason, "source": "provider_report"}
 
 
 # -- providers ---------------------------------------------------------------------------
@@ -481,6 +513,7 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     status = "COMPLETED" if names else "NO_CHANGE"
     if report.error and not names:
         status = "FAILED"
+    spend = worker_spend(report.cost_usd, order.max_budget_usd)
     summary = {
         "work_order": order.order, "status": status, "mode": order.mode, "mission_id": order.mission_id,
         "grant_id": order.grant_id, "order_digest": order.digest(), "repo": order.repo,
@@ -489,9 +522,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         "output": output_file, "scope": findings, "greg_tests": tests,
         "greg_tests_passed": bool(tests) and all(t["passed"] for t in tests),
         "worker": {"provider": report.provider, "identity": report.identity, "served_models": report.served_models,
-                   "cost_usd": report.cost_usd, "duration_s": report.duration_s, "turns": report.turns,
+                   "cost_usd": spend["reported_usd"], "provider_cost_raw": spend["raw_provider_value"],
+                   "duration_s": report.duration_s, "turns": report.turns,
                    "exit_code": report.exit_code, "error": report.error,
                    "permission_denials": report.permission_denials},
+        "spend": spend,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
         "evidence_path": str(evidence_path), "acceptance_owner": "worker.appraise (independent)",
         "authority_created": False,
@@ -521,6 +556,33 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         return {"order": order_name, "verdict": "ABSENT", "findings": ["no completed work order evidence yet"]}
     evidence = json.loads(evidence_path.read_text())
     order, summary = evidence["order"], evidence["summary"]
+    # Recombined from #157: the patch must be evaluated against the work that
+    # was commissioned, not an editable replacement acceptance specification.
+    try:
+        frozen_digest = WorkOrder(**order).digest()
+    except (TypeError, ValueError):
+        return {"order": order_name, "verdict": "REJECTED", "findings": ["retained work order is malformed"]}
+    if frozen_digest != evidence.get("order_digest") or frozen_digest != summary.get("order_digest"):
+        return {"order": order_name, "verdict": "REJECTED",
+                "findings": ["retained work order does not match its frozen digest"]}
+    receipt_binding = "standalone appraisal: canonical commission receipt unavailable"
+    if ctx.journal is not None:
+        receipts = [r for r in ctx.journal.ledger.by_type("receipt")
+                    if r.payload.get("grant_id") == order.get("grant_id")]
+        canonical = receipts[0].payload.get("result", {}).get("output") if len(receipts) == 1 else None
+        if (not isinstance(canonical, dict) or canonical.get("order_digest") != frozen_digest
+                or order.get("order") != order_name
+                or ctx.mission_id and order.get("mission_id") != ctx.mission_id):
+            return {"order": order_name, "verdict": "REJECTED",
+                    "findings": ["retained work order differs from its canonical commission receipt"]}
+        for field in ("patch_sha256", "changed_files", "base_commit", "commit", "spend"):
+            if canonical.get(field) != summary.get(field):
+                return {"order": order_name, "verdict": "REJECTED",
+                        "findings": [f"retained {field} differs from the canonical commission receipt"]}
+        if canonical.get("worker", {}).get("cost_usd") != summary.get("worker", {}).get("cost_usd"):
+            return {"order": order_name, "verdict": "REJECTED",
+                    "findings": ["retained spend differs from the canonical commission receipt"]}
+        receipt_binding = "frozen work order and collected artifact bound to canonical commission receipt"
     findings, verdict = [], "ACCEPTED"
     patch = (root / "change.patch").read_bytes() if (root / "change.patch").is_file() else b""
     if _sha(patch) != summary.get("patch_sha256"):
@@ -528,10 +590,16 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     if not patch.strip():
         return {"order": order_name, "verdict": "REJECTED", "findings": ["the worker produced no change"]}
     budget = float(order["max_budget_usd"])
-    cost = (summary.get("worker") or {}).get("cost_usd")
-    if cost is not None and float(cost) > budget + 1e-6:
-        findings.append(f"worker spend {cost} exceeded the signed cap {budget}")
+    worker = summary.get("worker") or {}
+    spend = worker_spend(worker.get("provider_cost_raw", worker.get("cost_usd")), budget)
+    if summary.get("spend") is not None and summary["spend"] != spend:
+        findings.append("collector's spend record differs from normalized provider evidence")
         verdict = "REJECTED"
+    if spend["status"] in ("invalid", "over_cap"):
+        findings.append(spend["reason"])
+        verdict = "REJECTED"
+    elif spend["status"] == "unknown":
+        findings.append(spend["reason"])
     with_tests = []
     import tempfile
     with tempfile.TemporaryDirectory(prefix="greg-appraise-") as tmp:
@@ -587,4 +655,6 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             "independent_tests": [{k: t[k] for k in ("argv", "returncode", "passed", "seconds")} for t in with_tests],
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
                             "acceptance re-run with no network; worker claim and collector tests not used",
-            "worker": summary.get("worker", {}).get("identity"), "authority_created": False}
+            "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
+            "spend": spend,
+            "authority_created": False}

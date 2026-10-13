@@ -145,6 +145,24 @@ def test_appraisal_rejects_a_tampered_patch(tmp_path, monkeypatch):
     assert result["verdict"] == "REJECTED" and "digest" in result["findings"][0]
 
 
+@pytest.mark.parametrize("raw", [float("nan"), float("inf"), -1, True, "nan", "-1", {}, []])
+def test_invalid_spend_reserves_cap_without_fabricating_zero(raw):
+    spend = workers.worker_spend(raw, 1)
+    assert spend["status"] == "invalid" and spend["reported_usd"] is None
+    assert spend["reserved_usd"] == spend["charge_usd"] == 1
+    json.dumps(spend, allow_nan=False)
+
+
+def test_unknown_reported_zero_and_overcap_spend_remain_distinct():
+    missing = workers.worker_spend(None, 1)
+    assert missing["status"] == "unknown" and missing["reported_usd"] is None
+    assert missing["reserved_usd"] == 1
+    zero = workers.worker_spend(0, 1)
+    assert zero["status"] == "reported" and zero["reported_usd"] == 0
+    assert zero["reserved_usd"] == 0
+    assert workers.worker_spend(2, 1)["status"] == "over_cap"
+
+
 def test_claude_worker_argv_is_bounded():
     order = workers.WorkOrder(order="x", mission_id="m:x", grant_id="g", authority_ref="a", mode="repository",
                               objective="o", acceptance={"tests": [["python", "-m", "pytest"]]},
@@ -156,6 +174,32 @@ def test_claude_worker_argv_is_bounded():
     assert {"WebFetch", "WebSearch", "Bash(git push:*)", "Bash(git commit:*)"} <= set(denied)
     assert "--strict-mcp-config" in argv and "--no-session-persistence" in argv
     assert not any(a == "Bash" for a in argv[argv.index("--allowedTools") + 1:argv.index("--disallowedTools")])
+
+
+@pytest.mark.parametrize("readdress", [False, True])
+def test_appraisal_binds_acceptance_to_the_original_commission(tmp_path, monkeypatch, readdress):
+    home, _, _, _, _ = run_mission(tmp_path, monkeypatch, GOOD)
+    root = Layout(home).workspace / "m_work-add-sub" / "work-orders" / "add-sub"
+    evidence_path = root / "evidence.json"
+    evidence = json.loads(evidence_path.read_text())
+    evidence["order"]["acceptance"]["tests"] = [["python", "-c", "pass"]]
+    if readdress:
+        forged = workers.WorkOrder(**evidence["order"]).digest()
+        evidence["order_digest"] = forged
+        evidence["summary"]["order_digest"] = forged
+    evidence_path.write_text(json.dumps(evidence))
+    config = json.loads(Layout(home).config.read_text())
+    from greg.capabilities import BUILTINS, InvocationContext
+    with Body(home) as body:
+        ctx = InvocationContext(workspace=root.parents[1], read_roots=tuple(Path(r) for r in config["read_roots"]),
+                                secrets=None, manifest=BUILTINS["worker.appraise"][0], journal=body.journal,
+                                mission_id="m:work-add-sub")
+        result = workers.appraise({"order": "add-sub"}, ctx)
+        appraisal = body.appraise("m:work-add-sub")
+    assert result["verdict"] == "REJECTED", result
+    assert any("digest" in f or "canonical" in f for f in result["findings"])
+    assert appraisal["verdict"] == "REFUTED", appraisal
+    assert appraisal["checks"]["world_reobserved"] is False
 
 
 @pytest.mark.parametrize("params, message", [

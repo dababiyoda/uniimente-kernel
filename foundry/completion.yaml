@@ -906,13 +906,33 @@
   adopt:
   - Claude Code
   - Claude Agent SDK
-  existing:
+  evidence: foundry/evidence/system-51.json
+  implementation:
+  - foundry/systems/commissioning.py
+  - greg/builders.py
+  - greg/genesis.py
+  - foundry/systems/cas.py
   - .github/pull_request_template.md
-  - .github/workflows/canonical-ci.yml
-  - tests/unit/test_founder_effect_doctrine.py
-  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
-    frozen contracts.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Commission.freeze|run (operator acts on a repository) with pluggable builders (AgentSDKBuilder on the
+    Claude Agent SDK, greg.builders.ClaudeCodeBuilder, StaticFilesBuilder); foundry.query contracts|commissions|proposal
+    (system 51)
+  limitations: 'The Claude Agent SDK route is adopted and configured (worktree cwd, file tools only, no shell or
+    network, turn and spend caps, acceptEdits) but not executed in the evidence run: it needs the founder''s own
+    authenticated Claude Code, which is never read from the environment; the sandbox builder is a scripted file set.
+    The write cone is a path allow-list and the pre-CI screen is a pattern screen for shell, socket, environment and
+    dynamic-execution primitives, not a sandbox: the CI commands themselves run as ordinary subprocesses with a scrubbed
+    environment and a timeout (the #9/#10 containment question is separate and paused). The exercise commissions
+    against a temporary repository; the engine is repository-agnostic and the same contract shape applies to this
+    one. Merging is never performed by the system.'
+  recovery: 'A contract is frozen once and never edited; its held-out tests are content-addressed and revealed only
+    at CI time, then removed from the branch so the proposal diff never contains them. Every round is journaled;
+    a refused round resets the worktree; failed commissions keep their branch as evidence; the main checkout is
+    verified untouched after every run.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 52:
   acceptance:
   - A failure yields diagnosis, competing patches, regression test and updated recovery procedure

@@ -879,3 +879,41 @@ def test_embassy_wire_admits_by_challenge_verifies_before_acceptance_and_exposes
     assert tasks["result"]["tasks"] == [], "a fresh workspace has no embassy work posted"
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 29, "op": "post_task", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): commissioning agents in isolated branches -----------------------------------
+
+from foundry.systems import commissioning
+
+
+def test_commissioning_freezes_contracts_isolates_branches_and_proposes_only_green_changes(tmp_path):
+    result = commissioning.exercise(tmp_path)
+    vat = result["vat"]
+    assert vat["status"] == "proposed" and vat["rounds"][0][1] == "red" and vat["rounds"][1][1] == "green"
+    assert vat["rounds"][0][2] == ["tests/held_out/test_vat_rounding.py::test_half_rounds_up",
+                                   "tests/held_out/test_vat_rounding.py::test_negative_rate_refused"], "the public tests passed; the held-out ones decided"
+    assert all(f.startswith("held-out or public test failed: test_") for f in vat["feedback_named_tests_not_bodies"])
+    assert vat["proposal_files"] == ["README.md", "pkg/tax.py", "tests/test_vat.py"] and vat["held_out_not_in_proposal"]
+    assert vat["held_out_matches_contract"] and vat["secret_scrubbed_from_ci"] and vat["body_from_repo_template"] and vat["merged"] is False
+    assert result["cone_breach"]["status"] == "abandoned" and len(result["cone_breach"]["problems"]) == 2
+    assert result["shell"]["problems"] == ["pkg/tax.py: names subprocess"]
+    assert result["nodocs"]["status"] == "abandoned" and result["nodocs"]["tests_green"], "green tests without the required docs is not a proposal"
+    assert result["branches_kept"] == ["commission/cone", "commission/nodocs", "commission/shell", "commission/vat"]
+    assert result["main_untouched"] and result["main_tree_unchanged"]
+    sdk = result["agent_sdk"]
+    assert sdk["configured"] and "Bash" not in sdk["allowed_tools"] and sdk["permission_mode"] == "acceptEdits" and sdk["live_route_run"] is False
+    assert all(result["refusals"].values()) and set(result["refusals"]) == {"refreeze", "contract_without_held_out", "run_unfrozen"}
+    # the screen alone
+    assert commissioning.screen({"../escape.py": ""}, ["x.py"]) and commissioning.screen({"x.py": "import os\nos.environ['A']"}, ["x.py"])
+    assert commissioning.screen({"x.py": "def f():\n    return 1\n"}, ["x.py"]) == []
+    with pytest.raises(commissioning.CommissionError, match="not a git repository"):
+        commissioning.Commission(tmp_path / "e", tmp_path / "not-a-repo")
+    # the SDK builder refuses to run without the CLI rather than pretending
+    builder = commissioning.AgentSDKBuilder(cli_path=None)
+    builder.available = lambda: False
+    with pytest.raises(commissioning.CommissionError, match="cannot run here"):
+        builder.build({"contract": {}, "worktree": str(tmp_path)}, None)
+    listing = foundry_bridge.query({"system": 51, "op": "commissions", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert listing["result"]["commissions"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 51, "op": "run", "args": {}}, _ctx(tmp_path, "foundry.apply"))

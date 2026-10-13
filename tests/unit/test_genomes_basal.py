@@ -385,3 +385,19 @@ def test_breaker_verify_recomputes_observed_successes():
     data, _, out = solved("basal_breaker")
     cert = dict(out["certificate"], successes_observed=out["certificate"]["successes_observed"] + 1)
     assert not verify("basal_breaker", data, out["output"], cert)["successes_recomputed"]
+
+
+def test_pid_verify_refuses_an_on_off_relay_offered_as_the_simc_answer():
+    # review 2026-10-13: the rule binding ran only when law == "pid", so a relay with a recomputed
+    # certificate passed every remaining check
+    data, _ = basal.pid_instance(0)
+    out = basal.pid_solve(data, {})
+    p = basal._pid_inputs(data)
+    forged = {"law": "on_off", "band": 0.0, "rule": out["output"]["rule"]}
+    sim = basal._pid_judge(p, basal._pid_controller(forged))
+    over, settle = basal._pid_steps_summary(p, sim["y"])
+    cert = dict(out["certificate"], iae=sim["iae"], effort_tv=sim["effort_tv"], cost=sim["cost"],
+                max_abs_error=sim["max_abs_error"], longest_limit_run=sim["longest_limit_run"],
+                overshoot=over, settling_time=settle)
+    assert basal.pid_verify(data, forged, cert)["controller_is_declared_pid"] is False
+    assert all(basal.pid_verify(data, out["output"], out["certificate"]).values())

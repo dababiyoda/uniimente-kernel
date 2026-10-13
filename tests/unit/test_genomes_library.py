@@ -226,3 +226,98 @@ def test_a_genome_abstention_through_the_canonical_path_is_an_abstention_receipt
     assert r["abstention_state"] == "ABSTAIN" and r["output"] is None
     assert r["proof_type"] is None and r["proof_artifact"] is None
     assert "short of their goals" in r["missing_information"][0] and r["authority_created"] is False
+
+
+def test_forecast_tolerances_follow_the_series_scale_so_tiny_units_cannot_hide_a_forgery():
+    # review 2026-10-13: absolute 1e-6 tolerances accepted a 670x-off point on a series in tiny units, and
+    # six absolute decimals collapsed such a series' forecast to a constant or to zero
+    from greg.cognition.genomes import forecasting
+    data, _ = forecasting.instance(3)
+    for scale in (1e-6, 1e-9):
+        tiny = {**data, "history": [v * scale for v in data["history"]]}
+        out = forecasting.solve(tiny, {})
+        assert all(forecasting.verify(tiny, out["output"], out["certificate"]).values())
+        assert len({v for k in out["output"]["quantiles"] for v in out["output"]["quantiles"][k]}) > 1
+        forged = {**out["output"], "point": [1e-9] * len(out["output"]["point"])}
+        assert forecasting.verify(tiny, forged, out["certificate"])["point_recomputed"] is False
+
+
+def test_forecast_levels_are_distinct_after_key_formatting():
+    from greg.cognition.genomes import forecasting
+    data, _ = forecasting.instance(3)
+    out = forecasting.solve({**data, "levels": [0.25, 0.5, 0.5, 0.75]}, {})       # duplicates collapse
+    assert out["output"]["levels"] == [0.25, 0.5, 0.75]
+    assert all(forecasting.verify({**data, "levels": [0.25, 0.5, 0.5, 0.75]}, out["output"],
+                                  out["certificate"]).values())
+    with pytest.raises(GenomeError):                                              # would share one key
+        forecasting.solve({**data, "levels": [0.1234567, 0.1234568, 0.9]}, {})
+
+
+def test_newsvendor_refuses_unequal_scenario_counts_whose_summed_cost_is_not_the_sample_average():
+    from greg.cognition.genomes import forecasting
+    data = {"products": [{"name": "A", "scenarios": [10, 10], "over_cost": 1, "under_cost": 5},
+                         {"name": "B", "scenarios": [10] * 10, "over_cost": 1, "under_cost": 2}], "capacity": 10}
+    for fn in (lambda: forecasting.compile_newsvendor(data, {}), lambda: forecasting.newsvendor_optimum(data)):
+        with pytest.raises(GenomeError):
+            fn()
+
+
+def test_forecast_verify_requires_the_declared_parameters_to_be_the_grid_selection():
+    # review 2026-10-13: an in-space but unselected (alpha, beta, phi) with its own consistent quantiles
+    # verified while scoring about 10x worse; the selection claim is now recomputed
+    from greg.cognition.genomes import forecasting as F
+    data, _ = F.instance(2)
+    y, h, levels = F._series(data)
+    cfg = dict(F.DEFAULT_CONFIG, fit_window=104, error_model="additive_scaled", interval_scale=1.4,
+               beta_set=[0.0, 0.02, 0.05], phi_set=[0.9, 0.98, 1.0])
+    forced = (0.1, 0.0, 1.0)
+    assert forced != F.fit(y, cfg)
+    point = F._holt_point(y, forced, h, cfg)
+    eq, origins = F._error_quantiles(y, F._holt_point, forced, h, levels, cfg)
+    forged = {"point": [F._sig(v) for v in point], "levels": levels,
+              "quantiles": {f"{q:g}": [F._sig(max(point[k] + eq[k][i] * y[-1], 1e-9)) for k in range(h)]
+                            for i, q in enumerate(levels)}}
+    cert = {"alpha": 0.1, "beta": 0.0, "phi": 1.0, "fit_window": 104, "beta_set": cfg["beta_set"],
+            "phi_set": cfg["phi_set"], "rolling_origins": origins, "interval_scale": 1.4,
+            "error_model": "empirical additive_scaled quantiles per horizon"}
+    checks = F.verify(data, forged, cert)
+    assert checks["quantiles_recomputed"] and checks["parameters_are_the_grid_selection"] is False
+    genuine = F.solve_with(cfg, data)
+    assert all(F.verify(data, genuine["output"], genuine["certificate"]).values())
+    for bad in ({"beta": [0.0]}, {"phi": {"x": 1}}, {"beta_set": "x"}, {"fit_window": 104.0}):
+        assert not all(F.verify(data, genuine["output"], {**genuine["certificate"], **bad}).values())
+
+
+@pytest.mark.parametrize("alpha,beta,n", [(5000.5, 0.5, 400), (2000.5, 1.5, 300), (3000, 1, 250), (5000.5, 0.5, 200)])
+def test_preposterior_verify_does_not_underflow_on_valid_posteriors(alpha, beta, n):
+    # review 2026-10-13: the float product for P(k=0) underflowed to 0 and refuted the solver's correct answer
+    from greg.cognition.genomes import decision
+    d = {"alpha": alpha, "beta": beta, "pilot_size": n, "customers": 1000, "value_per_success": 20,
+         "fixed_cost": 1000, "pilot_cost": 100}
+    out = decision.solve(d, {})
+    assert all(decision.verify(d, out["output"], out["certificate"]).values())
+
+
+def test_preposterior_exact_verify_is_linear_in_the_pilot_not_in_the_posterior_size():
+    # review 2026-10-13: factorials of alpha and beta took 66 s at alpha = beta = 50 000
+    import time
+    from greg.cognition.genomes import decision
+    d = {"alpha": 400_000, "beta": 400_000, "pilot_size": 200, "customers": 1000, "value_per_success": 20,
+         "fixed_cost": 1000, "pilot_cost": 100}
+    out = decision.solve(d, {})
+    started = time.perf_counter()
+    assert all(decision.verify(d, out["output"], out["certificate"]).values())
+    assert time.perf_counter() - started < 2.0
+    forged = {**out["output"], "posterior_scenarios": [dict(s) for s in out["output"]["posterior_scenarios"]]}
+    forged["posterior_scenarios"][100]["probability"] *= 1.01
+    assert decision.verify(d, forged, out["certificate"])["probabilities_recomputed"] is False
+
+
+def test_the_admission_freeze_hashes_the_path_the_data_and_the_dependency_versions():
+    # review 2026-10-13: the freeze hashed only the genome modules, so a changed cortex, solver or M4 file
+    # would not have raised FROZEN_INPUT_CHANGED
+    frozen = admission.inputs(sorted(library.executables()))
+    for path in ("greg/cognition/cortex.py", "greg/cognition/solvers.py", "greg/cognition/worker.py",
+                 "greg/capabilities.py", "cortex/evaluation/data/m4_weekly.json.gz", "tools/offline_test.py"):
+        assert path in frozen["code"]
+    assert frozen["dependencies"]["numpy"] and frozen["dependencies"]["scipy"]

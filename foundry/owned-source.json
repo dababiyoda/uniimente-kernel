@@ -75,6 +75,7 @@
     "cortex/evaluation/__init__.py",
     "cortex/evaluation/arms.py",
     "cortex/evaluation/build_suites.py",
+    "cortex/evaluation/closure.py",
     "cortex/evaluation/composition_lift/__init__.py",
     "cortex/evaluation/composition_lift/freeze-v1.json",
     "cortex/evaluation/composition_lift/freeze-v2.json",

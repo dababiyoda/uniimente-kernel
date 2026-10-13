@@ -141,3 +141,26 @@ def test_contaminated_evaluation_stops_before_any_computation(tmp_path,monkeypat
     with pytest.raises(RuntimeError,match='CONTAMINATED_EVALUATION'):
         evaluation.assess(tmp_path/'result.json')
     assert not (tmp_path/'result.json').exists()
+
+
+def test_an_answer_without_output_never_settles_and_an_unknown_is_never_a_conditional_result(monkeypatch):
+    # review 2026-10-13: after 6801c3c an ANSWER with output None verified STRUCTURALLY and was receipted as
+    # ANSWERED_WITHIN_SCOPE; an UNKNOWN without output was labelled CONDITIONAL_RESULT
+    from greg.cognition import cortex
+    from greg.cognition.genomes import contract, library
+    import pytest
+    with pytest.raises(contract.GenomeError):
+        contract.answer(None, {})
+    registry = cortex.registry_view()
+    registry.set_state("cognition.mc_importance", "ATTACHED")
+    unknown = {"component": "exponential", "terms": 1, "rate": 1.0, "threshold": 2000.0, "samples": 4000,
+               "seed": 3001}
+    r = cortex.reason({"problem_id": "u", "operation": library.genome("mc_importance").operation, "data": unknown,
+                       "geometry": {"latency_limit": 20}}, registry=registry)
+    assert r["output"] is None and r["outcome"]["outcome"] not in ("CONDITIONAL_RESULT", "ANSWERED_WITHIN_SCOPE")
+    real = cortex._numeric
+    monkeypatch.setattr(cortex, "_numeric", lambda *a, **k: {**real(*a, **k), "output": None})
+    instance, _ = library.executables()["mc_importance"].instance(3002)
+    r = cortex.reason({"problem_id": "n", "operation": library.genome("mc_importance").operation, "data": instance,
+                       "geometry": {"latency_limit": 20}}, registry=registry)
+    assert r["abstention_state"] != "NONE" and r["outcome_state"] != "ANSWERED_WITHIN_SCOPE"

@@ -178,11 +178,21 @@ def _module_file(family: str) -> Path:
     return Path(module.__file__)
 
 
+FREEZE_EXTRA = ("cortex/evaluation/data/m4_weekly.json.gz", "tools/offline_test.py",
+                "requirements-cortex.txt", "requirements-cognition.txt")
+
+
 def inputs(families) -> dict:
-    files = {str(_module_file(f).relative_to(ROOT)) for f in families}
-    files |= {str((HERE / n).relative_to(ROOT)) for n in ("contract.py", "admission.py", "library.py")}
+    """Everything a held-out run can execute or read: the import closure of this harness and the isolated
+    worker (the smoke runs through the canonical cortex path), all of ``greg/cognition`` (the library imports
+    genome modules by name), the M4 data and the dependency versions. The 2026-10-13-v1 freeze hashed only
+    the genome modules; its run is pinned by its commit (496c85b)."""
+    from cortex.evaluation.closure import code_closure, dependency_versions
+    files = code_closure(("greg/cognition/genomes/admission.py", "greg/cognition/worker.py"),
+                         packages=("greg/cognition",), extra=FREEZE_EXTRA, root=ROOT)
     return {"rule": RULE, "dev_seeds": list(DEV_SEEDS), "heldout_seeds": list(HELDOUT_SEEDS),
-            "families": sorted(families), "code": {p: _sha(ROOT / p) for p in sorted(files)}}
+            "families": sorted(families), "code": {p: _sha(ROOT / p) for p in files},
+            "dependencies": dependency_versions()}
 
 
 def smoke(family: str) -> dict:

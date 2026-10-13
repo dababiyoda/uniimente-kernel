@@ -294,6 +294,9 @@ def _grant_for(case_id: str, amount_cents: int):
     return gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
 
 
+charge_grant = _grant_for   # public name for #37 and #54, which settle through this rail
+
+
 QUERY_OPS = {"books": lambda a, r: accounting.trial_balance(Path(r) / "books")}
 APPLY_OPS: dict = {}       # charging is a gate-executed act, not a free op: see business/commercial_loop.py
 

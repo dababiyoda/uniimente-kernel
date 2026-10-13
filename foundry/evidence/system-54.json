@@ -1,0 +1,103 @@
+{
+ "command": "python -m foundry.completion --run 54",
+ "name": "Agent-native commerce",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "books_balance": true,
+  "books_vs_processor": {
+   "books": {
+    "fees_cents": 5840,
+    "gross_cents": 196300,
+    "net_cents": 43160,
+    "refunds_cents": 147300
+   },
+   "processor": {
+    "fees_cents": 5840,
+    "gross_cents": 196300,
+    "net_cents": 43160,
+    "refunds_cents": 147300
+   }
+  },
+  "buyer_recomputes_same_quote": true,
+  "card_proof": {
+   "body_matches_leaf": true,
+   "inclusion_ok": true,
+   "root_matches_signed_root": true,
+   "signature_ok": true
+  },
+  "card_served": true,
+  "challenge_status": 402,
+  "confirmed": "confirmed",
+  "declined_card_yields_no_payment": true,
+  "delivery_in_cas": true,
+  "discovered": [
+   {
+    "capability_id": "organ:greg-shop/audit",
+    "card_url": "https://seller.invalid/.well-known/agent.json",
+    "grants_access": false
+   },
+   {
+    "capability_id": "organ:greg-shop/report",
+    "card_url": "https://seller.invalid/.well-known/agent.json",
+    "grants_access": false
+   }
+  ],
+  "forged_receipt_rejected": true,
+  "payment_required": {
+   "amount_cents": 39200,
+   "currency": "usd",
+   "pay_to": "organ:greg-shop",
+   "resource": "/skills/audit",
+   "scheme": "card-test"
+  },
+  "published": {
+   "directory_sequence": 1,
+   "skills": 2,
+   "version": 1
+  },
+  "quote_cents": 39200,
+  "receipt_signature_verifies": true,
+  "receipts_without_verification_earn_nothing": true,
+  "reconciled_to_processor": true,
+  "redeemed": 200,
+  "refunds_due_after_sweep": 0,
+  "refusals": {
+   "buyer_overrides_constant": "buyer may set only ['customer_tier', 'units'], not ['base_price']",
+   "confirm_before_delivery": "order-0003 has no delivery to confirm",
+   "confirm_by_seller": "the seller does not grade its own delivery",
+   "expired_challenge": "challenge for order-0004 expired at 2026-10-13T12:20:00Z; ask again for a fresh ",
+   "grant_for_other_order": "delivery to another agent needs a Consequence Gate grant for this exact order",
+   "no_grant": "delivery to another agent needs a Consequence Gate grant for this exact order",
+   "payment_bound_to_other_order": "pi_000005 is bound to another order; refused and booked for refund",
+   "replay_same_payment": "order-0001 is delivered; a payment is redeemed once",
+   "replay_under_new_order": "pi_000001 was already redeemed for order-0001; replay refused",
+   "underpaid": "pi_000003 paid 100 cents; the quote was 39200; refused and booked for refund",
+   "unknown_payment": "the processor knows no payment pi_999999; nothing to redeem",
+   "unpriced_skill": "skill audit pricing rule refused: only ['max', 'min', 'round'] may be called (co",
+   "untyped_contract": "skill audit names untyped contracts ['miracle-contract']"
+  },
+  "silent_delivery": 200,
+  "standing": {
+   "audit": {
+    "effective_outcomes": 1.0,
+    "incidents": 0,
+    "status": "insufficient"
+   },
+   "report": {
+    "effective_outcomes": 2.998,
+    "incidents": 1,
+    "status": "insufficient"
+   }
+  },
+  "stray_swept": {
+   "payments": 2,
+   "swept_cents": 39300
+  },
+  "undeliverable": {
+   "refunded_cents": 108000,
+   "status": 409
+  }
+ },
+ "result_sha256": "sha256:18850000c5c53ea36664841076a585a5842f113dccaf436374628b03f2116cd5",
+ "system": 54
+}

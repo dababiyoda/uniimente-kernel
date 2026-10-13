@@ -774,3 +774,72 @@ def test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_
         server.shutdown(); server.server_close()
     books = foundry_bridge.query({"system": 38, "op": "books", "args": {}}, _ctx(tmp_path, "foundry.query"))
     assert books["result"]["balances"] == {}, "a fresh workspace has empty books; charging is never a free op"
+
+
+# -- increment 8 (part): markets whose rules are code ---------------------------------------------
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from foundry.systems import agent_commerce, marketplace
+from greg.founder import public_bytes
+
+
+def test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification(tmp_path):
+    result = marketplace.exercise(tmp_path)
+    big = result["big"]
+    assert big["winner"] == "party:alpha" and big["winning_bid_cents"] == 80000 and big["price_cents"] == 95000
+    assert result["cheapest_bid_did_not_win"] and result["paid_second_price_not_own_bid"]
+    assert "newcomer ceiling" in big["excluded"]["party:newcomer"] and "never revealed" in big["excluded"]["party:delta"]
+    assert result["no_reveal_on_record"] and result["truthful_bidding_dominant"]
+    assert result["strict"]["winner"] == "party:alpha" and result["sole_eligible_bidder_paid_ceiling"]
+    assert "below the buyer's minimum" in result["strict"]["excluded"]["party:gamma"]
+    assert result["standing"]["party:alpha"][0] == "rated" and result["standing"]["party:gamma"][2] == 1
+    assert result["settlement"]["status"] == "settled" and result["settlement"]["take_cents"] == 4750
+    assert result["settlement"]["supplier_payable_cents"] + result["settlement"]["take_cents"] == 95000
+    assert result["refuted_never_charged"] and result["books"]["equation_holds"] and result["books"]["cash_plus_reserve_matches_processor"]
+    assert set(result["refusals"]) >= {"self_dealing", "duplicate_commit", "reveal_before_close", "bid_after_close", "reveal_mismatch",
+                                       "verify_by_supplier", "settle_before_verification", "settle_refuted", "forged_signature",
+                                       "unenrolled_signer", "untyped_contract", "settle_grant_for_other_match", "settle_twice"}
+    assert all(result["refusals"].values()), "every attack named is refused with a reason"
+    # a sole unrated bidder cannot be paid more than the newcomer ceiling even when the buyer's ceiling is higher
+    root = tmp_path / "fresh"
+    buyer, seller = Ed25519PrivateKey.from_private_bytes(bytes(32 * [1])), Ed25519PrivateKey.from_private_bytes(bytes(32 * [2]))
+    marketplace.enroll(root, "b", public_bytes(buyer.public_key()).hex())
+    marketplace.enroll(root, "s", public_bytes(seller.public_key()).hex())
+    marketplace.post_request(root, marketplace.sign(buyer, {"request_id": "r", "buyer": "b", "produces": "evidence", "ceiling_cents": 90000,
+                                                            "closes_at": "2026-10-13T10:00:00Z", "verification_methods": ["human_review"],
+                                                            "min_reputation": None}))
+    marketplace.commit_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s",
+                                                           "commitment": marketplace.commitment("r", "s", 30000, "x")}), now="2026-10-13T09:00:00Z")
+    marketplace.reveal_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s", "amount_cents": 30000, "nonce": "x"}),
+                           now="2026-10-13T10:00:00Z")
+    awarded = marketplace.award(root, "r", now="2026-10-13T10:00:00Z")
+    assert awarded["status"] == "unfilled" and "newcomer ceiling" in awarded["excluded"]["s"]
+    board = foundry_bridge.query({"system": 37, "op": "board", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert board["result"]["requests"] == [] and board["result"]["rules"] == marketplace.DEFAULT_RULES
+    with pytest.raises(CapabilityError, match="refused"):
+        foundry_bridge.apply({"system": 37, "op": "award", "args": {"request_id": "nope", "now": "2026-10-13T10:00:00Z"}},
+                             _ctx(tmp_path, "foundry.apply"))
+
+
+def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_path):
+    result = agent_commerce.exercise(tmp_path)
+    assert result["published"]["skills"] == 2 and result["discovered"][0]["grants_access"] is False
+    assert result["card_served"] and all(result["card_proof"].values()), "the served card is provably the seller's"
+    assert result["quote_cents"] == 39200 and result["buyer_recomputes_same_quote"]
+    assert result["challenge_status"] == 402 and result["redeemed"] == 200
+    assert result["receipt_signature_verifies"] and result["forged_receipt_rejected"] and result["delivery_in_cas"]
+    assert result["confirmed"] == "confirmed" and result["undeliverable"] == {"status": 409, "refunded_cents": 108000}
+    assert result["receipts_without_verification_earn_nothing"] and result["declined_card_yields_no_payment"]
+    assert result["standing"]["report"]["incidents"] == 1 and result["standing"]["audit"]["effective_outcomes"] == 1.0
+    assert result["stray_swept"] == {"swept_cents": 39300, "payments": 2}, "under- and mis-paid money goes back to the payer"
+    assert result["reconciled_to_processor"] and result["books_balance"] and result["refunds_due_after_sweep"] == 0
+    assert set(result["refusals"]) >= {"unpriced_skill", "untyped_contract", "buyer_overrides_constant", "no_grant", "grant_for_other_order",
+                                       "replay_same_payment", "replay_under_new_order", "underpaid", "payment_bound_to_other_order",
+                                       "unknown_payment", "expired_challenge", "confirm_by_seller", "confirm_before_delivery"}
+    assert all(result["refusals"].values())
+    assert "replay refused" in result["refusals"]["replay_under_new_order"]
+    orders = foundry_bridge.query({"system": 54, "op": "orders", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert orders["result"]["orders"] == [], "a fresh workspace has sold nothing"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 54, "op": "redeem", "args": {}}, _ctx(tmp_path, "foundry.apply"))

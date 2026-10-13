@@ -628,8 +628,29 @@
   - Market rules are enforced, not advisory
   adopt:
   - Stripe Connect when real supply exists
-  gap: No independent supply or demand; a marketplace would be premature.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-37.json
+  implementation:
+  - foundry/systems/marketplace.py
+  - foundry/systems/mechanism.py
+  - foundry/systems/reputation.py
+  - foundry/systems/payments.py
+  - foundry/systems/accounting.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply open_market|enroll|post_request|commit_bid|reveal_bid|award|deliver|verify; foundry.query
+    board|standing (system 37); settle() is gate-executed through the #38 rail (financial consequence)
+  limitations: 'Independent supply and demand are distinct enrolled Ed25519 identities in the sandbox, not yet real
+    third parties: no customer or supplier has used the market. Settlement charges the buyer on the #38 rail (sandbox:
+    Stripe''s SDK against the local emulator); the supplier''s share is a booked liability (payable:suppliers), and paying
+    it out to a connected account (Stripe Connect) needs the founder''s account and real supply. The reputation bar
+    uses the #41 Beta lower bound; the newcomer ceiling and take rate are market rules set at open and frozen while
+    requests are open.'
+  recovery: 'Every state transition is a signed message recorded in market.json; the award is a pure function of the
+    revealed bids and the record, so it recomputes identically; a refuted or unverified match never reaches the rail,
+    and settlement is idempotent on the rail''s case key (a second settle of the same match is refused).'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 38:
   acceptance:
   - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
@@ -914,8 +935,32 @@
   - x402
   - A2A Agent Cards
   - MCP
-  gap: No machine-readable offers or agent payments.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-54.json
+  implementation:
+  - foundry/systems/agent_commerce.py
+  - foundry/systems/webserver.py
+  - foundry/systems/discovery.py
+  - foundry/systems/dsl.py
+  - foundry/systems/payments.py
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Storefront.publish_card|challenge|pay|redeem|confirm|sweep|reconcile (publishing and delivering are
+    gate-executed external acts); foundry.query card|orders|standing (system 54)
+  limitations: 'The card is A2A-style (name, url, version, skills[], with a signed x-uniimente extension for contracts,
+    pricing rule and settlement) and is not a claim of A2A protocol conformance; it is served from the #31 site and
+    announced in the #27 directory, not fetched by any external agent yet. The 402 flow is x402-shaped (requirement,
+    payment proof, processor-side verification, then delivery) over #38''s test rail: the asset is test-mode card money
+    on the local emulator, not an on-chain stablecoin, and no facilitator is contacted. Processor fees are read from the
+    emulator''s intent; live mode needs balance transactions. MCP exposure of the storefront is through the #28 gateway
+    pattern and is not wired here. No real agent has bought anything.'
+  recovery: 'Every order is a durable record; a payment id is redeemable once (marked before delivery, so a failed
+    delivery cannot be replayed); an undeliverable order is refunded on the rail and recorded as the skill''s failure;
+    money received for nothing sold is booked as a refund due and swept back, and the books reconcile to the processor
+    to the cent or the discrepancy is visible.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 55:
   acceptance:
   - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner

@@ -1,0 +1,129 @@
+{
+ "command": "python -m foundry.completion --run 37",
+ "name": "Marketplace systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "big": {
+   "eligible": {
+    "party:alpha": 80000,
+    "party:gamma": 95000
+   },
+   "excluded": {
+    "party:delta": "committed but never revealed",
+    "party:newcomer": "unrated newcomer above the newcomer ceiling 25000"
+   },
+   "price_cents": 95000,
+   "winner": "party:alpha",
+   "winning_bid_cents": 80000
+  },
+  "books": {
+   "cash_plus_reserve_matches_processor": true,
+   "equation_holds": true,
+   "market_fee_revenue": 4750,
+   "payable_to_suppliers": 90250,
+   "processor_net_cents": 92215
+  },
+  "cheapest_bid_did_not_win": true,
+  "day1_small_jobs": [
+   [
+    "r-alpha-0",
+    20000,
+    "verified"
+   ],
+   [
+    "r-alpha-1",
+    20000,
+    "verified"
+   ],
+   [
+    "r-alpha-2",
+    20000,
+    "verified"
+   ],
+   [
+    "r-alpha-3",
+    20000,
+    "verified"
+   ],
+   [
+    "r-gamma-0",
+    20000,
+    "verified"
+   ],
+   [
+    "r-gamma-1",
+    20000,
+    "verified"
+   ],
+   [
+    "r-gamma-2",
+    20000,
+    "verified"
+   ],
+   [
+    "r-gamma-3",
+    20000,
+    "refuted"
+   ]
+  ],
+  "no_reveal_on_record": true,
+  "paid_second_price_not_own_bid": true,
+  "refusals": {
+   "award_before_close": "request r-big is open until 2026-10-14T10:00:00Z; nothing to award yet",
+   "bid_after_close": "request r-big closed at 2026-10-14T10:00:00Z; bid refused",
+   "deliver_by_other": "party:gamma is not the awarded supplier of match:r-big",
+   "duplicate_commit": "party:alpha already committed a bid on r-big; one sealed bid per supplier",
+   "forged_signature": "signature does not verify against party:gamma's enrolled key",
+   "reveal_before_close": "bids on r-big stay sealed until 2026-10-14T10:00:00Z",
+   "reveal_mismatch": "reveal by party:gamma does not match its commitment; refused",
+   "rules_under_open_requests": "rules cannot change under open requests; close them first",
+   "self_dealing": "a buyer cannot bid on its own request (self-dealing)",
+   "settle_before_verification": "match:r-big is not verified; settlement refused (status awarded)",
+   "settle_grant_for_other_match": "a charge needs a Consequence Gate grant issued for this exact case",
+   "settle_refuted": "match:r-gamma-3 is not verified; settlement refused (status refuted)",
+   "settle_twice": "match:r-big is not verified; settlement refused (status settled)",
+   "unaccepted_method": "method 'independent_model' is not one the buyer accepts (['external_receipt', 'h",
+   "unaccepted_verification": "verification methods must be a non-empty subset of ('deterministic_invariant', '",
+   "unenrolled_signer": "'party:rogue' is not enrolled",
+   "untyped_contract": "request names untyped contract 'miracle-contract'",
+   "verify_before_delivery": "match:r-big has no delivery to verify",
+   "verify_by_supplier": "the supplier does not verify its own delivery"
+  },
+  "refuted_never_charged": true,
+  "settlement": {
+   "processor_fee_cents": 2785,
+   "status": "settled",
+   "supplier_payable_cents": 90250,
+   "take_cents": 4750
+  },
+  "sole_eligible_bidder_paid_ceiling": true,
+  "standing": {
+   "party:alpha": [
+    "rated",
+    0.6973,
+    0
+   ],
+   "party:delta": [
+    "insufficient",
+    0.0313,
+    0
+   ],
+   "party:gamma": [
+    "rated",
+    0.2858,
+    1
+   ]
+  },
+  "strict": {
+   "excluded": {
+    "party:gamma": "standing lower bound 0.2859 is below the buyer's minimum 0.6",
+    "party:newcomer": "unrated; the buyer requires rated standing"
+   },
+   "price_cents": 50000,
+   "winner": "party:alpha"
+  },
+  "truthful_bidding_dominant": true
+ },
+ "result_sha256": "sha256:7c2bf2293293e3b26f13928329dca28e6256f9375755935c73dcd39831e5af20",
+ "system": 37
+}

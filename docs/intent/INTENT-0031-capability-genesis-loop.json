@@ -1,0 +1,49 @@
+[
+  {
+    "intent_id": "INTENT-0031",
+    "title": "Build-your-own-x mechanisms recombined into a governed capability-formation loop for the Egregore",
+    "statement": "Continue /mechanism-recombination-foundry: use it to build your own x tech for UNIIMENTE. Do not clone tutorial products. Extract their primitive mechanisms, mutate them and recombine them into a new digital developmental substrate. Build it up to achieve /spider-web-hegemony: maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore, pushing and staying inside safety and legality constraints, preferring the maximum high-surface-tension asymmetrically strong lawful option: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while maximizing durable asymmetric leverage for the Egregore by anchoring the framework at its absolute meniscus, converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance; and be organized, collaborative and communicative using /install-recursive-founder-intent-collaboration-protocol.",
+    "source": "Founder chat message to Claude Code session, 2026-10-13",
+    "source_location": "claude.ai/code/session_01D4ongq2uXi7w5w3HNCUAed; faithful verbatim capture above; the chat is not founder authentication of a runtime principal",
+    "source_date_or_version": "2026-10-13",
+    "status": "active",
+    "authority_level": "active_requirement",
+    "consequence_class": "material",
+    "intended_outcome": "Standing cognition can form or reconfigure a function in response to a verified deficit: its own recorded failures open a case; candidates are admitted only in resourcefulness-ladder order (cheapest real mechanism first, new architecture last); candidates are trialled in shadow without influence; a content-addressed dossier is what a human ratifies; retained parts bind through the Consequence Gate and become reusable genomes, so each formation makes the next cheaper. Advantage compounds through evidence, accountability, deterrence against misuse, protection of affected parties and minimal collateral harm; never through authority gained by software, coercion or secrecy.",
+    "affected_systems": [
+      "uniimente-kernel egregore (runtime, parts board, genesis loop)",
+      "uniimente-kernel capabilities.genome registry",
+      "uniimente-kernel evolution capsule verifier tiers and failure classes",
+      "uniimente-kernel closure.whole_body",
+      "build-your-own-x fork (mechanism atlas only)"
+    ],
+    "rationale": "INTENT-0030 compiles 'digital developmental substrate' to functional capability formation in response to a verified CapabilityDeficit and names resourceful candidate discovery as the open seam. 'Spider-web hegemony', 'total systemic dominance' and 'impermeable shield' are compiled to lawful, non-bypassable internal control of the formation process (eligibility = ladder admission, routing = slots, proof = ledgered shadow dossier, settlement = Gate-granted binding) and to the six named lawful maximands; market-level hegemony has no governing external transaction yet and is not claimed. Build-your-own-x categories were mined for primitives (content addressing, write-ahead rebuild, capability grants, canary/shadow, quorum-as-verifier-tier, package resolution, immune detect-contain-learn) and mutated; no tutorial product was cloned.",
+    "conflicts": [
+      "Literal reading of 'developmental substrate' as digital cells/tissues conflicts with INTENT-0030 and is not implemented; developmental/ and morphogenesis/ remain research lineages",
+      "'Total systemic dominance' read literally conflicts with the constitutional invariants (intelligence never creates authority; UNIIMENTE grows in competence, not sovereignty); compiled to non-bypassability of the Gate and accepted proof inside UNIIMENTE",
+      "Market-level spider-web hegemony needs a governing external transaction and a named venture cell, which remain a founder decision (SR-INTENT-3 boundary)"
+    ],
+    "evidence_refs": [
+      "tests/unit/test_egregore_genesis.py (10 tests; each guard mutation-checked)",
+      "tests/unit/test_egregore_parts.py (14 tests)",
+      "docs/CAPABILITY_GENESIS_LOOP.md (invention dossier, internal spider-web mapping, ADR)",
+      "docs/collaboration/deliberation-genesis-2026-10-13.json (validator exit 0)"
+    ],
+    "implementation_refs": [
+      "egregore/genesis.py",
+      "egregore/parts.py",
+      "egregore/model_parts.py",
+      "dababiyoda/uniimente-kernel PR #129"
+    ],
+    "owner": "Alfonso Lopez; Claude Code session implements as draft",
+    "next_review_trigger": "First real deficit case run against a live local model in shadow on real signals, or founder designation of the first venture cell's governing transaction (whichever comes first)",
+    "unresolved_questions": [
+      "Which venture transaction becomes the external spider-web wedge; without it market hegemony stays Stage-gate",
+      "Whether model-backed evaluators (Guardian/Treasury) may ever be candidates; currently proposer slots only in practice",
+      "Whether detector thresholds (3 of 10 cycles) should be founder-ratified configuration rather than constructor defaults",
+      "Whether a detached shadow part should be removable without a grant (stop should be free); today detaching uses the same grant path"
+    ],
+    "created_at": "2026-10-13T14:30:00Z",
+    "updated_at": "2026-10-13T14:30:00Z"
+  }
+]

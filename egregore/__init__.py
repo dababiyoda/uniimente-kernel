@@ -17,15 +17,21 @@ from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
 from .parts import PartSpec, PartsBoard
 from .model_parts import local_draft_part
+from .genesis import CapabilityDeficit, CapabilityGenesis, CaseState, DeficitDetector, LADDER
 
 __all__ = [
     "Assessment",
     "CandidateProposal",
+    "CapabilityDeficit",
+    "CapabilityGenesis",
+    "CaseState",
     "ChangeProposal",
     "CognitionCycle",
     "ContractError",
     "CycleStatus",
+    "DeficitDetector",
     "IntegrityConflict",
+    "LADDER",
     "PartSpec",
     "PartsBoard",
     "ResourceExhausted",

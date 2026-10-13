@@ -214,6 +214,10 @@ class PartsBoard:
     def spec(self, part_id: str) -> PartSpec | None:
         return self._specs.get(part_id)
 
+    def resolved(self, part_id: str) -> bool:
+        """True when the part's code is registered in this process (specs persist; code does not)."""
+        return part_id in self._implementations
+
     # -- authority path ----------------------------------------------------
     def _objective(self, slot: str, mode: str, part_id: str | None, prior_head: str | None) -> str:
         return digest({

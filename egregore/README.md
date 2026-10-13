@@ -65,6 +65,27 @@ grant = issuer.issue_single_action(
 board.change(actor=actor, slot=spec.slot, part_id=part, mode="shadow", gate=gate, grant=grant)
 ```
 
+## Capability Genesis Loop (`genesis.py`)
+
+Canonical morphogenesis (INTENT-0030): capability formation in response to a
+*verified* deficit. The loop connects existing mechanisms and adds no authority.
+
+| Stage | Mechanism | Grant needed |
+|---|---|---|
+| Observe | `DeficitDetector.scan(cycles)` turns repeated component failures, budget refusals and refusal/silence/veto streaks into content-addressed `CapabilityDeficit`s; `observe()` opens or recurs a case | none |
+| Propose | `propose()` admits candidates only in resourcefulness-ladder order: a rung may hold a candidate only when every cheaper rung records `candidate`, `searched_none` or `not_applicable`; `new_architecture` only when no cheaper rung holds a candidate | none |
+| Trial | `shadow()` binds the candidate as a shadow via the parts board; `record_trials()` aggregates `shadow_result` records (samples, agreement, consequence classes, failure classes) | Gate + grant (shadow) |
+| Dossier | `dossier()` renders the Capability Genesis contract fields with a content hash | none |
+| Ratify | `ratify()` with an `evolution.capsule.VerifierRecord`: hypothesis-only tiers cannot retain; retain needs the minimum samples, no `doctrinal_refusal` in trial, the reviewed dossier hash, and a whole-body closure that is not FALSELY_CLOSED; it then binds through the board and registers a `CapabilityGenome` | Gate + grant (active) |
+| Reuse | `reuse_candidates(slot)` offers retained parts as rung-1 candidates for later deficits | none |
+| Stop | `ratify(decision="regress"|"kill")` and `close()` | none |
+
+Case states: `open → trialing → ready_for_ratification → retained | regressed | killed | lapsed`.
+Cases rebuild from the ledger; a retained label is applied only when the ledger
+holds the authorized binding it names, so forged decision records change nothing.
+Design record: `docs/CAPABILITY_GENESIS_LOOP.md`, `docs/intent/INTENT-0031-*.json`,
+`docs/collaboration/deliberation-genesis-2026-10-13.json`.
+
 ## What is intentionally absent
 
 - Private keys, wallet signing, swaps, transfers, staking, or treasury control.

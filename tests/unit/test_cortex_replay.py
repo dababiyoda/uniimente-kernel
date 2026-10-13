@@ -73,3 +73,37 @@ def test_replay_does_not_touch_the_freeze():
     assert "cortex/evaluation/replay.py" not in R.FROZEN_CODE
     manifest = json.loads(R.MANIFEST.read_text(encoding="utf-8"))
     assert manifest["inputs"] == R.freeze_inputs()
+
+
+def test_semantic_organ_can_be_served_by_the_same_recorded_model(tmp_path):
+    """The frozen disclosure says the routed seed's semantic route uses the same model as the
+    baselines; a second transcript keyed by the organ's own prompts serves it, and the cortex
+    class is restored afterwards."""
+    from cortex.organs.semantic import SYSTEM_PROMPT
+    from cortex.routing import Cortex, SEMANTIC
+    from cortex.contracts import canonical_json
+    item = next(i for i in R.load_items("smoke") if i["problem"]["payload"].get("sources"))
+    sources = sorted(item["problem"]["payload"]["sources"], key=lambda s: s["id"])
+    user = canonical_json({"question": item["problem"]["question"],
+                           "sources": [{"id": s["id"], "text": s["text"]} for s in sources]})
+    quote = sources[0]["text"][:12]
+    reply = json.dumps({"answer": "from the sources", "claims": [{"text": "x", "source_ids": [sources[0]["id"]],
+                                                                   "quotes": [quote]}], "assumptions": [],
+                        "contradictions": [], "uncertainty": "low"})
+    sem = tmp_path / "semantic.json"
+    sem.write_text(json.dumps({"schema": RP.REPLAY_SCHEMA, "replies": {RP.prompt_key(SYSTEM_PROMPT, user): reply}}))
+    arms = _transcript(tmp_path, "smoke", json.dumps({"disposition": "abstain", "answer": {}, "confidence": 0.5}))
+    before = R.Cortex
+    results = RP.run_replay("smoke", ["routed_seed", "always_llm"], arms, PROV, semantic_replies_path=sem)
+    assert R.Cortex is before and R.Cortex is Cortex
+    routed = next(i for i in results["arms"]["routed_seed"]["items"] if i["item_id"] == item["item_id"])
+    assert routed["state"] == "OK" and routed["disposition"] == "recommend"
+    sem_prov = results["arm_provenance"]["semantic_route"]
+    assert sem_prov["prompts_served"] == 1 and sem_prov["prompts_missing"] == 0
+    receipt = results["representative_receipts"].get(item["problem"]["problem_id"])
+    if receipt is not None:
+        assert receipt["versions"]["model"] == "test-model"
+    plain = RP.run_replay("smoke", ["routed_seed"], arms, PROV)
+    plain_item = next(i for i in plain["arms"]["routed_seed"]["items"] if i["item_id"] == item["item_id"])
+    assert plain_item["state"] == "DEPENDENCY_UNAVAILABLE"
+    assert "no model" in plain["arm_provenance"]["semantic_route"]["served_by"]

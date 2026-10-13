@@ -701,3 +701,49 @@ def test_cognitive_router_ranks_by_verified_evidence_and_keeps_governance(tmp_pa
         cognitive_router.declare(r, "c", provider="p", privacy="secret")
     out = foundry_bridge.query({"system": 25, "op": "routes", "args": {"now": now}}, _ctx(tmp_path, "foundry.query"))
     assert out["result"] == {}, "a fresh mission workspace has no routes until declared"
+
+
+# -- increment 7 (part): rabbit hole engine and path attribution ----------------------------
+
+from foundry.systems import attribution, rabbit_hole
+
+
+def test_rabbit_hole_routes_by_observed_doors_and_never_offers_weak_or_dark_nodes(tmp_path):
+    result = rabbit_hole.exercise(tmp_path)
+    assert result["territory_valid"] and "dark_pattern" in result["refusals"]
+    assert result["routed_from_entry"] == "pod-basics", "the door visitors actually completed and bought through leads"
+    assert result["alternatives"] == ["disputes"], "the other door is still offered, not hidden"
+    assert result["weak_node_never_offered"] and result["from_disputes"] == "audit-kit"
+    assert result["owned_ground"].startswith("portal:") and result["exit_ramp_always_present"] and result["depth_cap_stops"]
+    stats = result["door_stats"]["why-proof->pod-basics"]
+    assert stats["good"] <= stats["taken"], "a visitor counts once however well the visit went"
+    assert 0 < rabbit_hole.door_value(stats) <= 1.0
+    r2 = tmp_path / "t2"
+    rabbit_hole.demo_territory(r2)
+    rabbit_hole.observe(r2, session="s", kind="consume", node_id="why-proof", at="t")
+    rabbit_hole.observe(r2, session="s", kind="leave", node_id="why-proof", at="t")
+    with pytest.raises(rabbit_hole.RabbitHoleError, match="already left"):
+        rabbit_hole.observe(r2, session="s", kind="consume", node_id="pod-basics", at="t")
+    rec = foundry_bridge.query({"system": 50, "op": "recommend", "args": {"session": "nobody", "now": "t"}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert rec["result"]["node"] is None and "exit_ramp" in rec["result"], "an empty territory routes nowhere, honestly"
+
+
+def test_attribution_measures_paths_and_refuses_small_sample_stories(tmp_path):
+    result = attribution.exercise(tmp_path)
+    assert result["sessions"] == 24 and result["conversions"] == 10
+    assert result["top_path"] == ["why-proof", "pod-basics", "audit-kit", "offer"]
+    assert result["top_path_lower_bound"] < result["top_path_rate"], "reported with its uncertainty"
+    assert result["single_session_path_lower_bound"] < 0.25, "one converting session is not a 100% path"
+    assert result["attribution_sums_to_conversions"] and result["disputes_attracts_but_does_not_convert"]
+    assert result["by_source"]["owned-newsletter"]["rate_lower_bound"] > result["by_source"]["platform-x"]["rate_lower_bound"]
+    # the #34 engine measures the #50 engine's own log through the bridge (sibling store)
+    ws = tmp_path / "ws" / "foundry"
+    rabbit_hole.demo_territory(ws / "system-50")
+    for i in range(3):
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="why-proof", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="pod-basics", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="buy" if i else "leave", node_id="pod-basics", at="t")
+    measured = foundry_bridge.query({"system": 34, "op": "report_territory", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert measured["result"]["sessions"] == 3 and measured["result"]["conversions"] == 2
+    assert attribution.wilson_lower(0, 0) == 0.0 and attribution.report([])["removal"]["attribution"] == {}

@@ -583,13 +583,20 @@
   acceptance:
   - Maps which content sequences produced subscribers/customers from observed events
   - Reports measured path conversion, not assumed
-  adopt:
-  - PostHog
-  - Plausible
-  existing:
-  - DALEOBANKS:services/analytics.py
-  gap: Content analytics exist; no map of which narrative sequences produce subscribers or customers.
-  state: PARTIAL
+  evidence: foundry/evidence/system-34.json
+  implementation:
+  - foundry/systems/attribution.py
+  - foundry/systems/rabbit_hole.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query report|report_territory (system 34)
+  limitations: 'Measures only recorded journeys (the #50 log or any log of the same shape); platform-side recommendation
+    graphs are not observable from here and are not claimed. First-order Markov removal effect; higher-order paths
+    are reported exactly but attributed first-order. Samples under 5 are labelled small and carry Wilson lower bounds.'
+  recovery: Stateless over the log; recomputed from the journal at any time.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 35:
   acceptance:
   - Generates media assets (image/audio/video/interactive) from the canon through an integrated engine
@@ -826,13 +833,21 @@
 50:
   acceptance:
   - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
-  adopt:
-  - PostHog funnels
-  existing:
+  evidence: foundry/evidence/system-50.json
+  implementation:
+  - foundry/systems/rabbit_hole.py
   - foundry/territory.py
-  - tests/unit/test_foundry.py
-  gap: Territory Graphs validate; no audience journey measured through them.
-  state: PARTIAL
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query recommend|validate|doors; foundry.apply add_node|retire|observe (system 50)
+  limitations: Routing uses first-order door statistics (from-node, door) over recorded sessions; no visitor profiling
+    or cross-session identity. Node evidence levels and expiry are declared by the author, as in foundry/territory.py.
+    WMI's rabbit_hole.py is the mechanism source for earned progression and the exit ramp; it is not imported.
+  recovery: State is one JSON document written atomically; a retired or expired node drops out of routing immediately;
+    the exit ramp is present on every recommendation, including refusals and the depth ceiling.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 51:
   acceptance:
   - Agents write code, tests and docs in isolated branches; changes pass CI before proposal

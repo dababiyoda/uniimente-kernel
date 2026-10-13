@@ -80,6 +80,13 @@ def confine(root, public_files):
                 grants[path] = grants.get(path, 0) | READ_FILE
     interpreter = Path(sys.executable).resolve(strict=True)
     grants[interpreter] = READ_FILE | EXECUTE
+    # A virtual environment's interpreter reads <venv>/pyvenv.cfg at startup; without it every
+    # confined Python child dies in site initialisation. GREG's installers (greg/chromebook/install.sh,
+    # the Mac runbook) always create one, unlike CI's toolcache Python. Exact file, read-only.
+    if Path(sys.prefix).resolve() != Path(sys.base_prefix).resolve():
+        venv_config = Path(sys.prefix).resolve() / "pyvenv.cfg"
+        if venv_config.is_file():
+            grants[venv_config] = READ_FILE
     for name in ("/etc/ld.so.cache", "/dev/null", "/etc/ssl/certs/ca-certificates.crt"):
         path = Path(name)
         if path.exists():

@@ -501,7 +501,6 @@ def main(argv=None) -> int:
                 data = gravity.step(situation)
             print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
-            from datetime import datetime, timezone
             from greg import presence
             now = datetime.now(timezone.utc)
             try:

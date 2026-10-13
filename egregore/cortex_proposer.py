@@ -1,0 +1,141 @@
+"""Seed Cortex → standing cognition: a consequence-inert proposer.
+
+The Polyintelligence Cortex seed (``cortex/``) classifies a problem's geometry,
+recruits an eligible organ, verifies the result and returns a receipt. On its
+own it is a library. This module attaches it to the one place on main where
+GREG already deliberates, ``StandingCognitionRuntime``'s existing proposer slot,
+without adding a second runtime, gate or authority path.
+
+Mechanism recombined from PR #139 (``egregore/cognition/integration.py``,
+``CortexProposer``): bind explicitly to the runtime's proposer mapping; ledger
+the receipt first; return a candidate only when the cortex recommends or asks
+for human adjudication; cite the ledger record as evidence.
+
+What this binding does and does not do:
+
+* every call writes exactly one ``cortex.receipt`` record to the evidence
+  ledger, whatever the disposition (abstentions are traces too);
+* ``recommend`` becomes a ``draft.prepare`` candidate at ``internal_write`` whose
+  only effect is a human review of the receipt;
+* ``handoff`` becomes a ``human.adjudicate`` candidate at ``internal_write``:
+  the question is routed to legitimate human judgment, nothing is decided;
+* ``abstain`` and ``bounded_test`` produce no candidate (the receipt names the
+  missing information or the premise to test);
+* the semantic organ gets at most the model calls this proposer was configured
+  with (default 0), so the runtime's resource accounting stays truthful;
+* the cortex never sees the Consequence Gate, grants or adapters, and the
+  candidate's ``execution_authority`` is ``"none"`` by contract.
+
+Competence estimates live in ``cortex.memory.CompetenceLedger`` and settle only
+on verified outcomes; a candidate's ``confidence`` is 0.0 until that exists.
+"""
+from __future__ import annotations
+
+from typing import Any, Callable, Mapping, Sequence
+
+from egregore.contracts import CandidateProposal, ContractError, SignalEnvelope, canonical_copy
+
+RECEIPT_RECORD = "cortex.receipt"
+REQUEST_KEY = "cognitive_request"
+CANDIDATE_DISPOSITIONS = {
+    "recommend": ("draft.prepare", "draft.prepare", "internal://review/cognition",
+                  "a human reviews the receipted cognitive recommendation"),
+    "handoff": ("human.adjudicate", "human.adjudicate", "internal://founder/attention",
+                "legitimate human judgment decides; the receipt carries the question and its evidence"),
+}
+
+
+class CortexProposer:
+    """Attach the Seed Cortex to ``StandingCognitionRuntime(proposers={name: proposer})``."""
+
+    def __init__(self, cortex: Any, ledger: Any, *, name: str = "seed_cortex", max_model_calls: int = 0,
+                 records_provider: Callable[[Mapping[str, Any]], Sequence[Mapping[str, Any]]] | None = None):
+        if not hasattr(cortex, "run"):
+            raise ContractError("cortex must expose run(problem, records=...)")
+        if not hasattr(ledger, "append") or not hasattr(ledger, "by_type"):
+            raise ContractError("ledger must provide append() and by_type()")
+        if not isinstance(name, str) or not name.strip():
+            raise ContractError("proposer name required")
+        if not isinstance(max_model_calls, int) or isinstance(max_model_calls, bool) or max_model_calls < 0:
+            raise ContractError("max_model_calls must be a non-negative integer")
+        self.cortex = cortex
+        self.ledger = ledger
+        self.name = name
+        self.max_model_calls = max_model_calls
+        self.records_provider = records_provider
+
+    @property
+    def execution_authority(self) -> str:
+        return "none"
+
+    # ------------------------------------------------------------------ proposer protocol
+    def __call__(self, signals: Sequence[SignalEnvelope], context: Mapping[str, Any]):
+        if not signals:
+            return None
+        request = context.get(REQUEST_KEY) if isinstance(context, Mapping) else None
+        if not isinstance(request, Mapping):
+            return None
+        problem = request.get("problem")
+        if not isinstance(problem, Mapping):
+            raise ContractError("cognitive_request.problem must be a mapping")
+        problem = self._bounded_problem(problem)
+        records = list(request.get("authority_records") or [])
+        if self.records_provider is not None:
+            records.extend(self.records_provider(request))
+        receipt = self.cortex.run(problem, records=records or None)
+        record = self.ledger.append(RECEIPT_RECORD, {
+            "proposer": self.name, "receipt": receipt, "execution_authority": "none",
+            "source_signal_ids": [s.signal_id for s in signals],
+        })
+        kind = receipt["disposition"]["kind"]
+        if kind not in CANDIDATE_DISPOSITIONS:
+            return None
+        action_class, capability, target, expected = CANDIDATE_DISPOSITIONS[kind]
+        objective = str(problem.get("question") or "").strip() or f"cognition receipt {receipt['receipt_id']}"
+        geometry = receipt.get("geometry") or {}
+        return CandidateProposal.build(
+            proposed_by=self.name,
+            objective=objective,
+            action_class=action_class,
+            requested_capability=capability,
+            target=target,
+            consequence_class="internal_write",
+            payload={
+                "cortex_receipt_ref": record.hash,
+                "receipt_id": receipt["receipt_id"],
+                "disposition": receipt["disposition"],
+                "epistemic_class": geometry.get("epistemic_class"),
+                "selected_routes": list((receipt.get("route") or {}).get("selected") or []),
+                "state": receipt["output"]["state"],
+                "answer": receipt["output"]["answer"],
+                "authority_created": False,
+            },
+            evidence_refs=(f"ledger:{record.hash}", *self._receipt_refs(receipt)),
+            confidence=0.0,
+            estimated_cost_usd=float(receipt["expenditure"]["usd"]),
+            expected_outcome=expected,
+            source_signal_ids=tuple(s.signal_id for s in signals),
+        )
+
+    # ------------------------------------------------------------------ helpers
+    def _bounded_problem(self, problem: Mapping[str, Any]) -> dict:
+        """Clamp the semantic organ's model budget to what this proposer may spend."""
+        problem = canonical_copy(dict(problem))
+        payload = dict(problem.get("payload") or {})
+        resources = dict(payload.get("resources") or {})
+        requested = resources.get("max_model_calls", self.max_model_calls)
+        if not isinstance(requested, int) or isinstance(requested, bool) or requested < 0:
+            raise ContractError("resources.max_model_calls must be a non-negative integer")
+        resources["max_model_calls"] = min(requested, self.max_model_calls)
+        payload["resources"] = resources
+        problem["payload"] = payload
+        return problem
+
+    @staticmethod
+    def _receipt_refs(receipt: Mapping[str, Any]) -> list[str]:
+        inputs = receipt.get("inputs") or {}
+        return [ref for ref in (inputs.get("evidence_refs") or []) if isinstance(ref, str) and ref]
+
+    def receipts(self) -> list:
+        """Every receipt this proposer (by name) has ledgered, oldest first."""
+        return [r for r in self.ledger.by_type(RECEIPT_RECORD) if r.payload.get("proposer") == self.name]

@@ -936,14 +936,37 @@
     memory, operated end to end in sandbox'
   adopt:
   - existing DALEOBANKS persona and clients
-  existing:
+  evidence: foundry/evidence/system-49.json
+  implementation:
+  - foundry/systems/company_loop.py
   - foundry/company.py
   - foundry/distribution.py
-  - tests/unit/test_foundry.py
-  - DALEOBANKS:services/x_client.py
-  - DALEOBANKS:persona.json
-  gap: Charter and distribution loop are modeled; no products, community or finance attached to a persona.
-  state: PARTIAL
+  - foundry/territory.py
+  - foundry/systems/media.py
+  - foundry/systems/federation.py
+  - foundry/systems/community.py
+  - foundry/systems/payments.py
+  - foundry/systems/treasury.py
+  - foundry/systems/attribution.py
+  - foundry/systems/rabbit_hole.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: CompanyLoop.charter|ratify|check_draft|open_ground|open_rail|publish_node|cycle|next_plan (operator acts
+    on a running company; every publish crosses the Consequence Gate); foundry.query memory|plan (system 49)
+  limitations: 'Operated end to end in the sandbox only: the fediverse is three loopback #33 instances, the rail is the
+    #38 emulator, visitors are scripted journeys through the #50 territory, and the persona is the DALEOBANKS persona
+    file rather than a live DALEOBANKS client (its mastodon client remains a stub; pointing it at the owned instance is
+    the integration left open). Compliance rules are extracted from WMI src/services/influencer_company.py (disclosure,
+    topic bounds, prohibited patterns, escalation, kill criteria) and re-stated here because the organ repositories are
+    not importable from the Kernel. The two territory implementations (foundry/territory.py for publish governance,
+    #50 for routing and journeys) are both used; unifying them is a later metabolism step. No real audience, revenue
+    or founder use.'
+  recovery: 'Every cycle appends to memory.json and the next plan is read from it; a kill condition pauses publishing
+    and the pause survives in memory; the charter, canon, assets, community export and books all remain exportable
+    after a kill; a cycle that cannot publish a node records the refusal rather than skipping it silently.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 50:
   acceptance:
   - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior

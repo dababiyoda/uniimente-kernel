@@ -1014,3 +1014,33 @@ def test_media_engine_renders_from_canon_with_disclosure_and_signed_provenance(t
     assert [a["kind"] for a in assets["result"]["assets"]] == ["interactive"]
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 35, "op": "produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the company loop end to end ------------------------------------------------
+
+from foundry.systems import company_loop
+
+
+def test_company_loop_runs_charter_to_kill_with_owned_distribution_products_finance_and_memory(tmp_path):
+    result = company_loop.exercise(tmp_path)
+    assert result["charter_ratified"] and result["followers_on_owned_actor"] == 2
+    w1, w2, w3 = result["cycles"]
+    assert w1["published"] == ["why-proof", "pod-basics", "audit-kit"] and result["weak_node_refused_at_publish"]
+    assert w1["impressions"] == 6 and w1["owned_relationships"] == 3 and w1["useful_actions"] == {"completed_node": 4, "joined_community": 1, "purchased": 2}
+    assert w1["informed_return"] == 1.75 and w1["closure"] == "CLOSED" and w1["revenue_cents"] == 18000 and w1["surplus_usd"] == 165.0
+    assert w1["treasury_policy_version"] == 1 and w1["treasury_reconciled"] and w1["decision"] == "continue"
+    assert w2["closure"] == "FALSELY_CLOSED" and w2["decision"] == "revise" and w2["treasury_policy_version"] is None, "no surplus, no allocation"
+    assert w3["decision"] == "kill" and result["killed"] and result["memory_cycles"] == 3
+    assert result["plan_after_cycle1"]["action"] == "continue" and result["plan_after_cycle1"]["least_attributed_node"] == "disputes"
+    assert result["plan_after_kill"]["action"] == "stopped"
+    assert result["owned_copies_in_outbox"] == 9 and result["reader_inbox_posts"] == 9 and result["every_post_discloses"]
+    assert result["assets_with_provenance"] == 11 and result["community_members"] == 2 and result["community_export_verifies"]
+    assert result["books"] == {"reconciled_to_processor": True, "equation_holds": True, "gross_cents": 18000}
+    assert result["ledger"] == {"foundry.charter_submitted": 1, "foundry.charter_ratified": 1, "foundry.distribution_evaluated": 3}
+    assert set(result["refusals"]) == {"publish_before_ratification", "off_topic_draft", "undisclosed_draft", "prohibited_pattern", "escalation_topic",
+                                       "escalation_topic_even_if_allowed", "cycle_after_kill", "publish_after_kill"} and all(result["refusals"].values())
+    assert company_loop.plan_from_memory({"cycles": [], "kill": None})["action"] == "start"
+    plan = foundry_bridge.query({"system": 49, "op": "plan", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert plan["result"]["action"] == "start", "a fresh workspace has no company memory"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 49, "op": "cycle", "args": {}}, _ctx(tmp_path, "foundry.apply"))
